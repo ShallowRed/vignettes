@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Disable Tailwind preflight for Reveal.js slides */
+/* The reveal.js slides use their own styling */
+@layer base {
+  .reveal,
+  .reveal * {
+    all: revert;
+  }
+}
