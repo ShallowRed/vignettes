@@ -10,9 +10,17 @@ export default defineNuxtConfig({
 
   srcDir: 'src/',
 
-  modules: ['@nuxtjs/mdc', 'nuxt-auth-utils'],
+  modules: ['@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/icon'],
 
   css: ['~/assets/css/tailwind.css'],
+
+  icon: {
+    // Remix Icons are installed locally via @iconify-json/ri
+    // Usage: <Icon name="ri:home-line" /> or in markdown: :icon{name="ri:home-line"}
+    serverBundle: {
+      collections: ['ri'],
+    },
+  },
 
   mdc: {
     headings: {

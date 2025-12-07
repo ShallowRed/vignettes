@@ -19,6 +19,7 @@
     "prepare": "nuxt prepare"
   },
   "dependencies": {
+    "@iconify/vue": "^5.0.0",
     "@nuxtjs/mdc": "^0.19.1",
     "@types/node": "^24.10.1",
     "mermaid": "^11.12.2",
@@ -31,6 +32,8 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.4.2",
+    "@iconify-json/ri": "^1.2.6",
+    "@nuxt/icon": "^2.1.0",
     "@tailwindcss/vite": "^4.1.17",
     "concurrently": "^9.2.1",
     "daisyui": "^5.5.8",

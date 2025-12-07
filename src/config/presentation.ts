@@ -117,4 +117,7 @@ export const MDC_COMPONENTS = {
   'mermaid': 'Mermaid',
   'PreviewLink': 'PreviewLink',
   'preview-link': 'PreviewLink',
+  'IconInline': 'IconInline',
+  'icon-inline': 'IconInline',
+  'icon': 'IconInline',
 } as const
