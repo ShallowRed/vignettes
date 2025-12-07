@@ -3,6 +3,7 @@ import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import tailwindcss from '@tailwindcss/vite'
+import presentationWatcher from './plugins/presentation-watcher.js'
 import themeWatcher from './plugins/theme-watcher.js'
 
 export default defineNuxtConfig({
@@ -29,7 +30,7 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    plugins: [tailwindcss(), themeWatcher()],
+    plugins: [tailwindcss(), themeWatcher(), presentationWatcher()],
   },
 
   app: {
