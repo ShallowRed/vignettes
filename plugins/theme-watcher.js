@@ -1,5 +1,4 @@
 import { mkdirSync, watch, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
 import * as sass from 'sass'
 
 export default function themeWatcherPlugin() {

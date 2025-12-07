@@ -2,6 +2,15 @@
  * Core type definitions for the presentation system
  */
 
+/**
+ * Publication status based on folder location
+ * - public: Visible to everyone, prerendered (SSG)
+ * - draft: Only visible to authenticated owner
+ * - private: Only accessible to authenticated users
+ * - semi-private: Accessible via password (no login required)
+ */
+export type PublicationStatus = 'public' | 'draft' | 'private' | 'semi-private'
+
 export interface Slide {
   header?: any
   subtitle?: any
@@ -69,10 +78,23 @@ export interface PresentationMetadata extends PresentationMeta {
   // Legacy support: flat Reveal.js options (deprecated)
   transition?: string
   center?: boolean
+  // For semi-private presentations: hashed password
+  accessPassword?: string
   [key: string]: any
 }
 
 export interface PresentationData {
   slides: Slide[]
   metadata: PresentationMetadata
+}
+
+/**
+ * Presentation list item returned by GET /api/presentations
+ */
+export interface PresentationListItem {
+  slug: string
+  title: string
+  theme: string
+  status: PublicationStatus
+  filename: string
 }

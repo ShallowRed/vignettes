@@ -10,7 +10,7 @@ export default defineNuxtConfig({
 
   srcDir: 'src/',
 
-  modules: ['@nuxtjs/mdc'],
+  modules: ['@nuxtjs/mdc', 'nuxt-auth-utils'],
 
   css: ['~/assets/css/tailwind.css'],
 
@@ -34,39 +34,54 @@ export default defineNuxtConfig({
     },
   },
 
-  // Enable static site generation
+  // Hybrid rendering: SSG for public slides, SSR for protected routes
+  routeRules: {
+    // Public slides are prerendered (SSG)
+    '/slides/public/**': { prerender: true },
+    '/api/presentations/public/**': { prerender: true },
+    // Index and public API are prerendered
+    '/': { prerender: true },
+    '/api/presentations': { prerender: true },
+    // Login page is prerendered
+    '/login': { prerender: true },
+    // Protected routes use SSR (default)
+    '/slides/**': { ssr: true },
+    '/admin/**': { ssr: true },
+  },
+
   nitro: {
     prerender: {
       // Crawl links to discover routes
       crawlLinks: true,
-      // Add API routes that need to be prerendered
+      // Only prerender public presentations API
       routes: ['/api/presentations'],
     },
   },
 
-  // Hook to discover and prerender all presentation routes
+  // Hook to discover and prerender only PUBLIC presentation routes
   hooks: {
     'nitro:config': async function (nitroConfig) {
-      // Discover all presentation files
-      const presentationsDir = join(process.cwd(), 'presentations')
+      // Only prerender public presentations (SSG)
+      const publicDir = join(process.cwd(), 'presentations', 'public')
       try {
-        const files = await readdir(presentationsDir)
+        const files = await readdir(publicDir)
         const slugs = files
           .filter((file: string) => file.endsWith('.md'))
           .map((file: string) => file.replace('.md', ''))
 
-        // Add presentation routes for prerendering
-        const presentationRoutes = slugs.flatMap((slug: string) => [
+        // Add only public presentation routes for prerendering
+        const publicRoutes = slugs.flatMap((slug: string) => [
           `/slides/${slug}`,
           `/api/presentations/${slug}`,
         ])
 
         nitroConfig.prerender = nitroConfig.prerender || {}
         nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
-        nitroConfig.prerender.routes.push(...presentationRoutes)
+        nitroConfig.prerender.routes.push(...publicRoutes)
       }
       catch (error) {
-        console.warn('Could not discover presentation routes for prerendering:', error)
+        // Public folder may not exist yet, that's okay
+        console.warn('Could not discover public presentation routes:', error)
       }
     },
   },

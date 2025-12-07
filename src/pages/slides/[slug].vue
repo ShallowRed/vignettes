@@ -4,6 +4,25 @@ const slug = route.params.slug as string
 
 // Load presentation data
 const { data: presentationData, error } = usePresentation(slug)
+
+// Check if error requires password and redirect to unlock page
+const requiresPassword = computed(() => {
+  if (!error.value)
+    return false
+  const err = error.value as any
+  // Check various error formats
+  return err?.data?.requiresPassword
+    || err?.statusCode === 401
+    || err?.message?.includes('Password required')
+    || err?.message?.includes('401')
+})
+
+// Handle access control errors - redirect to unlock page for password-protected presentations
+watch(requiresPassword, (needsPassword) => {
+  if (needsPassword) {
+    navigateTo(`/unlock/${slug}`)
+  }
+}, { immediate: true })
 </script>
 
 <template>

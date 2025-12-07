@@ -16,7 +16,7 @@ const mdcComponents: Record<string, any> = Object.fromEntries(
 // Helper to get background for a slide
 function getBackground(headingLevel?: string) {
   return getSlideBackground(
-    props.presentationData.metadata.theme,
+    props.presentationData.metadata.theme || 'minimal',
     headingLevel,
     props.presentationData.metadata.backgrounds,
   )

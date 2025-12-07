@@ -3,6 +3,7 @@ interface Presentation {
   slug: string
   title: string
   theme: string
+  status: 'public' | 'draft' | 'private' | 'semi-private'
   filename: string
 }
 
@@ -13,6 +14,13 @@ const { data: presentations, status, error } = await useAsyncData(
     default: () => [],
   },
 )
+
+const statusConfig: Record<string, { badge: string, label: string, icon: string }> = {
+  'public': { badge: 'badge-success', label: 'Public', icon: '🌐' },
+  'semi-private': { badge: 'badge-warning', label: 'Password', icon: '🔑' },
+  'private': { badge: 'badge-info', label: 'Private', icon: '🔒' },
+  'draft': { badge: 'badge-ghost', label: 'Draft', icon: '📝' },
+}
 </script>
 
 <template>
@@ -27,6 +35,12 @@ const { data: presentations, status, error } = await useAsyncData(
       <p class="text-xl opacity-90">
         Select a presentation to view
       </p>
+      <NuxtLink
+        to="/login"
+        class="btn btn-ghost btn-sm mt-4 text-primary-content/70"
+      >
+        Admin →
+      </NuxtLink>
     </header>
 
     <main class="max-w-6xl mx-auto">
@@ -83,11 +97,14 @@ const { data: presentations, status, error } = await useAsyncData(
               {{ presentation.title }}
             </h2>
             <div class="card-actions justify-start mt-4">
-              <div class="badge badge-primary">
-                {{ presentation.theme }}
+              <div
+                class="badge"
+                :class="statusConfig[presentation.status]?.badge || 'badge-ghost'"
+              >
+                {{ statusConfig[presentation.status]?.icon }} {{ statusConfig[presentation.status]?.label || presentation.status }}
               </div>
-              <div class="badge badge-ghost">
-                {{ presentation.filename }}
+              <div class="badge badge-outline">
+                {{ presentation.theme }}
               </div>
             </div>
           </div>

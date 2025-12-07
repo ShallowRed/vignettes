@@ -1,19 +1,39 @@
-import { readdir, readFile } from 'node:fs/promises'
+import type { PublicationStatus } from '../utils/presentations'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
+import { listAllPresentations } from '../utils/presentations'
 
-export default defineEventHandler(async () => {
+interface PresentationListItem {
+  slug: string
+  title: string
+  theme: string
+  status: PublicationStatus
+  filename: string
+}
+
+export default defineEventHandler(async (event): Promise<PresentationListItem[]> => {
+  // Check if user is authenticated (for showing all presentations)
+  const session = await getUserSession(event).catch(() => null)
+  const isOwner = !!session?.user
+
   try {
-    const presentationsDir = join(process.cwd(), 'presentations')
-    const files = await readdir(presentationsDir)
+    const allPresentations = await listAllPresentations()
+    const baseDir = join(process.cwd(), 'presentations')
 
     const presentations = await Promise.all(
-      files
-        .filter(file => file.endsWith('.md'))
-        .map(async (file) => {
-          const slug = file.replace('.md', '')
-          const filePath = join(presentationsDir, file)
+      allPresentations
+        // Filter based on auth status
+        .filter(({ status }) => {
+          // Public and semi-private are always visible in list
+          if (status === 'public' || status === 'semi-private')
+            return true
+          // Draft and private only visible to owner
+          return isOwner
+        })
+        .map(async ({ slug, status }) => {
+          const filePath = join(baseDir, status, `${slug}.md`)
           const content = await readFile(filePath, 'utf-8')
 
           // Parse frontmatter to get title and theme
@@ -25,7 +45,8 @@ export default defineEventHandler(async () => {
             slug,
             title,
             theme,
-            filename: file,
+            status,
+            filename: `${slug}.md`,
           }
         }),
     )
