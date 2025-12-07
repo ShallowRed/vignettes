@@ -23,6 +23,15 @@
   text-align: left;
 }
 
+.reveal h2 em {
+    font-style: normal;
+    color: $as-contrast-title-em;
+  }
+.reveal h3 em {
+    font-style: normal;
+    color: $dsfr-blue-france-main-525;
+  }
+
 .reveal h1 {
   font-size: 4rem;
   font-weight: 800;
@@ -54,6 +63,12 @@
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 1em;
+}
+
+.reveal h5 {
+  font-size: 1.5rem;
+  margin-bottom: 1em;
+  font-weight: 600;
 }
 
 // Paragraph and inline text
@@ -155,8 +170,8 @@
     }
 
     p {
-      margin: 0.3em 0 0 0;
-      font-size: 1.2rem;
+      margin: 0.75em 0 0 0;
+      font-size: 1.25rem;
       font-style: italic;
       color: var(--dsfr-text-mention) !important;
     }

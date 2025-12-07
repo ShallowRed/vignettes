@@ -5,6 +5,7 @@ interface Props {
   alt?: string
   title?: string
   reverse?: boolean
+  lightbox?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -12,6 +13,7 @@ const props = withDefaults(defineProps<Props>(), {
   alt: '',
   title: '',
   reverse: false,
+  lightbox: false,
 })
 </script>
 
@@ -24,18 +26,44 @@ const props = withDefaults(defineProps<Props>(), {
       <slot />
     </div>
     <div class="split-media">
-      <iframe
-        v-if="props.type === 'iframe'"
-        :src="props.src"
-        :title="props.title"
-        frameborder="0"
-        allowfullscreen
-      />
-      <img
-        v-else
-        :src="props.src"
-        :alt="props.alt"
+      <!-- Use Reveal.js native lightbox with data-preview-link -->
+      <a
+        v-if="props.lightbox"
+        :href="props.src"
+        :data-preview-link="props.type === 'iframe' ? '' : undefined"
+        :data-preview-image="props.type === 'image' ? '' : undefined"
+        class="media-link"
       >
+        <iframe
+          v-if="props.type === 'iframe'"
+          :src="props.src"
+          :title="props.title"
+          frameborder="0"
+        />
+        <img
+          v-else
+          :src="props.src"
+          :alt="props.alt"
+        >
+        <div class="expand-hint">
+          <span>Cliquer pour agrandir</span>
+        </div>
+      </a>
+      <!-- No lightbox -->
+      <template v-else>
+        <iframe
+          v-if="props.type === 'iframe'"
+          :src="props.src"
+          :title="props.title"
+          frameborder="0"
+          allowfullscreen
+        />
+        <img
+          v-else
+          :src="props.src"
+          :alt="props.alt"
+        >
+      </template>
     </div>
   </div>
 </template>
@@ -45,16 +73,10 @@ const props = withDefaults(defineProps<Props>(), {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 2rem;
-  height: 100%;
   width: 100%;
   align-items: stretch;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 1rem;
   box-sizing: border-box;
+  height: 100%;
 }
 
 .split-slide-wrapper.reverse {
@@ -100,6 +122,35 @@ const props = withDefaults(defineProps<Props>(), {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.media-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+.media-link:hover .expand-hint {
+  opacity: 1;
+}
+
+.expand-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.9em;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .split-media iframe {
@@ -107,6 +158,7 @@ const props = withDefaults(defineProps<Props>(), {
   height: 100%;
   min-height: 400px;
   border: none;
+  pointer-events: none;
 }
 
 .split-media img {

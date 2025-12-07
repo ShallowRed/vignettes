@@ -17,7 +17,8 @@ export default defineNuxtConfig({
 
   icon: {
     // Remix Icons are installed locally via @iconify-json/ri
-    // Usage: <Icon name="ri:home-line" /> or in markdown: :icon{name="ri:home-line"}
+    // Usage: <Icon name="ri:home-line" /> or in markdown: :i{name="ri:home-line"}
+    mode: 'svg', // SVG mode for better SSR support
     serverBundle: {
       collections: ['ri'],
     },

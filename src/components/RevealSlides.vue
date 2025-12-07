@@ -142,6 +142,7 @@ function getBackground(headingLevel?: string) {
   * MDC wraps rendered content in divs, which can break semantic structure.
   * This style makes those divs behave like their parent elements.
  */
+:deep(.layout-split>div),
 header :deep(> div),
 article :deep(> div) {
   display: contents;

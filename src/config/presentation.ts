@@ -121,4 +121,7 @@ export const MDC_COMPONENTS = {
   'icon-inline': 'IconInline',
   'icon': 'IconInline',
   'i': 'IconInline',
+  'Column': 'Column',
+  'column': 'Column',
+  'col': 'Column',
 } as const
