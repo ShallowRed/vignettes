@@ -9,7 +9,7 @@ const error = route.query.error as string | undefined
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center p-8"
+    class="min-h-screen bg-neutral flex items-center justify-center p-8"
     data-theme="corporate"
   >
     <div class="card bg-base-100 shadow-xl w-full max-w-md">

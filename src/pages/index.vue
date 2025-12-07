@@ -25,7 +25,7 @@ const statusConfig: Record<string, { badge: string, label: string, icon: string 
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-primary to-secondary p-8"
+    class="min-h-screen bg-neutral p-8"
     data-theme="corporate"
   >
     <header class="text-center text-primary-content mb-12">
