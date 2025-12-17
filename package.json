@@ -16,7 +16,8 @@
     "generate": "pnpm build:themes && nuxt generate",
     "preview": "nuxt preview",
     "preview:static": "pnpm generate && nuxt preview",
-    "prepare": "nuxt prepare"
+    "prepare": "nuxt prepare",
+    "hash-password": "node scripts/hash-password.js"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
