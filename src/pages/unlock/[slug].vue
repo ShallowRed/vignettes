@@ -42,7 +42,7 @@ async function unlock() {
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center p-8"
+    class="min-h-screen bg-neutral flex items-center justify-center p-8"
     data-theme="corporate"
   >
     <div class="card bg-base-100 shadow-xl w-full max-w-md">
@@ -85,7 +85,7 @@ async function unlock() {
               v-model="password"
               type="password"
               placeholder="Entrez le mot de passe"
-              class="input input-bordered w-full"
+              class="input input-bordered"
               :disabled="loading"
               autofocus
             >
