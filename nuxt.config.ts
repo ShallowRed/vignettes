@@ -46,17 +46,23 @@ export default defineNuxtConfig({
 
   // Hybrid rendering: SSG for public slides, SSR for protected routes
   routeRules: {
-    // Public slides are prerendered (SSG)
-    '/slides/public/**': { prerender: true },
-    '/api/presentations/public/**': { prerender: true },
-    // Index and public API are prerendered
+    // Index and login are prerendered
     '/': { prerender: true },
-    '/api/presentations': { prerender: true },
-    // Login page is prerendered
     '/login': { prerender: true },
-    // Protected routes use SSR (default)
+    
+    // Public slides are prerendered (SSG) - more specific first
+    '/slides/public/**': { prerender: true },
+    
+    // Protected/dynamic slides require SSR - after specific rules
     '/slides/**': { ssr: true },
+    '/unlock/**': { ssr: true },
     '/admin/**': { ssr: true },
+    
+    // API: public presentations can be prerendered
+    '/api/presentations': { prerender: true },
+    
+    // API: protected presentations require SSR (cookies, auth)
+    '/api/presentations/**': { ssr: true },
   },
 
   nitro: {
