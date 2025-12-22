@@ -17,7 +17,16 @@ export const PUBLICATION_STATUSES: PublicationStatus[] = ['public', 'draft', 'pr
  * Get the presentations base directory
  */
 export function getPresentationsDir(): string {
-  return join(process.cwd(), 'presentations')
+  // In production build, presentations are in server/presentations
+  // In dev, they're in the project root
+  const cwd = process.cwd()
+  
+  // Check if we're in .output directory (production build)
+  if (cwd.includes('.output')) {
+    return join(cwd, 'server', 'presentations')
+  }
+  
+  return join(cwd, 'presentations')
 }
 
 /**

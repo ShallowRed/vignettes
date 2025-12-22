@@ -49,18 +49,18 @@ export default defineNuxtConfig({
     // Index and login are prerendered
     '/': { prerender: true },
     '/login': { prerender: true },
-    
+
     // Public slides are prerendered (SSG) - more specific first
     '/slides/public/**': { prerender: true },
-    
+
     // Protected/dynamic slides require SSR - after specific rules
     '/slides/**': { ssr: true },
     '/unlock/**': { ssr: true },
     '/admin/**': { ssr: true },
-    
+
     // API: public presentations can be prerendered
     '/api/presentations': { prerender: true },
-    
+
     // API: protected presentations require SSR (cookies, auth)
     '/api/presentations/**': { ssr: true },
   },
@@ -98,6 +98,19 @@ export default defineNuxtConfig({
       catch (error) {
         // Public folder may not exist yet, that's okay
         console.warn('Could not discover public presentation routes:', error)
+      }
+    },
+    'nitro:build:public-assets': async function (nitro) {
+      const { cp } = await import('node:fs/promises')
+      const srcDir = join(process.cwd(), 'presentations')
+      const destDir = join(nitro.options.output.serverDir, 'presentations')
+
+      try {
+        await cp(srcDir, destDir, { recursive: true })
+        console.log('✅ Copied presentations folder to build output')
+      }
+      catch (error) {
+        console.error('❌ Failed to copy presentations:', error.message)
       }
     },
   },
