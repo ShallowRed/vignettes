@@ -34,9 +34,10 @@ presentations/semi-private/*
 presentations/draft/*
 !presentations/draft/.gitkeep
 
-# Public presentations - keep only example.md
+# Public presentations - keep only examples
 presentations/public/*
 !presentations/public/example.md
+!presentations/public/example-minimal.md
 
 # Other sensitive presentation files
 presentations/*.csv
