@@ -25,3 +25,22 @@ logs
 .env
 .env.*
 !.env.example
+
+# Sensitive presentations (keep structure but ignore content)
+presentations/private/*
+!presentations/private/.gitkeep
+presentations/semi-private/*
+!presentations/semi-private/.gitkeep
+presentations/draft/*
+!presentations/draft/.gitkeep
+
+# Public presentations - keep only example.md
+presentations/public/*
+!presentations/public/example.md
+
+# Other sensitive presentation files
+presentations/*.csv
+
+# Exports (may contain sensitive content)
+export/*
+!export/.gitkeep

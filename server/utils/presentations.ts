@@ -20,12 +20,12 @@ export function getPresentationsDir(): string {
   // In production build, presentations are in server/presentations
   // In dev, they're in the project root
   const cwd = process.cwd()
-  
+
   // Check if we're in .output directory (production build)
   if (cwd.includes('.output')) {
     return join(cwd, 'server', 'presentations')
   }
-  
+
   return join(cwd, 'presentations')
 }
 
