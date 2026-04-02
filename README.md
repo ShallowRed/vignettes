@@ -8,7 +8,7 @@ A modern presentation system built with Nuxt 3, MDC, and reveal.js that converts
 - 📝 **MDC Support** - Write presentations in Markdown with Vue components
 - 🎨 **Multiple Themes** - DSFR and Minimal themes included
 - 📊 **reveal.js** - Professional presentation framework
-- 🔧 **Custom Components** - Alert, Columns, Divider, Centered directives
+- 🔧 **Custom Components** - Columns, Quote, Image, SplitSlide, and more
 - 🎯 **File-based Routing** - Auto-discover presentations from `presentations/` folder
 - ⬇️ **Vertical Slides** - Support for both `----` markers and `###` headings
 - 🎭 **Dynamic Theming** - Per-presentation theme selection
@@ -63,22 +63,24 @@ nuxt-slides/
 │   │       └── [slug].vue # Dynamic presentation route
 │   ├── components/
 │   │   ├── RevealPresentation.vue  # reveal.js wrapper
+│   │   ├── IconInline.vue          # Inline icon (Iconify)
 │   │   └── mdc/           # Custom MDC components
-│   │       ├── Alert.vue
-│   │       ├── ThreeColumns.vue
-│   │       ├── Divider.vue
-│   │       └── Centered.vue
+│   │       ├── Columns.vue
+│   │       ├── Quote.vue
+│   │       ├── Image.vue
+│   │       ├── SplitSlide.vue
+│   │       ├── FullScreenImage.vue
+│   │       ├── Iframe.vue
+│   │       ├── Mermaid.vue
+│   │       └── PreviewLink.vue
+│   ├── composables/       # Reusable logic
+│   ├── config/            # Presentation & theme config
 │   └── server/
 │       └── api/           # API endpoints
-│           ├── presentations.get.ts
-│           └── presentations/
-│               └── [slug].get.ts
 ├── presentations/         # Your presentation files (.md)
 ├── themes/               # Theme SCSS source files
 └── public/
     └── themes/          # Compiled CSS themes
-        ├── dsfr.css
-        └── minimal.css
 ```
 
 ## Presentation Format
@@ -142,60 +144,44 @@ Content
 
 ## MDC Components
 
-### Alert
+### Columns
 
 ```markdown
-::alert{type="info"}
-This is an informational alert
+:::Columns
+::column
+Left content
 ::
-
-::alert{type="success"}
-Success message
+::column
+Right content
 ::
+:::
+```
 
-::alert{type="warning"}
-Warning message
-::
+### Quote
 
-::alert{type="error"}
-Error message
+```markdown
+::Quote{author="Author Name" source="Source"}
+Quoted text here
 ::
 ```
 
-### Three Columns
+### Image
 
 ```markdown
-::columns{count="3"}
-
-### Column 1
-Content here
-
-### Column 2
-Content here
-
-### Column 3
-Content here
-
+::Image{src="/path/to/image.png" alt="Description" width="60%"}
+Optional caption text
 ::
 ```
 
-### Divider (Section Slide)
+### SplitSlide
 
 ```markdown
-::divider
-# Section Title
-Subtitle or description
-::
+:::SplitSlide{src="https://example.com" type="iframe" title="Example"}
+Description text next to the iframe.
+:::
 ```
 
-### Centered
-
-```markdown
-::centered
-# Centered Content
-This content is centered vertically and horizontally
-::
-```
+For the full component reference, see [docs/presentation-format.md](./docs/presentation-format.md).
 
 ## Themes
 
@@ -223,6 +209,24 @@ Non-public presentations (private, semi-private, draft) are stored in a separate
 | private | GitHub OAuth | SSR |
 
 See [docs/private-presentations.md](./docs/private-presentations.md) for setup.
+
+## Two-Repository Setup
+
+This project spans two codebases:
+
+| Repo | Role | Local path |
+|------|------|------------|
+| `ShallowRed/nuxt-slides` | Presentation renderer (Nuxt 3) | `~/Projects/nuxt-slides` |
+| `ShallowRed/codimd` | Live markdown editor (CodiMD fork) | `~/Projects/codimd` |
+
+The CodiMD fork adds MDC component preview (syntax highlighting, layout rendering) so authors can preview slides while editing. It deploys to Scalingo separately.
+
+**Remotes for CodiMD:**
+- `origin` → `ShallowRed/codimd` (our fork on GitHub)
+- `upstream` → `hackmdio/codimd` (upstream)
+- `scalingo` → Scalingo deployment
+
+A VS Code multi-root workspace file (`nuxt-slides.code-workspace`) includes both repos for unified search and editing.
 
 ## Development
 
