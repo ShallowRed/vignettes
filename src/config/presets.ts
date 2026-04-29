@@ -28,6 +28,22 @@ export const PRESETS: Record<string, Preset> = {
       height: 800,
     },
   },
+  brand: {
+    label: 'Brand',
+    lang: 'fr',
+    theme: 'dsfr',
+    parser: 'separator',
+    backgrounds: {
+      h1: '/backgrounds/brand-slide-bg-default.png',
+      h2: '/backgrounds/brand-slide-bg-contrast.png',
+      h3: '/backgrounds/brand-slide-bg-subtle.png',
+    },
+    reveal: {
+      slideNumber: true,
+      width: 1200,
+      height: 800,
+    },
+  },
   minimal: {
     label: 'Minimal',
     lang: 'fr',
