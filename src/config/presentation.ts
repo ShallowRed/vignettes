@@ -26,7 +26,11 @@ export const THEME_BACKGROUNDS: Record<string, ThemeBackgrounds> = {
   minimal: {
     // No backgrounds by default
   },
-  // Add more themes as needed
+  brand: {
+    h1: '/backgrounds/brand-slide-contrast.png',
+    h2: '/backgrounds/brand-slide-contrast.png',
+    h3: '/backgrounds/brand-slide-subtle.png',
+  },
 }
 
 /**

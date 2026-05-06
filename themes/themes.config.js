@@ -41,4 +41,11 @@ export const themes = [
     watchDir: 'themes/dsfr-alt',
     watchExtraDirs: ['themes/shared', 'themes/presets'],
   },
+  {
+    name: 'brand',
+    input: 'themes/brand/brand.scss',
+    output: 'public/themes/brand.css',
+    watchDir: 'themes/brand',
+    watchExtraDirs: ['themes/shared', 'themes/presets'],
+  },
 ]
