@@ -34,9 +34,9 @@ export const PRESETS: Record<string, Preset> = {
     theme: 'dsfr',
     parser: 'separator',
     backgrounds: {
-      h1: '/backgrounds/brand-slide-bg-default.png',
-      h2: '/backgrounds/brand-slide-bg-contrast.png',
-      h3: '/backgrounds/brand-slide-bg-subtle.png',
+      h1: '/backgrounds/brand-slide-contrast.png',
+      h2: '/backgrounds/brand-slide-contrast.png',
+      h3: '/backgrounds/brand-slide-subtle.png',
     },
     reveal: {
       slideNumber: true,
