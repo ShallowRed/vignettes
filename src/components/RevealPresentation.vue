@@ -2,9 +2,8 @@
 import type { RevealConfig } from '~/types/presentation'
 import { buildPrintPdfUrl, buildPrintView, mergeRevealConfig, PRINT_PDF_QUERY } from '#shared/render'
 import 'reveal.js/dist/reveal.css'
-// Reveal's print stylesheet: when the URL carries `?print-pdf`, Reveal adds the
-// `reveal-print` class to <html> and this CSS lays the deck out one slide per
-// page (audit §5.8 / #14 — the print/PDF writer's stylesheet half).
+// With `?print-pdf` in the URL, Reveal adds `reveal-print` to <html> and this
+// stylesheet lays the deck out one slide per page.
 import 'reveal.js/css/print/pdf.scss'
 
 interface Props {
@@ -22,51 +21,41 @@ const revealContainer = ref<HTMLElement | null>(null)
 
 const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().startsWith('fr'))
 
-// Serialised onto `.reveal` so the frozen prerendered bundle can init Reveal with
-// the deck's frontmatter `reveal:` config, not just defaults. DDR-017 §2.a-ter.
-// When the deck is already loaded in `?print-pdf` mode, Reveal switches to its
-// print layout — the on-screen "Print / PDF" affordance is then irrelevant.
-const isPrintMode = ref(false)
-// Whether THIS load is a `?print-pdf` render. Detected synchronously at setup
-// (client only) so Reveal can be initialized with the print config — not the
-// live one — from the start. SSR keeps it false (no `window`).
+// A `?print-pdf` load is detected at setup, before Reveal initializes, so the
+// print config (full-page layout, one slide per page) applies from the start.
 const isPrintMode = import.meta.client
   && new RegExp(PRINT_PDF_QUERY, 'i').test(window.location.search)
 
-/**
- * The config Reveal is actually initialized with. In `?print-pdf` mode it is the
- * print writer's view (audit §5.8 / #14): the deck's `reveal:` with print-only
- * overrides forced on — crucially `embedded: false`, so Reveal lays the deck out
- * full-page (one slide per page) instead of confining it to its live container.
- * Otherwise it is the deck's live `reveal:` config unchanged.
- */
 const effectiveConfig = isPrintMode
   ? buildPrintView({ meta: { reveal: props.config }, slides: [], assets: [] }, {
     deckUrl: window.location.href,
   }).reveal
   : (props.config || {})
 
-/**
- * Open the current deck in Reveal's native print/PDF view. Reuses the shared
- * `buildPrintPdfUrl` writer (one definition of the print entry, audit §5.8 / #14)
- * so the URL shape matches the frozen bundle and tests. The browser's print
- * dialog (Save as PDF) is left to the user — Reveal lays out the pages.
- */
 function openPrintView() {
   window.location.href = buildPrintPdfUrl(window.location.href)
 }
 
-// Serialised onto `.reveal` so it survives into the prerendered HTML: the frozen
-// bundle reads `data-reveal-config` to init Reveal with the deck's frontmatter
-// `reveal:` (margin/width), not just defaults. DDR-017 §2.a-ter. Uses the shared
-// merge so live and frozen agree on the defaults.
+const exitPrintUrl = computed(() => {
+  if (!import.meta.client)
+    return ''
+  const url = new URL(window.location.href)
+  url.searchParams.delete(PRINT_PDF_QUERY)
+  return `${url.pathname}${url.search}${url.hash}`
+})
+
+function reopenPrintDialog() {
+  window.print()
+}
+
+// Serialised onto `.reveal` so the frozen prerendered bundle can init Reveal with
+// the deck's frontmatter `reveal:` config, not just defaults. DDR-017 §2.a-ter.
 const resolvedRevealConfig = computed(() =>
   JSON.stringify(mergeRevealConfig(props.config)))
 
 const { loadTheme, unloadTheme, watchTheme } = useTheme(toRef(props, 'theme'))
 
-const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, props.config || {})
-const { initialize, destroy, getInstance, sync } = useReveal(revealContainer, effectiveConfig)
+const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, effectiveConfig)
 
 // Let MDC components trigger a Reveal sync after dynamic content changes.
 provide('revealSync', sync)
@@ -100,13 +89,18 @@ onMounted(async () => {
   // Reveal computes its print pagination during initialize(), but the Vue/MDC
   // slide bodies render *after* mount — so the first print layout sees a deck
   // that isn't filled in yet. Once content has settled, sync + re-layout so each
-  // slide is paginated against its real height. Two frames: one for Vue to flush
-  // the slot, one for the browser to apply the resulting sizes.
+  // slide is paginated against its real height, then open the browser's print
+  // dialog: Reveal's print layout is meant for the paged-print medium (on screen
+  // the pages sit off-viewport), so we hand straight to Save-as-PDF rather than
+  // leave the user on a blank-looking page. Two frames: one for Vue to flush the
+  // slot, one for the browser to apply the resulting sizes.
   if (isPrintMode) {
     await nextTick()
     requestAnimationFrame(() => requestAnimationFrame(() => {
       sync()
       getInstance()?.layout()
+      // A further frame so the re-layout paints before the (blocking) dialog.
+      requestAnimationFrame(() => window.print())
     }))
   }
 })
@@ -127,6 +121,31 @@ onUnmounted(() => {
   >
     <div class="slides">
       <slot />
+    </div>
+    <!-- On screen, Reveal's print layout sits off-viewport (it targets the paged
+         print medium), so without this the page looks blank. Screen-only; hidden
+         in the actual print render via @media print. -->
+    <div
+      v-if="isPrintMode"
+      class="print-overlay"
+    >
+      <p>Préparation de l’export PDF…</p>
+      <p class="print-overlay__hint">
+        La fenêtre d’impression s’ouvre automatiquement — choisissez « Enregistrer en PDF ».
+      </p>
+      <button
+        type="button"
+        class="print-overlay__btn"
+        @click="reopenPrintDialog"
+      >
+        Rouvrir la fenêtre d’impression
+      </button>
+      <a
+        class="print-overlay__btn print-overlay__btn--ghost"
+        :href="exitPrintUrl"
+      >
+        Revenir à la présentation
+      </a>
     </div>
     <button
       v-if="!isPrintMode"
@@ -184,9 +203,55 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.7);
 }
 
-/* Never let the on-screen control bleed into a print/PDF render. */
+.print-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+.print-overlay p {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.print-overlay__hint {
+  max-width: 32rem;
+  font-size: 0.95rem !important;
+  font-weight: 400 !important;
+  color: #555;
+}
+
+.print-overlay__btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  background: #1a1a1a;
+  border: 1px solid #1a1a1a;
+  border-radius: 0.4rem;
+}
+
+.print-overlay__btn--ghost {
+  color: #1a1a1a;
+  background: transparent;
+}
+
+/* Never let on-screen controls bleed into the print/PDF render. */
 @media print {
-  .print-pdf-button {
+  .print-pdf-button,
+  .print-overlay {
     display: none !important;
   }
 }
