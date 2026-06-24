@@ -26,11 +26,15 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
+    "@codemirror/lang-markdown": "catalog:",
+    "@codemirror/state": "catalog:",
+    "@codemirror/view": "catalog:",
     "@iconify/vue": "catalog:",
     "@nuxt/ui": "catalog:",
     "@nuxtjs/mdc": "catalog:",
     "@tanstack/vue-table": "catalog:",
     "@types/node": "catalog:",
+    "codemirror": "catalog:",
     "js-yaml": "catalog:",
     "mermaid": "catalog:",
     "nuxt": "catalog:",
@@ -38,6 +42,7 @@
     "reveal.js": "catalog:",
     "unist-util-visit": "catalog:",
     "vue": "catalog:",
+    "vue-codemirror6": "catalog:",
     "vue-router": "catalog:",
     "zod": "catalog:"
   },
