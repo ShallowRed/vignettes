@@ -95,3 +95,18 @@ export async function readArchivedStub(slug: string): Promise<string | null> {
   const raw = await presentationsStorage().getItem(`archived:${slug}.md`)
   return raw == null ? null : (typeof raw === 'string' ? raw : String(raw))
 }
+
+/**
+ * Write presentation markdown to a given storage key (`<access>:<slug>.md`),
+ * returning the bytes written. The key is validated/derived upstream by
+ * `prepareDeckWrite` (no traversal, known folder) — this only performs the I/O.
+ *
+ * Note: in dev this persists to the `presentations/` working tree via Nitro's
+ * filesystem storage driver. On a read-only/serverless deploy the driver may
+ * reject the write; the integrated-editor work (#16) targets a writable backing
+ * (local dev now, a git/remote writer later — analyse §6 Lot 0).
+ */
+export async function writePresentationContentAt(key: string, raw: string): Promise<number> {
+  await presentationsStorage().setItem(key, raw)
+  return new TextEncoder().encode(raw).length
+}

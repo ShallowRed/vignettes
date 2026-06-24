@@ -1,6 +1,7 @@
-import type { ContentSource, NoteSource } from '#shared/deck'
+import type { ContentSource, ContentWriter, NoteSource } from '#shared/deck'
+import { prepareDeckWrite } from '#shared/deck'
 import { fetchCollaborativeNote } from './codimd'
-import { readPresentationContent } from './presentations'
+import { readPresentationContent, writePresentationContentAt } from './presentations'
 
 /**
  * Server adapters implementing the `ContentSource` port — the only place that
@@ -34,4 +35,19 @@ export const fileSource: ContentSource = {
 /** Pick the collaborative-note adapter for a provider. */
 export function noteSource(source: NoteSource): ContentSource {
   return source === 'hackmd' ? hackmdSource : codimdSource
+}
+
+/**
+ * The write side of the `file` source. Symmetric to
+ * `fileSource`: persists a deck's markdown back to `presentations/<access>/`,
+ * keeping the markdown as the source of truth. Path safety is enforced by the
+ * pure `prepareDeckWrite` before any I/O.
+ */
+export const fileWriter: ContentWriter = {
+  id: 'file',
+  async save(input) {
+    const prepared = prepareDeckWrite(input)
+    const bytes = await writePresentationContentAt(prepared.key, prepared.raw)
+    return { key: prepared.key, bytes }
+  },
 }
