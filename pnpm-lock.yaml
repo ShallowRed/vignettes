@@ -21,6 +21,12 @@ catalogs:
     '@codemirror/view':
       specifier: ^6.43.2
       version: 6.43.6
+    '@hocuspocus/provider':
+      specifier: ^4.3.0
+      version: 4.4.0
+    '@hocuspocus/server':
+      specifier: ^4.3.0
+      version: 4.4.0
     '@iconify-json/lucide':
       specifier: ^1.2.117
       version: 1.2.117
@@ -93,6 +99,12 @@ catalogs:
     vue-router:
       specifier: ^4.6.3
       version: 4.6.3
+    y-codemirror.next:
+      specifier: ^0.3.5
+      version: 0.3.5
+    yjs:
+      specifier: ^13.6.31
+      version: 13.6.31
     zod:
       specifier: ^4.4.3
       version: 4.4.3
@@ -113,6 +125,9 @@ importers:
       '@codemirror/view':
         specifier: 'catalog:'
         version: 6.43.6
+      '@hocuspocus/provider':
+        specifier: 'catalog:'
+        version: 4.4.0(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31)
       '@iconify/vue':
         specifier: 'catalog:'
         version: 5.0.0(vue@3.5.25(typescript@5.9.3))
@@ -158,6 +173,12 @@ importers:
       vue-router:
         specifier: 'catalog:'
         version: 4.6.3(vue@3.5.25(typescript@5.9.3))
+      y-codemirror.next:
+        specifier: 'catalog:'
+        version: 0.3.5(@codemirror/state@6.7.1)(@codemirror/view@6.43.6)(yjs@13.6.31)
+      yjs:
+        specifier: 'catalog:'
+        version: 13.6.31
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -165,6 +186,9 @@ importers:
       '@antfu/eslint-config':
         specifier: 'catalog:'
         version: 6.4.2(@vue/compiler-sfc@3.5.25)(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)(vitest@4.1.9(@types/node@24.10.1)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.94.2)(terser@5.44.1)(yaml@2.8.2)))
+      '@hocuspocus/server':
+        specifier: 'catalog:'
+        version: 4.4.0(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31)
       '@iconify-json/lucide':
         specifier: 'catalog:'
         version: 1.2.117
@@ -952,6 +976,22 @@ packages:
   '@floating-ui/vue@1.1.11':
     resolution: {integrity: sha512-HzHKCNVxnGS35r9fCHBc3+uCnjw9IWIlCPL683cGgM9Kgj2BiAl8x1mS7vtvP6F9S/e/q4O6MApwSHj8hNLGfw==}
 
+  '@hocuspocus/common@4.4.0':
+    resolution: {integrity: sha512-cPSlPu/ws2JzBHW6OzctyaQMyDCq/YUS4nhXSbyMdkQwJzhjCkvfmmRnVtcmgLR3TBLaNwToNDwR/mNaJFOYsg==}
+
+  '@hocuspocus/provider@4.4.0':
+    resolution: {integrity: sha512-A83ROMFqU2bgjTTQ1YMteY9v2cIhDHj4S6XgzjPaqYEgOFr2XvBYGnK+NXzZ6DgldKTnlN7qqvWvZplPvltgyw==}
+    peerDependencies:
+      y-protocols: ^1.0.6
+      yjs: ^13.6.8
+
+  '@hocuspocus/server@4.4.0':
+    resolution: {integrity: sha512-eVSnx+76CN81vaRol+OlT8FyyGFOBF9Z+kdJQhjVXRpj3kIAI1TzuRHKiZN1vkUogdHfmOAN5Bhs5v7V/qhMkQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      y-protocols: ^1.0.6
+      yjs: ^13.6.8
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -1061,6 +1101,9 @@ packages:
 
   '@lezer/markdown@1.7.2':
     resolution: {integrity: sha512-iTkYvoVcKt3WkeL7qUDyXHONZEwLio4wj8KTNi2dnjQEXBZKMV63BpQrPqfsM+OkvuRbiSTAcycYAsQzLhRNoQ==}
+
+  '@lifeomic/attempt@3.1.0':
+    resolution: {integrity: sha512-QZqem4QuAnAyzfz+Gj5/+SLxqwCAw2qmt7732ZXodr6VDWGeYLG6w1i/vYLa55JQM9wRuBKLmXmiZ2P0LtE5rw==}
 
   '@lukeed/ms@2.0.2':
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
@@ -2804,6 +2847,9 @@ packages:
     resolution: {integrity: sha512-cbdCP0PGOBq0ASG+sjnKIoYkWMKhhz+F/h9pRexUdX2Hd38+WOlBkRKlqkGOSm0YQpcFMQBJeK4WspUAkwsEdg==}
     engines: {node: '>=20.19.0'}
 
+  async-mutex@0.5.0:
+    resolution: {integrity: sha512-1A94B18jkJ3DYq284ohPxoXbfTA5HsQ7/Mf4DEhcyLx3Bz27Rh59iScbB6EPiP+B+joue6YCxcMXSbFC1tZKwA==}
+
   async-sema@3.1.1:
     resolution: {integrity: sha512-tLRNUXati5MFePdAk8dw7Qt7DpxPB60ofAgn8WRhW6a2rcimZnYBP9oxHiv0OHy+Wz7kPMG+t4LGdt31+4EmGg==}
 
@@ -3125,6 +3171,14 @@ packages:
 
   crossws@0.3.5:
     resolution: {integrity: sha512-ojKiDvcmByhwa8YYqbQI/hg7MEU0NC03+pSdEq4ZUnZR9xXpwk7E43SMNGkn+JxJGPFtNvQ48+vV2p+P1ml5PA==}
+
+  crossws@0.4.10:
+    resolution: {integrity: sha512-pz3oubH/dt12KjqsUB0IuXW4nwRDQ583iDsP4555Cpdqx0NoU7pGlWBcayyFI8f/l/idRpgjMEfwuOxSWJYlIA==}
+    peerDependencies:
+      srvx: '>=0.11.5'
+    peerDependenciesMeta:
+      srvx:
+        optional: true
 
   css-declaration-sorter@7.3.0:
     resolution: {integrity: sha512-LQF6N/3vkAMYF4xoHLJfG718HRJh34Z8BnNhd6bosOMIVjMlhuZK5++oZa3uYAgrI5+7x2o27gUqTR2U/KjUOQ==}
@@ -6675,6 +6729,13 @@ packages:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}
     engines: {node: '>=12'}
 
+  y-codemirror.next@0.3.5:
+    resolution: {integrity: sha512-VluNu3e5HfEXybnypnsGwKAj+fKLd4iAnR7JuX1Sfyydmn1jCBS5wwEL/uS04Ch2ib0DnMAOF6ZRR/8kK3wyGw==}
+    peerDependencies:
+      '@codemirror/state': ^6.0.0
+      '@codemirror/view': ^6.0.0
+      yjs: ^13.5.6
+
   y-protocols@1.0.7:
     resolution: {integrity: sha512-YSVsLoXxO67J6eE/nV4AtFtT3QEotZf5sK5BHxFBXso7VDUT3Tx07IfA6hsu5Q5OmBdMkQVmFZ9QOA7fikWvnw==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
@@ -7559,6 +7620,30 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
+  '@hocuspocus/common@4.4.0':
+    dependencies:
+      lib0: 0.2.117
+
+  '@hocuspocus/provider@4.4.0(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31)':
+    dependencies:
+      '@hocuspocus/common': 4.4.0
+      '@lifeomic/attempt': 3.1.0
+      lib0: 0.2.117
+      y-protocols: 1.0.7(yjs@13.6.31)
+      yjs: 13.6.31
+
+  '@hocuspocus/server@4.4.0(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31)':
+    dependencies:
+      '@hocuspocus/common': 4.4.0
+      async-mutex: 0.5.0
+      crossws: 0.4.10
+      kleur: 4.1.5
+      lib0: 0.2.117
+      y-protocols: 1.0.7(yjs@13.6.31)
+      yjs: 13.6.31
+    transitivePeerDependencies:
+      - srvx
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -7697,6 +7782,8 @@ snapshots:
     dependencies:
       '@lezer/common': 1.5.2
       '@lezer/highlight': 1.2.3
+
+  '@lifeomic/attempt@3.1.0': {}
 
   '@lukeed/ms@2.0.2': {}
 
@@ -9790,6 +9877,10 @@ snapshots:
       '@babel/parser': 7.28.5
       ast-kit: 2.2.0
 
+  async-mutex@0.5.0:
+    dependencies:
+      tslib: 2.8.1
+
   async-sema@3.1.1: {}
 
   async@3.2.6: {}
@@ -10095,6 +10186,8 @@ snapshots:
   crossws@0.3.5:
     dependencies:
       uncrypto: 0.1.3
+
+  crossws@0.4.10: {}
 
   css-declaration-sorter@7.3.0(postcss@8.5.6):
     dependencies:
@@ -14225,6 +14318,13 @@ snapshots:
       is-wsl: 3.1.0
 
   xml-name-validator@4.0.0: {}
+
+  y-codemirror.next@0.3.5(@codemirror/state@6.7.1)(@codemirror/view@6.43.6)(yjs@13.6.31):
+    dependencies:
+      '@codemirror/state': 6.7.1
+      '@codemirror/view': 6.43.6
+      lib0: 0.2.117
+      yjs: 13.6.31
 
   y-protocols@1.0.7(yjs@13.6.31):
     dependencies:
