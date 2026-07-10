@@ -50,6 +50,11 @@ export default defineNuxtConfig({
     headings: {
       anchorLinks: false,
     },
+    highlight: {
+      // Coloration syntaxique shiki : blocs sombres et contrastés sur slides claires.
+      theme: 'github-dark',
+      langs: ['json', 'yaml', 'markdown', 'js', 'ts', 'bash', 'mermaid'],
+    },
   },
 
   vite: {

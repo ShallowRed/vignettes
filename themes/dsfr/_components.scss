@@ -101,36 +101,60 @@
 }
 
 // Code
+// Blocs sombres et contrastés (shiki `github-dark` fournit la coloration inline) :
+// lisibles de loin, présentables en grande colonne à la manière des iframes.
 .reveal pre {
   display: block;
   position: relative;
-  width: 90%;
-  margin: 20px auto;
+  width: 100%;
+  margin: 16px auto;
   text-align: left;
-  font-size: 0.55em;
-  font-family: 'Courier New', Courier, monospace;
-  line-height: 1.5;
+  font-size: 0.62em;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  font-weight: 500;
+  line-height: 1.55;
   word-wrap: break-word;
-  background: var(--dsfr-background-alt);
-  border-left: 4px solid var(--dsfr-blue-france-main-525);
-  padding: 1em;
+  background: #1b1b35; // bleu nuit DSFR, repris par shiki si thème inline absent
+  color: #f5f5fe;
+  border-radius: 10px;
+  padding: 1em 1.2em;
+  box-shadow: 0 6px 18px rgba(22, 22, 22, 0.22);
 }
 
+// shiki pose sa couleur de fond en style inline sur <pre> ; on l'aligne sur le bleu nuit.
+.reveal pre.shiki {
+  box-sizing: border-box;
+  background: #1b1b35 !important;
+}
+
+// MDC/shiki émet les couleurs en variables CSS (--shiki-default) : cette règle les applique.
+.reveal pre.shiki span[style] {
+  color: var(--shiki-default);
+}
+
+// Code inline dans la prose : visible et surligné (graisse + fond bleuté).
 .reveal code {
-  font-family: 'Courier New', Courier, monospace;
-  background: var(--dsfr-background-alt);
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  font-weight: 600;
+  color: var(--dsfr-blue-france-main-525, #000091);
+  background: #e3e3fd;
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
   font-size: 0.9em;
 }
 
 .reveal pre code {
   display: block;
   padding: 0;
-  overflow: auto;
-  max-height: 400px;
-  word-wrap: normal;
+  overflow: visible;
+  max-height: none;
+  // Replie les lignes longues au lieu de les couper (pas de scroll en présentation).
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
   background: transparent;
+  color: inherit;
+  font-weight: inherit;
+  font-size: 1em;
 }
 
 // Quotes
