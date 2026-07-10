@@ -1,0 +1,31 @@
+# Contexte de build Docker. On EXCLUT les artefacts et deps locaux ; on GARDE les
+# sources, presentations/ (submodule), .frozen*/ (decks gelés commités), public/,
+# themes/, scripts/, server/, shared/, plugins/.
+
+.git
+.github
+node_modules
+.nuxt
+.nitro
+.output
+.data
+.cache
+.vercel
+dist
+dist-standalone
+export
+*.log
+.DS_Store
+.vscode
+.fleet
+.idea
+
+# Fichiers d'env locaux (les secrets runtime passent par le compose sur le VPS)
+.env
+.env.*
+!.env.example
+
+# Doc / tests / gros binaires inutiles au build
+docs
+test
+slides.pptx

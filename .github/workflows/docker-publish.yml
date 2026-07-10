@@ -1,0 +1,87 @@
+name: Build and publish Docker image
+
+# Construit l'image SSR et la pousse sur GHCR (privée : elle contient le contenu
+# privé baké au build). Le VPS pull ensuite un tag épinglé (voir vps-infra).
+#
+# Le token de contenu (PRESENTATIONS_REPO_TOKEN) n'est PAS un secret GitHub : il
+# est récupéré depuis Infisical au runtime du workflow via OIDC (machine identity,
+# gratuit en CE) — aucun credential statique dans GitHub. Il est ensuite passé au
+# build en secret BuildKit (jamais écrit dans une couche de l'image).
+#
+# Prérequis (Settings > Secrets and variables > Actions > Variables) :
+#   INFISICAL_MACHINE_IDENTITY_ID : UUID de la machine identity Infisical (OIDC)
+#   INFISICAL_PROJECT_SLUG        : slug du projet Infisical hébergeant le token
+# Côté Infisical : créer une machine identity avec OIDC Auth, l'autoriser à valider
+# les tokens OIDC de ce repo (subject/branch), lui donner l'accès LECTURE au projet/
+# env/chemin, et y stocker le secret PRESENTATIONS_REPO_TOKEN.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  INFISICAL_API_URL: https://secrets.example.org
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # requis pour l'auth OIDC vers Infisical
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Récupère PRESENTATIONS_REPO_TOKEN depuis Infisical → variable d'env du job
+      # (export-type: env par défaut). Aucun secret statique côté GitHub.
+      - name: Fetch build secrets from Infisical (OIDC)
+        uses: Infisical/secrets-action@v1.0.16
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
+          domain: ${{ env.INFISICAL_API_URL }}
+          # Audience figée : doit être IDENTIQUE au champ « Audiences » de l'identité
+          # OIDC dans Infisical (évite tout défaut GitHub implicite).
+          oidc-audience: infisical-nuxt-slides
+          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          env-slug: prod
+          secret-path: "/"
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64 # le VPS est amd64 — évite tout build arm accidentel
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          secrets: |
+            presentations_token=${{ env.PRESENTATIONS_REPO_TOKEN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

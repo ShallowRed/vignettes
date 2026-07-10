@@ -10,6 +10,16 @@ import { discoverPublicSlugs } from './shared/build/public-decks'
 // Single typed read of the standalone-bundle toggles (audit §7 P2 #10).
 const bundle = readBundleConfig()
 
+// Self-host (Docker) build. En preset node-server, le prérendu écrit les routes
+// sur un vrai filesystem : `/api/presentations` (fichier) et
+// `/api/presentations/<slug>` (dossier) entrent en collision (EISDIR), et crawler
+// les liens suit `/auth/github` qui exige les secrets OAuth au build. On sert donc
+// ces routes API en SSR au runtime (rapides, cache TTL) et on ne crawle pas — le
+// SSG des pages `/slides/<slug>` appelle l'API en interne sans l'écrire sur disque.
+// Vercel (preset `vercel`) et le mode bundle ne sont PAS concernés.
+const preset = process.env.NITRO_PRESET || ''
+const isNodeServer = preset === 'node_server' || preset === 'node-server'
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-27',
 
@@ -136,10 +146,12 @@ export default defineNuxtConfig({
       { dir: join(process.cwd(), '.frozen-mirror'), baseURL: '/', maxAge: 0 },
     ],
     prerender: {
-      // Crawl links to discover routes
-      crawlLinks: true,
-      // Only prerender public presentations API
-      routes: ['/api/presentations'],
+      // Crawl links to discover routes (désactivé en node-server : voir isNodeServer
+      // — évite de suivre /auth/github, qui exige les secrets OAuth au build).
+      crawlLinks: !isNodeServer,
+      // Only prerender public presentations API (non prérendue en node-server pour
+      // éviter la collision fichier/dossier EISDIR ; servie en SSR au runtime).
+      routes: isNodeServer ? [] : ['/api/presentations'],
     },
     hooks: {
       // In bundle mode, skip the SPA fallbacks (index/200/404) + the prerendered
@@ -179,10 +191,11 @@ export default defineNuxtConfig({
         // public decks are discovered by parsing stubs, not by listing public/.
         const slugs = await discoverPublicSlugs(join(process.cwd(), 'presentations'))
 
-        const publicRoutes = slugs.flatMap((slug: string) => [
-          `/slides/${slug}`,
-          `/api/presentations/${slug}`,
-        ])
+        // En node-server, on ne prérend QUE la page SSG du deck ; son API JSON est
+        // servie en SSR (éviter la collision fichier/dossier EISDIR sur le FS).
+        const publicRoutes = slugs.flatMap((slug: string) => isNodeServer
+          ? [`/slides/${slug}`]
+          : [`/slides/${slug}`, `/api/presentations/${slug}`])
 
         nitroConfig.prerender = nitroConfig.prerender || {}
         nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
