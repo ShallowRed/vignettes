@@ -33,6 +33,19 @@ export function useAppSession() {
     immediate: state.value === null,
   })
 
+  // Les pages prérendues (/, /login, slides publics — cf. routeRules) figent une
+  // session « déconnecté » au build, et le payload SSG empêche tout refetch. On
+  // re-résout donc la session UNE fois après hydratation (le cookie part
+  // automatiquement côté client) pour que le header reflète l'auth réelle.
+  // Sinon : connecté sur /admin (SSR) mais « sign in » sur / (prérendu).
+  if (import.meta.client) {
+    const revalidated = useState('app-session-revalidated', () => false)
+    if (!revalidated.value) {
+      revalidated.value = true
+      onNuxtReady(() => { refresh() })
+    }
+  }
+
   const loggedIn = computed(() => state.value?.loggedIn ?? false)
   const role = computed<Role>(() => state.value?.role ?? 'anonymous')
   const user = computed(() => state.value?.user ?? null)
