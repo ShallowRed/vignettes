@@ -10,7 +10,12 @@ import { isPrivileged } from '#shared/access'
  * boundary (they gate by role server-side regardless of navigation).
  */
 export default defineNuxtRouteMiddleware(async (to) => {
-  const session = await $fetch<{ loggedIn: boolean, role: Role }>('/api/auth/session')
+  // useRequestFetch (pas $fetch nu) : pendant le rendu SSR de /admin, il réémet
+  // les en-têtes de la requête entrante — dont le cookie de session. Sans lui,
+  // /api/auth/session est appelé sans cookie → « déconnecté » → rebond vers /login
+  // alors que la session existe bel et bien.
+  const requestFetch = useRequestFetch()
+  const session = await requestFetch<{ loggedIn: boolean, role: Role }>('/api/auth/session')
     .catch(() => null)
 
   // Not logged in → login, remembering where they were headed.

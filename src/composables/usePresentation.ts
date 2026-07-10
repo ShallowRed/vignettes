@@ -10,11 +10,19 @@ import { DEFAULT_METADATA } from '~/config/presentation'
 import { PARSERS } from '~/utils/slide-ast'
 
 export function usePresentation(slug: string, apiUrl?: string) {
+  // Capté en scope setup. useRequestFetch réémet le cookie de session en SSR, ce
+  // qui permet de charger un deck PROTÉGÉ côté serveur pour un utilisateur loggé
+  // (sinon l'API le voit anonyme). On ne l'utilise QUE pour le chemin interne :
+  // pour une apiUrl explicite (potentiellement externe, ex. bundle) on garde
+  // $fetch nu afin de ne pas transmettre le cookie à un tiers.
+  const requestFetch = useRequestFetch()
   const { data, error, status, refresh } = useAsyncData(
     `presentation-${slug}`,
     async (): Promise<PresentationData> => {
       // Fetch markdown content
-      const response = await $fetch<{ content: string, editUrl?: string }>(apiUrl || `/api/presentations/${slug}`)
+      const response = apiUrl
+        ? await $fetch<{ content: string, editUrl?: string }>(apiUrl)
+        : await requestFetch<{ content: string, editUrl?: string }>(`/api/presentations/${slug}`)
 
       // Parse MDC
       const ast = await parseMarkdown(response.content)

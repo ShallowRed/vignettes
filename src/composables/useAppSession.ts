@@ -17,8 +17,13 @@ interface AppSession {
 export function useAppSession() {
   const state = useState<AppSession | null>('app-session', () => null)
 
+  // Capté dans le scope setup : en SSR, useRequestFetch réémet le cookie de
+  // session de la requête entrante (sinon l'entête rend « déconnecté » alors que
+  // l'utilisateur est loggé). Côté client, c'est un $fetch normal.
+  const requestFetch = useRequestFetch()
+
   async function refresh() {
-    state.value = await $fetch<AppSession>('/api/auth/session').catch(() => null)
+    state.value = await requestFetch<AppSession>('/api/auth/session').catch(() => null)
     return state.value
   }
 
