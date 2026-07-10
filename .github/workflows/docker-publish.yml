@@ -24,6 +24,12 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    # Les docs ne sont pas dans l'image (.dockerignore) : un commit docs-only ne
+    # doit pas déclencher un build + auto-deploy inutile.
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
   workflow_dispatch:
 
 env:
