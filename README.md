@@ -238,7 +238,7 @@ Clean and modern design:
 
 ## Private Presentations
 
-Non-public presentations (private, semi-private, draft) are stored in a separate private repository and synced at build time on Vercel via `scripts/fetch-presentations.js`. The main repository stays fully open source.
+Non-public presentations (private, semi-private, draft) are stored in a separate private repository and synced at build time in CI (GitHub Actions) via `scripts/fetch-presentations.js`. The main repository stays fully open source.
 
 | Status | Access | Rendering |
 |--------|--------|-----------|
@@ -300,12 +300,9 @@ pnpm generate
 # Output is in .output/public/ - ready to deploy!
 ```
 
-**Deployment options:**
-- Netlify, Vercel, Cloudflare Pages
-- GitHub Pages
-- Any static hosting service
-
-For detailed SSG configuration and deployment guides, see [SSG.md](./SSG.md).
+**Deployment:**
+- Production runs as **SSR in Docker** on a self-hosted VPS (image built + auto-deployed by GitHub Actions). See the infra repo (`vps-infra`) for the container, reverse proxy and secrets setup.
+- SSG output (`.output/public/`) can also be served from any static host (GitHub Pages, Cloudflare Pages, …) when auth/SSR isn't needed.
 
 ## Architecture
 

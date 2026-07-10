@@ -39,10 +39,9 @@ presentations/public/*--standalone.md
 # and served as-is by Nitro (nuxt.config publicAssets). Kept OUTSIDE public/ so
 # `nuxt generate` never aspirates an already-frozen bundle into the next one.
 #
-# These are COMMITTED on purpose: Vercel builds from Git and serves them via
-# publicAssets, so /p/<alias> → /frozen/<alias>/ resolves in production. They were
-# previously ignored, which 404'd every frozen deck in prod. Regenerating them at
-# build time isn't viable (needs Storybook + the source notes), so a frozen deck —
-# which by definition rarely changes — is versioned as the deployable artefact.
-.vercel
+# These are COMMITTED on purpose: the CI builds the Docker image from Git and
+# bakes them in (served via publicAssets), so /p/<alias> → /frozen/<alias>/
+# resolves in production. Regenerating them at build time isn't viable (needs
+# Storybook + the source notes), so a frozen deck — which by definition rarely
+# changes — is versioned as the deployable artefact.
 .env*

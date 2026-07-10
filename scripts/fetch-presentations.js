@@ -1,9 +1,9 @@
 /**
- * Initialize the presentations content during CI builds (Vercel).
+ * Initialize the presentations content during CI builds (GitHub Actions / Docker).
  *
  * Locally the content is a git submodule cloned via `git submodule update --init`.
- * On Vercel, where the private repo can't be cloned without a token, this script
- * clones it directly into the presentations/ directory.
+ * In CI, where the submodule isn't checked out, this script clones the private
+ * repo directly into the presentations/ directory using PRESENTATIONS_REPO_TOKEN.
  *
  * The source is now DECLARED once (audit §5.7 / Axe F): `readContentSourceConfig`
  * interprets the env into a typed config, and `decideFetchAction` makes the
@@ -60,7 +60,7 @@ async function fetchPresentations() {
       catch (error) {
         console.error('❌ Failed to fetch presentations:', error.message)
         if (config.failClosed) {
-          console.error('   Likely an expired/invalid PRESENTATIONS_REPO_TOKEN. Rotate it in Vercel env.')
+          console.error('   Likely an expired/invalid PRESENTATIONS_REPO_TOKEN. Rotate it in Infisical.')
           console.error('   Refusing to deploy a site without its presentations.')
           process.exit(1)
         }

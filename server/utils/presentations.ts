@@ -3,9 +3,9 @@
  *
  * Content is read through Nitro's server assets (`useStorage('assets:presentations')`)
  * rather than the raw filesystem. The `presentations/` folder is registered as a
- * server asset in nuxt.config, so Nitro bundles it into the deployed function and
- * the same access works in dev, on a Node server, and on serverless (Vercel) —
- * where a cwd-relative path would not resolve.
+ * server asset in nuxt.config, so Nitro bundles it into the build output and the
+ * same access works in dev and on the Node server, regardless of the process
+ * working directory.
  */
 
 import type { PublicationStatus } from '#shared/access'

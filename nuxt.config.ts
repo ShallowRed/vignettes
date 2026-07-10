@@ -16,7 +16,7 @@ const bundle = readBundleConfig()
 // les liens suit `/auth/github` qui exige les secrets OAuth au build. On sert donc
 // ces routes API en SSR au runtime (rapides, cache TTL) et on ne crawle pas — le
 // SSG des pages `/slides/<slug>` appelle l'API en interne sans l'écrire sur disque.
-// Vercel (preset `vercel`) et le mode bundle ne sont PAS concernés.
+// Les autres presets (build par défaut) et le mode bundle ne sont PAS concernés.
 const preset = process.env.NITRO_PRESET || ''
 const isNodeServer = preset === 'node_server' || preset === 'node-server'
 
@@ -126,10 +126,9 @@ export default defineNuxtConfig({
 
   nitro: {
     // Bundle the `presentations/` folder (stubs + registry.yml) as a server asset
-    // so it is reachable at runtime through `useStorage('assets:presentations')` on
-    // every target — including serverless (Vercel), where a cwd-relative path does
-    // NOT resolve. This is what makes the live `/p/<alias>` route + the registry
-    // work in production (DDR-018).
+    // so it is reachable at runtime through `useStorage('assets:presentations')`
+    // regardless of the process working directory. This is what makes the live
+    // `/p/<alias>` route + the registry work in production (DDR-018).
     serverAssets: [
       { baseName: 'presentations', dir: join(process.cwd(), 'presentations') },
     ],

@@ -45,12 +45,12 @@ export const DEFAULT_CONTENT_FOLDERS = ['public', 'draft', 'private', 'semi-priv
  * (defaults to `process.env`). The single point that interprets the env, so the
  * fetch script and any future consumer agree on the source definition.
  *
- * `failClosed` is true on CI (`CI`/`VERCEL`): a missing token or an unreachable
- * clone must fail the build rather than deploy a deck-less site.
+ * `failClosed` is true on CI (`CI`): a missing token or an unreachable clone must
+ * fail the build rather than deploy a deck-less site.
  */
 export function readContentSourceConfig(env: NodeJS.ProcessEnv = process.env): ContentSourceConfig {
   const hasToken = Boolean(env.PRESENTATIONS_REPO_TOKEN)
-  const isCI = Boolean(env.CI || env.VERCEL)
+  const isCI = Boolean(env.CI)
   const folders = env.PRESENTATIONS_FOLDERS
     ? env.PRESENTATIONS_FOLDERS.split(',').map(s => s.trim()).filter(Boolean)
     : DEFAULT_CONTENT_FOLDERS

@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 #
-# Image de l'app Nuxt (SSR / Nitro node-server), rapatriée de Vercel vers le VPS.
+# Image de l'app Nuxt (SSR / Nitro node-server), déployée en conteneur sur le VPS.
 # Build multi-stage :
 #   deps    -> `pnpm install` isolé (couche mise en cache tant que le lockfile ne bouge pas)
 #   build   -> clone le contenu privé (submodule `presentations/`) via un build-secret,
 #              puis `pnpm build` -> .output/ auto-suffisant (Nitro trace/bundle ses deps)
 #   runtime -> node:22-slim + .output/ uniquement. Pas de node_modules, pas de git.
 #
-# Le contenu privé est BAKÉ dans l'image au build (comme Vercel construit depuis Git) :
+# Le contenu privé est BAKÉ dans l'image au build (le build CI clone depuis Git) :
 # l'image GHCR doit donc rester PRIVÉE, et un changement de contenu = un rebuild.
 
 FROM node:22-slim AS base
