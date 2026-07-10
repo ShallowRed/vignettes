@@ -8,12 +8,17 @@ name: Build and publish Docker image
 # gratuit en CE) — aucun credential statique dans GitHub. Il est ensuite passé au
 # build en secret BuildKit (jamais écrit dans une couche de l'image).
 #
+# Après le build, le job `deploy` (push sur main) se connecte au VPS en SSH et
+# met à jour le conteneur sur le sha exact qui vient d'être construit (CD).
+#
 # Prérequis (Settings > Secrets and variables > Actions > Variables) :
+#   INFISICAL_API_URL             : URL de l'instance Infisical (non versionnée ici)
 #   INFISICAL_MACHINE_IDENTITY_ID : UUID de la machine identity Infisical (OIDC)
-#   INFISICAL_PROJECT_SLUG        : slug du projet Infisical hébergeant le token
-# Côté Infisical : créer une machine identity avec OIDC Auth, l'autoriser à valider
-# les tokens OIDC de ce repo (subject/branch), lui donner l'accès LECTURE au projet/
-# env/chemin, et y stocker le secret PRESENTATIONS_REPO_TOKEN.
+#   INFISICAL_PROJECT_SLUG        : slug du projet Infisical hébergeant les secrets
+#   VPS_HOST, VPS_USER            : hôte + user SSH du VPS (pour le job deploy)
+# Côté Infisical : machine identity OIDC (trust du repo) avec accès LECTURE au
+# projet/env, hébergeant les secrets PRESENTATIONS_REPO_TOKEN (build) et
+# VPS_SSH_KEY (clé privée de déploiement, utilisée par le job deploy).
 
 on:
   push:
@@ -24,7 +29,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  INFISICAL_API_URL: https://secrets.example.org
 
 jobs:
   build:
@@ -54,7 +58,7 @@ jobs:
         with:
           method: oidc
           identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
-          domain: ${{ env.INFISICAL_API_URL }}
+          domain: ${{ vars.INFISICAL_API_URL }}
           # Audience figée : doit être IDENTIQUE au champ « Audiences » de l'identité
           # OIDC dans Infisical (évite tout défaut GitHub implicite).
           oidc-audience: infisical-nuxt-slides
@@ -85,3 +89,44 @@ jobs:
             presentations_token=${{ env.PRESENTATIONS_REPO_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # CD : met à jour le conteneur sur le VPS sur le sha fraîchement construit.
+  # Uniquement sur push main (pas les tags/PR). La clé SSH est restreinte côté VPS
+  # par un forced command (deploy.sh) : elle ne peut que déclencher ce déploiement.
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC vers Infisical (récupère VPS_SSH_KEY)
+    steps:
+      - name: Fetch deploy secrets from Infisical (OIDC)
+        uses: Infisical/secrets-action@v1.0.16
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
+          domain: ${{ vars.INFISICAL_API_URL }}
+          oidc-audience: infisical-nuxt-slides
+          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          env-slug: prod
+          secret-path: "/"
+
+      - name: Deploy to VPS over SSH
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_USER: ${{ vars.VPS_USER }}
+          # VPS_SSH_KEY est injecté dans l'env du job par l'étape Infisical ci-dessus.
+        run: |
+          set -euo pipefail
+          IMAGE_TAG="sha-$(echo "${GITHUB_SHA}" | cut -c1-7)"
+          echo "Déploiement de ${IMAGE_TAG} sur ${VPS_HOST}"
+          umask 077
+          printf '%s\n' "${VPS_SSH_KEY}" > deploy_key
+          # TOFU : on pin la clé d'hôte au premier contact. Pour durcir, remplacer
+          # par une known_hosts pré-remplie (variable VPS_SSH_KNOWN_HOSTS).
+          ssh-keyscan -H "${VPS_HOST}" > known_hosts 2>/dev/null
+          # Le forced command côté VPS lit ce tag dans $SSH_ORIGINAL_COMMAND.
+          ssh -i deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts \
+            "${VPS_USER}@${VPS_HOST}" "${IMAGE_TAG}"
+          rm -f deploy_key
