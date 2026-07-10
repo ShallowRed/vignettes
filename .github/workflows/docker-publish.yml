@@ -91,8 +91,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          secrets: |
-            presentations_token=${{ env.PRESENTATIONS_REPO_TOKEN }}
+          # secret-envs référence la variable d'env par son NOM (injectée au runtime
+          # par l'étape Infisical) — pas d'accès ${{ env.* }} (évite le faux positif
+          # du linter) et le secret ne transite pas dans le YAML.
+          secret-envs: |
+            presentations_token=PRESENTATIONS_REPO_TOKEN
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
