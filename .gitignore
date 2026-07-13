@@ -41,3 +41,4 @@ presentations/public/*--standalone.md
 # stays as a dev cache + upload source. See docs/frozen-storage.md.
 .frozen/
 .env*
+.frozen-mirror/

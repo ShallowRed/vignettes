@@ -136,18 +136,11 @@ export default defineNuxtConfig({
       { baseName: 'presentations', dir: join(process.cwd(), 'presentations') },
     ],
 
-    // `.frozen-mirror/` → / : the future-proof origin-root asset safety net for a
-    // non-rebased consumer (bundles are self-contained and don't need it). Lives
-    // OUTSIDE public/ so `nuxt generate` never aspirates it into the next build.
-    //
-    // The frozen BUNDLES themselves (`/frozen/<bundle>/…`) are NO LONGER served
-    // from a committed `.frozen/` dir: they live in object storage (Scaleway) and
+    // Frozen bundles (`/frozen/<bundle>/…`) live in object storage (Scaleway) and
     // are served — with access gating — by `server/routes/frozen/[...path].ts`
-    // (DDR-018 storage migration; see docs/frozen-storage.md). That route falls
-    // back to the local `.frozen/` dir when S3 creds are absent (dev/transition).
-    publicAssets: [
-      { dir: join(process.cwd(), '.frozen-mirror'), baseURL: '/', maxAge: 0 },
-    ],
+    // (DDR-018 ; voir docs/frozen-storage.md). L'ancien filet origin-root
+    // `.frozen-mirror/` (publicAssets) a été retiré : les bundles sont autoportants
+    // (URLs relatives) et rien ne référence d'asset à la racine → vestigial.
     prerender: {
       // Crawl links to discover routes (désactivé en node-server : voir isNodeServer
       // — évite de suivre /auth/github, qui exige les secrets OAuth au build).
