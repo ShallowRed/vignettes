@@ -1,13 +1,10 @@
 /**
- * Makes a frozen Storybook self-contained (DDR-017 §2.a-ter). Embedded stories
- * reference staticDir assets root-absolute (`/vitrine/x.jpg`), which only resolve
- * if mirrored to the origin root — a mirror that pollutes public/ and gets
- * re-aspirated by the next `nuxt generate`. The assets already live in the bundle
- * under `_storybook/<dir>/`, so we rewrite the root-absolute URLs to relative
- * (`/vitrine/x` → `vitrine/x`): iframe.html has `<base target="_parent">` (no href),
- * so they resolve against the iframe location — exactly where the asset is. Only
- * rewrites URLs whose top segment is a real static-asset dir (never `/assets`, `/sb-*`).
- * Idempotent.
+ * Makes a frozen Storybook self-contained by rewriting root-absolute staticDir
+ * asset URLs (`/vitrine/x.jpg`) to relative (`vitrine/x`). The assets live in the
+ * bundle under `_storybook/<dir>/`, and iframe.html's `<base target="_parent">`
+ * has no href, so relative URLs resolve against the iframe location — where the
+ * asset is. Only rewrites URLs whose top segment is a real static-asset dir
+ * (never `/assets`, `/sb-*`). Idempotent.
  *
  * Usage: node scripts/rebase-storybook-assets.js <built-storybook-dir> [--dry]
  */
@@ -26,10 +23,8 @@ if (!storybookDir || !existsSync(storybookDir)) {
   process.exit(1)
 }
 
-// Top-level static-asset names present in the bundle (dirs + loose files), via
-// the EmbedSource port's single runtime/asset classifier (shared with mirror/prune).
-// A root-absolute URL whose first segment is one of these is a staticDir asset
-// we can safely rebase to relative.
+// Top-level static-asset names in the bundle — a root-absolute URL whose first
+// segment is one of these is a staticDir asset safe to rebase to relative.
 const topLevel = await readdir(storybookDir, { withFileTypes: true })
 const assetRoots = new Set(detectAssetRoots(topLevel.map(e => e.name)))
 
@@ -38,9 +33,8 @@ if (assetRoots.size === 0) {
   process.exit(0)
 }
 
-// Build a regex that matches `/<root>/…` (or bare `/<file>` for loose files)
-// when preceded by a string/template/url() opener, capturing the opener so we
-// can keep it. The leading slash is dropped in the replacement → relative URL.
+// Match `/<root>/…` (or bare `/<file>`) after a string/template/url() opener,
+// capturing the opener; the leading slash is dropped → relative URL.
 const rootsAlt = [...assetRoots]
   .map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   .join('|')
@@ -60,7 +54,7 @@ async function collect(dir) {
   }
 }
 await collect(SCAN_DIR)
-// Also rewrite iframe.html / index.html in case they carry root-absolute refs.
+// iframe.html / index.html may also carry root-absolute refs.
 for (const html of ['iframe.html', 'index.html']) {
   const p = join(storybookDir, html)
   if (existsSync(p))
@@ -73,20 +67,14 @@ let urlsRewritten = 0
 for (const file of scanFiles) {
   const text = await readFile(file, 'utf-8')
   let count = 0
-  // The asset files live at `_storybook/<root>/…`. The replacement prefix depends
-  // on the RESOLUTION CONTEXT of the reference, not just the file type:
-  //   • CSS `url(/fonts/x)`  → resolved against the STYLESHEET URL
-  //     (`_storybook/assets/iframe.css`) → needs `../fonts/x`.
-  //   • JS string literal `/vitrine/x` → becomes an `<img src>` resolved against
-  //     the DOCUMENT URL (`_storybook/iframe.html`) → needs `vitrine/x` (no prefix).
-  // Both bundles sit in `assets/`, but CSS references itself-relative while JS
-  // strings become DOM attrs resolved doc-relative. A single rule can't serve
-  // both — so prefix per file type.
+  // Prefix depends on resolution context: CSS url() resolves against the
+  // stylesheet (_storybook/assets/*.css → needs `../`); a JS string becomes a DOM
+  // attr resolved against the document (_storybook/iframe.html → no prefix).
   const isCss = /\.css$/.test(file)
   const prefix = isCss ? '../' : ''
   const out = text.replace(re, (_m, opener, rel) => {
     count++
-    return `${opener}${prefix}${rel}` // root-absolute → context-correct relative
+    return `${opener}${prefix}${rel}`
   })
   if (count > 0) {
     urlsRewritten += count

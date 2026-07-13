@@ -30,7 +30,6 @@ const props = withDefaults(defineProps<Props>(), {
       <slot />
     </div>
     <div class="split-media">
-      <!-- Use Reveal.js native lightbox with data-preview-link -->
       <a
         v-if="props.lightbox"
         :href="props.src"
@@ -54,7 +53,6 @@ const props = withDefaults(defineProps<Props>(), {
           <span>Cliquer pour agrandir</span>
         </div>
       </a>
-      <!-- No lightbox -->
       <template v-else>
         <iframe
           v-if="props.type === 'iframe'"
@@ -84,14 +82,14 @@ const props = withDefaults(defineProps<Props>(), {
   height: 100%;
 }
 
-/* Ratios without reverse (content left, media right) */
+/* Content left, media right. */
 .split-slide-wrapper.ratio-1-1 { grid-template-columns: 1fr 1fr; }
 .split-slide-wrapper.ratio-1-2 { grid-template-columns: 1fr 2fr; }
 .split-slide-wrapper.ratio-2-1 { grid-template-columns: 2fr 1fr; }
 .split-slide-wrapper.ratio-1-3 { grid-template-columns: 1fr 3fr; }
 .split-slide-wrapper.ratio-3-1 { grid-template-columns: 3fr 1fr; }
 
-/* Ratios with reverse (media left, content right) */
+/* Reversed: media left, content right. */
 .split-slide-wrapper.reverse.ratio-1-1 { grid-template-columns: 1fr 1fr; }
 .split-slide-wrapper.reverse.ratio-1-2 { grid-template-columns: 2fr 1fr; }
 .split-slide-wrapper.reverse.ratio-2-1 { grid-template-columns: 1fr 2fr; }

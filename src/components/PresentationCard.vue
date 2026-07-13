@@ -2,12 +2,7 @@
 import type { PresentationListItem } from '#shared/presentations'
 import { STATUS_CONFIG } from '#shared/presentations'
 
-/**
- * One presentation card, shared by the home and the admin dashboard (the markup
- * was duplicated and had drifted). `variant` toggles the small differences:
- * the public home links via the canonical alias and flags frozen decks; admin
- * shows the filename and a manage action.
- */
+// Shared card for home and admin; `variant` toggles public (alias link) vs admin (filename + manage action).
 const props = withDefaults(defineProps<{
   presentation: PresentationListItem
   variant?: 'public' | 'admin'
@@ -25,8 +20,8 @@ const to = computed(() =>
 
 const statusDisplay = computed(() => STATUS_CONFIG[props.presentation.status])
 
-// Resolve the real NuxtLink component: passing the string 'NuxtLink' to <component
-// :is> renders an inert <nuxtlink> HTML element (no navigation) — the click bug.
+// Must resolve the component: passing the string 'NuxtLink' to <component :is> renders
+// an inert <nuxtlink> element with no navigation.
 const NuxtLink = resolveComponent('NuxtLink')
 const rootTag = computed(() => (props.variant === 'public' ? NuxtLink : 'div'))
 </script>
@@ -40,7 +35,6 @@ const rootTag = computed(() => (props.variant === 'public' ? NuxtLink : 'div'))
       ? 'hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 cursor-pointer'
       : ''"
   >
-    <!-- Status accent strip -->
     <div
       class="h-1 w-full"
       :class="frozen ? 'bg-info' : {

@@ -1,10 +1,6 @@
-/**
- * Scales a story iframe (rendered at a logical desktop `--preview-width`, default
- * 1440px) down to fit its pane. JS, not CSS: the exact fit needs the pane height,
- * and the CSS `cqh` route is unreliable in Firefox on grid items. Reads
- * clientWidth/Height directly. Shared by the live app (client plugin) and the
- * frozen bundle (inlined). Targets `.slide-media-pane.is-scaled` / `.story-frame__media.is-scaled`.
- */
+// Scales a story iframe (logical `--preview-width`, default 1440px) down to fit
+// its pane. JS not CSS: the fit needs pane height, and `cqh` is unreliable in
+// Firefox on grid items. Shared by the live app (client plugin) and frozen bundle.
 ;(function () {
   if (typeof window === 'undefined')
     return
@@ -47,7 +43,7 @@
 
   function init() {
     scanAll(document)
-    // Catch panes added later (Reveal/MDC render asynchronously).
+    // Catch panes rendered asynchronously by Reveal/MDC.
     if (typeof MutationObserver !== 'undefined') {
       new MutationObserver((muts) => {
         for (const m of muts) {
@@ -69,15 +65,13 @@
   else
     init()
 
-  // In a Reveal deck, panes get their final size after Reveal lays out / scales.
-  // Re-scan on Reveal's lifecycle events when present (frozen bundle + live).
+  // Panes get their final size only after Reveal lays out; re-scan on its events.
   if (window.Reveal && typeof window.Reveal.on === 'function') {
     const rescan = () => scanAll(document)
     window.Reveal.on('ready', rescan)
     window.Reveal.on('slidechanged', rescan)
     window.Reveal.on('resize', rescan)
   }
-  // Also a deferred pass after first paint, in case Reveal initialised just before
-  // this script ran and we missed its 'ready'.
+  // Deferred pass in case Reveal fired 'ready' before this script attached.
   setTimeout(() => scanAll(document), 0)
 })()

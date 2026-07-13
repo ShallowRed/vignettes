@@ -3,20 +3,8 @@ import type { DeckMeta, ThemeBackgrounds } from '../deck/schema'
 import { getThemeTokens } from '../theme/tokens'
 import { buildStoryUrl } from './storybook'
 
-/**
- * Named transformation pipeline (audit §7 P2 #8 / §4.3 Slidev preparser,
- * §4.5 Pandoc filters).
- *
- * The "semantic transformations" (resolve a `:layout{story=…}` to an iframe URL,
- * decide media scaling, pick a slide background by heading level, collect embedded
- * assets) used to be scattered across `SlideContent.vue`, `slide-rendering.ts`,
- * `storybook.ts`, and the bundle plugin. Here each one is a **named, pure,
- * composable** step over the deck model — a home for them, and the unit of test.
- */
-
-// ---------------------------------------------------------------------------
-// Slide media resolution (was inlined in SlideContent.vue `mediaParts`)
-// ---------------------------------------------------------------------------
+// Named, pure, composable transform steps over the deck model: media resolution,
+// background resolution, asset collection, and the pipeline runner.
 
 export interface SlideMedia {
   src: string
@@ -33,16 +21,12 @@ export interface SlideMedia {
   previewImage?: string
 }
 
-/** Object-fit strategy for a media pane (`contain` only when explicitly asked). */
+/** `contain` only when explicitly asked, else `cover`. */
 export function getMediaFit(layoutProps?: Record<string, string>): 'cover' | 'contain' {
   return layoutProps?.fit === 'contain' ? 'contain' : 'cover'
 }
 
-/**
- * Resolve a slide's media pane from its `layoutProps` and the deck's `storybook`
- * base. Faithful to the original `SlideContent.mediaParts` logic, extracted so it
- * is shared and testable. Returns `null` when the slide has no media.
- */
+/** Returns null when the slide has no media. */
 export function resolveSlideMedia(
   layoutProps: Record<string, string> | undefined,
   opts: { storybook?: string } = {},
@@ -51,8 +35,6 @@ export function resolveSlideMedia(
   if (!lp)
     return null
 
-  // Storybook shortcut: `:layout{story="<id>"}` resolves against the frontmatter
-  // `storybook` base URL and embeds as an iframe; falls back to explicit src/type.
   const storySrc = lp.story ? buildStoryUrl(opts.storybook, lp.story) : undefined
   const src = storySrc ?? lp.src
   if (!src)
@@ -60,9 +42,8 @@ export function resolveSlideMedia(
 
   const type = storySrc ? 'iframe' : lp.type
   const fit = getMediaFit(lp)
-  // `previewWidth` (logical desktop px) drives the iframe zoom-out. MDC kebab-cases
-  // camelCase attribute keys, so `previewWidth="1600"` arrives as `preview-width` —
-  // check that first, with the camel/lower forms as fallbacks.
+  // MDC kebab-cases camelCase attribute keys, so `previewWidth="1600"` arrives as
+  // `preview-width` — check that first, with camel/lower forms as fallbacks.
   const previewWidthRaw = lp['preview-width'] ?? lp.previewWidth ?? lp.previewwidth
   const parsed = previewWidthRaw ? Number.parseInt(previewWidthRaw, 10) : 1440
   const previewWidth = Number.isFinite(parsed) && parsed > 0 ? parsed : 1440
@@ -76,8 +57,7 @@ export function resolveSlideMedia(
     alt: lp.alt || '',
     fit,
     scaled,
-    // Without a lightbox, a scaled story embed is interactive in place: clicks
-    // browse *inside* the iframe (sandboxed, so it can't escape the slides).
+    // Without a lightbox, a scaled story embed is interactive in place.
     interactive: scaled && !hasLightbox,
     previewWidth,
     hasLightbox,
@@ -87,17 +67,8 @@ export function resolveSlideMedia(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Background resolution (mirrors slide-rendering.resolveSlideBackground)
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve a slide's background image, preserving the original precedence:
- *   1. an explicit slide-level `backgroundImage` override;
- *   2. the deck frontmatter `backgrounds` map (`customBackgrounds`), if given;
- *   3. otherwise the theme tokens' per-heading-level background (audit §5.5).
- * Pure, so it works the same on client, server, and in the IR.
- */
+// Precedence: slide-level backgroundImage override → deck frontmatter
+// backgrounds map → theme tokens' per-heading-level background.
 export function resolveSlideBackground(
   slide: Pick<Slide, 'headingLevel' | 'backgroundImage'>,
   theme?: string,
@@ -114,15 +85,8 @@ export function resolveSlideBackground(
   return backgrounds.default
 }
 
-// ---------------------------------------------------------------------------
-// Asset collection (populates DeckModel.assets for centralized rebasing)
-// ---------------------------------------------------------------------------
-
-/**
- * Walk a deck's slides and collect the external assets they reference (storybook
- * iframes, layout media, slide backgrounds). This is what lets a renderer rebase
- * every asset in one place (audit §5.8/§5.9) instead of re-deriving them per path.
- */
+// Collect the external assets a deck's slides reference (storybook iframes,
+// layout media, backgrounds) so a renderer can rebase them all in one place.
 export function collectAssets(slides: Slide[], meta: Pick<DeckMeta, 'storybook' | 'theme' | 'backgrounds'>): AssetRef[] {
   const assets: AssetRef[] = []
   const seen = new Set<string>()
@@ -149,35 +113,24 @@ export function collectAssets(slides: Slide[], meta: Pick<DeckMeta, 'storybook' 
   return assets
 }
 
-// ---------------------------------------------------------------------------
-// Named pipeline runner + DeckModel builder
-// ---------------------------------------------------------------------------
-
-/** A named transform step over a deck model (Pandoc-style AST→AST filter). */
 export interface DeckTransform {
   readonly name: string
   apply: (model: DeckModel) => DeckModel
 }
 
-/** Run an ordered list of named transforms over a model. */
 export function runTransforms(model: DeckModel, transforms: readonly DeckTransform[]): DeckModel {
   return transforms.reduce((acc, t) => t.apply(acc), model)
 }
 
-/** Transform: (re)compute `assets` from the current slides + meta. */
 export const collectAssetsTransform: DeckTransform = {
   name: 'collect-assets',
   apply: model => ({ ...model, assets: collectAssets(model.slides, model.meta) }),
 }
 
-/** The default transform pipeline applied when building a `DeckModel`. */
 export const DEFAULT_TRANSFORMS: readonly DeckTransform[] = [collectAssetsTransform]
 
-/**
- * Build a normalized `DeckModel` (IR) from resolved meta + parsed slides, running
- * the named transform pipeline (audit §5.8 + §7 P2 #8). The single place that
- * assembles "what this deck is" for serialization and renderers.
- */
+// Build a normalized DeckModel (IR) from resolved meta + parsed slides, running
+// the named transform pipeline.
 export function buildDeckModel(
   meta: DeckMeta,
   slides: Slide[],

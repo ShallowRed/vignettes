@@ -1,15 +1,9 @@
 /**
- * Initialize the presentations content during CI builds (GitHub Actions / Docker).
- *
- * Locally the content is a git submodule cloned via `git submodule update --init`.
- * In CI, where the submodule isn't checked out, this script clones the private
- * repo directly into the presentations/ directory using PRESENTATIONS_REPO_TOKEN.
- *
- * The source is now DECLARED once (audit §5.7 / Axe F): `readContentSourceConfig`
- * interprets the env into a typed config, and `decideFetchAction` makes the
- * fail-closed policy an explicit, tested decision instead of branching buried in
- * this script. Shipping an empty presentations/ on CI is refused loudly — that
- * silent-empty deploy was the worst past failure mode.
+ * Initializes the presentations content during CI builds. Locally it's a git
+ * submodule; in CI this clones the private repo into presentations/ using
+ * PRESENTATIONS_REPO_TOKEN. readContentSourceConfig/decideFetchAction make the
+ * fail-closed policy an explicit tested decision — shipping an empty
+ * presentations/ is refused loudly rather than silently deployed.
  */
 
 import { execSync } from 'node:child_process'
@@ -47,13 +41,12 @@ async function fetchPresentations() {
       console.log(`📥 Cloning ${decision.repo}@${decision.branch} into presentations/...`)
       try {
         const cloneUrl = `https://x-access-token:${process.env.PRESENTATIONS_REPO_TOKEN}@github.com/${decision.repo}.git`
-        // Remove empty submodule placeholder and clone fresh
         execSync(`rm -rf "${PRESENTATIONS_DIR}"`, { stdio: 'inherit' })
         execSync(
           `git clone --depth 1 --branch ${decision.branch} ${cloneUrl} "${PRESENTATIONS_DIR}"`,
           { stdio: 'inherit' },
         )
-        // Remove .git from cloned dir so Nuxt doesn't get confused
+        // Drop .git from the clone so Nuxt doesn't treat presentations/ as a repo.
         execSync(`rm -rf "${join(PRESENTATIONS_DIR, '.git')}"`, { stdio: 'inherit' })
         console.log('✨ Presentations fetched successfully!')
       }

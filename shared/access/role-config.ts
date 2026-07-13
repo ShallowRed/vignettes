@@ -1,12 +1,6 @@
 import type { Role } from './roles'
 
-/**
- * Role display config (badge class, label, icon) — the identity vocabulary shown
- * in the app header. Framework-free data (DaisyUI class strings + Remix-icon
- * names), the role-level analogue of `STATUS_CONFIG` for the catalog.
- *
- * `icon` is a Remix-icon name (`ri:*`) rendered via `<Icon>` (@nuxt/icon).
- */
+/** Role display config shown in the app header. `icon` is a `ri:*` Iconify name. */
 export interface RoleDisplay {
   badge: string
   label: string

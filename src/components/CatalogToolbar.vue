@@ -5,17 +5,10 @@ import type { Project } from '#shared/projects'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { countByStatus, STATUS_CONFIG, UNGROUPED_PROJECT } from '#shared/presentations'
 
-/**
- * Catalog controls — free-text search, sort, and status filter chips. Owns no
- * filtering logic itself: it edits a `CatalogQuery` via v-model and the page
- * feeds that through the pure `applyCatalogQuery`. Status counts come from the
- * pure `countByStatus` over the *unfiltered* list so chips show totals.
- */
+// Catalog controls: edits a CatalogQuery via v-model; the page applies the filtering.
 const props = defineProps<{
   items: PresentationListItem[]
-  /** When false, hide the status filter (e.g. a single-status view). */
   showStatusFilter?: boolean
-  /** Project registry (projects.yml) for the project filter chips' labels/order. */
   projects?: Project[]
 }>()
 
@@ -23,11 +16,7 @@ const query = defineModel<CatalogQuery>({ required: true })
 
 const counts = computed(() => countByStatus(props.items))
 
-/**
- * Project chips to show: every project slug present in the catalog, ordered by
- * the registry (`projects.yml`), plus an "ungrouped" chip when some deck has no
- * project. Counts come from the unfiltered items so chips show totals.
- */
+// Chips for every project slug present, ordered by the registry, plus an "ungrouped" chip.
 const projectChips = computed(() => {
   const present = new Map<string, number>()
   let ungrouped = 0
@@ -104,7 +93,6 @@ function toggleDir() {
 <template>
   <div class="flex flex-col gap-4 mb-8">
     <div class="flex flex-wrap gap-2 items-center">
-      <!-- Search -->
       <label class="input input-bordered flex items-center gap-2 flex-1 min-w-56 bg-base-100">
         <Icon
           name="ri:search-line"
@@ -120,7 +108,6 @@ function toggleDir() {
         >
       </label>
 
-      <!-- Sort -->
       <select
         :value="query.sortKey ?? 'title'"
         class="select select-bordered bg-base-100"
@@ -148,7 +135,6 @@ function toggleDir() {
       </button>
     </div>
 
-    <!-- Status filter chips -->
     <div
       v-if="showStatusFilter"
       class="flex flex-wrap gap-2"
@@ -172,7 +158,6 @@ function toggleDir() {
       </button>
     </div>
 
-    <!-- Project filter chips -->
     <div
       v-if="showProjectFilter"
       class="flex flex-wrap gap-2"

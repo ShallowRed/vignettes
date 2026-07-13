@@ -1,8 +1,5 @@
 <script setup lang="ts">
-/**
- * Shared loading / error / empty placeholder for the catalog views, so both the
- * home and admin render those states identically instead of hand-rolling each.
- */
+// Shared loading / error / empty placeholder for the catalog views.
 defineProps<{
   state: 'pending' | 'error' | 'empty'
   message?: string

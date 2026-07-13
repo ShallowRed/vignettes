@@ -1,17 +1,10 @@
 /**
- * registry-get.js — print a field of a registry entry, for Makefile wiring.
+ * Prints a field of a registry entry, for Makefile wiring. `slug` falls back to
+ * the alias when unset (mirroring the server); `theme` is read from the stub
+ * frontmatter, not the registry, and defaults to `brand`. Exits 1 (empty stdout)
+ * when the alias is unknown or the field is unset.
  *
  * Usage: node scripts/registry-get.js <alias> <field>
- * Example: node scripts/registry-get.js annual-review slug  →  annual-review-2026
- *
- * Falls back to the alias itself for `slug` when unset, mirroring the server.
- *
- * Special field `theme`: the deck theme lives in the STUB FRONTMATTER (DDR-018 —
- * the .md frontmatter stays the source of truth for theme/storybook), not the
- * registry. This resolves slug + access, reads `theme:` from the stub, and falls
- * back to `brand`. Lets the freeze flow pick the right theme automatically.
- *
- * Exits 1 (empty stdout) when the alias is unknown or the field is unset.
  */
 
 import { existsSync } from 'node:fs'
@@ -36,7 +29,6 @@ if (!entry) {
 
 const slug = entry.slug || alias
 
-// `theme` is read from the stub's frontmatter, not the registry.
 if (field === 'theme') {
   const folders = entry.access ? [entry.access] : ['public', 'draft', 'private', 'semi-private']
   let theme
@@ -44,8 +36,6 @@ if (field === 'theme') {
     const stub = join(presentationsDir, folder, `${slug}.md`)
     if (!existsSync(stub))
       continue
-    // Read the stub frontmatter through the shared parser (audit §5.3) instead of
-    // a bespoke regex — one definition of "parse frontmatter", nested-key safe.
     const raw = await readFile(stub, 'utf-8')
     const value = splitFrontmatter(raw).data.theme
     if (typeof value === 'string' && value.trim()) {

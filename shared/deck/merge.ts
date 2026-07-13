@@ -1,12 +1,3 @@
-/**
- * Deep-merge and declared precedence (audit §5.4 / Axe A).
- *
- * A single deep-merge replaces the three divergent strategies (shallow on the
- * client, deep on `/api/codimd`, string-concat on `/p` & `/slides`). Precedence
- * stops being dispersed code and becomes *data*: a list of layers plus a note
- * override whitelist.
- */
-
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -14,8 +5,7 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
 /**
  * Recursively merge `override` onto `base`. Plain objects merge deeply; scalars
  * and arrays replace. `null`/`undefined` overrides are ignored so a stray empty
- * note key can't wipe a base default. (Faithful to the original `deepMerge` on
- * `/api/codimd`.)
+ * note key can't wipe a base default.
  */
 export function deepMerge<T extends Record<string, unknown>>(
   base: T,
@@ -35,11 +25,10 @@ export function deepMerge<T extends Record<string, unknown>>(
 }
 
 /**
- * Declared policy describing which keys of a note's frontmatter may override the
- * base layer:
- *   - `'all'`  → the note is the author's source of truth (CodiMD preset route).
- *   - `string[]` → only these top-level keys (e.g. `['storybook']` on `/p/<alias>`).
- *   - `[]`/undefined → the note contributes its body only, never its frontmatter.
+ * Which note frontmatter keys may override the base:
+ *   - `'all'` → note is the source of truth (CodiMD preset route).
+ *   - `string[]` → only these top-level keys.
+ *   - `[]`/undefined → note contributes its body only, never frontmatter.
  */
 export type NoteOverridePolicy = 'all' | readonly string[] | undefined
 

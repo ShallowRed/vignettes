@@ -1,8 +1,3 @@
-/**
- * Composable for loading and managing presentation data
- * Handles fetching, parsing, and providing presentation state
- */
-
 import type { PresentationData } from '~/types/presentation'
 import { parserIdFor } from '#shared/deck'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
@@ -10,32 +5,26 @@ import { DEFAULT_METADATA } from '~/config/presentation'
 import { PARSERS } from '~/utils/slide-ast'
 
 export function usePresentation(slug: string, apiUrl?: string) {
-  // Capté en scope setup. useRequestFetch réémet le cookie de session en SSR, ce
-  // qui permet de charger un deck PROTÉGÉ côté serveur pour un utilisateur loggé
-  // (sinon l'API le voit anonyme). On ne l'utilise QUE pour le chemin interne :
-  // pour une apiUrl explicite (potentiellement externe, ex. bundle) on garde
-  // $fetch nu afin de ne pas transmettre le cookie à un tiers.
+  // Must be called in setup scope. useRequestFetch re-emits the session cookie in
+  // SSR so a logged-in user can load a PROTECTED deck (else the API sees anonymous).
+  // Only for the internal path: an explicit apiUrl (possibly external, e.g. a bundle)
+  // uses bare $fetch to avoid leaking the cookie to a third party.
   const requestFetch = useRequestFetch()
   const { data, error, status, refresh } = useAsyncData(
     `presentation-${slug}`,
     async (): Promise<PresentationData> => {
-      // Fetch markdown content
       const response = apiUrl
         ? await $fetch<{ content: string, editUrl?: string }>(apiUrl)
         : await requestFetch<{ content: string, editUrl?: string }>(`/api/presentations/${slug}`)
 
-      // Parse MDC
       const ast = await parseMarkdown(response.content)
 
-      // Extract and merge metadata
       const metadata = {
         ...DEFAULT_METADATA,
         ...(ast.data || {}),
       }
 
-      // Parse slides through the shared parser port: the deck's `parser` mode
-      // selects the implementation (heading vs separator) — one contract, no
-      // ad-hoc branching (audit §5.8). Both take the raw markdown uniformly.
+      // The deck's `parser` mode selects heading vs separator via the shared port.
       const parser = PARSERS[parserIdFor(metadata)]
       const slides = await parser.parse(response.content, metadata)
 

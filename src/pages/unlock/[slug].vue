@@ -6,16 +6,9 @@ definePageMeta({
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
-/**
- * Password gate, route-agnostic. The deck pages redirect here on a 401
- * `requiresPassword`, passing:
- *   - `api`    : the endpoint to verify against (slides → /api/presentations/:slug,
- *                diffused → /api/p/:alias). The verified password sets the shared
- *                24h `access_<slug>` cookie server-side.
- *   - `return` : where to send the user once unlocked (their original URL), so a
- *                deck reached via /p/<alias> returns to /p/<alias>, not /slides.
- * Both default sanely so a bare /unlock/<slug> still works for the slides route.
- */
+// Query params from the redirecting deck page (both optional, default to the
+// slides route): `api` = endpoint to verify against (sets the access cookie),
+// `return` = URL to send the user back to once unlocked.
 const verifyApi = computed(() => {
   const api = route.query.api as string | undefined
   return api && api.startsWith('/api/') ? api : `/api/presentations/${slug.value}`
@@ -38,9 +31,8 @@ async function unlock() {
   try {
     const sep = verifyApi.value.includes('?') ? '&' : '?'
     await $fetch(`${verifyApi.value}${sep}password=${encodeURIComponent(password.value)}`)
-    // `replace: true` so the unlock page drops out of history once unlocked:
-    // Back from the now-accessible deck returns to the catalog, not to /unlock
-    // (which would re-redirect to the deck since the cookie is now set).
+    // `replace: true`: drop /unlock from history so Back skips it (the cookie is
+    // now set, so returning here would just re-redirect to the deck).
     await navigateTo(returnTo.value, { replace: true })
   }
   catch (e: any) {

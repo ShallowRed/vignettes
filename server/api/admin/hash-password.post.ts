@@ -1,17 +1,6 @@
-/**
- * Generate a password hash for semi-private presentations
- * POST /api/admin/hash-password
- *
- * Usage: Add the generated hash to your presentation's frontmatter:
- * ---
- * accessPassword: "<generated_hash>"
- * ---
- */
-
 import { hashAccessPassword } from '../../utils/password'
 
 export default defineEventHandler(async (event) => {
-  // Require authentication
   const session = await getUserSession(event).catch(() => null)
   if (!session?.user) {
     throw createError({
@@ -20,7 +9,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get password from body
   const body = await readBody(event)
   const password = body?.password
 
@@ -38,7 +26,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Generate hash
   const hash = await hashAccessPassword(password)
 
   return {

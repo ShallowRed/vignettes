@@ -14,18 +14,11 @@ import { readArchivedStub } from '../../utils/presentations'
 import { listRegistry, resolveAlias } from '../../utils/registry'
 
 /**
- * Frozen-bundle static server (DDR-018 storage migration).
- *
- * Replaces the `publicAssets: .frozen` serving. `/frozen/<bundle>/<...>` resolves
- * the bundle to its registry deck, ENFORCES `gateDeckAccess` (the same gate as
- * `/api/p/:alias` — previously the raw bundle files were world-readable, leaking
- * private frozen decks), then serves the asset from the Scaleway bucket. When no
- * S3 credentials are configured it falls back to the local `.frozen/` dir, so dev
- * and the pre-cutover transition keep working with zero regression.
- *
- * Access is re-checked per asset (public decks pass without auth; private decks
- * rely on the browser sending the session/password cookie). The bundle→gate
- * resolution is memoised briefly to avoid re-reading the stub for every asset.
+ * Frozen-bundle static server. `/frozen/<bundle>/<...>` resolves the bundle to its
+ * registry deck, ENFORCES `gateDeckAccess` (so private frozen decks aren't leaked),
+ * then serves the asset from S3 (falling back to the local `.frozen/` dir when no
+ * S3 creds are configured). Access is re-checked per asset; the bundle→gate
+ * resolution is memoised briefly.
  */
 
 const MIME: Record<string, string> = {
@@ -67,8 +60,7 @@ async function resolveBundleGate(bundle: string): Promise<GateInfo | null> {
   if (cached && Date.now() - cached.at < GATE_TTL_MS)
     return cached.info
 
-  // frozenBundle defaults to the alias, so resolveAlias(bundle) hits the common
-  // case; fall back to a reverse scan for any bundle whose name = frozenBundle/slug.
+  // frozenBundle defaults to the alias; fall back to a reverse scan otherwise.
   let entry = await resolveAlias(bundle)
   if (!entry) {
     const all = await listRegistry()
@@ -77,7 +69,6 @@ async function resolveBundleGate(bundle: string): Promise<GateInfo | null> {
 
   let info: GateInfo | null = null
   if (entry) {
-    // Frozen/archived stubs live in presentations/archived/ (a lifecycle folder).
     const stub = await readArchivedStub(entry.slug)
     if (stub != null) {
       const meta = splitFrontmatter(stub).data as { accessPassword?: string }
@@ -111,7 +102,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
   const [bundle, ...rest] = segments
-  // Defence in depth against path traversal in the asset portion.
+  // Defence in depth against path traversal.
   if (rest.includes('..'))
     throw createError({ statusCode: 400, statusMessage: 'Bad request' })
 
@@ -119,7 +110,7 @@ export default defineEventHandler(async (event) => {
   if (!gate)
     throw createError({ statusCode: 404, statusMessage: `Unknown frozen bundle "${bundle}"` })
 
-  // Enforce access BEFORE serving any byte (public passes; private needs cookie).
+  // Gate BEFORE serving any byte (public passes; private needs cookie).
   await gateDeckAccess(event, {
     slug: gate.slug,
     status: gate.status,
@@ -131,11 +122,9 @@ export default defineEventHandler(async (event) => {
   const isPublic = gate.status === 'public'
   const cacheControl = isPublic ? 'public, max-age=300' : 'private, no-store'
 
-  // Read S3 config from process.env AT RUNTIME (not useRuntimeConfig): the
-  // NUXT_FROZEN_S3_* names don't match Nuxt's runtime-override convention
-  // (NUXT_FROZEN_STORAGE_*), and nuxt.config bakes empty values at build time.
-  // In a built image the secrets are injected into the process by `infisical run`
-  // — process.env sees them, runtimeConfig would not.
+  // Read S3 config from process.env AT RUNTIME, not useRuntimeConfig: the
+  // NUXT_FROZEN_S3_* names don't match Nuxt's override convention and would be
+  // baked empty at build; `infisical run` injects them into process.env at runtime.
   const cfg = {
     endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
     region: process.env.NUXT_FROZEN_S3_REGION || 'fr-par',
@@ -145,7 +134,6 @@ export default defineEventHandler(async (event) => {
   }
   let body: Buffer
   let contentType: string | undefined
-  // Diagnostic: which backend actually served this asset (X-Frozen-Source).
   let source: 's3' | 'local'
 
   if (isFrozenS3Configured(cfg)) {
@@ -167,7 +155,6 @@ export default defineEventHandler(async (event) => {
     }
   }
   else {
-    // Local fallback (dev / pre-cutover): serve from the committed .frozen/ dir.
     source = 'local'
     try {
       body = await readFile(join(process.cwd(), '.frozen', bundle, assetPath))

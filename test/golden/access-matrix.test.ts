@@ -4,13 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { canList, decideAccess } from '../../shared/access'
 import { PUBLICATION_STATUSES } from '../../shared/access/status'
 
-/**
- * Golden snapshot of the WHOLE access policy (audit §6 "golden" style). A single
- * fixture documents every role × status × action decision and the catalog
- * predicate, so any unintended change to who-can-see-what is caught in review —
- * the access analogue of the deck-core golden tests.
- */
-
+// Golden snapshot of the whole access policy: every role × status × action.
 const ROLES: Role[] = ['anonymous', 'viewer', 'editor', 'owner']
 const ACTIONS: AccessAction[] = ['view', 'admin', 'edit']
 

@@ -2,16 +2,10 @@
 import { ROLE_CONFIG } from '#shared/access'
 import { useAppSession } from '~/composables/useAppSession'
 
-/**
- * Shared app chrome: title/subtitle on the left, identity on the right (avatar +
- * login + role badge, with sign-in / sign-out). One header for the home and
- * admin so identity reads the same everywhere — a logged-in viewer can see
- * they're authenticated and at what access level, which was invisible before.
- */
+// Shared app chrome: title/subtitle left, identity (avatar, role, sign-in/out) right.
 withDefaults(defineProps<{
   title?: string
   subtitle?: string
-  /** Show the "Admin" shortcut to privileged users (home only). */
   showAdminLink?: boolean
 }>(), {
   title: 'Nuxt Slides',
@@ -61,7 +55,6 @@ const roleDisplay = computed(() => ROLE_CONFIG[role.value])
         <span class="hidden sm:inline">Admin</span>
       </NuxtLink>
 
-      <!-- Anonymous: invite to sign in -->
       <a
         v-if="!loggedIn"
         href="/auth/github"
@@ -74,7 +67,6 @@ const roleDisplay = computed(() => ROLE_CONFIG[role.value])
         Sign in
       </a>
 
-      <!-- Logged in: identity dropdown -->
       <div
         v-else
         class="dropdown dropdown-end"

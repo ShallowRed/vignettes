@@ -5,13 +5,7 @@ import { getActorRole } from '../utils/actor'
 import { listAllPresentations, readArchivedStub, readPresentationContentAt } from '../utils/presentations'
 import { listRegistry } from '../utils/registry'
 
-/**
- * Catalog endpoint. Visibility is decided by the shared `canList` (same privilege
- * rule as the per-deck gate, so what you can list and what you can view never
- * drift), keyed on the actor's resolved role. Content is read via the Nitro
- * server-asset storage + the shared frontmatter parser — not a cwd-relative
- * `readFile` (which would not resolve on serverless) nor a second markdown parse.
- */
+/** Catalog endpoint. Visibility decided by the shared `canList` on the actor's role. */
 export default defineEventHandler(async (event): Promise<PresentationListItem[]> => {
   const role = await getActorRole(event)
 
@@ -41,8 +35,7 @@ export default defineEventHandler(async (event): Promise<PresentationListItem[]>
       }),
     )
 
-    // Frozen/archived decks left the access folders for archived/, so
-    // listAllPresentations() no longer sees them — source from the registry.
+    // Frozen/archived decks live in archived/ (unseen by listAllPresentations) — source from the registry.
     const livePaths = new Set(allPresentations.map(p => p.slug))
     const frozen = await Promise.all(
       registry
@@ -62,7 +55,6 @@ export default defineEventHandler(async (event): Promise<PresentationListItem[]>
         }),
     )
 
-    // One filter, the shared access predicate.
     return [...live, ...frozen].filter(p =>
       canList({ status: p.status, lifecycle: p.lifecycle, role, unlisted: p.unlisted }),
     )

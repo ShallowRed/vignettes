@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-/**
- * Hash a password for use in presentation frontmatter
- * Usage: node scripts/hash-password.js <password>
- * Or: pnpm hash-password <password>
+/** Hash a password for a presentation's `accessPassword` frontmatter.
+ *  Usage: node scripts/hash-password.js <password>
  */
 
 import { randomBytes, scrypt } from 'node:crypto'

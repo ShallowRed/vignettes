@@ -1,15 +1,7 @@
 /**
- * Boot-time theme-consistency warning (audit §7 quick win).
- *
- * Cross-checks, once at server startup, the three places a theme is declared —
- * the TS tokens manifest, the compiled `public/themes/*.css`, and the SCSS
- * source dirs under `themes/` — and logs any drift (e.g. a tokens theme whose
- * CSS is missing, which would make decks link a 404 stylesheet). The comparison
- * itself lives in the pure, tested `checkThemeConsistency`; this plugin only does
- * the filesystem reads and the logging.
- *
- * Non-fatal by design: it never throws (a deck must still render), and it
- * silently no-ops if the directories aren't present (e.g. a minimal bundle).
+ * Boot-time warning for theme drift between the compiled `public/themes/*.css`
+ * and the SCSS source dirs (e.g. a theme whose CSS is missing → 404 stylesheet).
+ * Non-fatal: never throws, no-ops if the dirs are absent.
  */
 
 import { existsSync, readdirSync } from 'node:fs'
@@ -18,8 +10,6 @@ import process from 'node:process'
 import { checkThemeConsistency } from '#shared/theme'
 
 export default defineNitroPlugin(() => {
-  // Validate from the project root. Guarded so a deployment without these dirs
-  // (or a non-Node runtime) just skips the check.
   let cwd: string
   try {
     cwd = process.cwd()

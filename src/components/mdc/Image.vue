@@ -22,7 +22,6 @@ const props = withDefaults(defineProps<Props>(), {
   shadow: true,
 })
 
-// Resolve value for data-preview-image attribute (Reveal.js lightbox trigger)
 const previewSrc = computed(() => {
   if (!props.preview)
     return null

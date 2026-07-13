@@ -1,12 +1,8 @@
 import type { PublicationStatus } from '../access/status'
 import type { PresentationListItem } from './list-item'
 
-/**
- * Pure catalog view-model: search / status-filter / sort over a list of
- * `PresentationListItem`. Framework-free (no Vue, no I/O) so the catalog's UX
- * behaviour is unit-tested like the access domain — the page components stay
- * thin and just feed their reactive state through these functions.
- */
+// Pure, framework-free catalog view-model: search / status-filter / sort over
+// PresentationListItem.
 
 export type SortKey = 'title' | 'status' | 'theme'
 export type SortDir = 'asc' | 'desc'
@@ -14,18 +10,17 @@ export type SortDir = 'asc' | 'desc'
 export interface CatalogQuery {
   /** Free-text match against title / slug / theme (case-insensitive). */
   search?: string
-  /** When set, keep only these statuses; empty/undefined ⇒ all statuses. */
+  /** Empty/undefined ⇒ all statuses. */
   statuses?: PublicationStatus[]
-  /** When set, keep only these project slugs; empty/undefined ⇒ all projects. */
+  /** Empty/undefined ⇒ all projects. */
   projects?: string[]
   sortKey?: SortKey
   sortDir?: SortDir
 }
 
-/** Bucket key for decks with no `project:` — kept distinct so they're filterable. */
+/** Bucket key for decks with no `project:`. */
 export const UNGROUPED_PROJECT = '__ungrouped__'
 
-/** Status display order (matches the admin grouping & legend). */
 const STATUS_ORDER: Record<PublicationStatus, number> = {
   'public': 0,
   'semi-private': 1,
@@ -46,10 +41,7 @@ function compare(a: PresentationListItem, b: PresentationListItem, key: SortKey)
   return av.localeCompare(bv)
 }
 
-/**
- * Apply a query to a catalog. Pure: returns a new array, never mutates the
- * input. Ties on the chosen key fall back to title so order is deterministic.
- */
+// Ties on the chosen key fall back to title for deterministic order.
 export function applyCatalogQuery(
   items: PresentationListItem[],
   query: CatalogQuery = {},
@@ -79,7 +71,6 @@ export function applyCatalogQuery(
   return sorted
 }
 
-/** Count of items per status (for filter-chip badges). Pure. */
 export function countByStatus(items: PresentationListItem[]): Record<PublicationStatus, number> {
   const counts: Record<PublicationStatus, number> = {
     'public': 0,
@@ -98,12 +89,8 @@ export interface ProjectGroup {
   items: PresentationListItem[]
 }
 
-/**
- * Group a catalog into project buckets. Pure: the bucket order follows
- * `projectOrder` (the `projects.yml` order) when given, with unknown projects
- * appended alphabetically and the ungrouped bucket always last. Within a bucket,
- * input order is preserved (feed it an already-sorted list).
- */
+// Bucket order follows projectOrder; unknown projects appended alphabetically,
+// ungrouped bucket always last. Within a bucket, input order is preserved.
 export function groupByProject(
   items: PresentationListItem[],
   projectOrder: string[] = [],

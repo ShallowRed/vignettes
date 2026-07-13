@@ -1,19 +1,10 @@
 /**
- * mirror-storybook-assets.js
+ * Mirrors the Storybook staticDir asset folders to the bundle root so embedded
+ * stories' root-absolute URLs (`/vitrine/...`) resolve. Copies every top-level
+ * built-Storybook entry that is NOT Storybook's own runtime, and only when the
+ * bundle root doesn't already own that name — Nuxt's assets win, Storybook fills gaps.
  *
- * Embedded Storybook stories reference their `staticDirs` assets with
- * root-absolute URLs (e.g. `/vitrine/...`, `/fonts/...`). Inside the bundle those
- * files live under `/_storybook/`, so the iframe — whatever sub-path it is served
- * at — requests them at the server root and 404s.
- *
- * Fix: mirror the Storybook static asset folders to the bundle root, so a
- * root-absolute `/vitrine/...` resolves. We copy every top-level entry of the
- * built Storybook that is NOT Storybook's own runtime (its JS/HTML/manifests),
- * and only when the bundle root doesn't already own that name — Nuxt's own assets
- * always win, Storybook merely fills the gaps.
- *
- * Usage:
- *   node scripts/mirror-storybook-assets.js <storybook-static-dir> <bundle-out-dir>
+ * Usage: node scripts/mirror-storybook-assets.js <storybook-static-dir> <bundle-out-dir>
  */
 
 import { existsSync } from 'node:fs'
@@ -34,8 +25,6 @@ const skipped = []
 
 for (const entry of entries) {
   const name = entry.name
-  // Skip Storybook's own runtime (the EmbedSource port's single definition) —
-  // only its staticDir assets get mirrored to the bundle root.
   if (isStorybookRuntime(name)) {
     continue
   }

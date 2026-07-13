@@ -1,9 +1,8 @@
 /**
- * Links every `_nuxt/*.css` chunk into the deck HTML (DDR-017 §2.a-ter). MDC renders
- * slide bodies through a dynamic `<MDCRenderer>`, so those components' CSS escapes
- * `inlineStyles` SSR collection — the chunks exist but are unreferenced, and the
- * Nuxt JS that would load them is gone (noScripts), leaving story iframes unstyled
- * (height 0). We wire the chunks in statically, depth-relative, no duplicates.
+ * Statically links every `_nuxt/*.css` chunk into the deck HTML. MDC renders slide
+ * bodies through a dynamic <MDCRenderer>, so those components' CSS escapes SSR
+ * inlineStyles collection, and the Nuxt JS that would load them is gone (noScripts)
+ * — leaving story iframes unstyled (height 0) unless we wire the chunks in.
  *
  * Usage: node scripts/link-deck-css.js <bundle-out-dir> <slug--standalone>
  */
@@ -26,7 +25,7 @@ if (!existsSync(htmlPath) || !existsSync(nuxtDir)) {
   process.exit(1)
 }
 
-// The deck HTML is at slides/<slug>/index.html → two dirs below the bundle root.
+// Deck HTML at slides/<slug>/index.html → two dirs below the bundle root.
 const prefix = '../..'
 const cssFiles = (await readdir(nuxtDir))
   .filter(f => f.endsWith('.css') && !f.startsWith('error-')) // skip Nuxt error-page CSS
@@ -35,12 +34,12 @@ const cssFiles = (await readdir(nuxtDir))
 let html = await readFile(htmlPath, 'utf-8')
 
 const links = cssFiles
-  .filter(f => !html.includes(`_nuxt/${f}`)) // don't duplicate an already-linked chunk
+  .filter(f => !html.includes(`_nuxt/${f}`))
   .map(f => `<link rel="stylesheet" href="${prefix}/_nuxt/${f}">`)
   .join('\n')
 
 if (links) {
-  // Inject right before </head> so component CSS layers over reveal.css/theme.
+  // Inject before </head> so component CSS layers over reveal.css/theme.
   html = html.replace('</head>', `${links}\n</head>`)
   await writeFile(htmlPath, html, 'utf-8')
 }

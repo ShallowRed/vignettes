@@ -1,16 +1,3 @@
-/**
- * Composable for managing Reveal.js instance
- * Handles initialization, configuration, and lifecycle
- *
- * Important: Reveal.js needs to be synced after dynamic content changes
- * to properly handle:
- * - Preview overlays (data-preview-image, data-preview-video, data-preview-link)
- * - Fragments (.fragment elements)
- * - Auto-animate (data-auto-animate)
- * - Embedded content (iframes, videos, audio)
- * - Slide backgrounds
- */
-
 import type { Ref } from 'vue'
 import type { RevealConfig } from '~/types/presentation'
 import { EMBED_SANDBOX, mergeRevealConfig } from '#shared/render'
@@ -22,16 +9,9 @@ export function useReveal(
   let revealInstance: any = null
   let overlayObserver: MutationObserver | null = null
 
-  /**
-   * Reveal's built-in preview overlay (`data-preview-link` / `data-preview-image`)
-   * creates its OWN iframe that we don't render — so it escapes the `sandbox`
-   * we put on inline embeds. Without containment, an internal Storybook link
-   * clicked *inside the lightbox* navigates the whole slides window away.
-   *
-   * This watches for the overlay iframe and applies the same `EMBED_SANDBOX`
-   * (no `allow-top-navigation`), re-loading it under the policy. Result: every
-   * embed — inline `:layout`, `<StoryFrame>`, and lightbox — shares one pattern.
-   */
+  // Reveal's preview overlay creates its own iframe that escapes the sandbox we
+  // put on inline embeds; without this a link clicked inside the lightbox could
+  // navigate the whole window away. Apply EMBED_SANDBOX and reload under the policy.
   function sandboxOverlayIframes() {
     const root = container.value
     if (!root)
@@ -56,14 +36,11 @@ export function useReveal(
     overlayObserver.observe(container.value, { childList: true, subtree: true })
   }
 
-  /**
-   * Initialize Reveal.js with the provided configuration
-   */
   async function initialize() {
     if (!container.value)
       return
 
-    // Dynamic import to avoid SSR issues
+    // Dynamic import to avoid SSR issues.
     const { default: Reveal } = await import('reveal.js')
 
     const mergedConfig = mergeRevealConfig(config)
@@ -71,43 +48,28 @@ export function useReveal(
     revealInstance = new Reveal(container.value, mergedConfig)
     await revealInstance.initialize()
 
-    // Sync after initialization to pick up dynamically rendered content
-    // This is crucial for Vue/Nuxt apps where content is rendered after mount
-    // Without this, the following features won't work:
-    // - Lightbox (data-preview-image)
-    // - Video preview (data-preview-video)
-    // - Link preview (data-preview-link)
-    // - Fragment animations
+    // Sync to pick up Vue-rendered content (lightbox, previews, fragments won't
+    // work otherwise since it renders after mount).
     revealInstance.sync()
 
-    // Contain navigation inside reveal's lightbox overlay iframe.
     observeOverlays()
 
     return revealInstance
   }
 
-  /**
-   * Sync Reveal.js with the current DOM state
-   * Call this after dynamically adding/removing slides or content
-   */
+  // Call after dynamically adding/removing slides or content.
   function sync() {
     if (revealInstance) {
       revealInstance.sync()
     }
   }
 
-  /**
-   * Sync a specific slide after content changes
-   */
   function syncSlide(slide: HTMLElement) {
     if (revealInstance) {
       revealInstance.syncSlide(slide)
     }
   }
 
-  /**
-   * Destroy the Reveal.js instance
-   */
   function destroy() {
     if (overlayObserver) {
       overlayObserver.disconnect()
@@ -119,41 +81,26 @@ export function useReveal(
     }
   }
 
-  /**
-   * Get the current Reveal.js instance
-   */
   function getInstance() {
     return revealInstance
   }
 
-  /**
-   * Navigate to a specific slide
-   */
   function slide(indexh: number, indexv?: number, indexf?: number) {
     if (revealInstance) {
       revealInstance.slide(indexh, indexv, indexf)
     }
   }
 
-  /**
-   * Get current slide indices
-   */
   function getIndices() {
     return revealInstance?.getIndices() || { h: 0, v: 0, f: 0 }
   }
 
-  /**
-   * Add event listener to Reveal.js
-   */
   function on(event: string, callback: (event: any) => void) {
     if (revealInstance) {
       revealInstance.on(event, callback)
     }
   }
 
-  /**
-   * Remove event listener from Reveal.js
-   */
   function off(event: string, callback: (event: any) => void) {
     if (revealInstance) {
       revealInstance.off(event, callback)

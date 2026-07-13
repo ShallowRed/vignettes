@@ -1,26 +1,9 @@
 import type { RevealConfig } from '../deck/schema'
 
-/**
- * Shared render utilities (audit §5.8 / §5.9, Axe G/H) — the "writer" side helpers
- * factored out of the three render targets that used to re-implement them.
- *
- * Before this, the same concerns were coded in several places:
- *   - `Reveal.initialize` config in `useReveal.ts`, `RevealPresentation.vue`,
- *     and the frozen bundle plugin (`server/plugins/nuxtout-deck.ts`);
- *   - the iframe `sandbox` policy in `utils/storybook.ts` and the overlay observer;
- *   - asset-URL rebasing by regex in the bundle plugin and the Storybook scripts.
- *
- * Centralizing them means a renderer concern is fixed once and shared by
- * `revealLive` and `revealFrozen` alike.
- */
+// Shared render helpers for the live composable and the frozen bundle: Reveal
+// defaults, the iframe sandbox policy, and asset-URL rebasing.
 
-/**
- * Default Reveal.js options forwarded to `Reveal.initialize()`.
- *
- * The single source for both the live composable and the frozen bundle (which no
- * longer hard-codes its own fallback). Per-deck `reveal:` frontmatter merges over
- * these via {@link mergeRevealConfig}.
- */
+// Per-deck `reveal:` frontmatter merges over these via mergeRevealConfig.
 export const DEFAULT_REVEAL_CONFIG: RevealConfig = {
   hash: true,
   slideNumber: 'c/t',
@@ -42,32 +25,19 @@ export const DEFAULT_REVEAL_CONFIG: RevealConfig = {
   autoSlide: 0,
 }
 
-/** Merge a deck's `reveal:` frontmatter over the shared defaults (one rule). */
 export function mergeRevealConfig(config?: Partial<RevealConfig>): RevealConfig {
   return { ...DEFAULT_REVEAL_CONFIG, ...(config || {}) }
 }
 
-/**
- * `sandbox` value for embedded story/app iframes.
- *
- * Crucially OMITS `allow-top-navigation` (and its by-user-activation variant):
- * embedded apps that call `window.parent.location.assign(...)` — e.g. Storybook
- * stories wired for the Storybook manager — would otherwise replace the whole
- * slides window with the Storybook URL. The flags propagate to nested iframes,
- * so a story navigated *inside* the embed also stays contained. Self-navigation
- * (plain `<a href>`) still works, so internal links browse within the embed.
- *
- * The single definition for inline embeds (`StoryFrame`), the Reveal lightbox
- * overlay observer, and — going forward — the CodiMD preview.
- */
+// `sandbox` value for embedded story/app iframes. Crucially OMITS
+// `allow-top-navigation` (and its by-user-activation variant): otherwise an
+// embedded app calling window.parent.location.assign(...) would replace the whole
+// slides window. Flags propagate to nested iframes; plain <a href> still works.
 export const EMBED_SANDBOX
   = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-storage-access-by-user-activation'
 
-/**
- * Directories whose root-absolute URLs a self-contained bundle must rebase to a
- * location-relative prefix. Shared by the render hook and (conceptually) the
- * Storybook freeze scripts so the regex lives in exactly one place (Axe H).
- */
+// Directories whose root-absolute URLs a self-contained bundle rebases to a
+// location-relative prefix.
 export const REBASEABLE_ASSET_DIRS = [
   '_storybook',
   'vitrine',
@@ -81,12 +51,9 @@ export const REBASEABLE_ASSET_DIRS = [
   'manifests',
 ] as const
 
-/**
- * Rebase root-absolute asset URLs (`="/images/x.png"`) to `="<prefix>/images/x.png"`,
- * keyed on the PATH TARGET not the attribute name — so `src`, `href`, and the
- * Reveal lightbox's `data-preview-link` are all covered. Value rewriting only,
- * never tag removal.
- */
+// Rebase root-absolute asset URLs (`="/images/x.png"` → `="<prefix>/images/x.png"`),
+// keyed on the path target not the attribute name, so src/href/data-preview-link
+// are all covered.
 export function rebaseAssetUrls(html: string, prefix: string): string {
   const dirs = REBASEABLE_ASSET_DIRS.join('|')
   const re = new RegExp(`(=")/((?:${dirs})/[^"]*)`, 'g')

@@ -1,9 +1,5 @@
 <script setup lang="ts">
-/**
- * Full-screen error placeholder for the deck routes (/slides, /p), replacing the
- * inline error markup that was copy-pasted into both pages. Self-contained so it
- * works inside the bare `presentation` layout.
- */
+// Full-screen error placeholder for deck routes; self-contained for the bare `presentation` layout.
 defineProps<{
   message?: string
 }>()

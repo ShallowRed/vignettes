@@ -1,11 +1,7 @@
 /**
- * Typed source errors (audit §5.7 / §4.1 Astro Live).
- *
- * The content-source layer used to fail *silently* (return `null` / an empty
- * list), which is how an expired token once produced a deploy that was "empty"
- * with every route 404 — the worst failure mode. Typed errors let callers choose
- * an explicit policy: a missing note can degrade to the stub, but a registry that
- * cannot be read should fail *closed*, not pretend the catalog is empty.
+ * Typed source errors so callers pick an explicit policy: a missing note may
+ * degrade to the stub, but an unreadable registry should fail closed rather than
+ * present an empty catalog.
  */
 
 /** A source could not be reached (network, auth, mis-config). Fail-closed worthy. */

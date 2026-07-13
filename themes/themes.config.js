@@ -1,17 +1,5 @@
-/**
- * Single source of truth for the list of themes compiled by this project.
- *
- * Used by:
- *   - scripts/build-themes.js    (CLI: `pnpm build:themes` and `--watch`)
- *   - plugins/theme-watcher.js   (Vite plugin: dev-time HMR)
- *
- * Paths are intentionally written as project-root-relative POSIX paths so
- * both consumers can resolve them against the project root with `path.join`.
- *
- * `watchDir` controls which directory the watchers monitor. When a theme
- * @use's files outside its own folder (e.g. themes/shared/, themes/presets/),
- * extend `watchExtraDirs` so saved changes still trigger a rebuild.
- */
+// Single source of truth for compiled themes (used by scripts/build-themes.js and plugins/theme-watcher.js).
+// Paths are project-root-relative POSIX. When a theme @use's files outside its folder, add them to watchExtraDirs.
 export const themes = [
   {
     name: 'dsfr',

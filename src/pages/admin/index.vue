@@ -17,8 +17,7 @@ const { data: presentations, status, error } = await useAsyncData(
 
 const query = ref<CatalogQuery>({ search: '', statuses: [], sortKey: 'title', sortDir: 'asc' })
 
-// Search/sort apply across all statuses; the status *filter* is handled by the
-// grouping below, so the toolbar's own status chips are hidden here.
+// Status filtering is done by the grouping below, so ignore query.statuses here.
 const visible = computed(() => applyCatalogQuery(presentations.value, { ...query.value, statuses: [] }))
 
 const grouped = computed(() => {

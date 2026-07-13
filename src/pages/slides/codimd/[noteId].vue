@@ -8,13 +8,11 @@ const noteId = route.params.noteId as string
 const preset = (route.query.preset as string) || 'dsfr'
 const source = (route.query.source as string) || 'codimd'
 
-// Build API URL with query params
 const apiUrl = computed(() => {
   const params = new URLSearchParams({ preset, source })
   return `/api/codimd/${noteId}?${params}`
 })
 
-// Reuse the same composable with a custom API URL
 const { presentationData, error } = usePresentation(
   `codimd-${noteId}`,
   apiUrl.value,

@@ -1,4 +1,3 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 import { join } from 'node:path'
 import process from 'node:process'
 import tailwindcss from '@tailwindcss/vite'
@@ -7,16 +6,12 @@ import themeWatcher from './plugins/theme-watcher.js'
 import { readBundleConfig } from './shared/build/bundle'
 import { discoverPublicSlugs } from './shared/build/public-decks'
 
-// Single typed read of the standalone-bundle toggles (audit §7 P2 #10).
 const bundle = readBundleConfig()
 
-// Self-host (Docker) build. En preset node-server, le prérendu écrit les routes
-// sur un vrai filesystem : `/api/presentations` (fichier) et
-// `/api/presentations/<slug>` (dossier) entrent en collision (EISDIR), et crawler
-// les liens suit `/auth/github` qui exige les secrets OAuth au build. On sert donc
-// ces routes API en SSR au runtime (rapides, cache TTL) et on ne crawle pas — le
-// SSG des pages `/slides/<slug>` appelle l'API en interne sans l'écrire sur disque.
-// Les autres presets (build par défaut) et le mode bundle ne sont PAS concernés.
+// node-server preset: prerendering `/api/presentations` (file) and
+// `/api/presentations/<slug>` (dir) to a real FS collides (EISDIR), and crawling
+// follows `/auth/github` which needs OAuth secrets at build. So we serve those API
+// routes via SSR at runtime and don't crawl; SSG pages call the API internally.
 const preset = process.env.NITRO_PRESET || ''
 const isNodeServer = preset === 'node_server' || preset === 'node-server'
 
@@ -25,20 +20,16 @@ export default defineNuxtConfig({
 
   srcDir: 'src/',
 
-  // Frozen bundles build against a reduced public/ (build-reduced-public.js) instead
-  // of the whole repo public/ (~11 Mo of home photos + all themes' backgrounds).
+  // Frozen bundles build against a reduced public/ to avoid shipping ~11MB of
+  // photos + all theme backgrounds.
   ...(bundle.publicDir
     ? { dir: { public: bundle.publicDir } }
     : {}),
 
   features: {
-    // Reveal-only frozen deck (DDR-017 §2.a-ter), bundle mode only. Together these
-    // produce hydration-free HTML with all CSS inlined, so the deck needs no JS:
-    //   noScripts → no entry script / _payload / preload hints (slides are in the
-    //     SSR markup since we dropped <ClientOnly>, nothing to hydrate).
-    //   inlineStyles: () => true → inline ALL CSS, not just `.vue` (the default
-    //     predicate). Composable-level CSS (e.g. reveal.css) would otherwise stay a
-    //     <link> into the deleted _nuxt/ dir and 404.
+    // Bundle mode: produce hydration-free HTML with all CSS inlined so the deck
+    // needs no JS. inlineStyles must inline ALL CSS (not just `.vue`), else e.g.
+    // reveal.css stays a <link> into the deleted _nuxt/ dir and 404s.
     noScripts: bundle.enabled,
     inlineStyles: bundle.enabled ? () => true : undefined,
   },
@@ -48,8 +39,6 @@ export default defineNuxtConfig({
   css: ['~/assets/css/tailwind.css'],
 
   icon: {
-    // Remix Icons are installed locally via @iconify-json/ri
-    // Usage: <Icon name="ri:home-line" /> or in markdown: :i{name="ri:home-line"}
     mode: 'svg', // SVG mode for better SSR support
     serverBundle: {
       collections: ['ri'],
@@ -61,7 +50,7 @@ export default defineNuxtConfig({
       anchorLinks: false,
     },
     highlight: {
-      // Coloration syntaxique shiki : blocs sombres et contrastés sur slides claires.
+      // Dark, high-contrast code blocks on light slides.
       theme: 'github-dark',
       langs: ['json', 'yaml', 'markdown', 'js', 'ts', 'bash', 'mermaid'],
     },
@@ -83,80 +72,60 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Self-hosted CodiMD instance URL (server-only for fetching)
     codimdUrl: process.env.NUXT_CODIMD_URL || '',
-    // HackMD.io API token for Bearer auth (server-only, never exposed to client)
     hackmdApiToken: process.env.NUXT_HACKMD_API_TOKEN || '',
-    // Single, shared TTL (ms) for content sources + registry (audit §5.7 / P1 #6).
+    // Shared TTL (ms) for content sources + registry.
     sourceCacheTtlMs: process.env.NUXT_SOURCE_CACHE_TTL_MS || '',
-    // Frozen-bundle object storage (Scaleway) is read from process.env AT RUNTIME
-    // in server/routes/frozen/[...path].ts (the NUXT_FROZEN_S3_* names don't fit
-    // Nuxt's runtime-override convention, and config is baked at build time).
+    // Frozen-bundle S3 config is read from process.env at runtime in
+    // server/routes/frozen/[...path].ts (NUXT_FROZEN_S3_* don't fit Nuxt's
+    // runtime-override convention, and config is baked at build time).
     public: {
-      // Exposed to client for building "Edit" links
       codimdUrl: process.env.NUXT_CODIMD_URL || '',
     },
   },
 
-  // Hybrid rendering: SSG for public slides, SSR for protected routes.
-  // In bundle mode (BUNDLE_ONLY_SLUG, DDR-017 §2.a-ter) we ONLY want the deck's
-  // own slug + its API — not the app shell (/, /login) nor the global API index,
-  // which would otherwise be prerendered into the bundle as dead pages.
+  // Bundle mode: prerender ONLY the deck's slug + its API — not the app shell
+  // (/, /login) nor the global API index (dead pages in a single-deck bundle).
   routeRules: bundle.enabled
     ? {
         '/slides/**': { prerender: true },
         '/api/presentations/**': { prerender: true },
       }
     : {
-        // Index and login are prerendered
         '/': { prerender: true },
         '/login': { prerender: true },
 
-        // Public slides are prerendered (SSG) - more specific first
+        // Specific (public, SSG) before generic (protected, SSR).
         '/slides/public/**': { prerender: true },
-
-        // Protected/dynamic slides require SSR - after specific rules
         '/slides/**': { ssr: true },
         '/unlock/**': { ssr: true },
         '/admin/**': { ssr: true },
 
-        // API: public presentations can be prerendered
         '/api/presentations': { prerender: true },
-
-        // API: protected presentations require SSR (cookies, auth)
+        // Protected presentations need SSR (cookies, auth).
         '/api/presentations/**': { ssr: true },
       },
 
   nitro: {
-    // Bundle the `presentations/` folder (stubs + registry.yml) as a server asset
-    // so it is reachable at runtime through `useStorage('assets:presentations')`
-    // regardless of the process working directory. This is what makes the live
-    // `/p/<alias>` route + the registry work in production (DDR-018).
+    // Ship `presentations/` (stubs + registry.yml) as a server asset so it's
+    // reachable at runtime via `useStorage('assets:presentations')` regardless of
+    // cwd; this powers the live `/p/<alias>` route + registry in production.
     serverAssets: [
       { baseName: 'presentations', dir: join(process.cwd(), 'presentations') },
     ],
 
-    // Frozen bundles (`/frozen/<bundle>/…`) live in object storage (Scaleway) and
-    // are served — with access gating — by `server/routes/frozen/[...path].ts`
-    // (DDR-018 ; voir docs/frozen-storage.md). L'ancien filet origin-root
-    // `.frozen-mirror/` (publicAssets) a été retiré : les bundles sont autoportants
-    // (URLs relatives) et rien ne référence d'asset à la racine → vestigial.
     prerender: {
-      // Crawl links to discover routes (désactivé en node-server : voir isNodeServer
-      // — évite de suivre /auth/github, qui exige les secrets OAuth au build).
+      // See isNodeServer above: don't crawl in node-server (avoids /auth/github).
       crawlLinks: !isNodeServer,
-      // Only prerender public presentations API (non prérendue en node-server pour
-      // éviter la collision fichier/dossier EISDIR ; servie en SSR au runtime).
+      // Skip the API prerender in node-server (EISDIR); served via SSR at runtime.
       routes: isNodeServer ? [] : ['/api/presentations'],
     },
     hooks: {
-      // In bundle mode, skip the SPA fallbacks (index/200/404) + the prerendered
-      // API json — dead weight in a single-deck static bundle.
+      // Bundle mode: skip SPA fallbacks + the prerendered API json (a single-deck
+      // static bundle doesn't fetch it).
       'prerender:generate': function (route) {
         if (!bundle.enabled)
           return
-        // Skip SPA fallbacks (the deck is a single static Reveal page) and the
-        // prerendered API json (the deck is static — it no longer fetches it).
         if (['/index.html', '/200.html', '/404.html', '/'].includes(route.route)
           || route.route?.startsWith('/api/')) {
           route.skip = true
@@ -165,16 +134,14 @@ export default defineNuxtConfig({
     },
   },
 
-  // Hook to discover and prerender only PUBLIC presentation routes
   hooks: {
     'nitro:config': async function (nitroConfig) {
-      // BUNDLE_ONLY_SLUG: restrict prerender to a single slug (standalone bundle mode)
+      // Standalone bundle mode: restrict prerender to a single slug.
       const onlySlug = bundle.onlySlug
       if (onlySlug) {
         nitroConfig.prerender = nitroConfig.prerender || {}
         nitroConfig.prerender.crawlLinks = false
-        // ONLY the deck's slug + its API. No '/' (the app home is dead weight in a
-        // single-deck bundle); the fallback files are skipped via prerender:generate.
+        // Only the deck's slug + its API; no '/' (dead weight in a single-deck bundle).
         nitroConfig.prerender.routes = [
           `/slides/${onlySlug}`,
           `/api/presentations/${onlySlug}`,
@@ -183,12 +150,10 @@ export default defineNuxtConfig({
       }
 
       try {
-        // Status now lives in the frontmatter (docs/presentation-metadata.md), so
-        // public decks are discovered by parsing stubs, not by listing public/.
+        // Public decks are discovered by parsing stub frontmatter (status lives there).
         const slugs = await discoverPublicSlugs(join(process.cwd(), 'presentations'))
 
-        // En node-server, on ne prérend QUE la page SSG du deck ; son API JSON est
-        // servie en SSR (éviter la collision fichier/dossier EISDIR sur le FS).
+        // node-server: prerender only the SSG deck page; its API JSON is SSR (EISDIR).
         const publicRoutes = slugs.flatMap((slug: string) => isNodeServer
           ? [`/slides/${slug}`]
           : [`/slides/${slug}`, `/api/presentations/${slug}`])

@@ -1,28 +1,9 @@
 <script setup lang="ts">
-/**
- * Screens — a responsive gallery of media frames on a single slide.
- *
- * Lays out its children (typically `<StoryFrame>`, but any media works) in an
- * even row, so several screens can be compared side by side. Pairs with the
- * `media-cover` / full-width philosophy: the heading + intro stay compact and
- * the screens claim the rest of the slide.
- *
- * Example (markdown):
- *   :::Screens{cols="3"}
- *   ::StoryFrame{story="vitrine-accueil-scenario-a--page" label="A · Acquisition"}
- *   ::
- *   ::StoryFrame{story="vitrine-accueil-scenario-b--page" label="B · Aiguillage"}
- *   ::
- *   ::StoryFrame{story="vitrine-accueil-scenario-c--page" label="C · Hub"}
- *   ::
- *   :::
- */
+// Responsive gallery laying out child media frames (typically <StoryFrame>) in an even row.
 interface Props {
-  /** Number of columns. Defaults to an even auto-fit row. */
+  /** Column count; defaults to an even auto-fit row. */
   cols?: string | number
-  /** Gap between screens (CSS length). */
   gap?: string
-  /** Vertical alignment of uneven-height screens. */
   align?: 'start' | 'center' | 'stretch'
 }
 
@@ -60,7 +41,6 @@ const gridStyle = computed(() => ({
   min-height: 0;
 }
 
-/* Galleries should fill the slide height when they are the main content. */
 .screens :deep(.story-frame) {
   height: 100%;
 }

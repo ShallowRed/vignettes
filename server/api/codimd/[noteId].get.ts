@@ -3,17 +3,7 @@ import { resolveDeck } from '#shared/deck'
 import { getEditUrl } from '../../utils/codimd'
 import { noteSource } from '../../utils/sources'
 
-/**
- * Dynamic CodiMD presentation endpoint.
- * Fetches any CodiMD note and serves it with a preset's frontmatter.
- *
- * GET /api/codimd/:noteId?preset=dsfr&source=codimd
- *
- * Thin wrapper around the single `resolveDeck` (audit §5.1): it builds a
- * descriptor (preset base + remote note as the author's source of truth) and the
- * resolver applies the declared precedence and validates once. The old inlined
- * preset definitions + hand-rolled deep-merge/YAML serializer are gone.
- */
+/** GET /api/codimd/:noteId?preset=dsfr&source=codimd — serve a note with a preset's frontmatter. */
 export default defineEventHandler(async (event) => {
   const noteId = getRouterParam(event, 'noteId')
 
@@ -28,7 +18,6 @@ export default defineEventHandler(async (event) => {
   const source: NoteSource = (query.source as NoteSource) || 'codimd'
   const preset = (query.preset as string) || 'dsfr'
 
-  // Validate source
   if (source !== 'codimd' && source !== 'hackmd') {
     throw createError({
       statusCode: 400,
@@ -36,7 +25,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Fetch remote content through the ContentSource port.
   const remote = await noteSource(source).load(noteId)
 
   if (!remote) {
@@ -46,10 +34,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // The note is the author's source of truth here: its frontmatter (including
-  // nested `reveal`/`backgrounds`) overrides the preset base. `resolveDeck` reads
-  // nested keys faithfully, so a deck's `reveal.margin` set in CodiMD is honored
-  // (the margins bug is structurally fixed).
+  // Note frontmatter is authoritative here: it overrides the preset base.
   const deck = resolveDeck({
     preset,
     remote: remote.raw,

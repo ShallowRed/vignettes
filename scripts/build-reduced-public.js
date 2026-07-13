@@ -1,9 +1,8 @@
 /**
- * Builds a reduced public/ dir for a frozen bundle (DDR-017 §2.a-ter). `nuxt
- * generate` would copy the whole repo public/ (~11 Mo of home photos + every
- * theme's backgrounds) into a single-deck bundle. Keep only: themes/ (tiny) and
- * the backgrounds the chosen theme uses (referenced in its CSS ∪ `<theme>-*`),
- * dropping a curated app-only deny-set. Theme-driven, runs before the build.
+ * Builds a reduced public/ dir for a frozen bundle. `nuxt generate` would copy
+ * the whole repo public/ into a single-deck bundle; keep only themes/ and the
+ * backgrounds the chosen theme uses (referenced in its CSS ∪ `<theme>-*`),
+ * dropping a curated app-only deny-set. Runs before the build.
  *
  * Usage: node scripts/build-reduced-public.js <theme> <out-dir>
  */
@@ -24,8 +23,8 @@ if (!outDir) {
   process.exit(1)
 }
 
-// App-only assets a deck bundle never needs. Deny-set, not allow-set: anything
-// unlisted is kept, so a deck that references an asset never loses it.
+// App-only assets a deck bundle never needs. Deny-set (not allow-set) so a deck
+// that references an unlisted asset never loses it.
 const APP_ONLY = new Set([
   'appels-a-projet.jpg',
   'clubs-departementaux.webp',
@@ -40,7 +39,7 @@ if (existsSync(outDir))
 await mkdir(outDir, { recursive: true })
 
 // Backgrounds the theme needs: referenced in its CSS, plus the `<theme>-*` naming
-// convention (the theme→bg mapping lives in SCSS, not always as a CSS url()).
+// convention (the theme→bg mapping isn't always a CSS url()).
 const themeCss = join(PUBLIC, 'themes', `${theme}.css`)
 const referenced = new Set()
 if (existsSync(themeCss)) {
@@ -62,7 +61,7 @@ if (existsSync(bgDir)) {
   }
 }
 
-// Copy the rest (themes/ whole — tiny), skipping backgrounds (done) + deny-set.
+// Copy the rest, skipping backgrounds (done) and the deny-set.
 for (const entry of await readdir(PUBLIC, { withFileTypes: true })) {
   const name = entry.name
   if (name === 'backgrounds' || APP_ONLY.has(name))

@@ -4,12 +4,7 @@ import { gateDeckAccess } from '../../utils/access'
 import { resolveDeckForRoute } from '../../utils/deck-resolution'
 import { readPresentationContent } from '../../utils/presentations'
 
-/**
- * Serve a deck by slug. Access is enforced by the shared `gateDeckAccess` (the
- * one place per-status gating lives), and the body is resolved by the shared
- * `resolveDeckForRoute`. `/slides` keeps the stub frontmatter fully authoritative
- * (`noteOverride: []`).
- */
+/** Serve a deck by slug. Stub frontmatter stays fully authoritative (`noteOverride: []`). */
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
   if (!slug) {
@@ -22,7 +17,6 @@ export default defineEventHandler(async (event) => {
   }
 
   const { content: stub, status } = result
-  // The stub frontmatter is the local source of truth for access + provenance.
   const stubMeta = splitFrontmatter(stub).data
 
   await gateDeckAccess(event, {

@@ -6,23 +6,10 @@ import { readArchivedStub, readPresentationContent } from '../../utils/presentat
 import { resolveAlias } from '../../utils/registry'
 
 /**
- * Stable diffused-presentation endpoint (DDR-018).
- *
- * GET /api/p/:alias resolves an alias through the registry and serves the right
- * content for its lifecycle:
- *   - live            : repo stub frontmatter + body fetched from CodiMD/HackMD
- *   - frozen|archived : the alias maps to a frozen bundle; this API reports the
- *                       lifecycle so the page can hand off to the static bundle.
- *
- * Access is enforced by the shared `gateDeckAccess` — the SAME gate as
- * `/api/presentations/:slug`. Previously this route had NO access check, so a
- * draft/private/semi-private deck was world-readable via its alias; the gate runs
- * before the frozen short-circuit so a frozen private deck isn't leaked either.
- *
- * The body resolution uses the shared `resolveDeckForRoute`; the one declared
- * difference from `/slides` stays a parameter — `noteOverride: ['storybook']`, so
- * the diffused URL uses the PUBLIC Storybook the author set in the live note
- * (audit §5.4, Axe H), not the stub's local-dev one.
+ * GET /api/p/:alias — resolve an alias through the registry and serve content per
+ * lifecycle: live (stub frontmatter + collaborative body) or frozen/archived
+ * (report the static bundle URL). `noteOverride: ['storybook']` makes the diffused
+ * URL use the public Storybook from the live note, not the stub's local-dev one.
  */
 export default defineEventHandler(async (event) => {
   const alias = getRouterParam(event, 'alias')
@@ -35,11 +22,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Unknown presentation alias "${alias}"` })
   }
 
-  // Read the stub (frontmatter = access + provenance source of truth). A
-  // frozen/archived deck's stub lives in presentations/archived/ (a lifecycle
-  // location, not an access folder), so it must be read with the dedicated
-  // archived reader — listStubEntries() deliberately skips archived/. Live decks
-  // are read from the flat layout by slug.
+  // Frozen/archived stubs live in presentations/archived/ (skipped by the flat
+  // reader), so they need the dedicated archived reader.
   const isFrozen = entry.lifecycle === 'frozen' || entry.lifecycle === 'archived'
   const stub = isFrozen
     ? await readArchivedStub(entry.slug)
@@ -52,12 +36,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const stubMeta = splitFrontmatter(stub).data
-  // Frozen stubs carry no folder; derive status from the stub's frontmatter
-  // (fail-closed), falling back to the registry's pinned access folder.
   const status = resolveDeckStatus(stub, entry.access)
 
-  // Enforce access BEFORE the frozen short-circuit — a frozen private deck must
-  // not be served just because it has a bundle.
+  // Gate BEFORE the frozen short-circuit — a frozen private deck must not be
+  // served just because it has a bundle.
   await gateDeckAccess(event, {
     slug: entry.slug,
     status,
@@ -65,8 +47,7 @@ export default defineEventHandler(async (event) => {
     storedHash: stubMeta.accessPassword as string | undefined,
   })
 
-  // Frozen / archived: content lives in a self-contained static bundle hosted
-  // under public/frozen/<bundle>/. Report the target; the page redirects there.
+  // Frozen/archived: content is a static bundle; report the target to redirect to.
   if (entry.lifecycle === 'frozen' || entry.lifecycle === 'archived') {
     const bundle = entry.frozenBundle ?? entry.slug
     return {
@@ -76,7 +57,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Live: stub frontmatter + body from the collaborative note when configured.
   const { content, editUrl } = await resolveDeckForRoute({
     stub,
     source: entry.source as NoteSource | undefined,

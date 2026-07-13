@@ -1,21 +1,7 @@
 <script setup lang="ts">
 interface Props {
-  /**
-   * Text size preset.
-   * - sm: slightly larger than body text
-   * - md: default emphasis size
-   * - lg: large callout
-   * - xl: full-slide statement
-   */
   size?: 'sm' | 'md' | 'lg' | 'xl'
-  /**
-   * Visual variant.
-   * - default: inherit slide text color, no background
-   * - accent: blue-france left border + light background
-   * - contrast: dark background, white text
-   */
   variant?: 'default' | 'accent' | 'contrast'
-  /** Center text horizontally */
   center?: boolean
 }
 
@@ -54,7 +40,6 @@ withDefaults(defineProps<Props>(), {
   align-items: center;
 }
 
-/* Size presets */
 .highlight--sm {
   font-size: 1.3em;
   max-width: 50ch;
@@ -87,7 +72,6 @@ withDefaults(defineProps<Props>(), {
   }
 }
 
-/* Variant: accent */
 .highlight--accent {
   border-left: 4px solid var(--accent, #000091);
   background: var(--accent-bg, #f5f5fe);
@@ -100,7 +84,6 @@ withDefaults(defineProps<Props>(), {
   text-align: left;
 }
 
-/* Variant: contrast */
 .highlight--contrast {
   background: var(--surface-contrast, #161616);
   color: var(--on-contrast, #ffffff);
@@ -108,7 +91,6 @@ withDefaults(defineProps<Props>(), {
   border-radius: 8px;
 }
 
-/* Emphasis on strong/em within highlight */
 .highlight :deep(strong) {
   color: var(--accent, #000091);
 }

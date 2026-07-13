@@ -2,16 +2,9 @@ import type { Slide } from '~/types/presentation'
 import { getTextContent, slugify } from '~/utils/slugify'
 
 /**
- * Manages deduplicated HTML ids for every slide in a presentation.
- *
- * IDs are derived from heading text and deduplicated with a numeric suffix:
- * "en-resume", "en-resume-1", "en-resume-2", …
- *
- * Vertical slide id assignment rules:
- * - inner[0] (H2 intercalaire): no id — not directly hash-navigable
- * - inner[1] (first content slide): inherits the section id (H2 slug)
- *   so that #slug navigates directly past the intercalaire
- * - inner[2+]: their own heading-based id
+ * Deduplicated heading-based HTML ids ("en-resume", "en-resume-1", …).
+ * Vertical id rules: inner[0] (H2 divider) gets no id; inner[1] inherits the
+ * section id so #slug skips past the divider; inner[2+] get their own id.
  */
 export function useSlideIds(slides: Ref<Slide[]>) {
   const slideIdMap = computed(() => {

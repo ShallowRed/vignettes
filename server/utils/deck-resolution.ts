@@ -4,20 +4,16 @@ import { getEditUrl } from './codimd'
 import { noteSource } from './sources'
 
 /**
- * Resolve a deck's content for a route — the note-fetch-or-fallback dance that
- * `/api/presentations/:slug` and `/api/p/:alias` both performed verbatim.
- *
- * The one intentional difference between the routes stays a parameter, not forked
- * code: the `noteOverride` whitelist (precedence-as-data, audit §5.4). `/slides`
- * passes `[]` (stub frontmatter fully wins); `/p` passes `['storybook']` so the
- * diffused URL uses the public Storybook the author set in the live note.
+ * Resolve a deck's content for a route (note-fetch-or-fallback). The route
+ * difference stays a parameter: `noteOverride` — `/slides` passes `[]` (stub wins),
+ * `/p` passes `['storybook']` to use the live note's public Storybook.
  */
 export interface DeckResolutionInput {
-  /** The repo stub markdown (frontmatter is the local source of truth). */
+  /** Repo stub markdown (frontmatter is the local source of truth). */
   stub: string
   source?: NoteSource
   noteId?: string
-  /** Which note frontmatter keys may override the stub (declared precedence). */
+  /** Which note frontmatter keys may override the stub. */
   noteOverride: NoteOverridePolicy
 }
 

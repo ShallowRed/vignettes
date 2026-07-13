@@ -1,10 +1,9 @@
 /**
- * Prunes a built Storybook's staticDir assets (~87 Mo of apps/web/public) down to
- * the set its stories actually reference (DDR-017 §2.a). Scans the BUILT JS/CSS/HTML
- * for root-absolute asset URLs — post-bundling every transitive import is an inlined
- * string literal, so this catches what static source-scanning misses. Keeps the
- * Storybook runtime (assets/, sb-*, iframe.html…) and referenced assets; removes the
- * rest.
+ * Prunes a built Storybook's staticDir assets down to the set its stories
+ * actually reference. Scans the built JS/CSS/HTML for root-absolute asset URLs —
+ * post-bundling every transitive import is an inlined string literal, so this
+ * catches what static source-scanning misses. Keeps the Storybook runtime and
+ * referenced assets; removes the rest.
  *
  * Usage: node scripts/prune-storybook-assets.js <built-storybook-dir> [--dry]
  */
@@ -23,15 +22,11 @@ if (!storybookDir || !existsSync(storybookDir)) {
   process.exit(1)
 }
 
-// Storybook's own runtime — never prune; these ARE the app, not static assets.
-// Classified by the EmbedSource port (the single definition shared with mirror/rebase).
-
-// Text files whose contents we scan for asset references.
+// Text files scanned for asset references.
 const TEXT_EXT = /\.(?:js|mjs|cjs|css|html|json|svg|map)$/i
-// Files we treat as referenceable static assets (root-absolute URL targets).
+// Files treated as referenceable static assets (root-absolute URL targets).
 const ASSET_EXT = /\.(?:jpe?g|png|webp|gif|avif|svg|woff2?|ttf|otf|eot|mp4|webm|mp3|wav|ico|json|geojson|pdf|xlsx?)$/i
 
-/** Recursively list every file under a dir, as paths relative to `root`. */
 async function listFiles(dir, root, out = []) {
   for (const e of await readdir(dir, { withFileTypes: true })) {
     const abs = join(dir, e.name)
@@ -46,12 +41,9 @@ async function listFiles(dir, root, out = []) {
 /** Collect every root-absolute asset URL referenced by the built text files. */
 async function collectReferences(root) {
   const refs = new Set()
-  // Scan Storybook's own runtime text (assets/, iframe.html, index.html) — that
-  // is where bundled story code and its inlined asset strings live.
   const scanRoots = ['assets', 'iframe.html', 'index.html', 'sb-preview', 'sb-manager']
-  // Match a root-absolute asset URL preceded by any string/template/url() opener:
-  // " ' ` ( — the backtick is essential, data files emit photo paths as template
-  // literals (`/vitrine/.../x.jpg`) and missing it would prune assets a deck needs.
+  // The backtick opener is essential: data files emit photo paths as template
+  // literals, and missing it would prune assets a deck needs.
   const urlRe = /["'`(]\s*(\/[a-z0-9][\w/.@-]*\.[a-z0-9]{2,5})\b/gi
 
   for (const entry of scanRoots) {
@@ -73,7 +65,7 @@ async function collectReferences(root) {
       for (const match of text.matchAll(urlRe)) {
         const url = match[1].split('?')[0].split('#')[0]
         if (ASSET_EXT.test(url))
-          refs.add(url.replace(/^\/+/, '')) // store relative to root
+          refs.add(url.replace(/^\/+/, ''))
       }
     }
   }
@@ -82,7 +74,6 @@ async function collectReferences(root) {
 
 const refs = await collectReferences(storybookDir)
 
-// Walk top-level entries; for each non-runtime entry, keep only referenced files.
 const topEntries = await readdir(storybookDir, { withFileTypes: true })
 let removedFiles = 0
 let removedBytes = 0
@@ -112,7 +103,6 @@ for (const e of topEntries) {
     await pruneEntry(e.name)
   }
   else {
-    // Top-level static file (e.g. /favicon.ico): keep only if referenced.
     if (refs.has(e.name)) {
       keptFiles++
       continue
@@ -126,7 +116,6 @@ for (const e of topEntries) {
   }
 }
 
-// Remove now-empty directories left behind by pruning.
 async function pruneEmptyDirs(dir) {
   if (!existsSync(dir))
     return

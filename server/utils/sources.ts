@@ -3,11 +3,8 @@ import { fetchCollaborativeNote } from './codimd'
 import { readPresentationContent } from './presentations'
 
 /**
- * Server adapters implementing the framework-agnostic `ContentSource` port
- * (audit §5.2). They are the only place that knows *how* to reach a given
- * provider; `resolveDeck` and the route handlers depend on the interface, not on
- * `$fetch`/`useStorage`. Adding a source (Google Docs, integrated editor…) is one
- * adapter here, not a change across N handlers.
+ * Server adapters implementing the `ContentSource` port — the only place that
+ * knows how to reach each provider. Adding a source is one adapter here.
  */
 
 export const codimdSource: ContentSource = {

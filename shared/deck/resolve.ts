@@ -7,52 +7,41 @@ import { buildPresetBase } from './presets'
 import { parseDeckMeta } from './schema'
 
 /**
- * The single deck resolver (audit §5.1).
- *
- * `resolveDeck` is a **pure** function: it takes already-fetched raw markdown
- * (the I/O lives behind the `ContentSource` port and stays in the handlers) and
- * returns one validated answer to "what is the config of this deck?". The three
- * routes become thin wrappers that differ only by the descriptor they build —
- * precedence divergences become declared *data*, not dispersed code.
+ * The single deck resolver. Pure: takes already-fetched raw markdown (I/O lives
+ * behind the `ContentSource` port in the handlers) and returns one validated
+ * answer to "what is the config of this deck?". Precedence is declared data.
  */
 export interface ResolveDeckInput {
-  /** Raw stub markdown; its frontmatter is authoritative for theme/access/storybook. */
+  /** Raw stub markdown; frontmatter authoritative for theme/access/storybook. */
   stub?: string
-  /** Preset name (base layer for preset-driven decks, e.g. the CodiMD route). */
+  /** Base layer for preset-driven decks (the CodiMD route). */
   preset?: string
   /** Raw remote note markdown: body source + frontmatter subject to the whitelist. */
   remote?: string
-  /** Which note frontmatter keys may override the base (declared precedence). */
   noteOverride?: NoteOverridePolicy
-  /** Provider of the remote note (recorded in provenance). */
   source?: NoteSource
   /** Throw on invalid frontmatter instead of warning (tests/tooling). */
   strict?: boolean
-  /** Label used in validation messages. */
   label?: string
 }
 
 export interface DeckProvenance {
-  /** Where the slide body came from. */
   bodyFrom: 'remote' | 'stub' | 'none'
-  /** Ordered list of contributing layers, e.g. `['preset:dsfr', 'note']`. */
+  /** Contributing layers, e.g. `['preset:dsfr', 'note']`. */
   layers: string[]
-  /** Note overrides actually applied, e.g. `['storybook<-note']`. */
+  /** Overrides applied, e.g. `['storybook<-note']`. */
   overrides: string[]
-  /** Provider of the remote note, when any. */
   source?: NoteSource
   /** Non-fatal diagnostics (e.g. an unknown theme name). */
   warnings: string[]
 }
 
 export interface ResolvedDeck {
-  /** Validated, precedence-applied metadata. */
   meta: DeckMeta
-  /** Slide body markdown (frontmatter stripped). */
+  /** Slide body, frontmatter stripped. */
   body: string
-  /** Full markdown document (frontmatter + body) for the API/wire contract. */
+  /** Full document (frontmatter + body) for the API/wire contract. */
   content: string
-  /** Debuggability: where everything came from. */
   provenance: DeckProvenance
 }
 
@@ -67,7 +56,7 @@ export function resolveDeck(input: ResolveDeckInput): ResolvedDeck {
   const layers: string[] = []
   const overrides: string[] = []
 
-  // 1) Base layer: preset (preset-driven decks) or the stub's own frontmatter.
+  // 1) Base: preset (preset-driven decks) or the stub's own frontmatter.
   let base: Record<string, unknown>
   if (preset !== undefined) {
     base = { ...buildPresetBase(preset, remoteDoc?.data.theme) } as Record<string, unknown>
@@ -83,7 +72,7 @@ export function resolveDeck(input: ResolveDeckInput): ResolvedDeck {
       layers.push('stub')
   }
 
-  // 2) Note frontmatter override, filtered by the declared whitelist policy.
+  // 2) Note frontmatter override, filtered by the whitelist policy.
   if (remoteDoc) {
     const { filtered, applied } = applyOverridePolicy(remoteDoc.data, noteOverride)
     if (applied.length > 0) {
@@ -97,15 +86,13 @@ export function resolveDeck(input: ResolveDeckInput): ResolvedDeck {
   // 3) Validate once, derive types, coerce numerics.
   const { meta } = parseDeckMeta(base, { strict, label })
 
-  // 3b) Theme-name traceability (audit §5.5 #5): the link frontmatter ↔ tokens is
-  // checked here. Unknown themes are *recorded* (not rejected) so a CSS-only theme
-  // with no token entry — or a typo — surfaces in provenance for debugging without
-  // taking a production deck dark.
+  // Unknown themes are recorded, not rejected, so a CSS-only theme or a typo
+  // surfaces in provenance without taking a production deck dark.
   const warnings: string[] = []
   if (typeof meta.theme === 'string' && !KNOWN_THEMES.includes(meta.theme))
     warnings.push(`unknown theme "${meta.theme}" (no tokens entry)`)
 
-  // 4) Body precedence: remote note wins, else the stub, else nothing.
+  // 4) Body: remote note wins, else the stub, else nothing.
   let body: string
   let bodyFrom: DeckProvenance['bodyFrom']
   if (remoteDoc) {

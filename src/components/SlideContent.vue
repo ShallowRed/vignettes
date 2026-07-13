@@ -13,9 +13,7 @@ const props = defineProps<{
 
 const layoutStrategy = computed(() => getLayoutStrategy(props.slide.layout))
 
-// Media pane resolution (story URL, scaling, fit, preview) lives in the shared
-// transform pipeline (audit §7 P2 #8) so it has one tested home instead of being
-// inlined here. Returns null when the slide has no media.
+// Media pane resolution lives in the shared transform pipeline; null when no media.
 const mediaParts = computed(() =>
   resolveSlideMedia(props.slide.layoutProps, { storybook: props.metadata?.storybook }))
 
@@ -30,7 +28,6 @@ const parsedQuicklink = computed(() => {
 </script>
 
 <template>
-  <!-- Full layout: single MDCRenderer covers the whole slide -->
   <template v-if="layoutStrategy === 'full'">
     <MDCRenderer
       :body="slide.body"
@@ -39,10 +36,8 @@ const parsedQuicklink = computed(() => {
     />
   </template>
 
-  <!-- Default + media layouts: header/article with optional media pane -->
   <template v-else>
     <div class="slide-content-pane">
-      <!-- hgroup: heading + optional pretitle / subtitle -->
       <hgroup v-if="slide.header?.children?.length && (slide.pretitle || slide.subtitle)">
         <div
           v-if="slide.pretitle"
@@ -73,7 +68,6 @@ const parsedQuicklink = computed(() => {
         </div>
       </hgroup>
 
-      <!-- Plain header (no pretitle/subtitle) -->
       <header v-else-if="slide.header?.children?.length">
         <MDCRenderer
           :body="slide.header"
@@ -98,7 +92,6 @@ const parsedQuicklink = computed(() => {
       </p>
     </div>
 
-    <!-- Media pane (image or iframe) -->
     <aside
       v-if="mediaParts"
       class="slide-media-pane"
@@ -126,7 +119,6 @@ const parsedQuicklink = computed(() => {
       >
     </aside>
 
-    <!-- Quick navigation hint pinned to the bottom -->
     <div
       v-if="parsedQuicklink"
       class="slide-quicklink-wrapper"
@@ -148,13 +140,5 @@ const parsedQuicklink = computed(() => {
 </template>
 
 <style scoped>
-/*
- * No styles here on purpose.
- *
- * The MDC structural bridge (display: contents on wrapper divs) and the
- * `.slide-content-pane` declaration are now part of the engine layer:
- * `themes/shared/_reveal-patches.scss`. They had to be promoted out of this
- * scoped block because they form a contract shared with media-layout rules
- * and can no longer rely on Vue's :deep() tunnel without duplication.
- */
+/* Slide structure lives in themes/shared/_reveal-patches.scss (shared with media-layout rules). */
 </style>

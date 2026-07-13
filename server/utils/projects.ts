@@ -1,12 +1,7 @@
 /**
- * Project registry loader (docs/presentation-metadata.md).
- *
- * Loads `presentations/projects.yml` (the catalog's grouping axis) through the
- * same Nitro server-asset storage + shared TTL cache as the deck registry
- * (`registry.ts`), and validates it with the pure `parseProjects`
- * (`#shared/projects`). The YAML is the single source of truth for a project's
- * display title / order / color; a deck opts into a project via its frontmatter
- * `project:` slug.
+ * Load `presentations/projects.yml` (the catalog's grouping axis) via Nitro
+ * server-asset storage + a TTL cache. A deck opts into a project via its
+ * frontmatter `project:` slug.
  */
 
 import type { Project } from '#shared/projects'
@@ -15,7 +10,6 @@ import { parseProjects } from '#shared/projects'
 import { load as parseYaml } from 'js-yaml'
 import { presentationsStorage } from './presentations'
 
-/** Shared TTL cache (audit §5.7) — same helper as registry/note source. */
 const projectsCache = createTtlCache<Project[]>(
   () => {
     const raw = useRuntimeConfig().sourceCacheTtlMs
@@ -24,11 +18,7 @@ const projectsCache = createTtlCache<Project[]>(
   },
 )
 
-/**
- * Load, validate and order the project registry. A missing file yields an empty
- * list (the catalog simply shows no project grouping); a malformed one is logged
- * and also yields an empty list — never throws into a request path.
- */
+/** Load, validate and order the project registry. Never throws; missing/malformed → []. */
 export async function listProjects(): Promise<Project[]> {
   return projectsCache.get('projects', async () => {
     try {

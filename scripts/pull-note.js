@@ -1,18 +1,9 @@
 /**
- * pull-note.js
+ * Pulls a collaborative CodiMD note's live body into its repo stub, keeping the
+ * stub's frontmatter (theme, storybook link, access) — the note's own frontmatter
+ * is stripped, the hand-editable stub wins. Alias resolves through registry.yml.
  *
- * Rapatriement CodiMD → repo (DDR-018). Fetches the live body of a collaborative
- * note and writes it into the repo stub, KEEPING the stub's frontmatter intact
- * (theme, storybook link, access). Ends the manual replication that caused
- * parallel forks.
- *
- * Resolves the alias through presentations/registry.yml to find its source +
- * noteId + stub slug. The note's own frontmatter is stripped — the repo stub's
- * frontmatter wins (it is hand-editable, e.g. the storybook URL).
- *
- * Usage:
- *   node scripts/pull-note.js <alias> [--codimd-url https://md.example.com] [--access public]
- *
+ * Usage: node scripts/pull-note.js <alias> [--codimd-url <url>] [--access <folder>]
  * Env: NUXT_CODIMD_URL (fallback for --codimd-url).
  */
 
@@ -80,7 +71,6 @@ if (!stubPath) {
   process.exit(1)
 }
 
-// Fetch the live note body.
 const url = `${codimdUrl}/${encodeURIComponent(entry.noteId)}/download`
 console.log(`▶  Fetching ${url}`)
 const remote = await fetch(url, { headers: { Accept: 'text/markdown, text/plain' } })
@@ -90,12 +80,10 @@ if (!remote.ok) {
 }
 const remoteMd = await remote.text()
 
-/** Strip a leading YAML frontmatter block. */
 function stripFrontmatter(md) {
   const m = md.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/)
   return m ? md.slice(m[0].length) : md
 }
-/** Extract a leading YAML frontmatter block (with fences), or ''. */
 function extractFrontmatter(md) {
   const m = md.match(/^(---\r?\n[\s\S]*?\r?\n---)\r?\n?/)
   return m ? m[1] : ''

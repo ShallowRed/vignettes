@@ -2,11 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 interface Props {
-  /**
-   * Number of columns to display when auto-splitting by headings.
-   * When explicit `::column` children are used this prop is ignored
-   * (column count is driven by the content itself).
-   */
+  /** Column count when auto-splitting by headings; ignored when explicit `::column` children are used. */
   count?: number
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }
@@ -28,25 +24,22 @@ onMounted(() => {
   if (children.length === 0)
     return
 
-  // If children are already wrapped in explicit ::column components, nothing to do.
   const columnChildren = children.filter(child => child.classList.contains('column'))
   if (columnChildren.length >= 2)
     return
 
-  // TwoColumns-style: look for an HR separator as an explicit split point.
   const hrIndex = children.findIndex(child => child.tagName === 'HR')
 
   let columns: HTMLElement[][] = []
 
   if (hrIndex !== -1) {
-    // Explicit HR split (TwoColumns behaviour)
     columns = [
       children.slice(0, hrIndex) as HTMLElement[],
       children.slice(hrIndex + 1) as HTMLElement[],
     ]
   }
   else {
-    // Auto-split on H3/H4 headings (both TwoColumns and ThreeColumns behaviour)
+    // Auto-split on H3/H4 headings.
     let currentColumn: HTMLElement[] = []
 
     for (const child of children) {
@@ -113,7 +106,6 @@ onMounted(() => {
   }
 }
 
-/* Size variants */
 .size-xs { font-size: 0.7em; }
 .size-sm { font-size: 0.85em; }
 .size-md { font-size: 1em; }

@@ -1,22 +1,9 @@
 /**
- * upload-frozen.js — push a frozen deck bundle to the Scaleway bucket.
+ * Mirrors a local frozen deck bundle (.frozen/<alias>/) to s3://<bucket>/frozen/
+ * <alias>/ so the deployed app can serve it from object storage. Config comes from
+ * the environment (direnv/Infisical, never a repo file); S3 keys are secrets.
  *
- * Additive to the freeze pipeline: `make host-frozen` still writes the bundle to
- * `.frozen/<alias>/` locally (dev + provenance); this script mirrors that folder
- * to `s3://<bucket>/frozen/<alias>/` so the deployed app can serve it from object
- * storage instead of a git-committed copy (DDR-018 storage migration).
- *
- * Config comes from the environment (injected by direnv/Infisical — never a repo
- * file). Non-secret defaults target Scaleway Paris:
- *   NUXT_FROZEN_S3_ENDPOINT       (default https://s3.fr-par.scw.cloud)
- *   NUXT_FROZEN_S3_REGION         (default fr-par)
- *   NUXT_FROZEN_S3_BUCKET         (default nuxt-slides-bucket)
- *   NUXT_FROZEN_S3_ACCESS_KEY_ID  (secret — Infisical)
- *   NUXT_FROZEN_S3_SECRET_ACCESS_KEY (secret — Infisical)
- *
- * Usage:
- *   node scripts/upload-frozen.js <alias> [--dir <path>] [--dry-run]
- *   node scripts/upload-frozen.js conference-talk --dry-run
+ * Usage: node scripts/upload-frozen.js <alias> [--dir <path>] [--dry-run]
  */
 import { createReadStream, statSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'

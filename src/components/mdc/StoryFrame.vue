@@ -2,50 +2,29 @@
 import { STORYBOOK_BASE } from '~/config/injection-keys'
 import { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '~/utils/storybook'
 
-/**
- * StoryFrame — a single embedded screen for a slide.
- *
- * Embeds either a live Storybook story (by id, resolved against the deck's
- * frontmatter `storybook` root) or an arbitrary iframe / image. Works on its
- * own in a slide body or as a child of `<Screens>` for side-by-side galleries.
- *
- * Iframes are rendered at a logical desktop width (`previewWidth`) and scaled
- * down to fit the frame, so the *whole* page is visible instead of the
- * top-left corner at 1:1. Raise `previewWidth` to show more, lower it to zoom in.
- *
- * Examples (markdown):
- *   ::StoryFrame{story="vitrine-accueil-scenario-a--page" label="A · Acquisition"}
- *   ::
- *   ::StoryFrame{src="/shots/home.png" type="image" ratio="desktop" lightbox}
- *   ::
- */
+// Embeds a Storybook story (by id, resolved against the deck's `storybook` root) or an
+// arbitrary iframe/image. Iframes render at a logical width (`previewWidth`) and scale down
+// to fit, so the whole page is visible rather than the top-left corner at 1:1.
 interface Props {
   /** Storybook story id (`<componentId>--<storyName>`). */
   story?: string
-  /** Explicit URL (used when `story` is absent). */
+  /** Explicit URL, used when `story` is absent. */
   src?: string
-  /** Media kind. Defaults to iframe when a story/url is embedded. */
   type?: 'iframe' | 'image'
-  /** `cover` fills the frame (default); `contain` shows the whole media. */
   fit?: 'cover' | 'contain'
-  /** Aspect ratio: named (`desktop`, `wide`, `mobile`…) or raw `16/9`. */
+  /** Named (`desktop`, `wide`, `mobile`…) or raw `16/9`. */
   ratio?: string
-  /**
-   * Logical width (px) the iframe renders at before being scaled to fit.
-   * Higher = "zoom out" (more of the page visible). Default 1440 (desktop).
-   */
+  /** Logical width (px) the iframe renders at before scaling; higher = more of the page visible. */
   previewWidth?: string | number
-  /** Disable scaling — render the iframe at the frame's native size (1:1). */
+  /** Render the iframe at native size (1:1), no scaling. */
   raw?: boolean
-  /** Caption shown under the frame (overrides the default slot). */
+  /** Caption under the frame; overrides the default slot. */
   label?: string
-  /** Click to open the media full-screen (Reveal lightbox). */
   lightbox?: boolean
-  /** Accessible title for the iframe / alt for the image. */
   title?: string
-  /** Let the frame grow to fill the available height (galleries). */
+  /** Let the frame grow to fill available height (galleries). */
   grow?: boolean
-  /** Short incentive text shown beside the frame to invite interaction. */
+  /** Incentive text shown beside the frame to invite interaction. */
   hint?: string
 }
 
@@ -68,15 +47,13 @@ const resolvedSrc = computed(() => {
 const isIframe = computed(() => {
   if (props.type)
     return props.type === 'iframe'
-  // Stories and bare URLs default to iframe embeds.
   return Boolean(props.story) || /^https?:\/\//.test(props.src ?? '')
 })
 
 const aspect = computed(() => resolveAspectRatio(props.ratio))
 const missing = computed(() => !resolvedSrc.value)
 
-// Iframe scaling: render at a logical desktop width, shrink to fit. The width is
-// exposed as `--preview-width`; scaled-frame.js reads it and sizes the iframe
+// Width exposed as `--preview-width`; scaled-frame.js reads it to size the iframe
 // (cross-browser, unlike CSS cqh in Firefox — see _media-layouts.scss).
 const previewWidthNum = computed(() => {
   const n = typeof props.previewWidth === 'string'
@@ -106,7 +83,6 @@ const scaledFrameStyle = computed(() =>
         Aucune source : renseigner <code>story</code> (+ <code>storybook</code> en frontmatter) ou <code>src</code>.
       </p>
 
-      <!-- Iframe with lightbox: wrap in a preview-link anchor -->
       <a
         v-else-if="isIframe && props.lightbox"
         :href="resolvedSrc"
@@ -123,7 +99,6 @@ const scaledFrameStyle = computed(() =>
         <span class="story-frame__hint">Cliquer pour agrandir</span>
       </a>
 
-      <!-- Plain interactive iframe -->
       <iframe
         v-else-if="isIframe"
         :src="resolvedSrc"
@@ -134,7 +109,6 @@ const scaledFrameStyle = computed(() =>
         data-preload
       />
 
-      <!-- Image (optionally clickable for the lightbox) -->
       <img
         v-else
         :src="resolvedSrc"
@@ -188,13 +162,11 @@ const scaledFrameStyle = computed(() =>
   box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 18, 0.12);
 }
 
-/* When no explicit ratio and growing, fill remaining height */
 .story-frame.grow .story-frame__media {
   flex: 1 1 0;
   height: 100%;
 }
 
-/* Non-scaled iframes fill the frame natively (raw mode / fallback). */
 .story-frame__media iframe {
   display: block;
   width: 100%;
@@ -203,8 +175,7 @@ const scaledFrameStyle = computed(() =>
   border: none;
 }
 
-/* Scaled iframes — sized by scaled-frame.js, not CSS (see _media-layouts.scss for
-   why). This block only sets the clip box + anchor; the script sets the transform. */
+/* Scaled iframes are sized by scaled-frame.js, not CSS; this only sets the clip box + anchor. */
 .story-frame__media.is-scaled {
   --preview-width: 1440px;
   position: relative;
@@ -214,15 +185,13 @@ const scaledFrameStyle = computed(() =>
   position: absolute;
   top: 0;
   left: 0;
-  /* Pre-paint fallback before scaled-frame.js runs (avoids an unscaled flash). */
+  /* Pre-paint fallback before scaled-frame.js runs, avoiding an unscaled flash. */
   width: 100%;
   height: 100%;
   min-height: 0;
   transform-origin: top left;
 }
 
-/* Story canvases render at desktop width — scale them down to fit the frame
-   while keeping the layout faithful (transform-based "zoom out"). */
 .story-frame.fit-contain .story-frame__media {
   background: transparent;
   border: none;

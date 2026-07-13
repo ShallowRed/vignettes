@@ -6,11 +6,7 @@ definePageMeta({
   layout: false,
 })
 
-/**
- * Shown when a logged-in but non-privileged actor (a viewer) tries to reach an
- * owner/editor-only page. Explains why rather than silently bouncing — the API
- * remains the real enforcement boundary; this is just honest UX.
- */
+// Shown when a logged-in non-privileged viewer hits an owner/editor-only page; API stays the real boundary.
 const { role, user } = useAppSession()
 const roleDisplay = computed(() => ROLE_CONFIG[role.value])
 </script>

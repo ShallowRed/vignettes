@@ -1,30 +1,8 @@
-/**
- * Storybook embed-source port (audit §5.9 / Axe H, P1bis #15).
- *
- * Storybook is an external embed dependency that the freeze pipeline used to
- * re-handle in four scripts (`mirror` / `prune` / `rebase` / `link`), each of
- * which re-declared the same two pieces of knowledge:
- *
- *   - WHICH built files are Storybook's own runtime (never a static asset), and
- *   - WHICH top-level entries are therefore re-baseable static-asset roots.
- *
- * That duplication is exactly the inter-repo coupling Axe H flags (annex #19):
- * three identical `RUNTIME` sets + two near-identical asset-root detectors. This
- * module is the single, pure, framework-free definition the four scripts now
- * consume — the "EmbedSource" half of the render hexagon, alongside the embed URL
- * shape in `./storybook` and the asset-URL rebasing in `./reveal`.
- *
- * Pure on purpose: no fs, no process — it classifies names and declares the
- * pipeline, so it is unit-testable without a built Storybook.
- */
+// Single pure definition of Storybook's runtime files and asset-root detection,
+// shared by the four freeze scripts (mirror/prune/rebase/link).
 
-/**
- * Storybook's own build output: its HTML shell, manifests, and bundled runtime
- * dirs. These are the app itself, never staticDir assets — so they are never
- * mirrored to the bundle root, never pruned, never rebased.
- *
- * The single definition; previously copied verbatim into mirror/prune/rebase.
- */
+// Storybook's own build output (shell, manifests, runtime dirs): never a
+// staticDir asset, so never mirrored/pruned/rebased.
 export const STORYBOOK_RUNTIME: ReadonlySet<string> = new Set([
   'index.html',
   'iframe.html',
@@ -40,23 +18,14 @@ export const STORYBOOK_RUNTIME: ReadonlySet<string> = new Set([
   '.well-known',
 ])
 
-/**
- * True when a top-level built-Storybook entry is part of Storybook's own runtime
- * (the shell/manifests/bundle dirs, plus any `.js`/`.json` file) rather than a
- * static asset. The one rule the four freeze scripts share for "skip this".
- */
+// Runtime = the RUNTIME set plus any `.js`/`.json` file.
 export function isStorybookRuntime(name: string): boolean {
   return STORYBOOK_RUNTIME.has(name) || name.endsWith('.js') || name.endsWith('.json')
 }
 
-/**
- * From the top-level entries of a built Storybook, the names that are re-baseable
- * static-asset roots: everything that is not Storybook runtime and not a hidden
- * dotfile. A root-absolute URL whose first segment is one of these (`/vitrine/…`)
- * points at a staticDir asset the bundle carries under `_storybook/<root>/`.
- *
- * Pure: takes the names, returns the asset roots — the caller does the `readdir`.
- */
+// Re-baseable static-asset roots: entries that are neither runtime nor a dotfile.
+// A root-absolute URL whose first segment is one of these points at a staticDir
+// asset carried under `_storybook/<root>/`.
 export function detectAssetRoots(entryNames: Iterable<string>): string[] {
   const roots: string[] = []
   for (const name of entryNames) {
@@ -67,20 +36,14 @@ export function detectAssetRoots(entryNames: Iterable<string>): string[] {
   return roots
 }
 
-/** A single named step of the Storybook freeze embed pipeline. */
 export interface StorybookFreezeStep {
   id: 'prune' | 'mirror' | 'rebase' | 'link'
-  /** The script that implements the step (the freeze adapter's mechanism). */
   script: string
   description: string
 }
 
-/**
- * The declarative description of the Storybook freeze embed pipeline — the four
- * passes that turn a built Storybook into a self-contained bundle embed, in the
- * order the freeze adapter runs them. Materializes Axe H's "four scripts become
- * one declared adapter step" so the orchestration is data, not Makefile prose.
- */
+// The four passes that turn a built Storybook into a self-contained bundle embed,
+// in the order the freeze adapter runs them.
 export const STORYBOOK_FREEZE_STEPS: readonly StorybookFreezeStep[] = [
   {
     id: 'prune',

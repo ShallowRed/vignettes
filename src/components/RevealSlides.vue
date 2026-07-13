@@ -10,14 +10,12 @@ const { slideIdMap, getVerticalId } = useSlideIds(
   computed(() => props.presentationData.slides),
 )
 
-// Share the deck's Storybook root with MDC components (<StoryFrame>, <Screens>)
-// so a story id alone resolves to a full iframe URL.
+// Share the deck's Storybook root so MDC components resolve a story id to a full iframe URL.
 provide(
   STORYBOOK_BASE,
   computed(() => props.presentationData.metadata.storybook),
 )
 
-// Resolve auto-imported MDC components once at setup time
 const mdcComponents: Record<string, any> = Object.fromEntries(
   Object.entries(MDC_COMPONENTS).map(([key, componentName]) => [
     key,
@@ -78,9 +76,4 @@ function getBackground(slide: { headingLevel?: string, backgroundImage?: string 
   </template>
 </template>
 
-<!--
-  No styles here on purpose.
-  Engine-level slide structure (media layouts, quicklink positioning,
-  MDC bridge) lives in `themes/shared/` so it is compiled into every theme
-  and stays a single source of truth.
--->
+<!-- Engine-level slide structure lives in `themes/shared/` (compiled into every theme). -->

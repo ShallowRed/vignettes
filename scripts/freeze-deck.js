@@ -1,36 +1,11 @@
 /**
- * freeze-deck.js
+ * Resolves which Storybook stories a deck embeds, so a freeze can bundle only
+ * those instead of the whole storybook-static/. Cross-checks referenced ids
+ * against the built index.json (Storybook owns id-generation, so reading the
+ * built index stays correct across upgrades and detects broken refs for free).
  *
- * Prototype for DDR-017 (mécanisme C — bundle réduit). Resolves which Storybook
- * stories a deck actually embeds, so a freeze can bundle *only* those stories
- * instead of the whole `storybook-static/`.
- *
- * It does NOT build anything by itself. It:
- *   1. Extracts story ids from a deck (.md) — `story="…"` annotations and
- *      `<StoryFrame story="…">` components.
- *   2. Cross-checks them against a built Storybook `index.json` (the authoritative
- *      id → importPath map), reporting any **broken reference** (id absent from
- *      the current Storybook — the exact fragility DDR-017 guards against).
- *   3. Emits the minimal set of source story files to keep in a reduced build,
- *      and a JSON report.
- *
- * Why `index.json` rather than re-deriving ids from titles: Storybook owns the
- * id-generation rules (title slugification, name normalisation). Reading the
- * built index keeps this resolver correct across Storybook upgrades and makes
- * broken-reference detection a free side effect.
- *
- * Usage:
- *   node scripts/freeze-deck.js <deck.md> <storybook-static-dir> [--json out.json] [--globs-only]
- *
- * `--globs-only` prints just the `stories` globs (one per resolved file, relative
- * to `.storybook/`, comma-separated) to stdout and suppresses the human summary —
- * meant to feed `STORYBOOK_STORIES_GLOBS` for a reduced build. Broken refs still
- * set exit code 2 (and are reported on stderr), so a Makefile can fail the freeze.
- *
- * Exit codes:
- *   0  all referenced ids resolve
- *   2  at least one referenced id is missing from the Storybook index
- *   1  usage / IO error
+ * Usage: node scripts/freeze-deck.js <deck.md> <storybook-static-dir> [--json out.json] [--globs-only]
+ * Exit codes: 0 all resolve, 2 a referenced id is missing from the index, 1 usage/IO.
  */
 
 import { existsSync } from 'node:fs'
@@ -61,13 +36,8 @@ if (!existsSync(indexPath)) {
   process.exit(1)
 }
 
-/**
- * Extracts every Storybook story id referenced by a deck.
- *
- * Both forms carry the id in a `story="…"` attribute — the MDC layout annotation
- * (`:layout{… story="…"}`) and the `<StoryFrame story="…">` component — so one
- * pattern covers both. Ids are returned de-duplicated, in first-seen order.
- */
+// Both the MDC layout annotation and <StoryFrame> carry the id in story="…",
+// so one pattern covers both. De-duplicated, first-seen order.
 function extractStoryIds(markdown) {
   const ids = []
   const seen = new Set()
@@ -86,7 +56,6 @@ function extractStoryIds(markdown) {
 
 const deck = await readFile(deckPath, 'utf-8')
 const index = JSON.parse(await readFile(indexPath, 'utf-8'))
-// Storybook 7+ uses { v, entries: { [id]: { id, title, importPath, … } } }.
 const entries = index.entries ?? index.stories ?? {}
 
 const referenced = extractStoryIds(deck)
@@ -101,9 +70,7 @@ for (const id of referenced) {
     broken.push(id)
 }
 
-// The reduced build keeps only the source files behind the resolved ids.
-// importPath looks like "./stories/candidats/.../X.stories.tsx" — normalise to a
-// glob-friendly relative path from the storybook project root.
+// Normalise importPath ("./stories/.../X.stories.tsx") to a glob-friendly path.
 const keepFiles = [...new Set(resolved.map(r => r.importPath.replace(/^\.\//, '')))].sort()
 
 const report = {
@@ -117,10 +84,8 @@ const report = {
   broken,
 }
 
-// ── Globs-only mode: emit the `stories` globs for a reduced build ────────────
-// `.storybook/main.ts` resolves globs relative to itself (the `.storybook/`
-// folder), while importPath is relative to the storybook project root — so we
-// prefix `../`. Broken refs are still surfaced on stderr and via the exit code.
+// main.ts resolves globs relative to .storybook/, importPath is relative to the
+// project root — so prefix `../`.
 if (globsOnly) {
   if (broken.length > 0) {
     console.error(`✗ ${broken.length} broken reference(s): ${broken.join(', ')}`)
@@ -131,7 +96,6 @@ if (globsOnly) {
   process.exit(0)
 }
 
-// ── Human-readable summary ──────────────────────────────────────────────────
 console.log(`\n📊 Deck: ${report.deck}`)
 console.log(`   Referenced stories : ${referenced.length}`)
 console.log(`   Resolved           : ${resolved.length}`)

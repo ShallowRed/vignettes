@@ -10,9 +10,9 @@ describe('createTtlCache', () => {
     vi.useFakeTimers()
     try {
       expect(await cache.get('k', loader)).toBe(1)
-      expect(await cache.get('k', loader)).toBe(1) // cached
+      expect(await cache.get('k', loader)).toBe(1)
       vi.advanceTimersByTime(1001)
-      expect(await cache.get('k', loader)).toBe(2) // expired → reload
+      expect(await cache.get('k', loader)).toBe(2)
     }
     finally {
       vi.useRealTimers()

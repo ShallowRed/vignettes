@@ -1,42 +1,29 @@
 import { z } from 'zod'
 
-/**
- * Project registry (docs/presentation-metadata.md).
- *
- * `presentations/projects.yml` declares the catalog's grouping axis: each key is
- * a project slug (matched against a deck's frontmatter `project:`), mapping to
- * display metadata. Pure data + zod validation here, à la `shared/deck/schema`;
- * the YAML I/O lives in the server util (`server/utils/projects.ts`).
- */
+// Schema for presentations/projects.yml (the catalog's grouping axis, slug →
+// display meta). YAML I/O lives in server/utils/projects.ts.
 
-/** Display metadata for one project (the value side of `projects.yml`). */
 export const ProjectMetaSchema = z
   .object({
-    /** Human-readable label shown in the catalog (defaults to the slug). */
+    /** Defaults to the slug. */
     title: z.string().optional(),
-    /** Sort order among project groups (ascending; unset sorts last). */
+    /** Ascending; unset sorts last. */
     order: z.coerce.number().optional(),
-    /** Accent color for the project's badge/group header (CSS color). */
     color: z.string().optional(),
   })
   .catchall(z.unknown())
 
 export type ProjectMeta = z.infer<typeof ProjectMetaSchema>
 
-/** The whole file: slug → metadata. */
 export const ProjectsFileSchema = z.record(z.string(), ProjectMetaSchema)
 export type ProjectsFile = z.infer<typeof ProjectsFileSchema>
 
-/** A resolved project, slug included (what callers consume). */
 export interface Project extends ProjectMeta {
   slug: string
 }
 
-/**
- * Parse + validate the raw YAML document into ordered `Project` entries.
- * Non-destructive: an invalid file yields an empty list (logged by the caller),
- * never throws into a request path. Entries are sorted by `order` then `title`.
- */
+// Non-destructive: an invalid file yields an empty list, never throws into a
+// request path. Sorted by order then title.
 export function parseProjects(input: unknown): Project[] {
   const result = ProjectsFileSchema.safeParse(input ?? {})
   if (!result.success)

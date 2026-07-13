@@ -41,7 +41,6 @@ describe('decideAccess — view matrix', () => {
 
 describe('decideAccess — semi-private password gate', () => {
   it('denies (fail-closed) when no password hash is declared', () => {
-    // A semi-private deck with no accessPassword must never be world-readable.
     expect(decideAccess(input({ status: 'semi-private', role: 'anonymous', hasPassword: false })))
       .toEqual({ outcome: 'deny', reason: 'auth-required' })
     expect(decideAccess(input({ status: 'semi-private', role: 'viewer', hasPassword: false })))

@@ -2,14 +2,9 @@ import { z } from 'zod'
 import { PublicationStatusSchema } from '../access/status'
 
 /**
- * Single source of truth for a deck's validated configuration (audit §5.3).
- *
- * Before this schema the "effective config" of a deck was parsed by ad-hoc regex
- * in ≥5 places, with no description of what a valid frontmatter is. `DeckMetaSchema`
- * centralizes validation and derives the TS types automatically (à la Astro / Nuxt
- * Content), coerces numeric Reveal options, and rejects typos in closed enums
- * (`parser`, `source`). Unknown keys are intentionally passed through (`.catchall`)
- * so authors keep the freedom the previous `[key: string]: any` allowed.
+ * Single source of truth for a deck's validated config: centralizes validation,
+ * derives TS types, coerces numeric Reveal options, and rejects typos in closed
+ * enums. Unknown keys pass through (`.catchall`) to keep authoring freedom.
  */
 
 /** Reveal.js options forwarded to `Reveal.initialize()`. Loose by design. */
@@ -58,34 +53,22 @@ export const DeckMetaSchema = z
   .object({
     title: z.string().optional(),
     lang: z.string().optional(),
-    /**
-     * Theme name. Kept as a free string here; existence vs `public/themes/` is
-     * checked separately (see `KNOWN_THEMES` / theme warning) to avoid rejecting
-     * a CSS-backed theme that has no preset. Enum-in-schema is a P1 follow-up.
-     */
+    /** Free string; existence is checked separately (KNOWN_THEMES) so a CSS-only theme isn't rejected. */
     theme: z.string().optional(),
-    /** Slide parser mode. A typo here is rejected early (was silent before). */
     parser: z.enum(['heading', 'separator']).optional(),
     storybook: z.string().optional(),
     backgrounds: ThemeBackgroundsSchema.optional(),
     reveal: RevealConfigSchema.optional(),
-    /**
-     * Publication status — the access axis, now sourced from the frontmatter
-     * rather than the `presentations/<status>/` folder (see
-     * docs/presentation-metadata.md). A missing/invalid value must be treated as
-     * the most closed status (`private`) by readers — the schema keeps it
-     * optional so an un-migrated stub still parses, and the closed-default is
-     * enforced at resolution (server/utils/presentations.ts), never here.
-     */
+    /** Optional so un-migrated stubs parse; the closed default (`private`) is enforced at resolution, never here. */
     status: PublicationStatusSchema.optional(),
-    /** Grouping axis for the catalog (slug into `presentations/projects.yml`). */
+    /** Catalog grouping slug into `presentations/projects.yml`. */
     project: z.string().optional(),
-    /** @deprecated legacy alias of `status` (pre-frontmatter-status stubs). */
+    /** @deprecated legacy alias of `status`. */
     access: z.string().optional(),
     accessPassword: z.string().optional(),
     source: NoteSourceSchema.optional(),
     noteId: z.string().optional(),
-    // Legacy flat Reveal options kept for backward compatibility.
+    // Legacy flat Reveal options, kept for backward compatibility.
     transition: z.string().optional(),
     center: z.boolean().optional(),
   })
@@ -97,21 +80,16 @@ export type NoteSource = z.infer<typeof NoteSourceSchema>
 export type DeckMeta = z.infer<typeof DeckMetaSchema>
 
 export interface ParseResult {
-  /** Validated metadata. On failure, falls back to the raw input (non-destructive). */
+  /** On failure, falls back to the raw input (non-destructive). */
   meta: DeckMeta
-  /** Whether zod validation succeeded. */
   valid: boolean
-  /** Human-readable validation issues (empty when valid). */
   issues: string[]
 }
 
 /**
- * Validate raw frontmatter into a `DeckMeta`.
- *
- * Non-destructive by default: when validation fails (e.g. a `parser` typo) it
- * logs the issues and returns the original object so an in-production deck never
- * goes dark over a bad field. Pass `{ strict: true }` to throw instead — useful
- * in tests and tooling where early rejection is desired (audit §5.3).
+ * Non-destructive by default: on failure logs the issues and returns the original
+ * object so an in-production deck never goes dark over a bad field. `strict`
+ * throws instead (tests/tooling).
  */
 export function parseDeckMeta(
   input: unknown,

@@ -2,13 +2,9 @@
 import { computed } from 'vue'
 
 interface Props {
-  /**
-   * Relative weight in the columns row (e.g. span=2 vs span=1 => 2/3 + 1/3).
-   */
+  /** Relative weight in the columns row (span=2 vs span=1 => 2/3 + 1/3). */
   span?: number | string
-  /**
-   * Explicit width ratio for this column (e.g. "2/3", "1/4").
-   */
+  /** Explicit width ratio, e.g. "2/3", "1/4". */
   ratio?: string
 }
 
@@ -85,9 +81,6 @@ const columnStyle = computed(() => {
   &.size-xl,
   .size-md.size-xl {
     font-size: 1.3em;
-    // display: flex;
-    // align-items: center;
-    // justify-content: center;
     &:deep(p) {
       max-width: 50ch;
       line-height: 1.7;

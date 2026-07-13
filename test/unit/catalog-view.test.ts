@@ -117,7 +117,6 @@ describe('groupByProject', () => {
 
   it('appends unknown projects alphabetically before the ungrouped bucket', () => {
     const groups = groupByProject(projectCatalog, ['vitrine'])
-    // portail-rse not in order → after known, before ungrouped.
     expect(groups.map(g => g.project)).toEqual(['vitrine', 'portail-rse', UNGROUPED_PROJECT])
   })
 

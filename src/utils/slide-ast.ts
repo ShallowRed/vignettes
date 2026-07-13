@@ -1,12 +1,6 @@
-/**
- * Pure functions for parsing MDC AST content into slide structures.
- * No Vue reactivity — all functions are stateless and independently testable.
- *
- * Two entry points, both conforming to the shared `DeckParser` port
- * (audit §5.8 / Axe G) via `headingParser` / `separatorParser` below:
- * - parseSlides(ast)              heading-based parser (H1/H2/H3)
- * - parseSlidesFromSeparators(md) separator-based parser (--- / ----)
- */
+// Pure, stateless MDC-AST-to-slide parsers. Two entry points, both behind the
+// shared `DeckParser` port: parseSlides (heading-based) and
+// parseSlidesFromSeparators (--- / ---- separators).
 
 import type { DeckParser, Slide } from '#shared/deck'
 import type { MDCParserResult } from '@nuxtjs/mdc'
@@ -17,13 +11,6 @@ import {
 } from '#shared/deck'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 
-// ---------------------------------------------------------------------------
-// AST helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Detects the first heading level in a list of AST children.
- */
 export function getHeadingLevel(children: any[]): string | undefined {
   if (!children || children.length === 0)
     return undefined
@@ -33,9 +20,7 @@ export function getHeadingLevel(children: any[]): string | undefined {
   return firstHeading?.tag
 }
 
-/**
- * Checks if a paragraph contains only italic text (for subtitle detection).
- */
+// Paragraph with only italic text — treated as a subtitle.
 function isItalicParagraph(node: any): boolean {
   if (node.type !== 'element' || node.tag !== 'p')
     return false
@@ -43,10 +28,7 @@ function isItalicParagraph(node: any): boolean {
   return children.length === 1 && children[0].type === 'element' && children[0].tag === 'em'
 }
 
-/**
- * Recursively checks whether any child is a full-slide layout component.
- * Returns the canonical layout name 'full' when found, otherwise undefined.
- */
+// Returns 'full' if any descendant is a full-slide layout component.
 function getSlideLayout(children: any[]): string | undefined {
   for (const node of children) {
     if (node.type === 'element' && FULL_SLIDE_COMPONENT_NAMES.includes(node.tag))
@@ -60,28 +42,15 @@ function getSlideLayout(children: any[]): string | undefined {
   return undefined
 }
 
-// ---------------------------------------------------------------------------
-// Annotation extractors
-// ---------------------------------------------------------------------------
-
-/**
- * Extracts :slide-background{image="..."} override.
- */
 function extractBackgroundOverride(children: any[]): string | undefined {
   const node = children.find(n => n.type === 'element' && n.tag === BACKGROUND_ANNOTATION_TAG && n.props?.image)
   return node?.props.image
 }
 
-/**
- * Removes :slide-background nodes so they don't reach MDCRenderer.
- */
 function filterBackgroundNodes(children: any[]): any[] {
   return children.filter(n => !(n.type === 'element' && n.tag === BACKGROUND_ANNOTATION_TAG))
 }
 
-/**
- * Extracts :pretitle{text="..."} and wraps it in a root AST node.
- */
 function extractPretitle(children: any[]): any | undefined {
   const node = children.find(n => n.type === 'element' && n.tag === 'pretitle' && n.props?.text)
   if (!node)
@@ -92,10 +61,6 @@ function extractPretitle(children: any[]): any | undefined {
   }
 }
 
-/**
- * Extracts :subtitle{text="..."} and wraps it in a root AST node.
- * The italic-paragraph fallback is handled separately in createSlide().
- */
 function extractExplicitSubtitle(children: any[]): any | undefined {
   const node = children.find(n => n.type === 'element' && n.tag === 'subtitle' && n.props?.text)
   if (!node)
@@ -106,9 +71,6 @@ function extractExplicitSubtitle(children: any[]): any | undefined {
   }
 }
 
-/**
- * Extracts :quicklink{text="..." href="..."}.
- */
 function extractQuicklink(children: any[]): { text: string, href: string } | undefined {
   const node = children.find(n => n.type === 'element' && n.tag === 'quicklink' && n.props?.text && n.props?.href)
   if (!node)
@@ -116,9 +78,6 @@ function extractQuicklink(children: any[]): { text: string, href: string } | und
   return { text: node.props.text, href: node.props.href }
 }
 
-/**
- * Extracts :layout{name="..." ...props}.
- */
 function extractLayout(children: any[]): { name: string, props: Record<string, string> } | undefined {
   const node = children.find(n => n.type === 'element' && n.tag === 'layout' && n.props?.name)
   if (!node)
@@ -127,29 +86,17 @@ function extractLayout(children: any[]): { name: string, props: Record<string, s
   return { name, props: rest }
 }
 
-/**
- * Removes :pretitle, :subtitle, :layout, and :quicklink annotation nodes
- * so they don't reach MDCRenderer.
- * :slide-background is handled separately by filterBackgroundNodes().
- */
+// The :slide-background tag is filtered separately by filterBackgroundNodes().
 function filterAnnotationNodes(children: any[]): any[] {
   return children.filter(n =>
     !(n.type === 'element' && STRIPPED_ANNOTATION_TAGS.includes(n.tag)),
   )
 }
 
-// ---------------------------------------------------------------------------
-// Slide builders
-// ---------------------------------------------------------------------------
-
 /**
- * Builds a Slide from a list of AST nodes.
- *
- * - Separates the first heading into `header`, the rest into `body`.
- * - Supports :pretitle, :subtitle, :layout, :quicklink annotations.
- * - Falls back to italic paragraph immediately after heading for subtitle.
- * - When a FULL_SLIDE_COMPONENT is detected (and no explicit :layout{}),
- *   all children stay in `body` (no header/body split).
+ * Builds a Slide: first heading -> `header`, rest -> `body`; supports :pretitle,
+ * :subtitle, :layout, :quicklink. A detected FULL_SLIDE_COMPONENT (without an
+ * explicit :layout{}) keeps all children in `body` with no header/body split.
  */
 export function createSlide(children: any[], headingLevel?: string): Slide {
   const level = headingLevel || getHeadingLevel(children)
@@ -163,7 +110,6 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
   const quicklink = extractQuicklink(filtered)
   const cleaned = filterAnnotationNodes(filtered)
 
-  // Full-slide component layout — only when no explicit :layout{} annotation
   if (!layoutInfo) {
     const fullLayout = getSlideLayout(cleaned)
     if (fullLayout) {
@@ -185,7 +131,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
     let subtitle: any = explicitSubtitle
     let bodyStartIndex = firstHeadingIndex + 1
 
-    // Fallback: italic paragraph immediately after heading (backward compat)
+    // Fallback: italic paragraph immediately after heading.
     if (!subtitle) {
       const next = cleaned[firstHeadingIndex + 1]
       if (next && isItalicParagraph(next)) {
@@ -213,7 +159,6 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
     }
   }
 
-  // No heading found
   return {
     body: { type: 'root', children: cleaned },
     headingLevel: level,
@@ -224,11 +169,8 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
   }
 }
 
-/**
- * Groups a flat list of AST children into vertical slides at each H3 boundary.
- * Returns a Slide with `verticalSlides` when multiple H3 sections are found,
- * or a plain Slide when there is only one.
- */
+// Splits children into vertical slides at each H3 boundary; returns a plain
+// Slide when only one section results.
 export function processVerticalSlides(children: any[], sectionHeadingLevel?: string): Slide {
   if (!children || children.length === 0)
     return createSlide([], sectionHeadingLevel)
@@ -257,14 +199,7 @@ export function processVerticalSlides(children: any[], sectionHeadingLevel?: str
   return createSlide(children, sectionHeadingLevel)
 }
 
-// ---------------------------------------------------------------------------
-// Public parsers
-// ---------------------------------------------------------------------------
-
-/**
- * Heading-based parser: splits an MDC AST by H1 (title), H2 (horizontal),
- * and HR (alternative horizontal) boundaries, then handles H3 vertical splits.
- */
+// Splits an MDC AST by H1 (title), H2/HR (horizontal), then H3 (vertical).
 export function parseSlides(ast: MDCParserResult): Slide[] {
   if (!ast.body?.children)
     return []
@@ -314,18 +249,12 @@ export function parseSlides(ast: MDCParserResult): Slide[] {
   return sections.map(children => processVerticalSlides(children))
 }
 
-/**
- * Strips YAML frontmatter from raw markdown content.
- */
 function stripFrontmatter(content: string): string {
   const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/)
   return match ? content.slice(match[0].length) : content
 }
 
-/**
- * Separator-based parser: splits raw markdown by --- (horizontal) and
- * ---- (vertical) separators. Parses each chunk independently with MDC.
- */
+// Splits raw markdown by --- (horizontal) / ---- (vertical), parsing each chunk with MDC.
 export async function parseSlidesFromSeparators(rawContent: string): Promise<Slide[]> {
   const body = stripFrontmatter(rawContent)
   const horizontalSections = body.split(/^---$/m).filter(s => s.trim().length > 0)
@@ -359,17 +288,8 @@ export async function parseSlidesFromSeparators(rawContent: string): Promise<Sli
   return slides
 }
 
-// ---------------------------------------------------------------------------
-// Parser port adapters (audit §5.8 / Axe G)
-// ---------------------------------------------------------------------------
-
-/**
- * The two parsers above, exposed behind the shared `DeckParser` port so callers
- * (the composable today; the IR pipeline / renderers tomorrow) depend on one
- * contract rather than picking a function by hand. Both take raw markdown so the
- * port shape is uniform; the heading parser runs MDC first (frontmatter is read
- * into `ast.data` and excluded from the body).
- */
+// Both parsers behind the shared `DeckParser` port: uniform raw-markdown input.
+// The heading parser runs MDC first (frontmatter goes to `ast.data`, not the body).
 export const headingParser: DeckParser = {
   id: 'heading',
   async parse(raw: string): Promise<Slide[]> {

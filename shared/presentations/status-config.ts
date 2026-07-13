@@ -1,14 +1,6 @@
 import type { PublicationStatus } from '../access/status'
 
-/**
- * Presentation-status display config (badge class, label, icon) — the catalog's
- * visual vocabulary. It was hardcoded identically in both `index.vue` and
- * `admin/index.vue`; defined once here and consumed by both. Framework-free data
- * (DaisyUI class strings + Remix-icon names are presentation data, not logic).
- *
- * `icon` is a Remix-icon name (`ri:*`) rendered via `<Icon>` (@nuxt/icon) — not an
- * emoji — so the catalog reads as a designed product rather than glyph soup.
- */
+// Presentation-status display config. `icon` is a Remix-icon name (`ri:*`).
 export interface StatusDisplay {
   badge: string
   label: string

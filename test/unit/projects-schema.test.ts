@@ -14,8 +14,8 @@ describe('parseProjects', () => {
   it('orders unset order last, ties broken by title (falling back to slug)', () => {
     const projects = parseProjects({
       zeta: { order: 1 },
-      beta: {}, // no order, no title → uses slug
-      alpha: {}, // no order, no title → uses slug
+      beta: {}, // no order, no title → sorts by slug
+      alpha: {},
     })
     expect(projects.map(p => p.slug)).toEqual(['zeta', 'alpha', 'beta'])
   })
@@ -28,7 +28,6 @@ describe('parseProjects', () => {
   it('returns an empty list for nullish or malformed input (non-throwing)', () => {
     expect(parseProjects(null)).toEqual([])
     expect(parseProjects(undefined)).toEqual([])
-    // A non-object value fails schema validation → empty, never throws.
     expect(parseProjects('nope')).toEqual([])
   })
 })

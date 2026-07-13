@@ -91,7 +91,6 @@ describe('collectAssets + pipeline', () => {
     const kinds = assets.map(a => a.kind)
     expect(kinds).toContain('storybook')
     expect(kinds).toContain('image')
-    // brand h1 background is collected once.
     expect(assets.some(a => a.url === '/backgrounds/brand-slide-contrast.png')).toBe(true)
   })
 

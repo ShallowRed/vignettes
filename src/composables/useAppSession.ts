@@ -9,17 +9,15 @@ interface AppSession {
 
 /**
  * Single client-side view of the session, including our resolved access `role`
- * (which `nuxt-auth-utils`' own `useUserSession` does not expose). Cached in
- * `useState` so the header, route guards and pages share one fetch instead of
- * each hitting `/api/auth/session`. The server API stays the enforcement
+ * (which `nuxt-auth-utils`' `useUserSession` does not expose). Cached in `useState`
+ * so header, guards and pages share one fetch. The server API stays the enforcement
  * boundary; this is purely for UI gating and identity display.
  */
 export function useAppSession() {
   const state = useState<AppSession | null>('app-session', () => null)
 
-  // Capté dans le scope setup : en SSR, useRequestFetch réémet le cookie de
-  // session de la requête entrante (sinon l'entête rend « déconnecté » alors que
-  // l'utilisateur est loggé). Côté client, c'est un $fetch normal.
+  // Must be called in setup scope: in SSR useRequestFetch re-emits the incoming
+  // session cookie (else the header renders "logged out" for a logged-in user).
   const requestFetch = useRequestFetch()
 
   async function refresh() {
@@ -27,17 +25,14 @@ export function useAppSession() {
     return state.value
   }
 
-  // Resolve once on first use (SSR-friendly via useState + useAsyncData key).
   const { status } = useAsyncData('app-session', () => refresh(), {
-    // Don't refetch if another caller already populated it.
-    immediate: state.value === null,
+    immediate: state.value === null, // don't refetch if another caller populated it
   })
 
-  // Les pages prérendues (/, /login, slides publics — cf. routeRules) figent une
-  // session « déconnecté » au build, et le payload SSG empêche tout refetch. On
-  // re-résout donc la session UNE fois après hydratation (le cookie part
-  // automatiquement côté client) pour que le header reflète l'auth réelle.
-  // Sinon : connecté sur /admin (SSR) mais « sign in » sur / (prérendu).
+  // Prerendered pages (/, /login, public slides) freeze a "logged out" session at
+  // build and the SSG payload blocks any refetch. Re-resolve once after hydration
+  // so the header reflects real auth; otherwise: logged in on /admin (SSR) but
+  // "sign in" on / (prerendered).
   if (import.meta.client) {
     const revalidated = useState('app-session-revalidated', () => false)
     if (!revalidated.value) {

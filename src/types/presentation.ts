@@ -1,58 +1,25 @@
-/**
- * Core type definitions for the presentation system.
- *
- * The canonical `Slide`, `RevealConfig`, and `ThemeBackgrounds` shapes now live in
- * the framework-agnostic deck core (`shared/deck`, audit §5.8) so there is a single
- * definition consumed by parsers, renderers, the server, and tests alike. They are
- * re-exported here for backward compatibility with existing `~/types` imports.
- */
-
 import type { RevealConfig, Slide, ThemeBackgrounds } from '#shared/deck'
 
 export type { RevealConfig, Slide, ThemeBackgrounds }
 
-/**
- * Publication status based on folder location
- * - public: Visible to everyone, prerendered (SSG)
- * - draft: Only visible to authenticated owner
- * - private: Only accessible to authenticated users
- * - semi-private: Accessible via password (no login required)
- *
- * Canonical definition in the access domain (`shared/access`); re-exported here.
- */
 export type { PublicationStatus } from '#shared/access'
 export interface PresentationMeta {
   title?: string
   lang?: string
   theme?: string
   backgrounds?: ThemeBackgrounds
-  /**
-   * Base URL of a published Storybook (no trailing `iframe.html`).
-   * When set, a slide's `:layout{story="<storyId>"}` resolves to
-   * `<storybook>/iframe.html?id=<storyId>&viewMode=story` and is embedded
-   * as an iframe in the media pane. Example: `https://storybook.example.com`
-   * or `http://localhost:6006`.
-   */
+  // Published Storybook root (no trailing `iframe.html`); resolves `:layout{story=…}` iframes.
   storybook?: string
-  /**
-   * Slide parser mode:
-   * - 'heading' (default): splits slides by H1/H2/H3 headings
-   * - 'separator': splits by --- (horizontal) and ---- (vertical)
-   */
+  // 'heading' splits by H1/H2/H3; 'separator' splits by --- / ----.
   parser?: 'heading' | 'separator'
 }
 
-/**
- * Full presentation metadata from frontmatter
- * - reveal: Reveal.js configuration
- * - Everything else: custom metadata
- */
 export interface PresentationMetadata extends PresentationMeta {
   reveal?: RevealConfig
-  // Legacy support: flat Reveal.js options (deprecated)
+  // Deprecated flat Reveal.js options.
   transition?: string
   center?: boolean
-  // For semi-private presentations: hashed password
+  // Hashed password for semi-private presentations.
   accessPassword?: string
   [key: string]: any
 }
@@ -63,9 +30,6 @@ export interface PresentationData {
   editUrl?: string
 }
 
-/**
- * Presentation list item returned by GET /api/presentations
- */
 export interface PresentationListItem {
   slug: string
   title: string

@@ -52,8 +52,6 @@ describe('checkThemeConsistency', () => {
   })
 
   it('the real repo CSS set matches the manifest (no drift)', () => {
-    // dsfr-alt and dsfr-standalone now have tokens entries, so the full compiled
-    // set is consistent with KNOWN_THEMES — no warnings at boot.
     const report = checkThemeConsistency({
       cssFiles: ['dsfr', 'dsfr-alt', 'dsfr-standalone', 'brand', 'minimal'],
     })
@@ -63,8 +61,6 @@ describe('checkThemeConsistency', () => {
   })
 
   it('defaults tokens to KNOWN_THEMES when not provided', () => {
-    // Passing only cssFiles must not throw and must compare against the manifest
-    // (the full set of compiled themes, which now includes the dsfr derivatives).
     const report = checkThemeConsistency({
       cssFiles: ['dsfr', 'dsfr-alt', 'dsfr-standalone', 'minimal', 'brand'],
     })

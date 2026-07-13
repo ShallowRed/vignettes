@@ -1,14 +1,6 @@
 /**
- * Server utilities for fetching presentation content from CodiMD or HackMD.
- *
- * Supported sources:
- *   - "codimd"  → self-hosted CodiMD: GET {baseUrl}/:noteId/download
- *   - "hackmd"  → hackmd.io API:     GET https://api.hackmd.io/v1/notes/:noteId
- *
- * The content is cached in-memory with a short TTL so that live collaborative
- * edits propagate quickly while avoiding excessive requests per page load. The
- * TTL is the single shared `createTtlCache` helper (audit §5.7 / P1 #6),
- * configurable via `NUXT_SOURCE_CACHE_TTL_MS`.
+ * Fetch presentation content from CodiMD (self-hosted, `/:noteId/download`) or
+ * HackMD (hackmd.io API). Cached in-memory with a short TTL (`NUXT_SOURCE_CACHE_TTL_MS`).
  */
 
 import { createTtlCache, DEFAULT_CACHE_TTL_MS, SourceUnreachableError } from '#shared/deck'
@@ -34,9 +26,6 @@ function getConfig() {
   }
 }
 
-/**
- * Fetch raw markdown from a self-hosted CodiMD instance.
- */
 async function fetchFromCodiMD(noteId: string): Promise<string | null> {
   const { codimdUrl } = getConfig()
   if (!codimdUrl) {
@@ -52,10 +41,6 @@ async function fetchFromCodiMD(noteId: string): Promise<string | null> {
   return content
 }
 
-/**
- * Fetch raw markdown from the official HackMD.io API.
- * Requires a Bearer token set via NUXT_HACKMD_API_TOKEN.
- */
 async function fetchFromHackMD(noteId: string): Promise<string | null> {
   const { hackmdApiToken } = getConfig()
   if (!hackmdApiToken) {
@@ -70,20 +55,12 @@ async function fetchFromHackMD(noteId: string): Promise<string | null> {
   return data.content
 }
 
-/**
- * Fetch the raw markdown content of a collaborative note.
- *
- * @param source  The provider: "codimd" (self-hosted) or "hackmd" (hackmd.io)
- * @param noteId  The note id or alias
- * @returns       The markdown string, or `null` when the note cannot be reached.
- */
+/** Fetch a collaborative note's markdown, or `null` when unreachable. */
 export async function fetchCollaborativeNote(source: NoteSource, noteId: string): Promise<string | null> {
   const cacheKey = `${source}:${noteId}`
 
   try {
-    // The loader throws on an unreachable/empty source so failures are NOT cached
-    // (only successful markdown is memoized for the TTL window). Fail-closed at the
-    // cache layer; callers decide whether to degrade to a stub.
+    // Loader throws on unreachable/empty so failures are NOT cached (only successful markdown is).
     return await noteCache.get(cacheKey, async () => {
       const content = source === 'hackmd'
         ? await fetchFromHackMD(noteId)
@@ -99,9 +76,6 @@ export async function fetchCollaborativeNote(source: NoteSource, noteId: string)
   }
 }
 
-/**
- * Build the public edit URL for a collaborative note.
- */
 export function getEditUrl(source: NoteSource, noteId: string): string | null {
   if (source === 'hackmd') {
     return `https://hackmd.io/${noteId}`
@@ -109,9 +83,3 @@ export function getEditUrl(source: NoteSource, noteId: string): string | null {
   const { codimdUrl } = getConfig()
   return codimdUrl ? `${codimdUrl}/${noteId}` : null
 }
-
-// Frontmatter handling now lives in the framework-agnostic deck core
-// (`shared/deck/frontmatter.ts`, audit §5.3): parse → operate on objects →
-// serialize once via a real YAML library, never by ad-hoc regex. The former
-// `stripFrontmatter` / `parseFlatFrontmatter` / `setFrontmatterScalar` helpers
-// were removed once the routes converged on `resolveDeck`.

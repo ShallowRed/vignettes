@@ -1,8 +1,3 @@
-/**
- * Get current user session, including the resolved access role so the client
- * (admin route guard, UI) can gate by role without re-deriving it.
- */
-
 import { getActorRole } from '../../utils/actor'
 
 export default defineEventHandler(async (event) => {

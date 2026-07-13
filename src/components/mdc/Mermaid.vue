@@ -12,7 +12,6 @@ const diagramId = `mermaid-${useId()}`
 
 const isFullscreen = ref(false)
 
-// Pan & zoom state
 const scale = ref(1)
 const panX = ref(0)
 const panY = ref(0)
@@ -28,7 +27,6 @@ function openFullscreen() {
   if (!svg || !fullscreenContent.value)
     return
 
-  // Clone SVG into fullscreen view
   const clone = svg.cloneNode(true) as SVGElement
   clone.style.maxWidth = 'none'
   clone.style.width = ''
@@ -36,7 +34,6 @@ function openFullscreen() {
   fullscreenContent.value.innerHTML = ''
   fullscreenContent.value.appendChild(clone)
 
-  // Reset transform
   scale.value = 1
   panX.value = 0
   panY.value = 0
@@ -44,7 +41,6 @@ function openFullscreen() {
 
   isFullscreen.value = true
 
-  // Center the diagram after display
   nextTick(() => {
     resetTransform()
   })
@@ -77,7 +73,6 @@ function resetTransform() {
   const svgWidth = svgRect.width / scale.value
   const svgHeight = svgRect.height / scale.value
 
-  // Fit diagram in the space with some padding
   const fitScale = Math.min(
     (spaceRect.width * 0.9) / svgWidth,
     (spaceRect.height * 0.9) / svgHeight,
@@ -92,7 +87,7 @@ function resetTransform() {
 
 function zoomBy(delta: number) {
   const newScale = Math.min(Math.max(scale.value + delta, MIN_SCALE), MAX_SCALE)
-  // Zoom around center of the space
+  // Zoom around the center of the space.
   if (fullscreenContent.value?.parentElement) {
     const rect = fullscreenContent.value.parentElement.getBoundingClientRect()
     const centerX = rect.width / 2
@@ -107,7 +102,6 @@ function zoomBy(delta: number) {
   updateTransform()
 }
 
-// Mouse drag handlers
 function onMouseDown(e: MouseEvent) {
   if (e.button !== 0)
     return
@@ -129,7 +123,6 @@ function onMouseUp() {
   isDragging.value = false
 }
 
-// Touch drag handlers
 function onTouchStart(e: TouchEvent) {
   if (e.touches.length !== 1)
     return
@@ -153,28 +146,24 @@ function onTouchEnd() {
   isDragging.value = false
 }
 
-// Wheel zoom handler
 function onWheel(e: WheelEvent) {
   e.preventDefault()
   const delta = e.deltaY > 0 ? -0.1 : 0.1
   zoomBy(delta)
 }
 
-// Escape key handler
 function onKeyDown(e: KeyboardEvent) {
   if (e.key === 'Escape' && isFullscreen.value) {
     closeFullscreen()
   }
 }
 
-// Click on backdrop (outside the space) to close
 function onOverlayClick(e: MouseEvent) {
   if (e.target === fullscreenOverlay.value) {
     closeFullscreen()
   }
 }
 
-// Lifecycle: global listeners
 onMounted(async () => {
   document.addEventListener('keydown', onKeyDown)
   document.addEventListener('mousemove', onMouseMove)
@@ -187,7 +176,6 @@ onMounted(async () => {
   if (!container.value || !hiddenSlot.value)
     return
 
-  // Try to find code in pre>code element first (from fenced code block)
   const codeElement = hiddenSlot.value.querySelector('pre code') || hiddenSlot.value.querySelector('code')
   let code = ''
 
@@ -195,13 +183,11 @@ onMounted(async () => {
     code = codeElement.textContent?.trim() || ''
   }
   else {
-    // Fallback: get text from pre element
     const preElement = hiddenSlot.value.querySelector('pre')
     if (preElement) {
       code = preElement.textContent?.trim() || ''
     }
     else {
-      // Last fallback: direct text content
       code = hiddenSlot.value.textContent?.trim() || ''
     }
   }
@@ -211,10 +197,9 @@ onMounted(async () => {
     return
   }
 
-  // Dynamic import to avoid SSR issues
+  // Dynamic import to avoid SSR issues.
   const mermaid = (await import('mermaid')).default
 
-  // Initialize mermaid with theme
   mermaid.initialize({
     startOnLoad: false,
     theme: props.theme || 'default',
@@ -223,7 +208,6 @@ onMounted(async () => {
   })
 
   try {
-    // Render the diagram
     const { svg } = await mermaid.render(diagramId, code)
     container.value.innerHTML = svg
   }
@@ -244,7 +228,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="mermaid-wrapper">
-    <!-- Hidden slot to capture text content -->
     <div
       ref="hiddenSlot"
       style="display: none;"
@@ -252,7 +235,6 @@ onBeforeUnmount(() => {
       <slot />
     </div>
 
-    <!-- Rendered diagram with expand button -->
     <div class="mermaid-diagram">
       <div
         ref="container"
@@ -293,7 +275,6 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- Fullscreen overlay -->
     <Teleport to="body">
       <div
         v-if="isFullscreen"
@@ -314,7 +295,6 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <!-- Controls -->
         <div
           class="mermaid-controls"
           @mousedown.stop
@@ -418,7 +398,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Diagram wrapper with hover-reveal expand button */
 .mermaid-diagram {
   position: relative;
 }
@@ -436,7 +415,6 @@ onBeforeUnmount(() => {
   height: auto;
 }
 
-/* Expand button - appears on hover */
 .expand-button {
   position: absolute;
   top: 0.5rem;
@@ -468,7 +446,6 @@ onBeforeUnmount(() => {
   border-color: rgba(128, 128, 128, 0.6);
 }
 
-/* Fullscreen overlay */
 .mermaid-fullscreen-overlay {
   position: fixed;
   inset: 0;
@@ -503,7 +480,6 @@ onBeforeUnmount(() => {
   height: auto;
 }
 
-/* Navigation controls */
 .mermaid-controls {
   position: fixed;
   bottom: calc((100vh - 85vh) / 2 + 16px);

@@ -1,14 +1,8 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
-/**
- * Plain (non-Nuxt) Vitest config.
- *
- * The deck core (`shared/deck/*`) is framework-agnostic and free of Nuxt
- * auto-imports by design, so it can be unit- and golden-tested without spinning
- * up a Nuxt runtime. Server adapters that need `useStorage`/`$fetch` are tested
- * through injected fakes (dependency injection in `resolveDeck`).
- */
+// Plain (non-Nuxt) Vitest: deck core is framework-agnostic; server adapters are
+// tested via injected fakes, so no Nuxt runtime is needed.
 export default defineConfig({
   resolve: {
     alias: {

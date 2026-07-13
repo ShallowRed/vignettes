@@ -1,40 +1,24 @@
 /**
- * Server utilities for presentation discovery and access control.
- *
- * Content is read through Nitro's server assets (`useStorage('assets:presentations')`)
- * rather than the raw filesystem. The `presentations/` folder is registered as a
- * server asset in nuxt.config, so Nitro bundles it into the build output and the
- * same access works in dev and on the Node server, regardless of the process
- * working directory.
+ * Presentation discovery. Content is read through Nitro server assets
+ * (`useStorage('assets:presentations')`), not the raw filesystem, so it resolves
+ * in dev and on the server regardless of the process working directory.
  */
 
 import type { PublicationStatus } from '#shared/access'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { resolveDeckStatus } from '#shared/deck'
 
-/**
- * Valid publication status folders. The canonical definition lives in the access
- * domain (`shared/access`, zod-validated); re-exported here (local binding, not a
- * bare `export … from`, so it survives Nitro's bundling) for existing imports.
- */
+// Local re-export (not a bare `export … from`) so it survives Nitro's bundling.
 export type { PublicationStatus }
 export { PUBLICATION_STATUSES }
 
-/**
- * The Nitro storage mount that exposes the bundled `presentations/` folder.
- */
 export function presentationsStorage() {
   return useStorage('assets:presentations')
 }
 
-/**
- * Reserved top-level keys under `presentations/` that are not deck stubs.
- * `archived/` is a lifecycle location (DDR-018), not a publication status, and is
- * sourced via the registry — excluded from catalog discovery.
- */
+// `archived/` is a lifecycle location sourced via the registry, not a deck stub.
 const NON_STUB_PREFIXES = ['archived']
 
-/** A discovered stub: its slug, raw content, derived status, and storage key. */
 interface StubEntry {
   slug: string
   status: PublicationStatus
@@ -43,10 +27,8 @@ interface StubEntry {
 }
 
 /**
- * Enumerate every deck stub under `presentations/`, regardless of layout —
- * flattened (`<slug>.md`) or the legacy access folders (`<status>/<slug>.md`).
- * Status is derived from each stub's frontmatter (closed default), so the
- * folder is no longer the source of truth; `archived/` is skipped (registry).
+ * Enumerate every deck stub under `presentations/` (flat `<slug>.md` or
+ * `<status>/<slug>.md`). Status derives from frontmatter; `archived/` is skipped.
  */
 async function listStubEntries(): Promise<StubEntry[]> {
   const storage = presentationsStorage()
@@ -69,10 +51,7 @@ async function listStubEntries(): Promise<StubEntry[]> {
   return entries
 }
 
-/**
- * Find a presentation by slug. Returns its (frontmatter-derived) status, or null
- * if not found; throws if the same slug exists in more than one stub.
- */
+/** Find a presentation by slug; throws if the slug exists in more than one stub. */
 export async function findPresentationBySlug(slug: string): Promise<{
   status: PublicationStatus
 } | null> {
@@ -85,24 +64,14 @@ export async function findPresentationBySlug(slug: string): Promise<{
   return { status: matches[0]!.status }
 }
 
-/**
- * List all presentations from a specific status (filtered by frontmatter status,
- * across whatever layout the stubs live in).
- */
 export async function listPresentationsByStatus(status: PublicationStatus): Promise<string[]> {
   return (await listStubEntries()).filter(e => e.status === status).map(e => e.slug)
 }
 
-/**
- * List all presentations with their (frontmatter-derived) status.
- */
 export async function listAllPresentations(): Promise<{ slug: string, status: PublicationStatus }[]> {
   return (await listStubEntries()).map(({ slug, status }) => ({ slug, status }))
 }
 
-/**
- * Read presentation content by slug, with its derived status.
- */
 export async function readPresentationContent(slug: string): Promise<{
   content: string
   status: PublicationStatus
@@ -113,12 +82,7 @@ export async function readPresentationContent(slug: string): Promise<{
   return { content: match.content, status: match.status }
 }
 
-/**
- * Read a stub by slug regardless of which folder (if any) it lives in. Kept for
- * the registry (DDR-018) and the catalog, which previously passed a status to
- * disambiguate folders; status now comes from the frontmatter, so the `access`
- * argument is accepted for source-compat but ignored.
- */
+/** Read a stub by slug. The `access` arg is accepted for source-compat but ignored. */
 export async function readPresentationContentAt(
   slug: string,
   _access?: PublicationStatus,
@@ -126,11 +90,7 @@ export async function readPresentationContentAt(
   return readPresentationContent(slug)
 }
 
-/**
- * Read a frozen/archived deck's stub from `presentations/archived/`. Archived is
- * a lifecycle location, not a publication status, so it has its own reader (used
- * by the catalog to source a frozen deck's theme).
- */
+/** Read a frozen/archived deck's stub from `presentations/archived/`. */
 export async function readArchivedStub(slug: string): Promise<string | null> {
   const raw = await presentationsStorage().getItem(`archived:${slug}.md`)
   return raw == null ? null : (typeof raw === 'string' ? raw : String(raw))

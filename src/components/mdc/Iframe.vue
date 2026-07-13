@@ -26,7 +26,6 @@ const props = withDefaults(defineProps<Props>(), {
     class="iframe-container"
     :class="{ fullwidth: props.fullwidth }"
   >
-    <!-- With lightbox: wrap in anchor for Reveal.js native lightbox -->
     <a
       v-if="props.lightbox"
       :href="props.src"
@@ -45,7 +44,6 @@ const props = withDefaults(defineProps<Props>(), {
         <span>Cliquer pour agrandir</span>
       </div>
     </a>
-    <!-- Without lightbox -->
     <iframe
       v-else
       :src="props.src"
@@ -69,7 +67,6 @@ const props = withDefaults(defineProps<Props>(), {
 }
 
 .iframe-container.fullwidth {
-  /* Break out of Reveal.js scaling constraints */
   width: 100%;
   border-radius: 0;
 }

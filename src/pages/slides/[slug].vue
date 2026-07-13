@@ -6,31 +6,22 @@ definePageMeta({
 const route = useRoute()
 const slug = route.params.slug as string
 
-// Load presentation data
 const { presentationData, error } = usePresentation(slug)
 
-// Collaborative edit link (CodiMD or HackMD)
 const editUrl = computed(() => presentationData.value?.editUrl || null)
 
-// Check if error requires password and redirect to unlock page
 const requiresPassword = computed(() => {
   if (!error.value)
     return false
   const err = error.value as any
-  // Check various error formats
   return err?.data?.requiresPassword
     || err?.statusCode === 401
     || err?.message?.includes('Password required')
     || err?.message?.includes('401')
 })
 
-// Handle access control errors - redirect to unlock page for password-protected
-// presentations, telling it to return here once unlocked.
-//
-// `replace: true` so this redirect does NOT push a history entry: /slides/<slug>
-// only ever bounces to /unlock, so leaving it in history traps Back (Back lands
-// here, the watch re-fires, and bounces forward to /unlock again). Replacing it
-// means Back from /unlock returns straight to the catalog.
+// `replace: true`: this route only ever bounces to /unlock, so keeping it in
+// history would trap Back (it re-fires the watch and bounces forward again).
 watch(requiresPassword, (needsPassword) => {
   if (needsPassword)
     navigateTo(`/unlock/${slug}?return=/slides/${slug}`, { replace: true })
@@ -39,8 +30,7 @@ watch(requiresPassword, (needsPassword) => {
 
 <template>
   <div class="presentation-page">
-    <!-- No <ClientOnly> (DDR-017 §2.a-ter): the markup is SSR-safe and must prerender
-         for the frozen bundle. Reveal init stays client-only (onMounted). -->
+    <!-- No <ClientOnly>: SSR-safe markup must prerender for the frozen bundle. -->
     <template v-if="presentationData && presentationData.slides.length > 0">
       <RevealPresentation
         :theme="presentationData.metadata.theme"

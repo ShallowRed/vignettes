@@ -1,17 +1,9 @@
 #!/usr/bin/env node
 /**
- * Generate the SCSS theme-tokens partial from the single tokens manifest
- * (`shared/theme/tokens.ts`) — the "Style Dictionary" formatter step (audit §5.5).
- *
- * One manifest → two outputs: the TS side is imported directly by the app/server
- * (`PRESETS`, `THEME_BACKGROUNDS`); this script emits the SCSS side so background
- * image paths and Reveal dimensions are declared exactly once. The generated
- * partial only EXPOSES values as namespaced CSS custom properties under
- * `:root` — it never overrides a theme's existing color/layout rules, so it is
- * additive and safe to regenerate on every build.
- *
- * Runs via Node's native TypeScript type-stripping (Node ≥ 23), so it can import
- * the `.ts` manifest with no build step.
+ * Generates the SCSS theme-tokens partial from the tokens manifest
+ * (shared/theme/tokens.ts), so background image paths and Reveal dimensions are
+ * declared once for both the TS and SCSS sides. Additive only (exposes CSS custom
+ * properties, overrides nothing), safe to regenerate on every build.
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

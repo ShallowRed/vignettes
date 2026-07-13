@@ -2,16 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { splitFrontmatter } from '../../shared/deck/frontmatter'
 import { resolveDeck } from '../../shared/deck/resolve'
 
-/**
- * Golden / characterization of `resolveDeck` (audit §6).
- *
- * One resolver, parameterized by declared precedence data, must reproduce the
- * three routes' behavior — and turn each past incident into a regression test:
- *   - nested `reveal.margin` preserved (the margins bug)
- *   - the "effective" Storybook URL identical regardless of route (whitelist)
- *   - body precedence (remote note vs stub)
- */
-
 describe('resolveDeck — CodiMD preset route (noteOverride: "all")', () => {
   it('preserves nested reveal.margin from the note (margins bug → regression test)', () => {
     const remote = [
@@ -26,7 +16,6 @@ describe('resolveDeck — CodiMD preset route (noteOverride: "all")', () => {
 
     const deck = resolveDeck({ preset: 'dsfr', remote, noteOverride: 'all', source: 'codimd' })
 
-    // Theme swapped to brand, brand backgrounds applied, margin honored.
     expect(deck.meta.theme).toBe('brand')
     expect(deck.meta.reveal).toMatchObject({ margin: 0.2, width: 1200, height: 800, slideNumber: true })
     expect(deck.meta.backgrounds).toEqual({

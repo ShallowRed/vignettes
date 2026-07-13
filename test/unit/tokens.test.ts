@@ -2,10 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { buildPresetBase, DEFAULT_PRESET, KNOWN_THEMES, PRESETS } from '../../shared/deck/presets'
 import { THEME_BACKGROUNDS, THEME_TOKENS } from '../../shared/theme/tokens'
 
-/**
- * Tokens manifest is the single source of truth (audit §5.5): presets and
- * backgrounds derive from it, so they can never drift apart again.
- */
 describe('theme tokens manifest', () => {
   it('derives PRESETS from the tokens manifest', () => {
     for (const name of Object.keys(THEME_TOKENS)) {

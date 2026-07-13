@@ -1,10 +1,6 @@
-/**
- * Loads the framework-agnostic iframe scaler (`public/scaled-frame.js`) in the
- * live app. The same script is injected into the frozen Reveal-only bundle by the
- * nuxtout-deck Nitro plugin, so scaling behaves identically in both. Client-only —
- * it touches the DOM and a ResizeObserver. See DDR-017 §2.a-ter for why this is JS
- * and not pure CSS (Firefox `cqh` on grid items is unreliable).
- */
+// Loads the iframe scaler (`public/scaled-frame.js`); the same script is injected
+// into the frozen bundle so scaling matches. JS, not CSS: Firefox `cqh` on grid
+// items is unreliable.
 export default defineNuxtPlugin(() => {
   if (document.getElementById('scaled-frame-js'))
     return

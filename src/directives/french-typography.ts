@@ -1,90 +1,28 @@
-/**
- * Vue Directive: French Typography
- *
- * Vue directive that applies French orthotypographic rules to element content.
- * Uses the generic DomTextTransformer with French-specific transformation rules.
- */
-
 import type { Directive } from 'vue'
 import { DomTextTransformer } from '~/utils/dom-text-transformer'
 import { transformerTexte } from '~/utils/french-typography'
 
-// =============================================================================
-// OBSERVER STORAGE
-// =============================================================================
-
-/**
- * WeakMap to store MutationObservers associated with each element.
- * Using WeakMap prevents memory leaks: entries are automatically
- * removed when the element is garbage collected.
- */
 const observers = new WeakMap<HTMLElement, MutationObserver>()
 
-// =============================================================================
-// TRANSFORMER INSTANCE
-// =============================================================================
-
-/**
- * Shared transformer instance configured with French typography rules.
- */
 const frenchTypographyTransformer = new DomTextTransformer({
   transform: transformerTexte,
   skipElements: ['script', 'style', 'code', 'pre', 'textarea', 'input'],
 })
 
-// =============================================================================
-// VUE DIRECTIVE
-// =============================================================================
-
-/**
- * Vue directive for French orthotypography.
- *
- * Automatically transforms text content within the element to follow
- * French typographic conventions (proper spacing around punctuation,
- * French quotes, typographic apostrophes, etc.).
- *
- * Also watches for dynamic content changes (useful for async MDC/Markdown
- * rendering) and applies transformations to newly added elements.
- *
- * @example
- * ```vue
- * <template>
- *   <article v-french-typography>
- *     <h1>Bienvenue !</h1>
- *     <p>Voici un exemple : « C'est magnifique ! »</p>
- *   </article>
- * </template>
- * ```
- */
 export const vFrenchTypography: Directive<HTMLElement> = {
-  /**
-   * SSR no-op (DDR-017 §2.a-ter). The transform runs client-side at `mounted`,
-   * but the directive must still expose `getSSRProps` so Vue's server renderer
-   * doesn't crash when the deck is prerendered (`ssrGetDirectiveProps` →
-   * `getSSRProps` of an undefined directive). Returning no props leaves the
-   * server markup untouched; the client applies the typography on mount.
-   */
+  // Required so the server renderer doesn't crash when prerendering the deck;
+  // the transform itself runs client-side at `mounted`.
   getSSRProps() {
     return {}
   },
 
-  /**
-   * Called when the element is mounted to the DOM.
-   * Processes existing content and sets up observer for dynamic content.
-   */
   mounted(element: HTMLElement) {
-    // Process initial content
     frenchTypographyTransformer.processNode(element)
-
-    // Set up observer for dynamic content (MDC renders asynchronously)
+    // Observe for async MDC content added after mount.
     const observer = frenchTypographyTransformer.createObserver(element)
     observers.set(element, observer)
   },
 
-  /**
-   * Called when the element is unmounted from the DOM.
-   * Cleans up the MutationObserver to prevent memory leaks.
-   */
   unmounted(element: HTMLElement) {
     const observer = observers.get(element)
     if (observer) {
