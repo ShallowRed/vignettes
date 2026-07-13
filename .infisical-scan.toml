@@ -1,0 +1,13 @@
+# Config de scan de secrets (infisical scan / gitleaks). Garde les règles par
+# défaut et allowliste les faux positifs connus.
+title = "nuxt-slides secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Assets Storybook buildés (JS minifié) + présentations figées — pas de source, faux positifs generic-api-key"
+paths = [
+  '''(^|/)_storybook/''',
+  '''(^|/)\.frozen/''',
+]
