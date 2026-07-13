@@ -1,0 +1,582 @@
+# Presentation Format Reference
+
+## File Structure
+Location: `presentations/[slug].md`
+
+## Frontmatter Schema
+```yaml
+---
+title: "Presentation Title"    # Display name (optional, defaults to slug)
+theme: dsfr                    # Theme name (optional, defaults to 'dsfr')
+transition: slide              # Reveal.js transition (optional, defaults to 'slide')
+center: true                   # Vertical centering (optional, defaults to true)
+storybook: http://localhost:6006  # Base URL of a published Storybook (optional).
+                               # Enables `:layout{story="<id>"}` live embeds (see below).
+# Custom fields supported for future extensions
+---
+```
+
+## Slide Hierarchy
+
+### Title Slide (H1)
+```markdown
+# Main Title
+Subtitle or description
+```
+- First H1 creates title slide
+- Content until next H2 included in title section
+- Only one H1 per presentation
+- Gets `slide-h1` CSS class
+
+### Horizontal Slides (H2)
+```markdown
+## Section Title
+Content for this slide
+```
+- Creates new horizontal slide
+- Navigate with ← → arrows
+- Gets `slide-h2` CSS class
+- Can contain vertical slides (H3)
+
+### Vertical Slides (H3)
+```markdown
+## Parent Section
+
+### First Vertical
+Content here
+
+### Second Vertical
+More content
+```
+- Nested under previous H2
+- Navigate with ↑ ↓ arrows
+- Gets `slide-h3` CSS class
+- Groups multiple related slides
+
+### Alternative Separator (HR)
+```markdown
+Content for slide 1
+
+---
+
+Content for slide 2
+```
+- `---` creates horizontal break
+- Alternative to H2
+- Useful for slides without titles
+
+---
+
+## MDC Components
+
+MDC (Markdown Components) uses colons to embed Vue components. The number of colons determines the component type:
+
+| Syntax | Type | Use when… |
+|--------|------|-----------|
+| `:::Component` … `:::` | **Container** (block) | Component **wraps other components** (nesting) |
+| `::Component` … `::` | **Leaf** (block) | Component **wraps text/content only**, no nesting |
+| `:component{props}` | **Inline** | Inside a line of text |
+
+**Nesting rule**: a parent container must use **more colons** than its children.
+
+### Container components (use `:::`)
+
+Containers wrap other MDC components. Always close with `:::`.
+
+#### Columns (2 or 3) with explicit column children
+```markdown
+:::Columns
+
+::column
+Left content goes here
+::
+
+::column
+Right content goes here
+::
+
+:::
+```
+
+For 3 columns, add `count=3`:
+```markdown
+:::Columns{count=3 size="sm"}
+
+::column
+First
+::
+
+::column
+Second
+::
+
+::column
+Third
+::
+
+:::
+```
+
+**Backward-compat**: `TwoColumns` and `ThreeColumns` still resolve to `Columns` (aliases in `MDC_COMPONENTS`).
+
+#### Columns with auto-split (heading-based)
+```markdown
+:::Columns
+### Column 1
+Content for first column
+
+### Column 2
+Content for second column
+:::
+```
+**Note**: Each H3/H4 starts a new column. Grouped via DOM manipulation in `onMounted`. `count` prop is informational only when using auto-split — actual column count is driven by the headings.
+
+#### Highlight (key message emphasis)
+Displays text larger than usual for slides with few words but strong messages.
+
+```markdown
+::Highlight
+Un **catalogue de règles** au service de la *transparence algorithmique*
+::
+```
+
+With size and variant:
+```markdown
+::Highlight{size="lg" variant="accent"}
+La mutualisation réduit les coûts de **60%**
+::
+```
+
+**Props**:
+- `size` — text size preset: `sm` (1.3em), `md` (1.6em, default), `lg` (2em), `xl` (2.6em)
+- `variant` — visual style: `default` (no background), `accent` (blue left border + light bg), `contrast` (dark bg, white text)
+- `center` — center text horizontally (default: `true`, set `:center="false"` for left-aligned)
+
+**Styling notes**: `**bold**` text gets blue-france color, `*italic*` text gets an underline accent. In `contrast` variant, accents use lighter blue tones.
+
+#### Slide-level layout: media alongside content
+```markdown
+### My slide title
+:layout{name="media-right" src="https://example.com" type="iframe"}
+
+Description text next to the iframe.
+```
+The `:layout` annotation is extracted by the parser — the heading + body render in a content column,
+while the media (iframe or image) renders in a sibling column. Supported layouts:
+- `media-right` — content left, media right (default proportions: 1fr / 1.5fr)
+- `media-left` — media left, content right
+- `media-right-wide` — content left, wider media right (1fr / 1.7fr)
+- `media-left-wide` — wider media left, content right (1.7fr / 0.8fr)
+- `media-right-xwide` — content shrinks to a caption rail, media dominates (0.62fr / 2.4fr)
+- `media-left-xwide` — same, media on the left (2.4fr / 0.62fr)
+- `media-below` — compact heading/intro row on top, full-width media row below (stacked)
+- `media-above` — full-width media row on top, heading/intro row below (stacked)
+- `media-cover` — one big screen full-bleed, heading/intro float in a translucent caption card
+
+Use `*-xwide` and `media-cover` for wide app screenshots/stories that the
+default side-by-side grid would shrink too much. Use `media-below` / `media-above`
+when the media is landscape and the text is short.
+
+Props: `src` (required unless `story` is set), `type` ("iframe" or "image", default "image"), `alt`, `title`, `lightbox`, `fit` ("cover" by default, or "contain" to remove container chrome and let the image float on the slide background), `previewWidth` (logical iframe width — see below), `raw` (disable iframe scaling).
+
+**Iframe scaling (show the whole page, not the top-left corner):** embedded
+stories/apps render their responsive layout at the iframe's pixel width, so a
+small slide frame would only show a corner at 1:1. Instead the engine renders
+the iframe at a logical desktop width (`previewWidth`, default `1440`) and
+scales it down to fit. Raise `previewWidth` to "zoom out" and show more (e.g.
+`1700` for a tall dashboard), lower it to zoom in. Add `raw` to opt out and
+render at native size. Scaling is automatic for `:layout{story}` /
+`StoryFrame` iframes; it is disabled for `fit="contain"`.
+
+**Deck size & side padding:** Reveal renders the deck at a fixed logical size
+and letterboxes the rest. For a 16:9 screen without empty side bars, set
+`reveal.width: 1280` + `reveal.height: 720` in the frontmatter. Lower
+`reveal.margin` (e.g. `0.03`) trims the reserved border further.
+
+#### Embedding a Storybook story (live, no screenshots)
+```markdown
+---
+title: "Design iterations"
+storybook: http://localhost:6006   # or a deployed Storybook URL
+---
+
+### My component, live
+:layout{name="media-right-wide" story="exploration-referentiel-vivant-plat--page" lightbox="true"}
+
+What we are testing, next to the live story.
+```
+When the frontmatter declares a `storybook` base URL, a `story` prop on `:layout`
+resolves to `<storybook>/iframe.html?id=<story>&viewMode=story` and is embedded
+as an `iframe` (type is forced to `iframe`; any `src`/`type` is ignored). The
+`story` value is the Storybook **story id** (`<componentId>--<storyName>`), e.g.
+`exploration-thematique-vivante--page`. This keeps slides in sync with the design
+system: no PNG to regenerate, the story renders live from the single `storybook`
+source. `lightbox="true"` adds the Reveal.js zoom on the embedded story.
+
+#### Several screens on one slide (`Screens` + `StoryFrame`)
+
+To compare several stories/screens side by side, use the `Screens` container
+with `StoryFrame` children. `StoryFrame` resolves a `story` id against the same
+frontmatter `storybook` root (or takes a raw `src`).
+
+```markdown
+### Five postures, side by side
+
+:::Screens{cols="5" gap="1rem"}
+::StoryFrame{story="vitrine-accueil-scenario-a--page" ratio="portrait" label="A · Acquisition" lightbox}
+::
+::StoryFrame{story="vitrine-accueil-scenario-b--page" ratio="portrait" label="B · Aiguillage" lightbox}
+::
+::StoryFrame{story="vitrine-accueil-scenario-c--page" ratio="portrait" label="C · Hub" lightbox}
+::
+:::
+```
+
+`Screens` props: `cols` (fixed column count; omit for an even auto-fit row),
+`gap` (CSS length, default `1.5rem`), `align` (`start` | `center` | `stretch`).
+
+`StoryFrame` props:
+- `story` — Storybook story id (resolved against the `storybook` frontmatter root)
+- `src` — explicit URL when no `story` is given
+- `type` — `iframe` (default for stories/URLs) or `image`
+- `ratio` — named (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or raw `16/9`
+- `fit` — `cover` (default) or `contain`
+- `previewWidth` — logical iframe width before scaling (default `1440`; higher shows more)
+- `raw` — render the iframe at native size (disable scaling)
+- `label` — caption under the frame (or use the default slot)
+- `lightbox` — click to open the screen full-screen
+- `title` — accessible iframe title / image alt
+
+`StoryFrame` also works standalone in a slide body (without `Screens`) for a
+single embedded screen with a caption.
+
+### Leaf components (use `::`)
+
+Leaves wrap text content but **never** other components.
+
+#### column (inside a container)
+```markdown
+::column
+Content for this column
+::
+```
+
+#### column with size
+```markdown
+::column{.size-xl}
+Larger text content
+::
+```
+
+#### Image
+```markdown
+::Image{src="/path/to/image.png" alt="Description" width="60%"}
+```
+
+**Props**:
+- `src` (required)
+- `alt`, `width`, `height`, `fit`, `position`, `rounded`, `shadow`
+- `preview` — enables Reveal.js lightbox. Pass `:preview="true"` to use `src` as the thumbnail, or `preview="/thumb.png"` for a distinct thumbnail URL.
+
+With a caption (use closing `::`):
+```markdown
+::Image{src="/diagram.png" alt="Architecture" width="80%" :preview="true"}
+Figure 1 — System architecture overview
+::
+```
+
+Self-closing (no caption):
+```markdown
+::Image{src="/photo.jpg" alt="Photo"}
+```
+
+### Inline components (use `:`)
+
+#### Icon
+```markdown
+### :i{name="ri:timer-flash-line"} Title with icon
+```
+Accepts both Iconify format (`ri:home-line`) and Remix CSS class format (`ri-home-line`) — both are normalised automatically.
+
+#### Slide background override
+Overrides the theme-default background for a single slide:
+```markdown
+## Section title
+:slide-background{image="/backgrounds/as-content.png"}
+
+Slide content...
+```
+The `:slide-background` node is extracted and filtered **before** rendering — it never appears in the output. It is intentionally absent from `MDC_COMPONENTS`.
+
+#### Pre-title
+Displays a label above the heading inside an `<hgroup>` (e.g. chapter label, context tag):
+```markdown
+## Section Title
+:pretitle{text="Chapter 3"}
+
+Slide content...
+```
+
+#### Subtitle
+Displays a tagline below the heading inside an `<hgroup>`:
+```markdown
+## Section Title
+:subtitle{text="A deeper look at the data"}
+
+Slide content...
+```
+
+Both `:pretitle` and `:subtitle` markers are extracted and filtered **before** rendering — they never appear in the output and are intentionally absent from `MDC_COMPONENTS`. They can appear anywhere in the slide, not necessarily adjacent to the heading.
+
+**Backward compatibility**: an italic-only paragraph immediately after the heading is still silently promoted to subtitle (e.g. `*tagline text*`). Prefer explicit `:subtitle` for new content.
+
+### Common mistakes to avoid
+
+```markdown
+❌ ::Columns containing ::column  (same colon count = ambiguous nesting)
+✅ :::Columns containing ::column (parent has more colons)
+
+❌ ::Image{...}  # then a stray :::  (Image is self-closing when no caption)
+✅ ::Image{...}  # nothing after
+```
+
+---
+
+## MDC Syntax Support
+
+### Inline Formatting
+```markdown
+**bold** text
+*italic* text
+`code` inline
+```
+
+### Lists
+```markdown
+- Unordered item 1
+- Unordered item 2
+
+1. Ordered item 1
+2. Ordered item 2
+```
+
+### Code Blocks
+````markdown
+```javascript
+const greeting = 'Hello World'
+console.log(greeting)
+```
+````
+
+### Links
+```markdown
+[Link text](https://example.com)
+```
+
+### Images
+```markdown
+![Alt text](/path/to/image.jpg)
+```
+
+---
+
+## Component Registration
+
+### Adding Custom Component
+1. Create: `src/components/mdc/MyComponent.vue`
+2. Register in `src/config/presentation.ts`:
+```ts
+export const MDC_COMPONENTS = {
+  'my-component': 'MyComponent',
+  // ...
+}
+```
+3. Use in markdown (leaf component):
+```markdown
+::my-component{prop="value"}
+Content
+::
+```
+   Or as a container:
+```markdown
+:::my-component{prop="value"}
+::child-component
+Nested content
+::
+:::
+```
+
+### Auto-Import
+Nuxt auto-imports components from `src/components/mdc/`.
+No manual imports needed.
+
+---
+
+## Example Presentations
+
+### Simple Presentation
+```markdown
+---
+title: "Quick Demo"
+theme: minimal
+---
+
+# Welcome
+
+A simple presentation
+
+## First Topic
+
+Content goes here
+
+## Second Topic
+
+More content
+
+---
+
+# Thank You
+```
+
+### Complex Presentation
+```markdown
+---
+title: "Advanced Topics"
+theme: dsfr
+transition: fade
+---
+
+# Main Title
+Subtitle text
+
+## Horizontal Section
+
+### Vertical Slide 1
+First nested slide
+
+### Vertical Slide 2
+Second nested slide
+
+## Another Section
+
+:::Columns{count=3}
+
+::column
+Left content
+::
+
+::column
+Middle content
+::
+
+::column
+Right content
+::
+
+:::
+
+---
+
+## Code Example
+
+```javascript
+function demo() {
+  return "Hello"
+}
+```
+
+```
+
+---
+
+## Reveal.js Features
+
+### Fragments (Progressive Display)
+Not yet implemented. Future: Add `{.fragment}` class support.
+
+### Speaker Notes
+Not yet implemented. Future: Add `::notes` component.
+
+### Backgrounds
+Implemented. Per-slide `:slide-background{image=...}`, a frontmatter `backgrounds:` block,
+and theme-level defaults (`THEME_BACKGROUNDS`) drive Reveal's `data-background-image`.
+See `docs/backgrounds.md`.
+
+---
+
+## Parsing Logic
+
+### Algorithm Summary
+1. Split by H1: Title section (everything until first H2)
+2. Split by H2/HR: Horizontal sections
+3. Within each H2: Split by H3 for vertical slides
+4. Detect first heading in each section → assign CSS class
+5. Return nested structure: `Slide[]` with optional `verticalSlides`
+
+### AST Structure
+```ts
+Slide = {
+  body: {
+    type: 'root',
+    children: [/* AST nodes */]
+  },
+  headingLevel: 'h1' | 'h2' | 'h3',
+  verticalSlides?: Slide[]  // Only if H3 found
+}
+```
+
+### CSS Class Application
+Template applies classes:
+```vue
+<section :class="section.headingLevel ? `slide-${section.headingLevel}` : ''">
+```
+Outputs: `<section class="slide-h2">...</section>`
+
+---
+
+## File Naming
+- Use kebab-case: `my-presentation.md`
+- Avoid spaces, special characters
+- Slug = filename without `.md`
+- Slug used in URLs: `/slides/my-presentation`
+
+---
+
+## Frontmatter Validation
+All fields optional. Defaults:
+```ts
+{
+  theme: 'dsfr',
+  transition: 'slide',
+  center: true
+}
+```
+
+Unknown fields preserved for future use (e.g., `author`, `date`).
+
+---
+
+## Best Practices
+
+### Structure
+- One H1 (title) per presentation
+- Use H2 for main sections
+- Use H3 for sub-topics within sections
+- Keep slides concise (3-5 bullets max)
+
+### Content
+- Short sentences
+- High contrast colors
+- Large text (20pt+)
+- Minimal animations
+
+### Organization
+- Logical flow: Intro → Topics → Conclusion
+- Group related slides vertically (H3)
+- Use dividers for major transitions
+
+### Assets
+- Place images in `public/images/`
+- Reference: `![](/images/photo.jpg)`
+- Optimize file sizes
+- Use modern formats (WebP, AVIF)

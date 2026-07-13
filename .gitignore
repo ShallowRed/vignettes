@@ -41,5 +41,5 @@ presentations/public/*--standalone.md
 .frozen/
 .frozen-mirror/
 
-# Working docs kept out of the repo (add back individually with `git add -f`).
-docs/
+# Docs personnelles / temporaires / audits (hors repo public)
+docs/private/
