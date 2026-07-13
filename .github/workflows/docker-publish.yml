@@ -22,7 +22,7 @@ name: Build and publish Docker image
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
     tags: ['v*']
     # Les docs ne sont pas dans l'image (.dockerignore) : un commit docs-only ne
     # doit pas déclencher un build + auto-deploy inutile.
@@ -100,11 +100,12 @@ jobs:
           cache-to: type=gha,mode=max
 
   # CD : met à jour le conteneur sur le VPS sur le sha fraîchement construit.
-  # Uniquement sur push main (pas les tags/PR). La clé SSH est restreinte côté VPS
-  # par un forced command (deploy.sh) : elle ne peut que déclencher ce déploiement.
+  # push staging -> env staging (staging.slides.…) ; push main -> env prod (slides.…).
+  # Même image, seul l'argument `<env>` envoyé au forced command (deploy.sh) change.
+  # La clé SSH est restreinte côté VPS par ce forced command (deploy.sh).
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -128,14 +129,16 @@ jobs:
           # VPS_SSH_KEY est injecté dans l'env du job par l'étape Infisical ci-dessus.
         run: |
           set -euo pipefail
+          # push staging -> staging ; push main -> prod. Même sha d'image.
+          if [ "${GITHUB_REF}" = "refs/heads/staging" ]; then TARGET_ENV=staging; else TARGET_ENV=prod; fi
           IMAGE_TAG="sha-$(echo "${GITHUB_SHA}" | cut -c1-7)"
-          echo "Déploiement de ${IMAGE_TAG} sur ${VPS_HOST}"
+          echo "Déploiement [${TARGET_ENV}] de ${IMAGE_TAG} sur ${VPS_HOST}"
           umask 077
           printf '%s\n' "${VPS_SSH_KEY}" > deploy_key
           # TOFU : on pin la clé d'hôte au premier contact. Pour durcir, remplacer
           # par une known_hosts pré-remplie (variable VPS_SSH_KNOWN_HOSTS).
           ssh-keyscan -H "${VPS_HOST}" > known_hosts 2>/dev/null
-          # Le forced command côté VPS lit ce tag dans $SSH_ORIGINAL_COMMAND.
+          # Le forced command côté VPS lit `<env> <tag>` dans $SSH_ORIGINAL_COMMAND.
           ssh -i deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts \
-            "${VPS_USER}@${VPS_HOST}" "${IMAGE_TAG}"
+            "${VPS_USER}@${VPS_HOST}" "${TARGET_ENV} ${IMAGE_TAG}"
           rm -f deploy_key
