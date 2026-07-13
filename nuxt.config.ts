@@ -89,16 +89,9 @@ export default defineNuxtConfig({
     hackmdApiToken: process.env.NUXT_HACKMD_API_TOKEN || '',
     // Single, shared TTL (ms) for content sources + registry (audit §5.7 / P1 #6).
     sourceCacheTtlMs: process.env.NUXT_SOURCE_CACHE_TTL_MS || '',
-    // Frozen-bundle object storage (Scaleway S3-compatible, DDR-018 migration).
-    // When credentials are empty the app falls back to local .frozen/ serving
-    // (dev + transition). Non-secret defaults target Scaleway Paris (fr-par).
-    frozenStorage: {
-      endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
-      region: process.env.NUXT_FROZEN_S3_REGION || 'fr-par',
-      bucket: process.env.NUXT_FROZEN_S3_BUCKET || 'nuxt-slides-bucket',
-      accessKeyId: process.env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
-    },
+    // Frozen-bundle object storage (Scaleway) is read from process.env AT RUNTIME
+    // in server/routes/frozen/[...path].ts (the NUXT_FROZEN_S3_* names don't fit
+    // Nuxt's runtime-override convention, and config is baked at build time).
     public: {
       // Exposed to client for building "Edit" links
       codimdUrl: process.env.NUXT_CODIMD_URL || '',

@@ -131,7 +131,18 @@ export default defineEventHandler(async (event) => {
   const isPublic = gate.status === 'public'
   const cacheControl = isPublic ? 'public, max-age=300' : 'private, no-store'
 
-  const cfg = useRuntimeConfig().frozenStorage
+  // Read S3 config from process.env AT RUNTIME (not useRuntimeConfig): the
+  // NUXT_FROZEN_S3_* names don't match Nuxt's runtime-override convention
+  // (NUXT_FROZEN_STORAGE_*), and nuxt.config bakes empty values at build time.
+  // In a built image the secrets are injected into the process by `infisical run`
+  // — process.env sees them, runtimeConfig would not.
+  const cfg = {
+    endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
+    region: process.env.NUXT_FROZEN_S3_REGION || 'fr-par',
+    bucket: process.env.NUXT_FROZEN_S3_BUCKET || 'nuxt-slides-bucket',
+    accessKeyId: process.env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
+  }
   let body: Buffer
   let contentType: string | undefined
   // Diagnostic: which backend actually served this asset (X-Frozen-Source).
