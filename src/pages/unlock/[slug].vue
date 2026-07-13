@@ -21,12 +21,10 @@ const returnTo = computed(() => {
 const password = ref('')
 const errorMessage = ref('')
 const loading = ref(false)
-const hasAttempted = ref(false)
 
 async function unlock() {
   loading.value = true
   errorMessage.value = ''
-  hasAttempted.value = true
 
   try {
     const sep = verifyApi.value.includes('?') ? '&' : '?'
@@ -50,82 +48,70 @@ async function unlock() {
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-neutral flex items-center justify-center p-8"
-    data-theme="corporate"
-  >
-    <div class="card bg-base-100 shadow-xl w-full max-w-md">
-      <div class="card-body">
-        <div class="grid place-items-center w-14 h-14 rounded-2xl bg-warning/15 text-warning mb-3">
-          <Icon
-            name="ri:lock-password-line"
-            size="1.75rem"
+  <div class="tailwind-app min-h-dvh bg-elevated flex items-center justify-center p-8">
+    <UCard class="w-full max-w-md">
+      <div class="flex flex-col gap-2">
+        <div class="grid place-items-center size-14 rounded-2xl bg-warning/15 text-warning mb-2">
+          <UIcon
+            name="i-lucide-lock-keyhole"
+            class="size-7"
           />
         </div>
-        <h1 class="card-title text-xl mb-1">
+        <h1 class="text-xl font-bold text-highlighted">
           Présentation protégée
         </h1>
-        <p class="text-base-content/60 mb-6">
+        <p class="text-muted mb-4">
           Cette présentation nécessite un mot de passe.
         </p>
 
-        <form @submit.prevent="unlock">
-          <div
-            v-if="hasAttempted && errorMessage"
-            role="alert"
-            class="alert alert-error mb-4"
-          >
-            <Icon
-              name="ri:error-warning-line"
-              size="1.25rem"
-            />
-            <span>{{ errorMessage }}</span>
-          </div>
+        <form
+          class="flex flex-col gap-4"
+          @submit.prevent="unlock"
+        >
+          <UAlert
+            v-if="errorMessage"
+            color="error"
+            variant="subtle"
+            icon="i-lucide-circle-alert"
+            :description="errorMessage"
+          />
 
-          <div class="form-control">
-            <label class="label">
-              <span class="label-text">Mot de passe</span>
-            </label>
-            <input
+          <UFormField label="Mot de passe">
+            <UInput
               v-model="password"
               type="password"
               placeholder="Entrez le mot de passe"
-              class="input input-bordered w-full"
+              icon="i-lucide-key-round"
               :disabled="loading"
               autofocus
-            >
-          </div>
+              class="w-full"
+            />
+          </UFormField>
 
-          <div class="form-control mt-6">
-            <button
-              type="submit"
-              class="btn btn-primary"
-              :disabled="loading || !password"
-            >
-              <span
-                v-if="loading"
-                class="loading loading-spinner loading-sm"
-              />
-              {{ loading ? 'Vérification…' : 'Déverrouiller' }}
-            </button>
-          </div>
+          <UButton
+            type="submit"
+            :label="loading ? 'Vérification…' : 'Déverrouiller'"
+            :loading="loading"
+            :disabled="!password"
+            block
+          />
         </form>
 
-        <div class="divider">
-          ou
-        </div>
+        <USeparator
+          label="ou"
+          class="my-3"
+        />
 
-        <NuxtLink
+        <UButton
           to="/"
-          class="btn btn-ghost btn-sm gap-1"
-        >
-          <Icon
-            name="ri:arrow-left-line"
-            size="1rem"
-          />
-          Retour aux présentations
-        </NuxtLink>
+          icon="i-lucide-arrow-left"
+          label="Retour aux présentations"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          class="self-center"
+        />
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

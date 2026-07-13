@@ -27,6 +27,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
     "@iconify/vue": "catalog:",
+    "@nuxt/ui": "catalog:",
     "@nuxtjs/mdc": "catalog:",
     "@types/node": "catalog:",
     "js-yaml": "catalog:",
@@ -41,12 +42,11 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
+    "@iconify-json/lucide": "catalog:",
     "@iconify-json/ri": "catalog:",
     "@nuxt/icon": "catalog:",
-    "@tailwindcss/vite": "catalog:",
     "@types/js-yaml": "catalog:",
     "concurrently": "catalog:",
-    "daisyui": "catalog:",
     "eslint": "catalog:",
     "sass": "catalog:",
     "tailwindcss": "catalog:",

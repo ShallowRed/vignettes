@@ -16,6 +16,40 @@ const query = defineModel<CatalogQuery>({ required: true })
 
 const counts = computed(() => countByStatus(props.items))
 
+const search = computed({
+  get: () => query.value.search ?? '',
+  set: (value: string) => { query.value = { ...query.value, search: value } },
+})
+
+const sortKey = computed({
+  get: () => query.value.sortKey ?? 'title',
+  set: (value: SortKey) => { query.value = { ...query.value, sortKey: value } },
+})
+
+const sortOptions: { label: string, value: SortKey }[] = [
+  { label: 'Titre', value: 'title' },
+  { label: 'Statut', value: 'status' },
+  { label: 'Thème', value: 'theme' },
+]
+
+function toggleDir() {
+  query.value = { ...query.value, sortDir: query.value.sortDir === 'desc' ? 'asc' : 'desc' }
+}
+
+function toggleStatus(status: PublicationStatus) {
+  const current = query.value.statuses ?? []
+  query.value = {
+    ...query.value,
+    statuses: current.includes(status)
+      ? current.filter(s => s !== status)
+      : [...current, status],
+  }
+}
+
+function isActive(status: PublicationStatus) {
+  return query.value.statuses?.includes(status) ?? false
+}
+
 // Chips for every project slug present, ordered by the registry, plus an "ungrouped" chip.
 const projectChips = computed(() => {
   const present = new Map<string, number>()
@@ -64,124 +98,76 @@ function toggleProject(value: string) {
 function isProjectActive(value: string) {
   return query.value.projects?.includes(value) ?? false
 }
-
-const sortOptions: { key: SortKey, label: string }[] = [
-  { key: 'title', label: 'Titre' },
-  { key: 'status', label: 'Statut' },
-  { key: 'theme', label: 'Thème' },
-]
-
-function toggleStatus(status: PublicationStatus) {
-  const current = query.value.statuses ?? []
-  query.value = {
-    ...query.value,
-    statuses: current.includes(status)
-      ? current.filter(s => s !== status)
-      : [...current, status],
-  }
-}
-
-function isActive(status: PublicationStatus) {
-  return query.value.statuses?.includes(status) ?? false
-}
-
-function toggleDir() {
-  query.value = { ...query.value, sortDir: query.value.sortDir === 'desc' ? 'asc' : 'desc' }
-}
 </script>
 
 <template>
   <div class="flex flex-col gap-4 mb-8">
     <div class="flex flex-wrap gap-2 items-center">
-      <label class="input input-bordered flex items-center gap-2 flex-1 min-w-56 bg-base-100">
-        <Icon
-          name="ri:search-line"
-          class="text-base-content/40"
-          size="1.1rem"
-        />
-        <input
-          :value="query.search ?? ''"
-          type="search"
-          class="grow"
-          placeholder="Rechercher (titre, slug, thème)…"
-          @input="query = { ...query, search: ($event.target as HTMLInputElement).value }"
-        >
-      </label>
+      <UInput
+        v-model="search"
+        icon="i-lucide-search"
+        placeholder="Rechercher (titre, slug, thème)…"
+        class="flex-1 min-w-56"
+      />
 
-      <select
-        :value="query.sortKey ?? 'title'"
-        class="select select-bordered bg-base-100"
+      <USelect
+        v-model="sortKey"
+        :items="sortOptions"
+        icon="i-lucide-arrow-down-up"
         aria-label="Trier par"
-        @change="query = { ...query, sortKey: ($event.target as HTMLSelectElement).value as SortKey }"
-      >
-        <option
-          v-for="opt in sortOptions"
-          :key="opt.key"
-          :value="opt.key"
-        >
-          {{ opt.label }}
-        </option>
-      </select>
-      <button
-        type="button"
-        class="btn btn-square btn-ghost border border-base-300 bg-base-100"
-        :title="query.sortDir === 'desc' ? 'Décroissant' : 'Croissant'"
-        @click="toggleDir"
-      >
-        <Icon
-          :name="query.sortDir === 'desc' ? 'ri:sort-desc' : 'ri:sort-asc'"
-          size="1.2rem"
+        class="w-36"
+      />
+      <UTooltip :text="query.sortDir === 'desc' ? 'Décroissant' : 'Croissant'">
+        <UButton
+          :icon="query.sortDir === 'desc' ? 'i-lucide-arrow-down-wide-narrow' : 'i-lucide-arrow-up-narrow-wide'"
+          color="neutral"
+          variant="outline"
+          @click="toggleDir"
         />
-      </button>
+      </UTooltip>
     </div>
 
     <div
       v-if="showStatusFilter"
       class="flex flex-wrap gap-2"
     >
-      <button
+      <UButton
         v-for="status in PUBLICATION_STATUSES"
         :key="status"
-        type="button"
-        class="badge badge-lg gap-1.5 cursor-pointer transition-all"
-        :class="isActive(status)
-          ? STATUS_CONFIG[status].badge
-          : 'badge-outline border-base-300 text-base-content/60 hover:border-base-content/40'"
+        size="xs"
+        :color="isActive(status) ? STATUS_CONFIG[status].color : 'neutral'"
+        :variant="isActive(status) ? 'soft' : 'outline'"
+        :icon="STATUS_CONFIG[status].icon"
+        class="rounded-full"
         @click="toggleStatus(status)"
       >
-        <Icon
-          :name="STATUS_CONFIG[status].icon"
-          size="0.9rem"
-        />
         {{ STATUS_CONFIG[status].label }}
-        <span class="opacity-70 tabular-nums">{{ counts[status] }}</span>
-      </button>
+        <span class="opacity-60 tabular-nums">{{ counts[status] }}</span>
+      </UButton>
     </div>
 
     <div
       v-if="showProjectFilter"
       class="flex flex-wrap gap-2"
     >
-      <button
+      <UButton
         v-for="chip in projectChips"
         :key="chip.value"
-        type="button"
-        class="badge badge-lg gap-1.5 cursor-pointer transition-all"
-        :class="isProjectActive(chip.value)
-          ? 'badge-neutral'
-          : 'badge-outline border-base-300 text-base-content/60 hover:border-base-content/40'"
-        :style="isProjectActive(chip.value) && chip.color
-          ? { backgroundColor: chip.color, borderColor: chip.color, color: '#fff' }
-          : undefined"
+        size="xs"
+        color="neutral"
+        :variant="isProjectActive(chip.value) ? 'soft' : 'outline'"
+        icon="i-lucide-folder"
+        class="rounded-full"
         @click="toggleProject(chip.value)"
       >
-        <Icon
-          name="ri:folder-2-line"
-          size="0.9rem"
+        <span
+          v-if="chip.color"
+          class="size-2 rounded-full"
+          :style="{ backgroundColor: chip.color }"
         />
         {{ chip.label }}
-        <span class="opacity-70 tabular-nums">{{ chip.count }}</span>
-      </button>
+        <span class="opacity-60 tabular-nums">{{ chip.count }}</span>
+      </UButton>
     </div>
   </div>
 </template>

@@ -24,8 +24,7 @@ export default defineOAuthGitHubEventHandler({
     const intended = getCookie(event, 'auth_redirect')
     deleteCookie(event, 'auth_redirect')
     const isSafe = intended && intended.startsWith('/') && !intended.startsWith('//')
-    const fallback = role === 'viewer' ? '/' : '/admin'
-    return sendRedirect(event, isSafe ? intended : fallback)
+    return sendRedirect(event, isSafe ? intended : '/')
   },
   onError(event, error) {
     console.error('GitHub OAuth error:', error)

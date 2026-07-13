@@ -1,12 +1,13 @@
-/* 
- * Tailwind CSS v4 with scoped Preflight.
- * Preflight is applied only within .tailwind-app (non-presentation pages).
- * This avoids conflicts with Reveal.js styles on /slides/* routes.
+/*
+ * Tailwind CSS v4 + Nuxt UI, with scoped Preflight.
+ * Tailwind's global preflight is deliberately NOT imported: it would fight
+ * Reveal.js styles on /slides/* routes. A manual reset is scoped to
+ * .tailwind-app (non-presentation pages) instead.
  */
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
-@plugin "daisyui";
+@import "@nuxt/ui";
 
 /* Scoped Preflight - only applies within .tailwind-app */
 @layer base {
@@ -15,7 +16,14 @@
       "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
       "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   }
+  /* Safe globally: Reveal.js assumes a marginless body too. */
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+  /* `&` includes the wrapper itself: sizing utilities on it assume border-box. */
   .tailwind-app {
+    &,
     *,
     *::before,
     *::after {

@@ -1,15 +1,15 @@
 import type { Role } from './roles'
 
-/** Role display config shown in the app header. `icon` is a `ri:*` Iconify name. */
+/** Role display config shown in the app header: Nuxt UI semantic color + Iconify icon. */
 export interface RoleDisplay {
-  badge: string
+  color: 'primary' | 'secondary' | 'neutral'
   label: string
   icon: string
 }
 
 export const ROLE_CONFIG: Record<Role, RoleDisplay> = {
-  owner: { badge: 'badge-primary', label: 'Owner', icon: 'ri:vip-crown-line' },
-  editor: { badge: 'badge-secondary', label: 'Editor', icon: 'ri:quill-pen-line' },
-  viewer: { badge: 'badge-ghost', label: 'Viewer', icon: 'ri:eye-line' },
-  anonymous: { badge: 'badge-ghost', label: 'Guest', icon: 'ri:user-line' },
+  owner: { color: 'primary', label: 'Owner', icon: 'i-lucide-crown' },
+  editor: { color: 'secondary', label: 'Editor', icon: 'i-lucide-pen-line' },
+  viewer: { color: 'neutral', label: 'Viewer', icon: 'i-lucide-eye' },
+  anonymous: { color: 'neutral', label: 'Guest', icon: 'i-lucide-user' },
 }

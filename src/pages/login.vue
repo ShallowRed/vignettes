@@ -26,63 +26,55 @@ const errorMessage = computed(() => {
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-neutral flex items-center justify-center p-8"
-    data-theme="corporate"
-  >
-    <div class="card bg-base-100 shadow-xl w-full max-w-md">
-      <div class="card-body items-center text-center">
-        <div class="grid place-items-center w-14 h-14 rounded-2xl bg-primary/10 text-primary mb-2">
-          <Icon
-            name="ri:slideshow-3-line"
-            size="1.75rem"
+  <div class="tailwind-app min-h-dvh bg-elevated flex items-center justify-center p-8">
+    <UCard class="w-full max-w-md">
+      <div class="flex flex-col items-center text-center gap-2">
+        <div class="grid place-items-center size-14 rounded-2xl bg-primary/10 text-primary mb-1">
+          <UIcon
+            name="i-lucide-presentation"
+            class="size-7"
           />
         </div>
-        <h1 class="card-title text-2xl mb-1">
+        <h1 class="text-2xl font-bold text-highlighted">
           Nuxt Slides
         </h1>
-        <p class="text-base-content/60 mb-6">
+        <p class="text-muted mb-4">
           Connectez-vous pour gérer vos présentations
         </p>
 
-        <div
+        <UAlert
           v-if="errorMessage"
-          role="alert"
-          class="alert alert-error mb-4"
-        >
-          <Icon
-            name="ri:error-warning-line"
-            size="1.25rem"
-          />
-          <span>{{ errorMessage }}</span>
-        </div>
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          :description="errorMessage"
+          class="mb-2 text-left"
+        />
 
-        <a
-          href="/auth/github"
-          class="btn btn-neutral w-full gap-2"
-        >
-          <Icon
-            name="ri:github-fill"
-            size="1.25rem"
-          />
-          Se connecter avec GitHub
-        </a>
+        <UButton
+          to="/auth/github"
+          external
+          icon="i-lucide-github"
+          label="Se connecter avec GitHub"
+          color="neutral"
+          size="lg"
+          block
+        />
 
-        <div class="divider">
-          ou
-        </div>
+        <USeparator
+          label="ou"
+          class="my-3"
+        />
 
-        <NuxtLink
+        <UButton
           to="/"
-          class="btn btn-ghost btn-sm gap-1"
-        >
-          <Icon
-            name="ri:arrow-left-line"
-            size="1rem"
-          />
-          Retour aux présentations
-        </NuxtLink>
+          icon="i-lucide-arrow-left"
+          label="Retour aux présentations"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+        />
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

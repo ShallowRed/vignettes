@@ -1,6 +1,5 @@
 import { join } from 'node:path'
 import process from 'node:process'
-import tailwindcss from '@tailwindcss/vite'
 import presentationWatcher from './plugins/presentation-watcher.js'
 import themeWatcher from './plugins/theme-watcher.js'
 import { readBundleConfig } from './shared/build/bundle'
@@ -34,14 +33,21 @@ export default defineNuxtConfig({
     inlineStyles: bundle.enabled ? () => true : undefined,
   },
 
-  modules: ['@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/icon'],
+  // @nuxt/ui registers @nuxt/icon, @nuxt/fonts and @nuxtjs/color-mode itself.
+  modules: ['@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui'],
 
   css: ['~/assets/css/tailwind.css'],
+
+  ui: {
+    // Reveal themes own their typography; keep the system font stack for the app.
+    fonts: false,
+  },
 
   icon: {
     mode: 'svg', // SVG mode for better SSR support
     serverBundle: {
-      collections: ['ri'],
+      // ri: slide/mdc components; lucide: Nuxt UI app chrome.
+      collections: ['ri', 'lucide'],
     },
   },
 
@@ -57,7 +63,8 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    plugins: [tailwindcss(), themeWatcher(), presentationWatcher()],
+    // Tailwind's vite plugin comes with @nuxt/ui; only the app watchers here.
+    plugins: [themeWatcher(), presentationWatcher()],
   },
 
   app: {
@@ -94,6 +101,8 @@ export default defineNuxtConfig({
     : {
         '/': { prerender: true },
         '/login': { prerender: true },
+        // Catalog and admin views merged; keep old bookmarks working.
+        '/admin': { redirect: '/' },
 
         // Specific (public, SSG) before generic (protected, SSR).
         '/slides/public/**': { prerender: true },
