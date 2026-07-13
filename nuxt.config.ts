@@ -143,15 +143,16 @@ export default defineNuxtConfig({
       { baseName: 'presentations', dir: join(process.cwd(), 'presentations') },
     ],
 
-    // Frozen-presentation hosting (DDR-018) lives OUTSIDE public/, so `nuxt
-    // generate` never aspirates already-frozen bundles (or their mirrored assets)
-    // into the next build. Nitro serves these extra dirs as static at the same
-    // origin: `.frozen/` → /frozen/<alias>/ (the bundles), `.frozen-mirror/` → /
-    // (the future-proof origin-root asset safety net; bundles are self-contained
-    // and don't need it, but a non-rebased consumer would). maxAge 0 keeps them
-    // re-servable without a cache-bust between freezes.
+    // `.frozen-mirror/` → / : the future-proof origin-root asset safety net for a
+    // non-rebased consumer (bundles are self-contained and don't need it). Lives
+    // OUTSIDE public/ so `nuxt generate` never aspirates it into the next build.
+    //
+    // The frozen BUNDLES themselves (`/frozen/<bundle>/…`) are NO LONGER served
+    // from a committed `.frozen/` dir: they live in object storage (Scaleway) and
+    // are served — with access gating — by `server/routes/frozen/[...path].ts`
+    // (DDR-018 storage migration; see docs/frozen-storage.md). That route falls
+    // back to the local `.frozen/` dir when S3 creds are absent (dev/transition).
     publicAssets: [
-      { dir: join(process.cwd(), '.frozen'), baseURL: '/frozen', maxAge: 0 },
       { dir: join(process.cwd(), '.frozen-mirror'), baseURL: '/', maxAge: 0 },
     ],
     prerender: {

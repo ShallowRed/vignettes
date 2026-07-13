@@ -20,7 +20,7 @@
  */
 import { createReadStream, statSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { join, relative, sep, extname } from 'node:path'
+import { extname, join, relative, sep } from 'node:path'
 import process from 'node:process'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import {
@@ -56,18 +56,23 @@ function parseArgs(argv) {
   const args = { alias: undefined, dir: undefined, dryRun: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
-    if (a === '--dry-run') args.dryRun = true
-    else if (a === '--dir') args.dir = argv[++i]
-    else if (!a.startsWith('--') && !args.alias) args.alias = a
+    if (a === '--dry-run')
+      args.dryRun = true
+    else if (a === '--dir')
+      args.dir = argv[++i]
+    else if (!a.startsWith('--') && !args.alias)
+      args.alias = a
   }
   return args
 }
 
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
-    if (entry.name === '.DS_Store') continue
+    if (entry.name === '.DS_Store')
+      continue
     const full = join(dir, entry.name)
-    if (entry.isDirectory()) yield* walk(full)
+    if (entry.isDirectory())
+      yield* walk(full)
     else yield full
   }
 }
@@ -80,8 +85,10 @@ async function main() {
   }
   const dir = dirArg ?? join('.frozen', alias)
   try {
-    if (!statSync(dir).isDirectory()) throw new Error('not a directory')
-  } catch {
+    if (!statSync(dir).isDirectory())
+      throw new Error('not a directory')
+  }
+  catch {
     console.error(`❌ Frozen bundle dir not found: ${dir} (run 'make freeze ALIAS=${alias}' first?)`)
     process.exit(1)
   }
@@ -98,8 +105,8 @@ async function main() {
   for await (const f of walk(dir)) files.push(f)
   const totalBytes = files.reduce((n, f) => n + statSync(f).size, 0)
   console.log(
-    `▶  ${alias}: ${files.length} files, ${(totalBytes / 1024 / 1024).toFixed(1)} MB → ` +
-      `s3://${config.bucket}/${frozenObjectKey(alias)}/`,
+    `▶  ${alias}: ${files.length} files, ${(totalBytes / 1024 / 1024).toFixed(1)} MB → `
+    + `s3://${config.bucket}/${frozenObjectKey(alias)}/`,
   )
 
   if (dryRun) {
@@ -112,8 +119,8 @@ async function main() {
 
   if (!isFrozenS3Configured(config)) {
     console.error(
-      '❌ Missing S3 credentials. Set NUXT_FROZEN_S3_ACCESS_KEY_ID / ' +
-        'NUXT_FROZEN_S3_SECRET_ACCESS_KEY (via Infisical/direnv).',
+      '❌ Missing S3 credentials. Set NUXT_FROZEN_S3_ACCESS_KEY_ID / '
+      + 'NUXT_FROZEN_S3_SECRET_ACCESS_KEY (via Infisical/direnv).',
     )
     process.exit(1)
   }
@@ -133,7 +140,8 @@ async function main() {
       }),
     )
     done++
-    if (done % 25 === 0 || done === files.length) console.log(`   ${done}/${files.length}`)
+    if (done % 25 === 0 || done === files.length)
+      console.log(`   ${done}/${files.length}`)
   }
   console.log(`✅ Uploaded ${done} objects to s3://${config.bucket}/${frozenObjectKey(alias)}/`)
 }

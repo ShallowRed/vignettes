@@ -39,5 +39,5 @@ export function makeFrozenS3Client(c: FrozenS3Config): S3Client {
 
 /** Object key for a frozen asset: `frozen/<alias>/<...parts>` (mirrors /frozen/<alias>/ URLs). */
 export function frozenObjectKey(alias: string, ...parts: string[]): string {
-  return ['frozen', alias, ...parts.flatMap((p) => p.split('/').filter(Boolean))].join('/')
+  return ['frozen', alias, ...parts.flatMap(p => p.split('/').filter(Boolean))].join('/')
 }
