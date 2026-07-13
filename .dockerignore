@@ -1,5 +1,5 @@
 # Contexte de build Docker. On EXCLUT les artefacts et deps locaux ; on GARDE les
-# sources, presentations/ (submodule), .frozen*/ (decks gelés commités), public/,
+# sources, presentations/ (submodule), .frozen-mirror/ (filet origin-root), public/,
 # themes/, scripts/, server/, shared/, plugins/.
 
 .git
@@ -13,6 +13,10 @@ node_modules
 dist
 dist-standalone
 export
+
+# Bundles gelés : désormais en object storage (Scaleway), plus bakés dans l'image
+# (servis par server/routes/frozen depuis le bucket). Voir docs/frozen-storage.md.
+.frozen/
 *.log
 .DS_Store
 .vscode
