@@ -25,6 +25,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
     "@iconify/vue": "catalog:",
     "@nuxtjs/mdc": "catalog:",
     "@types/node": "catalog:",
