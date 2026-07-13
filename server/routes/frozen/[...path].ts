@@ -134,8 +134,11 @@ export default defineEventHandler(async (event) => {
   const cfg = useRuntimeConfig().frozenStorage
   let body: Buffer
   let contentType: string | undefined
+  // Diagnostic: which backend actually served this asset (X-Frozen-Source).
+  let source: 's3' | 'local'
 
   if (isFrozenS3Configured(cfg)) {
+    source = 's3'
     const s3 = makeFrozenS3Client(cfg)
     try {
       const res = await s3.send(
@@ -154,6 +157,7 @@ export default defineEventHandler(async (event) => {
   }
   else {
     // Local fallback (dev / pre-cutover): serve from the committed .frozen/ dir.
+    source = 'local'
     try {
       body = await readFile(join(process.cwd(), '.frozen', bundle, assetPath))
     }
@@ -165,5 +169,6 @@ export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Content-Type', contentType || MIME[extname(assetPath).toLowerCase()] || 'application/octet-stream')
   setResponseHeader(event, 'Content-Length', body.byteLength)
   setResponseHeader(event, 'Cache-Control', cacheControl)
+  setResponseHeader(event, 'X-Frozen-Source', source)
   return body
 })
