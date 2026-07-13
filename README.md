@@ -238,7 +238,11 @@ Clean and modern design:
 
 ## Private Presentations
 
-Non-public presentations (private, semi-private, draft) are stored in a separate private repository and synced at build time in CI (GitHub Actions) via `scripts/fetch-presentations.js`. The main repository stays fully open source.
+Non-public presentations (private, semi-private, draft) are stored in a separate private repository and synced at build time in CI (GitHub Actions) via `scripts/fetch-presentations.js`. The main repository is meant to stay open source.
+
+> **Note (2026-07-13):** this repo is **temporarily private**; the plan is to make it public
+> again after a git-history cleanup. This has **no effect on deployment** (the GHCR image stays
+> public). See [docs/repo-visibility.md](./docs/repo-visibility.md).
 
 | Status | Access | Rendering |
 |--------|--------|-----------|
