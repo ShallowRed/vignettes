@@ -16,3 +16,13 @@ export interface PresentationListItem {
   /** frozen/archived serve a static bundle. */
   lifecycle?: Lifecycle
 }
+
+/** Canonical in-app path of a deck: stable alias when it has one, slug route otherwise. */
+export function deckPath(item: Pick<PresentationListItem, 'alias' | 'slug'>): string {
+  return item.alias ? `/p/${item.alias}` : `/slides/${item.slug}`
+}
+
+/** frozen/archived decks serve a static bundle and are read-only. */
+export function isFrozen(item: Pick<PresentationListItem, 'lifecycle'>): boolean {
+  return item.lifecycle === 'frozen' || item.lifecycle === 'archived'
+}

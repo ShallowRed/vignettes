@@ -6,11 +6,21 @@ import { PUBLICATION_STATUSES } from '#shared/access'
 import { countByStatus, STATUS_CONFIG, UNGROUPED_PROJECT } from '#shared/presentations'
 
 // Catalog controls: edits a CatalogQuery via v-model; the page applies the filtering.
-const props = defineProps<{
+// `showSort` off when the active view sorts itself (table columns).
+const props = withDefaults(defineProps<{
   items: PresentationListItem[]
   showStatusFilter?: boolean
+  showSort?: boolean
   projects?: Project[]
-}>()
+}>(), {
+  showSort: true,
+})
+
+const searchInput = useTemplateRef<{ inputRef?: HTMLInputElement }>('searchInput')
+
+defineExpose({
+  focusSearch: () => searchInput.value?.inputRef?.focus(),
+})
 
 const query = defineModel<CatalogQuery>({ required: true })
 
@@ -104,27 +114,36 @@ function isProjectActive(value: string) {
   <div class="flex flex-col gap-4 mb-8">
     <div class="flex flex-wrap gap-2 items-center">
       <UInput
+        ref="searchInput"
         v-model="search"
         icon="i-lucide-search"
         placeholder="Rechercher (titre, slug, thème)…"
         class="flex-1 min-w-56"
-      />
+      >
+        <template #trailing>
+          <UKbd value="/" />
+        </template>
+      </UInput>
 
-      <USelect
-        v-model="sortKey"
-        :items="sortOptions"
-        icon="i-lucide-arrow-down-up"
-        aria-label="Trier par"
-        class="w-36"
-      />
-      <UTooltip :text="query.sortDir === 'desc' ? 'Décroissant' : 'Croissant'">
-        <UButton
-          :icon="query.sortDir === 'desc' ? 'i-lucide-arrow-down-wide-narrow' : 'i-lucide-arrow-up-narrow-wide'"
-          color="neutral"
-          variant="outline"
-          @click="toggleDir"
+      <template v-if="showSort">
+        <USelect
+          v-model="sortKey"
+          :items="sortOptions"
+          icon="i-lucide-arrow-down-up"
+          aria-label="Trier par"
+          class="w-36"
         />
-      </UTooltip>
+        <UTooltip :text="query.sortDir === 'desc' ? 'Décroissant' : 'Croissant'">
+          <UButton
+            :icon="query.sortDir === 'desc' ? 'i-lucide-arrow-down-wide-narrow' : 'i-lucide-arrow-up-narrow-wide'"
+            color="neutral"
+            variant="outline"
+            @click="toggleDir"
+          />
+        </UTooltip>
+      </template>
+
+      <slot name="trailing" />
     </div>
 
     <div

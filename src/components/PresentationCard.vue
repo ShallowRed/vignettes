@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
-import { STATUS_CONFIG } from '#shared/presentations'
+import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 
 // Catalog card. `admin` adds management details for privileged viewers.
 const props = defineProps<{
@@ -8,13 +8,9 @@ const props = defineProps<{
   admin?: boolean
 }>()
 
-const frozen = computed(() =>
-  props.presentation.lifecycle === 'frozen' || props.presentation.lifecycle === 'archived')
+const frozen = computed(() => isFrozen(props.presentation))
 
-const to = computed(() =>
-  props.presentation.alias
-    ? `/p/${props.presentation.alias}`
-    : `/slides/${props.presentation.slug}`)
+const to = computed(() => deckPath(props.presentation))
 
 const statusDisplay = computed(() => STATUS_CONFIG[props.presentation.status])
 </script>

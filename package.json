@@ -29,6 +29,7 @@
     "@iconify/vue": "catalog:",
     "@nuxt/ui": "catalog:",
     "@nuxtjs/mdc": "catalog:",
+    "@tanstack/vue-table": "catalog:",
     "@types/node": "catalog:",
     "js-yaml": "catalog:",
     "mermaid": "catalog:",
