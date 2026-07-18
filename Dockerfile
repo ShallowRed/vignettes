@@ -39,6 +39,8 @@ ARG CI=1
 ENV NITRO_PRESET=node_server
 ENV CI=${CI}
 ENV NUXT_TELEMETRY_DISABLED=1
+# The prerenderer loads the full server bundle; the default ~2GB heap OOMs.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 # Le token n'est jamais écrit dans une couche : monté en secret le temps du build.
 RUN --mount=type=secret,id=presentations_token \
     PRESENTATIONS_REPO_TOKEN="$(cat /run/secrets/presentations_token)" \
