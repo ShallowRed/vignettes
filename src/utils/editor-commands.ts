@@ -1,4 +1,5 @@
 import type { EditorView } from '@codemirror/view'
+import { snippet } from '@codemirror/autocomplete'
 
 /**
  * Markdown insertion helpers for the writer toolbar. Each command edits the
@@ -46,6 +47,18 @@ export function insertLink(view: EditorView): void {
     changes: { from, to, insert },
     selection: { anchor: urlStart, head: urlStart + 3 },
   })
+  view.focus()
+}
+
+/**
+ * Insert a snippet template (tabbable `${…}` placeholders) at the cursor.
+ * A multi-line block dropped mid-line gets its own paragraph first.
+ */
+export function insertSnippet(view: EditorView, template: string): void {
+  const { from, to } = view.state.selection.main
+  const line = view.state.doc.lineAt(from)
+  const needsBreak = template.includes('\n') && line.text.trim().length > 0
+  snippet(needsBreak ? `\n${template}` : template)(view, null, from, to)
   view.focus()
 }
 

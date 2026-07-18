@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
-import { insertImage, insertLink, insertSlideBreak, setHeading, toggleLinePrefix, wrapSelection } from '~/utils/editor-commands'
+import type { DropdownMenuItem } from '@nuxt/ui'
+import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS } from '~/config/editor-reference'
+import { insertImage, insertLink, insertSlideBreak, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '~/utils/editor-commands'
 
 // Markdown formatting bar; every action targets the live EditorView.
 const props = defineProps<{
@@ -8,10 +10,25 @@ const props = defineProps<{
   disabled?: boolean
 }>()
 
+const emit = defineEmits<{ help: [] }>()
+
 function run(action: (view: EditorView) => void) {
   if (props.view)
     action(props.view)
 }
+
+// Discoverability menu: every engine component/annotation, inserted as a
+// tabbable snippet from the same reference the autocompletion uses.
+const insertItems = computed<DropdownMenuItem[][]>(() => [
+  COMPONENT_SNIPPETS.map(entry => ({
+    label: entry.label,
+    onSelect: () => run(view => insertSnippet(view, entry.snippet)),
+  })),
+  ANNOTATION_SNIPPETS.map(entry => ({
+    label: entry.label,
+    onSelect: () => run(view => insertSnippet(view, entry.snippet)),
+  })),
+])
 
 const headingItems = [1, 2, 3].map(level => ({
   label: `Titre ${level}`,
@@ -91,6 +108,34 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
         label="Diapo"
         :disabled="disabled || !view"
         @click="run(insertSlideBreak)"
+      />
+    </UTooltip>
+
+    <UDropdownMenu
+      :items="insertItems"
+      :content="{ align: 'start' }"
+      :ui="{ content: 'max-h-96 overflow-y-auto' }"
+    >
+      <UButton
+        icon="i-lucide-shapes"
+        color="neutral"
+        variant="ghost"
+        size="xs"
+        label="Insérer"
+        trailing-icon="i-lucide-chevron-down"
+        :disabled="disabled || !view"
+      />
+    </UDropdownMenu>
+
+    <div class="flex-1" />
+    <UTooltip text="Aide et syntaxe">
+      <UButton
+        icon="i-lucide-circle-help"
+        color="neutral"
+        variant="ghost"
+        size="xs"
+        aria-label="Aide et syntaxe"
+        @click="emit('help')"
       />
     </UTooltip>
   </div>

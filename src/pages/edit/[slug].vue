@@ -16,6 +16,7 @@ import type { Project } from '#shared/projects'
  */
 import type { Extension } from '@codemirror/state'
 import type { PresentationData } from '~/types/presentation'
+import { parserIdFor } from '#shared/deck'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
@@ -23,8 +24,10 @@ import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '~/composables/useAppSession'
 import { buildPresentationData } from '~/composables/usePresentation'
-import { wrapSelection } from '~/utils/editor-commands'
+import { insertSnippet, wrapSelection } from '~/utils/editor-commands'
+import { deckCompletions } from '~/utils/editor-completions'
 import { editorTheme } from '~/utils/editor-theme'
+import { slideAtLine, slideRanges } from '~/utils/slide-map'
 
 definePageMeta({ layout: false })
 
@@ -89,6 +92,43 @@ const statusDisplay = computed(() => STATUS_CONFIG[deckStatus.value as keyof typ
 const cm = useTemplateRef<{ view?: EditorView }>('cm')
 const editorView = computed(() => cm.value?.view)
 
+// ── Follow-the-cursor preview ────────────────────────────────────────────────
+// The preview navigates to the slide the caret sits in. The slide parser drops
+// source positions, so `slide-map` recomputes slide boundaries from the raw text
+// (heuristic, editor-only) and we drive Reveal's slide(h, v) — "à peu près".
+const previewRef = useTemplateRef<{ slide: (h: number, v?: number) => void, sync: () => void }>('preview')
+const followCursor = ref(true)
+const cursorLine = ref(1)
+const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser }))
+
+function syncPreviewToCursor() {
+  if (!followCursor.value || !previewRef.value)
+    return
+  const { h, v } = slideAtLine(slideRanges(raw.value, parserId.value), cursorLine.value)
+  previewRef.value.slide(h, v)
+}
+
+// Track the caret line; re-sync only when it crosses into another line (typing
+// within a line shouldn't re-navigate).
+const cursorListener = EditorView.updateListener.of((update) => {
+  if (!update.selectionSet && !update.docChanged)
+    return
+  const line = update.state.doc.lineAt(update.state.selection.main.head).number
+  const moved = line !== cursorLine.value
+  cursorLine.value = line
+  if (moved)
+    syncPreviewToCursor()
+})
+
+watch(followCursor, (on) => {
+  if (on)
+    syncPreviewToCursor()
+})
+
+function toggleFollow() {
+  followCursor.value = !followCursor.value
+}
+
 const shortcutKeymap = keymap.of([
   {
     key: 'Mod-b',
@@ -117,11 +157,20 @@ const shortcutKeymap = keymap.of([
 // Appended by startCollab (yCollab + remote-caret styling + Yjs undo keymap).
 const collabExtensions = shallowRef<Extension[]>([])
 
+// Project slugs feed the frontmatter completion (client-side, non-blocking).
+const { data: projects } = useAsyncData(
+  'editor-projects',
+  () => $fetch<Project[]>('/api/projects'),
+  { server: false, default: () => [] },
+)
+
 const extensions = computed<Extension[]>(() => [
   markdown(),
   EditorView.lineWrapping,
   highlightActiveLine(),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
+  deckCompletions({ projects: projects.value.map(p => p.slug) }),
+  cursorListener,
   shortcutKeymap,
   // Yjs owns undo in collab mode; the local history would fight it.
   ...(collabEnabled.value ? collabExtensions.value : [history(), keymap.of(historyKeymap)]),
@@ -143,6 +192,11 @@ let timer: ReturnType<typeof setTimeout> | null = null
 async function reparse() {
   try {
     preview.value = await buildPresentationData(raw.value)
+    // Let Reveal register added/removed slides, then re-align to the caret so a
+    // freshly-typed slide is reachable by the follow-cursor sync.
+    await nextTick()
+    previewRef.value?.sync?.()
+    syncPreviewToCursor()
   }
   catch {
     // A transient half-typed state can fail to parse — keep the last good preview.
@@ -280,20 +334,27 @@ async function publish() {
   }
 }
 
+// ── Help panel ──────────────────────────────────────────────────────────────
+
+const helpOpen = ref(false)
+const activeParser = computed<'heading' | 'separator'>(() =>
+  preview.value?.metadata.parser === 'separator' ? 'separator' : 'heading')
+
+function insertFromHelp(snippet: string) {
+  helpOpen.value = false
+  if (editorView.value)
+    insertSnippet(editorView.value, snippet)
+}
+
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
 
 const metaOpen = ref(false)
 const metaItem = ref<PresentationListItem | null>(null)
-const metaProjects = ref<Project[]>([])
 
 async function openMeta() {
   try {
-    const [list, projects] = await Promise.all([
-      $fetch<PresentationListItem[]>('/api/presentations'),
-      $fetch<Project[]>('/api/projects'),
-    ])
+    const list = await $fetch<PresentationListItem[]>('/api/presentations')
     metaItem.value = list.find(p => p.slug === slug) ?? null
-    metaProjects.value = projects
     if (metaItem.value)
       metaOpen.value = true
   }
@@ -421,6 +482,15 @@ async function onMetaSaved() {
         :disabled="!!loadError || !writable"
         @click="publish"
       />
+      <UTooltip :text="followCursor ? 'Suivi de la diapo au curseur : activé' : 'Suivre la diapo au curseur'">
+        <UButton
+          icon="i-lucide-crosshair"
+          color="neutral"
+          :variant="followCursor ? 'subtle' : 'ghost'"
+          aria-label="Suivre la diapo au curseur"
+          @click="toggleFollow"
+        />
+      </UTooltip>
       <UTooltip text="Ouvrir la présentation">
         <UButton
           icon="i-lucide-external-link"
@@ -438,6 +508,7 @@ async function onMetaSaved() {
       v-if="!loadError"
       :view="editorView"
       :disabled="!writable"
+      @help="helpOpen = true"
     />
 
     <div
@@ -487,6 +558,7 @@ async function onMetaSaved() {
       <div class="relative h-full overflow-hidden bg-white">
         <RevealPresentation
           v-if="preview && preview.slides.length > 0"
+          ref="preview"
           :key="preview.metadata.theme"
           :theme="preview.metadata.theme"
           :config="preview.metadata.reveal"
@@ -506,8 +578,14 @@ async function onMetaSaved() {
       v-if="metaItem"
       v-model:open="metaOpen"
       :item="metaItem"
-      :projects="metaProjects"
+      :projects="projects"
       @saved="onMetaSaved"
+    />
+
+    <EditorHelpSlideover
+      v-model:open="helpOpen"
+      :parser="activeParser"
+      @insert="insertFromHelp"
     />
   </div>
 </template>

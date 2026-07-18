@@ -21,11 +21,14 @@ const resolvedRevealConfig = computed(() =>
 
 const { loadTheme, unloadTheme, watchTheme } = useTheme(toRef(props, 'theme'))
 
-const { initialize, destroy, getInstance, sync } = useReveal(revealContainer, props.config || {})
+const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, props.config || {})
 
 // Let MDC components trigger a Reveal sync after dynamic content changes.
 provide('revealSync', sync)
 provide('revealInstance', getInstance)
+
+// The integrated editor drives the preview to the slide under the cursor.
+defineExpose({ slide, getIndices, getInstance, sync })
 
 // Translate markdown anchor clicks (href="#slug") into Reveal hash navigation (#/slug).
 function handleAnchorClick(event: MouseEvent) {
