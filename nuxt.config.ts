@@ -182,15 +182,20 @@ export default defineNuxtConfig({
     },
     'nitro:build:public-assets': async function (nitro) {
       const { cp } = await import('node:fs/promises')
-      const srcDir = join(process.cwd(), 'presentations')
-      const destDir = join(nitro.options.output.serverDir, 'presentations')
-
-      try {
-        await cp(srcDir, destDir, { recursive: true })
-        console.log('✅ Copied presentations folder to build output')
-      }
-      catch (error) {
-        console.error('❌ Failed to copy presentations:', error.message)
+      // presentations/: runtime server asset; migrations: read at boot by the
+      // migration plugin (drizzle needs a real folder next to the bundle).
+      const copies = [
+        [join(process.cwd(), 'presentations'), join(nitro.options.output.serverDir, 'presentations')],
+        [join(process.cwd(), 'server/db/migrations'), join(nitro.options.output.serverDir, 'migrations')],
+      ]
+      for (const [srcDir, destDir] of copies) {
+        try {
+          await cp(srcDir, destDir, { recursive: true })
+          console.log(`✅ Copied ${srcDir} to build output`)
+        }
+        catch (error) {
+          console.error(`❌ Failed to copy ${srcDir}:`, error.message)
+        }
       }
     },
   },
