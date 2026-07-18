@@ -1,5 +1,5 @@
 import type { PresentationListItem } from '#shared/presentations'
-import { canList } from '#shared/access'
+import { canList, isPrivileged } from '#shared/access'
 import { splitFrontmatter } from '#shared/deck'
 import { getActor } from '../utils/actor'
 import { listAllPresentations, readArchivedStub, readPresentationContentAt } from '../utils/presentations'
@@ -17,26 +17,35 @@ export default defineEventHandler(async (event): Promise<PresentationListItem[]>
     : new Map()
 
   try {
+    const privileged = isPrivileged(actor.role)
     const managed = await useDeckMeta().listManaged()
     const managedSlugs = new Set(managed.map(d => d.slug))
 
-    const fromDb = managed.map(deck => ({
-      slug: deck.slug,
-      title: deck.title,
-      theme: deck.theme || 'dsfr',
-      status: deck.status,
-      filename: `${deck.slug}.md`,
-      project: deck.project,
-      unlisted: deck.unlisted,
-      alias: deck.alias,
-      lifecycle: deck.lifecycle,
-    } satisfies PresentationListItem))
+    const files = await listAllPresentations()
+    const fileSlugs = new Set(files.map(f => f.slug))
+
+    // A database deck with no published version and no file behind it has
+    // nothing to serve: only people who can edit it should see it listed.
+    const fromDb = managed
+      .filter(deck => deck.published || fileSlugs.has(deck.slug) || privileged)
+      .map(deck => ({
+        slug: deck.slug,
+        title: deck.title,
+        theme: deck.theme || 'dsfr',
+        status: deck.status,
+        filename: `${deck.slug}.md`,
+        project: deck.project,
+        unlisted: deck.unlisted,
+        alias: deck.alias,
+        lifecycle: deck.lifecycle,
+        ...(privileged ? { fileBacked: fileSlugs.has(deck.slug), published: deck.published } : {}),
+      } satisfies PresentationListItem))
 
     // Map stub slug → canonical alias so the home can link to /p/<alias>.
     const directory = await deckDirectory.list()
     const bySlug = new Map(directory.map(e => [e.slug, e]))
 
-    const stubs = (await listAllPresentations()).filter(({ slug }) => !managedSlugs.has(slug))
+    const stubs = files.filter(({ slug }) => !managedSlugs.has(slug))
     const fromFiles = await Promise.all(
       stubs.map(async ({ slug, status }) => {
         const read = await readPresentationContentAt(slug, status)
@@ -52,6 +61,7 @@ export default defineEventHandler(async (event): Promise<PresentationListItem[]>
           unlisted: Boolean(data.unlisted),
           alias: entry?.alias,
           lifecycle: entry?.lifecycle,
+          ...(privileged ? { fileBacked: true } : {}),
         } satisfies PresentationListItem
       }),
     )

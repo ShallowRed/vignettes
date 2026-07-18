@@ -15,6 +15,10 @@ export interface PresentationListItem {
   alias?: string
   /** frozen/archived serve a static bundle. */
   lifecycle?: Lifecycle
+  /** Privileged only: a committed file exists behind this deck (deleting the database state reverts to it). */
+  fileBacked?: boolean
+  /** Privileged only, database decks: false until a first publish gives the deck servable content. */
+  published?: boolean
 }
 
 /** Canonical in-app path of a deck: stable alias when it has one, slug route otherwise. */
