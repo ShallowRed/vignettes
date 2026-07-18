@@ -1,7 +1,9 @@
+import { Buffer } from 'node:buffer'
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createDeckMeta } from '../../server/db/deck-meta'
 import { createDbDirectory } from '../../server/db/directory'
-import { deckAliases, decks, projects } from '../../server/db/schema'
+import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions, projects, users } from '../../server/db/schema'
 import { freshDb } from './helpers/db'
 
 describe('db directory', () => {
@@ -86,5 +88,32 @@ describe('deck meta', () => {
     const patched = await meta.update('fresh', { title: 'Fresh', unlisted: true })
     // A partial patch leaves earlier fields intact.
     expect(patched).toMatchObject({ title: 'Fresh', status: 'public', alias: 'fresh-alias', unlisted: true })
+  })
+
+  it('remove erases every trace of the deck and only that deck', async () => {
+    const meta = createDeckMeta(db)
+    db.insert(users).values({ id: 7, login: 'ana', createdAt: now, lastLoginAt: now }).run()
+    db.insert(decks).values([
+      { slug: 'doomed', title: 'Doomed', managed: true, createdAt: now, updatedAt: now },
+      { slug: 'kept', title: 'Kept', managed: true, createdAt: now, updatedAt: now },
+    ]).run()
+    const version = db.insert(deckVersions)
+      .values({ deckSlug: 'doomed', raw: '# d', publishedBy: 'ana', publishedAt: now })
+      .returning({ id: deckVersions.id })
+      .get()!
+    db.update(decks).set({ publishedVersionId: version.id }).where(eq(decks.slug, 'doomed')).run()
+    db.insert(deckDrafts).values({ deckSlug: 'doomed', ydoc: Buffer.from([1]), updatedAt: now }).run()
+    db.insert(deckAliases).values({ alias: 'old-path', deckSlug: 'doomed' }).run()
+    db.insert(deckPermissions).values({ deckSlug: 'doomed', userId: 7, role: 'viewer', grantedBy: 'ana', createdAt: now }).run()
+
+    expect(await meta.remove('doomed')).toBe(true)
+    expect(await meta.get('doomed')).toBeNull()
+    expect(db.select().from(deckVersions).all()).toEqual([])
+    expect(db.select().from(deckDrafts).all()).toEqual([])
+    expect(db.select().from(deckAliases).all()).toEqual([])
+    expect(db.select().from(deckPermissions).all()).toEqual([])
+    expect(await meta.get('kept')).not.toBeNull()
+
+    expect(await meta.remove('ghost')).toBe(false)
   })
 })

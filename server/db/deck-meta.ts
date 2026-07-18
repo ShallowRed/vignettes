@@ -2,7 +2,7 @@ import type { Lifecycle, PublicationStatus } from '#shared/access'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { PublicationStatusSchema } from '#shared/access'
 import { eq } from 'drizzle-orm'
-import { decks } from './schema'
+import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions } from './schema'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
@@ -73,6 +73,26 @@ export function createDeckMeta(db: Db) {
         .returning()
         .get()!
       return toMeta(row)
+    },
+
+    /**
+     * Erase every database trace of a deck: grants, redirect aliases, draft,
+     * versions, then the row itself. A file-backed deck reverts to its committed
+     * markdown; an app-created deck is gone. Returns false when nothing existed.
+     */
+    async remove(slug: string): Promise<boolean> {
+      const row = db.select({ slug: decks.slug }).from(decks).where(eq(decks.slug, slug)).get()
+      if (!row)
+        return false
+      db.transaction((tx) => {
+        tx.delete(deckPermissions).where(eq(deckPermissions.deckSlug, slug)).run()
+        tx.delete(deckAliases).where(eq(deckAliases.deckSlug, slug)).run()
+        tx.delete(deckDrafts).where(eq(deckDrafts.deckSlug, slug)).run()
+        tx.update(decks).set({ publishedVersionId: null }).where(eq(decks.slug, slug)).run()
+        tx.delete(deckVersions).where(eq(deckVersions.deckSlug, slug)).run()
+        tx.delete(decks).where(eq(decks.slug, slug)).run()
+      })
+      return true
     },
   }
 }
