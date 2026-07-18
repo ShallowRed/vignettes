@@ -54,6 +54,7 @@ async function listStubEntries(): Promise<StubEntry[]> {
 /** Find a presentation by slug; throws if the slug exists in more than one stub. */
 export async function findPresentationBySlug(slug: string): Promise<{
   status: PublicationStatus
+  key: string
 } | null> {
   const matches = (await listStubEntries()).filter(e => e.slug === slug)
   if (matches.length === 0)
@@ -61,7 +62,7 @@ export async function findPresentationBySlug(slug: string): Promise<{
   if (matches.length > 1) {
     throw new Error(`Duplicate slug "${slug}" found in: ${matches.map(m => m.key).join(', ')}`)
   }
-  return { status: matches[0]!.status }
+  return { status: matches[0]!.status, key: matches[0]!.key }
 }
 
 export async function listPresentationsByStatus(status: PublicationStatus): Promise<string[]> {
@@ -97,9 +98,9 @@ export async function readArchivedStub(slug: string): Promise<string | null> {
 }
 
 /**
- * Write presentation markdown to a given storage key (`<access>:<slug>.md`),
- * returning the bytes written. The key is validated/derived upstream by
- * `prepareDeckWrite` (no traversal, known folder) — this only performs the I/O.
+ * Write presentation markdown to a given storage key, returning the bytes
+ * written. The key is validated/derived upstream (no traversal) — this only
+ * performs the I/O.
  *
  * Note: in dev this persists to the `presentations/` working tree via Nitro's
  * filesystem storage driver. On a read-only/serverless deploy the driver may

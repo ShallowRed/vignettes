@@ -1,4 +1,4 @@
-import { parseDeckDocName } from '#shared/deck'
+import { isDeckSlug } from '#shared/deck'
 import { Hocuspocus } from '@hocuspocus/server'
 import { fileSource, fileWriter } from './sources'
 
@@ -10,7 +10,7 @@ let instance: Hocuspocus | undefined
 /**
  * Lazy Hocuspocus singleton bridging live Y.Text documents to deck markdown
  * through the content ports: markdown stays the source of truth, Yjs is only
- * the real-time transport. Document names follow `parseDeckDocName`.
+ * the real-time transport. Document names are deck slugs (`isDeckSlug`).
  */
 export function useCollabServer(): Hocuspocus {
   instance ??= new Hocuspocus({
@@ -24,8 +24,7 @@ export function useCollabServer(): Hocuspocus {
       if (ytext.length > 0)
         return document
 
-      const parsed = parseDeckDocName(documentName)
-      const loaded = parsed ? await fileSource.load(parsed.slug) : null
+      const loaded = isDeckSlug(documentName) ? await fileSource.load(documentName) : null
       if (!loaded) {
         console.warn(`[collab] no markdown for "${documentName}"`)
         return document
@@ -37,14 +36,13 @@ export function useCollabServer(): Hocuspocus {
     },
 
     async onStoreDocument({ documentName, document }) {
-      const parsed = parseDeckDocName(documentName)
-      if (!parsed)
+      if (!isDeckSlug(documentName))
         return
       const raw = document.getText(TEXT_FIELD).toString()
       // Never let a transient empty state wipe the committed deck.
       if (raw.length === 0)
         return
-      await fileWriter.save({ slug: parsed.slug, access: parsed.access, raw })
+      await fileWriter.save({ slug: documentName, raw })
     },
   })
   return instance

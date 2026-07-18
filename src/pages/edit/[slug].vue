@@ -28,7 +28,7 @@ const slug = route.params.slug as string
 const collabEnabled = computed(() => 'collab' in route.query)
 
 const raw = ref('')
-const access = ref<string>('public')
+const deckStatus = ref<string>('public')
 const preview = ref<PresentationData | null>(null)
 const loadError = ref<string | null>(null)
 const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -59,7 +59,7 @@ const cmModel = computed({
   },
 })
 
-// Load the deck's current markdown (raw source + its access folder, for save-back).
+// Load the deck's current markdown (status is display-only; it lives in the frontmatter).
 const { data, error } = await useAsyncData(`edit-${slug}`, () =>
   $fetch<{ content: string, status?: string }>(`/api/presentations/${slug}`))
 
@@ -68,7 +68,7 @@ if (error.value) {
 }
 else if (data.value) {
   if (data.value.status)
-    access.value = data.value.status
+    deckStatus.value = data.value.status
   // Solo mode seeds the editor from the fetched markdown. In collab mode the
   // Y.Text is the ONLY source — seeded server-side from the file — so we must NOT
   // also push this content in, or yCollab would insert it on top of the synced
@@ -113,7 +113,7 @@ async function startCollab() {
   const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
   const provider = new HocuspocusProvider({
     url: `${wsProtocol}://${window.location.host}/collab`,
-    name: `${access.value}:${slug}`,
+    name: slug,
     document: ydoc,
   })
 
@@ -174,7 +174,7 @@ async function save() {
   try {
     const res = await $fetch<{ ok: boolean, key: string, bytes: number }>(
       `/api/presentations/${slug}`,
-      { method: 'PUT', body: { access: access.value, raw: raw.value } },
+      { method: 'PUT', body: { raw: raw.value } },
     )
     saveState.value = 'saved'
     saveMessage.value = `Saved ${res.bytes} B → ${res.key}`
@@ -192,7 +192,7 @@ async function save() {
 <template>
   <div class="editor">
     <header class="editor__bar">
-      <span class="editor__title">Édition — {{ slug }} <em>({{ access }})</em></span>
+      <span class="editor__title">Édition — {{ slug }} <em>({{ deckStatus }})</em></span>
       <span
         v-if="collabEnabled"
         class="editor__collab"

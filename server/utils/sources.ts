@@ -1,7 +1,7 @@
 import type { ContentSource, ContentWriter, NoteSource } from '#shared/deck'
 import { prepareDeckWrite } from '#shared/deck'
 import { fetchCollaborativeNote } from './codimd'
-import { readPresentationContent, writePresentationContentAt } from './presentations'
+import { findPresentationBySlug, readPresentationContent, writePresentationContentAt } from './presentations'
 
 /**
  * Server adapters implementing the `ContentSource` port — the only place that
@@ -38,16 +38,19 @@ export function noteSource(source: NoteSource): ContentSource {
 }
 
 /**
- * The write side of the `file` source. Symmetric to
- * `fileSource`: persists a deck's markdown back to `presentations/<access>/`,
- * keeping the markdown as the source of truth. Path safety is enforced by the
- * pure `prepareDeckWrite` before any I/O.
+ * The write side of the `file` source. Symmetric to `fileSource`: persists a
+ * deck's markdown back to `presentations/`, keeping the markdown as the source
+ * of truth. Existing decks are updated in place (whatever key they live at);
+ * new decks land flat. Path safety is enforced by the pure `prepareDeckWrite`
+ * before any I/O.
  */
 export const fileWriter: ContentWriter = {
   id: 'file',
   async save(input) {
     const prepared = prepareDeckWrite(input)
-    const bytes = await writePresentationContentAt(prepared.key, prepared.raw)
-    return { key: prepared.key, bytes }
+    const existing = await findPresentationBySlug(prepared.slug)
+    const key = existing?.key ?? prepared.key
+    const bytes = await writePresentationContentAt(key, prepared.raw)
+    return { key, bytes }
   },
 }

@@ -30,19 +30,17 @@ export interface ContentWriter {
   /** Stable identifier of the writable target (only `file` for now). */
   readonly id: 'file'
   /**
-   * Persist raw markdown for a deck `ref` (slug) under an access folder. Returns
-   * the result so a caller can confirm where it landed. Throws on failure rather
-   * than silently dropping (a lost edit is worse than a visible error).
+   * Persist the full markdown document for a deck slug. Returns the result so a
+   * caller can confirm where it landed. Throws on failure rather than silently
+   * dropping (a lost edit is worse than a visible error).
    */
   save: (input: DeckWriteInput) => Promise<DeckWriteResult>
 }
 
-/** Where and what to write — validated/derived by `prepareDeckWrite`. */
+/** What to write — validated by `prepareDeckWrite`. */
 export interface DeckWriteInput {
   /** Deck slug (filename without `.md`). */
   slug: string
-  /** Access folder the deck lives under. */
-  access: string
   /** The full markdown document (frontmatter + body) to persist. */
   raw: string
 }
@@ -54,62 +52,37 @@ export interface DeckWriteResult {
   bytes: number
 }
 
-/** The access folders a deck may be written to (mirrors the read side). */
-export const WRITABLE_ACCESS_FOLDERS = ['public', 'draft', 'private', 'semi-private'] as const
-export type WritableAccess = typeof WRITABLE_ACCESS_FOLDERS[number]
-
 /** A slug is a single path segment: letters, digits, `-`, `_` (no `/`, no `..`). */
 const SLUG_RE = /^[a-z0-9][\w-]*$/i
 
+/** A valid deck slug — also the collab document-name convention. */
+export function isDeckSlug(name: string): boolean {
+  return typeof name === 'string' && SLUG_RE.test(name)
+}
+
 export interface PreparedDeckWrite {
-  /** Validated access folder. */
-  access: WritableAccess
   /** Validated slug. */
   slug: string
-  /** The Nitro storage key `"<access>:<slug>.md"` (also the relative path). */
+  /** Default storage key `"<slug>.md"` (flat layout; adapters may write to the deck's existing key). */
   key: string
   /** The markdown to persist (unchanged; kept for a single object to pass on). */
   raw: string
 }
 
 /**
- * Validate a write request and derive its storage key — pure, so the path
- * convention and the safety checks (no traversal, known folder, non-empty) are
- * testable without touching storage. Throws a descriptive error on invalid input
- * so the adapter never writes outside `presentations/<access>/`.
+ * Validate a write request and derive its default storage key — pure, so the
+ * safety checks (no traversal, non-empty) are testable without touching storage.
+ * Throws a descriptive error so the adapter never writes outside `presentations/`.
+ * Status lives in the frontmatter of `raw`, not in the path.
  */
 export function prepareDeckWrite(input: DeckWriteInput): PreparedDeckWrite {
-  const { slug, access, raw } = input
+  const { slug, raw } = input
 
-  if (!WRITABLE_ACCESS_FOLDERS.includes(access as WritableAccess))
-    throw new Error(`Invalid access folder "${access}" (expected one of ${WRITABLE_ACCESS_FOLDERS.join(', ')})`)
-
-  if (typeof slug !== 'string' || !SLUG_RE.test(slug))
+  if (!isDeckSlug(slug))
     throw new Error(`Invalid slug "${slug}" — must match ${SLUG_RE} (single path segment, no slashes)`)
 
   if (typeof raw !== 'string' || raw.length === 0)
     throw new Error('Refusing to write empty markdown (a blank save would wipe the deck)')
 
-  return {
-    access: access as WritableAccess,
-    slug,
-    key: `${access}:${slug}.md`,
-    raw,
-  }
-}
-
-/**
- * Parse a collab document name `"<access>:<slug>"` (the same key shape as the
- * file storage) into its validated parts, or `null` when malformed — the collab
- * server must never map a document to a path outside `presentations/<access>/`.
- */
-export function parseDeckDocName(name: string): { access: WritableAccess, slug: string } | null {
-  const sep = name.indexOf(':')
-  if (sep === -1)
-    return null
-  const access = name.slice(0, sep)
-  const slug = name.slice(sep + 1)
-  if (!WRITABLE_ACCESS_FOLDERS.includes(access as WritableAccess) || !SLUG_RE.test(slug))
-    return null
-  return { access: access as WritableAccess, slug }
+  return { slug, key: `${slug}.md`, raw }
 }
