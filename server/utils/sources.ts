@@ -1,9 +1,8 @@
-import type { ContentSource, ContentWriter, NoteSource } from '#shared/deck'
-import { prepareDeckWrite } from '#shared/deck'
+import type { ContentSource, NoteSource } from '#shared/deck'
 import { createDbContent } from '../db/content-store'
 import { fetchCollaborativeNote } from './codimd'
 import { useDb } from './db'
-import { findPresentationBySlug, isPresentationsWritable, readPresentationContent, writePresentationContentAt } from './presentations'
+import { readPresentationContent } from './presentations'
 
 /**
  * Server adapters implementing the `ContentSource` port — the only place that
@@ -53,24 +52,5 @@ export const publishedSource: ContentSource = {
   id: 'db',
   async load(slug) {
     return await useDbContent().source.load(slug) ?? await fileSource.load(slug)
-  },
-}
-
-/**
- * The write side of the `file` source. Symmetric to `fileSource`: persists a
- * deck's markdown back to `presentations/`, keeping the markdown as the source
- * of truth. Existing decks are updated in place (whatever key they live at);
- * new decks land flat. Path safety is enforced by the pure `prepareDeckWrite`
- * before any I/O.
- */
-export const fileWriter: ContentWriter = {
-  id: 'file',
-  isWritable: () => isPresentationsWritable(),
-  async save(input) {
-    const prepared = prepareDeckWrite(input)
-    const existing = await findPresentationBySlug(prepared.slug)
-    const key = existing?.key ?? prepared.key
-    const bytes = await writePresentationContentAt(key, prepared.raw)
-    return { key, bytes }
   },
 }
