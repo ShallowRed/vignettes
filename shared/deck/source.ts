@@ -43,6 +43,19 @@ export interface ContentWriter {
   save: (input: DeckWriteInput) => Promise<DeckWriteResult>
 }
 
+/**
+ * Draft store port: the live collaborative state of a deck as an opaque Y.Doc
+ * binary. Deliberately distinct from {@link ContentWriter} — a draft is CRDT
+ * transport state, not published markdown; publishing derives markdown from it
+ * as an explicit act. Adapters must treat the bytes as opaque.
+ */
+export interface DraftStore {
+  /** Whether drafts can currently be persisted (gates collab sessions). */
+  isWritable: () => boolean
+  load: (slug: string) => Promise<Uint8Array | null>
+  save: (slug: string, ydoc: Uint8Array) => Promise<void>
+}
+
 /** What to write — validated by `prepareDeckWrite`. */
 export interface DeckWriteInput {
   /** Deck slug (filename without `.md`). */

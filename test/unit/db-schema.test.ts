@@ -1,21 +1,8 @@
 import { Buffer } from 'node:buffer'
-import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import Database from 'better-sqlite3'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { deckDrafts, decks, deckVersions } from '../../server/db/schema'
-
-const MIGRATIONS_DIR = join(process.cwd(), 'server/db/migrations')
-
-function freshDb() {
-  const sqlite = new Database(':memory:')
-  sqlite.pragma('foreign_keys = ON')
-  for (const file of readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql')).sort())
-    sqlite.exec(readFileSync(join(MIGRATIONS_DIR, file), 'utf-8').replaceAll('--> statement-breakpoint', ''))
-  return drizzle(sqlite)
-}
+import { freshDb } from './helpers/db'
 
 describe('db schema', () => {
   let db: ReturnType<typeof freshDb>
