@@ -97,3 +97,19 @@ export function prepareDeckWrite(input: DeckWriteInput): PreparedDeckWrite {
     raw,
   }
 }
+
+/**
+ * Parse a collab document name `"<access>:<slug>"` (the same key shape as the
+ * file storage) into its validated parts, or `null` when malformed — the collab
+ * server must never map a document to a path outside `presentations/<access>/`.
+ */
+export function parseDeckDocName(name: string): { access: WritableAccess, slug: string } | null {
+  const sep = name.indexOf(':')
+  if (sep === -1)
+    return null
+  const access = name.slice(0, sep)
+  const slug = name.slice(sep + 1)
+  if (!WRITABLE_ACCESS_FOLDERS.includes(access as WritableAccess) || !SLUG_RE.test(slug))
+    return null
+  return { access: access as WritableAccess, slug }
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { prepareDeckWrite, WRITABLE_ACCESS_FOLDERS } from '../../shared/deck/source'
+import { parseDeckDocName, prepareDeckWrite, WRITABLE_ACCESS_FOLDERS } from '../../shared/deck/source'
 
 describe('prepareDeckWrite', () => {
   it('derives the storage key from access + slug', () => {
@@ -39,5 +39,28 @@ describe('prepareDeckWrite', () => {
   it('refuses to write empty markdown (would wipe the deck)', () => {
     expect(() => prepareDeckWrite({ access: 'public', slug: 'd', raw: '' }))
       .toThrow(/empty markdown/i)
+  })
+})
+
+describe('parseDeckDocName', () => {
+  it('parses "<access>:<slug>" into validated parts', () => {
+    expect(parseDeckDocName('public:my-deck')).toEqual({ access: 'public', slug: 'my-deck' })
+    expect(parseDeckDocName('semi-private:deck_2')).toEqual({ access: 'semi-private', slug: 'deck_2' })
+  })
+
+  it('rejects names without a separator', () => {
+    expect(parseDeckDocName('my-deck')).toBeNull()
+  })
+
+  it('rejects unknown access folders', () => {
+    expect(parseDeckDocName('secret:my-deck')).toBeNull()
+    expect(parseDeckDocName('archived:my-deck')).toBeNull()
+  })
+
+  it('rejects slugs with traversal or slashes', () => {
+    expect(parseDeckDocName('public:../etc/passwd')).toBeNull()
+    expect(parseDeckDocName('public:a/b')).toBeNull()
+    expect(parseDeckDocName('public:.hidden')).toBeNull()
+    expect(parseDeckDocName('public:')).toBeNull()
   })
 })
