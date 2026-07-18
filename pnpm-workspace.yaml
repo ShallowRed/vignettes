@@ -1,6 +1,7 @@
 catalog:
   '@antfu/eslint-config': ^6.4.2
   '@aws-sdk/client-s3': ^3.1085.0
+  '@codemirror/autocomplete': ^6.20.3
   '@codemirror/commands': ^6.10.4
   '@codemirror/lang-markdown': ^6.5.0
   '@codemirror/language': ^6.12.4
@@ -51,6 +52,11 @@ onlyBuiltDependencies:
   - esbuild
 
 shellEmulator: true
+
+# Same pin as .nvmrc: pnpm runs everything (dev, tests, lifecycle scripts) on
+# this exact Node, whatever node the invoking shell resolves. Keeps native
+# builds (better-sqlite3) on one ABI across mise shells and launchers.
+useNodeVersion: 22.23.1
 
 trustPolicy: no-downgrade
 
