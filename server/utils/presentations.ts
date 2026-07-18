@@ -103,8 +103,8 @@ export async function readArchivedStub(slug: string): Promise<string | null> {
  *
  * Note: in dev this persists to the `presentations/` working tree via Nitro's
  * filesystem storage driver. On a read-only/serverless deploy the driver may
- * reject the write; the integrated-editor work (#16) targets a writable backing
- * (local dev now, a git/remote writer later — analyse §6 Lot 0).
+ * reject the write; the integrated editor targets a writable backing
+ * (local dev now, a git/remote writer later).
  */
 export async function writePresentationContentAt(key: string, raw: string): Promise<number> {
   await presentationsStorage().setItem(key, raw)

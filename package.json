@@ -22,8 +22,7 @@
     "prepare": "nuxt prepare",
     "hash-password": "node scripts/hash-password.js",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "collab": "node server/collab/hocuspocus.ts"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
@@ -31,6 +30,7 @@
     "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
     "@hocuspocus/provider": "catalog:",
+    "@hocuspocus/server": "catalog:",
     "@iconify/vue": "catalog:",
     "@nuxt/ui": "catalog:",
     "@nuxtjs/mdc": "catalog:",
@@ -52,7 +52,6 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
-    "@hocuspocus/server": "catalog:",
     "@iconify-json/lucide": "catalog:",
     "@iconify-json/ri": "catalog:",
     "@nuxt/icon": "catalog:",

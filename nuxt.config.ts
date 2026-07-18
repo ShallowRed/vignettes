@@ -116,6 +116,11 @@ export default defineNuxtConfig({
       },
 
   nitro: {
+    // Experimental until Nitro v3; carries the /collab realtime endpoint.
+    experimental: {
+      websocket: true,
+    },
+
     // Ship `presentations/` (stubs + registry.yml) as a server asset so it's
     // reachable at runtime via `useStorage('assets:presentations')` regardless of
     // cwd; this powers the live `/p/<alias>` route + registry in production.
