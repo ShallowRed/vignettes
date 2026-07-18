@@ -2,19 +2,20 @@
  * Save a deck's markdown.
  * PUT /api/presentations/:slug   body: { access, raw }
  *
- * The write side of `GET /api/presentations/:slug`. Authenticated; persists
+ * The write side of `GET /api/presentations/:slug`. Owner/editor only; persists
  * through the `fileWriter` `ContentWriter` so the markdown stays the source of
  * truth (`resolveDeck` keeps reading exactly what the editor wrote). Path safety
  * (folder whitelist, no traversal, non-empty) is enforced by `prepareDeckWrite`
  * inside the writer.
  */
 
+import { isPrivileged } from '#shared/access'
+import { getActorRole } from '../../utils/actor'
 import { fileWriter } from '../../utils/sources'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event).catch(() => null)
-  if (!session?.user) {
-    throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+  if (!isPrivileged(await getActorRole(event))) {
+    throw createError({ statusCode: 403, statusMessage: 'Owner or editor role required' })
   }
 
   const slug = getRouterParam(event, 'slug')
