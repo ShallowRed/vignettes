@@ -1,0 +1,12 @@
+# Streaming replication of the SQLite database to the existing Scaleway bucket.
+# Credentials and env name arrive through the Infisical-injected environment.
+dbs:
+  - path: /app/.data/slides.db
+    replicas:
+      - type: s3
+        endpoint: ${NUXT_FROZEN_S3_ENDPOINT}
+        region: ${NUXT_FROZEN_S3_REGION}
+        bucket: ${NUXT_FROZEN_S3_BUCKET}
+        path: db-replica/${INFISICAL_ENV}
+        access-key-id: ${NUXT_FROZEN_S3_ACCESS_KEY_ID}
+        secret-access-key: ${NUXT_FROZEN_S3_SECRET_ACCESS_KEY}

@@ -59,20 +59,27 @@ ENV INFISICAL_DISABLE_UPDATE_CHECK=true
 # démarrage (machine identity -> `infisical run`). ca-certificates conservé pour
 # le TLS si l'API Infisical est jointe via son URL publique.
 ARG INFISICAL_CLI_VERSION=0.43.104
+ARG LITESTREAM_VERSION=0.5.14
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
     && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | bash \
     && apt-get update \
     && apt-get install -y --no-install-recommends "infisical=${INFISICAL_CLI_VERSION}" \
+    && ARCH="$(dpkg --print-architecture | sed 's/amd64/x86_64/')" \
+    && curl -fsSL -o /tmp/litestream.deb \
+       "https://github.com/benbjohnson/litestream/releases/download/v${LITESTREAM_VERSION}/litestream-${LITESTREAM_VERSION}-linux-${ARCH}.deb" \
+    && dpkg -i /tmp/litestream.deb && rm /tmp/litestream.deb \
     && apt-get purge -y curl \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/.output ./.output
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY litestream.yml /etc/litestream.yml
+COPY docker-entrypoint.sh run-app.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/run-app.sh \
+    && mkdir -p /app/.data && chown node:node /app/.data
 
 EXPOSE 3000
 USER node
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["node", ".output/server/index.mjs"]
+CMD ["/usr/local/bin/run-app.sh"]
