@@ -63,6 +63,8 @@ export const DeckMetaSchema = z
     status: PublicationStatusSchema.optional(),
     /** Catalog grouping slug into `presentations/projects.yml`. */
     project: z.string().optional(),
+    /** Pin to the top of the public showcase. */
+    featured: z.boolean().optional(),
     /** @deprecated legacy alias of `status`. */
     access: z.string().optional(),
     accessPassword: z.string().optional(),

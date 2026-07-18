@@ -29,6 +29,7 @@ const state = reactive({
   title: '',
   status: 'draft' as PublicationStatus,
   unlisted: false,
+  featured: false,
   project: '',
   theme: '',
   alias: '',
@@ -42,6 +43,7 @@ watch(open, (now) => {
       title: props.item.title,
       status: props.item.status,
       unlisted: props.item.unlisted ?? false,
+      featured: props.item.featured ?? false,
       project: props.item.project ?? '',
       theme: props.item.theme ?? '',
       alias: props.item.alias ?? '',
@@ -79,6 +81,7 @@ async function save() {
         title: state.title.trim() || props.item.title,
         status: state.status,
         unlisted: state.unlisted,
+        featured: state.featured,
         project: state.project || null,
         theme: state.theme || null,
         alias: state.alias.trim() || null,
@@ -188,7 +191,10 @@ async function removeGrant(userId: number) {
           />
         </UFormField>
 
-        <UFormField label="Statut">
+        <UFormField
+          label="Accès"
+          description="Qui peut ouvrir le contenu."
+        >
           <USelect
             v-model="state.status"
             :items="statusItems"
@@ -196,12 +202,23 @@ async function removeGrant(userId: number) {
           />
         </UFormField>
 
-        <UFormField
-          label="Non répertoriée"
-          description="Accessible par lien mais absente du catalogue public."
-        >
-          <USwitch v-model="state.unlisted" />
-        </UFormField>
+        <div class="rounded-lg border border-default p-3 flex flex-col gap-3">
+          <p class="text-xs font-medium text-muted uppercase tracking-wide">
+            Catalogue
+          </p>
+          <UFormField
+            label="Non répertoriée"
+            description="Accessible par lien mais absente du catalogue."
+          >
+            <USwitch v-model="state.unlisted" />
+          </UFormField>
+          <UFormField
+            label="Épinglée en vitrine"
+            description="Remonte en tête du catalogue public (decks publics uniquement)."
+          >
+            <USwitch v-model="state.featured" />
+          </UFormField>
+        </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <UFormField label="Projet">

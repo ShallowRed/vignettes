@@ -13,6 +13,7 @@ const PatchSchema = z.object({
   alias: z.string().min(1).nullable().optional(),
   frozenBundle: z.string().nullable().optional(),
   unlisted: z.boolean().optional(),
+  featured: z.boolean().optional(),
 }).strict()
 
 /**

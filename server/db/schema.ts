@@ -16,6 +16,8 @@ export const decks = sqliteTable('decks', {
   accessPasswordHash: text('access_password_hash'),
   frozenBundle: text('frozen_bundle'),
   unlisted: integer('unlisted', { mode: 'boolean' }).notNull().default(false),
+  /** Pinned to the top of the public showcase (listing curation, orthogonal to access). */
+  featured: integer('featured', { mode: 'boolean' }).notNull().default(false),
   /** True once a publish or an admin edit made this row the metadata truth; plain draft anchors stay false. */
   managed: integer('managed', { mode: 'boolean' }).notNull().default(false),
   publishedVersionId: integer('published_version_id'),

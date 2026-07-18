@@ -1,0 +1,1 @@
+ALTER TABLE `decks` ADD `featured` integer DEFAULT false NOT NULL;
