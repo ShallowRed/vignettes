@@ -179,14 +179,35 @@ async function save() {
       { method: 'PUT', body: { raw: raw.value } },
     )
     saveState.value = 'saved'
-    saveMessage.value = `Saved ${res.bytes} B → ${res.key}`
+    saveMessage.value = `Brouillon enregistré (${res.bytes} B)`
     setTimeout(() => {
       saveState.value = 'idle'
     }, 2500)
   }
   catch (e: any) {
     saveState.value = 'error'
-    saveMessage.value = e?.statusMessage || e?.message || 'Save failed'
+    saveMessage.value = e?.statusMessage || e?.message || 'Échec de l\'enregistrement'
+  }
+}
+
+const publishState = ref<'idle' | 'publishing' | 'published' | 'error'>('idle')
+
+async function publish() {
+  publishState.value = 'publishing'
+  try {
+    // Solo mode: make sure the draft carries the current text before deriving.
+    if (!collabEnabled.value)
+      await $fetch(`/api/presentations/${slug}`, { method: 'PUT', body: { raw: raw.value } })
+    await $fetch(`/api/presentations/${slug}/publish`, { method: 'POST' })
+    publishState.value = 'published'
+    saveMessage.value = 'Publié'
+    setTimeout(() => {
+      publishState.value = 'idle'
+    }, 2500)
+  }
+  catch (e: any) {
+    publishState.value = 'error'
+    saveMessage.value = e?.statusMessage || e?.message || 'Échec de la publication'
   }
 }
 </script>
@@ -215,12 +236,21 @@ async function save() {
         :class="`editor__msg--${saveState}`"
       >{{ saveMessage }}</span>
       <button
+        v-if="!collabEnabled"
         type="button"
         class="editor__save"
         :disabled="saveState === 'saving' || !!loadError || !writable"
         @click="save"
       >
         {{ saveState === 'saving' ? 'Enregistrement…' : 'Enregistrer' }}
+      </button>
+      <button
+        type="button"
+        class="editor__save editor__save--publish"
+        :disabled="publishState === 'publishing' || !!loadError || !writable"
+        @click="publish"
+      >
+        {{ publishState === 'publishing' ? 'Publication…' : 'Publier' }}
       </button>
       <a
         class="editor__open"
@@ -362,6 +392,11 @@ async function save() {
 .editor__save:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.editor__save--publish {
+  color: #fff;
+  background: #2563eb;
 }
 
 .editor__open {
