@@ -85,7 +85,7 @@ describe('access policy — golden', () => {
         "anonymous | draft": false,
         "anonymous | private": false,
         "anonymous | public": true,
-        "anonymous | semi-private": true,
+        "anonymous | semi-private": false,
         "editor | draft": true,
         "editor | private": true,
         "editor | public": true,
@@ -97,7 +97,7 @@ describe('access policy — golden', () => {
         "viewer | draft": false,
         "viewer | private": false,
         "viewer | public": true,
-        "viewer | semi-private": true,
+        "viewer | semi-private": false,
       }
     `)
   })

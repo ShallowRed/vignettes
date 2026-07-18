@@ -84,10 +84,11 @@ describe('canList', () => {
     }
   })
 
-  it('shows public + semi-private to non-privileged, hides draft/private', () => {
+  it('shows only public to non-privileged; semi-private/draft/private are hidden', () => {
     for (const role of ['anonymous', 'viewer'] as Role[]) {
       expect(canList({ status: 'public', role })).toBe(true)
-      expect(canList({ status: 'semi-private', role })).toBe(true)
+      // Semi-private titles must not leak to the public showcase (reached by link only).
+      expect(canList({ status: 'semi-private', role })).toBe(false)
       expect(canList({ status: 'draft', role })).toBe(false)
       expect(canList({ status: 'private', role })).toBe(false)
     }

@@ -79,9 +79,12 @@ export interface ListInput {
 }
 
 /**
- * Whether a deck appears in the catalog for `role`. Semi-private is listed
- * (discoverable, then gated on open); draft/private/unlisted/archived are hidden.
- * A per-deck grant always lists the deck for its grantee.
+ * Whether a deck appears in the catalog for `role`. Listing is the discoverability
+ * axis, distinct from view (see decideAccess): the public catalog is a showcase of
+ * `public` decks only — semi-private/private are hidden from unprivileged visitors,
+ * titles included, and reached solely by direct link. Privileged roles and per-deck
+ * grantees see the deck regardless; unlisted/archived are always hidden from the
+ * public showcase.
  */
 export function canList(input: ListInput): boolean {
   const { status, lifecycle, role, grant, unlisted } = input
@@ -89,5 +92,5 @@ export function canList(input: ListInput): boolean {
     return true
   if (unlisted || lifecycle === 'archived')
     return false
-  return status === 'public' || status === 'semi-private'
+  return status === 'public'
 }
