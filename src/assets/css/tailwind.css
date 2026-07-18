@@ -53,6 +53,21 @@
       color: inherit;
     }
 
+    /* Tailwind's global preflight is not imported, so restore the button reset
+     * it normally provides: without this, ghost/link buttons leak the native
+     * `buttonface` background at rest (grey pills on table headers, toolbar and
+     * dropdown triggers). */
+    button, [type="button"], [type="reset"], [type="submit"] {
+      appearance: button;
+      background-color: transparent;
+      background-image: none;
+      cursor: pointer;
+    }
+
+    :disabled {
+      cursor: default;
+    }
+
     ul, ol {
       list-style: none;
     }

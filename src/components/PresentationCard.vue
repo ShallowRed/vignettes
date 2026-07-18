@@ -39,7 +39,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
 <template>
   <UPageCard
     :to="to"
-    variant="outline"
+    variant="subtle"
     :ui="{ container: 'p-4 sm:p-5' }"
   >
     <template #body>
