@@ -7,6 +7,8 @@ import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 const props = defineProps<{
   presentation: PresentationListItem
   admin?: boolean
+  /** Showcase card: title-first, no status/theme chrome (everything shown is public). */
+  minimal?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -73,7 +75,10 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           />
         </div>
 
-        <div class="flex flex-wrap items-center gap-1.5">
+        <div
+          v-if="frozen || !minimal"
+          class="flex flex-wrap items-center gap-1.5"
+        >
           <UTooltip
             v-if="frozen"
             text="Instantané autoportant : contenu figé, non éditable en direct"
@@ -86,17 +91,18 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
               :label="presentation.lifecycle === 'archived' ? 'Archivée' : 'Gelée'"
             />
           </UTooltip>
+          <!-- Public is the implicit default: only badge the exceptions. -->
           <UBadge
-            v-else
-            :color="statusDisplay?.color || 'neutral'"
+            v-else-if="!minimal && statusDisplay && presentation.status !== 'public'"
+            :color="statusDisplay.color"
             variant="subtle"
             size="sm"
-            :icon="statusDisplay?.icon || 'i-lucide-file'"
-            :label="statusDisplay?.label || presentation.status"
+            :icon="statusDisplay.icon"
+            :label="statusDisplay.label"
           />
 
           <UBadge
-            v-if="presentation.unlisted"
+            v-if="!minimal && presentation.unlisted"
             color="neutral"
             variant="subtle"
             size="sm"
@@ -105,7 +111,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           />
 
           <UTooltip
-            v-if="admin && presentation.published === false && !presentation.fileBacked"
+            v-if="!minimal && admin && presentation.published === false && !presentation.fileBacked"
             text="Aucune version publiée : le deck n'est pas encore servable"
           >
             <UBadge
@@ -118,6 +124,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           </UTooltip>
 
           <UBadge
+            v-if="!minimal"
             color="neutral"
             variant="outline"
             size="sm"
@@ -127,7 +134,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
         </div>
 
         <p
-          v-if="admin"
+          v-if="admin && !minimal"
           class="text-xs text-muted font-mono flex items-center gap-1.5"
         >
           <UIcon

@@ -114,6 +114,14 @@ function openDelete(item: PresentationListItem) {
       </div>
     </template>
 
+    <!-- Visitors get the public showcase: grouped, featured-first, no management chrome. -->
+    <CatalogShowcase
+      v-else-if="!privileged"
+      :items="presentations"
+      :projects="projects"
+    />
+
+    <!-- Privileged: the full management console (filters, table, actions). -->
     <template v-else>
       <CatalogToolbar
         ref="toolbar"
