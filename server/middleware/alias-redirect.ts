@@ -1,9 +1,9 @@
-import { resolveAlias } from '../utils/registry'
+import { deckDirectory } from '../utils/sources'
 
 /**
- * 301-redirect any `/slides/<x>` that resolves to a registry entry (by alias, stub
+ * 301-redirect any `/slides/<x>` that resolves to a directory entry (by alias, stub
  * slug, or historical `aliases:` path) to its canonical `/p/<alias>`, so a single
- * URL serves each deck. Decks not in the registry pass through untouched.
+ * URL serves each deck. Decks not in the directory pass through untouched.
  */
 export default defineEventHandler(async (event) => {
   const path = event.path || ''
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   if (!candidate)
     return
 
-  const entry = await resolveAlias(candidate)
+  const entry = await deckDirectory.resolveAlias(candidate)
   if (entry) {
     await sendRedirect(event, `/p/${entry.alias}`, 301)
   }

@@ -1,10 +1,9 @@
 /**
- * Load `presentations/projects.yml` (the catalog's grouping axis) via Nitro
- * server-asset storage + a TTL cache. A deck opts into a project via its
- * frontmatter `project:` slug.
+ * Yaml adapter for the `ProjectDirectory` port: loads `presentations/projects.yml`
+ * via Nitro server-asset storage + a TTL cache. Never throws; missing/malformed → [].
  */
 
-import type { Project } from '#shared/projects'
+import type { Project, ProjectDirectory } from '#shared/projects'
 import { createTtlCache, DEFAULT_CACHE_TTL_MS } from '#shared/deck'
 import { parseProjects } from '#shared/projects'
 import { load as parseYaml } from 'js-yaml'
@@ -18,8 +17,7 @@ const projectsCache = createTtlCache<Project[]>(
   },
 )
 
-/** Load, validate and order the project registry. Never throws; missing/malformed → []. */
-export async function listProjects(): Promise<Project[]> {
+async function loadProjects(): Promise<Project[]> {
   return projectsCache.get('projects', async () => {
     try {
       const stored = await presentationsStorage().getItem('projects.yml')
@@ -36,8 +34,10 @@ export async function listProjects(): Promise<Project[]> {
   })
 }
 
-/** Resolve a single project slug to its metadata, or null. */
-export async function resolveProject(slug: string): Promise<Project | null> {
-  const projects = await listProjects()
-  return projects.find(p => p.slug === slug) ?? null
+export const fileProjects: ProjectDirectory = {
+  list: loadProjects,
+
+  async resolve(slug) {
+    return (await loadProjects()).find(p => p.slug === slug) ?? null
+  },
 }

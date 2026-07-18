@@ -39,6 +39,8 @@ describe('createDbContent', () => {
     expect(deck.status).toBe('public')
     expect(deck.theme).toBe('minimal')
     expect(deck.project).toBe('interne')
+    expect(deck.unlisted).toBe(false)
+    expect(deck.managed).toBe(true)
   })
 
   it('defaults the status closed when the frontmatter has none', async () => {

@@ -1,33 +1,15 @@
 /**
- * Registry of diffused presentations. Loads `presentations/registry.yml` and
- * resolves a stable alias to its lifecycle + source; an alias keeps the same URL
- * across live → frozen → archived. Per-file frontmatter still owns theme /
- * storybook / access — the registry only adds the lifecycle axis and alias mapping.
+ * Yaml adapter for the `DeckDirectory` port: loads `presentations/registry.yml`
+ * (stable aliases surviving live → frozen → archived). The db adapter takes
+ * precedence entry by entry — see the chain in `sources.ts`.
  */
 
+import type { DeckDirectory, DeckDirectoryEntry } from '#shared/deck'
 import { createTtlCache, DEFAULT_CACHE_TTL_MS } from '#shared/deck'
 import { load as parseYaml } from 'js-yaml'
 import { presentationsStorage } from './presentations'
 
-export type { Lifecycle } from '#shared/access'
-
-export interface RegistryEntry {
-  alias: string
-  title?: string
-  lifecycle: Lifecycle
-  /** Stub slug; defaults to alias. */
-  slug: string
-  source?: 'codimd' | 'hackmd'
-  noteId?: string
-  /** Bundle folder served when lifecycle is frozen/archived. */
-  frozenBundle?: string
-  /** Access folder; disambiguates when the same slug exists in several folders. */
-  access?: string
-  /** Historical paths redirected to this alias. */
-  aliases?: string[]
-}
-
-const registryCache = createTtlCache<Map<string, RegistryEntry>>(
+const registryCache = createTtlCache<Map<string, DeckDirectoryEntry>>(
   () => {
     const raw = useRuntimeConfig().sourceCacheTtlMs
     const n = typeof raw === 'number' ? raw : Number(raw)
@@ -35,22 +17,22 @@ const registryCache = createTtlCache<Map<string, RegistryEntry>>(
   },
 )
 
-/** Load and index the registry (canonical alias + historical `aliases` → same entry). */
-async function loadRegistry(): Promise<Map<string, RegistryEntry>> {
+/** Load and index the registry (canonical alias, stub slug, historical `aliases` → same entry). */
+async function loadRegistry(): Promise<Map<string, DeckDirectoryEntry>> {
   return registryCache.get('registry', async () => {
-    const entries = new Map<string, RegistryEntry>()
+    const entries = new Map<string, DeckDirectoryEntry>()
 
     try {
       const stored = await presentationsStorage().getItem('registry.yml')
       const raw = typeof stored === 'string' ? stored : stored == null ? '' : String(stored)
-      const doc = (parseYaml(raw) || {}) as Record<string, Omit<RegistryEntry, 'alias'>>
+      const doc = (parseYaml(raw) || {}) as Record<string, Omit<DeckDirectoryEntry, 'alias'>>
 
       for (const [alias, value] of Object.entries(doc)) {
-        const entry: RegistryEntry = {
+        const entry: DeckDirectoryEntry = {
+          ...value,
           alias,
           slug: value.slug || alias,
           lifecycle: value.lifecycle || 'live',
-          ...value,
         }
         entries.set(alias, entry)
         // Index the stub slug too, so /slides/<slug> converges on /p/<alias>.
@@ -69,14 +51,14 @@ async function loadRegistry(): Promise<Map<string, RegistryEntry>> {
   })
 }
 
-/** Resolve an alias (canonical or historical) to its registry entry, or null. */
-export async function resolveAlias(alias: string): Promise<RegistryEntry | null> {
-  const entries = await loadRegistry()
-  return entries.get(alias) ?? entries.get(alias.replace(/^\/+/, '')) ?? null
-}
+export const fileDirectory: DeckDirectory = {
+  async resolveAlias(alias) {
+    const entries = await loadRegistry()
+    return entries.get(alias) ?? entries.get(alias.replace(/^\/+/, '')) ?? null
+  },
 
-/** List all registry entries, de-duplicated to canonical aliases. */
-export async function listRegistry(): Promise<RegistryEntry[]> {
-  const entries = await loadRegistry()
-  return [...entries.values()].filter((e, i, arr) => arr.indexOf(e) === i)
+  async list() {
+    const entries = await loadRegistry()
+    return [...entries.values()].filter((e, i, arr) => arr.indexOf(e) === i)
+  },
 }

@@ -39,6 +39,8 @@ export function createDbContent(db: Db): { source: ContentSource, writer: Conten
           theme: (meta.theme as string) ?? null,
           project: (meta.project as string) ?? null,
           accessPasswordHash: (meta.accessPassword as string) ?? null,
+          unlisted: Boolean(meta.unlisted),
+          managed: true,
           updatedAt: now,
         }
         // Deck row first (FK anchor), version next, then repoint — atomic.

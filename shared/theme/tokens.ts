@@ -13,7 +13,7 @@ export interface ThemeTokens {
 }
 
 export const THEME_TOKENS: Record<string, ThemeTokens> = {
-  dsfr: {
+  'dsfr': {
     name: 'dsfr',
     lang: 'fr',
     parser: 'separator',
@@ -56,7 +56,7 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
       height: 800,
     },
   },
-  minimal: {
+  'minimal': {
     name: 'minimal',
     lang: 'fr',
     parser: 'separator',
@@ -64,7 +64,7 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
       slideNumber: true,
     },
   },
-  brand: {
+  'brand': {
     name: 'brand',
     lang: 'fr',
     parser: 'separator',

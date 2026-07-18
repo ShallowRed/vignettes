@@ -11,7 +11,7 @@ import {
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { gateDeckAccess } from '../../utils/access'
 import { readArchivedStub } from '../../utils/presentations'
-import { listRegistry, resolveAlias } from '../../utils/registry'
+import { deckDirectory } from '../../utils/sources'
 
 /**
  * Frozen-bundle static server. `/frozen/<bundle>/<...>` resolves the bundle to its
@@ -61,9 +61,9 @@ async function resolveBundleGate(bundle: string): Promise<GateInfo | null> {
     return cached.info
 
   // frozenBundle defaults to the alias; fall back to a reverse scan otherwise.
-  let entry = await resolveAlias(bundle)
+  let entry = await deckDirectory.resolveAlias(bundle)
   if (!entry) {
-    const all = await listRegistry()
+    const all = await deckDirectory.list()
     entry = all.find(e => (e.frozenBundle ?? e.slug) === bundle) ?? null
   }
 

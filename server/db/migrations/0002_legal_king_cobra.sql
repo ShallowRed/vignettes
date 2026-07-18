@@ -1,0 +1,1 @@
+ALTER TABLE `decks` ADD `managed` integer DEFAULT false NOT NULL;

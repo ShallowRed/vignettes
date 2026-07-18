@@ -3,7 +3,7 @@ import { resolveDeckStatus, splitFrontmatter } from '#shared/deck'
 import { gateDeckAccess } from '../../utils/access'
 import { resolveDeckForRoute } from '../../utils/deck-resolution'
 import { readArchivedStub, readPresentationContent } from '../../utils/presentations'
-import { resolveAlias } from '../../utils/registry'
+import { deckDirectory } from '../../utils/sources'
 
 /**
  * GET /api/p/:alias — resolve an alias through the registry and serve content per
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'alias parameter is required' })
   }
 
-  const entry = await resolveAlias(alias)
+  const entry = await deckDirectory.resolveAlias(alias)
   if (!entry) {
     throw createError({ statusCode: 404, statusMessage: `Unknown presentation alias "${alias}"` })
   }

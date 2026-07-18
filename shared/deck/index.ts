@@ -1,5 +1,6 @@
 export * from './cache'
 export * from './components'
+export * from './directory'
 export * from './errors'
 export * from './frontmatter'
 export * from './merge'

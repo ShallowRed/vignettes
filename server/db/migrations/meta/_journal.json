@@ -15,6 +15,13 @@
       "when": 1784376028959,
       "tag": "0001_crazy_red_shift",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784376414625,
+      "tag": "0002_legal_king_cobra",
+      "breakpoints": true
     }
   ]
 }
