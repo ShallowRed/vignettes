@@ -14,6 +14,11 @@ const props = defineProps<{
   projects?: Project[]
 }>()
 
+const emit = defineEmits<{
+  editMeta: [item: PresentationListItem]
+  remove: [item: PresentationListItem]
+}>()
+
 const UButton = resolveComponent('UButton')
 const UCheckbox = resolveComponent('UCheckbox')
 
@@ -110,12 +115,31 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
 ])
 
 function rowActions(item: PresentationListItem) {
-  return [[
-    { label: 'Ouvrir', icon: 'i-lucide-arrow-up-right', to: deckPath(item) },
-    { label: 'Ouvrir dans un nouvel onglet', icon: 'i-lucide-external-link', to: deckPath(item), target: '_blank' },
-  ], [
-    { label: 'Copier le lien', icon: 'i-lucide-link', onSelect: () => copyLinks([item]) },
-  ]]
+  return [
+    [
+      { label: 'Ouvrir', icon: 'i-lucide-arrow-up-right', to: deckPath(item) },
+      { label: 'Ouvrir dans un nouvel onglet', icon: 'i-lucide-external-link', to: deckPath(item), target: '_blank' },
+    ],
+    [
+      { label: 'Copier le lien', icon: 'i-lucide-link', onSelect: () => copyLinks([item]) },
+    ],
+    ...(props.admin && !isFrozen(item)
+      ? [
+          [
+            { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
+            { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
+          ],
+          [
+            {
+              label: item.fileBacked ? 'Réinitialiser depuis le fichier…' : 'Supprimer…',
+              icon: 'i-lucide-trash-2',
+              color: 'error' as const,
+              onSelect: () => emit('remove', item),
+            },
+          ],
+        ]
+      : []),
+  ]
 }
 
 function onRowClick(_e: Event, row: { original: PresentationListItem }) {
@@ -230,6 +254,18 @@ function clearSelection() {
             icon="i-lucide-eye-off"
             aria-label="Unlisted"
           />
+          <UTooltip
+            v-if="admin && row.original.published === false && !row.original.fileBacked"
+            text="Aucune version publiée : le deck n'est pas encore servable"
+          >
+            <UBadge
+              color="warning"
+              variant="subtle"
+              size="sm"
+              icon="i-lucide-cloud-off"
+              aria-label="Non publié"
+            />
+          </UTooltip>
         </div>
       </template>
 

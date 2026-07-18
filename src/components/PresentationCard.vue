@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 
-// Catalog card. `admin` adds management details for privileged viewers.
+// Catalog card. `admin` adds management details and actions for privileged viewers.
 const props = defineProps<{
   presentation: PresentationListItem
   admin?: boolean
+}>()
+
+const emit = defineEmits<{
+  editMeta: []
+  remove: []
 }>()
 
 const frozen = computed(() => isFrozen(props.presentation))
@@ -13,6 +19,21 @@ const frozen = computed(() => isFrozen(props.presentation))
 const to = computed(() => deckPath(props.presentation))
 
 const statusDisplay = computed(() => STATUS_CONFIG[props.presentation.status])
+
+const adminActions = computed<DropdownMenuItem[][]>(() => [
+  [
+    { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${props.presentation.slug}` },
+    { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta') },
+  ],
+  [
+    {
+      label: props.presentation.fileBacked ? 'Réinitialiser depuis le fichier…' : 'Supprimer…',
+      icon: 'i-lucide-trash-2',
+      color: 'error',
+      onSelect: () => emit('remove'),
+    },
+  ],
+])
 </script>
 
 <template>
@@ -27,7 +48,26 @@ const statusDisplay = computed(() => STATUS_CONFIG[props.presentation.status])
           <h2 class="font-semibold text-highlighted leading-snug line-clamp-2">
             {{ presentation.title }}
           </h2>
+          <div
+            v-if="admin && !frozen"
+            class="shrink-0 -mt-1 -mr-1"
+            @click.stop.prevent
+          >
+            <UDropdownMenu
+              :items="adminActions"
+              :content="{ align: 'end' }"
+            >
+              <UButton
+                icon="i-lucide-ellipsis-vertical"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                aria-label="Actions"
+              />
+            </UDropdownMenu>
+          </div>
           <UIcon
+            v-else
             name="i-lucide-arrow-up-right"
             class="shrink-0 size-4 text-dimmed mt-0.5"
           />
@@ -63,6 +103,19 @@ const statusDisplay = computed(() => STATUS_CONFIG[props.presentation.status])
             icon="i-lucide-eye-off"
             label="Unlisted"
           />
+
+          <UTooltip
+            v-if="admin && presentation.published === false && !presentation.fileBacked"
+            text="Aucune version publiée : le deck n'est pas encore servable"
+          >
+            <UBadge
+              color="warning"
+              variant="subtle"
+              size="sm"
+              icon="i-lucide-cloud-off"
+              label="Non publié"
+            />
+          </UTooltip>
 
           <UBadge
             color="neutral"

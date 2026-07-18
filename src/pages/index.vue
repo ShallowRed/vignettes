@@ -9,9 +9,13 @@ import { useAppSession } from '~/composables/useAppSession'
 // management details on the cards/table.
 const { privileged } = useAppSession()
 
+// useRequestFetch: an SSR pass must re-emit the session cookie so a logged-in
+// navigation gets its scoped catalog server-side (prerender stays anonymous and
+// relies on the privileged refresh below).
+const requestFetch = useRequestFetch()
 const { data: presentations, status, error, refresh } = await useAsyncData(
   'presentations',
-  () => $fetch<PresentationListItem[]>('/api/presentations'),
+  () => requestFetch<PresentationListItem[]>('/api/presentations'),
   { default: () => [] },
 )
 
@@ -54,11 +58,35 @@ onMounted(() => {
 
 watch(view, v => localStorage.setItem(VIEW_KEY, v))
 
+function setView(v: 'cards' | 'table') {
+  view.value = v
+}
+
 const toolbar = useTemplateRef('toolbar')
 
 defineShortcuts({
   '/': () => toolbar.value?.focusSearch(),
 })
+
+// Management modals (privileged): one instance at page level, targeted per deck.
+const createOpen = ref(false)
+const metaOpen = ref(false)
+const deleteOpen = ref(false)
+const target = ref<PresentationListItem | null>(null)
+
+function openCreate() {
+  createOpen.value = true
+}
+
+function openMeta(item: PresentationListItem) {
+  target.value = item
+  metaOpen.value = true
+}
+
+function openDelete(item: PresentationListItem) {
+  target.value = item
+  deleteOpen.value = true
+}
 </script>
 
 <template>
@@ -72,10 +100,19 @@ defineShortcuts({
       state="error"
       :message="error.message"
     />
-    <CatalogState
-      v-else-if="presentations.length === 0"
-      state="empty"
-    />
+    <template v-else-if="presentations.length === 0">
+      <CatalogState state="empty" />
+      <div
+        v-if="privileged"
+        class="flex justify-center mt-4"
+      >
+        <UButton
+          icon="i-lucide-file-plus-2"
+          label="Nouvelle présentation"
+          @click="openCreate"
+        />
+      </div>
+    </template>
 
     <template v-else>
       <CatalogToolbar
@@ -87,6 +124,12 @@ defineShortcuts({
         :show-sort="view === 'cards'"
       >
         <template #trailing>
+          <UButton
+            v-if="privileged"
+            icon="i-lucide-file-plus-2"
+            label="Nouvelle présentation"
+            @click="openCreate"
+          />
           <UFieldGroup>
             <UTooltip text="Vue cartes">
               <UButton
@@ -94,7 +137,7 @@ defineShortcuts({
                 color="neutral"
                 :variant="view === 'cards' ? 'subtle' : 'outline'"
                 aria-label="Vue cartes"
-                @click="view = 'cards'"
+                @click="setView('cards')"
               />
             </UTooltip>
             <UTooltip text="Vue table">
@@ -103,7 +146,7 @@ defineShortcuts({
                 color="neutral"
                 :variant="view === 'table' ? 'subtle' : 'outline'"
                 aria-label="Vue table"
-                @click="view = 'table'"
+                @click="setView('table')"
               />
             </UTooltip>
           </UFieldGroup>
@@ -132,6 +175,8 @@ defineShortcuts({
         :items="visible"
         :admin="privileged"
         :projects="projects"
+        @edit-meta="openMeta"
+        @remove="openDelete"
       />
 
       <div
@@ -143,8 +188,28 @@ defineShortcuts({
           :key="presentation.slug"
           :presentation="presentation"
           :admin="privileged"
+          @edit-meta="openMeta(presentation)"
+          @remove="openDelete(presentation)"
         />
       </div>
     </template>
+
+    <DeckCreateModal
+      v-model:open="createOpen"
+      :projects="projects"
+    />
+    <DeckMetaSlideover
+      v-if="target"
+      v-model:open="metaOpen"
+      :item="target"
+      :projects="projects"
+      @saved="refresh"
+    />
+    <DeckDeleteModal
+      v-if="target"
+      v-model:open="deleteOpen"
+      :item="target"
+      @deleted="refresh"
+    />
   </div>
 </template>
