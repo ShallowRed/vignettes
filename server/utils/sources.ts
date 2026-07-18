@@ -1,7 +1,7 @@
 import type { ContentSource, ContentWriter, NoteSource } from '#shared/deck'
 import { prepareDeckWrite } from '#shared/deck'
 import { fetchCollaborativeNote } from './codimd'
-import { findPresentationBySlug, readPresentationContent, writePresentationContentAt } from './presentations'
+import { findPresentationBySlug, isPresentationsWritable, readPresentationContent, writePresentationContentAt } from './presentations'
 
 /**
  * Server adapters implementing the `ContentSource` port — the only place that
@@ -46,6 +46,7 @@ export function noteSource(source: NoteSource): ContentSource {
  */
 export const fileWriter: ContentWriter = {
   id: 'file',
+  isWritable: () => isPresentationsWritable(),
   async save(input) {
     const prepared = prepareDeckWrite(input)
     const existing = await findPresentationBySlug(prepared.slug)

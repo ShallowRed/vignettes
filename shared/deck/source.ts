@@ -27,8 +27,14 @@ export type ContentSources = Partial<Record<ContentSource['id'], ContentSource>>
  * in-memory fakes.
  */
 export interface ContentWriter {
-  /** Stable identifier of the writable target (only `file` for now). */
-  readonly id: 'file'
+  /** Stable identifier of the writable target. */
+  readonly id: 'file' | 'db'
+  /**
+   * Whether the backing currently accepts writes. Callers gate editing features
+   * on this instead of probing infrastructure themselves; adapters answer from
+   * their own backing (e.g. baked build assets are read-only).
+   */
+  isWritable: () => boolean
   /**
    * Persist the full markdown document for a deck slug. Returns the result so a
    * caller can confirm where it landed. Throws on failure rather than silently

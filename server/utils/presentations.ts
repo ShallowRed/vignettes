@@ -98,16 +98,26 @@ export async function readArchivedStub(slug: string): Promise<string | null> {
 }
 
 /**
+ * Whether the presentations backing accepts writes. In dev the server assets
+ * mount on the real `presentations/` directory (fs driver, writable); in a
+ * production build the assets are baked into the bundle behind a driver with
+ * no `setItem` — unstorage then silently drops writes, so callers must gate
+ * on this instead of trusting a write to land.
+ */
+export function isPresentationsWritable(): boolean {
+  const { driver } = useStorage().getMount('assets:presentations:probe')
+  return typeof driver.setItem === 'function' || typeof driver.setItemRaw === 'function'
+}
+
+/**
  * Write presentation markdown to a given storage key, returning the bytes
  * written. The key is validated/derived upstream (no traversal) — this only
- * performs the I/O.
- *
- * Note: in dev this persists to the `presentations/` working tree via Nitro's
- * filesystem storage driver. On a read-only/serverless deploy the driver may
- * reject the write; the integrated editor targets a writable backing
- * (local dev now, a git/remote writer later).
+ * performs the I/O, but fails loudly on a read-only backing (a silent no-op
+ * would report success while losing the edit).
  */
 export async function writePresentationContentAt(key: string, raw: string): Promise<number> {
+  if (!isPresentationsWritable())
+    throw new Error('Presentations storage is read-only (baked build assets)')
   await presentationsStorage().setItem(key, raw)
   return new TextEncoder().encode(raw).length
 }

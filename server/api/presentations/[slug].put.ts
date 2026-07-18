@@ -18,6 +18,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'Owner or editor role required' })
   }
 
+  if (!fileWriter.isWritable()) {
+    throw createError({ statusCode: 503, statusMessage: 'Content backing is read-only on this deployment' })
+  }
+
   const slug = getRouterParam(event, 'slug')
   if (!slug) {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })

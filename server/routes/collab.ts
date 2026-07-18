@@ -2,6 +2,7 @@ import type { Peer } from 'crossws'
 import { isPrivileged } from '#shared/access'
 import { getActorRoleFromRequest } from '../utils/actor'
 import { useCollabServer } from '../utils/collab'
+import { fileWriter } from '../utils/sources'
 
 type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleConnection']>
 
@@ -27,6 +28,9 @@ export default defineWebSocketHandler({
   async upgrade(request) {
     if (!isPrivileged(await getActorRoleFromRequest(request)))
       throw new Response('Owner or editor role required', { status: 401 })
+    // A session that cannot persist would silently lose every edit.
+    if (!fileWriter.isWritable())
+      throw new Response('Content backing is read-only on this deployment', { status: 503 })
   },
 
   open(peer) {

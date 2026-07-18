@@ -61,7 +61,9 @@ const cmModel = computed({
 
 // Load the deck's current markdown (status is display-only; it lives in the frontmatter).
 const { data, error } = await useAsyncData(`edit-${slug}`, () =>
-  $fetch<{ content: string, status?: string }>(`/api/presentations/${slug}`))
+  $fetch<{ content: string, status?: string, writable?: boolean }>(`/api/presentations/${slug}`))
+
+const writable = computed(() => data.value?.writable !== false)
 
 if (error.value) {
   loadError.value = (error.value as any)?.statusMessage || 'Failed to load deck'
@@ -203,6 +205,11 @@ async function save() {
       </span>
       <span class="editor__spacer" />
       <span
+        v-if="!writable"
+        class="editor__readonly"
+        title="Le stockage de contenu de ce déploiement n'accepte pas l'écriture"
+      >Lecture seule</span>
+      <span
         v-if="saveMessage"
         class="editor__msg"
         :class="`editor__msg--${saveState}`"
@@ -210,7 +217,7 @@ async function save() {
       <button
         type="button"
         class="editor__save"
-        :disabled="saveState === 'saving' || !!loadError"
+        :disabled="saveState === 'saving' || !!loadError || !writable"
         @click="save"
       >
         {{ saveState === 'saving' ? 'Enregistrement…' : 'Enregistrer' }}
@@ -324,6 +331,14 @@ async function save() {
 
 .editor__spacer {
   flex: 1;
+}
+
+.editor__readonly {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  color: #ffd27a;
+  border: 1px solid #ffd27a55;
+  border-radius: 0.35rem;
 }
 
 .editor__msg--saved {

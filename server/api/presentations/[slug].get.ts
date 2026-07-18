@@ -3,6 +3,7 @@ import { splitFrontmatter } from '#shared/deck'
 import { gateDeckAccess } from '../../utils/access'
 import { resolveDeckForRoute } from '../../utils/deck-resolution'
 import { readPresentationContent } from '../../utils/presentations'
+import { fileWriter } from '../../utils/sources'
 
 /** Serve a deck by slug. Stub frontmatter stays fully authoritative (`noteOverride: []`). */
 export default defineEventHandler(async (event) => {
@@ -32,5 +33,5 @@ export default defineEventHandler(async (event) => {
     noteOverride: [],
   })
 
-  return { content, status, editUrl }
+  return { content, status, editUrl, writable: fileWriter.isWritable() }
 })
