@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { deckDrafts, decks, deckVersions } from '../../server/db/schema'
+import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions, users } from '../../server/db/schema'
 import { freshDb } from './helpers/db'
 
 describe('db schema', () => {
@@ -52,5 +52,37 @@ describe('db schema', () => {
     expect(() =>
       db.insert(deckVersions).values({ deckSlug: 'ghost', raw: 'x', publishedBy: 'x', publishedAt: now }).run(),
     ).toThrow(/FOREIGN KEY/i)
+  })
+
+  it('defaults a user to the least-privileged role and a deck to listed', () => {
+    db.insert(users).values({ id: 1, login: 'alice', createdAt: now, lastLoginAt: now }).run()
+    expect(db.select().from(users).where(eq(users.id, 1)).get()!.role).toBe('viewer')
+    db.insert(decks).values({ slug: 'd', title: 'D', createdAt: now, updatedAt: now }).run()
+    expect(db.select().from(decks).where(eq(decks.slug, 'd')).get()!.unlisted).toBe(false)
+  })
+
+  it('enforces unique logins', () => {
+    db.insert(users).values({ id: 1, login: 'alice', createdAt: now, lastLoginAt: now }).run()
+    expect(() =>
+      db.insert(users).values({ id: 2, login: 'alice', createdAt: now, lastLoginAt: now }).run(),
+    ).toThrow(/UNIQUE/i)
+  })
+
+  it('maps historical aliases to an existing deck only (fk)', () => {
+    db.insert(decks).values({ slug: 'd', title: 'D', createdAt: now, updatedAt: now }).run()
+    db.insert(deckAliases).values({ alias: 'old-path', deckSlug: 'd' }).run()
+    expect(db.select().from(deckAliases).where(eq(deckAliases.alias, 'old-path')).get()!.deckSlug).toBe('d')
+    expect(() =>
+      db.insert(deckAliases).values({ alias: 'x', deckSlug: 'ghost' }).run(),
+    ).toThrow(/FOREIGN KEY/i)
+  })
+
+  it('allows one grant per deck and user (composite pk)', () => {
+    db.insert(decks).values({ slug: 'd', title: 'D', createdAt: now, updatedAt: now }).run()
+    db.insert(users).values({ id: 1, login: 'alice', createdAt: now, lastLoginAt: now }).run()
+    db.insert(deckPermissions).values({ deckSlug: 'd', userId: 1, role: 'viewer', grantedBy: 'lucas', createdAt: now }).run()
+    expect(() =>
+      db.insert(deckPermissions).values({ deckSlug: 'd', userId: 1, role: 'editor', grantedBy: 'lucas', createdAt: now }).run(),
+    ).toThrow(/UNIQUE|PRIMARY/i)
   })
 })
