@@ -98,3 +98,34 @@ describe('canList', () => {
     expect(canList({ status: 'public', role: 'viewer', lifecycle: 'archived' })).toBe(false)
   })
 })
+
+describe('decideAccess — per-deck grants', () => {
+  it('opens view on private decks for any grant', () => {
+    for (const grant of ['editor', 'viewer'] as const) {
+      expect(decideAccess(input({ status: 'private', role: 'viewer', grant })).outcome).toBe('allow')
+      expect(decideAccess(input({ status: 'draft', role: 'viewer', grant })).outcome).toBe('allow')
+    }
+  })
+
+  it('opens edit only for an editor grant', () => {
+    expect(decideAccess(input({ status: 'private', role: 'viewer', action: 'edit', grant: 'editor' })).outcome)
+      .toBe('allow')
+    expect(decideAccess(input({ status: 'private', role: 'viewer', action: 'edit', grant: 'viewer' })))
+      .toEqual({ outcome: 'deny', reason: 'forbidden' })
+  })
+
+  it('never opens admin through a grant', () => {
+    expect(decideAccess(input({ status: 'public', role: 'viewer', action: 'admin', grant: 'editor' })))
+      .toEqual({ outcome: 'deny', reason: 'forbidden' })
+  })
+
+  it('bypasses the semi-private password for the grantee', () => {
+    expect(decideAccess(input({ status: 'semi-private', role: 'viewer', grant: 'viewer', hasPassword: true })).outcome)
+      .toBe('allow')
+  })
+
+  it('lists granted decks even when private or unlisted', () => {
+    expect(canList({ status: 'private', role: 'viewer', grant: 'viewer' })).toBe(true)
+    expect(canList({ status: 'public', role: 'viewer', unlisted: true, grant: 'editor' })).toBe(true)
+  })
+})

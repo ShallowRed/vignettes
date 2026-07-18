@@ -11,3 +11,7 @@ export type Role = z.infer<typeof RoleSchema>
 export function isPrivileged(role: Role): boolean {
   return role === 'owner' || role === 'editor'
 }
+
+/** Per-deck grant escalating a user beyond their global role, on that deck only. */
+export const DeckGrantSchema = z.enum(['editor', 'viewer'])
+export type DeckGrant = z.infer<typeof DeckGrantSchema>
