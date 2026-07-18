@@ -59,5 +59,20 @@ export function createDeckMeta(db: Db) {
     async listManaged(): Promise<DeckMetaRecord[]> {
       return db.select().from(decks).where(eq(decks.managed, true)).all().map(toMeta)
     },
+
+    /**
+     * Admin metadata edit — the second way a deck becomes `managed` (its row
+     * turns into the metadata truth, shadowing file frontmatter).
+     */
+    async update(slug: string, patch: Partial<Pick<DeckMetaRecord, 'title' | 'status' | 'lifecycle' | 'project' | 'theme' | 'alias' | 'frozenBundle' | 'unlisted'>>): Promise<DeckMetaRecord> {
+      const now = new Date()
+      const set = { ...patch, managed: true, updatedAt: now }
+      const row = db.insert(decks)
+        .values({ slug, title: patch.title ?? slug, createdAt: now, ...set })
+        .onConflictDoUpdate({ target: decks.slug, set })
+        .returning()
+        .get()!
+      return toMeta(row)
+    },
   }
 }

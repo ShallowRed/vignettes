@@ -3,6 +3,7 @@ import type { ProjectDirectory } from '#shared/projects'
 import { createDbContent } from '../db/content-store'
 import { createDeckMeta } from '../db/deck-meta'
 import { createDbDirectory } from '../db/directory'
+import { createPermissionStore } from '../db/permission-store'
 import { fetchCollaborativeNote } from './codimd'
 import { useDb } from './db'
 import { readPresentationContent } from './presentations'
@@ -63,6 +64,11 @@ export const publishedSource: ContentSource = {
 /** Deck catalog/access metadata rows (truth for managed decks). */
 export function useDeckMeta() {
   return createDeckMeta(useDb())
+}
+
+/** Per-deck permission grants. */
+export function usePermissionStore() {
+  return createPermissionStore(useDb())
 }
 
 /**

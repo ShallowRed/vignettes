@@ -1,9 +1,9 @@
 import type { PresentationListItem } from '#shared/presentations'
 import { canList } from '#shared/access'
 import { splitFrontmatter } from '#shared/deck'
-import { getActorRole } from '../utils/actor'
+import { getActor } from '../utils/actor'
 import { listAllPresentations, readArchivedStub, readPresentationContentAt } from '../utils/presentations'
-import { deckDirectory, useDeckMeta } from '../utils/sources'
+import { deckDirectory, useDeckMeta, usePermissionStore } from '../utils/sources'
 
 /**
  * Catalog endpoint. Managed decks (published or admin-edited) come from their
@@ -11,7 +11,10 @@ import { deckDirectory, useDeckMeta } from '../utils/sources'
  * Visibility decided by the shared `canList` on the actor's role.
  */
 export default defineEventHandler(async (event): Promise<PresentationListItem[]> => {
-  const role = await getActorRole(event)
+  const actor = await getActor(event)
+  const grants = actor.id
+    ? await usePermissionStore().listForUser(actor.id).catch(() => new Map())
+    : new Map()
 
   try {
     const managed = await useDeckMeta().listManaged()
@@ -75,7 +78,13 @@ export default defineEventHandler(async (event): Promise<PresentationListItem[]>
     )
 
     return [...fromDb, ...fromFiles, ...frozen].filter(p =>
-      canList({ status: p.status, lifecycle: p.lifecycle, role, unlisted: p.unlisted }),
+      canList({
+        status: p.status,
+        lifecycle: p.lifecycle,
+        role: actor.role,
+        grant: grants.get(p.slug),
+        unlisted: p.unlisted,
+      }),
     )
   }
   catch (error) {

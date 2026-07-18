@@ -77,4 +77,14 @@ describe('deck meta', () => {
     db.insert(decks).values({ slug: 'd', title: 'D', status: 'everyone', managed: true, createdAt: now, updatedAt: now }).run()
     expect((await createDeckMeta(db).get('d'))!.status).toBe('private')
   })
+
+  it('update makes the row managed, creating or patching it', async () => {
+    const meta = createDeckMeta(db)
+    const created = await meta.update('fresh', { status: 'public', alias: 'fresh-alias' })
+    expect(created).toMatchObject({ slug: 'fresh', status: 'public', alias: 'fresh-alias', managed: true })
+
+    const patched = await meta.update('fresh', { title: 'Fresh', unlisted: true })
+    // A partial patch leaves earlier fields intact.
+    expect(patched).toMatchObject({ title: 'Fresh', status: 'public', alias: 'fresh-alias', unlisted: true })
+  })
 })

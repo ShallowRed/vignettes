@@ -2,8 +2,8 @@ import type { NoteSource } from '#shared/deck'
 import { resolveDeckStatus, splitFrontmatter } from '#shared/deck'
 import { gateDeckAccess } from '../../utils/access'
 import { resolveDeckForRoute } from '../../utils/deck-resolution'
-import { readArchivedStub, readPresentationContent } from '../../utils/presentations'
-import { deckDirectory } from '../../utils/sources'
+import { readArchivedStub } from '../../utils/presentations'
+import { deckDirectory, publishedSource, useDeckMeta } from '../../utils/sources'
 
 /**
  * GET /api/p/:alias — resolve an alias through the registry and serve content per
@@ -23,11 +23,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Frozen/archived stubs live in presentations/archived/ (skipped by the flat
-  // reader), so they need the dedicated archived reader.
+  // reader), so they need the dedicated archived reader. Live decks go through
+  // the published chain (database version first, committed file else).
   const isFrozen = entry.lifecycle === 'frozen' || entry.lifecycle === 'archived'
   const stub = isFrozen
     ? await readArchivedStub(entry.slug)
-    : (await readPresentationContent(entry.slug))?.content ?? null
+    : (await publishedSource.load(entry.slug))?.raw ?? null
   if (stub == null) {
     throw createError({
       statusCode: 404,
@@ -35,8 +36,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const meta = await useDeckMeta().get(entry.slug)
   const stubMeta = splitFrontmatter(stub).data
-  const status = resolveDeckStatus(stub, entry.access)
+  const status = meta?.managed ? meta.status : resolveDeckStatus(stub, entry.access)
 
   // Gate BEFORE the frozen short-circuit — a frozen private deck must not be
   // served just because it has a bundle.
@@ -44,7 +46,9 @@ export default defineEventHandler(async (event) => {
     slug: entry.slug,
     status,
     lifecycle: entry.lifecycle,
-    storedHash: stubMeta.accessPassword as string | undefined,
+    storedHash: meta?.managed
+      ? meta.accessPasswordHash
+      : stubMeta.accessPassword as string | undefined,
   })
 
   // Frozen/archived: content is a static bundle; report the target to redirect to.

@@ -1,6 +1,5 @@
-import { isPrivileged } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/deck/ydoc'
-import { getActorRole } from '../../../utils/actor'
+import { assertCanEditDeck } from '../../../utils/access'
 import { useCollabServer, useDraftStore } from '../../../utils/collab'
 import { useDbContent } from '../../../utils/sources'
 
@@ -10,14 +9,12 @@ import { useDbContent } from '../../../utils/sources'
  * POST /api/presentations/:slug/publish
  */
 export default defineEventHandler(async (event) => {
-  if (!isPrivileged(await getActorRole(event))) {
-    throw createError({ statusCode: 403, statusMessage: 'Owner or editor role required' })
-  }
-
   const slug = getRouterParam(event, 'slug')
   if (!slug) {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
+
+  const editor = await assertCanEditDeck(event, slug)
 
   // Prefer the live room over the stored draft (the store lags by the debounce).
   const live = useCollabServer().documents.get(slug)
@@ -29,11 +26,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'No draft to publish' })
   }
 
-  const session = await getUserSession(event).catch(() => null)
-  const actor = (session?.user as { login?: string } | undefined)?.login ?? 'unknown'
-
   try {
-    const result = await useDbContent().writer.save({ slug, raw: draft, actor })
+    const result = await useDbContent().writer.save({ slug, raw: draft, actor: editor.login ?? 'unknown' })
     return { ok: true, ...result }
   }
   catch (error: any) {

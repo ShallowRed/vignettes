@@ -4,12 +4,13 @@ import { gateDeckAccess } from '../../utils/access'
 import { useDraftStore } from '../../utils/collab'
 import { resolveDeckForRoute } from '../../utils/deck-resolution'
 import { readPresentationContent } from '../../utils/presentations'
-import { useDbContent } from '../../utils/sources'
+import { useDbContent, useDeckMeta } from '../../utils/sources'
 
 /**
  * Serve a deck by slug: the published database version first, else the committed
- * file. Status and access derive from the served markdown itself — the same
- * derivation chain the publish act uses.
+ * file. For managed decks the database row is the status/access truth (admin
+ * edits win over the served frontmatter); everything else keeps deriving from
+ * the markdown itself.
  */
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
@@ -25,13 +26,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
   }
 
-  const { content: stub, status } = result
+  const meta = await useDeckMeta().get(slug)
+  const { content: stub } = result
   const stubMeta = splitFrontmatter(stub).data
+  const status = meta?.managed ? meta.status : result.status
 
   await gateDeckAccess(event, {
     slug,
     status,
-    storedHash: stubMeta.accessPassword as string | undefined,
+    storedHash: meta?.managed
+      ? meta.accessPasswordHash
+      : stubMeta.accessPassword as string | undefined,
   })
 
   const { content, editUrl } = await resolveDeckForRoute({

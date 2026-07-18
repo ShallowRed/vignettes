@@ -10,6 +10,13 @@ interface SessionUser {
   login?: string
 }
 
+/** The resolved actor: session identity + runtime role (database-first). */
+export interface Actor {
+  id?: number
+  login?: string
+  role: Role
+}
+
 /**
  * Resolve the actor's role from the session identity, database first. A missing
  * row or an unreachable database falls back to the env login map — never to the
@@ -28,10 +35,16 @@ async function resolveActorRole(user: SessionUser | undefined): Promise<Role> {
   }
 }
 
+/** The actor for an H3 request; anonymous (no identity) when no session. */
+export async function getActor(event: H3Event): Promise<Actor> {
+  const session = await getUserSession(event).catch(() => null)
+  const user = session?.user as SessionUser | undefined
+  return { id: user?.id, login: user?.login, role: await resolveActorRole(user) }
+}
+
 /** The actor's `Role` for an H3 request; `anonymous` when no session. */
 export async function getActorRole(event: H3Event): Promise<Role> {
-  const session = await getUserSession(event).catch(() => null)
-  return resolveActorRole(session?.user as SessionUser | undefined)
+  return (await getActor(event)).role
 }
 
 function readCookie(header: string | null, name: string): string | undefined {

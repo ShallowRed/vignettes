@@ -8,25 +8,22 @@
  * a fresh document would fork it.
  */
 
-import { isPrivileged } from '#shared/access'
 import { prepareDeckWrite } from '#shared/deck'
 import { markdownToYDocUpdate } from '#shared/deck/ydoc'
-import { getActorRole } from '../../utils/actor'
+import { assertCanEditDeck } from '../../utils/access'
 import { useCollabServer, useDraftStore } from '../../utils/collab'
 
 export default defineEventHandler(async (event) => {
-  if (!isPrivileged(await getActorRole(event))) {
-    throw createError({ statusCode: 403, statusMessage: 'Owner or editor role required' })
+  const slug = getRouterParam(event, 'slug')
+  if (!slug) {
+    throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
+
+  await assertCanEditDeck(event, slug)
 
   const drafts = useDraftStore()
   if (!drafts.isWritable()) {
     throw createError({ statusCode: 503, statusMessage: 'Draft storage is unavailable on this deployment' })
-  }
-
-  const slug = getRouterParam(event, 'slug')
-  if (!slug) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
 
   if (useCollabServer().documents.has(slug)) {
