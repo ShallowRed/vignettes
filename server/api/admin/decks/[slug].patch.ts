@@ -1,7 +1,8 @@
 import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug, splitFrontmatter } from '#shared/deck'
 import { z } from 'zod'
 import { getActorRole } from '../../../utils/actor'
+import { readPresentationContent } from '../../../utils/presentations'
 import { useDeckMeta } from '../../../utils/sources'
 
 const PatchSchema = z.object({
@@ -44,5 +45,27 @@ export default defineEventHandler(async (event) => {
   const patch = Object.fromEntries(
     Object.entries(parsed.data).filter(([, v]) => v !== undefined),
   )
-  return await useDeckMeta().update(slug, patch)
+
+  // First materialization of a file-backed deck: `update()` upserts, so any
+  // column the patch omits would fall back to its DB default (e.g. a public deck
+  // silently flipping to private). Seed the base from the file's effective
+  // frontmatter so a partial patch only changes what it names.
+  const meta = useDeckMeta()
+  let base: Record<string, unknown> = {}
+  if (!(await meta.get(slug))) {
+    const file = await readPresentationContent(slug).catch(() => null)
+    if (file) {
+      const data = splitFrontmatter(file.content).data as Record<string, unknown>
+      base = {
+        title: (data.title as string) || slug,
+        status: file.status,
+        project: (data.project as string) || null,
+        theme: (data.theme as string) || null,
+        unlisted: Boolean(data.unlisted),
+        featured: Boolean(data.featured),
+      }
+    }
+  }
+
+  return await meta.update(slug, { ...base, ...patch })
 })
