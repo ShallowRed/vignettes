@@ -1,0 +1,74 @@
+import type { EditorView } from '@codemirror/view'
+
+/**
+ * Markdown insertion helpers for the writer toolbar. Each command edits the
+ * document through the view's dispatch (single undoable transaction) and gives
+ * focus back to the editor.
+ */
+
+/** Wrap the selection in `marker` (bold, italic, code…); no selection inserts a selected placeholder. */
+export function wrapSelection(view: EditorView, marker: string, placeholder: string): void {
+  const { from, to } = view.state.selection.main
+  const selected = view.state.sliceDoc(from, to) || placeholder
+  view.dispatch({
+    changes: { from, to, insert: `${marker}${selected}${marker}` },
+    selection: { anchor: from + marker.length, head: from + marker.length + selected.length },
+  })
+  view.focus()
+}
+
+/** Set the current line to heading `level`; the same level again removes it. */
+export function setHeading(view: EditorView, level: number): void {
+  const line = view.state.doc.lineAt(view.state.selection.main.head)
+  const stripped = line.text.replace(/^#{1,6} /, '')
+  const current = (line.text.length - stripped.length - 1)
+  const next = current === level ? stripped : `${'#'.repeat(level)} ${stripped}`
+  view.dispatch({ changes: { from: line.from, to: line.to, insert: next } })
+  view.focus()
+}
+
+/** Toggle a line prefix (`- `, `1. `, `> `) on the current line. */
+export function toggleLinePrefix(view: EditorView, prefix: string): void {
+  const line = view.state.doc.lineAt(view.state.selection.main.head)
+  view.dispatch(line.text.startsWith(prefix)
+    ? { changes: { from: line.from, to: line.from + prefix.length, insert: '' } }
+    : { changes: { from: line.from, insert: prefix } })
+  view.focus()
+}
+
+/** Turn the selection into a link, leaving the url placeholder selected. */
+export function insertLink(view: EditorView): void {
+  const { from, to } = view.state.selection.main
+  const text = view.state.sliceDoc(from, to) || 'texte'
+  const insert = `[${text}](url)`
+  const urlStart = from + text.length + 3
+  view.dispatch({
+    changes: { from, to, insert },
+    selection: { anchor: urlStart, head: urlStart + 3 },
+  })
+  view.focus()
+}
+
+/** Insert an image directive, url placeholder selected. */
+export function insertImage(view: EditorView): void {
+  const { from, to } = view.state.selection.main
+  const alt = view.state.sliceDoc(from, to) || 'description'
+  const insert = `![${alt}](url)`
+  const urlStart = from + alt.length + 4
+  view.dispatch({
+    changes: { from, to, insert },
+    selection: { anchor: urlStart, head: urlStart + 3 },
+  })
+  view.focus()
+}
+
+/** Start a new slide: a `---` separator on its own paragraph after the current line. */
+export function insertSlideBreak(view: EditorView): void {
+  const line = view.state.doc.lineAt(view.state.selection.main.head)
+  const insert = '\n\n---\n\n'
+  view.dispatch({
+    changes: { from: line.to, insert },
+    selection: { anchor: line.to + insert.length },
+  })
+  view.focus()
+}

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { PresentationListItem } from '#shared/presentations'
+import type { Project } from '#shared/projects'
 /**
  * Integrated Markdown editor.
  *
@@ -7,17 +9,22 @@
  * pipeline the deck routes use (`buildPresentationData` → RevealPresentation) —
  * so the preview is exactly what the published deck renders, no second parser.
  *
- * Saving persists the markdown back through `PUT /api/presentations/:slug`
- * (through the ContentWriter port). Markdown stays the source of truth.
- *
- * No real-time collaboration yet — the collab mode adds Yjs + Hocuspocus.
+ * The pane loads DRAFT-first (`?draft`): the editor must show what "Enregistrer"
+ * saved, not the published version. Saving persists the draft through
+ * `PUT /api/presentations/:slug`; publishing stays a separate explicit act.
+ * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
 import type { PresentationData } from '~/types/presentation'
+import { STATUS_CONFIG } from '#shared/presentations'
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { EditorView } from '@codemirror/view'
+import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import Codemirror from 'vue-codemirror6'
+import { useAppSession } from '~/composables/useAppSession'
 import { buildPresentationData } from '~/composables/usePresentation'
+import { wrapSelection } from '~/utils/editor-commands'
+import { editorTheme } from '~/utils/editor-theme'
 
 definePageMeta({ layout: false })
 
@@ -27,8 +34,15 @@ const slug = route.params.slug as string
 // is the solo CodeMirror editor.
 const collabEnabled = computed(() => 'collab' in route.query)
 
+const { privileged } = useAppSession()
+const colorMode = useColorMode()
+const toast = useToast()
+
 const raw = ref('')
-const deckStatus = ref<string>('public')
+const lastSaved = ref('')
+const deckTitle = ref<string | undefined>(undefined)
+const deckStatus = ref<string>('draft')
+const loadedFrom = ref<'draft' | 'published' | 'file' | null>(null)
 const preview = ref<PresentationData | null>(null)
 const loadError = ref<string | null>(null)
 const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -38,18 +52,82 @@ const saveMessage = ref('')
 const collabStatus = ref<'connecting' | 'connected' | 'disconnected'>('connecting')
 const peerCount = ref(0)
 
-// Editor theme: a readable local caret (the default was near-invisible, black on
-// the dark-ish default) and a light editor surface. Remote carets are styled by
-// y-codemirror.next's own `yRemoteSelectionsTheme` (added in collab mode).
-const editorTheme = EditorView.theme({
-  '&': { fontSize: '0.9rem', backgroundColor: '#ffffff', color: '#1a1a1a' },
-  '.cm-content': { caretColor: '#1a1a1a' },
-  '.cm-cursor, .cm-dropCursor': { borderLeftColor: '#1a1a1a', borderLeftWidth: '2px' },
-  '&.cm-focused .cm-cursor': { borderLeftColor: '#1a1a1a' },
-})
+// Load the working draft (falls back to published version, then file).
+// useRequestFetch: the SSR pass must re-emit the session cookie — `?draft`
+// requires edit rights, so an anonymous internal fetch would 401.
+const requestFetch = useRequestFetch()
+const { data, error } = await useAsyncData(`edit-${slug}`, () =>
+  requestFetch<{ content: string, status?: string, title?: string, from?: 'draft' | 'published' | 'file', writable?: boolean }>(
+    `/api/presentations/${slug}`,
+    { query: { draft: '' } },
+  ))
 
-// Base CodeMirror extensions; the Yjs collab extension is appended at mount.
-const extensions = ref<Extension[]>([markdown(), EditorView.lineWrapping, editorTheme])
+const writable = computed(() => data.value?.writable !== false)
+// In solo mode the draft is only "unsaved" when it differs from what the server has.
+const dirty = computed(() => !collabEnabled.value && raw.value !== lastSaved.value)
+
+if (error.value) {
+  loadError.value = (error.value as any)?.statusMessage || 'Failed to load deck'
+}
+else if (data.value) {
+  deckStatus.value = data.value.status ?? 'draft'
+  deckTitle.value = data.value.title
+  loadedFrom.value = data.value.from ?? null
+  // Solo mode seeds the editor from the fetched markdown. In collab mode the
+  // Y.Text is the ONLY source — seeded server-side — so we must NOT also push
+  // this content in, or yCollab would duplicate it (one deck → N).
+  if (!collabEnabled.value) {
+    raw.value = data.value.content
+    lastSaved.value = data.value.content
+  }
+}
+
+const statusDisplay = computed(() => STATUS_CONFIG[deckStatus.value as keyof typeof STATUS_CONFIG])
+
+// ── CodeMirror setup ────────────────────────────────────────────────────────
+
+const cm = useTemplateRef<{ view?: EditorView }>('cm')
+const editorView = computed(() => cm.value?.view)
+
+const shortcutKeymap = keymap.of([
+  {
+    key: 'Mod-b',
+    run: (view) => {
+      wrapSelection(view, '**', 'texte')
+      return true
+    },
+  },
+  {
+    key: 'Mod-i',
+    run: (view) => {
+      wrapSelection(view, '*', 'texte')
+      return true
+    },
+  },
+  {
+    key: 'Mod-s',
+    run: () => {
+      if (!collabEnabled.value)
+        save()
+      return true
+    },
+  },
+])
+
+// Appended by startCollab (yCollab + remote-caret styling + Yjs undo keymap).
+const collabExtensions = shallowRef<Extension[]>([])
+
+const extensions = computed<Extension[]>(() => [
+  markdown(),
+  EditorView.lineWrapping,
+  highlightActiveLine(),
+  ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
+  shortcutKeymap,
+  // Yjs owns undo in collab mode; the local history would fight it.
+  ...(collabEnabled.value ? collabExtensions.value : [history(), keymap.of(historyKeymap)]),
+  keymap.of(defaultKeymap),
+])
+
 // In collab mode the Y.Text owns the document, so we DON'T use v-model (it would
 // fight Yjs). `cmModel` is only bound in solo mode.
 const cmModel = computed({
@@ -58,26 +136,6 @@ const cmModel = computed({
     raw.value = v
   },
 })
-
-// Load the deck's current markdown (status is display-only; it lives in the frontmatter).
-const { data, error } = await useAsyncData(`edit-${slug}`, () =>
-  $fetch<{ content: string, status?: string, writable?: boolean }>(`/api/presentations/${slug}`))
-
-const writable = computed(() => data.value?.writable !== false)
-
-if (error.value) {
-  loadError.value = (error.value as any)?.statusMessage || 'Failed to load deck'
-}
-else if (data.value) {
-  if (data.value.status)
-    deckStatus.value = data.value.status
-  // Solo mode seeds the editor from the fetched markdown. In collab mode the
-  // Y.Text is the ONLY source — seeded server-side from the file — so we must NOT
-  // also push this content in, or yCollab would insert it on top of the synced
-  // doc and duplicate it (one deck → N).
-  if (!collabEnabled.value)
-    raw.value = data.value.content
-}
 
 // Reparse the preview, debounced, whenever the markdown changes. The same parse
 // path as the live routes guarantees fidelity.
@@ -103,7 +161,7 @@ watch(raw, () => {
 let cleanupCollab: (() => void) | null = null
 
 async function startCollab() {
-  const [{ Doc }, { HocuspocusProvider }, { yCollab, yRemoteSelectionsTheme }] = await Promise.all([
+  const [{ Doc }, { HocuspocusProvider }, { yCollab, yUndoManagerKeymap, yRemoteSelectionsTheme }] = await Promise.all([
     import('yjs'),
     import('@hocuspocus/provider'),
     import('y-codemirror.next'),
@@ -144,15 +202,12 @@ async function startCollab() {
     peerCount.value = provider.awareness ? provider.awareness.getStates().size : 0
   })
 
-  // Append the collaborative binding to CodeMirror: yCollab wires sync + local
-  // awareness, and yRemoteSelectionsTheme is y-codemirror.next's own styling for
-  // remote carets/selections (the canonical way to make peers' cursors visible).
-  extensions.value = [
-    markdown(),
-    EditorView.lineWrapping,
-    editorTheme,
+  // yCollab wires sync + local awareness; yRemoteSelectionsTheme is
+  // y-codemirror.next's own styling for remote carets/selections.
+  collabExtensions.value = [
     yCollab(ytext, provider.awareness),
     yRemoteSelectionsTheme,
+    keymap.of(yUndoManagerKeymap),
   ]
 
   cleanupCollab = () => {
@@ -162,26 +217,37 @@ async function startCollab() {
   }
 }
 
+// An unsaved solo draft deserves the browser's "leave the page?" guard.
+function beforeUnload(e: BeforeUnloadEvent) {
+  if (dirty.value)
+    e.preventDefault()
+}
+
 onMounted(() => {
+  window.addEventListener('beforeunload', beforeUnload)
   if (collabEnabled.value)
     startCollab()
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', beforeUnload)
   cleanupCollab?.()
 })
+
+// ── Actions ─────────────────────────────────────────────────────────────────
 
 async function save() {
   saveState.value = 'saving'
   try {
-    const res = await $fetch<{ ok: boolean, key: string, bytes: number }>(
-      `/api/presentations/${slug}`,
-      { method: 'PUT', body: { raw: raw.value } },
-    )
+    const saved = raw.value
+    await $fetch(`/api/presentations/${slug}`, { method: 'PUT', body: { raw: saved } })
+    lastSaved.value = saved
+    loadedFrom.value = 'draft'
     saveState.value = 'saved'
-    saveMessage.value = `Brouillon enregistré (${res.bytes} B)`
+    saveMessage.value = 'Brouillon enregistré'
     setTimeout(() => {
       saveState.value = 'idle'
+      saveMessage.value = ''
     }, 2500)
   }
   catch (e: any) {
@@ -196,13 +262,16 @@ async function publish() {
   publishState.value = 'publishing'
   try {
     // Solo mode: make sure the draft carries the current text before deriving.
-    if (!collabEnabled.value)
+    if (!collabEnabled.value) {
       await $fetch(`/api/presentations/${slug}`, { method: 'PUT', body: { raw: raw.value } })
+      lastSaved.value = raw.value
+    }
     await $fetch(`/api/presentations/${slug}/publish`, { method: 'POST' })
     publishState.value = 'published'
     saveMessage.value = 'Publié'
     setTimeout(() => {
       publishState.value = 'idle'
+      saveMessage.value = ''
     }, 2500)
   }
   catch (e: any) {
@@ -210,73 +279,190 @@ async function publish() {
     saveMessage.value = e?.statusMessage || e?.message || 'Échec de la publication'
   }
 }
+
+// ── Metadata panel (shared with the catalog) ────────────────────────────────
+
+const metaOpen = ref(false)
+const metaItem = ref<PresentationListItem | null>(null)
+const metaProjects = ref<Project[]>([])
+
+async function openMeta() {
+  try {
+    const [list, projects] = await Promise.all([
+      $fetch<PresentationListItem[]>('/api/presentations'),
+      $fetch<Project[]>('/api/projects'),
+    ])
+    metaItem.value = list.find(p => p.slug === slug) ?? null
+    metaProjects.value = projects
+    if (metaItem.value)
+      metaOpen.value = true
+  }
+  catch {
+    toast.add({ title: 'Impossible de charger les métadonnées', icon: 'i-lucide-triangle-alert', color: 'error' })
+  }
+}
+
+async function onMetaSaved() {
+  const fresh = await $fetch<{ status?: string, title?: string }>(
+    `/api/presentations/${slug}`,
+    { query: { draft: '' } },
+  ).catch(() => null)
+  if (fresh) {
+    deckStatus.value = fresh.status ?? deckStatus.value
+    deckTitle.value = fresh.title ?? deckTitle.value
+  }
+}
 </script>
 
 <template>
-  <div class="editor">
-    <header class="editor__bar">
-      <span class="editor__title">Édition — {{ slug }} <em>({{ deckStatus }})</em></span>
-      <span
-        v-if="collabEnabled"
-        class="editor__collab"
-        :class="`editor__collab--${collabStatus}`"
-        :title="`Collaboration : ${collabStatus}`"
+  <div class="h-screen flex flex-col overflow-hidden bg-default">
+    <header class="flex items-center gap-2 px-3 h-14 shrink-0 border-b border-default">
+      <UTooltip text="Retour au catalogue">
+        <UButton
+          icon="i-lucide-arrow-left"
+          color="neutral"
+          variant="ghost"
+          to="/"
+          aria-label="Retour au catalogue"
+        />
+      </UTooltip>
+
+      <div class="flex flex-col min-w-0">
+        <span class="font-semibold text-highlighted text-sm truncate">
+          {{ deckTitle || slug }}
+        </span>
+        <span class="text-xs text-dimmed font-mono truncate">{{ slug }}</span>
+      </div>
+
+      <UBadge
+        v-if="statusDisplay"
+        :color="statusDisplay.color"
+        variant="subtle"
+        size="sm"
+        :icon="statusDisplay.icon"
+        :label="statusDisplay.label"
+      />
+      <UTooltip
+        v-if="loadedFrom && loadedFrom !== 'draft'"
+        :text="loadedFrom === 'published'
+          ? 'Aucun brouillon : contenu chargé depuis la dernière version publiée'
+          : 'Aucun brouillon : contenu chargé depuis le fichier committé'"
       >
-        ● {{ collabStatus === 'connected' ? `Collab (${peerCount})` : collabStatus }}
-      </span>
-      <span class="editor__spacer" />
-      <span
+        <UBadge
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-file-input"
+          :label="loadedFrom === 'published' ? 'Depuis le publié' : 'Depuis le fichier'"
+        />
+      </UTooltip>
+
+      <UBadge
+        v-if="collabEnabled"
+        :color="collabStatus === 'connected' ? 'success' : collabStatus === 'connecting' ? 'warning' : 'error'"
+        variant="subtle"
+        size="sm"
+        icon="i-lucide-users"
+        :label="collabStatus === 'connected' ? `Collab (${peerCount})` : collabStatus"
+      />
+
+      <div class="flex-1" />
+
+      <UBadge
         v-if="!writable"
-        class="editor__readonly"
-        title="Le stockage de contenu de ce déploiement n'accepte pas l'écriture"
-      >Lecture seule</span>
+        color="warning"
+        variant="outline"
+        size="sm"
+        icon="i-lucide-lock"
+        label="Lecture seule"
+      />
       <span
         v-if="saveMessage"
-        class="editor__msg"
-        :class="`editor__msg--${saveState}`"
+        class="text-xs"
+        :class="saveState === 'error' || publishState === 'error' ? 'text-error' : 'text-success'"
       >{{ saveMessage }}</span>
-      <button
+      <UTooltip
+        v-else-if="dirty"
+        text="Modifications non enregistrées"
+      >
+        <span class="flex items-center gap-1.5 text-xs text-warning">
+          <span class="size-1.5 rounded-full bg-warning" />
+          Non enregistré
+        </span>
+      </UTooltip>
+
+      <UTooltip
+        v-if="privileged"
+        text="Métadonnées"
+      >
+        <UButton
+          icon="i-lucide-settings-2"
+          color="neutral"
+          variant="ghost"
+          aria-label="Métadonnées"
+          @click="openMeta"
+        />
+      </UTooltip>
+
+      <UButton
         v-if="!collabEnabled"
-        type="button"
-        class="editor__save"
-        :disabled="saveState === 'saving' || !!loadError || !writable"
+        label="Enregistrer"
+        icon="i-lucide-save"
+        color="neutral"
+        variant="subtle"
+        :loading="saveState === 'saving'"
+        :disabled="!!loadError || !writable || !dirty"
         @click="save"
-      >
-        {{ saveState === 'saving' ? 'Enregistrement…' : 'Enregistrer' }}
-      </button>
-      <button
-        type="button"
-        class="editor__save editor__save--publish"
-        :disabled="publishState === 'publishing' || !!loadError || !writable"
+      />
+      <UButton
+        label="Publier"
+        icon="i-lucide-send"
+        :loading="publishState === 'publishing'"
+        :disabled="!!loadError || !writable"
         @click="publish"
-      >
-        {{ publishState === 'publishing' ? 'Publication…' : 'Publier' }}
-      </button>
-      <a
-        class="editor__open"
-        :href="`/slides/${slug}`"
-        target="_blank"
-        rel="noopener"
-      >Ouvrir ↗</a>
+      />
+      <UTooltip text="Ouvrir la présentation">
+        <UButton
+          icon="i-lucide-external-link"
+          color="neutral"
+          variant="ghost"
+          :href="`/slides/${slug}`"
+          target="_blank"
+          rel="noopener"
+          aria-label="Ouvrir la présentation"
+        />
+      </UTooltip>
     </header>
+
+    <EditorToolbar
+      v-if="!loadError"
+      :view="editorView"
+      :disabled="!writable"
+    />
 
     <div
       v-if="loadError"
-      class="editor__error"
+      class="flex-1 grid place-items-center"
     >
-      {{ loadError }}
+      <UEmpty
+        icon="i-lucide-file-x"
+        title="Deck introuvable"
+        :description="loadError"
+        :actions="[{ label: 'Retour au catalogue', icon: 'i-lucide-arrow-left', color: 'neutral', variant: 'subtle', to: '/' }]"
+      />
     </div>
 
     <div
       v-else
-      class="editor__panes"
+      class="grid grid-cols-2 flex-1 min-h-0"
     >
       <ClientOnly>
         <!-- Collab mode: the Y.Text owns the document (no v-model — it would fight
              Yjs); the yCollab extension syncs the editor and we mirror into `raw`. -->
         <Codemirror
           v-if="collabEnabled"
-          class="editor__code"
+          ref="cm"
+          class="h-full overflow-auto border-r border-default"
           :extensions="extensions"
           :indent-with-tab="true"
           :tab-size="2"
@@ -284,20 +470,21 @@ async function publish() {
         <!-- Solo mode: plain two-way binding. -->
         <Codemirror
           v-else
+          ref="cm"
           v-model="cmModel"
-          class="editor__code"
+          class="h-full overflow-auto border-r border-default"
           :extensions="extensions"
           :indent-with-tab="true"
           :tab-size="2"
         />
         <template #fallback>
-          <div class="editor__code editor__code--loading">
-            Chargement de l’éditeur…
+          <div class="h-full grid place-items-center text-muted text-sm border-r border-default">
+            Chargement de l'éditeur…
           </div>
         </template>
       </ClientOnly>
 
-      <div class="editor__preview">
+      <div class="relative h-full overflow-hidden bg-white">
         <RevealPresentation
           v-if="preview && preview.slides.length > 0"
           :key="preview.metadata.theme"
@@ -308,137 +495,19 @@ async function publish() {
         </RevealPresentation>
         <div
           v-else
-          class="editor__preview-empty"
+          class="h-full grid place-items-center text-muted text-sm p-8 text-center"
         >
-          La prévisualisation s’affichera ici.
+          La prévisualisation s'affichera ici.
         </div>
       </div>
     </div>
+
+    <DeckMetaSlideover
+      v-if="metaItem"
+      v-model:open="metaOpen"
+      :item="metaItem"
+      :projects="metaProjects"
+      @saved="onMetaSaved"
+    />
   </div>
 </template>
-
-<style scoped>
-.editor {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.editor__bar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.9rem;
-  background: #1a1a1a;
-  color: #fff;
-  font-size: 0.9rem;
-}
-
-.editor__title em {
-  opacity: 0.6;
-  font-style: normal;
-}
-
-.editor__collab {
-  font-size: 0.8rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.editor__collab--connected {
-  color: #7ee787;
-}
-
-.editor__collab--connecting {
-  color: #f0c674;
-}
-
-.editor__collab--disconnected {
-  color: #ff7b72;
-}
-
-.editor__spacer {
-  flex: 1;
-}
-
-.editor__readonly {
-  padding: 0.2rem 0.6rem;
-  font-size: 0.8rem;
-  color: #ffd27a;
-  border: 1px solid #ffd27a55;
-  border-radius: 0.35rem;
-}
-
-.editor__msg--saved {
-  color: #7ee787;
-}
-
-.editor__msg--error {
-  color: #ff7b72;
-}
-
-.editor__save {
-  padding: 0.35rem 0.9rem;
-  font: inherit;
-  color: #1a1a1a;
-  cursor: pointer;
-  background: #fff;
-  border: none;
-  border-radius: 0.35rem;
-}
-
-.editor__save:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.editor__save--publish {
-  color: #fff;
-  background: #2563eb;
-}
-
-.editor__open {
-  color: #fff;
-  text-decoration: none;
-  opacity: 0.7;
-}
-
-.editor__panes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  flex: 1;
-  min-height: 0;
-}
-
-.editor__code {
-  height: 100%;
-  overflow: auto;
-  font-size: 0.9rem;
-  border-right: 1px solid #ddd;
-}
-
-.editor__code--loading {
-  padding: 1rem;
-  color: #666;
-}
-
-.editor__preview {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-  background: #fff;
-}
-
-.editor__preview-empty,
-.editor__error {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #888;
-  padding: 2rem;
-  text-align: center;
-}
-</style>

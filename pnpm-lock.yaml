@@ -12,9 +12,15 @@ catalogs:
     '@aws-sdk/client-s3':
       specifier: ^3.1085.0
       version: 3.1085.0
+    '@codemirror/commands':
+      specifier: ^6.10.4
+      version: 6.10.4
     '@codemirror/lang-markdown':
       specifier: ^6.5.0
       version: 6.5.1
+    '@codemirror/language':
+      specifier: ^6.12.4
+      version: 6.12.4
     '@codemirror/state':
       specifier: ^6.7.0
       version: 6.7.1
@@ -36,6 +42,9 @@ catalogs:
     '@iconify/vue':
       specifier: ^5.0.0
       version: 5.0.0
+    '@lezer/highlight':
+      specifier: ^1.2.3
+      version: 1.2.3
     '@nuxt/icon':
       specifier: ^2.1.0
       version: 2.1.0
@@ -128,9 +137,15 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
         version: 3.1085.0
+      '@codemirror/commands':
+        specifier: 'catalog:'
+        version: 6.10.4
       '@codemirror/lang-markdown':
         specifier: 'catalog:'
         version: 6.5.1
+      '@codemirror/language':
+        specifier: 'catalog:'
+        version: 6.12.4
       '@codemirror/state':
         specifier: 'catalog:'
         version: 6.7.1
@@ -146,6 +161,9 @@ importers:
       '@iconify/vue':
         specifier: 'catalog:'
         version: 5.0.0(vue@3.5.25(typescript@5.9.3))
+      '@lezer/highlight':
+        specifier: 'catalog:'
+        version: 1.2.3
       '@nuxt/ui':
         specifier: 'catalog:'
         version: 4.9.0(97854a86ae41d742cf80d3edcca99c6f)
