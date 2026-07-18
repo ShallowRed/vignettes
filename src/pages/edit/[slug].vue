@@ -108,11 +108,13 @@ async function startCollab() {
   ])
 
   const ydoc = new Doc()
+  // Same-origin endpoint: the session cookie rides the upgrade request, so the
+  // server authorizes there — no token to share.
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
   const provider = new HocuspocusProvider({
-    url: `ws://${window.location.hostname}:1234`,
+    url: `${wsProtocol}://${window.location.host}/collab`,
     name: `${access.value}:${slug}`,
     document: ydoc,
-    token: 'dev-token', // exploration-branch shared token (server: COLLAB_DEV_TOKEN)
   })
 
   provider.on('status', (e: { status: string }) => {
