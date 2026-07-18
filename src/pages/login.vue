@@ -23,6 +23,18 @@ const errorMessage = computed(() => {
       return error.value ? 'Authentification impossible. Veuillez réessayer.' : ''
   }
 })
+
+// Dev-only shortcut: GitHub OAuth needs secrets + a network round-trip, so local
+// iteration on gated features logs in as a synthetic per-role account instead.
+// `import.meta.dev` is a build constant → this block is stripped from production.
+const isDev = import.meta.dev
+const devRedirect = computed(() =>
+  redirect.value?.startsWith('/') ? `&redirect=${encodeURIComponent(redirect.value)}` : '')
+const devRoles = [
+  { role: 'owner', label: 'Owner', icon: 'i-lucide-shield' },
+  { role: 'editor', label: 'Éditeur', icon: 'i-lucide-pencil' },
+  { role: 'viewer', label: 'Lecteur', icon: 'i-lucide-eye' },
+]
 </script>
 
 <template>
@@ -60,6 +72,36 @@ const errorMessage = computed(() => {
           size="lg"
           block
         />
+
+        <template v-if="isDev">
+          <USeparator
+            label="dev"
+            class="my-3"
+          />
+          <div class="w-full rounded-lg border border-dashed border-warning/40 bg-warning/5 p-3">
+            <p class="text-xs text-muted mb-2 flex items-center gap-1.5">
+              <UIcon
+                name="i-lucide-flask-conical"
+                class="size-3.5 text-warning"
+              />
+              Connexion de développement (locale uniquement)
+            </p>
+            <div class="flex gap-2">
+              <UButton
+                v-for="entry in devRoles"
+                :key="entry.role"
+                :to="`/auth/dev-login?role=${entry.role}${devRedirect}`"
+                external
+                :icon="entry.icon"
+                :label="entry.label"
+                color="neutral"
+                variant="subtle"
+                size="sm"
+                block
+              />
+            </div>
+          </div>
+        </template>
 
         <USeparator
           label="ou"
