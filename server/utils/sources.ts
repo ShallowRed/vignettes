@@ -1,6 +1,8 @@
 import type { ContentSource, ContentWriter, NoteSource } from '#shared/deck'
 import { prepareDeckWrite } from '#shared/deck'
+import { createDbContent } from '../db/content-store'
 import { fetchCollaborativeNote } from './codimd'
+import { useDb } from './db'
 import { findPresentationBySlug, isPresentationsWritable, readPresentationContent, writePresentationContentAt } from './presentations'
 
 /**
@@ -35,6 +37,23 @@ export const fileSource: ContentSource = {
 /** Pick the collaborative-note adapter for a provider. */
 export function noteSource(source: NoteSource): ContentSource {
   return source === 'hackmd' ? hackmdSource : codimdSource
+}
+
+/** The database-backed content ports (published versions). */
+export function useDbContent() {
+  return createDbContent(useDb())
+}
+
+/**
+ * Published deck markdown: the database version when one exists, else the
+ * committed file — the transition chain that lets decks migrate one publish at
+ * a time with no bulk seed.
+ */
+export const publishedSource: ContentSource = {
+  id: 'db',
+  async load(slug) {
+    return await useDbContent().source.load(slug) ?? await fileSource.load(slug)
+  },
 }
 
 /**

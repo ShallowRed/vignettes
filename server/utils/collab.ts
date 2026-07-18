@@ -3,7 +3,7 @@ import { Hocuspocus } from '@hocuspocus/server'
 import * as Y from 'yjs'
 import { createDraftStore } from '../db/draft-store'
 import { useDb } from './db'
-import { fileSource } from './sources'
+import { publishedSource } from './sources'
 
 /** The Y.Doc text field shared with y-codemirror.next. */
 const TEXT_FIELD = 'codemirror'
@@ -44,7 +44,7 @@ export function useCollabServer(): Hocuspocus {
       // the live text, turning one deck into N copies.
       if (ytext.length > 0)
         return document
-      const loaded = await fileSource.load(documentName)
+      const loaded = await publishedSource.load(documentName)
       if (!loaded) {
         console.warn(`[collab] no markdown for "${documentName}"`)
         return document

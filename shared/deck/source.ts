@@ -5,7 +5,7 @@ import type { NoteSource } from './schema'
  * CodiMD, HackMD, …). Server provides concrete adapters; tests use in-memory fakes.
  */
 export interface ContentSource {
-  readonly id: NoteSource | 'file'
+  readonly id: NoteSource | 'file' | 'db'
   /** Load raw markdown for a ref (slug/alias/noteId), or `null` if unreachable. Caching is internal. */
   load: (ref: string) => Promise<{ raw: string } | null>
 }
@@ -62,6 +62,8 @@ export interface DeckWriteInput {
   slug: string
   /** The full markdown document (frontmatter + body) to persist. */
   raw: string
+  /** Who performs the write; writers that keep provenance record it. */
+  actor?: string
 }
 
 export interface DeckWriteResult {
