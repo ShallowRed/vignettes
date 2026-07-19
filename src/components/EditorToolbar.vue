@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS } from '~/config/editor-reference'
-import { insertImage, insertLink, insertSlideBreak, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '~/utils/editor-commands'
+import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS, SLIDE_TEMPLATES } from '~/config/editor-reference'
+import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '~/utils/editor-commands'
 
 // Markdown formatting bar; every action targets the live EditorView.
 const props = defineProps<{
@@ -34,6 +34,13 @@ const insertItems = computed<DropdownMenuItem[][]>(() => [
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
   })),
 ])
+
+// Whole-slide starters (with lorem) — described in the tooltip for discoverability.
+const templateItems = computed<DropdownMenuItem[]>(() =>
+  SLIDE_TEMPLATES.map(entry => ({
+    label: entry.label,
+    onSelect: () => run(view => insertSlideTemplate(view, entry.snippet)),
+  })))
 
 const headingItems = [1, 2, 3].map(level => ({
   label: `Titre ${level}`,
@@ -113,6 +120,23 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
           @click="run(insertSlideBreak)"
         />
       </UTooltip>
+
+      <UDropdownMenu
+        :items="templateItems"
+        :content="{ align: 'start' }"
+        :ui="{ content: 'max-h-96 overflow-y-auto' }"
+      >
+        <UButton
+          icon="i-lucide-layout-template"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :class="btnHover"
+          label="Modèles"
+          trailing-icon="i-lucide-chevron-down"
+          :disabled="disabled || !view"
+        />
+      </UDropdownMenu>
 
       <UDropdownMenu
         :items="insertItems"

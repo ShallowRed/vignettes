@@ -129,6 +129,65 @@ export const ANNOTATION_SNIPPETS: readonly ReferenceSnippet[] = [
   },
 ] as const
 
+/**
+ * Whole-slide starters with lorem placeholders, inserted from the toolbar
+ * "Modèles" menu. Templates with a heading rely on the default `heading` parser
+ * (a `##` opens a new slide); headingless ones lead with `---` so they break in
+ * both parsers.
+ */
+export const SLIDE_TEMPLATES: readonly ReferenceSnippet[] = [
+  {
+    label: 'Deux colonnes',
+    description: 'Titre + deux colonnes avec sous-titres',
+    snippet: '## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Sous-titre 1}\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n::\n::column\n### ${Sous-titre 2}\n${Sed do eiusmod tempor incididunt ut labore.}\n::\n:::',
+  },
+  {
+    label: 'Trois colonnes',
+    description: 'Titre + trois colonnes',
+    snippet: '## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Colonne 1}\n${Lorem ipsum dolor sit amet.}\n::\n::column\n### ${Colonne 2}\n${Consectetur adipiscing elit.}\n::\n::column\n### ${Colonne 3}\n${Sed do eiusmod tempor.}\n::\n:::',
+  },
+  {
+    label: 'Couverture',
+    description: 'Diapo de garde : titre + sous-titre',
+    snippet: '## ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
+  },
+  {
+    label: 'Section',
+    description: 'Intercalaire : surtitre + grand titre de partie',
+    snippet: '## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
+  },
+  {
+    label: 'Points clés',
+    description: 'Titre + liste à puces',
+    snippet: '## ${Titre de la diapo}\n\n- ${Premier point clé}\n- ${Deuxième point clé}\n- ${Troisième point clé}',
+  },
+  {
+    label: 'Comparaison',
+    description: 'Deux colonnes en vis-à-vis (avant/après, pour/contre)',
+    snippet: '## ${Titre de la comparaison}\n\n:::Columns\n::column\n### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::column\n### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
+  },
+  {
+    label: 'Média + texte',
+    description: 'Texte à gauche, image à droite (layout media-right)',
+    snippet: '## ${Titre de la diapo}\n\n:layout{name="media-right"}\n\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n\n::Image{src="${/images/exemple.png}" alt="${Description}"}\n::',
+  },
+  {
+    label: 'Citation',
+    description: 'Citation pleine diapo (auteur, rôle)',
+    snippet: '---\n\n::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation qui marque les esprits.}\n::',
+  },
+  {
+    label: 'Image plein écran',
+    description: 'Image qui occupe toute la diapo',
+    snippet: '---\n\n::FullScreenImage{src="${/images/exemple.png}" alt="${Description}"}\n::',
+  },
+  {
+    label: 'Galerie Storybook',
+    description: 'Titre + deux écrans Storybook côte à côte',
+    snippet: '## ${Titre de la démo}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n:::',
+  },
+] as const
+
 export const LAYOUT_NAMES: readonly string[] = Object.keys(SLIDE_LAYOUT_REGISTRY)
 
 export interface ShortcutEntry {

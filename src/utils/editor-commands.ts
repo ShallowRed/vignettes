@@ -62,6 +62,30 @@ export function insertSnippet(view: EditorView, template: string): void {
   view.focus()
 }
 
+/**
+ * Insert a whole-slide template on its own paragraph after the current line.
+ * A full slide would corrupt the deck if dropped inside the YAML frontmatter,
+ * so the insertion point is clamped past the frontmatter's closing `---`.
+ */
+export function insertSlideTemplate(view: EditorView, template: string): void {
+  const { doc } = view.state
+  let insertLine = doc.lineAt(view.state.selection.main.head)
+
+  if (doc.line(1).text.trim() === '---') {
+    for (let i = 2; i <= doc.lines; i++) {
+      if (doc.line(i).text.trim() === '---') {
+        if (insertLine.number <= i)
+          insertLine = doc.line(i)
+        break
+      }
+    }
+  }
+
+  const pos = insertLine.to
+  snippet(`\n\n${template}`)(view, null, pos, pos)
+  view.focus()
+}
+
 /** Insert an image directive, url placeholder selected. */
 export function insertImage(view: EditorView): void {
   const { from, to } = view.state.selection.main
