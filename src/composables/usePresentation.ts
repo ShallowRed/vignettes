@@ -21,7 +21,9 @@ export async function buildPresentationData(
   }
   // The deck's `parser` mode selects heading vs separator via the shared port.
   const parser = PARSERS[parserIdFor(metadata)]
-  const slides = await parser.parse(raw, metadata)
+  // `?? []` keeps `slides` an array even if a parser degrades, so downstream
+  // `.slides.length` guards can never read `.length` of undefined.
+  const slides = (await parser.parse(raw, metadata)) ?? []
   return { slides, metadata, editUrl }
 }
 

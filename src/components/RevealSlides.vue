@@ -7,13 +7,13 @@ import { getSlideClasses, resolveSlideBackground } from '~/utils/slide-rendering
 const props = defineProps<{ presentationData: PresentationData }>()
 
 const { slideIdMap, getVerticalId } = useSlideIds(
-  computed(() => props.presentationData.slides),
+  computed(() => props.presentationData?.slides ?? []),
 )
 
 // Share the deck's Storybook root so MDC components resolve a story id to a full iframe URL.
 provide(
   STORYBOOK_BASE,
-  computed(() => props.presentationData.metadata.storybook),
+  computed(() => props.presentationData?.metadata?.storybook),
 )
 
 const mdcComponents: Record<string, any> = Object.fromEntries(
@@ -34,7 +34,7 @@ function getBackground(slide: { headingLevel?: string, backgroundImage?: string 
 
 <template>
   <template
-    v-for="(section, index) in presentationData.slides"
+    v-for="(section, index) in presentationData?.slides ?? []"
     :key="index"
   >
     <!-- Horizontal section with vertical slides -->

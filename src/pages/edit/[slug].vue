@@ -96,7 +96,11 @@ const editorView = computed(() => cm.value?.view)
 // The preview navigates to the slide the caret sits in. The slide parser drops
 // source positions, so `slide-map` recomputes slide boundaries from the raw text
 // (heuristic, editor-only) and we drive Reveal's slide(h, v) — "à peu près".
-const previewRef = useTemplateRef<{ slide: (h: number, v?: number) => void, sync: () => void }>('preview')
+// Key must NOT be "preview": a `ref="preview"` would collide with the `preview`
+// data ref above, and Vue would overwrite it with the component instance on
+// mount — nuking `preview.value.slides`/`.metadata` and crashing every downstream
+// computed. Hence the distinct "previewInstance" key.
+const previewRef = useTemplateRef<{ slide: (h: number, v?: number) => void, sync: () => void }>('previewInstance')
 const followCursor = ref(true)
 const cursorLine = ref(1)
 const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser }))
@@ -338,7 +342,7 @@ async function publish() {
 
 const helpOpen = ref(false)
 const activeParser = computed<'heading' | 'separator'>(() =>
-  preview.value?.metadata.parser === 'separator' ? 'separator' : 'heading')
+  preview.value?.metadata?.parser === 'separator' ? 'separator' : 'heading')
 
 function insertFromHelp(snippet: string) {
   helpOpen.value = false
@@ -556,21 +560,32 @@ async function onMetaSaved() {
       </ClientOnly>
 
       <div class="relative h-full overflow-hidden bg-white">
-        <RevealPresentation
-          v-if="preview && preview.slides.length > 0"
-          ref="preview"
-          :key="preview.metadata.theme"
-          :theme="preview.metadata.theme"
-          :config="preview.metadata.reveal"
-        >
-          <RevealSlides :presentation-data="preview" />
-        </RevealPresentation>
-        <div
-          v-else
-          class="h-full grid place-items-center text-muted text-sm p-8 text-center"
-        >
-          La prévisualisation s'affichera ici.
-        </div>
+        <!-- Client-only: the preview is driven by CodeMirror input + an async
+             client-side reparse, so `preview` is always null on the server.
+             SSR-ing it renders the placeholder, then hydration swaps to Reveal —
+             a mismatch that crashes the minified prod build. -->
+        <ClientOnly>
+          <RevealPresentation
+            v-if="preview?.slides?.length"
+            ref="previewInstance"
+            :key="preview.metadata.theme"
+            :theme="preview.metadata.theme"
+            :config="preview.metadata.reveal"
+          >
+            <RevealSlides :presentation-data="preview" />
+          </RevealPresentation>
+          <div
+            v-else
+            class="h-full grid place-items-center text-muted text-sm p-8 text-center"
+          >
+            La prévisualisation s'affichera ici.
+          </div>
+          <template #fallback>
+            <div class="h-full grid place-items-center text-muted text-sm p-8 text-center">
+              La prévisualisation s'affichera ici.
+            </div>
+          </template>
+        </ClientOnly>
       </div>
     </div>
 
