@@ -1,3 +1,4 @@
+import type { Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { snippet } from '@codemirror/autocomplete'
 
@@ -63,25 +64,24 @@ export function insertSnippet(view: EditorView, template: string): void {
 }
 
 /**
- * Insert a whole-slide template on its own paragraph after the current line.
- * A full slide would corrupt the deck if dropped inside the YAML frontmatter,
- * so the insertion point is clamped past the frontmatter's closing `---`.
+ * Clamp `pos` to never land inside the YAML frontmatter — a block dropped
+ * between the `---` fences would corrupt the deck. Returns `pos` unchanged when
+ * it already sits past the frontmatter (or when there is none).
  */
+export function safeInsertPos(doc: Text, pos: number): number {
+  if (doc.line(1).text.trim() !== '---')
+    return pos
+  for (let i = 2; i <= doc.lines; i++) {
+    if (doc.line(i).text.trim() === '---')
+      return Math.max(pos, doc.line(i).to)
+  }
+  return pos
+}
+
+/** Insert a whole-slide template on its own paragraph after the current line. */
 export function insertSlideTemplate(view: EditorView, template: string): void {
   const { doc } = view.state
-  let insertLine = doc.lineAt(view.state.selection.main.head)
-
-  if (doc.line(1).text.trim() === '---') {
-    for (let i = 2; i <= doc.lines; i++) {
-      if (doc.line(i).text.trim() === '---') {
-        if (insertLine.number <= i)
-          insertLine = doc.line(i)
-        break
-      }
-    }
-  }
-
-  const pos = insertLine.to
+  const pos = safeInsertPos(doc, doc.lineAt(view.state.selection.main.head).to)
   snippet(`\n\n${template}`)(view, null, pos, pos)
   view.focus()
 }

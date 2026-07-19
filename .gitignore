@@ -41,5 +41,9 @@ presentations/public/*--standalone.md
 .frozen/
 .frozen-mirror/
 
+# Uploaded media: stored in the same object storage under `media/` and served by
+# `server/routes/media/[...path].ts`. Local `.media/` is the dev fallback — NOT in git.
+.media/
+
 # Docs personnelles / temporaires / audits (hors repo public)
 docs/private/
