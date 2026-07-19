@@ -399,48 +399,27 @@ async function onMetaSaved() {
         <span class="text-xs text-dimmed font-mono truncate">{{ slug }}</span>
       </div>
 
-      <UBadge
+      <!-- Editor state taxonomies stripped to plain text (clean base). -->
+      <span
         v-if="statusDisplay"
-        :color="statusDisplay.color"
-        variant="subtle"
-        size="sm"
-        :icon="statusDisplay.icon"
-        :label="statusDisplay.label"
-      />
-      <UTooltip
+        class="text-xs text-muted"
+      >{{ statusDisplay.label }}</span>
+      <span
         v-if="loadedFrom && loadedFrom !== 'draft'"
-        :text="loadedFrom === 'published'
-          ? 'Aucun brouillon : contenu chargé depuis la dernière version publiée'
-          : 'Aucun brouillon : contenu chargé depuis le fichier committé'"
-      >
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-          icon="i-lucide-file-input"
-          :label="loadedFrom === 'published' ? 'Depuis le publié' : 'Depuis le fichier'"
-        />
-      </UTooltip>
+        class="text-xs text-muted"
+      >{{ loadedFrom === 'published' ? 'Depuis le publié' : 'Depuis le fichier' }}</span>
 
-      <UBadge
+      <span
         v-if="collabEnabled"
-        :color="collabStatus === 'connected' ? 'success' : collabStatus === 'connecting' ? 'warning' : 'error'"
-        variant="subtle"
-        size="sm"
-        icon="i-lucide-users"
-        :label="collabStatus === 'connected' ? `Collab (${peerCount})` : collabStatus"
-      />
+        class="text-xs text-muted"
+      >{{ collabStatus === 'connected' ? `Collab (${peerCount})` : collabStatus }}</span>
 
       <div class="flex-1" />
 
-      <UBadge
+      <span
         v-if="!writable"
-        color="warning"
-        variant="subtle"
-        size="sm"
-        icon="i-lucide-lock"
-        label="Lecture seule"
-      />
+        class="text-xs text-muted"
+      >Lecture seule</span>
       <span
         v-if="saveMessage"
         class="text-xs"

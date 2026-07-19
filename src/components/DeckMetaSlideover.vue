@@ -59,7 +59,6 @@ watch(open, (now) => {
 const statusItems = PUBLICATION_STATUSES.map(status => ({
   label: STATUS_CONFIG[status].label,
   value: status,
-  icon: STATUS_CONFIG[status].icon,
 }))
 
 const projectItems = computed(() => [
@@ -267,17 +266,8 @@ async function removeGrant(userId: number) {
               :key="grant.userId"
               class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2"
             >
-              <UIcon
-                name="i-lucide-user"
-                class="size-4 text-dimmed"
-              />
               <span class="text-sm font-medium">{{ grant.login }}</span>
-              <UBadge
-                :color="grant.role === 'editor' ? 'warning' : 'neutral'"
-                variant="subtle"
-                size="sm"
-                :label="grant.role === 'editor' ? 'Édition' : 'Lecture'"
-              />
+              <span class="text-xs text-muted">{{ grant.role === 'editor' ? 'Édition' : 'Lecture' }}</span>
               <div class="flex-1" />
               <UButton
                 icon="i-lucide-x"

@@ -57,13 +57,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             size="2xs"
           />
           <span class="hidden sm:inline">{{ user?.login || user?.name }}</span>
-          <UBadge
-            :color="roleDisplay.color"
-            variant="subtle"
-            size="sm"
-            :icon="roleDisplay.icon"
-            :label="roleDisplay.label"
-          />
+          <span class="text-xs text-muted">{{ roleDisplay.label }}</span>
         </UButton>
       </UDropdownMenu>
     </template>

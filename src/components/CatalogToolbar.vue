@@ -2,6 +2,7 @@
 import type { PublicationStatus } from '#shared/access'
 import type { CatalogQuery, PresentationListItem, SortKey } from '#shared/presentations'
 import type { Project } from '#shared/projects'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { countByStatus, STATUS_CONFIG, UNGROUPED_PROJECT } from '#shared/presentations'
 
@@ -36,10 +37,10 @@ const sortKey = computed({
   set: (value: SortKey) => { query.value = { ...query.value, sortKey: value } },
 })
 
+// Theme is a project-coupled attribute, not a browsing axis — no theme sort/filter.
 const sortOptions: { label: string, value: SortKey }[] = [
   { label: 'Titre', value: 'title' },
   { label: 'Statut', value: 'status' },
-  { label: 'Thème', value: 'theme' },
 ]
 
 function toggleDir() {
@@ -59,6 +60,18 @@ function toggleStatus(status: PublicationStatus) {
 function isActive(status: PublicationStatus) {
   return query.value.statuses?.includes(status) ?? false
 }
+
+// Status filter folded into a checkbox dropdown; `onSelect.preventDefault` keeps it open.
+const statusMenuItems = computed<DropdownMenuItem[]>(() =>
+  PUBLICATION_STATUSES.map(status => ({
+    label: `${STATUS_CONFIG[status].label} (${counts.value[status]})`,
+    type: 'checkbox' as const,
+    checked: isActive(status),
+    onUpdateChecked: () => toggleStatus(status),
+    onSelect: (e: Event) => e.preventDefault(),
+  })))
+
+const activeStatusCount = computed(() => query.value.statuses?.length ?? 0)
 
 // Chips for every project slug present, ordered by the registry, plus an "ungrouped" chip.
 const projectChips = computed(() => {
@@ -108,85 +121,96 @@ function toggleProject(value: string) {
 function isProjectActive(value: string) {
   return query.value.projects?.includes(value) ?? false
 }
+
+const projectMenuItems = computed<DropdownMenuItem[]>(() =>
+  projectChips.value.map(chip => ({
+    label: `${chip.label} (${chip.count})`,
+    type: 'checkbox' as const,
+    checked: isProjectActive(chip.value),
+    onUpdateChecked: () => toggleProject(chip.value),
+    onSelect: (e: Event) => e.preventDefault(),
+  })))
+
+const activeProjectCount = computed(() => query.value.projects?.length ?? 0)
+
+const hasActiveFilters = computed(() =>
+  activeStatusCount.value > 0 || activeProjectCount.value > 0)
+
+function clearFilters() {
+  query.value = { ...query.value, statuses: [], projects: [] }
+}
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 mb-8">
-    <div class="flex flex-wrap gap-2 items-center">
-      <UInput
-        ref="searchInput"
-        v-model="search"
-        icon="i-lucide-search"
-        placeholder="Rechercher (titre, slug, thème)…"
-        class="flex-1 min-w-56"
-      >
-        <template #trailing>
-          <UKbd value="/" />
-        </template>
-      </UInput>
-
-      <template v-if="showSort">
-        <USelect
-          v-model="sortKey"
-          :items="sortOptions"
-          icon="i-lucide-arrow-down-up"
-          aria-label="Trier par"
-          class="w-36"
-        />
-        <UTooltip :text="query.sortDir === 'desc' ? 'Décroissant' : 'Croissant'">
-          <UButton
-            :icon="query.sortDir === 'desc' ? 'i-lucide-arrow-down-wide-narrow' : 'i-lucide-arrow-up-narrow-wide'"
-            color="neutral"
-            variant="outline"
-            @click="toggleDir"
-          />
-        </UTooltip>
+  <div class="flex flex-wrap items-center gap-2">
+    <UInput
+      ref="searchInput"
+      v-model="search"
+      icon="i-lucide-search"
+      placeholder="Rechercher…"
+      class="flex-1 min-w-48"
+    >
+      <template #trailing>
+        <UKbd value="/" />
       </template>
+    </UInput>
 
-      <slot name="trailing" />
-    </div>
-
-    <div
+    <!-- Filters folded into compact checkbox dropdowns; active count shown in the trigger. -->
+    <UDropdownMenu
       v-if="showStatusFilter"
-      class="flex flex-wrap gap-2"
+      :items="statusMenuItems"
+      :content="{ align: 'start' }"
     >
       <UButton
-        v-for="status in PUBLICATION_STATUSES"
-        :key="status"
-        size="xs"
-        :color="isActive(status) ? STATUS_CONFIG[status].color : 'neutral'"
-        :variant="isActive(status) ? 'solid' : 'outline'"
-        :icon="STATUS_CONFIG[status].icon"
-        class="rounded-full"
-        @click="toggleStatus(status)"
-      >
-        {{ STATUS_CONFIG[status].label }}
-        <span class="opacity-60 tabular-nums">{{ counts[status] }}</span>
-      </UButton>
-    </div>
+        :label="activeStatusCount ? `Statut · ${activeStatusCount}` : 'Statut'"
+        icon="i-lucide-list-filter"
+        trailing-icon="i-lucide-chevron-down"
+        color="neutral"
+        :variant="activeStatusCount ? 'subtle' : 'outline'"
+      />
+    </UDropdownMenu>
 
-    <div
+    <UDropdownMenu
       v-if="showProjectFilter"
-      class="flex flex-wrap gap-2"
+      :items="projectMenuItems"
+      :content="{ align: 'start' }"
     >
       <UButton
-        v-for="chip in projectChips"
-        :key="chip.value"
-        size="xs"
-        :color="isProjectActive(chip.value) ? 'primary' : 'neutral'"
-        :variant="isProjectActive(chip.value) ? 'solid' : 'outline'"
+        :label="activeProjectCount ? `Projet · ${activeProjectCount}` : 'Projet'"
         icon="i-lucide-folder"
-        class="rounded-full"
-        @click="toggleProject(chip.value)"
-      >
-        <span
-          v-if="chip.color"
-          class="size-2 rounded-full"
-          :style="{ backgroundColor: chip.color }"
+        trailing-icon="i-lucide-chevron-down"
+        color="neutral"
+        :variant="activeProjectCount ? 'subtle' : 'outline'"
+      />
+    </UDropdownMenu>
+
+    <UButton
+      v-if="hasActiveFilters"
+      label="Effacer"
+      icon="i-lucide-filter-x"
+      color="neutral"
+      variant="ghost"
+      @click="clearFilters"
+    />
+
+    <template v-if="showSort">
+      <USelect
+        v-model="sortKey"
+        :items="sortOptions"
+        icon="i-lucide-arrow-down-up"
+        aria-label="Trier par"
+        class="w-36"
+      />
+      <UTooltip :text="query.sortDir === 'desc' ? 'Décroissant' : 'Croissant'">
+        <UButton
+          :icon="query.sortDir === 'desc' ? 'i-lucide-arrow-down-wide-narrow' : 'i-lucide-arrow-up-narrow-wide'"
+          color="neutral"
+          variant="outline"
+          @click="toggleDir"
         />
-        {{ chip.label }}
-        <span class="opacity-60 tabular-nums">{{ chip.count }}</span>
-      </UButton>
-    </div>
+      </UTooltip>
+    </template>
+
+    <slot name="trailing" />
   </div>
 </template>

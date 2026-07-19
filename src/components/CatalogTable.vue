@@ -91,6 +91,9 @@ function stopRowClick(e: Event) {
 const columns = computed<TableColumn<PresentationListItem>[]>(() => [
   {
     id: 'select',
+    // Symmetric padding around the checkbox: the default `pe-0` makes the row-hover
+    // highlight look lopsided (16px left, 0 right).
+    meta: { class: { td: '[&:has([role=checkbox])]:!px-4', th: '[&:has([role=checkbox])]:!px-4' } },
     header: ({ table: t }) => h(UCheckbox, {
       'modelValue': t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
       'aria-label': 'Tout sélectionner',
@@ -111,7 +114,18 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
   ...(props.admin
     ? [{ accessorKey: 'filename', header: sortableHeader('Fichier') } satisfies TableColumn<PresentationListItem>]
     : []),
-  { id: 'actions', header: '' },
+  {
+    id: 'actions',
+    header: '',
+    // Pinned right: on horizontal overflow only the middle columns scroll under it.
+    // Its opaque bg occludes them.
+    meta: {
+      class: {
+        td: 'sticky right-0 w-0 bg-default',
+        th: 'sticky right-0 bg-default',
+      },
+    },
+  },
 ])
 
 function rowActions(item: PresentationListItem) {
@@ -140,10 +154,6 @@ function rowActions(item: PresentationListItem) {
         ]
       : []),
   ]
-}
-
-function onRowClick(_e: Event, row: { original: PresentationListItem }) {
-  navigateTo(deckPath(row.original))
 }
 
 const selectedItems = computed<PresentationListItem[]>(() =>
@@ -197,40 +207,6 @@ function clearSelection() {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div
-      v-if="selectedItems.length > 0"
-      class="flex flex-wrap items-center gap-2 rounded-lg bg-elevated px-4 py-2.5 shadow-sm"
-    >
-      <span class="text-sm font-medium text-highlighted">
-        {{ selectedItems.length }} sélectionnée(s)
-      </span>
-      <div class="flex-1" />
-      <UButton
-        icon="i-lucide-link"
-        label="Copier les liens"
-        color="neutral"
-        variant="subtle"
-        size="sm"
-        @click="copyLinks(selectedItems)"
-      />
-      <UButton
-        icon="i-lucide-file-down"
-        label="Exporter CSV"
-        color="neutral"
-        variant="subtle"
-        size="sm"
-        @click="exportCsv(selectedItems)"
-      />
-      <UButton
-        icon="i-lucide-x"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        aria-label="Effacer la sélection"
-        @click="clearSelection"
-      />
-    </div>
-
     <UTable
       ref="table"
       v-model:sorting="sorting"
@@ -240,71 +216,38 @@ function clearSelection() {
       :columns="columns"
       :sorting-options="{ getSortedRowModel: getSortedRowModel() }"
       :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-      :ui="{ root: 'rounded-lg bg-default shadow-sm', tr: 'cursor-pointer' }"
-      @select="onRowClick"
+      :ui="{ root: 'rounded-lg bg-default shadow-sm' }"
     >
+      <!-- Taxonomies stripped to plain text (clean base): no colour, no icon. -->
       <template #title-cell="{ row }">
         <div class="flex items-center gap-2 min-w-48">
           <span class="font-medium text-highlighted">{{ row.original.title }}</span>
-          <UBadge
+          <span
             v-if="row.original.unlisted"
-            color="neutral"
-            variant="subtle"
-            size="sm"
-            icon="i-lucide-eye-off"
-            aria-label="Unlisted"
-          />
-          <UTooltip
+            class="text-xs text-muted"
+          >Unlisted</span>
+          <span
             v-if="admin && row.original.published === false && !row.original.fileBacked"
-            text="Aucune version publiée : le deck n'est pas encore servable"
-          >
-            <UBadge
-              color="warning"
-              variant="subtle"
-              size="sm"
-              icon="i-lucide-cloud-off"
-              aria-label="Non publié"
-            />
-          </UTooltip>
+            class="text-xs text-muted"
+          >Non publié</span>
         </div>
       </template>
 
       <template #status-cell="{ row }">
-        <div class="flex items-center gap-1.5">
-          <UBadge
-            :color="STATUS_CONFIG[row.original.status]?.color || 'neutral'"
-            variant="subtle"
-            size="sm"
-            :icon="STATUS_CONFIG[row.original.status]?.icon"
-            :label="STATUS_CONFIG[row.original.status]?.label || row.original.status"
-          />
-          <UTooltip
+        <div class="flex items-center gap-2 text-sm">
+          <span>{{ STATUS_CONFIG[row.original.status]?.label || row.original.status }}</span>
+          <span
             v-if="isFrozen(row.original)"
-            text="Instantané autoportant : contenu figé"
-          >
-            <UBadge
-              color="info"
-              variant="subtle"
-              size="sm"
-              icon="i-lucide-snowflake"
-              :label="row.original.lifecycle === 'archived' ? 'Archivée' : 'Gelée'"
-            />
-          </UTooltip>
+            class="text-muted"
+          >{{ row.original.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
         </div>
       </template>
 
       <template #project-cell="{ row }">
-        <div
+        <span
           v-if="row.original.project"
-          class="flex items-center gap-1.5 text-sm"
-        >
-          <span
-            v-if="projectMeta.get(row.original.project)?.color"
-            class="size-2 rounded-full shrink-0"
-            :style="{ backgroundColor: projectMeta.get(row.original.project)?.color }"
-          />
-          {{ projectMeta.get(row.original.project)?.title ?? row.original.project }}
-        </div>
+          class="text-sm"
+        >{{ projectMeta.get(row.original.project)?.title ?? row.original.project }}</span>
         <span
           v-else
           class="text-dimmed"
@@ -312,13 +255,7 @@ function clearSelection() {
       </template>
 
       <template #theme-cell="{ row }">
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-          icon="i-lucide-palette"
-          :label="row.original.theme"
-        />
+        <span class="text-sm">{{ row.original.theme }}</span>
       </template>
 
       <template #filename-cell="{ row }">
@@ -327,9 +264,32 @@ function clearSelection() {
 
       <template #actions-cell="{ row }">
         <div
-          class="flex justify-end"
+          class="flex justify-end items-center gap-0.5"
           @click.stop
         >
+          <UTooltip text="Consulter">
+            <UButton
+              :to="deckPath(row.original)"
+              icon="i-lucide-eye"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              aria-label="Consulter"
+            />
+          </UTooltip>
+          <UTooltip
+            v-if="admin && !isFrozen(row.original)"
+            text="Éditer le contenu"
+          >
+            <UButton
+              :to="`/edit/${row.original.slug}`"
+              icon="i-lucide-pencil"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              aria-label="Éditer"
+            />
+          </UTooltip>
           <UDropdownMenu
             :items="rowActions(row.original)"
             :content="{ align: 'end' }"
@@ -339,7 +299,7 @@ function clearSelection() {
               color="neutral"
               variant="ghost"
               size="sm"
-              aria-label="Actions"
+              aria-label="Autres actions"
             />
           </UDropdownMenu>
         </div>
@@ -367,4 +327,56 @@ function clearSelection() {
       />
     </div>
   </div>
+
+  <!-- Bulk actions float over the page (fixed) so appearing never shifts the table. -->
+  <Transition
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="opacity-0 translate-y-3"
+    leave-active-class="transition duration-150 ease-in"
+    leave-to-class="opacity-0 translate-y-3"
+  >
+    <div
+      v-if="selectedItems.length > 0"
+      class="fixed inset-x-0 bottom-6 z-40 mx-auto flex w-max max-w-[calc(100vw-2rem)] items-center gap-1 rounded-full bg-inverted text-inverted py-1.5 pl-4 pr-2 shadow-2xl"
+    >
+      <span class="text-sm font-semibold whitespace-nowrap">
+        {{ selectedItems.length }} sélectionnée{{ selectedItems.length > 1 ? 's' : '' }}
+      </span>
+      <span class="mx-2 h-5 w-px bg-inverted/15" />
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors hover:bg-default/10"
+        @click="copyLinks(selectedItems)"
+      >
+        <UIcon
+          name="i-lucide-link"
+          class="size-4"
+        />
+        Copier les liens
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors hover:bg-default/10"
+        @click="exportCsv(selectedItems)"
+      >
+        <UIcon
+          name="i-lucide-file-down"
+          class="size-4"
+        />
+        Exporter CSV
+      </button>
+      <span class="mx-1 h-5 w-px bg-inverted/15" />
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-full p-1.5 transition-colors hover:bg-default/10"
+        aria-label="Effacer la sélection"
+        @click="clearSelection"
+      >
+        <UIcon
+          name="i-lucide-x"
+          class="size-4"
+        />
+      </button>
+    </div>
+  </Transition>
 </template>

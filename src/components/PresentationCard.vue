@@ -43,107 +43,63 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
     :to="to"
     variant="outline"
     :ui="{
-      root: 'ring-0 border-0 shadow-md hover:shadow-lg transition-shadow duration-200',
+      root: 'ring-0 border-0 shadow-sm hover:shadow-md hover:bg-accented transition-all duration-200',
       container: 'p-4 sm:p-5',
     }"
   >
     <template #body>
+      <!-- Admin actions pinned to the card's top-right corner (z-10 clears the
+           stretched-link overlay so the trigger stays clickable). -->
+      <div
+        v-if="admin && !frozen"
+        class="absolute top-2 right-2 z-10"
+        @click.stop.prevent
+      >
+        <UDropdownMenu
+          :items="adminActions"
+          :content="{ align: 'end' }"
+        >
+          <UButton
+            icon="i-lucide-ellipsis-vertical"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            aria-label="Actions"
+          />
+        </UDropdownMenu>
+      </div>
+
       <div class="flex flex-col gap-3">
         <div class="flex items-start justify-between gap-3">
-          <h2 class="font-semibold text-highlighted leading-snug line-clamp-2">
+          <h2
+            class="font-semibold text-highlighted leading-snug line-clamp-2"
+            :class="{ 'pr-6': admin && !frozen }"
+          >
             {{ presentation.title }}
           </h2>
-          <div
-            v-if="admin && !frozen"
-            class="shrink-0 -mt-1 -mr-1"
-            @click.stop.prevent
-          >
-            <UDropdownMenu
-              :items="adminActions"
-              :content="{ align: 'end' }"
-            >
-              <UButton
-                icon="i-lucide-ellipsis-vertical"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                aria-label="Actions"
-              />
-            </UDropdownMenu>
-          </div>
           <UIcon
-            v-else
+            v-if="!(admin && !frozen)"
             name="i-lucide-arrow-up-right"
             class="shrink-0 size-4 text-dimmed mt-0.5"
           />
         </div>
 
+        <!-- Taxonomies stripped to plain text (clean base): no colour, no icon. -->
         <div
           v-if="frozen || !minimal"
-          class="flex flex-wrap items-center gap-1.5"
+          class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted"
         >
-          <UTooltip
-            v-if="frozen"
-            text="Instantané autoportant : contenu figé, non éditable en direct"
-          >
-            <UBadge
-              color="info"
-              variant="subtle"
-              size="sm"
-              icon="i-lucide-snowflake"
-              :label="presentation.lifecycle === 'archived' ? 'Archivée' : 'Gelée'"
-            />
-          </UTooltip>
-          <!-- Public is the implicit default: only badge the exceptions. -->
-          <UBadge
-            v-else-if="!minimal && statusDisplay && presentation.status !== 'public'"
-            :color="statusDisplay.color"
-            variant="subtle"
-            size="sm"
-            :icon="statusDisplay.icon"
-            :label="statusDisplay.label"
-          />
-
-          <UBadge
-            v-if="!minimal && presentation.unlisted"
-            color="neutral"
-            variant="subtle"
-            size="sm"
-            icon="i-lucide-eye-off"
-            label="Unlisted"
-          />
-
-          <UTooltip
-            v-if="!minimal && admin && presentation.published === false && !presentation.fileBacked"
-            text="Aucune version publiée : le deck n'est pas encore servable"
-          >
-            <UBadge
-              color="warning"
-              variant="subtle"
-              size="sm"
-              icon="i-lucide-cloud-off"
-              label="Non publié"
-            />
-          </UTooltip>
-
-          <UBadge
-            v-if="!minimal"
-            color="neutral"
-            variant="subtle"
-            size="sm"
-            icon="i-lucide-palette"
-            :label="presentation.theme"
-          />
+          <span v-if="frozen">{{ presentation.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
+          <span v-else-if="!minimal && statusDisplay && presentation.status !== 'public'">{{ statusDisplay.label }}</span>
+          <span v-if="!minimal && presentation.unlisted">Unlisted</span>
+          <span v-if="!minimal && admin && presentation.published === false && !presentation.fileBacked">Non publié</span>
+          <span v-if="!minimal">{{ presentation.theme }}</span>
         </div>
 
         <p
           v-if="admin && !minimal"
-          class="text-xs text-muted font-mono flex items-center gap-1.5"
+          class="text-xs text-muted font-mono"
         >
-          <UIcon
-            name="i-lucide-file-text"
-            class="size-3.5"
-          />
           {{ presentation.filename }}
         </p>
       </div>
