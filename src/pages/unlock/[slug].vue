@@ -48,8 +48,11 @@ async function unlock() {
 </script>
 
 <template>
-  <div class="tailwind-app min-h-dvh bg-elevated flex items-center justify-center p-8">
-    <UCard class="w-full max-w-md">
+  <div class="tailwind-app min-h-dvh bg-muted flex items-center justify-center p-8">
+    <UCard
+      class="w-full max-w-md"
+      :ui="{ root: 'ring-0 border-0 shadow-lg' }"
+    >
       <div class="flex flex-col gap-2">
         <div class="grid place-items-center size-14 rounded-2xl bg-warning/15 text-warning mb-2">
           <UIcon

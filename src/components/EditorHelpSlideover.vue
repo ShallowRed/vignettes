@@ -135,7 +135,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               v-for="name in LAYOUT_NAMES"
               :key="name"
               color="neutral"
-              variant="outline"
+              variant="subtle"
               size="sm"
               class="font-mono"
               :label="name"

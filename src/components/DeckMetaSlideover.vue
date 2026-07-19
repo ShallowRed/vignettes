@@ -205,7 +205,7 @@ async function removeGrant(userId: number) {
           />
         </UFormField>
 
-        <div class="rounded-lg border border-default p-3 flex flex-col gap-3">
+        <div class="rounded-lg bg-muted p-3 flex flex-col gap-3">
           <p class="text-xs font-medium text-muted uppercase tracking-wide">
             Catalogue
           </p>

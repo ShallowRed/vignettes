@@ -380,7 +380,7 @@ async function onMetaSaved() {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col overflow-hidden bg-default">
+  <div class="tailwind-app h-screen flex flex-col overflow-hidden bg-default">
     <header class="flex items-center gap-2 px-3 h-14 shrink-0 border-b border-default">
       <UTooltip text="Retour au catalogue">
         <UButton
@@ -415,7 +415,7 @@ async function onMetaSaved() {
       >
         <UBadge
           color="neutral"
-          variant="outline"
+          variant="subtle"
           size="sm"
           icon="i-lucide-file-input"
           :label="loadedFrom === 'published' ? 'Depuis le publié' : 'Depuis le fichier'"
@@ -436,7 +436,7 @@ async function onMetaSaved() {
       <UBadge
         v-if="!writable"
         color="warning"
-        variant="outline"
+        variant="subtle"
         size="sm"
         icon="i-lucide-lock"
         label="Lecture seule"

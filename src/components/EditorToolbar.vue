@@ -17,6 +17,11 @@ function run(action: (view: EditorView) => void) {
     action(props.view)
 }
 
+// Ghost buttons sit on a bg-elevated rail, whose default ghost hover (also
+// bg-elevated) is invisible; bump the hover a step to bg-accented so every
+// control gives clear feedback. tailwind-merge lets this win over the variant.
+const btnHover = 'hover:bg-accented'
+
 // Discoverability menu: every engine component/annotation, inserted as a
 // tabbable snippet from the same reference the autocompletion uses.
 const insertItems = computed<DropdownMenuItem[][]>(() => [
@@ -56,27 +61,26 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
 </script>
 
 <template>
-  <div class="flex items-center gap-1 px-2 py-1 border-b border-default bg-elevated/50 overflow-x-auto">
+  <div class="flex items-center gap-2 px-3 py-2 border-b border-default bg-default overflow-x-auto">
     <UDropdownMenu :items="headingItems">
       <UButton
         icon="i-lucide-heading"
         color="neutral"
         variant="ghost"
-        size="xs"
+        size="sm"
+        :class="btnHover"
         trailing-icon="i-lucide-chevron-down"
         :disabled="disabled || !view"
         aria-label="Titre"
       />
     </UDropdownMenu>
 
-    <template
+    <!-- Formatting actions grouped into segmented clusters on a soft rail. -->
+    <div
       v-for="(group, index) in groups"
       :key="index"
+      class="flex items-center gap-0.5 rounded-lg bg-elevated p-0.5"
     >
-      <USeparator
-        orientation="vertical"
-        class="h-5 mx-1"
-      />
       <UTooltip
         v-for="button in group"
         :key="button.icon"
@@ -87,45 +91,46 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
           :icon="button.icon"
           color="neutral"
           variant="ghost"
-          size="xs"
+          size="sm"
+          :class="btnHover"
           :disabled="disabled || !view"
           :aria-label="button.tooltip"
           @click="run(button.action)"
         />
       </UTooltip>
-    </template>
+    </div>
 
-    <USeparator
-      orientation="vertical"
-      class="h-5 mx-1"
-    />
-    <UTooltip text="Nouvelle diapositive">
-      <UButton
-        icon="i-lucide-between-horizontal-start"
-        color="neutral"
-        variant="ghost"
-        size="xs"
-        label="Diapo"
-        :disabled="disabled || !view"
-        @click="run(insertSlideBreak)"
-      />
-    </UTooltip>
+    <div class="flex items-center gap-0.5 rounded-lg bg-elevated p-0.5">
+      <UTooltip text="Nouvelle diapositive">
+        <UButton
+          icon="i-lucide-between-horizontal-start"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :class="btnHover"
+          label="Diapo"
+          :disabled="disabled || !view"
+          @click="run(insertSlideBreak)"
+        />
+      </UTooltip>
 
-    <UDropdownMenu
-      :items="insertItems"
-      :content="{ align: 'start' }"
-      :ui="{ content: 'max-h-96 overflow-y-auto' }"
-    >
-      <UButton
-        icon="i-lucide-shapes"
-        color="neutral"
-        variant="ghost"
-        size="xs"
-        label="Insérer"
-        trailing-icon="i-lucide-chevron-down"
-        :disabled="disabled || !view"
-      />
-    </UDropdownMenu>
+      <UDropdownMenu
+        :items="insertItems"
+        :content="{ align: 'start' }"
+        :ui="{ content: 'max-h-96 overflow-y-auto' }"
+      >
+        <UButton
+          icon="i-lucide-shapes"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :class="btnHover"
+          label="Insérer"
+          trailing-icon="i-lucide-chevron-down"
+          :disabled="disabled || !view"
+        />
+      </UDropdownMenu>
+    </div>
 
     <div class="flex-1" />
     <UTooltip text="Aide et syntaxe">
@@ -133,7 +138,8 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
         icon="i-lucide-circle-help"
         color="neutral"
         variant="ghost"
-        size="xs"
+        size="sm"
+        :class="btnHover"
         aria-label="Aide et syntaxe"
         @click="emit('help')"
       />

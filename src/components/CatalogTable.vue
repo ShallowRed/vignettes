@@ -199,7 +199,7 @@ function clearSelection() {
   <div class="flex flex-col gap-4">
     <div
       v-if="selectedItems.length > 0"
-      class="flex flex-wrap items-center gap-2 rounded-lg bg-elevated px-4 py-2.5 ring ring-accented"
+      class="flex flex-wrap items-center gap-2 rounded-lg bg-elevated px-4 py-2.5 shadow-sm"
     >
       <span class="text-sm font-medium text-highlighted">
         {{ selectedItems.length }} sélectionnée(s)
@@ -240,7 +240,7 @@ function clearSelection() {
       :columns="columns"
       :sorting-options="{ getSortedRowModel: getSortedRowModel() }"
       :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-      :ui="{ root: 'rounded-lg ring ring-default', tr: 'cursor-pointer' }"
+      :ui="{ root: 'rounded-lg bg-default shadow-sm', tr: 'cursor-pointer' }"
       @select="onRowClick"
     >
       <template #title-cell="{ row }">
@@ -314,7 +314,7 @@ function clearSelection() {
       <template #theme-cell="{ row }">
         <UBadge
           color="neutral"
-          variant="outline"
+          variant="subtle"
           size="sm"
           icon="i-lucide-palette"
           :label="row.original.theme"

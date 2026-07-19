@@ -41,8 +41,11 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
 <template>
   <UPageCard
     :to="to"
-    variant="subtle"
-    :ui="{ container: 'p-4 sm:p-5' }"
+    variant="outline"
+    :ui="{
+      root: 'ring-0 border-0 shadow-md hover:shadow-lg transition-shadow duration-200',
+      container: 'p-4 sm:p-5',
+    }"
   >
     <template #body>
       <div class="flex flex-col gap-3">
@@ -126,7 +129,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           <UBadge
             v-if="!minimal"
             color="neutral"
-            variant="outline"
+            variant="subtle"
             size="sm"
             icon="i-lucide-palette"
             :label="presentation.theme"
