@@ -12,11 +12,14 @@ const open = defineModel<boolean>('open', { required: true })
 
 const toast = useToast()
 
-// '' means "none" in the project select; dropped at POST time.
+// A non-empty sentinel marks "none" in the project select (reka-ui forbids an
+// empty-string SelectItem value); dropped at POST time.
+const NONE = '__none__'
+
 const state = reactive({
   title: '',
   slug: '',
-  project: '',
+  project: NONE,
   theme: 'dsfr',
 })
 const slugEdited = ref(false)
@@ -30,7 +33,7 @@ watch(() => state.title, (title) => {
 
 watch(open, (now) => {
   if (now) {
-    Object.assign(state, { title: '', slug: '', project: '', theme: 'dsfr' })
+    Object.assign(state, { title: '', slug: '', project: NONE, theme: 'dsfr' })
     slugEdited.value = false
     errorMessage.value = ''
   }
@@ -40,7 +43,7 @@ const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 const canSubmit = computed(() => state.title.trim().length > 0 && isDeckSlug(state.slug) && !pending.value)
 
 const projectItems = computed(() => [
-  { label: 'Sans projet', value: '' },
+  { label: 'Sans projet', value: NONE },
   ...(props.projects ?? []).map(p => ({ label: p.title ?? p.slug, value: p.slug })),
 ])
 
@@ -61,7 +64,7 @@ async function submit() {
       body: {
         slug: state.slug,
         title: state.title.trim(),
-        ...(state.project ? { project: state.project } : {}),
+        ...(state.project !== NONE ? { project: state.project } : {}),
         ...(state.theme ? { theme: state.theme } : {}),
       },
     })

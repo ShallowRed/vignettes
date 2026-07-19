@@ -24,14 +24,17 @@ const { role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 const toast = useToast()
 
-// '' means "none" in the selects; mapped to null (clear column) at PATCH time.
+// A non-empty sentinel marks "none" in the selects (reka-ui forbids an
+// empty-string SelectItem value); mapped back to null (clear column) at PATCH time.
+const NONE = '__none__'
+
 const state = reactive({
   title: '',
   status: 'draft' as PublicationStatus,
   unlisted: false,
   featured: false,
-  project: '',
-  theme: '',
+  project: NONE,
+  theme: NONE,
   alias: '',
 })
 
@@ -44,8 +47,8 @@ watch(open, (now) => {
       status: props.item.status,
       unlisted: props.item.unlisted ?? false,
       featured: props.item.featured ?? false,
-      project: props.item.project ?? '',
-      theme: props.item.theme ?? '',
+      project: props.item.project ?? NONE,
+      theme: props.item.theme ?? NONE,
       alias: props.item.alias ?? '',
     })
     if (isOwner.value)
@@ -60,7 +63,7 @@ const statusItems = PUBLICATION_STATUSES.map(status => ({
 }))
 
 const projectItems = computed(() => [
-  { label: 'Sans projet', value: '' },
+  { label: 'Sans projet', value: NONE },
   ...(props.projects ?? []).map(p => ({ label: p.title ?? p.slug, value: p.slug })),
 ])
 
@@ -82,8 +85,8 @@ async function save() {
         status: state.status,
         unlisted: state.unlisted,
         featured: state.featured,
-        project: state.project || null,
-        theme: state.theme || null,
+        project: state.project === NONE ? null : state.project,
+        theme: state.theme === NONE ? null : state.theme,
         alias: state.alias.trim() || null,
       },
     })
@@ -231,7 +234,7 @@ async function removeGrant(userId: number) {
           <UFormField label="Thème">
             <USelect
               v-model="state.theme"
-              :items="[{ label: 'Par défaut (dsfr)', value: '' }, ...themeItems]"
+              :items="[{ label: 'Par défaut (dsfr)', value: NONE }, ...themeItems]"
               class="w-full"
             />
           </UFormField>

@@ -43,6 +43,13 @@ export function useReveal(
     // Dynamic import to avoid SSR issues.
     const { default: Reveal } = await import('reveal.js')
 
+    // The import above yields to the event loop; a fast route change can unmount
+    // the deck in that gap, nulling `container.value`. Constructing Reveal then
+    // makes it fall back to `document.querySelector('.reveal')` — gone too — which
+    // logs "Unable to find presentation root" and crashes reading `.slides`.
+    if (!container.value)
+      return
+
     const mergedConfig = mergeRevealConfig(config)
 
     revealInstance = new Reveal(container.value, mergedConfig)
