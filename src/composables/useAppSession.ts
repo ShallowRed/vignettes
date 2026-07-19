@@ -37,7 +37,7 @@ export function useAppSession() {
     const revalidated = useState('app-session-revalidated', () => false)
     if (!revalidated.value) {
       revalidated.value = true
-      onNuxtReady(() => { refresh() })
+      onNuxtReady(() => refresh())
     }
   }
 
