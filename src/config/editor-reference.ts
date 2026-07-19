@@ -66,12 +66,12 @@ export const COMPONENT_SNIPPETS: readonly ReferenceSnippet[] = [
   {
     label: '::Image',
     description: 'Image avec cadrage (fit, position, rounded, shadow)',
-    snippet: '::Image{src="${/images/exemple.png}" alt="${Description}"}\n::',
+    snippet: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
     label: '::FullScreenImage',
     description: 'Image plein écran (occupe toute la diapo)',
-    snippet: '::FullScreenImage{src="${/images/exemple.png}" alt="${Description}"}\n::',
+    snippet: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
     label: '::Iframe',
@@ -169,7 +169,7 @@ export const SLIDE_TEMPLATES: readonly ReferenceSnippet[] = [
   {
     label: 'Média + texte',
     description: 'Texte à gauche, image à droite (layout media-right)',
-    snippet: '## ${Titre de la diapo}\n\n:layout{name="media-right"}\n\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n\n::Image{src="${/images/exemple.png}" alt="${Description}"}\n::',
+    snippet: '## ${Titre de la diapo}\n\n:layout{name="media-right"}\n\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n\n::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
     label: 'Citation',
@@ -179,7 +179,7 @@ export const SLIDE_TEMPLATES: readonly ReferenceSnippet[] = [
   {
     label: 'Image plein écran',
     description: 'Image qui occupe toute la diapo',
-    snippet: '---\n\n::FullScreenImage{src="${/images/exemple.png}" alt="${Description}"}\n::',
+    snippet: '---\n\n::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
     label: 'Galerie Storybook',

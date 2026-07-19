@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Image d'exemple">
+  <rect x="4" y="4" width="792" height="442" rx="20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="4" stroke-dasharray="14 12"/>
+  <circle cx="298" cy="168" r="40" fill="#cbd5e1"/>
+  <path d="M232 322 L360 194 L452 284 L540 206 L604 322 Z" fill="#cbd5e1"/>
+  <text x="400" y="388" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="36" font-weight="600" fill="#94a3b8">Image</text>
+</svg>
