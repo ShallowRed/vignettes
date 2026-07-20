@@ -8,6 +8,7 @@ import { createDeckMeta } from '../db/deck-meta'
 import { createDbDirectory } from '../db/directory'
 import { createPermissionStore } from '../db/permission-store'
 import { createProjectPermissionStore } from '../db/project-permission-store'
+import { createProjectStore } from '../db/project-store'
 import { decks } from '../db/schema'
 import { useDb } from './db'
 
@@ -42,6 +43,11 @@ export function usePermissionStore() {
 /** Project-scoped permission grants (master key over a project's decks). */
 export function useProjectPermissionStore() {
   return createProjectPermissionStore(useDb())
+}
+
+/** Project lifecycle writes (create / rename / trash / restore / purge). */
+export function useProjectStore() {
+  return createProjectStore(useDb())
 }
 
 /**

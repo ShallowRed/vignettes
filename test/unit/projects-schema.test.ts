@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { parseProjects } from '../../shared/projects/schema'
+import { parseProjects, slugifyProject } from '../../shared/projects/schema'
+
+describe('slugifyProject', () => {
+  it('lowercases, strips accents and collapses to dashes', () => {
+    expect(slugifyProject('Refonte Présentation')).toBe('refonte-presentation')
+    expect(slugifyProject('  Été 2026 !! ')).toBe('ete-2026')
+    expect(slugifyProject('Client — Acme')).toBe('client-acme')
+  })
+
+  it('returns an empty string when nothing survives (caller falls back)', () => {
+    expect(slugifyProject('🎉')).toBe('')
+    expect(slugifyProject('   ')).toBe('')
+  })
+})
 
 describe('parseProjects', () => {
   it('maps slug → metadata and sorts by order then title', () => {

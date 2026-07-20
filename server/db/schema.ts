@@ -19,6 +19,8 @@ export const decks = sqliteTable('decks', {
   /** True once a publish or an admin edit made this row the metadata truth; plain draft anchors stay false. */
   managed: integer('managed', { mode: 'boolean' }).notNull().default(false),
   publishedVersionId: integer('published_version_id'),
+  /** Non-null once trashed: soft-deleted, hidden everywhere but restorable. */
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
@@ -59,6 +61,8 @@ export const projects = sqliteTable('projects', {
   title: text('title').notNull(),
   order: integer('order').notNull().default(0),
   color: text('color'),
+  /** Non-null once trashed: soft-deleted with its decks, restorable as a whole. */
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })

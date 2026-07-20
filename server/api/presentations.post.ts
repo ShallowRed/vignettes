@@ -51,8 +51,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Draft storage is unavailable on this deployment' })
   }
 
-  if (await useDeckMeta().get(slug)) {
-    throw createError({ statusCode: 409, statusMessage: `A deck "${slug}" already exists` })
+  if (await useDeckMeta().existsIncludingTrashed(slug)) {
+    throw createError({ statusCode: 409, statusMessage: `A deck "${slug}" already exists (it may be in the trash)` })
   }
 
   await drafts.save(slug, markdownToYDocUpdate(starterMarkdown({ title, theme, project })))

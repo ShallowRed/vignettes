@@ -4,9 +4,9 @@ import { useCollabServer } from '../../utils/collab'
 import { useDeckMeta } from '../../utils/sources'
 
 /**
- * DELETE /api/presentations/:slug — erase the deck's database state (draft,
- * versions, grants, aliases, row). The database is the source of truth, so this
- * is permanent. Owner only: versions are history and this destroys them.
+ * DELETE /api/presentations/:slug — move the deck to the trash (soft-delete).
+ * Reversible from the trash; the permanent erase is the trash purge endpoint.
+ * Owner only, and refused while a collab session is open on the deck.
  */
 export default defineEventHandler(async (event) => {
   await assertOwner(event)
@@ -20,8 +20,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: 'A collab session is open for this deck; close it first' })
   }
 
-  const removed = await useDeckMeta().remove(slug)
-  if (!removed) {
+  const trashed = await useDeckMeta().softDelete(slug)
+  if (!trashed) {
     throw createError({ statusCode: 404, statusMessage: `No database state for "${slug}" (file decks are managed in git)` })
   }
 

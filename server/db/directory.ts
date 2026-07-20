@@ -1,7 +1,7 @@
 import type { DeckDirectory, DeckDirectoryEntry } from '#shared/deck'
 import type { ProjectDirectory } from '#shared/projects'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { asc, eq, isNotNull } from 'drizzle-orm'
+import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm'
 import { deckAliases, decks, projects } from './schema'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
@@ -32,26 +32,27 @@ export function createDbDirectory(db: Db): { decks: DeckDirectory, projects: Pro
   return {
     decks: {
       async resolveAlias(alias) {
-        const direct = db.select().from(decks).where(eq(decks.alias, alias)).get()
-          ?? db.select().from(decks).where(eq(decks.slug, alias)).get()
+        // A trashed deck resolves to nothing: its alias 404s rather than redirecting.
+        const direct = db.select().from(decks).where(and(eq(decks.alias, alias), isNull(decks.deletedAt))).get()
+          ?? db.select().from(decks).where(and(eq(decks.slug, alias), isNull(decks.deletedAt))).get()
         if (direct?.alias)
           return toEntry(direct, historicalFor(direct.slug))
 
         const historical = db.select().from(deckAliases).where(eq(deckAliases.alias, alias)).get()
         if (!historical)
           return null
-        const deck = db.select().from(decks).where(eq(decks.slug, historical.deckSlug)).get()
+        const deck = db.select().from(decks).where(and(eq(decks.slug, historical.deckSlug), isNull(decks.deletedAt))).get()
         return deck?.alias ? toEntry(deck, historicalFor(deck.slug)) : null
       },
 
       async list() {
-        return db.select().from(decks).where(isNotNull(decks.alias)).all().map(row => toEntry(row, historicalFor(row.slug)))
+        return db.select().from(decks).where(and(isNotNull(decks.alias), isNull(decks.deletedAt))).all().map(row => toEntry(row, historicalFor(row.slug)))
       },
     },
 
     projects: {
       async list() {
-        return db.select().from(projects).orderBy(asc(projects.order), asc(projects.title)).all().map(row => ({
+        return db.select().from(projects).where(isNull(projects.deletedAt)).orderBy(asc(projects.order), asc(projects.title)).all().map(row => ({
           slug: row.slug,
           title: row.title,
           order: row.order,
@@ -60,7 +61,7 @@ export function createDbDirectory(db: Db): { decks: DeckDirectory, projects: Pro
       },
 
       async resolve(slug) {
-        const row = db.select().from(projects).where(eq(projects.slug, slug)).get()
+        const row = db.select().from(projects).where(and(eq(projects.slug, slug), isNull(projects.deletedAt))).get()
         return row
           ? { slug: row.slug, title: row.title, order: row.order, color: row.color ?? undefined }
           : null

@@ -22,6 +22,20 @@ export interface Project extends ProjectMeta {
   slug: string
 }
 
+/**
+ * Derive a url-safe slug from a free-text project title: strip accents, lower,
+ * keep `[a-z0-9-]`, collapse dashes. Returns `''` when nothing survives (the
+ * caller falls back to a generated slug). Pure — unit-tested.
+ */
+export function slugifyProject(title: string): string {
+  return title
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '') // strip combining diacritics
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 // Non-destructive: an invalid file yields an empty list, never throws into a
 // request path. Sorted by order then title.
 export function parseProjects(input: unknown): Project[] {

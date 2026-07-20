@@ -64,6 +64,13 @@
       "when": 1784574359692,
       "tag": "0008_project_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1784578036695,
+      "tag": "0009_project_lifecycle_trash",
+      "breakpoints": true
     }
   ]
 }

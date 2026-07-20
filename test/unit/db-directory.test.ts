@@ -90,7 +90,7 @@ describe('deck meta', () => {
     expect(patched).toMatchObject({ title: 'Fresh', status: 'public', alias: 'fresh-alias', unlisted: true })
   })
 
-  it('remove erases every trace of the deck and only that deck', async () => {
+  it('purge erases every trace of the deck and only that deck', async () => {
     const meta = createDeckMeta(db)
     db.insert(users).values({ id: 7, login: 'ana', createdAt: now, lastLoginAt: now }).run()
     db.insert(decks).values([
@@ -106,7 +106,7 @@ describe('deck meta', () => {
     db.insert(deckAliases).values({ alias: 'old-path', deckSlug: 'doomed' }).run()
     db.insert(deckPermissions).values({ deckSlug: 'doomed', userId: 7, role: 'viewer', grantedBy: 'ana', createdAt: now }).run()
 
-    expect(await meta.remove('doomed')).toBe(true)
+    expect(await meta.purge('doomed')).toBe(true)
     expect(await meta.get('doomed')).toBeNull()
     expect(db.select().from(deckVersions).all()).toEqual([])
     expect(db.select().from(deckDrafts).all()).toEqual([])
@@ -114,6 +114,6 @@ describe('deck meta', () => {
     expect(db.select().from(deckPermissions).all()).toEqual([])
     expect(await meta.get('kept')).not.toBeNull()
 
-    expect(await meta.remove('ghost')).toBe(false)
+    expect(await meta.purge('ghost')).toBe(false)
   })
 })
