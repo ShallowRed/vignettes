@@ -14,17 +14,23 @@ const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeS
 
 const { privileged } = useAppSession()
 
+const nuxtApp = useNuxtApp()
 const requestFetch = useRequestFetch()
-// Same as the catalog home: never reuse the cached payload, it is session-dependent.
+// Same as the catalog home: use the SSR payload during hydration, never after
+// (the listing is session-dependent). See index.vue for the full rationale.
+function sessionScopedCache(key: string) {
+  return nuxtApp.isHydrating ? nuxtApp.payload.data[key] : undefined
+}
+
 const { data: presentations, status, error, refresh } = await useAsyncData(
   'presentations',
   () => requestFetch<PresentationListItem[]>('/api/presentations'),
-  { default: () => [], getCachedData: () => undefined },
+  { default: () => [], getCachedData: sessionScopedCache },
 )
 const { data: projects } = await useAsyncData(
   'projects',
   () => $fetch<Project[]>('/api/projects'),
-  { default: () => [], getCachedData: () => undefined },
+  { default: () => [], getCachedData: sessionScopedCache },
 )
 
 watch(privileged, (now, before) => {

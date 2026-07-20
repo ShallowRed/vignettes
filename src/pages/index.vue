@@ -8,20 +8,26 @@ import { useAppSession } from '~/composables/useAppSession'
 // privileged users can flip to the flat management console for cross-project work.
 const { privileged } = useAppSession()
 
+const nuxtApp = useNuxtApp()
 const requestFetch = useRequestFetch()
-// `getCachedData` off: the catalog depends on the session, so the cached payload
-// must never be reused on client navigation — that is how a stale (anonymous)
-// listing came back when returning to this page.
+// Session-dependent catalog: keep the SSR payload during hydration (else the
+// client discards it and flashes the empty state — a mismatch), but never reuse
+// it on later client navigation (that is how a stale anonymous listing came
+// back when returning to this page). `watch(privileged)` refetches on login.
+function sessionScopedCache(key: string) {
+  return nuxtApp.isHydrating ? nuxtApp.payload.data[key] : undefined
+}
+
 const { data: presentations, status, error, refresh } = await useAsyncData(
   'presentations',
   () => requestFetch<PresentationListItem[]>('/api/presentations'),
-  { default: () => [], getCachedData: () => undefined },
+  { default: () => [], getCachedData: sessionScopedCache },
 )
 
 const { data: projects } = await useAsyncData(
   'projects',
   () => $fetch<Project[]>('/api/projects'),
-  { default: () => [], getCachedData: () => undefined },
+  { default: () => [], getCachedData: sessionScopedCache },
 )
 
 watch(privileged, (now, before) => {
