@@ -4,34 +4,26 @@ import { resolveDeck } from '../../shared/deck'
 
 function fakeSource(map: Record<string, string>): ContentSource {
   return {
-    id: 'codimd',
+    id: 'db',
     load: async ref => (ref in map ? { raw: map[ref]! } : null),
   }
 }
 
 describe('content source port + resolveDeck (injectable, I/O-free)', () => {
-  const note = '---\ntheme: brand\nstorybook: https://public.example\nreveal:\n  margin: 0.2\n---\n\n# Body'
-  const stub = '---\ntheme: dsfr\nstorybook: http://localhost:6007\naccess: public\nsource: codimd\nnoteId: abc\n---\n\n# Stub'
-  const source = fakeSource({ abc: note })
+  const deck = '---\ntheme: dsfr\nstorybook: http://localhost:6007\naccess: public\n---\n\n# Body'
+  const source = fakeSource({ 'my-deck': deck })
 
   it('returns null for an unknown ref (fail-closed friendly)', async () => {
     expect(await source.load('missing')).toBeNull()
   })
 
-  it('feeds resolveDeck and yields the same body across route descriptors', async () => {
-    const remote = (await source.load('abc'))!.raw
+  it('feeds resolveDeck, which reads the loaded markdown as the only truth', async () => {
+    const raw = (await source.load('my-deck'))!.raw
+    const resolved = resolveDeck({ stub: raw })
 
-    const codimd = resolveDeck({ preset: 'dsfr', remote, noteOverride: 'all', source: 'codimd' })
-    const alias = resolveDeck({ stub, remote, noteOverride: ['storybook'], source: 'codimd' })
-    const slides = resolveDeck({ stub, remote, noteOverride: [], source: 'codimd' })
-
-    expect(codimd.body).toBe('\n# Body')
-    expect(alias.body).toBe('\n# Body')
-    expect(slides.body).toBe('\n# Body')
-
-    expect(codimd.meta.theme).toBe('brand')
-    expect(alias.meta.theme).toBe('dsfr') // stub wins, note.theme not whitelisted
-    expect(alias.meta.storybook).toBe('https://public.example')
-    expect(slides.meta.storybook).toBe('http://localhost:6007')
+    expect(resolved.body).toBe('\n# Body')
+    expect(resolved.meta.theme).toBe('dsfr')
+    expect(resolved.meta.storybook).toBe('http://localhost:6007')
+    expect(resolved.meta.access).toBe('public')
   })
 })

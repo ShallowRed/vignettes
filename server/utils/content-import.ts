@@ -22,8 +22,6 @@ interface RegistryEntry {
   title?: string
   slug?: string
   lifecycle?: string
-  source?: string
-  noteId?: string
   frozenBundle?: string
   aliases?: string[]
 }
@@ -50,8 +48,6 @@ interface DeckPlan {
   project: string | null
   theme: string | null
   alias: string | null
-  source: string | null
-  noteId: string | null
   frozenBundle: string | null
   accessPasswordHash: string | null
   unlisted: boolean
@@ -162,8 +158,6 @@ export async function runContentImport(db: Db, options: { apply: boolean }): Pro
       project,
       theme: (data.theme as string) ?? null,
       alias: reg?.alias ?? null,
-      source: reg?.source ?? null,
-      noteId: reg?.noteId ?? null,
       frozenBundle: reg?.frozenBundle ?? null,
       accessPasswordHash: (data.accessPassword as string) ?? null,
       unlisted: Boolean(data.unlisted),
@@ -227,8 +221,6 @@ export async function runContentImport(db: Db, options: { apply: boolean }): Pro
         theme: p.theme,
         accessPasswordHash: p.accessPasswordHash,
         frozenBundle: p.frozenBundle,
-        source: p.source,
-        noteId: p.noteId,
         unlisted: p.unlisted,
         managed: true,
       }

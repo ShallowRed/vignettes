@@ -12,7 +12,6 @@ import { PARSERS } from '~/utils/slide-ast'
  */
 export async function buildPresentationData(
   raw: string,
-  editUrl?: string,
 ): Promise<PresentationData> {
   const ast = await parseMarkdown(raw)
   const metadata = {
@@ -24,7 +23,7 @@ export async function buildPresentationData(
   // `?? []` keeps `slides` an array even if a parser degrades, so downstream
   // `.slides.length` guards can never read `.length` of undefined.
   const slides = (await parser.parse(raw, metadata)) ?? []
-  return { slides, metadata, editUrl }
+  return { slides, metadata }
 }
 
 export function usePresentation(slug: string, apiUrl?: string) {
@@ -37,16 +36,15 @@ export function usePresentation(slug: string, apiUrl?: string) {
     `presentation-${slug}`,
     async (): Promise<PresentationData> => {
       const response = apiUrl
-        ? await $fetch<{ content: string, editUrl?: string }>(apiUrl)
-        : await requestFetch<{ content: string, editUrl?: string }>(`/api/presentations/${slug}`)
+        ? await $fetch<{ content: string }>(apiUrl)
+        : await requestFetch<{ content: string }>(`/api/presentations/${slug}`)
 
-      return buildPresentationData(response.content, response.editUrl)
+      return buildPresentationData(response.content)
     },
     {
       default: () => ({
         slides: [],
         metadata: { ...DEFAULT_METADATA },
-        editUrl: undefined,
       }),
     },
   )

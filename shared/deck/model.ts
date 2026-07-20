@@ -2,9 +2,9 @@ import type { DeckMeta } from './schema'
 
 /**
  * Deck intermediate representation: parsers (readers) produce a `DeckModel`,
- * renderers (writers) consume it. One normalized model kills the live/frozen/
- * CodiMD drift. `Slide` keeps MDC AST nodes as `unknown` to stay framework-free;
- * only renderers interpret them.
+ * renderers (writers) consume it. One normalized model kills live/frozen drift.
+ * `Slide` keeps MDC AST nodes as `unknown` to stay framework-free; only
+ * renderers interpret them.
  */
 
 /** A single slide produced by a parser. AST fields are renderer-interpreted. */

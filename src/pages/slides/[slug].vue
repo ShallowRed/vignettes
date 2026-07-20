@@ -8,8 +8,6 @@ const slug = route.params.slug as string
 
 const { presentationData, error } = usePresentation(slug)
 
-const editUrl = computed(() => presentationData.value?.editUrl || null)
-
 const requiresPassword = computed(() => {
   if (!error.value)
     return false
@@ -38,17 +36,6 @@ watch(requiresPassword, (needsPassword) => {
       >
         <RevealSlides :presentation-data="presentationData" />
       </RevealPresentation>
-
-      <a
-        v-if="editUrl"
-        :href="editUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="codimd-edit-link"
-        title="Edit collaboratively"
-      >
-        Edit
-      </a>
     </template>
 
     <DeckError
@@ -66,24 +53,5 @@ watch(requiresPassword, (needsPassword) => {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.codimd-edit-link {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  z-index: 100;
-  padding: 0.4rem 0.8rem;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  border-radius: 0.4rem;
-  font-size: 0.85rem;
-  text-decoration: none;
-  opacity: 0.3;
-  transition: opacity 0.2s;
-}
-
-.codimd-edit-link:hover {
-  opacity: 1;
 }
 </style>

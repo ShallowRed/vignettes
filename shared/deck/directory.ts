@@ -1,5 +1,4 @@
 import type { Lifecycle } from '../access/status'
-import type { NoteSource } from './schema'
 
 /**
  * `DeckDirectory` port: the diffusion registry — stable aliases, lifecycle and
@@ -13,8 +12,6 @@ export interface DeckDirectoryEntry {
   slug: string
   title?: string
   lifecycle: Lifecycle
-  source?: NoteSource
-  noteId?: string
   /** Bundle folder served when lifecycle is frozen/archived. */
   frozenBundle?: string
   /** Legacy yaml access-folder hint. */

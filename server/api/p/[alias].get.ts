@@ -1,15 +1,13 @@
-import type { NoteSource } from '#shared/deck'
-import { resolveDeckStatus, splitFrontmatter } from '#shared/deck'
+import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '#shared/deck'
 import { gateDeckAccess } from '../../utils/access'
-import { resolveDeckForRoute } from '../../utils/deck-resolution'
 import { readArchivedStub } from '../../utils/presentations'
 import { deckDirectory, publishedSource, useDeckMeta } from '../../utils/sources'
 
 /**
- * GET /api/p/:alias — resolve an alias through the registry and serve content per
- * lifecycle: live (stub frontmatter + collaborative body) or frozen/archived
- * (report the static bundle URL). `noteOverride: ['storybook']` makes the diffused
- * URL use the public Storybook from the live note, not the stub's local-dev one.
+ * GET /api/p/:alias — resolve an alias through the directory and serve content
+ * per lifecycle: live (the published markdown) or frozen/archived (report the
+ * static bundle URL). The body is always the deck's published version now; the
+ * collaborative-note fetch was retired in favour of the integrated editor.
  */
 export default defineEventHandler(async (event) => {
   const alias = getRouterParam(event, 'alias')
@@ -61,12 +59,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { content, editUrl } = await resolveDeckForRoute({
-    stub,
-    source: entry.source as NoteSource | undefined,
-    noteId: entry.noteId,
-    noteOverride: ['storybook'],
-  })
-
-  return { lifecycle: entry.lifecycle, content, editUrl }
+  return { lifecycle: entry.lifecycle, content: resolveDeck({ stub }).content }
 })

@@ -71,16 +71,11 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    codimdUrl: process.env.NUXT_CODIMD_URL || '',
-    hackmdApiToken: process.env.NUXT_HACKMD_API_TOKEN || '',
-    // Shared TTL (ms) for content sources + registry.
+    // Shared TTL (ms) for the file/registry content sources.
     sourceCacheTtlMs: process.env.NUXT_SOURCE_CACHE_TTL_MS || '',
     // Frozen-bundle S3 config is read from process.env at runtime in
     // server/routes/frozen/[...path].ts (NUXT_FROZEN_S3_* don't fit Nuxt's
     // runtime-override convention, and config is baked at build time).
-    public: {
-      codimdUrl: process.env.NUXT_CODIMD_URL || '',
-    },
   },
 
   // Bundle mode: prerender ONLY the deck's slug + its API — not the app shell

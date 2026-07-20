@@ -1,9 +1,7 @@
-import type { NoteSource } from '#shared/deck'
-import { resolveDeckStatus, splitFrontmatter } from '#shared/deck'
+import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '#shared/deck'
 import { yDocUpdateToMarkdown } from '#shared/deck/ydoc'
 import { assertCanEditDeck, gateDeckAccess } from '../../utils/access'
 import { useDraftStore } from '../../utils/collab'
-import { resolveDeckForRoute } from '../../utils/deck-resolution'
 import { readPresentationContent } from '../../utils/presentations'
 import { useDbContent, useDeckMeta } from '../../utils/sources'
 
@@ -62,12 +60,5 @@ export default defineEventHandler(async (event) => {
       : stubMeta.accessPassword as string | undefined,
   })
 
-  const { content, editUrl } = await resolveDeckForRoute({
-    stub,
-    source: stubMeta.source as NoteSource | undefined,
-    noteId: stubMeta.noteId as string | undefined,
-    noteOverride: [],
-  })
-
-  return { content, status, editUrl, writable: useDraftStore().isWritable() }
+  return { content: resolveDeck({ stub }).content, status, writable: useDraftStore().isWritable() }
 })

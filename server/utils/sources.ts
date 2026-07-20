@@ -1,10 +1,9 @@
-import type { ContentSource, DeckDirectory, NoteSource } from '#shared/deck'
+import type { ContentSource, DeckDirectory } from '#shared/deck'
 import type { ProjectDirectory } from '#shared/projects'
 import { createDbContent } from '../db/content-store'
 import { createDeckMeta } from '../db/deck-meta'
 import { createDbDirectory } from '../db/directory'
 import { createPermissionStore } from '../db/permission-store'
-import { fetchCollaborativeNote } from './codimd'
 import { useDb } from './db'
 import { readPresentationContent } from './presentations'
 import { fileProjects } from './projects'
@@ -12,24 +11,8 @@ import { fileDirectory } from './registry'
 
 /**
  * Server adapters implementing the `ContentSource` port — the only place that
- * knows how to reach each provider. Adding a source is one adapter here.
+ * knows how to reach each backing. Adding a source is one adapter here.
  */
-
-export const codimdSource: ContentSource = {
-  id: 'codimd',
-  async load(noteId) {
-    const raw = await fetchCollaborativeNote('codimd', noteId)
-    return raw == null ? null : { raw }
-  },
-}
-
-export const hackmdSource: ContentSource = {
-  id: 'hackmd',
-  async load(noteId) {
-    const raw = await fetchCollaborativeNote('hackmd', noteId)
-    return raw == null ? null : { raw }
-  },
-}
 
 export const fileSource: ContentSource = {
   id: 'file',
@@ -37,11 +20,6 @@ export const fileSource: ContentSource = {
     const result = await readPresentationContent(slug)
     return result == null ? null : { raw: result.content }
   },
-}
-
-/** Pick the collaborative-note adapter for a provider. */
-export function noteSource(source: NoteSource): ContentSource {
-  return source === 'hackmd' ? hackmdSource : codimdSource
 }
 
 /** The database-backed content ports (published versions). */

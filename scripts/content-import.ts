@@ -6,7 +6,7 @@
  * Reads `presentations/` (stubs, registry.yml, projects.yml) and writes:
  *   projects.yml  → projects
  *   .md stubs    → decks (managed) + deck_versions (the markdown)
- *   registry.yml  → decks.alias/lifecycle/source/note_id/frozen_bundle
+ *   registry.yml  → decks.alias/lifecycle/frozen_bundle
  *                   + deck_aliases (historical paths)
  *
  * DRY-RUN BY DEFAULT: prints the plan and writes nothing. Pass `--apply` to
@@ -79,8 +79,6 @@ interface RegistryEntry {
   title?: string
   slug?: string
   lifecycle?: string
-  source?: string
-  noteId?: string
   frozenBundle?: string
   access?: string
   aliases?: string[]
@@ -156,8 +154,6 @@ interface DeckPlan {
   project: string | null
   theme: string | null
   alias: string | null
-  source: string | null
-  noteId: string | null
   frozenBundle: string | null
   accessPasswordHash: string | null
   unlisted: number
@@ -199,8 +195,6 @@ for (const stub of stubs) {
     project,
     theme: (data.theme as string) ?? null,
     alias: reg?.alias ?? null,
-    source: reg?.source ?? null,
-    noteId: reg?.noteId ?? null,
     frozenBundle: reg?.frozenBundle ?? null,
     accessPasswordHash: (data.accessPassword as string) ?? null,
     unlisted: data.unlisted ? 1 : 0,
@@ -284,12 +278,12 @@ const upsertProject = db.prepare(`
 `)
 const upsertDeck = db.prepare(`
   insert into decks (slug,alias,title,status,lifecycle,project,theme,access_password_hash,
-                     frozen_bundle,source,note_id,unlisted,managed,created_at,updated_at)
+                     frozen_bundle,unlisted,managed,created_at,updated_at)
   values (@slug,@alias,@title,@status,@lifecycle,@project,@theme,@accessPasswordHash,
-          @frozenBundle,@source,@noteId,@unlisted,1,@ts,@ts)
+          @frozenBundle,@unlisted,1,@ts,@ts)
   on conflict(slug) do update set
     alias=@alias,title=@title,status=@status,lifecycle=@lifecycle,project=@project,theme=@theme,
-    access_password_hash=@accessPasswordHash,frozen_bundle=@frozenBundle,source=@source,note_id=@noteId,
+    access_password_hash=@accessPasswordHash,frozen_bundle=@frozenBundle,
     unlisted=@unlisted,managed=1,updated_at=@ts
 `)
 const insertVersion = db.prepare(

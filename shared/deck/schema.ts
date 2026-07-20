@@ -46,9 +46,6 @@ export const ThemeBackgroundsSchema = z
   })
   .catchall(z.unknown())
 
-/** Provider of a collaborative note used as the body source. */
-export const NoteSourceSchema = z.enum(['codimd', 'hackmd'])
-
 export const DeckMetaSchema = z
   .object({
     title: z.string().optional(),
@@ -66,8 +63,6 @@ export const DeckMetaSchema = z
     /** @deprecated legacy alias of `status`. */
     access: z.string().optional(),
     accessPassword: z.string().optional(),
-    source: NoteSourceSchema.optional(),
-    noteId: z.string().optional(),
     // Legacy flat Reveal options, kept for backward compatibility.
     transition: z.string().optional(),
     center: z.boolean().optional(),
@@ -76,7 +71,6 @@ export const DeckMetaSchema = z
 
 export type RevealConfig = z.infer<typeof RevealConfigSchema>
 export type ThemeBackgrounds = z.infer<typeof ThemeBackgroundsSchema>
-export type NoteSource = z.infer<typeof NoteSourceSchema>
 export type DeckMeta = z.infer<typeof DeckMetaSchema>
 
 export interface ParseResult {

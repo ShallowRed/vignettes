@@ -1,12 +1,11 @@
-import type { NoteSource } from './schema'
-
 /**
- * Framework-agnostic port for obtaining a deck's raw markdown (local storage,
- * CodiMD, HackMD, …). Server provides concrete adapters; tests use in-memory fakes.
+ * Framework-agnostic port for obtaining a deck's raw markdown (published database
+ * version, committed file, …). Server provides concrete adapters; tests use
+ * in-memory fakes.
  */
 export interface ContentSource {
-  readonly id: NoteSource | 'file' | 'db'
-  /** Load raw markdown for a ref (slug/alias/noteId), or `null` if unreachable. Caching is internal. */
+  readonly id: 'file' | 'db'
+  /** Load raw markdown for a ref (slug), or `null` if unreachable. Caching is internal. */
   load: (ref: string) => Promise<{ raw: string } | null>
 }
 

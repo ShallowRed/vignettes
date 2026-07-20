@@ -1,7 +1,7 @@
 /**
  * The single component & syntax contract. Declarative spec consumed by the slide
- * parser, the MDC component map, and the CodiMD preview generator. Pure data +
- * pure string functions, so it stays framework-free and unit-testable.
+ * parser and the MDC component map. Pure data + pure string functions, so it
+ * stays framework-free and unit-testable.
  */
 
 /**

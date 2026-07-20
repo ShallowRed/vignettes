@@ -21,9 +21,6 @@ export function createDbDirectory(db: Db): { decks: DeckDirectory, projects: Pro
       title: row.title,
       lifecycle: row.lifecycle as DeckDirectoryEntry['lifecycle'],
       frozenBundle: row.frozenBundle ?? undefined,
-      // A `live` deck can still take its body from a collaborative note.
-      source: (row.source ?? undefined) as DeckDirectoryEntry['source'],
-      noteId: row.noteId ?? undefined,
       aliases: historical.length ? historical : undefined,
     }
   }

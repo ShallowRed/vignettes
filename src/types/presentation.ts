@@ -27,7 +27,6 @@ export interface PresentationMetadata extends PresentationMeta {
 export interface PresentationData {
   slides: Slide[]
   metadata: PresentationMetadata
-  editUrl?: string
 }
 
 export interface PresentationListItem {

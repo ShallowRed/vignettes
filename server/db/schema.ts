@@ -15,13 +15,6 @@ export const decks = sqliteTable('decks', {
   theme: text('theme'),
   accessPasswordHash: text('access_password_hash'),
   frozenBundle: text('frozen_bundle'),
-  /**
-   * Collaborative-note origin for a `live` deck (absorbs registry.yml's
-   * `source`/`noteId`): the body is fetched from CodiMD/HackMD at request time
-   * instead of coming from a published version.
-   */
-  source: text('source'),
-  noteId: text('note_id'),
   unlisted: integer('unlisted', { mode: 'boolean' }).notNull().default(false),
   /** True once a publish or an admin edit made this row the metadata truth; plain draft anchors stay false. */
   managed: integer('managed', { mode: 'boolean' }).notNull().default(false),

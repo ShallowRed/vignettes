@@ -45,8 +45,6 @@ interface Row {
   lifecycle: string
   project: string | null
   theme: string | null
-  source: string | null
-  note_id: string | null
   frozen_bundle: string | null
   unlisted: number
   raw: string | null
@@ -54,7 +52,7 @@ interface Row {
 
 const rows = db.prepare(`
   select d.slug, d.alias, d.title, d.status, d.lifecycle, d.project, d.theme,
-         d.source, d.note_id, d.frozen_bundle, d.unlisted, v.raw
+         d.frozen_bundle, d.unlisted, v.raw
   from decks d
   left join deck_versions v on v.id = d.published_version_id
   where d.managed = 1
@@ -109,8 +107,6 @@ const catalog = {
     ...(r.alias ? { alias: r.alias } : {}),
     ...(r.project ? { project: r.project } : {}),
     ...(r.theme ? { theme: r.theme } : {}),
-    ...(r.source ? { source: r.source } : {}),
-    ...(r.note_id ? { noteId: r.note_id } : {}),
     ...(r.frozen_bundle ? { frozenBundle: r.frozen_bundle } : {}),
     ...(r.unlisted ? { unlisted: true } : {}),
     ...(historical.some(h => h.deck_slug === r.slug)
