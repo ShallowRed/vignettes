@@ -2,14 +2,12 @@ import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '#shared/deck'
 import { yDocUpdateToMarkdown } from '#shared/deck/ydoc'
 import { assertCanEditDeck, gateDeckAccess } from '../../utils/access'
 import { useDraftStore } from '../../utils/collab'
-import { readPresentationContent } from '../../utils/presentations'
 import { useDbContent, useDeckMeta } from '../../utils/sources'
 
 /**
- * Serve a deck by slug: the published database version first, else the committed
- * file. For managed decks the database row is the status/access truth (admin
- * edits win over the served frontmatter); everything else keeps deriving from
- * the markdown itself.
+ * Serve a deck by slug from its published database version. For managed decks the
+ * database row is the status/access truth (admin edits win over the served
+ * frontmatter).
  *
  * `?draft` (editors only) loads the working draft first instead — the editor
  * must show what "Enregistrer" saved, not the published version.
@@ -24,8 +22,7 @@ export default defineEventHandler(async (event) => {
     await assertCanEditDeck(event, slug)
     const draft = await useDraftStore().load(slug).then(update => update && yDocUpdateToMarkdown(update))
     const published = draft ? null : await useDbContent().source.load(slug)
-    const fallback = draft || published ? null : await readPresentationContent(slug)
-    const content = draft ?? published?.raw ?? fallback?.content
+    const content = draft ?? published?.raw
     if (!content) {
       throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
     }
@@ -34,23 +31,20 @@ export default defineEventHandler(async (event) => {
       content,
       status: meta?.managed ? meta.status : resolveDeckStatus(content),
       title: meta?.managed ? meta.title : (splitFrontmatter(content).data.title as string | undefined),
-      from: draft ? 'draft' as const : published ? 'published' as const : 'file' as const,
+      from: draft ? 'draft' as const : 'published' as const,
       writable: useDraftStore().isWritable(),
     }
   }
 
   const published = await useDbContent().source.load(slug)
-  const result = published
-    ? { content: published.raw, status: resolveDeckStatus(published.raw) }
-    : await readPresentationContent(slug)
-  if (!result) {
+  if (!published) {
     throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
   }
 
   const meta = await useDeckMeta().get(slug)
-  const { content: stub } = result
+  const stub = published.raw
   const stubMeta = splitFrontmatter(stub).data
-  const status = meta?.managed ? meta.status : result.status
+  const status = meta?.managed ? meta.status : resolveDeckStatus(stub)
 
   await gateDeckAccess(event, {
     slug,
