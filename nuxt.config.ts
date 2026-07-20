@@ -110,7 +110,11 @@ export default defineNuxtConfig({
         '/unlock/**': { ssr: true },
         '/admin/**': { ssr: true },
 
-        '/api/presentations': { prerender: true },
+        // NEVER prerender the catalog: its result depends on the caller's role
+        // AND on the database, which does not exist at build time. A prerendered
+        // copy is frozen on the anonymous, database-less view — owners would see
+        // only public file stubs, and no deck created in the app would ever show.
+        '/api/presentations': { ssr: true },
         // Protected presentations need SSR (cookies, auth).
         '/api/presentations/**': { ssr: true },
       },
