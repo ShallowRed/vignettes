@@ -15,3 +15,10 @@ export function isPrivileged(role: Role): boolean {
 /** Per-deck grant escalating a user beyond their global role, on that deck only. */
 export const DeckGrantSchema = z.enum(['editor', 'viewer'])
 export type DeckGrant = z.infer<typeof DeckGrantSchema>
+
+/** The UI-facing session: identity for display + resolved runtime `role` for gating. */
+export interface AppSession {
+  loggedIn: boolean
+  role: Role
+  user: { login?: string, name?: string, avatar?: string } | null
+}

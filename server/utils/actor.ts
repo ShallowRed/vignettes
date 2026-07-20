@@ -1,4 +1,4 @@
-import type { Role } from '#shared/access'
+import type { AppSession, Role } from '#shared/access'
 import type { H3Event } from 'h3'
 import process from 'node:process'
 import { readRoleMap, resolveRole } from '#shared/access'
@@ -45,6 +45,20 @@ export async function getActor(event: H3Event): Promise<Actor> {
 /** The actor's `Role` for an H3 request; `anonymous` when no session. */
 export async function getActorRole(event: H3Event): Promise<Role> {
   return (await getActor(event)).role
+}
+
+/**
+ * The UI-facing session for an H3 request: identity (from the sealed session) +
+ * runtime role (database-first). The single source for both `/api/auth/session`
+ * and the SSR seed, so the header renders the same branch on server and client.
+ */
+export async function getAppSession(event: H3Event): Promise<AppSession> {
+  const session = await getUserSession(event).catch(() => null)
+  return {
+    user: session?.user || null,
+    loggedIn: !!session?.user,
+    role: await getActorRole(event),
+  }
 }
 
 function readCookie(header: string | null, name: string): string | undefined {
