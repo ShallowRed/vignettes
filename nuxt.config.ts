@@ -99,7 +99,11 @@ export default defineNuxtConfig({
         '/api/presentations/**': { prerender: true },
       }
     : {
-        '/': { prerender: true },
+        // The catalog depends on the caller's role, so it cannot be prerendered:
+        // a static copy freezes the anonymous view, and the client then has to
+        // patch it once the session resolves — a race we kept losing. Render it
+        // per request instead; `useRequestFetch` forwards the cookie.
+        '/': { ssr: true },
         '/login': { prerender: true },
         // Catalog and admin views merged; keep old bookmarks working.
         '/admin': { redirect: '/' },
