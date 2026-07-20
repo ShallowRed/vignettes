@@ -11,7 +11,6 @@
     "dev": "nuxt dev",
     "dev:themes": "pnpm build:themes && nuxt dev",
     "dev:theme": "node scripts/build-themes.js --watch",
-    "prebuild": "node scripts/fetch-presentations.js",
     "build": "pnpm build:themes && nuxt build",
     "build:themes": "node scripts/build-theme-tokens.ts && node scripts/build-themes.js",
     "build:theme": "node scripts/build-themes.js",

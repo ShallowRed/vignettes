@@ -22,29 +22,18 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
-# ---- build : fetch contenu privé + nuxt build ----
+# ---- build : nuxt build ----
 FROM base AS build
-# git : nécessaire à scripts/fetch-presentations.js pour cloner le repo de contenu.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# NITRO_PRESET explicite (sinon Nitro autodétecte selon l'environnement).
-# CI=1 (défaut) -> readContentSourceConfig passe en fail-closed : un token
-# manquant/expiré fait échouer le build au lieu de livrer un site sans decks.
-# Build local sans token : `--build-arg CI=` -> mode submodule, utilise le
-# contenu déjà présent dans le contexte (pas de clone).
-ARG CI=1
+# NITRO_PRESET explicite (sinon Nitro autodétecte selon l'environnement). Deck
+# content lives in the database at runtime, so the build no longer clones the
+# content repo — it needs no secret.
 ENV NITRO_PRESET=node_server
-ENV CI=${CI}
 ENV NUXT_TELEMETRY_DISABLED=1
 # The prerenderer loads the full server bundle; the default ~2GB heap OOMs.
 ENV NODE_OPTIONS=--max-old-space-size=4096
-# Le token n'est jamais écrit dans une couche : monté en secret le temps du build.
-RUN --mount=type=secret,id=presentations_token \
-    PRESENTATIONS_REPO_TOKEN="$(cat /run/secrets/presentations_token)" \
-    pnpm build
+RUN pnpm build
 
 # ---- runtime : minimal + CLI Infisical pour l'injection des secrets ----
 FROM node:22-slim AS runtime

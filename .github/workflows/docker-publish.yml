@@ -42,7 +42,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write # requis pour l'auth OIDC vers Infisical
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,20 +56,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Récupère PRESENTATIONS_REPO_TOKEN depuis Infisical → variable d'env du job
-      # (export-type: env par défaut). Aucun secret statique côté GitHub.
-      - name: Fetch build secrets from Infisical (OIDC)
-        uses: Infisical/secrets-action@v1.0.16
-        with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
-          domain: ${{ vars.INFISICAL_API_URL }}
-          # Audience figée : doit être IDENTIQUE au champ « Audiences » de l'identité
-          # OIDC dans Infisical (évite tout défaut GitHub implicite).
-          oidc-audience: infisical-nuxt-slides
-          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
-          env-slug: prod
-          secret-path: "/"
+      # Deck content lives in the database, so the build needs no secret and never
+      # calls Infisical — only the deploy job (VPS_SSH_KEY) still does.
 
       - name: Docker metadata
         id: meta
@@ -91,11 +78,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # secret-envs référence la variable d'env par son NOM (injectée au runtime
-          # par l'étape Infisical) — pas d'accès ${{ env.* }} (évite le faux positif
-          # du linter) et le secret ne transite pas dans le YAML.
-          secret-envs: |
-            presentations_token=PRESENTATIONS_REPO_TOKEN
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

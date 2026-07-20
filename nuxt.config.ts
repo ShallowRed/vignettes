@@ -105,13 +105,6 @@ export default defineNuxtConfig({
       websocket: true,
     },
 
-    // Ship `presentations/` (stubs + registry.yml) as a server asset so it's
-    // reachable at runtime via `useStorage('assets:presentations')` regardless of
-    // cwd; this powers the live `/p/<alias>` route + registry in production.
-    serverAssets: [
-      { baseName: 'presentations', dir: join(process.cwd(), 'presentations') },
-    ],
-
     prerender: {
       // The app never prerenders, whatever the preset: every page and the catalog
       // API depend on the session and on the database, and neither exists at
@@ -155,20 +148,17 @@ export default defineNuxtConfig({
     },
     'nitro:build:public-assets': async function (nitro) {
       const { cp } = await import('node:fs/promises')
-      // presentations/: runtime server asset; migrations: read at boot by the
-      // migration plugin (drizzle needs a real folder next to the bundle).
-      const copies = [
-        [join(process.cwd(), 'presentations'), join(nitro.options.output.serverDir, 'presentations')],
-        [join(process.cwd(), 'server/db/migrations'), join(nitro.options.output.serverDir, 'migrations')],
-      ]
-      for (const [srcDir, destDir] of copies) {
-        try {
-          await cp(srcDir, destDir, { recursive: true })
-          console.log(`✅ Copied ${srcDir} to build output`)
-        }
-        catch (error) {
-          console.error(`❌ Failed to copy ${srcDir}:`, error.message)
-        }
+      // migrations: read at boot by the migration plugin (drizzle needs a real
+      // folder next to the bundle). Content is served from the database, so
+      // presentations/ is no longer shipped.
+      const srcDir = join(process.cwd(), 'server/db/migrations')
+      const destDir = join(nitro.options.output.serverDir, 'migrations')
+      try {
+        await cp(srcDir, destDir, { recursive: true })
+        console.log(`✅ Copied ${srcDir} to build output`)
+      }
+      catch (error) {
+        console.error(`❌ Failed to copy ${srcDir}:`, error.message)
       }
     },
   },
