@@ -15,15 +15,16 @@ const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeS
 const { privileged } = useAppSession()
 
 const requestFetch = useRequestFetch()
+// Same as the catalog home: never reuse the cached payload, it is session-dependent.
 const { data: presentations, status, error, refresh } = await useAsyncData(
   'presentations',
   () => requestFetch<PresentationListItem[]>('/api/presentations'),
-  { default: () => [] },
+  { default: () => [], getCachedData: () => undefined },
 )
 const { data: projects } = await useAsyncData(
   'projects',
   () => $fetch<Project[]>('/api/projects'),
-  { default: () => [] },
+  { default: () => [], getCachedData: () => undefined },
 )
 
 watch(privileged, (now, before) => {

@@ -3,16 +3,8 @@ import process from 'node:process'
 import presentationWatcher from './plugins/presentation-watcher.js'
 import themeWatcher from './plugins/theme-watcher.js'
 import { readBundleConfig } from './shared/build/bundle'
-import { discoverPublicSlugs } from './shared/build/public-decks'
 
 const bundle = readBundleConfig()
-
-// node-server preset: prerendering `/api/presentations` (file) and
-// `/api/presentations/<slug>` (dir) to a real FS collides (EISDIR), and crawling
-// follows `/auth/github` which needs OAuth secrets at build. So we serve those API
-// routes via SSR at runtime and don't crawl; SSG pages call the API internally.
-const preset = process.env.NITRO_PRESET || ''
-const isNodeServer = preset === 'node_server' || preset === 'node-server'
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-27',
@@ -99,28 +91,17 @@ export default defineNuxtConfig({
         '/api/presentations/**': { prerender: true },
       }
     : {
-        // The catalog depends on the caller's role, so it cannot be prerendered:
-        // a static copy freezes the anonymous view, and the client then has to
-        // patch it once the session resolves — a race we kept losing. Render it
-        // per request instead; `useRequestFetch` forwards the cookie.
-        '/': { ssr: true },
-        '/login': { prerender: true },
-        // Catalog and admin views merged; keep old bookmarks working.
+        // ONE rendering strategy: render everything per request.
+        //
+        // Mixing prerender/SSR across routes cost us a long, confusing hunt: what
+        // a deck contains and who may see it both depend on the session AND on
+        // the database, neither of which exists at build time. Any prerendered
+        // copy is therefore frozen on the anonymous, database-less view, and the
+        // client has to patch it after hydration — a race we kept losing.
+        //
+        // Prerendering can come back later, route by route, for pages that are
+        // genuinely static. Until then, uniform SSR is the safe default.
         '/admin': { redirect: '/' },
-
-        // Specific (public, SSG) before generic (protected, SSR).
-        '/slides/public/**': { prerender: true },
-        '/slides/**': { ssr: true },
-        '/unlock/**': { ssr: true },
-        '/admin/**': { ssr: true },
-
-        // NEVER prerender the catalog: its result depends on the caller's role
-        // AND on the database, which does not exist at build time. A prerendered
-        // copy is frozen on the anonymous, database-less view — owners would see
-        // only public file stubs, and no deck created in the app would ever show.
-        '/api/presentations': { ssr: true },
-        // Protected presentations need SSR (cookies, auth).
-        '/api/presentations/**': { ssr: true },
       },
 
   nitro: {
@@ -137,10 +118,11 @@ export default defineNuxtConfig({
     ],
 
     prerender: {
-      // See isNodeServer above: don't crawl in node-server (avoids /auth/github).
-      crawlLinks: !isNodeServer,
-      // Skip the API prerender in node-server (EISDIR); served via SSR at runtime.
-      routes: isNodeServer ? [] : ['/api/presentations'],
+      // The app never prerenders, whatever the preset: every page and the catalog
+      // API depend on the session and on the database, and neither exists at
+      // build time. Only bundle mode (a single, frozen, self-contained deck) does.
+      crawlLinks: bundle.enabled,
+      routes: [],
     },
     hooks: {
       // Bundle mode: skip SPA fallbacks + the prerendered API json (a single-deck
@@ -168,25 +150,13 @@ export default defineNuxtConfig({
           `/slides/${onlySlug}`,
           `/api/presentations/${onlySlug}`,
         ]
-        return
       }
 
-      try {
-        // Public decks are discovered by parsing stub frontmatter (status lives there).
-        const slugs = await discoverPublicSlugs(join(process.cwd(), 'presentations'))
-
-        // node-server: prerender only the SSG deck page; its API JSON is SSR (EISDIR).
-        const publicRoutes = slugs.flatMap((slug: string) => isNodeServer
-          ? [`/slides/${slug}`]
-          : [`/slides/${slug}`, `/api/presentations/${slug}`])
-
-        nitroConfig.prerender = nitroConfig.prerender || {}
-        nitroConfig.prerender.routes = nitroConfig.prerender.routes || []
-        nitroConfig.prerender.routes.push(...publicRoutes)
-      }
-      catch (error) {
-        console.warn('Could not discover public presentation routes:', error)
-      }
+      // Outside bundle mode the app prerenders nothing. Public deck pages used to
+      // be prerendered from the stubs, which froze their body at build time: a
+      // deck edited in the app kept serving its old file content to visitors.
+      // Now that the database is the truth, every deck page is rendered per
+      // request. Re-introducing SSG here means invalidating on publish first.
     },
     'nitro:build:public-assets': async function (nitro) {
       const { cp } = await import('node:fs/promises')

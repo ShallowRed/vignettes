@@ -9,16 +9,19 @@ import { useAppSession } from '~/composables/useAppSession'
 const { privileged } = useAppSession()
 
 const requestFetch = useRequestFetch()
+// `getCachedData` off: the catalog depends on the session, so the cached payload
+// must never be reused on client navigation — that is how a stale (anonymous)
+// listing came back when returning to this page.
 const { data: presentations, status, error, refresh } = await useAsyncData(
   'presentations',
   () => requestFetch<PresentationListItem[]>('/api/presentations'),
-  { default: () => [] },
+  { default: () => [], getCachedData: () => undefined },
 )
 
 const { data: projects } = await useAsyncData(
   'projects',
   () => $fetch<Project[]>('/api/projects'),
-  { default: () => [] },
+  { default: () => [], getCachedData: () => undefined },
 )
 
 watch(privileged, (now, before) => {
