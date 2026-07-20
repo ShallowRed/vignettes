@@ -27,7 +27,7 @@ const { data: presentations, status, error, refresh } = await useAsyncData(
   () => requestFetch<PresentationListItem[]>('/api/presentations'),
   { default: () => [], getCachedData: sessionScopedCache },
 )
-const { data: projects } = await useAsyncData(
+const { data: projects, refresh: refreshProjects } = await useAsyncData(
   'projects',
   () => $fetch<Project[]>('/api/projects'),
   { default: () => [], getCachedData: sessionScopedCache },
@@ -57,8 +57,25 @@ const isOwner = computed(() => role.value === 'owner')
 
 // Project access (owner only): a master-key grant over every deck in the project.
 const accessOpen = ref(false)
-const projectRef = computed(() => ({ slug: projectKey.value, title: projectTitle.value }))
+const currentProject = computed(() => projects.value.find(p => p.slug === projectKey.value))
+const projectRef = computed(() => ({ slug: projectKey.value, title: projectTitle.value, color: currentProject.value?.color ?? null }))
 const canManageAccess = computed(() => isOwner.value && !isUngrouped.value)
+
+// Project lifecycle (owner only): edit metadata, or trash the whole folder.
+const editProjectOpen = ref(false)
+const deleteProjectOpen = ref(false)
+const canManageProject = computed(() => isOwner.value && !isUngrouped.value)
+
+function onProjectSaved(project: Project) {
+  // A slug change moves the folder to a new URL; otherwise just refresh in place.
+  if (project.slug !== routeSlug.value)
+    navigateTo(`/projects/${project.slug}`)
+  else
+    refreshProjects()
+}
+function onProjectDeleted() {
+  navigateTo('/')
+}
 
 // Management modals (privileged), mirroring the home console.
 const metaOpen = ref(false)
@@ -86,6 +103,15 @@ function openDelete(item: PresentationListItem) {
       <span class="text-sm text-muted">{{ decks.length }} présentation{{ decks.length > 1 ? 's' : '' }}</span>
       <div class="flex-1" />
       <UButton
+        v-if="canManageProject"
+        icon="i-lucide-pencil"
+        label="Modifier"
+        color="neutral"
+        variant="subtle"
+        size="sm"
+        @click="editProjectOpen = true"
+      />
+      <UButton
         v-if="canManageAccess"
         icon="i-lucide-users"
         label="Gérer l'accès"
@@ -93,6 +119,15 @@ function openDelete(item: PresentationListItem) {
         variant="subtle"
         size="sm"
         @click="accessOpen = true"
+      />
+      <UButton
+        v-if="canManageProject"
+        icon="i-lucide-trash-2"
+        label="Supprimer"
+        color="error"
+        variant="ghost"
+        size="sm"
+        @click="deleteProjectOpen = true"
       />
     </div>
 
@@ -145,6 +180,19 @@ function openDelete(item: PresentationListItem) {
       v-if="canManageAccess"
       v-model:open="accessOpen"
       :project="projectRef"
+    />
+    <ProjectEditModal
+      v-if="canManageProject"
+      v-model:open="editProjectOpen"
+      :project="projectRef"
+      @saved="onProjectSaved"
+    />
+    <ProjectDeleteModal
+      v-if="canManageProject"
+      v-model:open="deleteProjectOpen"
+      :project="projectRef"
+      :deck-count="decks.length"
+      @deleted="onProjectDeleted"
     />
   </div>
 </template>

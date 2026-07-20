@@ -4,7 +4,7 @@ import { ROLE_CONFIG } from '#shared/access'
 import { useAppSession } from '~/composables/useAppSession'
 
 // App chrome: brand left, identity (color mode, sign-in/out, role) right.
-const { loggedIn, role, user } = useAppSession()
+const { loggedIn, role, user, privileged } = useAppSession()
 const roleDisplay = computed(() => ROLE_CONFIG[role.value])
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
@@ -28,6 +28,14 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     </template>
 
     <template #right>
+      <UButton
+        v-if="privileged"
+        to="/trash"
+        icon="i-lucide-trash-2"
+        color="neutral"
+        variant="ghost"
+        aria-label="Corbeille"
+      />
       <UColorModeButton />
 
       <UButton

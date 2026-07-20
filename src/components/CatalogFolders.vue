@@ -1,30 +1,57 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import { groupByProject, UNGROUPED_PROJECT } from '#shared/presentations'
+import { UNGROUPED_PROJECT } from '#shared/presentations'
+import { projectColorStyle } from '~/utils/project-colors'
 
-// Projects rendered as folders: the catalog's primary entry point. Each folder
-// links to its stable /projects/<slug> route. The no-project bucket routes to
-// the reserved `divers` slug.
+// Projects rendered as folders: the catalog's primary entry point. Every project
+// gets a folder — including empty ones just created (so a new project is visible
+// before it has any deck). Each links to its stable /projects/<slug> route; the
+// no-project bucket routes to the reserved `divers` slug.
 const props = defineProps<{
   items: PresentationListItem[]
   projects?: Project[]
 }>()
 
-const projectOrder = computed(() => (props.projects ?? []).map(p => p.slug))
 const meta = computed(() => new Map((props.projects ?? []).map(p => [p.slug, p])))
 
-const folders = computed(() =>
-  groupByProject(props.items, projectOrder.value).map((group) => {
-    const ungrouped = group.project === UNGROUPED_PROJECT
+// decks grouped by their project key (or the ungrouped bucket).
+const buckets = computed(() => {
+  const map = new Map<string, PresentationListItem[]>()
+  for (const item of props.items) {
+    const key = item.project ?? UNGROUPED_PROJECT
+    if (!map.has(key))
+      map.set(key, [])
+    map.get(key)!.push(item)
+  }
+  return map
+})
+
+function themesOf(items: PresentationListItem[]): string[] {
+  return [...new Set(items.map(i => i.theme).filter(Boolean))] as string[]
+}
+
+const folders = computed(() => {
+  const named = (props.projects ?? []).map(p => p.slug)
+  // Decks pointing at a project not in the list (legacy free-text) still get a folder.
+  const orphan = [...buckets.value.keys()].filter(k => k !== UNGROUPED_PROJECT && !named.includes(k))
+  const out = [...named, ...orphan].map((slug) => {
+    const items = buckets.value.get(slug) ?? []
     return {
-      routeSlug: ungrouped ? 'divers' : group.project,
-      title: ungrouped ? 'Divers' : (meta.value.get(group.project)?.title ?? group.project),
-      count: group.items.length,
-      themes: [...new Set(group.items.map(i => i.theme).filter(Boolean))] as string[],
+      routeSlug: slug,
+      title: meta.value.get(slug)?.title ?? slug,
+      count: items.length,
+      color: meta.value.get(slug)?.color ?? null,
+      themes: themesOf(items),
     }
-  }),
-)
+  })
+
+  const ungrouped = buckets.value.get(UNGROUPED_PROJECT) ?? []
+  if (ungrouped.length) {
+    out.push({ routeSlug: 'divers', title: 'Divers', count: ungrouped.length, color: null, themes: themesOf(ungrouped) })
+  }
+  return out
+})
 </script>
 
 <template>
@@ -43,7 +70,8 @@ const folders = computed(() =>
         <div class="flex items-start gap-3">
           <UIcon
             name="i-lucide-folder"
-            class="size-6 text-dimmed shrink-0 mt-0.5"
+            class="size-6 shrink-0 mt-0.5 text-dimmed"
+            :style="projectColorStyle(folder.color)"
           />
           <div class="min-w-0">
             <h2 class="font-semibold text-highlighted leading-snug">

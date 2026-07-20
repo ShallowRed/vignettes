@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 
-// Delete confirmation. The database is the source of truth, so this is permanent.
+// Delete confirmation. Moves the deck to the trash (reversible); it can be
+// restored or permanently erased from there.
 const props = defineProps<{ item: PresentationListItem }>()
 
 const emit = defineEmits<{ deleted: [] }>()
@@ -21,7 +22,7 @@ async function confirm() {
     await $fetch(`/api/presentations/${props.item.slug}`, { method: 'DELETE' })
     open.value = false
     toast.add({
-      title: 'Présentation supprimée',
+      title: 'Présentation placée dans la corbeille',
       description: props.item.title,
       icon: 'i-lucide-trash-2',
       color: 'success',
@@ -40,16 +41,16 @@ async function confirm() {
 <template>
   <UModal
     v-model:open="open"
-    title="Supprimer la présentation ?"
+    title="Placer dans la corbeille ?"
     :description="item.title"
   >
     <template #body>
       <UAlert
-        color="error"
+        color="warning"
         variant="subtle"
-        icon="i-lucide-triangle-alert"
-        title="Suppression définitive"
-        description="Brouillon, versions publiées, réglages et partages seront perdus. Cette action est irréversible."
+        icon="i-lucide-trash-2"
+        title="Réversible"
+        description="La présentation part dans la corbeille. Tu pourras la restaurer, ou la supprimer définitivement depuis la corbeille."
       />
     </template>
 
@@ -62,8 +63,8 @@ async function confirm() {
           @click="close"
         />
         <UButton
-          label="Supprimer"
-          color="error"
+          label="Mettre à la corbeille"
+          color="warning"
           icon="i-lucide-trash-2"
           :loading="pending"
           @click="confirm"

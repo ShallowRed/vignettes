@@ -24,11 +24,16 @@ const { data: presentations, status, error, refresh } = await useAsyncData(
   { default: () => [], getCachedData: sessionScopedCache },
 )
 
-const { data: projects } = await useAsyncData(
+const { data: projects, refresh: refreshProjects } = await useAsyncData(
   'projects',
   () => $fetch<Project[]>('/api/projects'),
   { default: () => [], getCachedData: sessionScopedCache },
 )
+
+async function onProjectCreated(project: Project) {
+  await refreshProjects()
+  await navigateTo(`/projects/${project.slug}`)
+}
 
 watch(privileged, (now, before) => {
   if (now && !before)
@@ -58,6 +63,7 @@ defineShortcuts({
 
 // Management modals (privileged): one instance at page level, targeted per deck.
 const createOpen = ref(false)
+const createProjectOpen = ref(false)
 const metaOpen = ref(false)
 const deleteOpen = ref(false)
 const target = ref<PresentationListItem | null>(null)
@@ -87,8 +93,15 @@ function openDelete(item: PresentationListItem) {
       <CatalogState state="empty" />
       <div
         v-if="privileged"
-        class="flex justify-center mt-4"
+        class="flex justify-center gap-2 mt-4"
       >
+        <UButton
+          icon="i-lucide-folder-plus"
+          label="Nouveau dossier"
+          color="neutral"
+          variant="subtle"
+          @click="createProjectOpen = true"
+        />
         <UButton
           icon="i-lucide-file-plus-2"
           label="Nouvelle présentation"
@@ -147,6 +160,14 @@ function openDelete(item: PresentationListItem) {
         />
 
         <UButton
+          icon="i-lucide-folder-plus"
+          label="Nouveau dossier"
+          color="neutral"
+          variant="subtle"
+          class="shrink-0"
+          @click="createProjectOpen = true"
+        />
+        <UButton
           icon="i-lucide-file-plus-2"
           label="Nouvelle présentation"
           class="shrink-0"
@@ -194,6 +215,10 @@ function openDelete(item: PresentationListItem) {
     <DeckCreateModal
       v-model:open="createOpen"
       :projects="projects"
+    />
+    <ProjectCreateModal
+      v-model:open="createProjectOpen"
+      @created="onProjectCreated"
     />
     <DeckMetaSlideover
       v-if="target"
