@@ -5,22 +5,11 @@ import { createDeckMeta } from '../db/deck-meta'
 import { createDbDirectory } from '../db/directory'
 import { createPermissionStore } from '../db/permission-store'
 import { useDb } from './db'
-import { readPresentationContent } from './presentations'
 
 /**
- * Server adapters implementing the `ContentSource` port. The database is the
- * runtime source of truth (`presentations/` git is the exported archive, not a
- * runtime input); `fileSource` remains only for the admin write path, which
- * still reports whether a slug is shadowed by a committed stub.
+ * The database is the runtime source of truth for all deck content and metadata;
+ * `presentations/` git is the exported archive, never read at request time.
  */
-
-export const fileSource: ContentSource = {
-  id: 'file',
-  async load(slug) {
-    const result = await readPresentationContent(slug)
-    return result == null ? null : { raw: result.content }
-  },
-}
 
 /** The database-backed content ports (published versions). */
 export function useDbContent() {

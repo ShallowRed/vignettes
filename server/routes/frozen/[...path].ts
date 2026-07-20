@@ -1,8 +1,8 @@
+import type { PublicationStatus } from '#shared/access'
 import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import process from 'node:process'
-import { resolveDeckStatus, splitFrontmatter } from '#shared/deck'
 import {
   frozenObjectKey,
   isFrozenS3Configured,
@@ -10,8 +10,7 @@ import {
 } from '#shared/storage/frozen-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { gateDeckAccess } from '../../utils/access'
-import { readArchivedStub } from '../../utils/presentations'
-import { deckDirectory } from '../../utils/sources'
+import { deckDirectory, useDeckMeta } from '../../utils/sources'
 
 /**
  * Frozen-bundle static server. `/frozen/<bundle>/<...>` resolves the bundle to its
@@ -46,7 +45,7 @@ const MIME: Record<string, string> = {
 
 interface GateInfo {
   slug: string
-  status: ReturnType<typeof resolveDeckStatus>
+  status: PublicationStatus
   lifecycle: string
   storedHash?: string
 }
@@ -69,14 +68,13 @@ async function resolveBundleGate(bundle: string): Promise<GateInfo | null> {
 
   let info: GateInfo | null = null
   if (entry) {
-    const stub = await readArchivedStub(entry.slug)
-    if (stub != null) {
-      const meta = splitFrontmatter(stub).data as { accessPassword?: string }
+    const meta = await useDeckMeta().get(entry.slug)
+    if (meta?.managed) {
       info = {
         slug: entry.slug,
-        status: resolveDeckStatus(stub, entry.access),
+        status: meta.status,
         lifecycle: entry.lifecycle,
-        storedHash: meta.accessPassword,
+        storedHash: meta.accessPasswordHash ?? undefined,
       }
     }
   }

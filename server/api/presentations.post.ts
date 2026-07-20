@@ -4,7 +4,7 @@ import { markdownToYDocUpdate } from '#shared/deck/ydoc'
 import { z } from 'zod'
 import { getActorRole } from '../utils/actor'
 import { useDraftStore } from '../utils/collab'
-import { fileSource, useDeckMeta } from '../utils/sources'
+import { useDeckMeta } from '../utils/sources'
 
 const CreateSchema = z.object({
   slug: z.string().min(1),
@@ -51,8 +51,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Draft storage is unavailable on this deployment' })
   }
 
-  const [row, file] = await Promise.all([useDeckMeta().get(slug), fileSource.load(slug)])
-  if (row || file) {
+  if (await useDeckMeta().get(slug)) {
     throw createError({ statusCode: 409, statusMessage: `A deck "${slug}" already exists` })
   }
 
