@@ -8,6 +8,19 @@ import { publishedSource } from './sources'
 /** The Y.Doc text field shared with y-codemirror.next. */
 const TEXT_FIELD = 'codemirror'
 
+/**
+ * The socket is authorized for ONE deck at upgrade time (`/collab?deck=<slug>`).
+ * Hocuspocus lets a client name any document afterwards, so every document hook
+ * re-checks that the requested name is the deck the connection was granted.
+ */
+function isPinnedTo(requestParameters: URLSearchParams | undefined, documentName: string): boolean {
+  const pinned = requestParameters?.get('deck')
+  if (pinned === documentName)
+    return true
+  console.warn(`[collab] refused "${documentName}" on a socket pinned to "${pinned}"`)
+  return false
+}
+
 let instance: Hocuspocus | undefined
 
 /** The draft store backing collab sessions (gates the /collab route). */
@@ -25,11 +38,14 @@ export function useCollabServer(): Hocuspocus {
   instance ??= new Hocuspocus({
     name: 'nuxt-slides-collab',
 
-    async onLoadDocument({ documentName, document }) {
+    async onLoadDocument({ documentName, document, requestParameters }) {
       if (!isDeckSlug(documentName)) {
         console.warn(`[collab] invalid document name "${documentName}"`)
         return document
       }
+      // Serve no content to a document the socket wasn't authorized for.
+      if (!isPinnedTo(requestParameters, documentName))
+        return document
 
       const draft = await useDraftStore().load(documentName)
       if (draft) {
@@ -55,8 +71,11 @@ export function useCollabServer(): Hocuspocus {
       return document
     },
 
-    async onStoreDocument({ documentName, document }) {
+    async onStoreDocument({ documentName, document, requestParameters }) {
       if (!isDeckSlug(documentName))
+        return
+      // Never persist through a socket authorized for another deck.
+      if (!isPinnedTo(requestParameters, documentName))
         return
       await useDraftStore().save(documentName, Y.encodeStateAsUpdate(document))
     },

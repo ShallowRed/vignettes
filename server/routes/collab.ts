@@ -1,7 +1,9 @@
 import type { Peer } from 'crossws'
 import { isPrivileged } from '#shared/access'
-import { getActorRoleFromRequest } from '../utils/actor'
+import { isDeckSlug } from '#shared/deck'
+import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'
+import { usePermissionStore } from '../utils/sources'
 
 type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleConnection']>
 
@@ -19,14 +21,28 @@ function toWebSocketLike(peer: Peer) {
 }
 
 /**
- * Real-time collaboration endpoint (`/collab`). The session cookie rides the
- * same-origin upgrade request, so auth happens here — Hocuspocus receives only
- * already-authorized connections.
+ * Real-time collaboration endpoint (`/collab?deck=<slug>`). The session cookie
+ * rides the same-origin upgrade request, so auth happens here — Hocuspocus
+ * receives only already-authorized connections.
+ *
+ * The deck travels in the query because the upgrade must decide BEFORE the
+ * Hocuspocus handshake reveals the document name. Authorization mirrors the HTTP
+ * edit rule: a privileged role, or an `editor` grant on THIS deck — so a deck can
+ * be shared with an outside collaborator without making them a global editor.
+ * `collab.ts` (server/utils) then pins the socket to that same deck.
  */
 export default defineWebSocketHandler({
   async upgrade(request) {
-    if (!isPrivileged(await getActorRoleFromRequest(request)))
-      throw new Response('Owner or editor role required', { status: 401 })
+    const deck = new URL(request.url).searchParams.get('deck') ?? ''
+    if (!isDeckSlug(deck))
+      throw new Response('A ?deck=<slug> parameter is required', { status: 400 })
+
+    const actor = await getActorFromRequest(request)
+    const granted = actor.id != null
+      && await usePermissionStore().get(deck, actor.id).catch(() => null) === 'editor'
+    if (!isPrivileged(actor.role) && !granted)
+      throw new Response('Editing requires an owner/editor role or an editor grant on this deck', { status: 401 })
+
     // A session that cannot persist would silently lose every edit.
     if (!useDraftStore().isWritable())
       throw new Response('Draft storage is unavailable on this deployment', { status: 503 })

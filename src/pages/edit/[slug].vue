@@ -292,7 +292,9 @@ async function startCollab() {
   // server authorizes there — no token to share.
   const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
   const provider = new HocuspocusProvider({
-    url: `${wsProtocol}://${window.location.host}/collab`,
+    // The deck rides the query so the upgrade can authorize it (per-deck grant)
+    // before Hocuspocus reveals the document name.
+    url: `${wsProtocol}://${window.location.host}/collab?deck=${encodeURIComponent(slug)}`,
     name: slug,
     document: ydoc,
   })

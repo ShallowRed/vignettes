@@ -58,15 +58,16 @@ function readCookie(header: string | null, name: string): string | undefined {
  * falls back to the env var because runtimeConfig only merges it at first
  * `getUserSession` call.
  */
-export async function getActorRoleFromRequest(request: Request): Promise<Role> {
+export async function getActorFromRequest(request: Request): Promise<Actor> {
   const config = useRuntimeConfig().session as { name?: string, password?: string, maxAge?: number }
   const name = config?.name || 'nuxt-session'
   const password = config?.password || process.env.NUXT_SESSION_PASSWORD
   const sealed = readCookie(request.headers.get('cookie'), name)
   if (!sealed || !password)
-    return 'anonymous'
+    return { role: 'anonymous' }
 
   const session = await unsealSession(undefined as never, { password, maxAge: config?.maxAge }, sealed)
     .catch(() => null)
-  return resolveActorRole((session?.data as { user?: SessionUser })?.user)
+  const user = (session?.data as { user?: SessionUser })?.user
+  return { id: user?.id, login: user?.login, role: await resolveActorRole(user) }
 }
