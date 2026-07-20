@@ -12,7 +12,7 @@ const routeSlug = computed(() => route.params.slug as string)
 const isUngrouped = computed(() => routeSlug.value === 'divers')
 const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeSlug.value)
 
-const { privileged } = useAppSession()
+const { privileged, role } = useAppSession()
 
 const nuxtApp = useNuxtApp()
 const requestFetch = useRequestFetch()
@@ -53,6 +53,13 @@ const breadcrumb = computed(() => [
 
 useHead(() => ({ title: `${projectTitle.value} — Nuxt Slides` }))
 
+const isOwner = computed(() => role.value === 'owner')
+
+// Project access (owner only): a master-key grant over every deck in the project.
+const accessOpen = ref(false)
+const projectRef = computed(() => ({ slug: projectKey.value, title: projectTitle.value }))
+const canManageAccess = computed(() => isOwner.value && !isUngrouped.value)
+
 // Management modals (privileged), mirroring the home console.
 const metaOpen = ref(false)
 const deleteOpen = ref(false)
@@ -72,11 +79,21 @@ function openDelete(item: PresentationListItem) {
   <div class="flex flex-col gap-6">
     <UBreadcrumb :items="breadcrumb" />
 
-    <div class="flex items-baseline gap-3">
+    <div class="flex items-center gap-3">
       <h1 class="text-xl font-semibold text-highlighted">
         {{ projectTitle }}
       </h1>
       <span class="text-sm text-muted">{{ decks.length }} présentation{{ decks.length > 1 ? 's' : '' }}</span>
+      <div class="flex-1" />
+      <UButton
+        v-if="canManageAccess"
+        icon="i-lucide-users"
+        label="Gérer l'accès"
+        color="neutral"
+        variant="subtle"
+        size="sm"
+        @click="accessOpen = true"
+      />
     </div>
 
     <CatalogState
@@ -123,6 +140,11 @@ function openDelete(item: PresentationListItem) {
       v-model:open="deleteOpen"
       :item="target"
       @deleted="refresh"
+    />
+    <ProjectAccessSlideover
+      v-if="canManageAccess"
+      v-model:open="accessOpen"
+      :project="projectRef"
     />
   </div>
 </template>
