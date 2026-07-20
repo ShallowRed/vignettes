@@ -55,7 +55,6 @@ interface DeckPlan {
   frozenBundle: string | null
   accessPasswordHash: string | null
   unlisted: boolean
-  featured: boolean
   raw: string
   needsVersion: boolean
 }
@@ -168,7 +167,6 @@ export async function runContentImport(db: Db, options: { apply: boolean }): Pro
       frozenBundle: reg?.frozenBundle ?? null,
       accessPasswordHash: (data.accessPassword as string) ?? null,
       unlisted: Boolean(data.unlisted),
-      featured: Boolean(data.featured),
       raw: stub.raw,
       needsVersion: publishedRaw.get(stub.slug) !== stub.raw,
     }
@@ -232,7 +230,6 @@ export async function runContentImport(db: Db, options: { apply: boolean }): Pro
         source: p.source,
         noteId: p.noteId,
         unlisted: p.unlisted,
-        featured: p.featured,
         managed: true,
       }
       tx.insert(decks)

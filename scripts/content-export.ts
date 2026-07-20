@@ -49,13 +49,12 @@ interface Row {
   note_id: string | null
   frozen_bundle: string | null
   unlisted: number
-  featured: number
   raw: string | null
 }
 
 const rows = db.prepare(`
   select d.slug, d.alias, d.title, d.status, d.lifecycle, d.project, d.theme,
-         d.source, d.note_id, d.frozen_bundle, d.unlisted, d.featured, v.raw
+         d.source, d.note_id, d.frozen_bundle, d.unlisted, v.raw
   from decks d
   left join deck_versions v on v.id = d.published_version_id
   where d.managed = 1
@@ -114,7 +113,6 @@ const catalog = {
     ...(r.note_id ? { noteId: r.note_id } : {}),
     ...(r.frozen_bundle ? { frozenBundle: r.frozen_bundle } : {}),
     ...(r.unlisted ? { unlisted: true } : {}),
-    ...(r.featured ? { featured: true } : {}),
     ...(historical.some(h => h.deck_slug === r.slug)
       ? { aliases: historical.filter(h => h.deck_slug === r.slug).map(h => h.alias) }
       : {}),

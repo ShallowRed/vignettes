@@ -12,7 +12,6 @@ export interface PresentationListItem {
   /** Hidden from the catalog for non-privileged actors. */
   unlisted?: boolean
   /** Pinned to the top of the public showcase. */
-  featured?: boolean
   /** Link to `/p/<alias>` when present. */
   alias?: string
   /** frozen/archived serve a static bundle. */

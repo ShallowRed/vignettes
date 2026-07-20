@@ -32,7 +32,6 @@ const state = reactive({
   title: '',
   status: 'draft' as PublicationStatus,
   unlisted: false,
-  featured: false,
   project: NONE,
   theme: NONE,
   alias: '',
@@ -46,7 +45,6 @@ watch(open, (now) => {
       title: props.item.title,
       status: props.item.status,
       unlisted: props.item.unlisted ?? false,
-      featured: props.item.featured ?? false,
       project: props.item.project ?? NONE,
       theme: props.item.theme ?? NONE,
       alias: props.item.alias ?? '',
@@ -83,7 +81,6 @@ async function save() {
         title: state.title.trim() || props.item.title,
         status: state.status,
         unlisted: state.unlisted,
-        featured: state.featured,
         project: state.project === NONE ? null : state.project,
         theme: state.theme === NONE ? null : state.theme,
         alias: state.alias.trim() || null,
@@ -213,12 +210,6 @@ async function removeGrant(userId: number) {
             description="Accessible par lien mais absente du catalogue."
           >
             <USwitch v-model="state.unlisted" />
-          </UFormField>
-          <UFormField
-            label="Épinglée en vitrine"
-            description="Remonte en tête du catalogue public (decks publics uniquement)."
-          >
-            <USwitch v-model="state.featured" />
           </UFormField>
         </div>
 

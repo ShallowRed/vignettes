@@ -14,7 +14,6 @@ const PatchSchema = z.object({
   alias: z.string().min(1).nullable().optional(),
   frozenBundle: z.string().nullable().optional(),
   unlisted: z.boolean().optional(),
-  featured: z.boolean().optional(),
 }).strict()
 
 /**
@@ -62,7 +61,6 @@ export default defineEventHandler(async (event) => {
         project: (data.project as string) || null,
         theme: (data.theme as string) || null,
         unlisted: Boolean(data.unlisted),
-        featured: Boolean(data.featured),
       }
     }
   }

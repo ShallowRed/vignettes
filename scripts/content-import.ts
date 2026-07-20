@@ -161,7 +161,6 @@ interface DeckPlan {
   frozenBundle: string | null
   accessPasswordHash: string | null
   unlisted: number
-  featured: number
   raw: string
   needsVersion: boolean
 }
@@ -205,7 +204,6 @@ for (const stub of stubs) {
     frozenBundle: reg?.frozenBundle ?? null,
     accessPasswordHash: (data.accessPassword as string) ?? null,
     unlisted: data.unlisted ? 1 : 0,
-    featured: data.featured ? 1 : 0,
     raw,
     // Only publish a new version when the markdown actually changed.
     needsVersion: publishedRaw.get(stub.slug) !== raw,
@@ -286,13 +284,13 @@ const upsertProject = db.prepare(`
 `)
 const upsertDeck = db.prepare(`
   insert into decks (slug,alias,title,status,lifecycle,project,theme,access_password_hash,
-                     frozen_bundle,source,note_id,unlisted,featured,managed,created_at,updated_at)
+                     frozen_bundle,source,note_id,unlisted,managed,created_at,updated_at)
   values (@slug,@alias,@title,@status,@lifecycle,@project,@theme,@accessPasswordHash,
-          @frozenBundle,@source,@noteId,@unlisted,@featured,1,@ts,@ts)
+          @frozenBundle,@source,@noteId,@unlisted,1,@ts,@ts)
   on conflict(slug) do update set
     alias=@alias,title=@title,status=@status,lifecycle=@lifecycle,project=@project,theme=@theme,
     access_password_hash=@accessPasswordHash,frozen_bundle=@frozenBundle,source=@source,note_id=@noteId,
-    unlisted=@unlisted,featured=@featured,managed=1,updated_at=@ts
+    unlisted=@unlisted,managed=1,updated_at=@ts
 `)
 const insertVersion = db.prepare(
   'insert into deck_versions (deck_slug,raw,published_by,published_at) values (?,?,?,?)',

@@ -22,7 +22,6 @@ export interface DeckMetaRecord {
   frozenBundle?: string
   accessPasswordHash?: string
   unlisted: boolean
-  featured: boolean
   managed: boolean
   published: boolean
 }
@@ -46,7 +45,6 @@ export function createDeckMeta(db: Db) {
       frozenBundle: row.frozenBundle ?? undefined,
       accessPasswordHash: row.accessPasswordHash ?? undefined,
       unlisted: row.unlisted,
-      featured: row.featured,
       managed: row.managed,
       published: row.publishedVersionId != null,
     }
@@ -66,7 +64,7 @@ export function createDeckMeta(db: Db) {
      * Admin metadata edit — the second way a deck becomes `managed` (its row
      * turns into the metadata truth, shadowing file frontmatter).
      */
-    async update(slug: string, patch: Partial<Pick<DeckMetaRecord, 'title' | 'status' | 'lifecycle' | 'project' | 'theme' | 'alias' | 'frozenBundle' | 'unlisted' | 'featured'>>): Promise<DeckMetaRecord> {
+    async update(slug: string, patch: Partial<Pick<DeckMetaRecord, 'title' | 'status' | 'lifecycle' | 'project' | 'theme' | 'alias' | 'frozenBundle' | 'unlisted'>>): Promise<DeckMetaRecord> {
       const now = new Date()
       const set = { ...patch, managed: true, updatedAt: now }
       const row = db.insert(decks)
