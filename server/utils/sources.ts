@@ -1,9 +1,14 @@
+import type { DeckGrant } from '#shared/access'
 import type { ContentSource, DeckDirectory } from '#shared/deck'
 import type { ProjectDirectory } from '#shared/projects'
+import { strongerGrant } from '#shared/access'
+import { eq } from 'drizzle-orm'
 import { createDbContent } from '../db/content-store'
 import { createDeckMeta } from '../db/deck-meta'
 import { createDbDirectory } from '../db/directory'
 import { createPermissionStore } from '../db/permission-store'
+import { createProjectPermissionStore } from '../db/project-permission-store'
+import { decks } from '../db/schema'
 import { useDb } from './db'
 
 /**
@@ -32,6 +37,49 @@ export function useDeckMeta() {
 /** Per-deck permission grants. */
 export function usePermissionStore() {
   return createPermissionStore(useDb())
+}
+
+/** Project-scoped permission grants (master key over a project's decks). */
+export function useProjectPermissionStore() {
+  return createProjectPermissionStore(useDb())
+}
+
+/**
+ * Effective grants: per-deck grants folded with the grants a user holds on each
+ * deck's project (the stronger scope wins). This is what access decisions and the
+ * catalog consume, so a project grant transparently opens every deck in the project.
+ */
+export function useGrants() {
+  const db = useDb()
+  const deckStore = createPermissionStore(db)
+  const projectStore = createProjectPermissionStore(db)
+
+  return {
+    async get(deckSlug: string, userId: number): Promise<DeckGrant | undefined> {
+      const deck = db.select({ project: decks.project }).from(decks).where(eq(decks.slug, deckSlug)).get()
+      const [deckGrant, projectGrant] = await Promise.all([
+        deckStore.get(deckSlug, userId),
+        deck?.project ? projectStore.get(deck.project, userId) : Promise.resolve(null),
+      ])
+      return strongerGrant(deckGrant ?? undefined, projectGrant ?? undefined)
+    },
+
+    async listForUser(userId: number): Promise<Map<string, DeckGrant>> {
+      const [deckGrants, projectGrants] = await Promise.all([
+        deckStore.listForUser(userId),
+        projectStore.listForUser(userId),
+      ])
+      const effective = new Map(deckGrants)
+      if (projectGrants.size > 0) {
+        for (const { slug, project } of db.select({ slug: decks.slug, project: decks.project }).from(decks).all()) {
+          const pg = project ? projectGrants.get(project) : undefined
+          if (pg)
+            effective.set(slug, strongerGrant(effective.get(slug), pg)!)
+        }
+      }
+      return effective
+    },
+  }
 }
 
 // Directories resolve the db handle lazily (per call), so the connection is only

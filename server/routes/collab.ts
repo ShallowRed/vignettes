@@ -3,7 +3,7 @@ import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
 import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'
-import { usePermissionStore } from '../utils/sources'
+import { useGrants } from '../utils/sources'
 
 type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleConnection']>
 
@@ -39,7 +39,7 @@ export default defineWebSocketHandler({
 
     const actor = await getActorFromRequest(request)
     const granted = actor.id != null
-      && await usePermissionStore().get(deck, actor.id).catch(() => null) === 'editor'
+      && await useGrants().get(deck, actor.id).catch(() => undefined) === 'editor'
     if (!isPrivileged(actor.role) && !granted)
       throw new Response('Editing requires an owner/editor role or an editor grant on this deck', { status: 401 })
 

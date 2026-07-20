@@ -5,7 +5,7 @@ import process from 'node:process'
 import { decideAccess } from '#shared/access'
 import { getActor } from './actor'
 import { verifyAccessPassword } from './password'
-import { usePermissionStore } from './sources'
+import { useGrants } from './sources'
 
 /**
  * Server-side access gate: the I/O adapter around the pure `decideAccess`. Resolves
@@ -21,11 +21,15 @@ export interface GateOptions {
   storedHash?: string
 }
 
-/** The actor's per-deck grant; a permission-store failure never grants anything. */
+/**
+ * The actor's effective grant on this deck — its per-deck grant folded with any
+ * grant on the deck's project (a project grant opens every deck in the project).
+ * A permission-store failure never grants anything.
+ */
 async function resolveGrant(actor: Actor, slug: string): Promise<DeckGrant | undefined> {
   if (!actor.id)
     return undefined
-  return await usePermissionStore().get(slug, actor.id).catch(() => null) ?? undefined
+  return await useGrants().get(slug, actor.id).catch(() => undefined) ?? undefined
 }
 
 /** Throws `createError` on deny/needs-password; returns normally on allow. */

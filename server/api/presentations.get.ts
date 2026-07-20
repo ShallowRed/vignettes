@@ -1,7 +1,7 @@
 import type { PresentationListItem } from '#shared/presentations'
 import { canList, isPrivileged } from '#shared/access'
 import { getActor } from '../utils/actor'
-import { useDeckMeta, usePermissionStore } from '../utils/sources'
+import { useDeckMeta, useGrants } from '../utils/sources'
 
 /**
  * Catalog endpoint. Every deck is a database row now (the git content is the
@@ -12,7 +12,7 @@ import { useDeckMeta, usePermissionStore } from '../utils/sources'
 export default defineEventHandler(async (event): Promise<PresentationListItem[]> => {
   const actor = await getActor(event)
   const grants = actor.id
-    ? await usePermissionStore().listForUser(actor.id).catch(() => new Map())
+    ? await useGrants().listForUser(actor.id).catch(() => new Map())
     : new Map()
 
   try {

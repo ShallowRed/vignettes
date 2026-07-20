@@ -77,3 +77,15 @@ export const deckPermissions = sqliteTable('deck_permissions', {
   grantedBy: text('granted_by').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, table => [primaryKey({ columns: [table.deckSlug, table.userId] })])
+
+/**
+ * Project-scoped grant: a master key over every deck in the project (private ones
+ * included). Folded with any per-deck grant at resolution — the stronger wins.
+ */
+export const projectPermissions = sqliteTable('project_permissions', {
+  projectSlug: text('project_slug').notNull().references(() => projects.slug),
+  userId: integer('user_id').notNull().references(() => users.id),
+  role: text('role').notNull(),
+  grantedBy: text('granted_by').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, table => [primaryKey({ columns: [table.projectSlug, table.userId] })])
