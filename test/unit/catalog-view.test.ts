@@ -14,7 +14,7 @@ function item(partial: Partial<PresentationListItem> & { slug: string }): Presen
 
 const catalog: PresentationListItem[] = [
   item({ slug: 'zeta', title: 'Zeta deck', theme: 'corporate', status: 'public' }),
-  item({ slug: 'alpha', title: 'Alpha intro', theme: 'dsfr', status: 'draft' }),
+  item({ slug: 'alpha', title: 'Alpha intro', theme: 'dsfr', status: 'public' }),
   item({ slug: 'mid', title: 'Mid talk', theme: 'dsfr', status: 'semi-private' }),
   item({ slug: 'priv', title: 'Private notes', theme: 'dsfr', status: 'private' }),
 ]
@@ -38,7 +38,7 @@ describe('applyCatalogQuery', () => {
   })
 
   it('filters by status set; empty set means all', () => {
-    expect(applyCatalogQuery(catalog, { statuses: ['public', 'draft'] }).map(p => p.slug))
+    expect(applyCatalogQuery(catalog, { statuses: ['public'] }).map(p => p.slug))
       .toEqual(['alpha', 'zeta'])
     expect(applyCatalogQuery(catalog, { statuses: [] }).map(p => p.slug))
       .toEqual(['alpha', 'mid', 'priv', 'zeta'])
@@ -46,7 +46,7 @@ describe('applyCatalogQuery', () => {
 
   it('sorts by status in canonical order, ties broken by title', () => {
     expect(applyCatalogQuery(catalog, { sortKey: 'status' }).map(p => p.status))
-      .toEqual(['public', 'semi-private', 'private', 'draft'])
+      .toEqual(['public', 'public', 'semi-private', 'private'])
   })
 
   it('reverses with sortDir desc', () => {
@@ -68,12 +68,11 @@ describe('applyCatalogQuery', () => {
 describe('countByStatus', () => {
   it('counts each status, zero for absent', () => {
     expect(countByStatus(catalog)).toEqual({
-      'public': 1,
+      'public': 2,
       'semi-private': 1,
       'private': 1,
-      'draft': 1,
     })
-    expect(countByStatus([])).toEqual({ 'public': 0, 'semi-private': 0, 'private': 0, 'draft': 0 })
+    expect(countByStatus([])).toEqual({ 'public': 0, 'semi-private': 0, 'private': 0 })
   })
 })
 

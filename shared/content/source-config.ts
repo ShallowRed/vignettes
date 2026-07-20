@@ -21,7 +21,7 @@ export type ContentSourceConfig = z.infer<typeof ContentSourceConfigSchema>
 
 export const DEFAULT_CONTENT_REPO = 'ShallowRed/nuxt-slides-content'
 export const DEFAULT_CONTENT_BRANCH = 'main'
-export const DEFAULT_CONTENT_FOLDERS = ['public', 'draft', 'private', 'semi-private']
+export const DEFAULT_CONTENT_FOLDERS = ['public', 'private', 'semi-private']
 
 // failClosed is true on CI: a missing token or unreachable clone fails the build
 // rather than deploying a deck-less site.

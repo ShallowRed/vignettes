@@ -30,7 +30,7 @@ const NONE = '__none__'
 
 const state = reactive({
   title: '',
-  status: 'draft' as PublicationStatus,
+  status: 'private' as PublicationStatus,
   unlisted: false,
   project: NONE,
   theme: NONE,

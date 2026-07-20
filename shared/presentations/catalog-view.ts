@@ -25,7 +25,6 @@ const STATUS_ORDER: Record<PublicationStatus, number> = {
   'public': 0,
   'semi-private': 1,
   'private': 2,
-  'draft': 3,
 }
 
 function matchesSearch(item: PresentationListItem, term: string): boolean {
@@ -76,7 +75,6 @@ export function countByStatus(items: PresentationListItem[]): Record<Publication
     'public': 0,
     'semi-private': 0,
     'private': 0,
-    'draft': 0,
   }
   for (const item of items)
     counts[item.status]++

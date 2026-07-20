@@ -43,6 +43,13 @@
       "when": 1784556222325,
       "tag": "0005_smooth_red_shift",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1784557551266,
+      "tag": "0006_map_draft_to_private",
+      "breakpoints": true
     }
   ]
 }

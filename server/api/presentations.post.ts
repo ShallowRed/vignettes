@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
   await drafts.save(slug, markdownToYDocUpdate(starterMarkdown({ title, theme, project })))
   const meta = await useDeckMeta().update(slug, {
     title,
-    status: 'draft',
+    status: 'private',
     ...(project ? { project } : {}),
     ...(theme ? { theme } : {}),
   })

@@ -57,7 +57,6 @@ export function decideAccess(input: AccessInput): AccessDecision {
       if (!hasPassword)
         return denyFor(role)
       return passwordGranted ? { outcome: 'allow' } : { outcome: 'needs-password' }
-    case 'draft':
     case 'private':
       return denyFor(role)
     default:

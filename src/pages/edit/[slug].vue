@@ -44,7 +44,7 @@ const toast = useToast()
 const raw = ref('')
 const lastSaved = ref('')
 const deckTitle = ref<string | undefined>(undefined)
-const deckStatus = ref<string>('draft')
+const deckStatus = ref<string>('private')
 const loadedFrom = ref<'draft' | 'published' | 'file' | null>(null)
 const preview = ref<PresentationData | null>(null)
 const loadError = ref<string | null>(null)
@@ -73,7 +73,7 @@ if (error.value) {
   loadError.value = (error.value as any)?.statusMessage || 'Failed to load deck'
 }
 else if (data.value) {
-  deckStatus.value = data.value.status ?? 'draft'
+  deckStatus.value = data.value.status ?? 'private'
   deckTitle.value = data.value.title
   loadedFrom.value = data.value.from ?? null
   // Solo mode seeds the editor from the fetched markdown. In collab mode the

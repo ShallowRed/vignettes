@@ -9,7 +9,15 @@ describe('resolveDeckStatus — fail-closed status resolution', () => {
   it('reads a valid frontmatter status', () => {
     expect(resolveDeckStatus(stub('status: public'))).toBe('public')
     expect(resolveDeckStatus(stub('status: semi-private'))).toBe('semi-private')
-    expect(resolveDeckStatus(stub('status: draft'))).toBe('draft')
+    expect(resolveDeckStatus(stub('status: private'))).toBe('private')
+  })
+
+  // `draft` was removed from the visibility enum: it granted exactly the same
+  // access as `private` while pretending to describe publication. Legacy stubs
+  // still carrying it land on `private` through the fail-closed default, so the
+  // migration changes no one's access.
+  it('maps the retired `draft` status to private', () => {
+    expect(resolveDeckStatus(stub('status: draft'))).toBe('private')
   })
 
   it('accepts the legacy `access:` alias', () => {

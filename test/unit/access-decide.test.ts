@@ -24,15 +24,15 @@ describe('decideAccess — view matrix', () => {
       expect(decideAccess(input({ status: 'public', role })).outcome).toBe('allow')
   })
 
-  it('denies draft/private to anonymous as auth-required', () => {
-    for (const status of ['draft', 'private'] as PublicationStatus[]) {
+  it('denies private to anonymous as auth-required', () => {
+    for (const status of ['private'] as PublicationStatus[]) {
       expect(decideAccess(input({ status, role: 'anonymous' })))
         .toEqual({ outcome: 'deny', reason: 'auth-required' })
     }
   })
 
-  it('denies draft/private to an authenticated viewer as forbidden (403, not 401)', () => {
-    for (const status of ['draft', 'private'] as PublicationStatus[]) {
+  it('denies private to an authenticated viewer as forbidden (403, not 401)', () => {
+    for (const status of ['private'] as PublicationStatus[]) {
       expect(decideAccess(input({ status, role: 'viewer' })))
         .toEqual({ outcome: 'deny', reason: 'forbidden' })
     }
