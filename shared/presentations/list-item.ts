@@ -16,9 +16,7 @@ export interface PresentationListItem {
   alias?: string
   /** frozen/archived serve a static bundle. */
   lifecycle?: Lifecycle
-  /** Privileged only: a committed file exists behind this deck (deleting the database state reverts to it). */
-  fileBacked?: boolean
-  /** Privileged only, database decks: false until a first publish gives the deck servable content. */
+  /** Privileged only: false until a first publish gives the deck servable content. */
   published?: boolean
 }
 

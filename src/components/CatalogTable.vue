@@ -145,7 +145,7 @@ function rowActions(item: PresentationListItem) {
           ],
           [
             {
-              label: item.fileBacked ? 'Réinitialiser depuis le fichier…' : 'Supprimer…',
+              label: 'Supprimer…',
               icon: 'i-lucide-trash-2',
               color: 'error' as const,
               onSelect: () => emit('remove', item),
@@ -227,7 +227,7 @@ function clearSelection() {
             class="text-xs text-muted"
           >Unlisted</span>
           <span
-            v-if="admin && row.original.published === false && !row.original.fileBacked"
+            v-if="admin && row.original.published === false"
             class="text-xs text-muted"
           >Non publié</span>
         </div>

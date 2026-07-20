@@ -29,7 +29,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
   ],
   [
     {
-      label: props.presentation.fileBacked ? 'Réinitialiser depuis le fichier…' : 'Supprimer…',
+      label: 'Supprimer…',
       icon: 'i-lucide-trash-2',
       color: 'error',
       onSelect: () => emit('remove'),
@@ -92,7 +92,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           <span v-if="frozen">{{ presentation.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
           <span v-else-if="!minimal && statusDisplay && presentation.status !== 'public'">{{ statusDisplay.label }}</span>
           <span v-if="!minimal && presentation.unlisted">Unlisted</span>
-          <span v-if="!minimal && admin && presentation.published === false && !presentation.fileBacked">Non publié</span>
+          <span v-if="!minimal && admin && presentation.published === false">Non publié</span>
           <span v-if="!minimal">{{ presentation.theme }}</span>
         </div>
 

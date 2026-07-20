@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 
-// Delete confirmation: a file-backed deck reverts to its committed markdown
-// (the database only shadows it); an app-created deck disappears for good.
+// Delete confirmation. The database is the source of truth, so this is permanent.
 const props = defineProps<{ item: PresentationListItem }>()
 
 const emit = defineEmits<{ deleted: [] }>()
@@ -22,7 +21,7 @@ async function confirm() {
     await $fetch(`/api/presentations/${props.item.slug}`, { method: 'DELETE' })
     open.value = false
     toast.add({
-      title: props.item.fileBacked ? 'Données en base supprimées' : 'Présentation supprimée',
+      title: 'Présentation supprimée',
       description: props.item.title,
       icon: 'i-lucide-trash-2',
       color: 'success',
@@ -41,25 +40,16 @@ async function confirm() {
 <template>
   <UModal
     v-model:open="open"
-    :title="item.fileBacked ? 'Réinitialiser depuis le fichier ?' : 'Supprimer la présentation ?'"
+    title="Supprimer la présentation ?"
     :description="item.title"
   >
     <template #body>
       <UAlert
-        v-if="item.fileBacked"
-        color="warning"
-        variant="subtle"
-        icon="i-lucide-history"
-        title="Ce deck a un fichier committé derrière lui"
-        description="Brouillon, versions publiées, réglages et partages en base seront supprimés ; le deck reviendra à la version du fichier."
-      />
-      <UAlert
-        v-else
         color="error"
         variant="subtle"
         icon="i-lucide-triangle-alert"
         title="Suppression définitive"
-        description="Ce deck n'existe qu'en base : brouillon, versions publiées et partages seront perdus. Aucun fichier ne le fera revivre."
+        description="Brouillon, versions publiées, réglages et partages seront perdus. Cette action est irréversible."
       />
     </template>
 
@@ -72,7 +62,7 @@ async function confirm() {
           @click="close"
         />
         <UButton
-          :label="item.fileBacked ? 'Réinitialiser' : 'Supprimer'"
+          label="Supprimer"
           color="error"
           icon="i-lucide-trash-2"
           :loading="pending"
