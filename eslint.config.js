@@ -2,6 +2,9 @@ import antfu from '@antfu/eslint-config'
 
 export default antfu({
   vue: true,
+  // Drizzle rewrites these on every `drizzle-kit generate` (no trailing newline),
+  // so linting them only invites `--fix` to churn generated files.
+  ignores: ['server/db/migrations/**'],
   rules: {
     'no-console': 'off',
     'no-debugger': 'off',
