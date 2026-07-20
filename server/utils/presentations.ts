@@ -19,6 +19,9 @@ export function presentationsStorage() {
 // `archived/` is a lifecycle location sourced via the registry, not a deck stub.
 const NON_STUB_PREFIXES = ['archived']
 
+// Repo documentation, not a deck — it would otherwise be catalogued as one.
+const NON_STUB_SLUGS = ['README']
+
 interface StubEntry {
   slug: string
   status: PublicationStatus
@@ -42,6 +45,8 @@ async function listStubEntries(): Promise<StubEntry[]> {
     if (folderHint && NON_STUB_PREFIXES.includes(folderHint))
       continue
     const slug = segments[segments.length - 1]!.replace(/\.md$/, '')
+    if (NON_STUB_SLUGS.includes(slug))
+      continue
     const raw = await storage.getItem(key)
     if (raw == null)
       continue
