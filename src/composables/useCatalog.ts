@@ -1,9 +1,8 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { useQuery, useQueryCache } from '@pinia/colada'
-import { catalogApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
-import { catalogKeys } from '~/queries/keys'
+import { catalogKeys, presentationsQuery, projectsQuery } from '~/queries'
 
 /**
  * The app-wide catalog data layer, on Pinia Colada. Both the access-filtered deck
@@ -25,18 +24,12 @@ export function useCatalog() {
   const requestFetch = useRequestFetch()
   const queryCache = useQueryCache()
 
-  const presentationsQuery = useQuery({
-    key: catalogKeys.presentations,
-    query: () => catalogApi.listPresentations(requestFetch),
-  })
-  const projectsQuery = useQuery({
-    key: catalogKeys.projects,
-    query: () => catalogApi.listProjects(requestFetch),
-  })
+  const presentationsQ = useQuery(presentationsQuery(requestFetch))
+  const projectsQ = useQuery(projectsQuery(requestFetch))
 
   // Never undefined for the templates (arrays are iterated/filtered directly).
-  const presentations = computed<PresentationListItem[]>(() => presentationsQuery.data.value ?? [])
-  const projects = computed<Project[]>(() => projectsQuery.data.value ?? [])
+  const presentations = computed<PresentationListItem[]>(() => presentationsQ.data.value ?? [])
+  const projects = computed<Project[]>(() => projectsQ.data.value ?? [])
 
   watch(privileged, (now, before) => {
     if (now && !before) {
@@ -47,12 +40,12 @@ export function useCatalog() {
 
   return {
     presentations,
-    presentationsStatus: presentationsQuery.status,
-    presentationsError: presentationsQuery.error,
+    presentationsStatus: presentationsQ.status,
+    presentationsError: presentationsQ.error,
     projects,
-    refreshPresentations: () => presentationsQuery.refresh(),
-    refreshProjects: () => projectsQuery.refresh(),
-    refreshAll: () => Promise.all([presentationsQuery.refresh(), projectsQuery.refresh()]),
+    refreshPresentations: () => presentationsQ.refresh(),
+    refreshProjects: () => projectsQ.refresh(),
+    refreshAll: () => Promise.all([presentationsQ.refresh(), projectsQ.refresh()]),
   }
 }
 

@@ -2,7 +2,7 @@ import type { TrashedDeckSummary, TrashedProjectSummary, TrashTarget } from '#sh
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { trashApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
-import { catalogKeys, trashKeys } from '~/queries/keys'
+import { catalogKeys, trashKeys, trashQuery } from '~/queries'
 
 /**
  * The trash (corbeille) data layer, on Pinia Colada. One query for the listing,
@@ -20,14 +20,10 @@ export function useTrash() {
   // Trash is privileged-only: gating the query keeps an anonymous SSR pass from
   // hitting a 401 (which would surface as an error response instead of the page's
   // "accès réservé" state).
-  const trashQuery = useQuery({
-    key: trashKeys.all,
-    query: () => trashApi.list(requestFetch),
-    enabled: () => privileged.value,
-  })
+  const trashQ = useQuery({ ...trashQuery(requestFetch), enabled: () => privileged.value })
 
-  const projects = computed<TrashedProjectSummary[]>(() => trashQuery.data.value?.projects ?? [])
-  const decks = computed<TrashedDeckSummary[]>(() => trashQuery.data.value?.decks ?? [])
+  const projects = computed<TrashedProjectSummary[]>(() => trashQ.data.value?.projects ?? [])
+  const decks = computed<TrashedDeckSummary[]>(() => trashQ.data.value?.decks ?? [])
   const isEmpty = computed(() => projects.value.length === 0 && decks.value.length === 0)
 
   function invalidateTrash() {
@@ -72,7 +68,8 @@ export function useTrash() {
     projects,
     decks,
     isEmpty,
-    error: trashQuery.error,
+    status: trashQ.status,
+    error: trashQ.error,
     canView: privileged,
     busy,
     restore: async (target: TrashTarget): Promise<void> => { await restore.mutateAsync(target) },

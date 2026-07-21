@@ -8,7 +8,7 @@ const { role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 
 // Query + restore/purge mutations (cross-invalidate the catalog on restore).
-const { projects, decks, isEmpty, canView, busy, restore, purge } = useTrash()
+const { projects, decks, isEmpty, status, canView, busy, restore, purge } = useTrash()
 
 const breadcrumb = [
   { label: 'Accueil', to: '/' },
@@ -58,110 +58,127 @@ async function confirmPurge() {
       description="La corbeille est réservée aux comptes autorisés."
     />
 
-    <UEmpty
-      v-else-if="isEmpty"
-      icon="i-lucide-trash-2"
-      title="Corbeille vide"
-      description="Les dossiers et présentations supprimés apparaîtront ici."
-      variant="naked"
-    />
+    <AsyncSection
+      v-else
+      :status="status"
+      :empty="isEmpty"
+    >
+      <template #pending>
+        <div class="flex flex-col gap-2">
+          <USkeleton
+            v-for="i in 3"
+            :key="i"
+            class="h-12 rounded-lg"
+          />
+        </div>
+      </template>
 
-    <template v-else>
-      <!-- Trashed projects (folder + its decks restore/purge together). -->
-      <section
-        v-if="projects.length"
-        class="flex flex-col gap-2"
-      >
-        <h2 class="text-sm font-medium text-muted">
-          Dossiers
-        </h2>
-        <ul class="flex flex-col gap-2">
-          <li
-            v-for="project in projects"
-            :key="project.slug"
-            class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
-          >
-            <UIcon
-              name="i-lucide-folder"
-              class="size-5 text-dimmed shrink-0"
-            />
-            <div class="min-w-0">
-              <p class="text-sm font-medium text-highlighted truncate">
-                {{ project.title }}
-              </p>
-              <p class="text-xs text-muted">
-                {{ project.deckCount }} présentation{{ project.deckCount > 1 ? 's' : '' }}
-              </p>
-            </div>
-            <div class="flex-1" />
-            <UButton
-              label="Restaurer"
-              icon="i-lucide-undo-2"
-              color="neutral"
-              variant="subtle"
-              size="xs"
-              :disabled="busy"
-              @click="restoreProject(project.slug)"
-            />
-            <UButton
-              v-if="isOwner"
-              icon="i-lucide-trash-2"
-              color="error"
-              variant="ghost"
-              size="xs"
-              :disabled="busy"
-              aria-label="Supprimer définitivement"
-              @click="purgeTarget = { kind: 'project', slug: project.slug, title: project.title }"
-            />
-          </li>
-        </ul>
-      </section>
+      <template #empty>
+        <UEmpty
+          icon="i-lucide-trash-2"
+          title="Corbeille vide"
+          description="Les dossiers et présentations supprimés apparaîtront ici."
+          variant="naked"
+        />
+      </template>
 
-      <!-- Standalone trashed decks (not part of a trashed folder). -->
-      <section
-        v-if="decks.length"
-        class="flex flex-col gap-2"
-      >
-        <h2 class="text-sm font-medium text-muted">
-          Présentations
-        </h2>
-        <ul class="flex flex-col gap-2">
-          <li
-            v-for="deck in decks"
-            :key="deck.slug"
-            class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
-          >
-            <UIcon
-              name="i-lucide-presentation"
-              class="size-5 text-dimmed shrink-0"
-            />
-            <p class="text-sm font-medium text-highlighted truncate min-w-0">
-              {{ deck.title }}
-            </p>
-            <div class="flex-1" />
-            <UButton
-              label="Restaurer"
-              icon="i-lucide-undo-2"
-              color="neutral"
-              variant="subtle"
-              size="xs"
-              :disabled="busy"
-              @click="restoreDeck(deck.slug)"
-            />
-            <UButton
-              v-if="isOwner"
-              icon="i-lucide-trash-2"
-              color="error"
-              variant="ghost"
-              size="xs"
-              :disabled="busy"
-              aria-label="Supprimer définitivement"
-              @click="purgeTarget = { kind: 'deck', slug: deck.slug, title: deck.title }"
-            />
-          </li>
-        </ul>
-      </section>
-    </template>
+      <div class="flex flex-col gap-6">
+        <!-- Trashed projects (folder + its decks restore/purge together). -->
+        <section
+          v-if="projects.length"
+          class="flex flex-col gap-2"
+        >
+          <h2 class="text-sm font-medium text-muted">
+            Dossiers
+          </h2>
+          <ul class="flex flex-col gap-2">
+            <li
+              v-for="project in projects"
+              :key="project.slug"
+              class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
+            >
+              <UIcon
+                name="i-lucide-folder"
+                class="size-5 text-dimmed shrink-0"
+              />
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-highlighted truncate">
+                  {{ project.title }}
+                </p>
+                <p class="text-xs text-muted">
+                  {{ project.deckCount }} présentation{{ project.deckCount > 1 ? 's' : '' }}
+                </p>
+              </div>
+              <div class="flex-1" />
+              <UButton
+                label="Restaurer"
+                icon="i-lucide-undo-2"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+                :disabled="busy"
+                @click="restoreProject(project.slug)"
+              />
+              <UButton
+                v-if="isOwner"
+                icon="i-lucide-trash-2"
+                color="error"
+                variant="ghost"
+                size="xs"
+                :disabled="busy"
+                aria-label="Supprimer définitivement"
+                @click="purgeTarget = { kind: 'project', slug: project.slug, title: project.title }"
+              />
+            </li>
+          </ul>
+        </section>
+
+        <!-- Standalone trashed decks (not part of a trashed folder). -->
+        <section
+          v-if="decks.length"
+          class="flex flex-col gap-2"
+        >
+          <h2 class="text-sm font-medium text-muted">
+            Présentations
+          </h2>
+          <ul class="flex flex-col gap-2">
+            <li
+              v-for="deck in decks"
+              :key="deck.slug"
+              class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
+            >
+              <UIcon
+                name="i-lucide-presentation"
+                class="size-5 text-dimmed shrink-0"
+              />
+              <p class="text-sm font-medium text-highlighted truncate min-w-0">
+                {{ deck.title }}
+              </p>
+              <div class="flex-1" />
+              <UButton
+                label="Restaurer"
+                icon="i-lucide-undo-2"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+                :disabled="busy"
+                @click="restoreDeck(deck.slug)"
+              />
+              <UButton
+                v-if="isOwner"
+                icon="i-lucide-trash-2"
+                color="error"
+                variant="ghost"
+                size="xs"
+                :disabled="busy"
+                aria-label="Supprimer définitivement"
+                @click="purgeTarget = { kind: 'deck', slug: deck.slug, title: deck.title }"
+              />
+            </li>
+          </ul>
+        </section>
+      </div>
+    </AsyncSection>
 
     <UModal
       v-model:open="purgeOpen"

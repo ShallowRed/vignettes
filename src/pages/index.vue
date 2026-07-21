@@ -53,37 +53,38 @@ function openDelete(item: PresentationListItem) {
 
 <template>
   <div>
-    <CatalogState
-      v-if="status === 'pending'"
-      state="pending"
-    />
-    <CatalogState
-      v-else-if="error"
-      state="error"
-      :message="error.message"
-    />
-    <template v-else-if="presentations.length === 0">
-      <CatalogState state="empty" />
-      <div
-        v-if="privileged"
-        class="flex justify-center gap-2 mt-4"
-      >
-        <UButton
-          icon="i-lucide-folder-plus"
-          label="Nouveau dossier"
-          color="neutral"
-          variant="subtle"
-          @click="createProjectOpen = true"
+    <AsyncSection
+      :status="status"
+      :error="error"
+      :empty="presentations.length === 0"
+    >
+      <template #empty>
+        <UEmpty
+          icon="i-lucide-presentation"
+          title="Aucune présentation"
+          :description="privileged ? 'Créez un premier dossier ou une présentation pour démarrer.' : 'Rien à afficher pour le moment.'"
+          variant="naked"
+          size="lg"
         />
-        <UButton
-          icon="i-lucide-file-plus-2"
-          label="Nouvelle présentation"
-          @click="createOpen = true"
-        />
-      </div>
-    </template>
+        <div
+          v-if="privileged"
+          class="flex justify-center gap-2 mt-4"
+        >
+          <UButton
+            icon="i-lucide-folder-plus"
+            label="Nouveau dossier"
+            color="neutral"
+            variant="subtle"
+            @click="createProjectOpen = true"
+          />
+          <UButton
+            icon="i-lucide-file-plus-2"
+            label="Nouvelle présentation"
+            @click="createOpen = true"
+          />
+        </div>
+      </template>
 
-    <template v-else>
       <!-- Admin header: mode switch + (management search inline) + create.
            Inlining the toolbar between the switch and the create button saves a row. -->
       <div
@@ -183,7 +184,7 @@ function openDelete(item: PresentationListItem) {
           @remove="openDelete"
         />
       </template>
-    </template>
+    </AsyncSection>
 
     <DeckCreateModal
       v-model:open="createOpen"

@@ -130,40 +130,34 @@ function openDelete(item: PresentationListItem) {
       />
     </div>
 
-    <CatalogState
-      v-if="status === 'pending'"
-      state="pending"
-    />
-    <CatalogState
-      v-else-if="error"
-      state="error"
-      :message="error.message"
-    />
-
-    <UEmpty
-      v-else-if="decks.length === 0"
-      icon="i-lucide-folder-open"
-      title="Dossier vide"
-      description="Aucune présentation dans ce projet."
-      variant="naked"
-      :actions="privileged
-        ? [{ label: 'Nouvelle présentation', icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
-        : []"
-    />
-
-    <div
-      v-else
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    <AsyncSection
+      :status="status"
+      :error="error"
+      :empty="decks.length === 0"
     >
-      <PresentationCard
-        v-for="presentation in decks"
-        :key="presentation.slug"
-        :presentation="presentation"
-        :admin="privileged"
-        @edit-meta="openMeta(presentation)"
-        @remove="openDelete(presentation)"
-      />
-    </div>
+      <template #empty>
+        <UEmpty
+          icon="i-lucide-folder-open"
+          title="Dossier vide"
+          description="Aucune présentation dans ce projet."
+          variant="naked"
+          :actions="privileged
+            ? [{ label: 'Nouvelle présentation', icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
+            : []"
+        />
+      </template>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <PresentationCard
+          v-for="presentation in decks"
+          :key="presentation.slug"
+          :presentation="presentation"
+          :admin="privileged"
+          @edit-meta="openMeta(presentation)"
+          @remove="openDelete(presentation)"
+        />
+      </div>
+    </AsyncSection>
 
     <DeckMetaSlideover
       v-if="target"

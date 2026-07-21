@@ -43,7 +43,7 @@ src/                                # Nuxt app (srcDir)
 │   ├── useRevealSync.ts           # Inject sync/instance in child components
 │   └── useTheme.ts                # Dynamic CSS theme loading
 ├── components/
-│   ├── AppHeader.vue, PresentationCard.vue, CatalogToolbar.vue, CatalogState.vue, DeckError.vue
+│   ├── AppHeader.vue, PresentationCard.vue, CatalogToolbar.vue, AsyncSection.vue, DeckError.vue
 │   ├── RevealPresentation.vue     # Reveal.js wrapper component
 │   ├── RevealSlides.vue           # Section scaffolding (iterates Slide[])
 │   ├── SlideContent.vue           # Inner slide rendering (layout strategy dispatch)

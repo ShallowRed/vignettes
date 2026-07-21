@@ -1,7 +1,7 @@
 import type { DeckGrant, GrantSummary, PermissionScope, UserAccount } from '#shared/access'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
-import { permissionsApi, usersApi } from '~/api'
-import { deckKeys, projectKeys, usersKeys } from '~/queries/keys'
+import { permissionsApi } from '~/api'
+import { grantsQuery, sharingKey, usersQuery } from '~/queries'
 
 export const GRANT_ROLE_ITEMS = [
   { label: 'Lecture', value: 'viewer' as DeckGrant },
@@ -23,24 +23,11 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
   const queryCache = useQueryCache()
   const toast = useToast()
 
-  function grantsKey() {
-    const s = scope()
-    return s.kind === 'deck' ? deckKeys.sharing(s.slug) : projectKeys.sharing(s.slug)
-  }
+  const grantsQ = useQuery({ ...grantsQuery(requestFetch, scope), enabled })
+  const usersQ = useQuery({ ...usersQuery(requestFetch), enabled })
 
-  const grantsQuery = useQuery({
-    key: grantsKey,
-    query: () => permissionsApi.list(requestFetch, scope()),
-    enabled,
-  })
-  const usersQuery = useQuery({
-    key: usersKeys.all,
-    query: () => usersApi.list(requestFetch),
-    enabled,
-  })
-
-  const grants = computed<GrantSummary[]>(() => grantsQuery.data.value ?? [])
-  const knownUsers = computed<UserAccount[]>(() => usersQuery.data.value ?? [])
+  const grants = computed<GrantSummary[]>(() => grantsQ.data.value ?? [])
+  const knownUsers = computed<UserAccount[]>(() => usersQ.data.value ?? [])
 
   // Global owners/editors already see everything; only a viewer can be escalated.
   const grantableUsers = computed(() => {
@@ -54,7 +41,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
   const grantRole = ref<DeckGrant>('viewer')
 
   function invalidateGrants() {
-    return queryCache.invalidateQueries({ key: grantsKey() })
+    return queryCache.invalidateQueries({ key: sharingKey(scope) })
   }
   function onError(error: any, action: string) {
     toast.add({ title: error?.statusMessage || action, icon: 'i-lucide-triangle-alert', color: 'error' })

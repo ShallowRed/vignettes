@@ -23,10 +23,9 @@ import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
 import Codemirror from 'vue-codemirror6'
-import { catalogApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
 import { buildPresentationData } from '~/composables/usePresentation'
-import { catalogKeys } from '~/queries/keys'
+import { projectsQuery } from '~/queries'
 import { insertSnippet, safeInsertPos, wrapSelection } from '~/utils/editor-commands'
 import { deckCompletions } from '~/utils/editor-completions'
 import { editorTheme } from '~/utils/editor-theme'
@@ -227,10 +226,7 @@ const collabExtensions = shallowRef<Extension[]>([])
 
 // Project slugs feed the frontmatter completion. Shares the catalog's `projects`
 // query cache (same key) so navigating from the catalog needs no extra fetch.
-const { data: projectsData } = useQuery({
-  key: catalogKeys.projects,
-  query: () => catalogApi.listProjects(requestFetch),
-})
+const { data: projectsData } = useQuery(projectsQuery(requestFetch))
 const projects = computed<Project[]>(() => projectsData.value ?? [])
 
 const extensions = computed<Extension[]>(() => [
