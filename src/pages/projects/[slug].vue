@@ -55,6 +55,10 @@ const editProjectOpen = ref(false)
 const deleteProjectOpen = ref(false)
 const canManageProject = computed(() => isOwner.value && !isUngrouped.value)
 
+// Create a deck straight into this folder (privileged; pre-selects the project).
+const createOpen = ref(false)
+const defaultProject = computed(() => isUngrouped.value ? undefined : projectKey.value)
+
 function onProjectSaved(project: Project) {
   // A slug change moves the folder to a new URL; otherwise just refresh in place.
   if (project.slug !== routeSlug.value)
@@ -94,6 +98,13 @@ function openDelete(item: PresentationListItem) {
       </h1>
       <span class="text-sm text-muted">{{ decks.length }} présentation{{ decks.length > 1 ? 's' : '' }}</span>
       <div class="flex-1" />
+      <UButton
+        v-if="privileged"
+        icon="i-lucide-file-plus-2"
+        label="Nouvelle présentation"
+        size="sm"
+        @click="createOpen = true"
+      />
       <UButton
         v-if="canManageProject"
         icon="i-lucide-pencil"
@@ -139,6 +150,9 @@ function openDelete(item: PresentationListItem) {
       title="Dossier vide"
       description="Aucune présentation dans ce projet."
       variant="naked"
+      :actions="privileged
+        ? [{ label: 'Nouvelle présentation', icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
+        : []"
     />
 
     <div
@@ -185,6 +199,11 @@ function openDelete(item: PresentationListItem) {
       :project="projectRef"
       :deck-count="decks.length"
       @deleted="onProjectDeleted"
+    />
+    <DeckCreateModal
+      v-model:open="createOpen"
+      :projects="projects"
+      :default-project="defaultProject"
     />
   </div>
 </template>

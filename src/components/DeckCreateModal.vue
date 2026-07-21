@@ -6,7 +6,8 @@ import { slugify } from '~/utils/slugify'
 
 // Create-deck modal: title drives the slug until the user edits it by hand;
 // the deck is born in the database (draft status) and opens in the editor.
-const props = defineProps<{ projects?: Project[] }>()
+// `defaultProject` pre-selects a folder (creating from a project page).
+const props = defineProps<{ projects?: Project[], defaultProject?: string }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -33,7 +34,7 @@ watch(() => state.title, (title) => {
 
 watch(open, (now) => {
   if (now) {
-    Object.assign(state, { title: '', slug: '', project: NONE, theme: 'dsfr' })
+    Object.assign(state, { title: '', slug: '', project: props.defaultProject ?? NONE, theme: 'dsfr' })
     slugEdited.value = false
     errorMessage.value = ''
   }
