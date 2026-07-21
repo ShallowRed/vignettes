@@ -2,6 +2,7 @@
 import type { Project } from '#shared/projects'
 import { isDeckSlug } from '#shared/deck'
 import { KNOWN_THEMES } from '#shared/theme'
+import { useCatalogCache } from '~/composables/useCatalog'
 import { slugify } from '~/utils/slugify'
 
 // Create-deck modal: title drives the slug until the user edits it by hand;
@@ -12,6 +13,7 @@ const props = defineProps<{ projects?: Project[], defaultProject?: string }>()
 const open = defineModel<boolean>('open', { required: true })
 
 const toast = useToast()
+const { invalidatePresentations } = useCatalogCache()
 
 // A non-empty sentinel marks "none" in the project select (reka-ui forbids an
 // empty-string SelectItem value); dropped at POST time.
@@ -71,6 +73,7 @@ async function submit() {
     })
     open.value = false
     toast.add({ title: 'Présentation créée', description: state.title.trim(), icon: 'i-lucide-file-plus-2', color: 'success' })
+    await invalidatePresentations()
     await navigateTo(`/edit/${state.slug}`)
   }
   catch (e: any) {

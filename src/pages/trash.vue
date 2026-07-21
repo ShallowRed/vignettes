@@ -1,25 +1,15 @@
 <script setup lang="ts">
-import type { PublicationStatus } from '#shared/access'
+import type { TrashTarget } from '~/composables/useTrash'
 import { useAppSession } from '~/composables/useAppSession'
+import { useTrash } from '~/composables/useTrash'
 
 // The trash (corbeille): restore or permanently erase soft-deleted projects and
 // decks. Privileged users can restore; only the owner can permanently erase.
-interface TrashProject { slug: string, title: string, color?: string | null, deckCount: number }
-interface TrashDeck { slug: string, title: string, project?: string, status: PublicationStatus }
-
 const { role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 
-const toast = useToast()
-const busy = ref(false)
-
-const { data, refresh, error } = await useAsyncData(
-  'trash',
-  () => $fetch<{ projects: TrashProject[], decks: TrashDeck[] }>('/api/admin/trash'),
-  { default: () => ({ projects: [], decks: [] }) },
-)
-
-const isEmpty = computed(() => data.value.projects.length === 0 && data.value.decks.length === 0)
+// Query + restore/purge mutations (cross-invalidate the catalog on restore).
+const { projects, decks, isEmpty, canView, busy, restore, purge } = useTrash()
 
 const breadcrumb = [
   { label: 'Accueil', to: '/' },
@@ -27,26 +17,11 @@ const breadcrumb = [
 ]
 useHead({ title: 'Corbeille — Nuxt Slides' })
 
-async function act(url: string, method: 'POST' | 'DELETE', okTitle: string) {
-  busy.value = true
-  try {
-    await $fetch(url, { method })
-    toast.add({ title: okTitle, icon: 'i-lucide-check', color: 'success' })
-    await refresh()
-  }
-  catch (e: any) {
-    toast.add({ title: e?.statusMessage || 'Échec', icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-  finally {
-    busy.value = false
-  }
-}
-
-const restoreProject = (slug: string) => act(`/api/admin/trash/projects/${slug}/restore`, 'POST', 'Dossier restauré')
-const restoreDeck = (slug: string) => act(`/api/admin/trash/decks/${slug}/restore`, 'POST', 'Présentation restaurée')
+const restoreProject = (slug: string) => restore({ kind: 'project', slug })
+const restoreDeck = (slug: string) => restore({ kind: 'deck', slug })
 
 // Permanent deletion goes through a confirmation modal.
-const purgeTarget = ref<{ kind: 'project' | 'deck', slug: string, title: string } | null>(null)
+const purgeTarget = ref<TrashTarget | null>(null)
 const purgeOpen = computed({
   get: () => purgeTarget.value !== null,
   set: (v: boolean) => {
@@ -56,11 +31,9 @@ const purgeOpen = computed({
 })
 
 async function confirmPurge() {
-  const t = purgeTarget.value
-  if (!t)
+  if (!purgeTarget.value)
     return
-  const url = t.kind === 'project' ? `/api/admin/trash/projects/${t.slug}` : `/api/admin/trash/decks/${t.slug}`
-  await act(url, 'DELETE', 'Supprimé définitivement')
+  await purge(purgeTarget.value)
   purgeTarget.value = null
 }
 </script>
@@ -76,7 +49,7 @@ async function confirmPurge() {
     </div>
 
     <UAlert
-      v-if="error"
+      v-if="!canView"
       color="error"
       variant="subtle"
       icon="i-lucide-lock"
@@ -95,7 +68,7 @@ async function confirmPurge() {
     <template v-else>
       <!-- Trashed projects (folder + its decks restore/purge together). -->
       <section
-        v-if="data.projects.length"
+        v-if="projects.length"
         class="flex flex-col gap-2"
       >
         <h2 class="text-sm font-medium text-muted">
@@ -103,7 +76,7 @@ async function confirmPurge() {
         </h2>
         <ul class="flex flex-col gap-2">
           <li
-            v-for="project in data.projects"
+            v-for="project in projects"
             :key="project.slug"
             class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
           >
@@ -145,7 +118,7 @@ async function confirmPurge() {
 
       <!-- Standalone trashed decks (not part of a trashed folder). -->
       <section
-        v-if="data.decks.length"
+        v-if="decks.length"
         class="flex flex-col gap-2"
       >
         <h2 class="text-sm font-medium text-muted">
@@ -153,7 +126,7 @@ async function confirmPurge() {
         </h2>
         <ul class="flex flex-col gap-2">
           <li
-            v-for="deck in data.decks"
+            v-for="deck in decks"
             :key="deck.slug"
             class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
           >

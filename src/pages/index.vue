@@ -9,20 +9,18 @@ import { useCatalog } from '~/composables/useCatalog'
 // privileged users can flip to the flat management console for cross-project work.
 const { privileged } = useAppSession()
 
-// Shared, access-filtered catalog state (decks + folders). Mutations refresh it
-// so create/delete reflect instantly. See useCatalog for the SSR/session rationale.
+// Shared, access-filtered catalog state (decks + folders) on Pinia Colada.
+// Mutations invalidate the cache, so create/delete reflect everywhere instantly.
 const {
   presentations,
   presentationsStatus: status,
   presentationsError: error,
   projects,
-  refreshPresentations,
-  refreshProjects,
-} = await useCatalog()
+} = useCatalog()
 
-async function onProjectCreated(project: Project) {
-  await refreshProjects()
-  await navigateTo(`/projects/${project.slug}`)
+function onProjectCreated(project: Project) {
+  // The create mutation already invalidated the folders query; just navigate.
+  return navigateTo(`/projects/${project.slug}`)
 }
 
 // folders = browse by project (default); manage = flat table/grid (admin only).
@@ -210,13 +208,11 @@ function openDelete(item: PresentationListItem) {
       v-model:open="metaOpen"
       :item="target"
       :projects="projects"
-      @saved="refreshPresentations"
     />
     <DeckDeleteModal
       v-if="target"
       v-model:open="deleteOpen"
       :item="target"
-      @deleted="refreshPresentations"
     />
   </div>
 </template>

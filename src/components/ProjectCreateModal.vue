@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
+import { useCatalogCache } from '~/composables/useCatalog'
 import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
 const emit = defineEmits<{ created: [Project] }>()
@@ -7,6 +8,7 @@ const emit = defineEmits<{ created: [Project] }>()
 // server-side from the title. Emits `created` with the new project.
 const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
+const { invalidateAll } = useCatalogCache()
 
 const state = reactive({ title: '', color: null as string | null })
 const pending = ref(false)
@@ -35,6 +37,8 @@ async function submit() {
       method: 'POST',
       body: { title: state.title.trim(), ...(state.color ? { color: state.color } : {}) },
     })
+    // Refetch the folders query so the new folder is present before we navigate.
+    await invalidateAll()
     open.value = false
     toast.add({ title: 'Dossier créé', description: project.title, icon: 'i-lucide-folder-plus', color: 'success' })
     emit('created', project)

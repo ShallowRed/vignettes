@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import type { DeckGrant, PublicationStatus } from '#shared/access'
+import type { PublicationStatus } from '#shared/access'
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { KNOWN_THEMES } from '#shared/theme'
 import { useAppSession } from '~/composables/useAppSession'
+import { useCatalogCache } from '~/composables/useCatalog'
+import { useSharing } from '~/composables/useSharing'
 
 /**
  * Deck management panel: catalog/access metadata through the admin PATCH, plus
@@ -23,6 +25,7 @@ const open = defineModel<boolean>('open', { required: true })
 const { role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 const toast = useToast()
+const { invalidatePresentations } = useCatalogCache()
 
 // A non-empty sentinel marks "none" in the selects (reka-ui forbids an
 // empty-string SelectItem value); mapped back to null (clear column) at PATCH time.
@@ -49,8 +52,6 @@ watch(open, (now) => {
       theme: props.item.theme ?? NONE,
       alias: props.item.alias ?? '',
     })
-    if (isOwner.value)
-      loadSharing()
   }
 }, { immediate: true })
 
@@ -87,6 +88,7 @@ async function save() {
       },
     })
     toast.add({ title: 'Métadonnées enregistrées', icon: 'i-lucide-check', color: 'success' })
+    await invalidatePresentations()
     open.value = false
     emit('saved')
   }
@@ -99,77 +101,18 @@ async function save() {
 }
 
 // ── Sharing (per-deck grants, owner only) ───────────────────────────────────
-
-interface GrantRow { userId: number, login: string, role: DeckGrant }
-interface UserRow { id: number, login: string, role: string }
-
-const grants = ref<GrantRow[]>([])
-const knownUsers = ref<UserRow[]>([])
-const grantUserId = ref<number | undefined>(undefined)
-const grantRole = ref<DeckGrant>('viewer')
-const sharingBusy = ref(false)
-
-async function loadSharing() {
-  try {
-    const [g, u] = await Promise.all([
-      $fetch<GrantRow[]>(`/api/admin/decks/${props.item.slug}/permissions`),
-      $fetch<UserRow[]>('/api/admin/users'),
-    ])
-    grants.value = g
-    knownUsers.value = u
-  }
-  catch {
-    grants.value = []
-    knownUsers.value = []
-  }
-}
-
-// Global owners/editors already edit everything; only offer users a grant can escalate.
-const grantableUsers = computed(() => {
-  const granted = new Set(grants.value.map(g => g.userId))
-  return knownUsers.value
-    .filter(u => u.role === 'viewer' && !granted.has(u.id))
-    .map(u => ({ label: u.login, value: u.id }))
-})
-
-const grantRoleItems = [
-  { label: 'Lecture', value: 'viewer' },
-  { label: 'Édition', value: 'editor' },
-]
-
-async function addGrant() {
-  if (grantUserId.value == null)
-    return
-  sharingBusy.value = true
-  try {
-    await $fetch(`/api/admin/decks/${props.item.slug}/permissions/${grantUserId.value}`, {
-      method: 'PUT',
-      body: { role: grantRole.value },
-    })
-    grantUserId.value = undefined
-    await loadSharing()
-  }
-  catch (e: any) {
-    toast.add({ title: e?.statusMessage || 'Échec du partage', icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-  finally {
-    sharingBusy.value = false
-  }
-}
-
-async function removeGrant(userId: number) {
-  sharingBusy.value = true
-  try {
-    await $fetch(`/api/admin/decks/${props.item.slug}/permissions/${userId}`, { method: 'DELETE' })
-    await loadSharing()
-  }
-  catch (e: any) {
-    toast.add({ title: e?.statusMessage || 'Échec du retrait', icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-  finally {
-    sharingBusy.value = false
-  }
-}
+// Delegated to the shared `useSharing`; grants + users load only while the panel
+// is open for an owner (enabled gate).
+const {
+  grants,
+  grantableUsers,
+  grantUserId,
+  grantRole,
+  grantRoleItems,
+  addGrant,
+  removeGrant,
+  busy: sharingBusy,
+} = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && isOwner.value)
 </script>
 
 <template>

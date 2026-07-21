@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
 import { isDeckSlug } from '#shared/deck'
+import { useCatalogCache } from '~/composables/useCatalog'
 import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
 // Edit a project's metadata (name, color, slug). Changing the slug cascades to
@@ -9,6 +10,7 @@ const props = defineProps<{ project: { slug: string, title: string, color?: stri
 const emit = defineEmits<{ saved: [Project] }>()
 const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
+const { invalidateAll } = useCatalogCache()
 
 const state = reactive({ title: '', slug: '', color: null as string | null })
 const pending = ref(false)
@@ -37,6 +39,9 @@ async function submit() {
       method: 'PATCH',
       body: { title: state.title.trim(), color: state.color, ...(slugChanged.value ? { slug: state.slug } : {}) },
     })
+    // Title/color/slug all change the folders query; a slug change also cascades
+    // to the decks' project, so refresh both catalog queries.
+    await invalidateAll()
     open.value = false
     toast.add({ title: 'Dossier mis à jour', description: project.title, icon: 'i-lucide-check', color: 'success' })
     emit('saved', project)

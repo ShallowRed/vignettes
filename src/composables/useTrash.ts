@@ -1,0 +1,92 @@
+import type { PublicationStatus } from '#shared/access'
+import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+import { useAppSession } from '~/composables/useAppSession'
+import { catalogKeys, trashKeys } from '~/queries/keys'
+
+/** A trashed project (folder) plus how many decks were trashed with it. */
+export interface TrashProject { slug: string, title: string, color?: string | null, deckCount: number }
+/** A standalone trashed deck (not part of a trashed folder). */
+export interface TrashDeck { slug: string, title: string, project?: string, status: PublicationStatus }
+
+/** What a restore/purge acts on. */
+export interface TrashTarget { kind: 'project' | 'deck', slug: string, title?: string }
+
+function segment(kind: TrashTarget['kind']): string {
+  return kind === 'project' ? 'projects' : 'decks'
+}
+
+/**
+ * The trash (corbeille) data layer, on Pinia Colada. One query for the listing,
+ * two mutations (restore / permanent purge). A restore brings a project or deck
+ * back into the catalog, so it invalidates the catalog queries too; a purge only
+ * touches the trash. `useRequestFetch` forwards the session cookie (the endpoint
+ * is privileged) so the listing renders correctly on SSR.
+ */
+export function useTrash() {
+  const requestFetch = useRequestFetch()
+  const queryCache = useQueryCache()
+  const toast = useToast()
+  const { privileged } = useAppSession()
+
+  // Trash is privileged-only: gating the query keeps an anonymous SSR pass from
+  // hitting a 401 (which would surface as an error response instead of the page's
+  // "accès réservé" state).
+  const trashQuery = useQuery({
+    key: trashKeys.all,
+    query: () => requestFetch<{ projects: TrashProject[], decks: TrashDeck[] }>('/api/admin/trash'),
+    enabled: () => privileged.value,
+  })
+
+  const projects = computed<TrashProject[]>(() => trashQuery.data.value?.projects ?? [])
+  const decks = computed<TrashDeck[]>(() => trashQuery.data.value?.decks ?? [])
+  const isEmpty = computed(() => projects.value.length === 0 && decks.value.length === 0)
+
+  function invalidateTrash() {
+    return queryCache.invalidateQueries({ key: trashKeys.all })
+  }
+  function invalidateCatalog() {
+    return Promise.all([
+      queryCache.invalidateQueries({ key: catalogKeys.presentations }),
+      queryCache.invalidateQueries({ key: catalogKeys.projects }),
+    ])
+  }
+  function toastError(error: any) {
+    toast.add({ title: error?.statusMessage || 'Échec', icon: 'i-lucide-triangle-alert', color: 'error' })
+  }
+
+  const restore = useMutation({
+    mutation: (t: TrashTarget) => requestFetch(`/api/admin/trash/${segment(t.kind)}/${t.slug}/restore`, { method: 'POST' }),
+    onSuccess(_data, t) {
+      toast.add({
+        title: t.kind === 'project' ? 'Dossier restauré' : 'Présentation restaurée',
+        icon: 'i-lucide-check',
+        color: 'success',
+      })
+    },
+    onError: toastError,
+    // A restored item re-enters the catalog: refetch both the trash and the catalog.
+    onSettled: () => Promise.all([invalidateTrash(), invalidateCatalog()]),
+  })
+
+  const purge = useMutation({
+    mutation: (t: TrashTarget) => requestFetch(`/api/admin/trash/${segment(t.kind)}/${t.slug}`, { method: 'DELETE' }),
+    onSuccess() {
+      toast.add({ title: 'Supprimé définitivement', icon: 'i-lucide-check', color: 'success' })
+    },
+    onError: toastError,
+    onSettled: invalidateTrash,
+  })
+
+  const busy = computed(() => restore.isLoading.value || purge.isLoading.value)
+
+  return {
+    projects,
+    decks,
+    isEmpty,
+    error: trashQuery.error,
+    canView: privileged,
+    busy,
+    restore: (target: TrashTarget) => restore.mutateAsync(target),
+    purge: (target: TrashTarget) => purge.mutateAsync(target),
+  }
+}

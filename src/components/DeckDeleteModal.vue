@@ -1,25 +1,24 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
+import { useMutation } from '@pinia/colada'
+import { useCatalogCache } from '~/composables/useCatalog'
 
 // Delete confirmation. Moves the deck to the trash (reversible); it can be
 // restored or permanently erased from there.
 const props = defineProps<{ item: PresentationListItem }>()
 
-const emit = defineEmits<{ deleted: [] }>()
-
 const open = defineModel<boolean>('open', { required: true })
 
 const toast = useToast()
-const pending = ref(false)
+const { invalidatePresentations } = useCatalogCache()
 
 function close() {
   open.value = false
 }
 
-async function confirm() {
-  pending.value = true
-  try {
-    await $fetch(`/api/presentations/${props.item.slug}`, { method: 'DELETE' })
+const { mutate: confirm, isLoading: pending } = useMutation({
+  mutation: () => $fetch(`/api/presentations/${props.item.slug}`, { method: 'DELETE' }),
+  onSuccess() {
     open.value = false
     toast.add({
       title: 'Présentation placée dans la corbeille',
@@ -27,15 +26,13 @@ async function confirm() {
       icon: 'i-lucide-trash-2',
       color: 'success',
     })
-    emit('deleted')
-  }
-  catch (e: any) {
-    toast.add({ title: e?.statusMessage || 'Échec de la suppression', icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-  finally {
-    pending.value = false
-  }
-}
+  },
+  onError(error: any) {
+    toast.add({ title: error?.statusMessage || 'Échec de la suppression', icon: 'i-lucide-triangle-alert', color: 'error' })
+  },
+  // Refetch the deck listing so the trashed deck disappears from the catalog.
+  onSettled: invalidatePresentations,
+})
 </script>
 
 <template>
@@ -67,7 +64,7 @@ async function confirm() {
           color="warning"
           icon="i-lucide-trash-2"
           :loading="pending"
-          @click="confirm"
+          @click="() => confirm()"
         />
       </div>
     </template>

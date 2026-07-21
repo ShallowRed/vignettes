@@ -1,17 +1,22 @@
 <script setup lang="ts">
+import { useMutation } from '@pinia/colada'
+import { useCatalogCache } from '~/composables/useCatalog'
+
 // Delete a project: it and all its decks move to the trash together (reversible).
+// Optimistic — the folder and its decks vanish from the catalog immediately,
+// rolling back if the request fails.
 const props = defineProps<{ project: { slug: string, title: string }, deckCount: number }>()
 const emit = defineEmits<{ deleted: [] }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
 const toast = useToast()
-const pending = ref(false)
+const { removeProjectOptimistic, restoreSnapshot, invalidateAll } = useCatalogCache()
 
-async function confirm() {
-  pending.value = true
-  try {
-    await $fetch(`/api/admin/projects/${props.project.slug}`, { method: 'DELETE' })
+const { mutate: confirm, isLoading: pending } = useMutation({
+  mutation: () => $fetch(`/api/admin/projects/${props.project.slug}`, { method: 'DELETE' }),
+  onMutate: () => removeProjectOptimistic(props.project.slug),
+  onSuccess() {
     open.value = false
     toast.add({
       title: 'Dossier placé dans la corbeille',
@@ -20,14 +25,15 @@ async function confirm() {
       color: 'success',
     })
     emit('deleted')
-  }
-  catch (e: any) {
-    toast.add({ title: e?.statusMessage || 'Échec de la suppression', icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-  finally {
-    pending.value = false
-  }
-}
+  },
+  onError(error: any, _vars, snapshot) {
+    // Roll the optimistic removal back, then surface the failure.
+    if (snapshot)
+      restoreSnapshot(snapshot)
+    toast.add({ title: error?.statusMessage || 'Échec de la suppression', icon: 'i-lucide-triangle-alert', color: 'error' })
+  },
+  onSettled: invalidateAll,
+})
 </script>
 
 <template>
@@ -61,7 +67,7 @@ async function confirm() {
           color="warning"
           icon="i-lucide-trash-2"
           :loading="pending"
-          @click="confirm"
+          @click="() => confirm()"
         />
       </div>
     </template>

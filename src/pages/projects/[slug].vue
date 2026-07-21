@@ -15,17 +15,15 @@ const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeS
 
 const { privileged, role } = useAppSession()
 
-// Shared catalog state (decks + folders), same instance the home reads. Mutating
-// a folder here and refreshing updates the home grid too — no stale folder.
+// Shared catalog state (decks + folders) on Pinia Colada, same cache the home
+// reads. Mutating a folder here invalidates those queries, so the home grid
+// updates too — no stale folder, no manual refresh threading.
 const {
   presentations,
   presentationsStatus: status,
   presentationsError: error,
   projects,
-  refreshPresentations: refresh,
-  refreshProjects,
-  refreshAll,
-} = await useCatalog()
+} = useCatalog()
 
 const projectTitle = computed(() =>
   isUngrouped.value
@@ -60,16 +58,14 @@ const createOpen = ref(false)
 const defaultProject = computed(() => isUngrouped.value ? undefined : projectKey.value)
 
 function onProjectSaved(project: Project) {
-  // A slug change moves the folder to a new URL; otherwise just refresh in place.
+  // The edit mutation invalidated the folders query already; a slug change also
+  // moves the folder to a new URL.
   if (project.slug !== routeSlug.value)
     navigateTo(`/projects/${project.slug}`)
-  else
-    refreshProjects()
 }
-async function onProjectDeleted() {
-  // Refresh the shared catalog before leaving so the home grid no longer shows
-  // this folder (nor its now-trashed decks) — no stale card, no hard reload.
-  await refreshAll()
+function onProjectDeleted() {
+  // The delete mutation optimistically dropped this folder + its decks and
+  // invalidated the caches; just leave the (now-gone) folder page.
   navigateTo('/')
 }
 
@@ -174,13 +170,11 @@ function openDelete(item: PresentationListItem) {
       v-model:open="metaOpen"
       :item="target"
       :projects="projects"
-      @saved="refresh"
     />
     <DeckDeleteModal
       v-if="target"
       v-model:open="deleteOpen"
       :item="target"
-      @deleted="refresh"
     />
     <ProjectAccessSlideover
       v-if="canManageAccess"
