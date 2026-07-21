@@ -3,6 +3,7 @@ import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '~/composables/useAppSession'
+import { useCatalog } from '~/composables/useCatalog'
 
 // A project folder's contents: the decks grouped under one project, reached from
 // the folder grid via the stable /projects/<slug> route. `divers` is the
@@ -14,29 +15,17 @@ const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeS
 
 const { privileged, role } = useAppSession()
 
-const nuxtApp = useNuxtApp()
-const requestFetch = useRequestFetch()
-// Same as the catalog home: use the SSR payload during hydration, never after
-// (the listing is session-dependent). See index.vue for the full rationale.
-function sessionScopedCache(key: string) {
-  return nuxtApp.isHydrating ? nuxtApp.payload.data[key] : undefined
-}
-
-const { data: presentations, status, error, refresh } = await useAsyncData(
-  'presentations',
-  () => requestFetch<PresentationListItem[]>('/api/presentations'),
-  { default: () => [], getCachedData: sessionScopedCache },
-)
-const { data: projects, refresh: refreshProjects } = await useAsyncData(
-  'projects',
-  () => $fetch<Project[]>('/api/projects'),
-  { default: () => [], getCachedData: sessionScopedCache },
-)
-
-watch(privileged, (now, before) => {
-  if (now && !before)
-    refresh()
-})
+// Shared catalog state (decks + folders), same instance the home reads. Mutating
+// a folder here and refreshing updates the home grid too — no stale folder.
+const {
+  presentations,
+  presentationsStatus: status,
+  presentationsError: error,
+  projects,
+  refreshPresentations: refresh,
+  refreshProjects,
+  refreshAll,
+} = await useCatalog()
 
 const projectTitle = computed(() =>
   isUngrouped.value
@@ -73,7 +62,10 @@ function onProjectSaved(project: Project) {
   else
     refreshProjects()
 }
-function onProjectDeleted() {
+async function onProjectDeleted() {
+  // Refresh the shared catalog before leaving so the home grid no longer shows
+  // this folder (nor its now-trashed decks) — no stale card, no hard reload.
+  await refreshAll()
   navigateTo('/')
 }
 

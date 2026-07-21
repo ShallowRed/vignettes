@@ -1,57 +1,20 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import { UNGROUPED_PROJECT } from '#shared/presentations'
+import { buildCatalogFolders } from '#shared/presentations'
 import { projectColorStyle } from '~/utils/project-colors'
 
-// Projects rendered as folders: the catalog's primary entry point. Every project
-// gets a folder — including empty ones just created (so a new project is visible
-// before it has any deck). Each links to its stable /projects/<slug> route; the
-// no-project bucket routes to the reserved `divers` slug.
+// Projects rendered as folders: the catalog's primary entry point. The folder
+// set is derived (pure view-model) from the access-filtered decks plus the
+// visible projects — the server already decides which projects an actor may see,
+// so an empty folder only reaches privileged actors (e.g. a project just created,
+// before it has any deck). Each links to its stable /projects/<slug> route.
 const props = defineProps<{
   items: PresentationListItem[]
   projects?: Project[]
 }>()
 
-const meta = computed(() => new Map((props.projects ?? []).map(p => [p.slug, p])))
-
-// decks grouped by their project key (or the ungrouped bucket).
-const buckets = computed(() => {
-  const map = new Map<string, PresentationListItem[]>()
-  for (const item of props.items) {
-    const key = item.project ?? UNGROUPED_PROJECT
-    if (!map.has(key))
-      map.set(key, [])
-    map.get(key)!.push(item)
-  }
-  return map
-})
-
-function themesOf(items: PresentationListItem[]): string[] {
-  return [...new Set(items.map(i => i.theme).filter(Boolean))] as string[]
-}
-
-const folders = computed(() => {
-  const named = (props.projects ?? []).map(p => p.slug)
-  // Decks pointing at a project not in the list (legacy free-text) still get a folder.
-  const orphan = [...buckets.value.keys()].filter(k => k !== UNGROUPED_PROJECT && !named.includes(k))
-  const out = [...named, ...orphan].map((slug) => {
-    const items = buckets.value.get(slug) ?? []
-    return {
-      routeSlug: slug,
-      title: meta.value.get(slug)?.title ?? slug,
-      count: items.length,
-      color: meta.value.get(slug)?.color ?? null,
-      themes: themesOf(items),
-    }
-  })
-
-  const ungrouped = buckets.value.get(UNGROUPED_PROJECT) ?? []
-  if (ungrouped.length) {
-    out.push({ routeSlug: 'divers', title: 'Divers', count: ungrouped.length, color: null, themes: themesOf(ungrouped) })
-  }
-  return out
-})
+const folders = computed(() => buildCatalogFolders(props.items, props.projects ?? []))
 </script>
 
 <template>

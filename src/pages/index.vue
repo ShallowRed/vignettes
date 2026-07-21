@@ -3,42 +3,27 @@ import type { CatalogQuery, PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { applyCatalogQuery } from '#shared/presentations'
 import { useAppSession } from '~/composables/useAppSession'
+import { useCatalog } from '~/composables/useCatalog'
 
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
 const { privileged } = useAppSession()
 
-const nuxtApp = useNuxtApp()
-const requestFetch = useRequestFetch()
-// Session-dependent catalog: keep the SSR payload during hydration (else the
-// client discards it and flashes the empty state — a mismatch), but never reuse
-// it on later client navigation (that is how a stale anonymous listing came
-// back when returning to this page). `watch(privileged)` refetches on login.
-function sessionScopedCache(key: string) {
-  return nuxtApp.isHydrating ? nuxtApp.payload.data[key] : undefined
-}
-
-const { data: presentations, status, error, refresh } = await useAsyncData(
-  'presentations',
-  () => requestFetch<PresentationListItem[]>('/api/presentations'),
-  { default: () => [], getCachedData: sessionScopedCache },
-)
-
-const { data: projects, refresh: refreshProjects } = await useAsyncData(
-  'projects',
-  () => $fetch<Project[]>('/api/projects'),
-  { default: () => [], getCachedData: sessionScopedCache },
-)
+// Shared, access-filtered catalog state (decks + folders). Mutations refresh it
+// so create/delete reflect instantly. See useCatalog for the SSR/session rationale.
+const {
+  presentations,
+  presentationsStatus: status,
+  presentationsError: error,
+  projects,
+  refreshPresentations,
+  refreshProjects,
+} = await useCatalog()
 
 async function onProjectCreated(project: Project) {
   await refreshProjects()
   await navigateTo(`/projects/${project.slug}`)
 }
-
-watch(privileged, (now, before) => {
-  if (now && !before)
-    refresh()
-})
 
 // folders = browse by project (default); manage = flat table/grid (admin only).
 const mode = ref<'folders' | 'manage'>('folders')
@@ -225,13 +210,13 @@ function openDelete(item: PresentationListItem) {
       v-model:open="metaOpen"
       :item="target"
       :projects="projects"
-      @saved="refresh"
+      @saved="refreshPresentations"
     />
     <DeckDeleteModal
       v-if="target"
       v-model:open="deleteOpen"
       :item="target"
-      @deleted="refresh"
+      @deleted="refreshPresentations"
     />
   </div>
 </template>

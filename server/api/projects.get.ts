@@ -1,10 +1,15 @@
 import type { Project } from '#shared/projects'
-import { projectDirectory } from '../utils/sources'
+import { listVisibleProjects } from '../utils/catalog'
 
-/** Project grouping metadata (db over projects.yml). Public (labels aren't sensitive). */
-export default defineEventHandler(async (): Promise<Project[]> => {
+/**
+ * Project folders the actor may see — the catalog's grouping axis, access-filtered
+ * like the deck listing (an unprivileged actor only sees folders that hold at
+ * least one deck they can list; privileged actors see every folder). Session-
+ * dependent: callers must forward the session cookie (useRequestFetch in SSR).
+ */
+export default defineEventHandler(async (event): Promise<Project[]> => {
   try {
-    return await projectDirectory.list()
+    return await listVisibleProjects(event)
   }
   catch (error) {
     console.error('Error loading projects:', error)

@@ -20,8 +20,8 @@ resolved at login from `NUXT_OWNER_LOGINS` / `NUXT_EDITOR_LOGINS`. Deck publicat
 **Location**: `server/api/presentations.get.ts`
 
 Catalog listing. Role-based visibility via the shared `canList` predicate (same privilege rule as
-the per-deck gate). Content is read through Nitro server-asset storage (`useStorage('assets:presentations')`),
-not a cwd-relative `readFile`.
+the per-deck gate). The access-filtered listing lives in `listVisiblePresentations`
+(`server/utils/catalog.ts`), the source of truth shared with `GET /api/projects`.
 
 **Process**:
 1. Resolve actor role (`getActorRole`).
@@ -87,8 +87,10 @@ prerender). Protected decks are always SSR (`routeRules['/api/presentations/**']
 ## GET /api/projects
 **Location**: `server/api/projects.get.ts`
 
-Catalog grouping metadata from `presentations/projects.yml`. Public (labels are not sensitive; the
-per-deck gate still governs decks).
+Catalog grouping metadata (folders). Access-filtered like `GET /api/presentations`, from the shared
+`listVisibleProjects` (`server/utils/catalog.ts`): an unprivileged actor only gets folders that hold
+at least one deck they can list; privileged actors get every folder, including empty ones. Session-
+dependent — callers must forward the session cookie (`useRequestFetch` in SSR).
 
 **Response Schema** (`Project[]`):
 ```ts
