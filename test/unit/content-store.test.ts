@@ -57,6 +57,12 @@ describe('createDbContent', () => {
     expect(versions.map(v => v.publishedBy)).toEqual(['a', 'b'])
   })
 
+  it('does not serve a soft-deleted deck', async () => {
+    await content.writer.save({ slug: 'trashed', raw: '# hidden', actor: 'lucas' })
+    db.update(decks).set({ deletedAt: new Date() }).where(eq(decks.slug, 'trashed')).run()
+    expect(await content.source.load('trashed')).toBeNull()
+  })
+
   it('refuses empty markdown (would publish a blank deck)', async () => {
     await expect(content.writer.save({ slug: 'd', raw: '' })).rejects.toThrow(/empty markdown/i)
   })

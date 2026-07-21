@@ -1,7 +1,7 @@
 import type { ContentSource, ContentWriter } from '#shared/deck'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '#shared/deck'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { decks, deckVersions } from './schema'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
@@ -17,7 +17,7 @@ export function createDbContent(db: Db): { source: ContentSource, writer: Conten
     source: {
       id: 'db',
       async load(slug) {
-        const deck = db.select().from(decks).where(eq(decks.slug, slug)).get()
+        const deck = db.select().from(decks).where(and(eq(decks.slug, slug), isNull(decks.deletedAt))).get()
         if (!deck?.publishedVersionId)
           return null
         const version = db.select().from(deckVersions).where(eq(deckVersions.id, deck.publishedVersionId)).get()
