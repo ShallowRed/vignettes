@@ -1,19 +1,8 @@
-import type { PublicationStatus } from '#shared/access'
+import type { TrashedDeckSummary, TrashedProjectSummary, TrashTarget } from '#shared/trash'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+import { trashApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
 import { catalogKeys, trashKeys } from '~/queries/keys'
-
-/** A trashed project (folder) plus how many decks were trashed with it. */
-export interface TrashProject { slug: string, title: string, color?: string | null, deckCount: number }
-/** A standalone trashed deck (not part of a trashed folder). */
-export interface TrashDeck { slug: string, title: string, project?: string, status: PublicationStatus }
-
-/** What a restore/purge acts on. */
-export interface TrashTarget { kind: 'project' | 'deck', slug: string, title?: string }
-
-function segment(kind: TrashTarget['kind']): string {
-  return kind === 'project' ? 'projects' : 'decks'
-}
 
 /**
  * The trash (corbeille) data layer, on Pinia Colada. One query for the listing,
@@ -33,12 +22,12 @@ export function useTrash() {
   // "accès réservé" state).
   const trashQuery = useQuery({
     key: trashKeys.all,
-    query: () => requestFetch<{ projects: TrashProject[], decks: TrashDeck[] }>('/api/admin/trash'),
+    query: () => trashApi.list(requestFetch),
     enabled: () => privileged.value,
   })
 
-  const projects = computed<TrashProject[]>(() => trashQuery.data.value?.projects ?? [])
-  const decks = computed<TrashDeck[]>(() => trashQuery.data.value?.decks ?? [])
+  const projects = computed<TrashedProjectSummary[]>(() => trashQuery.data.value?.projects ?? [])
+  const decks = computed<TrashedDeckSummary[]>(() => trashQuery.data.value?.decks ?? [])
   const isEmpty = computed(() => projects.value.length === 0 && decks.value.length === 0)
 
   function invalidateTrash() {
@@ -55,7 +44,7 @@ export function useTrash() {
   }
 
   const restore = useMutation({
-    mutation: (t: TrashTarget) => requestFetch(`/api/admin/trash/${segment(t.kind)}/${t.slug}/restore`, { method: 'POST' }),
+    mutation: (t: TrashTarget) => trashApi.restore(requestFetch, t),
     onSuccess(_data, t) {
       toast.add({
         title: t.kind === 'project' ? 'Dossier restauré' : 'Présentation restaurée',
@@ -69,7 +58,7 @@ export function useTrash() {
   })
 
   const purge = useMutation({
-    mutation: (t: TrashTarget) => requestFetch(`/api/admin/trash/${segment(t.kind)}/${t.slug}`, { method: 'DELETE' }),
+    mutation: (t: TrashTarget) => trashApi.purge(requestFetch, t),
     onSuccess() {
       toast.add({ title: 'Supprimé définitivement', icon: 'i-lucide-check', color: 'success' })
     },
@@ -86,7 +75,7 @@ export function useTrash() {
     error: trashQuery.error,
     canView: privileged,
     busy,
-    restore: (target: TrashTarget) => restore.mutateAsync(target),
-    purge: (target: TrashTarget) => purge.mutateAsync(target),
+    restore: async (target: TrashTarget): Promise<void> => { await restore.mutateAsync(target) },
+    purge: async (target: TrashTarget): Promise<void> => { await purge.mutateAsync(target) },
   }
 }

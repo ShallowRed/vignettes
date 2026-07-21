@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import { useMutation } from '@pinia/colada'
+import { deckApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
 
 // Delete confirmation. Moves the deck to the trash (reversible); it can be
@@ -17,7 +18,7 @@ function close() {
 }
 
 const { mutate: confirm, isLoading: pending } = useMutation({
-  mutation: () => $fetch(`/api/presentations/${props.item.slug}`, { method: 'DELETE' }),
+  mutation: () => deckApi.trash($fetch, props.item.slug),
   onSuccess() {
     open.value = false
     toast.add({

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { CatalogQuery, PresentationListItem } from '#shared/presentations'
+import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import { applyCatalogQuery } from '#shared/presentations'
 import { useAppSession } from '~/composables/useAppSession'
 import { useCatalog } from '~/composables/useCatalog'
+import { useCatalogFilters } from '~/composables/useCatalogFilters'
 
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
@@ -26,18 +26,8 @@ function onProjectCreated(project: Project) {
 // folders = browse by project (default); manage = flat table/grid (admin only).
 const mode = ref<'folders' | 'manage'>('folders')
 
-// ── Management console state (only used in `manage` mode) ───────────────────
-const query = ref<CatalogQuery>({ search: '', statuses: [], projects: [], sortKey: 'title', sortDir: 'asc' })
-const visible = computed(() => applyCatalogQuery(presentations.value, query.value))
-
-const hasActiveFilters = computed(() =>
-  Boolean(query.value.search)
-  || (query.value.statuses?.length ?? 0) > 0
-  || (query.value.projects?.length ?? 0) > 0)
-
-function resetFilters() {
-  query.value = { ...query.value, search: '', statuses: [], projects: [] }
-}
+// Management console filter state (only used in `manage` mode).
+const { query, visible, hasActiveFilters, resetFilters } = useCatalogFilters(presentations)
 
 const toolbar = useTemplateRef('toolbar')
 defineShortcuts({

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { TrashTarget } from '~/composables/useTrash'
 import { useAppSession } from '~/composables/useAppSession'
 import { useTrash } from '~/composables/useTrash'
 
@@ -20,8 +19,10 @@ useHead({ title: 'Corbeille — Nuxt Slides' })
 const restoreProject = (slug: string) => restore({ kind: 'project', slug })
 const restoreDeck = (slug: string) => restore({ kind: 'deck', slug })
 
-// Permanent deletion goes through a confirmation modal.
-const purgeTarget = ref<TrashTarget | null>(null)
+// Permanent deletion goes through a confirmation modal. The target keeps a title
+// for the dialog copy; only { kind, slug } is sent to the purge endpoint.
+interface PurgeTarget { kind: 'project' | 'deck', slug: string, title: string }
+const purgeTarget = ref<PurgeTarget | null>(null)
 const purgeOpen = computed({
   get: () => purgeTarget.value !== null,
   set: (v: boolean) => {
@@ -33,7 +34,7 @@ const purgeOpen = computed({
 async function confirmPurge() {
   if (!purgeTarget.value)
     return
-  await purge(purgeTarget.value)
+  await purge({ kind: purgeTarget.value.kind, slug: purgeTarget.value.slug })
   purgeTarget.value = null
 }
 </script>

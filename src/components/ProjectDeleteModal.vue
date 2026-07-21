@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMutation } from '@pinia/colada'
+import { projectApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
 
 // Delete a project: it and all its decks move to the trash together (reversible).
@@ -13,8 +14,12 @@ const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
 const { removeProjectOptimistic, restoreSnapshot, invalidateAll } = useCatalogCache()
 
+function close() {
+  open.value = false
+}
+
 const { mutate: confirm, isLoading: pending } = useMutation({
-  mutation: () => $fetch(`/api/admin/projects/${props.project.slug}`, { method: 'DELETE' }),
+  mutation: () => projectApi.trash($fetch, props.project.slug),
   onMutate: () => removeProjectOptimistic(props.project.slug),
   onSuccess() {
     open.value = false
@@ -60,7 +65,7 @@ const { mutate: confirm, isLoading: pending } = useMutation({
           label="Annuler"
           color="neutral"
           variant="ghost"
-          @click="open = false"
+          @click="close"
         />
         <UButton
           label="Mettre à la corbeille"

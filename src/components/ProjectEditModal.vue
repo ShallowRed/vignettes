@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
 import { isDeckSlug } from '#shared/deck'
+import { useMutation } from '@pinia/colada'
+import { projectApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
 import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
@@ -13,7 +15,6 @@ const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
 const state = reactive({ title: '', slug: '', color: null as string | null })
-const pending = ref(false)
 const errorMessage = ref('')
 
 watch(open, (now) => {
@@ -27,33 +28,39 @@ watch(open, (now) => {
 
 const slugValid = computed(() => isDeckSlug(state.slug))
 const slugChanged = computed(() => state.slug !== props.project.slug)
-const canSubmit = computed(() => state.title.trim().length > 0 && slugValid.value && !pending.value)
 
-async function submit() {
-  if (!canSubmit.value)
-    return
-  pending.value = true
-  errorMessage.value = ''
-  try {
-    const project = await $fetch<Project>(`/api/admin/projects/${props.project.slug}`, {
-      method: 'PATCH',
-      body: { title: state.title.trim(), color: state.color, ...(slugChanged.value ? { slug: state.slug } : {}) },
-    })
+const { mutate: runSave, isLoading: pending } = useMutation({
+  mutation: () => projectApi.update($fetch, props.project.slug, {
+    title: state.title.trim(),
+    color: state.color,
+    ...(slugChanged.value ? { slug: state.slug } : {}),
+  }),
+  async onSuccess(project) {
     // Title/color/slug all change the folders query; a slug change also cascades
     // to the decks' project, so refresh both catalog queries.
     await invalidateAll()
     open.value = false
     toast.add({ title: 'Dossier mis à jour', description: project.title, icon: 'i-lucide-check', color: 'success' })
     emit('saved', project)
-  }
-  catch (e: any) {
+  },
+  onError(e: any) {
     errorMessage.value = e?.statusCode === 409
       ? `L'identifiant « ${state.slug} » est déjà pris.`
       : e?.statusMessage || 'Échec de la mise à jour'
-  }
-  finally {
-    pending.value = false
-  }
+  },
+})
+
+const canSubmit = computed(() => state.title.trim().length > 0 && slugValid.value && !pending.value)
+
+function submit() {
+  if (!canSubmit.value)
+    return
+  errorMessage.value = ''
+  runSave()
+}
+
+function close() {
+  open.value = false
 }
 </script>
 
@@ -129,7 +136,7 @@ async function submit() {
           label="Annuler"
           color="neutral"
           variant="ghost"
-          @click="open = false"
+          @click="close"
         />
         <UButton
           label="Enregistrer"

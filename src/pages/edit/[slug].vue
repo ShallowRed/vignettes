@@ -23,6 +23,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
 import Codemirror from 'vue-codemirror6'
+import { catalogApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
 import { buildPresentationData } from '~/composables/usePresentation'
 import { catalogKeys } from '~/queries/keys'
@@ -228,7 +229,7 @@ const collabExtensions = shallowRef<Extension[]>([])
 // query cache (same key) so navigating from the catalog needs no extra fetch.
 const { data: projectsData } = useQuery({
   key: catalogKeys.projects,
-  query: () => requestFetch<Project[]>('/api/projects'),
+  query: () => catalogApi.listProjects(requestFetch),
 })
 const projects = computed<Project[]>(() => projectsData.value ?? [])
 

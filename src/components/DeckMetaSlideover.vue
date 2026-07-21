@@ -5,6 +5,8 @@ import type { Project } from '#shared/projects'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { KNOWN_THEMES } from '#shared/theme'
+import { useMutation } from '@pinia/colada'
+import { deckApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
 import { useCatalogCache } from '~/composables/useCatalog'
 import { useSharing } from '~/composables/useSharing'
@@ -67,38 +69,29 @@ const projectItems = computed(() => [
 
 const themeItems = KNOWN_THEMES.map(name => ({ label: name, value: name }))
 
-const saving = ref(false)
-
 function close() {
   open.value = false
 }
 
-async function save() {
-  saving.value = true
-  try {
-    await $fetch(`/api/admin/decks/${props.item.slug}`, {
-      method: 'PATCH',
-      body: {
-        title: state.title.trim() || props.item.title,
-        status: state.status,
-        unlisted: state.unlisted,
-        project: state.project === NONE ? null : state.project,
-        theme: state.theme === NONE ? null : state.theme,
-        alias: state.alias.trim() || null,
-      },
-    })
+const { mutate: save, isLoading: saving } = useMutation({
+  mutation: () => deckApi.updateMeta($fetch, props.item.slug, {
+    title: state.title.trim() || props.item.title,
+    status: state.status,
+    unlisted: state.unlisted,
+    project: state.project === NONE ? null : state.project,
+    theme: state.theme === NONE ? null : state.theme,
+    alias: state.alias.trim() || null,
+  }),
+  async onSuccess() {
     toast.add({ title: 'Métadonnées enregistrées', icon: 'i-lucide-check', color: 'success' })
     await invalidatePresentations()
     open.value = false
     emit('saved')
-  }
-  catch (e: any) {
+  },
+  onError(e: any) {
     toast.add({ title: e?.statusMessage || 'Échec de l\'enregistrement', icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-  finally {
-    saving.value = false
-  }
-}
+  },
+})
 
 // ── Sharing (per-deck grants, owner only) ───────────────────────────────────
 // Delegated to the shared `useSharing`; grants + users load only while the panel
@@ -261,7 +254,7 @@ const {
           label="Enregistrer"
           icon="i-lucide-check"
           :loading="saving"
-          @click="save"
+          @click="() => save()"
         />
       </div>
     </template>

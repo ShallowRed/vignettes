@@ -1,6 +1,7 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { useQuery, useQueryCache } from '@pinia/colada'
+import { catalogApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
 import { catalogKeys } from '~/queries/keys'
 
@@ -26,11 +27,11 @@ export function useCatalog() {
 
   const presentationsQuery = useQuery({
     key: catalogKeys.presentations,
-    query: () => requestFetch<PresentationListItem[]>('/api/presentations'),
+    query: () => catalogApi.listPresentations(requestFetch),
   })
   const projectsQuery = useQuery({
     key: catalogKeys.projects,
-    query: () => requestFetch<Project[]>('/api/projects'),
+    query: () => catalogApi.listProjects(requestFetch),
   })
 
   // Never undefined for the templates (arrays are iterated/filtered directly).

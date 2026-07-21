@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
+import { useMutation } from '@pinia/colada'
+import { projectApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
 import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
@@ -11,7 +13,6 @@ const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
 const state = reactive({ title: '', color: null as string | null })
-const pending = ref(false)
 const errorMessage = ref('')
 
 watch(open, (now) => {
@@ -21,34 +22,31 @@ watch(open, (now) => {
   }
 })
 
+const { mutate: runCreate, isLoading: pending } = useMutation({
+  mutation: () => projectApi.create($fetch, { title: state.title.trim(), ...(state.color ? { color: state.color } : {}) }),
+  async onSuccess(project) {
+    // Refetch the folders query so the new folder is present before we navigate.
+    await invalidateAll()
+    open.value = false
+    toast.add({ title: 'Dossier créé', description: project.title, icon: 'i-lucide-folder-plus', color: 'success' })
+    emit('created', project)
+  },
+  onError(e: any) {
+    errorMessage.value = e?.statusMessage || 'Échec de la création'
+  },
+})
+
 const canSubmit = computed(() => state.title.trim().length > 0 && !pending.value)
 
 function close() {
   open.value = false
 }
 
-async function submit() {
+function submit() {
   if (!canSubmit.value)
     return
-  pending.value = true
   errorMessage.value = ''
-  try {
-    const project = await $fetch<Project>('/api/admin/projects', {
-      method: 'POST',
-      body: { title: state.title.trim(), ...(state.color ? { color: state.color } : {}) },
-    })
-    // Refetch the folders query so the new folder is present before we navigate.
-    await invalidateAll()
-    open.value = false
-    toast.add({ title: 'Dossier créé', description: project.title, icon: 'i-lucide-folder-plus', color: 'success' })
-    emit('created', project)
-  }
-  catch (e: any) {
-    errorMessage.value = e?.statusMessage || 'Échec de la création'
-  }
-  finally {
-    pending.value = false
-  }
+  runCreate()
 }
 </script>
 

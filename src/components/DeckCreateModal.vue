@@ -2,6 +2,8 @@
 import type { Project } from '#shared/projects'
 import { isDeckSlug } from '#shared/deck'
 import { KNOWN_THEMES } from '#shared/theme'
+import { useMutation } from '@pinia/colada'
+import { deckApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
 import { slugify } from '~/utils/slugify'
 
@@ -26,7 +28,6 @@ const state = reactive({
   theme: 'dsfr',
 })
 const slugEdited = ref(false)
-const pending = ref(false)
 const errorMessage = ref('')
 
 watch(() => state.title, (title) => {
@@ -43,7 +44,6 @@ watch(open, (now) => {
 })
 
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
-const canSubmit = computed(() => state.title.trim().length > 0 && isDeckSlug(state.slug) && !pending.value)
 
 const projectItems = computed(() => [
   { label: 'Sans projet', value: NONE },
@@ -56,34 +56,33 @@ function close() {
   open.value = false
 }
 
-async function submit() {
-  if (!canSubmit.value)
-    return
-  pending.value = true
-  errorMessage.value = ''
-  try {
-    await $fetch('/api/presentations', {
-      method: 'POST',
-      body: {
-        slug: state.slug,
-        title: state.title.trim(),
-        ...(state.project !== NONE ? { project: state.project } : {}),
-        ...(state.theme ? { theme: state.theme } : {}),
-      },
-    })
+const { mutate: runCreate, isLoading: pending } = useMutation({
+  mutation: () => deckApi.create($fetch, {
+    slug: state.slug,
+    title: state.title.trim(),
+    ...(state.project !== NONE ? { project: state.project } : {}),
+    ...(state.theme ? { theme: state.theme } : {}),
+  }),
+  async onSuccess() {
     open.value = false
     toast.add({ title: 'Présentation créée', description: state.title.trim(), icon: 'i-lucide-file-plus-2', color: 'success' })
     await invalidatePresentations()
     await navigateTo(`/edit/${state.slug}`)
-  }
-  catch (e: any) {
+  },
+  onError(e: any) {
     errorMessage.value = e?.statusCode === 409
       ? `Le slug « ${state.slug} » est déjà pris.`
       : e?.statusMessage || 'Échec de la création'
-  }
-  finally {
-    pending.value = false
-  }
+  },
+})
+
+const canSubmit = computed(() => state.title.trim().length > 0 && isDeckSlug(state.slug) && !pending.value)
+
+function submit() {
+  if (!canSubmit.value)
+    return
+  errorMessage.value = ''
+  runCreate()
 }
 </script>
 

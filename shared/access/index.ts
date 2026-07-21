@@ -1,4 +1,5 @@
 export * from './decide'
+export * from './permissions'
 export * from './resolve-role'
 export * from './role-config'
 export * from './roles'

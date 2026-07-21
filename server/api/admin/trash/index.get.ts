@@ -1,3 +1,4 @@
+import type { TrashListing } from '#shared/trash'
 import { isPrivileged } from '#shared/access'
 import { getActorRole } from '../../../utils/actor'
 import { useDeckMeta, useProjectStore } from '../../../utils/sources'
@@ -8,7 +9,7 @@ import { useDeckMeta, useProjectStore } from '../../../utils/sources'
  * here — they are represented by, and restored/purged with, their project entry.
  * Privileged only.
  */
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<TrashListing> => {
   const role = await getActorRole(event)
   if (!isPrivileged(role)) {
     throw createError({
@@ -26,5 +27,9 @@ export default defineEventHandler(async (event) => {
     .filter(d => !(d.project && trashedProjects.has(d.project)))
     .map(d => ({ slug: d.slug, title: d.title, project: d.project, status: d.status }))
 
-  return { projects, decks }
+  return {
+    // `Project.title` is optional at the type level; the store always sets it.
+    projects: projects.map(p => ({ slug: p.slug, title: p.title ?? p.slug, color: p.color ?? null, deckCount: p.deckCount })),
+    decks,
+  }
 })
