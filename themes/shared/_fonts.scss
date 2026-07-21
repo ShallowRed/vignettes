@@ -1,0 +1,46 @@
+// Self-hosted Marianne (the DSFR typeface). Themes reference `font-family:
+// 'Marianne'`, but without an @font-face the font only renders on devices that
+// happen to have it installed. These faces load it from /public/fonts so every
+// device shows the intended type. Imported by the dsfr, dsfr-standalone and brand
+// themes. `swap` avoids invisible text while the file downloads; there is no
+// italic file, so the browser synthesises obliques.
+
+@font-face {
+  font-family: 'Marianne';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src:
+    url('/fonts/marianne/Marianne-Light.woff2') format('woff2'),
+    url('/fonts/marianne/Marianne-Light.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Marianne';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url('/fonts/marianne/Marianne-Regular.woff2') format('woff2'),
+    url('/fonts/marianne/Marianne-Regular.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Marianne';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    url('/fonts/marianne/Marianne-Medium.woff2') format('woff2'),
+    url('/fonts/marianne/Marianne-Medium.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Marianne';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    url('/fonts/marianne/Marianne-Bold.woff2') format('woff2'),
+    url('/fonts/marianne/Marianne-Bold.woff') format('woff');
+}

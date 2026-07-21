@@ -13,7 +13,7 @@ export const themes = [
     input: 'themes/dsfr/dsfr-standalone.scss',
     output: 'public/themes/dsfr-standalone.css',
     watchDir: 'themes/dsfr',
-    watchExtraDirs: [],
+    watchExtraDirs: ['themes/shared'],
   },
   {
     name: 'minimal',

@@ -13,6 +13,9 @@
  */
 
 @use 'variables' as *;
+// Self-hosted Marianne. On our domain (frozen decks) the /fonts URLs resolve; in
+// a HackMD paste they fall back to the system stack, as before.
+@use '../shared/fonts';
 
 // ============================================
 // 1. Standard Reveal.js CSS custom properties
