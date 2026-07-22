@@ -18,7 +18,11 @@ const emit = defineEmits<{
 
 const frozen = computed(() => isFrozen(props.presentation))
 
-const to = computed(() => deckPath(props.presentation))
+const to = computed(() => {
+  if (props.admin && props.presentation.published === false && !frozen.value)
+    return `/edit/${props.presentation.slug}`
+  return deckPath(props.presentation)
+})
 
 const statusDisplay = computed(() => STATUS_CONFIG[props.presentation.status])
 

@@ -59,6 +59,12 @@ watch(() => props.items, () => {
   rowSelection.value = {}
 })
 
+function defaultDeckTarget(item: PresentationListItem) {
+  if (props.admin && item.published === false && !isFrozen(item))
+    return `/edit/${item.slug}`
+  return deckPath(item)
+}
+
 const projectMeta = computed(() => new Map(
   (props.projects ?? []).map(p => [p.slug, { title: p.title ?? p.slug, color: p.color }]),
 ))
@@ -129,10 +135,11 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
 ])
 
 function rowActions(item: PresentationListItem) {
+  const defaultTarget = defaultDeckTarget(item)
   return [
     [
-      { label: 'Ouvrir', icon: 'i-lucide-arrow-up-right', to: deckPath(item) },
-      { label: 'Ouvrir dans un nouvel onglet', icon: 'i-lucide-external-link', to: deckPath(item), target: '_blank' },
+      { label: 'Ouvrir', icon: 'i-lucide-arrow-up-right', to: defaultTarget },
+      { label: 'Ouvrir dans un nouvel onglet', icon: 'i-lucide-external-link', to: defaultTarget, target: '_blank' },
     ],
     [
       { label: 'Copier le lien', icon: 'i-lucide-link', onSelect: () => copyLinks([item]) },
@@ -269,7 +276,7 @@ function clearSelection() {
         >
           <UTooltip text="Consulter">
             <UButton
-              :to="deckPath(row.original)"
+              :to="defaultDeckTarget(row.original)"
               icon="i-lucide-eye"
               color="neutral"
               variant="ghost"
