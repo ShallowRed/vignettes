@@ -4,6 +4,7 @@ import type { Project } from '#shared/projects'
 import { UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '~/composables/useAppSession'
 import { useCatalog } from '~/composables/useCatalog'
+import { useModalTarget } from '~/composables/useModalTarget'
 
 // A project folder's contents: the decks grouped under one project, reached from
 // the folder grid via the stable /projects/<slug> route. `divers` is the
@@ -70,18 +71,7 @@ function onProjectDeleted() {
 }
 
 // Management modals (privileged), mirroring the home console.
-const metaOpen = ref(false)
-const deleteOpen = ref(false)
-const target = ref<PresentationListItem | null>(null)
-
-function openMeta(item: PresentationListItem) {
-  target.value = item
-  metaOpen.value = true
-}
-function openDelete(item: PresentationListItem) {
-  target.value = item
-  deleteOpen.value = true
-}
+const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
 </script>
 
 <template>

@@ -4,6 +4,7 @@ import type { Project } from '#shared/projects'
 import { useAppSession } from '~/composables/useAppSession'
 import { useCatalog } from '~/composables/useCatalog'
 import { useCatalogFilters } from '~/composables/useCatalogFilters'
+import { useModalTarget } from '~/composables/useModalTarget'
 
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
@@ -37,18 +38,7 @@ defineShortcuts({
 // Management modals (privileged): one instance at page level, targeted per deck.
 const createOpen = ref(false)
 const createProjectOpen = ref(false)
-const metaOpen = ref(false)
-const deleteOpen = ref(false)
-const target = ref<PresentationListItem | null>(null)
-
-function openMeta(item: PresentationListItem) {
-  target.value = item
-  metaOpen.value = true
-}
-function openDelete(item: PresentationListItem) {
-  target.value = item
-  deleteOpen.value = true
-}
+const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
 </script>
 
 <template>
