@@ -203,7 +203,10 @@ onMounted(async () => {
   mermaid.initialize({
     startOnLoad: false,
     theme: props.theme || 'default',
-    securityLevel: 'loose',
+    // Deck source is author-editable and rendered for every viewer, so keep
+    // Mermaid's DOMPurify pass on: strict encodes HTML in labels and disables
+    // click directives.
+    securityLevel: 'strict',
     fontFamily: 'inherit',
   })
 
@@ -213,7 +216,12 @@ onMounted(async () => {
   }
   catch (error) {
     console.error('Mermaid rendering error:', error)
-    container.value.innerHTML = `<pre class="mermaid-error">${code}</pre>`
+    // textContent, not innerHTML: the raw source is untrusted and this path
+    // runs precisely when it failed to parse as a diagram.
+    const pre = document.createElement('pre')
+    pre.className = 'mermaid-error'
+    pre.textContent = code
+    container.value.replaceChildren(pre)
   }
 })
 
