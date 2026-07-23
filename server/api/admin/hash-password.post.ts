@@ -1,11 +1,13 @@
+import { isPrivileged } from '#shared/access'
+import { getActorRole } from '../../utils/actor'
 import { hashAccessPassword } from '../../utils/password'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event).catch(() => null)
-  if (!session?.user) {
+  const role = await getActorRole(event)
+  if (!isPrivileged(role)) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Authentication required',
+      statusCode: role === 'anonymous' ? 401 : 403,
+      statusMessage: 'Owner or editor role required',
     })
   }
 
