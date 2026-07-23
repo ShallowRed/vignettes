@@ -34,6 +34,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid slug' })
   }
 
+  // update() upserts (a file-backed deck gains its managed row here), but a
+  // trashed deck must stay absent until restored rather than be edited back.
+  if (await useDeckMeta().isTrashed(slug)) {
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
+  }
+
   const parsed = PatchSchema.safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: `Invalid patch: ${parsed.error.issues.map(i => i.path.join('.') || i.message).join(', ')}` })
