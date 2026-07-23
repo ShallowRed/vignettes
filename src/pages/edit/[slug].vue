@@ -24,9 +24,10 @@ import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '~/composables/useAppSession'
+import { useEditorImageUpload } from '~/composables/useEditorImageUpload'
 import { buildPresentationData } from '~/composables/usePresentation'
 import { projectsQuery } from '~/queries'
-import { insertSnippet, safeInsertPos, wrapSelection } from '~/utils/editor-commands'
+import { insertSnippet, wrapSelection } from '~/utils/editor-commands'
 import { deckCompletions } from '~/utils/editor-completions'
 import { editorTheme } from '~/utils/editor-theme'
 import { slideAtLine, slideRanges } from '~/utils/slide-map'
@@ -160,66 +161,9 @@ const shortcutKeymap = keymap.of([
   },
 ])
 
-// ── Image upload (paste / drop) ──────────────────────────────────────────────
-// Uploads to /api/media (S3 in prod, local .media in dev) and inserts an ::Image
-// directive at the caret/drop position. Full-public for now.
-async function uploadImage(file: File): Promise<string> {
-  const body = new FormData()
-  body.append('file', file)
-  const res = await $fetch<{ src: string }>('/api/media', { method: 'POST', body })
-  return res.src
-}
-
-function insertUploadedImage(view: EditorView, at: number, src: string): void {
-  const pos = safeInsertPos(view.state.doc, at)
-  const line = view.state.doc.lineAt(pos)
-  const lead = line.text.trim().length > 0 ? '\n\n' : ''
-  const text = `${lead}::Image{src="${src}" alt=""}\n::\n`
-  view.dispatch({ changes: { from: pos, insert: text }, selection: { anchor: pos + text.length } })
-  view.focus()
-}
-
-function imageFilesFrom(list: FileList | null | undefined): File[] {
-  return [...(list ?? [])].filter(f => f.type.startsWith('image/'))
-}
-
-async function uploadAndInsert(view: EditorView, files: File[]): Promise<void> {
-  for (const file of files) {
-    try {
-      const src = await uploadImage(file)
-      insertUploadedImage(view, view.state.selection.main.head, src)
-    }
-    catch {
-      toast.add({ title: 'Échec de l\'import de l\'image', icon: 'i-lucide-triangle-alert', color: 'error' })
-    }
-  }
-}
-
-const imageUploadHandlers = EditorView.domEventHandlers({
-  paste(event, view) {
-    if (!writable.value)
-      return false
-    const files = imageFilesFrom(event.clipboardData?.files)
-    if (!files.length)
-      return false
-    event.preventDefault()
-    uploadAndInsert(view, files)
-    return true
-  },
-  drop(event, view) {
-    if (!writable.value)
-      return false
-    const files = imageFilesFrom(event.dataTransfer?.files)
-    if (!files.length)
-      return false
-    event.preventDefault()
-    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
-    if (pos != null)
-      view.dispatch({ selection: { anchor: pos } })
-    uploadAndInsert(view, files)
-    return true
-  },
-})
+// Image upload (paste / drop): uploads to /api/media and inserts an ::Image
+// directive at the caret/drop position.
+const { imageUploadHandlers } = useEditorImageUpload(writable)
 
 // Appended by startCollab (yCollab + remote-caret styling + Yjs undo keymap).
 const collabExtensions = shallowRef<Extension[]>([])
