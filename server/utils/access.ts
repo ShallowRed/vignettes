@@ -5,7 +5,13 @@ import process from 'node:process'
 import { decideAccess } from '#shared/access'
 import { getActor } from './actor'
 import { verifyAccessPassword } from './password'
+import { hitRateLimit } from './rate-limit'
 import { useDeckMeta, useGrants } from './sources'
+
+// Semi-private decks are guarded by a shared password, so throttle guesses per
+// client and deck to keep the scrypt check from becoming a brute-force oracle.
+const PASSWORD_ATTEMPTS = 10
+const PASSWORD_WINDOW_MS = 5 * 60 * 1000
 
 /**
  * Server-side access gate: the I/O adapter around the pure `decideAccess`. Resolves
@@ -106,6 +112,10 @@ async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: st
   const password = getQuery(event).password as string | undefined
   if (!password)
     return false
+
+  const client = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
+  if (!hitRateLimit(`unlock:${client}:${slug}`, PASSWORD_ATTEMPTS, PASSWORD_WINDOW_MS))
+    throw createError({ statusCode: 429, statusMessage: 'Too many attempts, try again later' })
 
   const valid = await verifyAccessPassword(password, storedHash)
   if (!valid)
