@@ -23,6 +23,10 @@ function toProject(row: ProjectRow): Project {
  * side stays in `directory.ts` (`ProjectDirectory`, which filters trashed rows).
  * Deleting a project is a soft cascade: the project and its live decks go to the
  * trash together and restore together; purge is the permanent "empty the trash".
+ *
+ * INVARIANT: a project owns its decks. Trash, restore and purge must each cascade
+ * to `decks` in the same transaction, so a folder and its decks are never split
+ * across states. A new deck-owned child table has to be added to all three.
  */
 export function createProjectStore(db: Db) {
   /** First free slug from the title, disambiguated against every row (slug is the PK). */
