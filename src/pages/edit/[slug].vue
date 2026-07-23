@@ -359,6 +359,10 @@ onBeforeUnmount(() => {
 // ── Actions ─────────────────────────────────────────────────────────────────
 
 async function save() {
+  // Guard re-entry: these use $fetch directly, without a mutation's own in-flight
+  // lock, so a double-click would fire two PUTs and race the save state.
+  if (saveState.value === 'saving')
+    return
   saveState.value = 'saving'
   try {
     const saved = raw.value
@@ -381,6 +385,8 @@ async function save() {
 const publishState = ref<'idle' | 'publishing' | 'published' | 'error'>('idle')
 
 async function publish() {
+  if (publishState.value === 'publishing')
+    return
   publishState.value = 'publishing'
   try {
     // Solo mode: make sure the draft carries the current text before deriving.
