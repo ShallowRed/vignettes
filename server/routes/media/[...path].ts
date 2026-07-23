@@ -65,8 +65,15 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  setResponseHeader(event, 'Content-Type', contentType || MIME[extname(name).toLowerCase()] || 'application/octet-stream')
+  const resolvedType = contentType || MIME[extname(name).toLowerCase()] || 'application/octet-stream'
+  setResponseHeader(event, 'Content-Type', resolvedType)
   setResponseHeader(event, 'Content-Length', body.byteLength)
   setResponseHeader(event, 'Cache-Control', 'public, max-age=31536000, immutable')
+  // Uploaded files are user-supplied. Stop the browser from sniffing them into an
+  // executable type, and sandbox SVG (which can embed inline script) so nothing
+  // runs when one is opened as a top-level document. Inline <img> use is unaffected.
+  setResponseHeader(event, 'X-Content-Type-Options', 'nosniff')
+  if (resolvedType === 'image/svg+xml')
+    setResponseHeader(event, 'Content-Security-Policy', 'default-src \'none\'; style-src \'unsafe-inline\'; sandbox')
   return body
 })
