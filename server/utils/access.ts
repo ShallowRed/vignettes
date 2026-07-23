@@ -5,7 +5,7 @@ import process from 'node:process'
 import { decideAccess } from '#shared/access'
 import { getActor } from './actor'
 import { verifyAccessPassword } from './password'
-import { useGrants } from './sources'
+import { useDeckMeta, useGrants } from './sources'
 
 /**
  * Server-side access gate: the I/O adapter around the pure `decideAccess`. Resolves
@@ -79,6 +79,10 @@ export async function assertCanEditDeck(event: H3Event, slug: string): Promise<A
       statusMessage: 'Editing requires an owner/editor role or an editor grant on this deck',
     })
   }
+  // A trashed deck is not editable: it stays absent (draft, publish, collab all
+  // refused) until restored from the corbeille.
+  if (await useDeckMeta().isTrashed(slug))
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
   return actor
 }
 

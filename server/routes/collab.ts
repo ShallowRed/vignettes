@@ -3,7 +3,7 @@ import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
 import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'
-import { useGrants } from '../utils/sources'
+import { useDeckMeta, useGrants } from '../utils/sources'
 
 type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleConnection']>
 
@@ -42,6 +42,11 @@ export default defineWebSocketHandler({
       && await useGrants().get(deck, actor.id).catch(() => undefined) === 'editor'
     if (!isPrivileged(actor.role) && !granted)
       throw new Response('Editing requires an owner/editor role or an editor grant on this deck', { status: 401 })
+
+    // A trashed deck is not editable: refuse the collab session until it is
+    // restored, mirroring the HTTP edit guard.
+    if (await useDeckMeta().isTrashed(deck))
+      throw new Response('Not found', { status: 404 })
 
     // A session that cannot persist would silently lose every edit.
     if (!useDraftStore().isWritable())

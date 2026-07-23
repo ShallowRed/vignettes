@@ -77,6 +77,15 @@ export function createDeckMeta(db: Db) {
       return !!db.select({ slug: decks.slug }).from(decks).where(eq(decks.slug, slug)).get()
     },
 
+    /**
+     * True when a row exists for this slug and it is in the trash. The write
+     * guard: `get()` returns null both for a brand-new deck (editable) and a
+     * trashed one (not), so edit paths need this to tell them apart.
+     */
+    async isTrashed(slug: string): Promise<boolean> {
+      return !!db.select({ slug: decks.slug }).from(decks).where(and(eq(decks.slug, slug), isNotNull(decks.deletedAt))).get()
+    },
+
     async listManaged(): Promise<DeckMetaRecord[]> {
       return db.select().from(decks).where(and(eq(decks.managed, true), isNull(decks.deletedAt))).all().map(toMeta)
     },
