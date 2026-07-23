@@ -5,6 +5,7 @@ import { KNOWN_THEMES } from '#shared/theme'
 import { useMutation } from '@pinia/colada'
 import { deckApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
+import { useFormModal } from '~/composables/useFormModal'
 import { slugify } from '~/utils/slugify'
 
 // Create-deck modal: title drives the slug until the user edits it by hand;
@@ -21,26 +22,17 @@ const { invalidatePresentations } = useCatalogCache()
 // empty-string SelectItem value); dropped at POST time.
 const NONE = '__none__'
 
-const state = reactive({
-  title: '',
-  slug: '',
-  project: NONE,
-  theme: 'dsfr',
-})
 const slugEdited = ref(false)
-const errorMessage = ref('')
+
+const { state, errorMessage, runIfValid } = useFormModal(
+  open,
+  () => ({ title: '', slug: '', project: props.defaultProject ?? NONE, theme: 'dsfr' }),
+  () => { slugEdited.value = false },
+)
 
 watch(() => state.title, (title) => {
   if (!slugEdited.value)
     state.slug = slugify(title, { lower: true, strict: true })
-})
-
-watch(open, (now) => {
-  if (now) {
-    Object.assign(state, { title: '', slug: '', project: props.defaultProject ?? NONE, theme: 'dsfr' })
-    slugEdited.value = false
-    errorMessage.value = ''
-  }
 })
 
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
@@ -79,10 +71,7 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
 const canSubmit = computed(() => state.title.trim().length > 0 && isDeckSlug(state.slug) && !pending.value)
 
 function submit() {
-  if (!canSubmit.value)
-    return
-  errorMessage.value = ''
-  runCreate()
+  runIfValid(canSubmit.value, runCreate)
 }
 </script>
 

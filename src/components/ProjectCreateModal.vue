@@ -3,6 +3,7 @@ import type { Project } from '#shared/projects'
 import { useMutation } from '@pinia/colada'
 import { projectApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
+import { useFormModal } from '~/composables/useFormModal'
 import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
 const emit = defineEmits<{ created: [Project] }>()
@@ -12,15 +13,7 @@ const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
-const state = reactive({ title: '', color: null as string | null })
-const errorMessage = ref('')
-
-watch(open, (now) => {
-  if (now) {
-    Object.assign(state, { title: '', color: null })
-    errorMessage.value = ''
-  }
-})
+const { state, errorMessage, runIfValid } = useFormModal(open, () => ({ title: '', color: null as string | null }))
 
 const { mutate: runCreate, isLoading: pending } = useMutation({
   mutation: () => projectApi.create($fetch, { title: state.title.trim(), ...(state.color ? { color: state.color } : {}) }),
@@ -43,10 +36,7 @@ function close() {
 }
 
 function submit() {
-  if (!canSubmit.value)
-    return
-  errorMessage.value = ''
-  runCreate()
+  runIfValid(canSubmit.value, runCreate)
 }
 </script>
 

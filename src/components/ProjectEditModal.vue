@@ -4,6 +4,7 @@ import { isDeckSlug } from '#shared/deck'
 import { useMutation } from '@pinia/colada'
 import { projectApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
+import { useFormModal } from '~/composables/useFormModal'
 import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
 // Edit a project's metadata (name, color, slug). Changing the slug cascades to
@@ -14,17 +15,11 @@ const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
-const state = reactive({ title: '', slug: '', color: null as string | null })
-const errorMessage = ref('')
-
-watch(open, (now) => {
-  if (now) {
-    state.title = props.project.title
-    state.slug = props.project.slug
-    state.color = props.project.color ?? null
-    errorMessage.value = ''
-  }
-}, { immediate: true })
+const { state, errorMessage, runIfValid } = useFormModal(open, () => ({
+  title: props.project.title,
+  slug: props.project.slug,
+  color: props.project.color ?? null,
+}))
 
 const slugValid = computed(() => isDeckSlug(state.slug))
 const slugChanged = computed(() => state.slug !== props.project.slug)
@@ -53,10 +48,7 @@ const { mutate: runSave, isLoading: pending } = useMutation({
 const canSubmit = computed(() => state.title.trim().length > 0 && slugValid.value && !pending.value)
 
 function submit() {
-  if (!canSubmit.value)
-    return
-  errorMessage.value = ''
-  runSave()
+  runIfValid(canSubmit.value, runSave)
 }
 
 function close() {
