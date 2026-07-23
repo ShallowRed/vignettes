@@ -21,10 +21,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (password.length < 4) {
+  if (password.length < 8) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Password must be at least 4 characters',
+      statusMessage: 'Password must be at least 8 characters',
     })
   }
 
