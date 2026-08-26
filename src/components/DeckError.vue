@@ -1,17 +1,30 @@
 <script setup lang="ts">
-// Full-screen error placeholder for deck routes; self-contained for the bare `presentation` layout.
+// Full-screen error placeholder for deck routes; self-contained for the bare
+// `presentation` layout. `loginRedirect` turns it into a sign-in prompt (private
+// deck reached anonymously): the CTA goes to /login and comes back here after.
 defineProps<{
+  title?: string
   message?: string
+  loginRedirect?: string
 }>()
 </script>
 
 <template>
   <div class="deck-error">
     <div class="deck-error__icon">
-      ⚠️
+      {{ loginRedirect ? '🔒' : '⚠️' }}
     </div>
-    <h1>Présentation indisponible</h1>
+    <h1 :class="{ 'deck-error__title--info': loginRedirect }">
+      {{ title || 'Présentation indisponible' }}
+    </h1>
     <p>{{ message || 'Impossible de charger la présentation.' }}</p>
+    <NuxtLink
+      v-if="loginRedirect"
+      :to="`/login?redirect=${encodeURIComponent(loginRedirect)}`"
+      class="deck-error__login"
+    >
+      Se connecter
+    </NuxtLink>
     <NuxtLink
       to="/"
       class="deck-error__back"
@@ -44,6 +57,26 @@ defineProps<{
   color: #f87171;
   margin-bottom: 0.5rem;
   font-size: 1.5rem;
+}
+
+/* A sign-in prompt is an expected state, not a failure: neutral title.
+   Qualified with h1 to outrank the `.deck-error h1` rule above. */
+.deck-error h1.deck-error__title--info {
+  color: #e2e8f0;
+}
+
+.deck-error__login {
+  margin-top: 2rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: 0.5rem;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.deck-error__login:hover {
+  background: #1d4ed8;
 }
 
 .deck-error__back {

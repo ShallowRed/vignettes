@@ -17,10 +17,11 @@ if (resolved.value?.frozenUrl) {
 const { presentationData, error: loadError } = usePresentation(`p-${alias}`, `/api/p/${alias}`)
 
 const error = computed(() => resolveError.value || loadError.value)
-const requiresPassword = computed(() => {
-  const err = error.value as any
-  return !!(err && (err.data?.requiresPassword || err.statusCode === 401))
-})
+// Same three closed doors as /slides/<slug>: only the explicit server flag
+// bounces to the password prompt; a plain 401 asks to sign in instead.
+const requiresPassword = computed(() => (error.value as any)?.data?.requiresPassword === true)
+const needsLogin = computed(() => !requiresPassword.value && (error.value as any)?.statusCode === 401)
+const forbidden = computed(() => (error.value as any)?.statusCode === 403)
 
 watch(requiresPassword, (needsPassword) => {
   if (needsPassword) {
@@ -43,6 +44,17 @@ watch(requiresPassword, (needsPassword) => {
       </RevealPresentation>
     </template>
 
+    <DeckError
+      v-else-if="needsLogin"
+      title="Présentation privée"
+      message="Connectez-vous pour y accéder — avec le compte auquel elle a été partagée."
+      :login-redirect="`/p/${alias}`"
+    />
+    <DeckError
+      v-else-if="forbidden"
+      title="Accès refusé"
+      message="Votre compte n'a pas accès à cette présentation."
+    />
     <DeckError
       v-else-if="error && !requiresPassword"
       :message="error.message"

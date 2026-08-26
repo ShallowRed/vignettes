@@ -8,15 +8,13 @@ const slug = route.params.slug as string
 
 const { presentationData, error } = usePresentation(slug)
 
-const requiresPassword = computed(() => {
-  if (!error.value)
-    return false
-  const err = error.value as any
-  return err?.data?.requiresPassword
-    || err?.statusCode === 401
-    || err?.message?.includes('Password required')
-    || err?.message?.includes('401')
-})
+// The server distinguishes the three closed doors: 401 + requiresPassword flag
+// (semi-private, ask for the deck password), plain 401 (private, ask to sign
+// in), 403 (signed in but not granted). Only the flag decides the unlock
+// bounce — a plain 401 must NOT land on a password prompt it can never satisfy.
+const requiresPassword = computed(() => (error.value as any)?.data?.requiresPassword === true)
+const needsLogin = computed(() => !requiresPassword.value && (error.value as any)?.statusCode === 401)
+const forbidden = computed(() => (error.value as any)?.statusCode === 403)
 
 // `replace: true`: this route only ever bounces to /unlock, so keeping it in
 // history would trap Back (it re-fires the watch and bounces forward again).
@@ -38,6 +36,17 @@ watch(requiresPassword, (needsPassword) => {
       </RevealPresentation>
     </template>
 
+    <DeckError
+      v-else-if="needsLogin"
+      title="Présentation privée"
+      message="Connectez-vous pour y accéder — avec le compte auquel elle a été partagée."
+      :login-redirect="`/slides/${slug}`"
+    />
+    <DeckError
+      v-else-if="forbidden"
+      title="Accès refusé"
+      message="Votre compte n'a pas accès à cette présentation."
+    />
     <DeckError
       v-else-if="error && !requiresPassword"
       :message="error.message"
