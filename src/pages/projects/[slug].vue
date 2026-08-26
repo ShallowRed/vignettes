@@ -14,7 +14,7 @@ const routeSlug = computed(() => route.params.slug as string)
 const isUngrouped = computed(() => routeSlug.value === 'divers')
 const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeSlug.value)
 
-const { privileged, role } = useAppSession()
+const { privileged, role, loggedIn } = useAppSession()
 
 // Shared catalog state (decks + folders) on Pinia Colada, same cache the home
 // reads. Mutating a folder here invalidates those queries, so the home grid
@@ -128,12 +128,16 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
       <template #empty>
         <UEmpty
           icon="i-lucide-folder-open"
-          title="Dossier vide"
-          description="Aucune présentation dans ce projet."
+          :title="loggedIn ? 'Dossier vide' : 'Dossier privé ou vide'"
+          :description="loggedIn
+            ? 'Aucune présentation dans ce projet.'
+            : 'Si ce dossier vous a été partagé, connectez-vous pour voir son contenu.'"
           variant="naked"
           :actions="privileged
             ? [{ label: 'Nouvelle présentation', icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
-            : []"
+            : !loggedIn
+              ? [{ label: 'Se connecter', icon: 'i-lucide-log-in', to: `/login?redirect=/projects/${routeSlug}` }]
+              : []"
         />
       </template>
 

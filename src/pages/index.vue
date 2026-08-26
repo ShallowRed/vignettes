@@ -8,7 +8,7 @@ import { useModalTarget } from '~/composables/useModalTarget'
 
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
-const { privileged } = useAppSession()
+const { privileged, loggedIn } = useAppSession()
 
 // Shared, access-filtered catalog state (decks + folders) on Pinia Colada.
 // Mutations invalidate the cache, so create/delete reflect everywhere instantly.
@@ -52,9 +52,16 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
         <UEmpty
           icon="i-lucide-presentation"
           title="Aucune présentation"
-          :description="privileged ? 'Créez un premier dossier ou une présentation pour démarrer.' : 'Rien à afficher pour le moment.'"
+          :description="privileged
+            ? 'Créez un premier dossier ou une présentation pour démarrer.'
+            : loggedIn
+              ? 'Rien ne vous a été partagé pour le moment.'
+              : 'Si des présentations vous ont été partagées, connectez-vous pour les voir.'"
           variant="naked"
           size="lg"
+          :actions="!loggedIn
+            ? [{ label: 'Se connecter', icon: 'i-lucide-log-in', to: '/login' }]
+            : []"
         />
         <div
           v-if="privileged"

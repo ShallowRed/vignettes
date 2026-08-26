@@ -90,6 +90,12 @@ const devRoles = [
           size="lg"
           block
         />
+        <p
+          v-if="providers?.google"
+          class="text-xs text-muted text-left"
+        >
+          Un accès vous a été partagé ? Utilisez « Se connecter avec Google » avec l'adresse à laquelle il a été accordé.
+        </p>
 
         <template v-if="isDev">
           <USeparator
