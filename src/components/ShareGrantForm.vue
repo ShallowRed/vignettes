@@ -53,8 +53,8 @@ const showInvite = ref(false)
 
     <UButton
       v-if="!showInvite"
-      label="Inviter un compte Google par email…"
-      icon="i-lucide-mail-plus"
+      label="Autoriser un compte Google…"
+      icon="i-lucide-user-plus"
       color="neutral"
       variant="link"
       size="xs"
@@ -67,21 +67,21 @@ const showInvite = ref(false)
       @submit.prevent="invite"
     >
       <UFormField
-        label="Inviter par email"
-        help="Le compte pourra se connecter avec Google et recevoir un accès dès maintenant."
+        label="Adresse du compte Google"
+        help="Aucun email n'est envoyé : partagez le lien vous-même. L'accès s'appliquera dès sa première connexion Google."
         class="flex-1"
       >
         <UInput
           v-model="inviteEmail"
           type="email"
-          placeholder="prenom.nom@exemple.fr"
+          placeholder="prenom.nom@gmail.com"
           autofocus
           class="w-full"
         />
       </UFormField>
       <UButton
-        label="Inviter"
-        icon="i-lucide-mail-plus"
+        label="Autoriser"
+        icon="i-lucide-user-plus"
         :disabled="!inviteValid || busy"
         :loading="busy"
         @click="invite"
