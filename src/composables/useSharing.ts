@@ -1,7 +1,8 @@
 import type { DeckGrant, GrantSummary, PermissionScope, UserAccount } from '#shared/access'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
-import { permissionsApi } from '~/api'
+import { permissionsApi, usersApi } from '~/api'
 import { grantsQuery, sharingKey, usersQuery } from '~/queries'
+import { usersKeys } from '~/queries/keys'
 
 export const GRANT_ROLE_ITEMS = [
   { label: 'Lecture', value: 'viewer' as DeckGrant },
@@ -34,7 +35,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     const granted = new Set(grants.value.map(g => g.userId))
     return knownUsers.value
       .filter(u => u.role === 'viewer' && !granted.has(u.id))
-      .map(u => ({ label: u.login, value: u.id }))
+      .map(u => ({ label: u.invited ? `${u.login} (invité)` : u.login, value: u.id }))
   })
 
   const grantUserId = ref<number | undefined>(undefined)
@@ -64,7 +65,31 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
       submitGrant()
   }
 
-  const busy = computed(() => adding.value || removing.value)
+  // Invite on the fly: an email that never logged in becomes a pre-provisioned
+  // Google account (server-side), immediately selectable in the picker — the
+  // grant then goes through the normal flow above.
+  const inviteEmail = ref('')
+  // Coarse shape check to enable the button; the endpoint zod-validates for real.
+  const inviteValid = computed(() => {
+    const [local, domain, ...rest] = inviteEmail.value.trim().split('@')
+    return rest.length === 0 && !!local && !!domain && domain.includes('.')
+  })
+  const { mutate: submitInvite, isLoading: inviting } = useMutation({
+    mutation: () => usersApi.invite(requestFetch, inviteEmail.value.trim()),
+    async onSuccess(account) {
+      await queryCache.invalidateQueries({ key: usersKeys.all })
+      grantUserId.value = account.id
+      inviteEmail.value = ''
+      toast.add({ title: 'Compte invité', description: `${account.login} peut maintenant recevoir un accès.`, icon: 'i-lucide-mail-plus', color: 'success' })
+    },
+    onError: e => onError(e, 'Échec de l\'invitation'),
+  })
+  function invite() {
+    if (inviteValid.value && !inviting.value)
+      submitInvite()
+  }
+
+  const busy = computed(() => adding.value || removing.value || inviting.value)
 
   return {
     grants,
@@ -74,6 +99,9 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     grantRoleItems: GRANT_ROLE_ITEMS,
     addGrant,
     removeGrant: (userId: number) => submitRemove(userId),
+    inviteEmail,
+    inviteValid,
+    invite,
     busy,
   }
 }

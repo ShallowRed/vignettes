@@ -95,17 +95,9 @@ const { mutate: save, isLoading: saving } = useMutation({
 
 // ── Sharing (per-deck grants, owner only) ───────────────────────────────────
 // Delegated to the shared `useSharing`; grants + users load only while the panel
-// is open for an owner (enabled gate).
-const {
-  grants,
-  grantableUsers,
-  grantUserId,
-  grantRole,
-  grantRoleItems,
-  addGrant,
-  removeGrant,
-  busy: sharingBusy,
-} = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && isOwner.value)
+// is open for an owner (enabled gate). The whole bag also feeds ShareGrantForm.
+const sharing = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && isOwner.value)
+const { grants, removeGrant, busy: sharingBusy } = sharing
 </script>
 
 <template>
@@ -214,30 +206,7 @@ const {
             Aucun accès individuel.
           </p>
 
-          <div class="flex items-end gap-2">
-            <UFormField
-              label="Ajouter un accès"
-              class="flex-1"
-            >
-              <USelect
-                v-model="grantUserId"
-                :items="grantableUsers"
-                placeholder="Choisir un compte"
-                class="w-full"
-              />
-            </UFormField>
-            <USelect
-              v-model="grantRole"
-              :items="grantRoleItems"
-              class="w-28"
-            />
-            <UButton
-              icon="i-lucide-user-plus"
-              :disabled="grantUserId == null || sharingBusy"
-              aria-label="Accorder l'accès"
-              @click="addGrant"
-            />
-          </div>
+          <ShareGrantForm :sharing="sharing" />
         </template>
       </div>
     </template>

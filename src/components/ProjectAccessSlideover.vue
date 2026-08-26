@@ -12,17 +12,10 @@ const props = defineProps<{
 
 const open = defineModel<boolean>('open', { required: true })
 
-// Grants + users load only while the slideover is open (enabled gate).
-const {
-  grants,
-  grantableUsers,
-  grantUserId,
-  grantRole,
-  grantRoleItems,
-  addGrant,
-  removeGrant,
-  busy,
-} = useSharing(() => ({ kind: 'project', slug: props.project.slug }), () => open.value)
+// Grants + users load only while the slideover is open (enabled gate). The
+// whole bag also feeds ShareGrantForm (add + invite-by-email).
+const sharing = useSharing(() => ({ kind: 'project', slug: props.project.slug }), () => open.value)
+const { grants, removeGrant, busy } = sharing
 </script>
 
 <template>
@@ -71,30 +64,7 @@ const {
           Aucun accès au dossier.
         </p>
 
-        <div class="flex items-end gap-2">
-          <UFormField
-            label="Ajouter un accès"
-            class="flex-1"
-          >
-            <USelect
-              v-model="grantUserId"
-              :items="grantableUsers"
-              placeholder="Choisir un compte"
-              class="w-full"
-            />
-          </UFormField>
-          <USelect
-            v-model="grantRole"
-            :items="grantRoleItems"
-            class="w-28"
-          />
-          <UButton
-            icon="i-lucide-user-plus"
-            :disabled="grantUserId == null || busy"
-            aria-label="Accorder l'accès"
-            @click="addGrant"
-          />
-        </div>
+        <ShareGrantForm :sharing="sharing" />
       </div>
     </template>
   </USlideover>
