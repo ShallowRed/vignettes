@@ -38,12 +38,13 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
       />
       <UColorModeButton />
 
+      <!-- Route through /login so every configured provider is offered
+           (a direct /auth/github link would hide Google from invited accounts). -->
       <UButton
         v-if="!loggedIn"
-        to="/auth/github"
-        external
-        icon="i-lucide-github"
-        label="Sign in"
+        to="/login"
+        icon="i-lucide-log-in"
+        label="Se connecter"
         color="neutral"
         variant="subtle"
       />
