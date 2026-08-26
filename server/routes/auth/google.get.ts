@@ -13,10 +13,13 @@ import { useUserStore } from '../../utils/users'
 export default defineOAuthGoogleEventHandler({
   config: {},
   async onSuccess(event, { user }) {
-    const login = user.email as string
+    const login = (user.email as string).toLowerCase()
     const { id, role } = await useUserStore().upsertOAuthLogin(
       { provider: 'google', providerId: String(user.sub), login, name: user.name, avatarUrl: user.picture },
       resolveRole(login, readRoleMap()),
+      // A verified email may claim a pre-provisioned invited account; an
+      // unverified one must never inherit an invitation's grants.
+      { claimInvited: user.email_verified === true },
     )
 
     await setUserSession(event, {

@@ -82,4 +82,39 @@ describe('user store', () => {
       expect(a.id).not.toBe(b.id)
     })
   })
+
+  describe('invite', () => {
+    it('pre-provisions a viewer stub, normalized and flagged invited', async () => {
+      const account = await store.invite('  Dave@Example.COM ')
+      expect(account).toMatchObject({ login: 'dave@example.com', role: 'viewer', invited: true })
+    })
+
+    it('is idempotent and never resets an existing account', async () => {
+      const first = await store.invite('dave@example.com')
+      await store.setRole(first.id, 'editor')
+      const again = await store.invite('dave@example.com')
+      expect(again).toMatchObject({ id: first.id, role: 'editor' })
+    })
+
+    it('claim at first verified login: same id, kept role, real sub installed', async () => {
+      const stub = await store.invite('dave@example.com')
+      const identity = { provider: 'google' as const, providerId: '999999999999999999999', login: 'dave@example.com', name: 'Dave' }
+      const claimed = await store.upsertOAuthLogin(identity, 'viewer', { claimInvited: true })
+      // Grants attached to the invited account apply: it IS the same account.
+      expect(claimed.id).toBe(stub.id)
+      const relogin = await store.upsertOAuthLogin(identity, 'viewer')
+      expect(relogin.id).toBe(stub.id)
+      expect(db.select().from(users).where(eq(users.id, stub.id)).get()!.providerId).toBe(identity.providerId)
+    })
+
+    it('an unverified email cannot inherit the invitation (fail closed)', async () => {
+      await store.invite('dave@example.com')
+      // Without claimInvited the insert path collides on the unique login:
+      // the login fails rather than silently minting a second account.
+      await expect(store.upsertOAuthLogin(
+        { provider: 'google', providerId: '111', login: 'dave@example.com' },
+        'viewer',
+      )).rejects.toThrow()
+    })
+  })
 })

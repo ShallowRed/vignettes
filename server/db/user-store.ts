@@ -12,10 +12,18 @@ function readRole(value: string): Role {
   return parsed.success ? parsed.data : 'viewer'
 }
 
+/**
+ * Placeholder providerId for an invited account that never logged in. Prefixed
+ * so it can never collide with a real Google sub (subs are all digits), and
+ * derived from the login so the first-login claim is a direct key lookup.
+ */
+const INVITED_PREFIX = 'invited:'
+const invitedPlaceholder = (login: string) => `${INVITED_PREFIX}${login}`
+
 /** SQLite adapter for the `UserStore` port (factory over a drizzle handle). */
 export function createUserStore(db: Db): UserStore {
   return {
-    async upsertOAuthLogin(identity, bootstrapRole) {
+    async upsertOAuthLogin(identity, bootstrapRole, opts) {
       const now = new Date()
       const existing = db.select({ id: users.id, role: users.role }).from(users).where(and(eq(users.provider, identity.provider), eq(users.providerId, identity.providerId))).get()
       if (existing) {
@@ -29,6 +37,24 @@ export function createUserStore(db: Db): UserStore {
           .where(eq(users.id, existing.id))
           .run()
         return { id: existing.id, role: readRole(existing.role) }
+      }
+      // First login may claim an invited account: same provider, login matched,
+      // and the caller vouched for the email (claimInvited). The placeholder
+      // identity becomes the real one; role and grants carry over.
+      if (opts?.claimInvited) {
+        const stub = db.select({ id: users.id, role: users.role }).from(users).where(and(eq(users.provider, identity.provider), eq(users.providerId, invitedPlaceholder(identity.login)))).get()
+        if (stub) {
+          db.update(users)
+            .set({
+              providerId: identity.providerId,
+              name: identity.name ?? null,
+              avatarUrl: identity.avatarUrl ?? null,
+              lastLoginAt: now,
+            })
+            .where(eq(users.id, stub.id))
+            .run()
+          return { id: stub.id, role: readRole(stub.role) }
+        }
       }
       // No explicit id: SQLite mints the next rowid above every existing id,
       // so internal ids never collide with the historical GitHub-id rows.
@@ -78,6 +104,34 @@ export function createUserStore(db: Db): UserStore {
       return readRole(row.role)
     },
 
+    async invite(email) {
+      const login = email.trim().toLowerCase()
+      const now = new Date()
+      // Find-or-invite: an existing account (real or already invited) with this
+      // login is returned untouched — inviting twice must not reset anything.
+      const existing = db.select().from(users).where(eq(users.login, login)).get()
+      const row = existing ?? db.insert(users)
+        .values({
+          provider: 'google',
+          providerId: invitedPlaceholder(login),
+          login,
+          role: 'viewer',
+          createdAt: now,
+          lastLoginAt: now,
+        })
+        .returning()
+        .get()!
+      return {
+        id: row.id,
+        login: row.login,
+        name: row.name,
+        avatarUrl: row.avatarUrl,
+        role: readRole(row.role),
+        lastLoginAt: row.lastLoginAt,
+        invited: row.providerId.startsWith(INVITED_PREFIX),
+      }
+    },
+
     async getRole(id) {
       const row = db.select({ role: users.role }).from(users).where(eq(users.id, id)).get()
       return row ? readRole(row.role) : null
@@ -91,6 +145,7 @@ export function createUserStore(db: Db): UserStore {
         avatarUrl: row.avatarUrl,
         role: readRole(row.role),
         lastLoginAt: row.lastLoginAt,
+        invited: row.providerId.startsWith(INVITED_PREFIX),
       }))
     },
 
