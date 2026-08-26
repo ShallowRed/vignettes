@@ -12,8 +12,8 @@ describe('permission store', () => {
     db = freshDb()
     store = createPermissionStore(db)
     db.insert(users).values([
-      { id: 1, login: 'alice', createdAt: now, lastLoginAt: now },
-      { id: 2, login: 'bob', createdAt: now, lastLoginAt: now },
+      { id: 1, providerId: '1', login: 'alice', createdAt: now, lastLoginAt: now },
+      { id: 2, providerId: '2', login: 'bob', createdAt: now, lastLoginAt: now },
     ]).run()
   })
 
