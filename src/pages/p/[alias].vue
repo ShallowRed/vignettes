@@ -47,7 +47,7 @@ watch(requiresPassword, (needsPassword) => {
     <DeckError
       v-else-if="needsLogin"
       title="Présentation privée"
-      message="Connectez-vous pour y accéder — avec le compte auquel elle a été partagée."
+      message="Connectez-vous avec le compte auquel elle a été partagée."
       :login-redirect="`/p/${alias}`"
     />
     <DeckError

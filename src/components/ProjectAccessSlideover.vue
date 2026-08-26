@@ -21,7 +21,7 @@ const { grants, removeGrant, busy } = sharing
 <template>
   <USlideover
     v-model:open="open"
-    :title="`Accès — ${project.title}`"
+    :title="`Accès · ${project.title}`"
     description="Ouvre tout le dossier à un compte précis."
   >
     <template #body>

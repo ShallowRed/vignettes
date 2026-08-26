@@ -39,7 +39,7 @@ const breadcrumb = computed(() => [
   { label: projectTitle.value },
 ])
 
-useHead(() => ({ title: `${projectTitle.value} — Nuxt Slides` }))
+useHead(() => ({ title: `${projectTitle.value} · Nuxt Slides` }))
 
 const isOwner = computed(() => role.value === 'owner')
 

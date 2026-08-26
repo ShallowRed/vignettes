@@ -65,7 +65,7 @@ function submit() {
 
         <UFormField
           label="Couleur"
-          help="Optionnel — teinte l'icône du dossier."
+          help="Optionnel : teinte l'icône du dossier."
         >
           <div class="flex items-center gap-2">
             <button

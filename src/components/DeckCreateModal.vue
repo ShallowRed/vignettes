@@ -101,7 +101,7 @@ function submit() {
         <UFormField
           label="Slug"
           :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
-          help="Identifiant de l'URL (/slides/…) — dérivé du titre."
+          help="Identifiant de l'URL (/slides/…), dérivé du titre."
         >
           <UInput
             v-model="state.slug"
