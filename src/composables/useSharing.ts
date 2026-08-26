@@ -65,24 +65,29 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
       submitGrant()
   }
 
-  // Invite on the fly: an email that never logged in becomes a pre-provisioned
-  // Google account (server-side), immediately selectable in the picker — the
-  // grant then goes through the normal flow above.
-  const inviteEmail = ref('')
+  // Invite on the fly: a handle that never logged in becomes a pre-provisioned
+  // account (server-side), immediately selectable in the picker — the grant then
+  // goes through the normal flow above. Works for both providers: a Google email
+  // or a GitHub username.
+  const inviteProvider = ref<'github' | 'google'>('google')
+  const inviteHandle = ref('')
   // Coarse shape check to enable the button; the endpoint zod-validates for real.
   const inviteValid = computed(() => {
-    const [local, domain, ...rest] = inviteEmail.value.trim().split('@')
+    const handle = inviteHandle.value.trim()
+    if (inviteProvider.value === 'github')
+      return handle.length > 0 && !handle.includes('@')
+    const [local, domain, ...rest] = handle.split('@')
     return rest.length === 0 && !!local && !!domain && domain.includes('.')
   })
   const { mutate: submitInvite, isLoading: inviting } = useMutation({
-    mutation: () => usersApi.invite(requestFetch, inviteEmail.value.trim()),
+    mutation: () => usersApi.invite(requestFetch, inviteProvider.value, inviteHandle.value.trim()),
     async onSuccess(account) {
       await queryCache.invalidateQueries({ key: usersKeys.all })
       grantUserId.value = account.id
-      inviteEmail.value = ''
-      toast.add({ title: 'Compte invité', description: `${account.login} peut maintenant recevoir un accès.`, icon: 'i-lucide-mail-plus', color: 'success' })
+      inviteHandle.value = ''
+      toast.add({ title: 'Compte autorisé', description: `${account.login} peut maintenant recevoir un accès.`, icon: 'i-lucide-user-plus', color: 'success' })
     },
-    onError: e => onError(e, 'Échec de l\'invitation'),
+    onError: e => onError(e, 'Échec de l\'autorisation'),
   })
   function invite() {
     if (inviteValid.value && !inviting.value)
@@ -99,7 +104,8 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     grantRoleItems: GRANT_ROLE_ITEMS,
     addGrant,
     removeGrant: (userId: number) => submitRemove(userId),
-    inviteEmail,
+    inviteProvider,
+    inviteHandle,
     inviteValid,
     invite,
     busy,

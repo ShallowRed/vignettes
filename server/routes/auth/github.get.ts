@@ -17,6 +17,8 @@ export default defineOAuthGitHubEventHandler({
     const { id, role } = await useUserStore().upsertOAuthLogin(
       { provider: 'github', providerId: String(user.id), login: user.login, name: user.name, avatarUrl: user.avatar_url },
       resolveRole(user.login, readRoleMap()),
+      // The login is issued by GitHub itself, so it may claim an invitation.
+      { claimInvited: true },
     ).catch(() => ({ id: user.id as number, role: resolveRole(user.login, readRoleMap()) }))
 
     await setUserSession(event, {

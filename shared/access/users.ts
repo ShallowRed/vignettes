@@ -38,17 +38,18 @@ export interface UserStore {
    * internal id — that is what sessions and grants reference.
    *
    * With `claimInvited` (set by the handler only when the provider vouches for
-   * the email), a first login may claim a pre-provisioned invited account whose
-   * login matches: the placeholder identity becomes the real one and every grant
-   * already attached to the account applies.
+   * the handle: a verified email, or the provider-issued username), a first login
+   * may claim a pre-provisioned invited account whose login matches: the
+   * placeholder identity becomes the real one and every grant already attached
+   * to the account applies.
    */
   upsertOAuthLogin: (identity: OAuthIdentity, bootstrapRole: Role, opts?: { claimInvited?: boolean }) => Promise<{ id: number, role: Role }>
   /**
-   * Pre-provision a Google account by email so it can be granted access before
-   * its first login. Idempotent: an existing account (invited or real) with this
-   * login is returned untouched.
+   * Pre-provision an account by its provider handle (Google email or GitHub
+   * username) so it can be granted access before its first login. Idempotent:
+   * an existing account (invited or real) for this handle is returned untouched.
    */
-  invite: (email: string) => Promise<UserAccount>
+  invite: (identity: { provider: 'github' | 'google', handle: string }) => Promise<UserAccount>
   /** Id-keyed variant for synthetic accounts (dev-login) whose internal id is fixed. */
   upsertOnLogin: (profile: UserProfile, bootstrapRole: Role) => Promise<Role>
   getRole: (id: number) => Promise<Role | null>

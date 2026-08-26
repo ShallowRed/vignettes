@@ -86,7 +86,6 @@ const devRoles = [
           icon="i-ri-google-fill"
           label="Se connecter avec Google"
           color="neutral"
-          variant="subtle"
           size="lg"
           block
         />

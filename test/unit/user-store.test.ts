@@ -85,19 +85,19 @@ describe('user store', () => {
 
   describe('invite', () => {
     it('pre-provisions a viewer stub, normalized and flagged invited', async () => {
-      const account = await store.invite('  Dave@Example.COM ')
+      const account = await store.invite({ provider: 'google', handle: '  Dave@Example.COM ' })
       expect(account).toMatchObject({ login: 'dave@example.com', role: 'viewer', invited: true })
     })
 
     it('is idempotent and never resets an existing account', async () => {
-      const first = await store.invite('dave@example.com')
+      const first = await store.invite({ provider: 'google', handle: 'dave@example.com' })
       await store.setRole(first.id, 'editor')
-      const again = await store.invite('dave@example.com')
+      const again = await store.invite({ provider: 'google', handle: 'dave@example.com' })
       expect(again).toMatchObject({ id: first.id, role: 'editor' })
     })
 
     it('claim at first verified login: same id, kept role, real sub installed', async () => {
-      const stub = await store.invite('dave@example.com')
+      const stub = await store.invite({ provider: 'google', handle: 'dave@example.com' })
       const identity = { provider: 'google' as const, providerId: '999999999999999999999', login: 'dave@example.com', name: 'Dave' }
       const claimed = await store.upsertOAuthLogin(identity, 'viewer', { claimInvited: true })
       // Grants attached to the invited account apply: it IS the same account.
@@ -109,8 +109,8 @@ describe('user store', () => {
 
     it('gmail spellings of one inbox are one account: dedupe and claim', async () => {
       // Gmail ignores dots and +suffixes; googlemail.com aliases gmail.com.
-      const stub = await store.invite('marie.durand.brand@gmail.com')
-      const again = await store.invite('camillemartin.brand+test@googlemail.com')
+      const stub = await store.invite({ provider: 'google', handle: 'marie.durand.brand@gmail.com' })
+      const again = await store.invite({ provider: 'google', handle: 'camillemartin.brand+test@googlemail.com' })
       expect(again.id).toBe(stub.id)
       // Google reports a canonical spelling that differs from the invited one.
       const claimed = await store.upsertOAuthLogin(
@@ -124,8 +124,8 @@ describe('user store', () => {
     })
 
     it('keeps dots significant outside gmail', async () => {
-      const a = await store.invite('a.b@example.com')
-      const b = await store.invite('ab@example.com')
+      const a = await store.invite({ provider: 'google', handle: 'a.b@example.com' })
+      const b = await store.invite({ provider: 'google', handle: 'ab@example.com' })
       expect(a.id).not.toBe(b.id)
     })
 
@@ -134,18 +134,37 @@ describe('user store', () => {
         { provider: 'google', providerId: '271828182845904523536', login: 'mariedurand2@gmail.com' },
         'viewer',
       )
-      const invited = await store.invite('marie.durand2@gmail.com')
+      const invited = await store.invite({ provider: 'google', handle: 'marie.durand2@gmail.com' })
       expect(invited).toMatchObject({ id: real.id, invited: false })
     })
 
     it('an unverified email cannot inherit the invitation (fail closed)', async () => {
-      await store.invite('dave@example.com')
+      await store.invite({ provider: 'google', handle: 'dave@example.com' })
       // Without claimInvited the insert path collides on the unique login:
       // the login fails rather than silently minting a second account.
       await expect(store.upsertOAuthLogin(
         { provider: 'google', providerId: '111', login: 'dave@example.com' },
         'viewer',
       )).rejects.toThrow()
+    })
+
+    it('a github username invitation is claimed case-insensitively', async () => {
+      const stub = await store.invite({ provider: 'github', handle: 'shallowred' })
+      expect(stub).toMatchObject({ login: 'shallowred', invited: true })
+      // GitHub reports the canonical casing at login; usernames match either way.
+      const claimed = await store.upsertOAuthLogin(
+        { provider: 'github', providerId: '4242', login: 'ShallowRed' },
+        'viewer',
+        { claimInvited: true },
+      )
+      expect(claimed.id).toBe(stub.id)
+      expect(db.select().from(users).where(eq(users.id, stub.id)).get()!.login).toBe('ShallowRed')
+    })
+
+    it('github and google invitations for lookalike handles stay distinct', async () => {
+      const gh = await store.invite({ provider: 'github', handle: 'dave' })
+      const gg = await store.invite({ provider: 'google', handle: 'dave@gmail.com' })
+      expect(gh.id).not.toBe(gg.id)
     })
   })
 })
