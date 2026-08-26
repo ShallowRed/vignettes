@@ -18,11 +18,14 @@ onMounted(() => {
 const errorMessage = computed(() => {
   switch (error.value) {
     case 'oauth_failed':
-      return 'L\'authentification GitHub a échoué. Veuillez réessayer.'
+      return 'L\'authentification a échoué. Veuillez réessayer.'
     default:
       return error.value ? 'Authentification impossible. Veuillez réessayer.' : ''
   }
 })
+
+// Only offer the providers this deployment holds credentials for.
+const { data: providers } = await useFetch('/api/auth/providers')
 
 // Dev-only shortcut: GitHub OAuth needs secrets + a network round-trip, so local
 // iteration on gated features logs in as a synthetic per-role account instead.
@@ -72,6 +75,18 @@ const devRoles = [
           icon="i-lucide-github"
           label="Se connecter avec GitHub"
           color="neutral"
+          size="lg"
+          block
+        />
+
+        <UButton
+          v-if="providers?.google"
+          to="/auth/google"
+          external
+          icon="i-ri-google-fill"
+          label="Se connecter avec Google"
+          color="neutral"
+          variant="subtle"
           size="lg"
           block
         />

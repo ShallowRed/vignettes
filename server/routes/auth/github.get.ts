@@ -11,14 +11,17 @@ import { useUserStore } from '../../utils/users'
 export default defineOAuthGitHubEventHandler({
   config: {},
   async onSuccess(event, { user }) {
-    const role = await useUserStore().upsertOnLogin(
-      { id: user.id, login: user.login, name: user.name, avatarUrl: user.avatar_url },
+    // Identity is (provider, providerId); the returned internal id — equal to
+    // the GitHub id for rows that predate 0010 — is what the session carries.
+    // An unreachable database degrades to the env map, as before.
+    const { id, role } = await useUserStore().upsertOAuthLogin(
+      { provider: 'github', providerId: String(user.id), login: user.login, name: user.name, avatarUrl: user.avatar_url },
       resolveRole(user.login, readRoleMap()),
-    ).catch(() => resolveRole(user.login, readRoleMap()))
+    ).catch(() => ({ id: user.id as number, role: resolveRole(user.login, readRoleMap()) }))
 
     await setUserSession(event, {
       user: {
-        id: user.id,
+        id,
         login: user.login,
         name: user.name,
         avatar: user.avatar_url,
