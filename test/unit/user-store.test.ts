@@ -107,6 +107,37 @@ describe('user store', () => {
       expect(db.select().from(users).where(eq(users.id, stub.id)).get()!.providerId).toBe(identity.providerId)
     })
 
+    it('gmail spellings of one inbox are one account: dedupe and claim', async () => {
+      // Gmail ignores dots and +suffixes; googlemail.com aliases gmail.com.
+      const stub = await store.invite('marie.durand.brand@gmail.com')
+      const again = await store.invite('camillemartin.brand+test@googlemail.com')
+      expect(again.id).toBe(stub.id)
+      // Google reports a canonical spelling that differs from the invited one.
+      const claimed = await store.upsertOAuthLogin(
+        { provider: 'google', providerId: '31415926535897932384', login: 'camillemartin.brand@gmail.com' },
+        'viewer',
+        { claimInvited: true },
+      )
+      expect(claimed.id).toBe(stub.id)
+      // The stored login becomes the canonical spelling.
+      expect(db.select().from(users).where(eq(users.id, stub.id)).get()!.login).toBe('camillemartin.brand@gmail.com')
+    })
+
+    it('keeps dots significant outside gmail', async () => {
+      const a = await store.invite('a.b@example.com')
+      const b = await store.invite('ab@example.com')
+      expect(a.id).not.toBe(b.id)
+    })
+
+    it('inviting a spelling of an already-claimed inbox returns the real account', async () => {
+      const real = await store.upsertOAuthLogin(
+        { provider: 'google', providerId: '271828182845904523536', login: 'mariedurand2@gmail.com' },
+        'viewer',
+      )
+      const invited = await store.invite('marie.durand2@gmail.com')
+      expect(invited).toMatchObject({ id: real.id, invited: false })
+    })
+
     it('an unverified email cannot inherit the invitation (fail closed)', async () => {
       await store.invite('dave@example.com')
       // Without claimInvited the insert path collides on the unique login:

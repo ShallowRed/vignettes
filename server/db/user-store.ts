@@ -20,8 +20,29 @@ function readRole(value: string): Role {
 const INVITED_PREFIX = 'invited:'
 const invitedPlaceholder = (login: string) => `${INVITED_PREFIX}${login}`
 
+/**
+ * Gmail ignores dots and `+suffix` in the local part, and googlemail.com is an
+ * alias of gmail.com — `marie.durand+x@googlemail.com` and
+ * `camillemartin@gmail.com` are the same inbox, but Google reports only ONE
+ * canonical spelling at OAuth login. Invitation matching must be tolerant, or
+ * inviting the wrong spelling silently creates a grant nobody can ever claim.
+ * Other domains keep their exact spelling (dots are significant there).
+ */
+function normalizedLogin(login: string): string {
+  const [local, domain] = login.split('@')
+  if (!domain || (domain !== 'gmail.com' && domain !== 'googlemail.com'))
+    return login
+  return `${local.split('+')[0].replaceAll('.', '')}@gmail.com`
+}
+
 /** SQLite adapter for the `UserStore` port (factory over a drizzle handle). */
 export function createUserStore(db: Db): UserStore {
+  /** The google account whose login names the same inbox as `login`, if any. */
+  function findGoogleAccountByInbox(login: string) {
+    const target = normalizedLogin(login)
+    return db.select().from(users).where(eq(users.provider, 'google')).all().find(row => normalizedLogin(row.login) === target)
+  }
+
   return {
     async upsertOAuthLogin(identity, bootstrapRole, opts) {
       const now = new Date()
@@ -40,13 +61,19 @@ export function createUserStore(db: Db): UserStore {
       }
       // First login may claim an invited account: same provider, login matched,
       // and the caller vouched for the email (claimInvited). The placeholder
-      // identity becomes the real one; role and grants carry over.
+      // identity becomes the real one; role and grants carry over. Exact match
+      // first, then the same-inbox fallback (gmail dot/plus spellings).
       if (opts?.claimInvited) {
-        const stub = db.select({ id: users.id, role: users.role }).from(users).where(and(eq(users.provider, identity.provider), eq(users.providerId, invitedPlaceholder(identity.login)))).get()
+        const candidate = db.select().from(users).where(and(eq(users.provider, identity.provider), eq(users.providerId, invitedPlaceholder(identity.login)))).get()
+          ?? findGoogleAccountByInbox(identity.login)
+        // Only an unclaimed placeholder may be taken over — never a real account.
+        const stub = candidate?.providerId.startsWith(INVITED_PREFIX) ? candidate : undefined
         if (stub) {
           db.update(users)
             .set({
               providerId: identity.providerId,
+              // Google's canonical spelling replaces whatever the owner typed.
+              login: identity.login,
               name: identity.name ?? null,
               avatarUrl: identity.avatarUrl ?? null,
               lastLoginAt: now,
@@ -108,8 +135,11 @@ export function createUserStore(db: Db): UserStore {
       const login = email.trim().toLowerCase()
       const now = new Date()
       // Find-or-invite: an existing account (real or already invited) with this
-      // login is returned untouched — inviting twice must not reset anything.
+      // login — or the same gmail inbox under another spelling — is returned
+      // untouched; inviting twice must not reset anything or split the inbox
+      // across two accounts.
       const existing = db.select().from(users).where(eq(users.login, login)).get()
+        ?? findGoogleAccountByInbox(login)
       const row = existing ?? db.insert(users)
         .values({
           provider: 'google',
