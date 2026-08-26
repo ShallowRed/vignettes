@@ -71,6 +71,13 @@
       "when": 1784578036695,
       "tag": "0009_project_lifecycle_trash",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1787762784395,
+      "tag": "0010_google_identity_provider",
+      "breakpoints": true
     }
   ]
 }

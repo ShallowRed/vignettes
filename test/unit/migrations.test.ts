@@ -1,3 +1,4 @@
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import Database from 'better-sqlite3'
@@ -30,5 +31,30 @@ describe('database migrations', () => {
     const db = migratedDb()
     // Second pass over the same database must not re-run or throw.
     expect(() => migrate(db, { migrationsFolder: MIGRATIONS_FOLDER })).not.toThrow()
+  })
+
+  it('0010 backfills provider identity on a populated database', () => {
+    // The production shape: users exist BEFORE 0010 runs. Without the backfill,
+    // every row would share ('github', '') and the unique index would refuse to
+    // build — an empty-database run cannot catch that.
+    const sqlite = new Database(':memory:')
+    const files = readdirSync(MIGRATIONS_FOLDER).filter(f => f.endsWith('.sql')).sort()
+    for (const file of files.filter(f => f < '0010'))
+      sqlite.exec(readFileSync(join(MIGRATIONS_FOLDER, file), 'utf-8').replaceAll('--> statement-breakpoint', ''))
+
+    const now = Date.now()
+    const insert = sqlite.prepare('INSERT INTO users (id, login, role, created_at, last_login_at) VALUES (?, ?, ?, ?, ?)')
+    insert.run(101, 'alice', 'owner', now, now)
+    insert.run(202, 'bob', 'viewer', now, now)
+
+    for (const file of files.filter(f => f >= '0010'))
+      sqlite.exec(readFileSync(join(MIGRATIONS_FOLDER, file), 'utf-8').replaceAll('--> statement-breakpoint', ''))
+
+    const rows = sqlite.prepare('SELECT id, provider, provider_id FROM users ORDER BY id').all() as
+      { id: number, provider: string, provider_id: string }[]
+    expect(rows).toEqual([
+      { id: 101, provider: 'github', provider_id: '101' },
+      { id: 202, provider: 'github', provider_id: '202' },
+    ])
   })
 })

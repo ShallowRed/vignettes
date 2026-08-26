@@ -1,4 +1,4 @@
-import { blob, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { blob, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 /**
  * Deck identity + catalog/access axes. The published markdown itself lives in
@@ -42,18 +42,24 @@ export const deckDrafts = sqliteTable('deck_drafts', {
 })
 
 /**
- * Identities seen at GitHub login. `role` is the runtime truth — the env login
- * map only seeds it on first login. Defaults to the least-privileged role.
+ * Identities seen at OAuth login. `id` is an internal key (historically the
+ * GitHub numeric id; new rows autoincrement above it) — the external identity is
+ * `(provider, providerId)`, kept as text because Google subs overflow JS numbers.
+ * `role` is the runtime truth — the env login map only seeds it on first login.
+ * Defaults to the least-privileged role. For Google accounts `login` is the email
+ * (GitHub logins cannot contain `@`, so the namespaces cannot collide).
  */
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey(),
+  provider: text('provider').notNull().default('github'),
+  providerId: text('provider_id').notNull().default(''),
   login: text('login').notNull().unique(),
   name: text('name'),
   avatarUrl: text('avatar_url'),
   role: text('role').notNull().default('viewer'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }).notNull(),
-})
+}, table => [uniqueIndex('users_provider_identity').on(table.provider, table.providerId)])
 
 /** Catalog grouping axis (absorbs projects.yml). */
 export const projects = sqliteTable('projects', {
