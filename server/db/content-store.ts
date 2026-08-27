@@ -35,29 +35,36 @@ export function createDbContent(db: Db): { source: ContentSource, writer: Conten
 
         // A managed row is the access truth (admin edits shadow frontmatter), so
         // republishing must not re-derive the ACCESS axes: a stale
-        // `status: public` in the source would silently reopen a deck an admin
-        // closed (that incident happened). Access axes follow the frontmatter
-        // only until the first publish marks the row managed; catalog axes
-        // (title, theme, project) stay content-driven on every publish.
+        // `status: public` would silently reopen a closed deck (that incident
+        // happened), and a stale `project:` would undo a folder rename or move —
+        // the project decides which master keys apply, so it is an access axis
+        // too. These follow the frontmatter only until the first publish marks
+        // the row managed; title and theme stay content-driven on every publish.
         const current = db.select({
           status: decks.status,
           unlisted: decks.unlisted,
           accessPasswordHash: decks.accessPasswordHash,
+          project: decks.project,
           managed: decks.managed,
         }).from(decks).where(eq(decks.slug, prepared.slug)).get()
 
         const accessAxes = current?.managed
-          ? { status: current.status, unlisted: current.unlisted, accessPasswordHash: current.accessPasswordHash }
+          ? {
+              status: current.status,
+              unlisted: current.unlisted,
+              accessPasswordHash: current.accessPasswordHash,
+              project: current.project,
+            }
           : {
               status: resolveDeckStatus(prepared.raw),
               unlisted: Boolean(meta.unlisted),
               accessPasswordHash: (meta.accessPassword as string) ?? null,
+              project: (meta.project as string) ?? null,
             }
 
         const derived = {
           title: (meta.title as string) || prepared.slug,
           theme: (meta.theme as string) ?? null,
-          project: (meta.project as string) ?? null,
           ...accessAxes,
           managed: true,
           updatedAt: now,

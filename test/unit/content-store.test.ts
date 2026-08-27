@@ -84,12 +84,22 @@ describe('createDbContent', () => {
     expect(db.select().from(decks).where(eq(decks.slug, 'fresh')).get()!.status).toBe('public')
   })
 
-  it('catalog axes keep following the frontmatter on republish', async () => {
+  it('content axes keep following the frontmatter on republish', async () => {
     await content.writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
-    const moved = DECK.replace('project: interne', 'project: autre').replace('title: Mon deck', 'title: Renommé')
-    await content.writer.save({ slug: 'my-deck', raw: moved, actor: 'lucas' })
+    const renamed = DECK.replace('title: Mon deck', 'title: Renommé').replace('theme: minimal', 'theme: dsfr')
+    await content.writer.save({ slug: 'my-deck', raw: renamed, actor: 'lucas' })
     const row = db.select().from(decks).where(eq(decks.slug, 'my-deck')).get()!
-    expect(row.project).toBe('autre')
     expect(row.title).toBe('Renommé')
+    expect(row.theme).toBe('dsfr')
+  })
+
+  it('a folder move or rename survives a republish with stale frontmatter', async () => {
+    // The project decides which master keys apply: once managed, the DB value
+    // wins over the source's stale `project:` (a folder rename cascades in DB
+    // only — every deck's frontmatter would otherwise undo it at republish).
+    await content.writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    db.update(decks).set({ project: 'renomme' }).where(eq(decks.slug, 'my-deck')).run()
+    await content.writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    expect(db.select().from(decks).where(eq(decks.slug, 'my-deck')).get()!.project).toBe('renomme')
   })
 })
