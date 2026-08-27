@@ -54,7 +54,7 @@ const isGoogle = computed(() => inviteProvider.value === 'google')
       <UButton
         icon="i-lucide-user-plus"
         :disabled="grantUserId == null || busy"
-        aria-label="Accorder l'accès"
+        aria-label="Ajouter l'accès"
         @click="addGrant"
       />
     </div>

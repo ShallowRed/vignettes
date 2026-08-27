@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest'
 import { canList, decideAccess } from '../../shared/access/decide'
 
 const ROLES: Role[] = ['anonymous', 'viewer', 'editor', 'owner']
-const STATUSES: PublicationStatus[] = ['public', 'draft', 'private', 'semi-private']
+const STATUSES: PublicationStatus[] = ['public', 'private', 'semi-private']
+// A value outside the enum (e.g. the retired 'draft') must fail closed everywhere.
+const LEGACY_STATUS = 'draft' as PublicationStatus
 
 function input(over: Partial<AccessInput> & Pick<AccessInput, 'status' | 'role'>): AccessInput {
   return { hasPassword: false, passwordGranted: false, ...over }
@@ -36,6 +38,11 @@ describe('decideAccess — view matrix', () => {
       expect(decideAccess(input({ status, role: 'viewer' })))
         .toEqual({ outcome: 'deny', reason: 'forbidden' })
     }
+  })
+
+  it('a status outside the enum fails closed for view', () => {
+    expect(decideAccess(input({ status: LEGACY_STATUS, role: 'viewer' })))
+      .toEqual({ outcome: 'deny', reason: 'forbidden' })
   })
 })
 
@@ -84,12 +91,12 @@ describe('canList', () => {
     }
   })
 
-  it('shows only public to non-privileged; semi-private/draft/private are hidden', () => {
+  it('shows only public to non-privileged; semi-private/legacy/private are hidden', () => {
     for (const role of ['anonymous', 'viewer'] as Role[]) {
       expect(canList({ status: 'public', role })).toBe(true)
       // Semi-private titles must not leak to the public showcase (reached by link only).
       expect(canList({ status: 'semi-private', role })).toBe(false)
-      expect(canList({ status: 'draft', role })).toBe(false)
+      expect(canList({ status: LEGACY_STATUS, role })).toBe(false)
       expect(canList({ status: 'private', role })).toBe(false)
     }
   })
@@ -104,7 +111,7 @@ describe('decideAccess — per-deck grants', () => {
   it('opens view on private decks for any grant', () => {
     for (const grant of ['editor', 'viewer'] as const) {
       expect(decideAccess(input({ status: 'private', role: 'viewer', grant })).outcome).toBe('allow')
-      expect(decideAccess(input({ status: 'draft', role: 'viewer', grant })).outcome).toBe('allow')
+      expect(decideAccess(input({ status: LEGACY_STATUS, role: 'viewer', grant })).outcome).toBe('allow')
     }
   })
 

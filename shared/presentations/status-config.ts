@@ -9,6 +9,6 @@ export interface StatusDisplay {
 
 export const STATUS_CONFIG: Record<PublicationStatus, StatusDisplay> = {
   'public': { color: 'success', label: 'Public', icon: 'i-lucide-globe' },
-  'semi-private': { color: 'warning', label: 'Password', icon: 'i-lucide-key-round' },
-  'private': { color: 'info', label: 'Private', icon: 'i-lucide-lock' },
+  'semi-private': { color: 'warning', label: 'Mot de passe', icon: 'i-lucide-key-round' },
+  'private': { color: 'info', label: 'Privée', icon: 'i-lucide-lock' },
 }

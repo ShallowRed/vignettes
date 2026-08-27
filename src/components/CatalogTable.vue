@@ -232,7 +232,7 @@ function clearSelection() {
           <span
             v-if="row.original.unlisted"
             class="text-xs text-muted"
-          >Unlisted</span>
+          >Non répertoriée</span>
           <span
             v-if="admin && row.original.published === false"
             class="text-xs text-muted"

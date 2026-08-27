@@ -95,7 +95,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
         >
           <span v-if="frozen">{{ presentation.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
           <span v-else-if="!minimal && statusDisplay && presentation.status !== 'public'">{{ statusDisplay.label }}</span>
-          <span v-if="!minimal && presentation.unlisted">Unlisted</span>
+          <span v-if="!minimal && presentation.unlisted">Non répertoriée</span>
           <span v-if="!minimal && admin && presentation.published === false">Non publié</span>
           <span v-if="!minimal">{{ presentation.theme }}</span>
         </div>
