@@ -66,4 +66,30 @@ describe('createDbContent', () => {
   it('refuses empty markdown (would publish a blank deck)', async () => {
     await expect(content.writer.save({ slug: 'd', raw: '' })).rejects.toThrow(/empty markdown/i)
   })
+
+  it('republishing cannot reopen a deck an admin closed', async () => {
+    // The incident shape: published public, admin flips to private in the DB
+    // (managed row = access truth), then a republish carries a stale
+    // `status: public` frontmatter. The DB status must survive.
+    await content.writer.save({ slug: 'client', raw: DECK, actor: 'lucas' })
+    db.update(decks).set({ status: 'private', managed: true }).where(eq(decks.slug, 'client')).run()
+    await content.writer.save({ slug: 'client', raw: DECK, actor: 'lucas' })
+    expect(db.select().from(decks).where(eq(decks.slug, 'client')).get()!.status).toBe('private')
+  })
+
+  it('the first publish still derives access axes from the frontmatter', async () => {
+    // An unmanaged anchor row (draft-only deck) has no admin intent to protect.
+    db.insert(decks).values({ slug: 'fresh', title: 'fresh', createdAt: new Date(), updatedAt: new Date() }).run()
+    await content.writer.save({ slug: 'fresh', raw: DECK, actor: 'lucas' })
+    expect(db.select().from(decks).where(eq(decks.slug, 'fresh')).get()!.status).toBe('public')
+  })
+
+  it('catalog axes keep following the frontmatter on republish', async () => {
+    await content.writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    const moved = DECK.replace('project: interne', 'project: autre').replace('title: Mon deck', 'title: Renommé')
+    await content.writer.save({ slug: 'my-deck', raw: moved, actor: 'lucas' })
+    const row = db.select().from(decks).where(eq(decks.slug, 'my-deck')).get()!
+    expect(row.project).toBe('autre')
+    expect(row.title).toBe('Renommé')
+  })
 })
