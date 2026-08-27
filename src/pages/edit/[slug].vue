@@ -396,14 +396,19 @@ async function onMetaSaved() {
 <template>
   <div class="tailwind-app h-screen flex flex-col overflow-hidden bg-default">
     <header class="flex items-center gap-2 px-3 h-14 shrink-0 border-b border-default">
+      <!-- The app's brand mark doubles as the way back: the same anchor as the
+           catalog header, so the editor reads as another room of the same app. -->
       <UTooltip text="Retour au catalogue">
-        <UButton
-          icon="i-lucide-arrow-left"
-          color="neutral"
-          variant="ghost"
+        <NuxtLink
           to="/"
           aria-label="Retour au catalogue"
-        />
+          class="grid place-items-center size-8 shrink-0 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        >
+          <UIcon
+            name="i-lucide-presentation"
+            class="size-5"
+          />
+        </NuxtLink>
       </UTooltip>
 
       <div class="flex flex-col min-w-0">

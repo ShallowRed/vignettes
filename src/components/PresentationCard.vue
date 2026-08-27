@@ -56,9 +56,19 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
            stretched-link overlay so the trigger stays clickable). -->
       <div
         v-if="admin && !frozen"
-        class="absolute top-2 right-2 z-10"
+        class="absolute top-2 right-2 z-10 flex items-center gap-0.5"
         @click.stop.prevent
       >
+        <UTooltip text="Éditer le contenu">
+          <UButton
+            icon="i-lucide-pencil"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :to="`/edit/${presentation.slug}`"
+            aria-label="Éditer le contenu"
+          />
+        </UTooltip>
         <UDropdownMenu
           :items="adminActions"
           :content="{ align: 'end' }"
@@ -77,7 +87,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
         <div class="flex items-start justify-between gap-3">
           <h2
             class="font-semibold text-highlighted leading-snug line-clamp-2"
-            :class="{ 'pr-6': admin && !frozen }"
+            :class="{ 'pr-14': admin && !frozen }"
           >
             {{ presentation.title }}
           </h2>

@@ -68,7 +68,10 @@ const projectDeckCount = computed(() =>
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-6">
+    <!-- Same top rhythm as the folder/trash/users pages: no layout shift when
+         navigating between catalog spaces. -->
+    <UBreadcrumb :items="[{ label: 'Accueil' }]" />
     <AsyncSection
       :status="status"
       :error="error"
