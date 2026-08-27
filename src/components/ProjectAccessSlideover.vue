@@ -15,7 +15,7 @@ const open = defineModel<boolean>('open', { required: true })
 // Grants + users load only while the slideover is open (enabled gate). The
 // whole bag also feeds ShareGrantForm (add + invite-by-email).
 const sharing = useSharing(() => ({ kind: 'project', slug: props.project.slug }), () => open.value)
-const { grants, removeGrant, busy } = sharing
+const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
 </script>
 
 <template>
@@ -26,13 +26,13 @@ const { grants, removeGrant, busy } = sharing
   >
     <template #body>
       <div class="flex flex-col gap-4">
-        <UAlert
-          color="neutral"
-          variant="subtle"
-          icon="i-lucide-key-round"
-          title="Clé maîtresse du dossier"
-          description="Un accès accordé ici ouvre toutes les présentations du dossier, y compris les privées."
-        />
+        <p class="text-xs text-muted flex items-center gap-1.5">
+          <UIcon
+            name="i-lucide-key-round"
+            class="size-3.5 shrink-0"
+          />
+          Un accès accordé ici ouvre toutes les présentations du dossier, privées comprises.
+        </p>
 
         <ul
           v-if="grants.length > 0"
@@ -44,7 +44,15 @@ const { grants, removeGrant, busy } = sharing
             class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2"
           >
             <span class="text-sm font-medium">{{ grant.login }}</span>
-            <span class="text-xs text-muted">{{ grant.role === 'editor' ? 'Édition' : 'Lecture' }}</span>
+            <USelect
+              :model-value="grant.role"
+              :items="grantRoleItems"
+              size="xs"
+              class="w-24"
+              :disabled="busy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
+              :aria-label="`Rôle de ${grant.login}`"
+              @update:model-value="(r: any) => changeGrantRole(grant, r)"
+            />
             <span
               v-if="grant.invited"
               class="text-xs text-dimmed"

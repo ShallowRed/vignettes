@@ -78,6 +78,19 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     onSettled: invalidateGrants,
   })
 
+  // Inline role change on an existing grant: same upsert, keeping its expiry.
+  // An expired grant is not editable this way (re-adding it is a conscious act).
+  const { mutate: submitRoleChange, isLoading: changingRole } = useMutation({
+    mutation: ({ userId, role, expiresAt }: { userId: number, role: DeckGrant, expiresAt: string | null }) =>
+      permissionsApi.set(requestFetch, scope(), userId, role, expiresAt),
+    onError: e => onError(e, 'Échec de la modification'),
+    onSettled: invalidateGrants,
+  })
+  function changeGrantRole(grant: GrantSummary, role: DeckGrant) {
+    if (role !== grant.role)
+      submitRoleChange({ userId: grant.userId, role, expiresAt: grant.expiresAt ?? null })
+  }
+
   function addGrant() {
     if (grantUserId.value != null)
       submitGrant()
@@ -112,7 +125,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
       submitInvite()
   }
 
-  const busy = computed(() => adding.value || removing.value || inviting.value)
+  const busy = computed(() => adding.value || removing.value || inviting.value || changingRole.value)
 
   return {
     grants,
@@ -123,6 +136,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     grantRoleItems: GRANT_ROLE_ITEMS,
     grantDurationItems: GRANT_DURATION_ITEMS,
     addGrant,
+    changeGrantRole,
     removeGrant: (userId: number) => submitRemove(userId),
     inviteProvider,
     inviteHandle,

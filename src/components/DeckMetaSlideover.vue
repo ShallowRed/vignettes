@@ -108,7 +108,7 @@ const { mutate: save, isLoading: saving } = useMutation({
 // Delegated to the shared `useSharing`; grants + users load only while the panel
 // is open for an owner (enabled gate). The whole bag also feeds ShareGrantForm.
 const sharing = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && isOwner.value)
-const { grants, removeGrant, busy: sharingBusy } = sharing
+const { grants, grantRoleItems, changeGrantRole, removeGrant, busy: sharingBusy } = sharing
 
 // The folder's master keys open this deck too: surface them here (read-only,
 // same cache key as the folder panel) so this panel cannot claim "no access"
@@ -261,7 +261,15 @@ const audience = computed(() => {
               class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2"
             >
               <span class="text-sm font-medium">{{ grant.login }}</span>
-              <span class="text-xs text-muted">{{ grant.role === 'editor' ? 'Édition' : 'Lecture' }}</span>
+              <USelect
+                :model-value="grant.role"
+                :items="grantRoleItems"
+                size="xs"
+                class="w-24"
+                :disabled="sharingBusy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
+                :aria-label="`Rôle de ${grant.login}`"
+                @update:model-value="(r: any) => changeGrantRole(grant, r)"
+              />
               <span
                 v-if="grant.invited"
                 class="text-xs text-dimmed"

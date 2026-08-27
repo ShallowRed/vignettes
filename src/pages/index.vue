@@ -8,7 +8,8 @@ import { useModalTarget } from '~/composables/useModalTarget'
 
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
-const { privileged, loggedIn } = useAppSession()
+const { privileged, loggedIn, role } = useAppSession()
+const isOwner = computed(() => role.value === 'owner')
 
 // Shared, access-filtered catalog state (decks + folders) on Pinia Colada.
 // Mutations invalidate the cache, so create/delete reflect everywhere instantly.
@@ -39,6 +40,31 @@ defineShortcuts({
 const createOpen = ref(false)
 const createProjectOpen = ref(false)
 const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
+
+// Folder management from the cards (owner), mirroring the deck pattern: one
+// modal instance each, targeted per project by the grid's menu events.
+const projectTarget = ref<Project | null>(null)
+const editProjectOpen = ref(false)
+const accessProjectOpen = ref(false)
+const deleteProjectOpen = ref(false)
+
+function openProjectEdit(project: Project) {
+  projectTarget.value = project
+  editProjectOpen.value = true
+}
+function openProjectAccess(project: Project) {
+  projectTarget.value = project
+  accessProjectOpen.value = true
+}
+function openProjectDelete(project: Project) {
+  projectTarget.value = project
+  deleteProjectOpen.value = true
+}
+
+const projectDeckCount = computed(() =>
+  projectTarget.value
+    ? presentations.value.filter(d => d.project === projectTarget.value!.slug).length
+    : 0)
 </script>
 
 <template>
@@ -151,6 +177,10 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
         v-if="!privileged || mode === 'folders'"
         :items="presentations"
         :projects="projects"
+        :owner="isOwner"
+        @edit-project="openProjectEdit"
+        @manage-access="openProjectAccess"
+        @remove-project="openProjectDelete"
       />
 
       <!-- Management console (admin): flat, cross-project. -->
@@ -201,6 +231,22 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
       v-if="target"
       v-model:open="deleteOpen"
       :item="target"
+    />
+    <ProjectEditModal
+      v-if="projectTarget"
+      v-model:open="editProjectOpen"
+      :project="projectTarget"
+    />
+    <ProjectAccessSlideover
+      v-if="projectTarget"
+      v-model:open="accessProjectOpen"
+      :project="projectTarget"
+    />
+    <ProjectDeleteModal
+      v-if="projectTarget"
+      v-model:open="deleteProjectOpen"
+      :project="projectTarget"
+      :deck-count="projectDeckCount"
     />
   </div>
 </template>

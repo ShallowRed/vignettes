@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import { buildCatalogFolders } from '#shared/presentations'
 import { projectColorStyle } from '~/utils/project-colors'
 
@@ -9,9 +10,17 @@ import { projectColorStyle } from '~/utils/project-colors'
 // visible projects — the server already decides which projects an actor may see,
 // so an empty folder only reaches privileged actors (e.g. a project just created,
 // before it has any deck). Each links to its stable /projects/<slug> route.
+// `owner` adds the folder management menu, mirroring the presentation cards.
 const props = defineProps<{
   items: PresentationListItem[]
   projects?: Project[]
+  owner?: boolean
+}>()
+
+const emit = defineEmits<{
+  editProject: [Project]
+  manageAccess: [Project]
+  removeProject: [Project]
 }>()
 
 const folders = computed(() => buildCatalogFolders(props.items, props.projects ?? []))
@@ -19,6 +28,22 @@ const folders = computed(() => buildCatalogFolders(props.items, props.projects ?
 // Folder master keys (privileged payloads only), for the "shared" hint.
 const sharedBySlug = computed(() =>
   new Map((props.projects ?? []).map(p => [p.slug, p.sharedCount ?? 0])))
+
+// Only real project rows are manageable (Divers and orphan buckets have none).
+const projectBySlug = computed(() =>
+  new Map((props.projects ?? []).map(p => [p.slug, p])))
+
+function folderActions(project: Project): DropdownMenuItem[][] {
+  return [
+    [
+      { label: 'Modifier…', icon: 'i-lucide-pencil', onSelect: () => emit('editProject', project) },
+      { label: 'Gérer l\'accès…', icon: 'i-lucide-users', onSelect: () => emit('manageAccess', project) },
+    ],
+    [
+      { label: 'Supprimer…', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => emit('removeProject', project) },
+    ],
+  ]
+}
 </script>
 
 <template>
@@ -34,6 +59,26 @@ const sharedBySlug = computed(() =>
       }"
     >
       <template #body>
+        <!-- Owner actions pinned top-right (z-10 clears the stretched-link overlay). -->
+        <div
+          v-if="owner && projectBySlug.get(folder.routeSlug)"
+          class="absolute top-2 right-2 z-10"
+          @click.stop.prevent
+        >
+          <UDropdownMenu
+            :items="folderActions(projectBySlug.get(folder.routeSlug)!)"
+            :content="{ align: 'end' }"
+          >
+            <UButton
+              icon="i-lucide-ellipsis-vertical"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              aria-label="Actions du dossier"
+            />
+          </UDropdownMenu>
+        </div>
+
         <div class="flex items-start gap-3">
           <UIcon
             name="i-lucide-folder"
