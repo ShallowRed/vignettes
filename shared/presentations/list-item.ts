@@ -18,6 +18,10 @@ export interface PresentationListItem {
   lifecycle?: Lifecycle
   /** Privileged only: false until a first publish gives the deck servable content. */
   published?: boolean
+  /** Privileged only: a semi-private deck without one is unreachable (fail-closed). */
+  hasPassword?: boolean
+  /** Privileged only: number of per-deck grants (folder master keys not included). */
+  sharedCount?: number
 }
 
 /** Canonical in-app path of a deck: stable alias when it has one, slug route otherwise. */

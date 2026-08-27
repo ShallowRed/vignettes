@@ -2,6 +2,7 @@ import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
 import { z } from 'zod'
 import { getActorRole } from '../../../utils/actor'
+import { hashAccessPassword } from '../../../utils/password'
 import { useDeckMeta } from '../../../utils/sources'
 
 const PatchSchema = z.object({
@@ -13,6 +14,9 @@ const PatchSchema = z.object({
   alias: z.string().min(1).nullable().optional(),
   frozenBundle: z.string().nullable().optional(),
   unlisted: z.boolean().optional(),
+  // Plain password, hashed server-side (null clears it). The UI sets it next to
+  // the semi-private status so the two can no longer drift apart.
+  accessPassword: z.string().min(8).max(200).nullable().optional(),
 }).strict()
 
 /**
@@ -46,9 +50,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // null clears an optional column; undefined leaves it untouched.
-  const patch = Object.fromEntries(
-    Object.entries(parsed.data).filter(([, v]) => v !== undefined),
+  const { accessPassword, ...rest } = parsed.data
+  const patch: Record<string, unknown> = Object.fromEntries(
+    Object.entries(rest).filter(([, v]) => v !== undefined),
   )
+  if (accessPassword !== undefined)
+    patch.accessPasswordHash = accessPassword === null ? null : await hashAccessPassword(accessPassword)
 
   return await useDeckMeta().update(slug, patch)
 })

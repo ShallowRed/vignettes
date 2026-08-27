@@ -20,6 +20,8 @@ export type ProjectsFile = z.infer<typeof ProjectsFileSchema>
 
 export interface Project extends ProjectMeta {
   slug: string
+  /** Privileged only: number of project grants (folder master keys). */
+  sharedCount?: number
 }
 
 /**

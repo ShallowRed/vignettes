@@ -17,4 +17,6 @@ export interface GrantSummary {
   userId: number
   login: string
   role: DeckGrant
+  /** The account was pre-provisioned by invitation and never logged in. */
+  invited?: boolean
 }

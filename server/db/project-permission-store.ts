@@ -12,6 +12,8 @@ export interface ProjectGrantRecord {
   role: DeckGrant
   grantedBy: string
   createdAt: Date
+  /** The account was pre-provisioned by invitation and never logged in. */
+  invited: boolean
 }
 
 /** An invalid stored grant degrades to view-only. */
@@ -39,12 +41,13 @@ export function createProjectPermissionStore(db: Db) {
         role: projectPermissions.role,
         grantedBy: projectPermissions.grantedBy,
         createdAt: projectPermissions.createdAt,
+        providerId: users.providerId,
       })
         .from(projectPermissions)
         .innerJoin(users, eq(users.id, projectPermissions.userId))
         .where(eq(projectPermissions.projectSlug, projectSlug))
         .all()
-        .map(r => ({ ...r, role: readGrant(r.role) }))
+        .map(({ providerId, ...r }) => ({ ...r, role: readGrant(r.role), invited: providerId.startsWith('invited:') }))
     },
 
     /** projectSlug → grant, for one-lookup catalog visibility. */

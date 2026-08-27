@@ -3,8 +3,21 @@ import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
 import { canList, isPrivileged } from '#shared/access'
 import { UNGROUPED_PROJECT } from '#shared/presentations'
+import { count } from 'drizzle-orm'
+import { deckPermissions, projectPermissions } from '../db/schema'
 import { getActor } from './actor'
+import { useDb } from './db'
 import { projectDirectory, useDeckMeta, useGrants } from './sources'
+
+/** slug → number of grants, for the privileged "shared" badges (one query). */
+function grantCounts(table: typeof deckPermissions | typeof projectPermissions, column: 'deckSlug' | 'projectSlug'): Map<string, number> {
+  const col = column === 'deckSlug'
+    ? (table as typeof deckPermissions).deckSlug
+    : (table as typeof projectPermissions).projectSlug
+  return new Map(
+    useDb().select({ slug: col, n: count() }).from(table).groupBy(col).all().map(r => [r.slug, r.n]),
+  )
+}
 
 /**
  * The catalog as one actor may see it — the single access-filtered source of
@@ -22,6 +35,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
 
   const privileged = isPrivileged(actor.role)
   const decks = await useDeckMeta().listManaged()
+  const shared = privileged ? grantCounts(deckPermissions, 'deckSlug') : undefined
 
   return decks
     // A deck with no published version has nothing to serve: only those who can
@@ -37,7 +51,13 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       unlisted: deck.unlisted,
       alias: deck.alias,
       lifecycle: deck.lifecycle,
-      ...(privileged ? { published: deck.published } : {}),
+      ...(privileged
+        ? {
+            published: deck.published,
+            hasPassword: Boolean(deck.accessPasswordHash),
+            sharedCount: shared?.get(deck.slug) ?? 0,
+          }
+        : {}),
     } satisfies PresentationListItem))
     .filter(p => canList({
       status: p.status,
@@ -62,8 +82,10 @@ export async function listVisibleProjects(event: H3Event): Promise<Project[]> {
     projectDirectory.list(),
     listVisiblePresentations(event),
   ])
-  if (isPrivileged(actor.role))
-    return projects
+  if (isPrivileged(actor.role)) {
+    const shared = grantCounts(projectPermissions, 'projectSlug')
+    return projects.map(p => ({ ...p, sharedCount: shared.get(p.slug) ?? 0 }))
+  }
 
   const populated = new Set(
     visible.map(p => p.project).filter((slug): slug is string => !!slug && slug !== UNGROUPED_PROJECT),
