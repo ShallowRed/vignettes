@@ -11,6 +11,7 @@ import type { useSharing } from '~/composables/useSharing'
 const props = defineProps<{ sharing: ReturnType<typeof useSharing> }>()
 
 const {
+  usersReady,
   grantableUsers,
   grantUserId,
   grantRole,
@@ -26,6 +27,14 @@ const {
 } = props.sharing
 
 const showInvite = ref(false)
+// With nobody left to pick, the picker row is noise: explain it and lead with
+// the authorize form instead. Gated on usersReady — while loading, the list is
+// empty too and the form would pop open on every panel.
+const noGrantable = computed(() => usersReady.value && grantableUsers.value.length === 0)
+watch(noGrantable, (none) => {
+  if (none)
+    showInvite.value = true
+}, { immediate: true })
 
 const providerItems = [
   { label: 'Google', value: 'google' },
@@ -36,11 +45,8 @@ const isGoogle = computed(() => inviteProvider.value === 'google')
 
 <template>
   <div class="flex flex-col gap-2">
-    <div class="flex items-end gap-2">
-      <UFormField
-        label="Ajouter un accès"
-        class="flex-1"
-      >
+    <template v-if="!noGrantable">
+      <UFormField label="Ajouter un accès">
         <USelect
           v-model="grantUserId"
           :items="grantableUsers"
@@ -48,24 +54,33 @@ const isGoogle = computed(() => inviteProvider.value === 'google')
           class="w-full"
         />
       </UFormField>
-      <USelect
-        v-model="grantRole"
-        :items="grantRoleItems"
-        class="w-28"
-      />
-      <USelect
-        v-model="grantDays"
-        :items="grantDurationItems"
-        class="w-28"
-        aria-label="Durée de l'accès"
-      />
-      <UButton
-        icon="i-lucide-user-plus"
-        :disabled="grantUserId == null || busy"
-        aria-label="Ajouter l'accès"
-        @click="addGrant"
-      />
-    </div>
+      <div class="flex items-center gap-2">
+        <USelect
+          v-model="grantRole"
+          :items="grantRoleItems"
+          class="flex-1"
+          aria-label="Niveau d'accès"
+        />
+        <USelect
+          v-model="grantDays"
+          :items="grantDurationItems"
+          class="flex-1"
+          aria-label="Durée de l'accès"
+        />
+        <UButton
+          icon="i-lucide-user-plus"
+          :disabled="grantUserId == null || busy"
+          aria-label="Ajouter l'accès"
+          @click="addGrant"
+        />
+      </div>
+    </template>
+    <p
+      v-else
+      class="text-sm text-dimmed"
+    >
+      Tous les comptes connus ont déjà accès. Autorisez-en un nouveau :
+    </p>
 
     <UButton
       v-if="!showInvite"
@@ -79,28 +94,27 @@ const isGoogle = computed(() => inviteProvider.value === 'google')
     />
     <form
       v-else
-      class="flex flex-col gap-2"
+      class="flex flex-col gap-1.5"
       @submit.prevent="invite"
     >
-      <div class="flex items-end gap-2">
+      <span class="text-sm font-medium text-default">
+        {{ isGoogle ? 'Adresse du compte Google' : 'Nom d\'utilisateur GitHub' }}
+      </span>
+      <div class="flex items-center gap-2">
         <USelect
           v-model="inviteProvider"
           :items="providerItems"
           class="w-28"
           aria-label="Fournisseur de connexion"
         />
-        <UFormField
-          :label="isGoogle ? 'Adresse du compte Google' : 'Nom d\'utilisateur GitHub'"
+        <UInput
+          v-model="inviteHandle"
+          :type="isGoogle ? 'email' : 'text'"
+          :placeholder="isGoogle ? 'prenom.nom@gmail.com' : 'nom-utilisateur'"
+          :aria-label="isGoogle ? 'Adresse du compte Google' : 'Nom d\'utilisateur GitHub'"
+          autofocus
           class="flex-1"
-        >
-          <UInput
-            v-model="inviteHandle"
-            :type="isGoogle ? 'email' : 'text'"
-            :placeholder="isGoogle ? 'prenom.nom@gmail.com' : 'nom-utilisateur'"
-            autofocus
-            class="w-full"
-          />
-        </UFormField>
+        />
         <UButton
           label="Autoriser"
           icon="i-lucide-user-plus"

@@ -37,6 +37,8 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
 
   const grants = computed<GrantSummary[]>(() => grantsQ.data.value ?? [])
   const knownUsers = computed<UserAccount[]>(() => usersQ.data.value ?? [])
+  /** True once the accounts list actually loaded (empty ≠ still loading). */
+  const usersReady = computed(() => usersQ.status.value === 'success')
 
   // Global owners/editors already see everything; only a viewer can be escalated.
   const grantableUsers = computed(() => {
@@ -138,6 +140,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     addGrant,
     changeGrantRole,
     removeGrant: (userId: number) => submitRemove(userId),
+    usersReady,
     inviteProvider,
     inviteHandle,
     inviteValid,
