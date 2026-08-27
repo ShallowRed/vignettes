@@ -8,9 +8,9 @@ import { useCatalogCache } from '~/composables/useCatalog'
 import { useFormModal } from '~/composables/useFormModal'
 import { slugify } from '~/utils/slugify'
 
-// Create-deck modal: title drives the slug until the user edits it by hand;
-// the deck is born in the database (draft status) and opens in the editor.
-// `defaultProject` pre-selects a folder (creating from a project page).
+// Create-deck modal: the deck is born in the database (draft status) and opens
+// in the editor. The slug is the user's to type; the wand fills it from the
+// title on demand. `defaultProject` pre-selects a folder (folder-page create).
 const props = defineProps<{ projects?: Project[], defaultProject?: string }>()
 
 const open = defineModel<boolean>('open', { required: true })
@@ -22,18 +22,16 @@ const { invalidatePresentations } = useCatalogCache()
 // empty-string SelectItem value); dropped at POST time.
 const NONE = '__none__'
 
-const slugEdited = ref(false)
-
 const { state, errorMessage, runIfValid } = useFormModal(
   open,
   () => ({ title: '', slug: '', project: props.defaultProject ?? NONE, theme: 'dsfr' }),
-  () => { slugEdited.value = false },
 )
 
-watch(() => state.title, (title) => {
-  if (!slugEdited.value)
-    state.slug = slugify(title, { lower: true, strict: true })
-})
+// Filling from the title is an explicit act (the wand), never automatic: the
+// slug is the user's to choose.
+function slugFromTitle() {
+  state.slug = slugify(state.title, { lower: true, strict: true })
+}
 
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 
@@ -101,14 +99,22 @@ function submit() {
         <UFormField
           label="Slug"
           :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
-          help="Identifiant de l'URL (/slides/…), dérivé du titre."
+          help="Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre."
         >
-          <UInput
-            v-model="state.slug"
-            placeholder="mon-slug"
-            class="w-full font-mono"
-            @input="slugEdited = true"
-          />
+          <div class="flex items-center gap-2">
+            <UInput
+              v-model="state.slug"
+              placeholder="mon-slug"
+              class="flex-1 font-mono"
+            />
+            <UButton
+              icon="i-lucide-wand-sparkles"
+              color="neutral"
+              variant="subtle"
+              aria-label="Remplir depuis le titre"
+              @click="slugFromTitle"
+            />
+          </div>
         </UFormField>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

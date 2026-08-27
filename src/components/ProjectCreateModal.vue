@@ -15,22 +15,10 @@ const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
-const slugEdited = ref(false)
 const { state, errorMessage, runIfValid } = useFormModal(
   open,
   () => ({ title: '', slug: '', color: null as string | null, icon: null as string | null }),
-  () => { slugEdited.value = false },
 )
-
-watch(() => state.title, (title) => {
-  if (!slugEdited.value)
-    state.slug = slugifyProject(title)
-})
-
-function regenerateSlug() {
-  state.slug = slugifyProject(state.title)
-  slugEdited.value = false
-}
 
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 
@@ -92,21 +80,20 @@ function submit() {
         <UFormField
           label="Identifiant"
           :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
-          help="Segment d'URL (/projects/…), dérivé du nom tant que vous ne l'éditez pas."
+          help="Optionnel : laissé vide, il sera dérivé du nom. La baguette le remplit depuis le nom."
         >
           <div class="flex items-center gap-2">
             <UInput
               v-model="state.slug"
               placeholder="mon-dossier"
               class="flex-1 font-mono"
-              @input="slugEdited = true"
             />
             <UButton
               icon="i-lucide-wand-sparkles"
               color="neutral"
               variant="subtle"
-              aria-label="Régénérer depuis le nom"
-              @click="regenerateSlug"
+              aria-label="Remplir depuis le nom"
+              @click="state.slug = slugifyProject(state.title)"
             />
           </div>
         </UFormField>
