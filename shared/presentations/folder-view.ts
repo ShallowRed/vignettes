@@ -18,6 +18,8 @@ export interface CatalogFolder {
   /** Number of visible decks in the folder. */
   count: number
   color: string | null
+  /** Bare lucide name; null = the default folder icon. */
+  icon: string | null
   /** Distinct themes across the folder's decks (for the subtitle). */
   themes: string[]
   /** True for the reserved no-project bucket. */
@@ -64,6 +66,7 @@ export function buildCatalogFolders(
       title: meta.get(slug)?.title ?? slug,
       count: bucket.length,
       color: meta.get(slug)?.color ?? null,
+      icon: meta.get(slug)?.icon ?? null,
       themes: themesOf(bucket),
       ungrouped: false,
     }
@@ -76,6 +79,7 @@ export function buildCatalogFolders(
       title: 'Divers',
       count: ungrouped.length,
       color: null,
+      icon: null,
       themes: themesOf(ungrouped),
       ungrouped: true,
     })

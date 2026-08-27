@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
+import { isDeckSlug } from '#shared/deck'
+import { PROJECT_ICONS, slugifyProject } from '#shared/projects'
 import { useMutation } from '@pinia/colada'
 import { projectApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
@@ -7,16 +9,38 @@ import { useFormModal } from '~/composables/useFormModal'
 import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
 const emit = defineEmits<{ created: [Project] }>()
-// Create-project modal: a first-class catalog folder. The slug is derived
-// server-side from the title. Emits `created` with the new project.
+// Create-project modal: a first-class catalog folder. The slug follows the
+// title until edited by hand; the wand re-derives it on demand.
 const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
-const { state, errorMessage, runIfValid } = useFormModal(open, () => ({ title: '', color: null as string | null }))
+const slugEdited = ref(false)
+const { state, errorMessage, runIfValid } = useFormModal(
+  open,
+  () => ({ title: '', slug: '', color: null as string | null, icon: null as string | null }),
+  () => { slugEdited.value = false },
+)
+
+watch(() => state.title, (title) => {
+  if (!slugEdited.value)
+    state.slug = slugifyProject(title)
+})
+
+function regenerateSlug() {
+  state.slug = slugifyProject(state.title)
+  slugEdited.value = false
+}
+
+const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 
 const { mutate: runCreate, isLoading: pending } = useMutation({
-  mutation: () => projectApi.create($fetch, { title: state.title.trim(), ...(state.color ? { color: state.color } : {}) }),
+  mutation: () => projectApi.create($fetch, {
+    title: state.title.trim(),
+    ...(state.color ? { color: state.color } : {}),
+    ...(state.icon ? { icon: state.icon } : {}),
+    ...(state.slug ? { slug: state.slug } : {}),
+  }),
   async onSuccess(project) {
     // Refetch the folders query so the new folder is present before we navigate.
     await invalidateAll()
@@ -25,11 +49,13 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
     emit('created', project)
   },
   onError(e: any) {
-    errorMessage.value = e?.statusMessage || 'Échec de la création'
+    errorMessage.value = e?.statusCode === 409
+      ? `L'identifiant « ${state.slug} » est déjà pris.`
+      : e?.statusMessage || 'Échec de la création'
   },
 })
 
-const canSubmit = computed(() => state.title.trim().length > 0 && !pending.value)
+const canSubmit = computed(() => state.title.trim().length > 0 && slugValid.value && !pending.value)
 
 function close() {
   open.value = false
@@ -61,6 +87,49 @@ function submit() {
             autofocus
             class="w-full"
           />
+        </UFormField>
+
+        <UFormField
+          label="Identifiant"
+          :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
+          help="Segment d'URL (/projects/…), dérivé du nom tant que vous ne l'éditez pas."
+        >
+          <div class="flex items-center gap-2">
+            <UInput
+              v-model="state.slug"
+              placeholder="mon-dossier"
+              class="flex-1 font-mono"
+              @input="slugEdited = true"
+            />
+            <UButton
+              icon="i-lucide-wand-sparkles"
+              color="neutral"
+              variant="subtle"
+              aria-label="Régénérer depuis le nom"
+              @click="regenerateSlug"
+            />
+          </div>
+        </UFormField>
+
+        <UFormField
+          label="Icône"
+        >
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-for="i in PROJECT_ICONS"
+              :key="i"
+              type="button"
+              class="grid place-items-center size-8 rounded-lg ring-2 transition bg-elevated"
+              :class="(state.icon ?? 'folder') === i ? 'ring-primary' : 'ring-transparent'"
+              :aria-label="i"
+              @click="state.icon = i === 'folder' ? null : i"
+            >
+              <UIcon
+                :name="`i-lucide-${i}`"
+                class="size-4"
+              />
+            </button>
+          </div>
         </UFormField>
 
         <UFormField

@@ -5,6 +5,7 @@ import { UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '~/composables/useAppSession'
 import { useCatalog } from '~/composables/useCatalog'
 import { useModalTarget } from '~/composables/useModalTarget'
+import { projectColorStyle } from '~/utils/project-colors'
 
 // A project folder's contents: the decks grouped under one project, reached from
 // the folder grid via the stable /projects/<slug> route. `divers` is the
@@ -46,7 +47,7 @@ const isOwner = computed(() => role.value === 'owner')
 // Project access (owner only): a master-key grant over every deck in the project.
 const accessOpen = ref(false)
 const currentProject = computed(() => projects.value.find(p => p.slug === projectKey.value))
-const projectRef = computed(() => ({ slug: projectKey.value, title: projectTitle.value, color: currentProject.value?.color ?? null }))
+const projectRef = computed(() => ({ slug: projectKey.value, title: projectTitle.value, color: currentProject.value?.color ?? null, icon: currentProject.value?.icon ?? null }))
 const canManageAccess = computed(() => isOwner.value && !isUngrouped.value)
 
 // Project lifecycle (owner only): edit metadata, or trash the whole folder.
@@ -79,6 +80,11 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
     <UBreadcrumb :items="breadcrumb" />
 
     <div class="flex items-center gap-3">
+      <UIcon
+        :name="`i-lucide-${currentProject?.icon || 'folder'}`"
+        class="size-5 shrink-0 text-dimmed"
+        :style="projectColorStyle(currentProject?.color)"
+      />
       <h1 class="text-xl font-semibold text-highlighted">
         {{ projectTitle }}
       </h1>

@@ -3,10 +3,16 @@
 // stored hex renders — the palette is just the set the picker offers.
 export const PROJECT_COLORS = [
   '#2563eb', // blue
+  '#0891b2', // cyan
+  '#0d9488', // teal
   '#059669', // emerald
+  '#65a30d', // lime
   '#d97706', // amber
+  '#ea580c', // orange
   '#dc2626', // red
+  '#db2777', // pink
   '#7c3aed', // violet
+  '#4f46e5', // indigo
   '#64748b', // slate
 ] as const
 

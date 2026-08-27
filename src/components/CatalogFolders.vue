@@ -81,7 +81,7 @@ function folderActions(project: Project): DropdownMenuItem[][] {
 
         <div class="flex items-start gap-3">
           <UIcon
-            name="i-lucide-folder"
+            :name="`i-lucide-${folder.icon || 'folder'}`"
             class="size-6 shrink-0 mt-0.5 text-dimmed"
             :style="projectColorStyle(folder.color)"
           />

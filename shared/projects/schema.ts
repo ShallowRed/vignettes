@@ -10,6 +10,8 @@ export const ProjectMetaSchema = z
     /** Ascending; unset sorts last. */
     order: z.coerce.number().optional(),
     color: z.string().optional(),
+    /** Lucide icon name (bare); see PROJECT_ICONS for the offered set. */
+    icon: z.string().optional(),
   })
   .catchall(z.unknown())
 
@@ -17,6 +19,20 @@ export type ProjectMeta = z.infer<typeof ProjectMetaSchema>
 
 export const ProjectsFileSchema = z.record(z.string(), ProjectMetaSchema)
 export type ProjectsFile = z.infer<typeof ProjectsFileSchema>
+
+/** Folder icons offered by the picker (bare lucide names, `folder` = default). */
+export const PROJECT_ICONS = [
+  'folder',
+  'briefcase',
+  'building-2',
+  'rocket',
+  'graduation-cap',
+  'heart-handshake',
+  'flask-conical',
+  'palette',
+  'globe',
+  'megaphone',
+] as const
 
 export interface Project extends ProjectMeta {
   slug: string

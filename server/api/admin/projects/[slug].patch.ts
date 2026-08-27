@@ -1,5 +1,6 @@
 import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
+import { PROJECT_ICONS } from '#shared/projects'
 import { z } from 'zod'
 import { getActorRole } from '../../../utils/actor'
 import { useProjectStore } from '../../../utils/sources'
@@ -8,6 +9,7 @@ const PatchSchema = z.object({
   slug: z.string().trim().min(1).optional(),
   title: z.string().trim().min(1).optional(),
   color: z.string().trim().min(1).nullable().optional(),
+  icon: z.enum(PROJECT_ICONS).nullable().optional(),
   order: z.number().int().optional(),
 }).strict()
 

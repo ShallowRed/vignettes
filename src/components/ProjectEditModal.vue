@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
 import { isDeckSlug } from '#shared/deck'
+import { PROJECT_ICONS, slugifyProject } from '#shared/projects'
 import { useMutation } from '@pinia/colada'
 import { projectApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
@@ -9,7 +10,7 @@ import { PROJECT_COLORS, projectSwatchStyle } from '~/utils/project-colors'
 
 // Edit a project's metadata (name, color, slug). Changing the slug cascades to
 // the folder's decks and grants; old /projects/<slug> links stop resolving.
-const props = defineProps<{ project: { slug: string, title: string, color?: string | null } }>()
+const props = defineProps<{ project: { slug: string, title: string, color?: string | null, icon?: string | null } }>()
 const emit = defineEmits<{ saved: [Project] }>()
 const open = defineModel<boolean>('open', { required: true })
 const toast = useToast()
@@ -19,6 +20,7 @@ const { state, errorMessage, runIfValid } = useFormModal(open, () => ({
   title: props.project.title,
   slug: props.project.slug,
   color: props.project.color ?? null,
+  icon: props.project.icon ?? null,
 }))
 
 const slugValid = computed(() => isDeckSlug(state.slug))
@@ -28,6 +30,7 @@ const { mutate: runSave, isLoading: pending } = useMutation({
   mutation: () => projectApi.update($fetch, props.project.slug, {
     title: state.title.trim(),
     color: state.color,
+    icon: state.icon,
     ...(slugChanged.value ? { slug: state.slug } : {}),
   }),
   async onSuccess(project) {
@@ -83,11 +86,41 @@ function close() {
           :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
           help="Segment d'URL (/projects/…). Le changer casse les anciens liens du dossier."
         >
-          <UInput
-            v-model="state.slug"
-            class="w-full font-mono"
-            placeholder="mon-dossier"
-          />
+          <div class="flex items-center gap-2">
+            <UInput
+              v-model="state.slug"
+              class="flex-1 font-mono"
+              placeholder="mon-dossier"
+            />
+            <UButton
+              icon="i-lucide-wand-sparkles"
+              color="neutral"
+              variant="subtle"
+              aria-label="Régénérer depuis le nom"
+              @click="state.slug = slugifyProject(state.title)"
+            />
+          </div>
+        </UFormField>
+
+        <UFormField
+          label="Icône"
+        >
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-for="i in PROJECT_ICONS"
+              :key="i"
+              type="button"
+              class="grid place-items-center size-8 rounded-lg ring-2 transition bg-elevated"
+              :class="(state.icon ?? 'folder') === i ? 'ring-primary' : 'ring-transparent'"
+              :aria-label="i"
+              @click="state.icon = i === 'folder' ? null : i"
+            >
+              <UIcon
+                :name="`i-lucide-${i}`"
+                class="size-4"
+              />
+            </button>
+          </div>
         </UFormField>
 
         <UFormField label="Couleur">

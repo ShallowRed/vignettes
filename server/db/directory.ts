@@ -57,13 +57,14 @@ export function createDbDirectory(db: Db): { decks: DeckDirectory, projects: Pro
           title: row.title,
           order: row.order,
           color: row.color ?? undefined,
+          icon: row.icon ?? undefined,
         }))
       },
 
       async resolve(slug) {
         const row = db.select().from(projects).where(and(eq(projects.slug, slug), isNull(projects.deletedAt))).get()
         return row
-          ? { slug: row.slug, title: row.title, order: row.order, color: row.color ?? undefined }
+          ? { slug: row.slug, title: row.title, order: row.order, color: row.color ?? undefined, icon: row.icon ?? undefined }
           : null
       },
     },

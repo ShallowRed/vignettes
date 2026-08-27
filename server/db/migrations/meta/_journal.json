@@ -85,6 +85,13 @@
       "when": 1787833995096,
       "tag": "0011_grant_expiry",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1787837077020,
+      "tag": "0012_project_icon",
+      "breakpoints": true
     }
   ]
 }

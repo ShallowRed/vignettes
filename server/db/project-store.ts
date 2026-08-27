@@ -15,7 +15,7 @@ export interface TrashedProject extends Project {
 }
 
 function toProject(row: ProjectRow): Project {
-  return { slug: row.slug, title: row.title, order: row.order, color: row.color ?? undefined }
+  return { slug: row.slug, title: row.title, order: row.order, color: row.color ?? undefined, icon: row.icon ?? undefined }
 }
 
 /**
@@ -40,12 +40,13 @@ export function createProjectStore(db: Db) {
   }
 
   return {
-    async create({ title, color }: { title: string, color?: string | null }): Promise<Project> {
+    async create({ title, color, icon, slug: wanted }: { title: string, color?: string | null, icon?: string | null, slug?: string }): Promise<Project> {
       const now = new Date()
-      const slug = freeSlug(title)
+      // An explicit slug is caller-validated (shape + uniqueness → 409 upstream).
+      const slug = wanted ?? freeSlug(title)
       const max = db.select({ m: sql<number>`coalesce(max(${projects.order}), -1)` }).from(projects).get()?.m ?? -1
       const row = db.insert(projects)
-        .values({ slug, title: title.trim(), order: max + 1, color: color ?? null, createdAt: now, updatedAt: now })
+        .values({ slug, title: title.trim(), order: max + 1, color: color ?? null, icon: icon ?? null, createdAt: now, updatedAt: now })
         .returning()
         .get()!
       return toProject(row)
@@ -76,12 +77,14 @@ export function createProjectStore(db: Db) {
       return row ? toProject(row) : null
     },
 
-    async update(slug: string, patch: { title?: string, color?: string | null, order?: number }): Promise<Project | null> {
+    async update(slug: string, patch: { title?: string, color?: string | null, icon?: string | null, order?: number }): Promise<Project | null> {
       const set: Partial<ProjectRow> = { updatedAt: new Date() }
       if (patch.title !== undefined)
         set.title = patch.title.trim()
       if (patch.color !== undefined)
         set.color = patch.color
+      if (patch.icon !== undefined)
+        set.icon = patch.icon
       if (patch.order !== undefined)
         set.order = patch.order
       const row = db.update(projects).set(set).where(eq(projects.slug, slug)).returning().get()

@@ -67,6 +67,8 @@ export const projects = sqliteTable('projects', {
   title: text('title').notNull(),
   order: integer('order').notNull().default(0),
   color: text('color'),
+  /** Lucide icon name (bare, no prefix); null = the default folder icon. */
+  icon: text('icon'),
   /** Non-null once trashed: soft-deleted with its decks, restorable as a whole. */
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),

@@ -1,16 +1,19 @@
 import type { Project } from '#shared/projects'
 import type { Fetcher } from './http'
 
-/** Body for creating a project (folder). The slug is derived server-side. */
+/** Body for creating a project (folder). Slug derived server-side when absent. */
 export interface CreateProjectInput {
   title: string
   color?: string | null
+  icon?: string | null
+  slug?: string
 }
 
 /** Body for a project edit. A slug change cascades to the folder's decks. */
 export interface UpdateProjectInput {
   title?: string
   color?: string | null
+  icon?: string | null
   slug?: string
 }
 
