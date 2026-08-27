@@ -2,7 +2,7 @@ import type { Role, UserStore } from '#shared/access'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { RoleSchema } from '#shared/access'
 import { and, asc, eq } from 'drizzle-orm'
-import { users } from './schema'
+import { deckPermissions, projectPermissions, users } from './schema'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
@@ -185,6 +185,18 @@ export function createUserStore(db: Db): UserStore {
 
     async setRole(id, role) {
       db.update(users).set({ role }).where(eq(users.id, id)).run()
+    },
+
+    async remove(id) {
+      const row = db.select({ id: users.id }).from(users).where(eq(users.id, id)).get()
+      if (!row)
+        return false
+      db.transaction((tx) => {
+        tx.delete(deckPermissions).where(eq(deckPermissions.userId, id)).run()
+        tx.delete(projectPermissions).where(eq(projectPermissions.userId, id)).run()
+        tx.delete(users).where(eq(users.id, id)).run()
+      })
+      return true
     },
   }
 }

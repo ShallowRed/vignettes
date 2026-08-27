@@ -167,4 +167,19 @@ describe('user store', () => {
       expect(gh.id).not.toBe(gg.id)
     })
   })
+
+  describe('remove', () => {
+    it('deletes the account with every grant it holds', async () => {
+      const { createPermissionStore } = await import('../../server/db/permission-store')
+      const account = await store.invite({ provider: 'google', handle: 'gone@example.com' })
+      await createPermissionStore(db).set('deck', account.id, 'viewer', 'boss')
+      await expect(store.remove(account.id)).resolves.toBe(true)
+      await expect(store.getRole(account.id)).resolves.toBeNull()
+      await expect(createPermissionStore(db).get('deck', account.id)).resolves.toBeNull()
+    })
+
+    it('reports an unknown id', async () => {
+      await expect(store.remove(404)).resolves.toBe(false)
+    })
+  })
 })

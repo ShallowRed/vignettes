@@ -9,6 +9,9 @@ const roleDisplay = computed(() => ROLE_CONFIG[role.value])
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
   [{ type: 'label', label: user.value?.login || user.value?.name || 'Compte', avatar: user.value?.avatar ? { src: user.value.avatar } : undefined }],
+  ...(role.value === 'owner'
+    ? [[{ label: 'Comptes', icon: 'i-lucide-users', to: '/users' }]]
+    : []),
   [{ label: 'Se déconnecter', icon: 'i-lucide-log-out', to: '/auth/logout', external: true }],
 ])
 </script>
