@@ -97,6 +97,17 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           <span v-else-if="!minimal && statusDisplay && presentation.status !== 'public'">{{ statusDisplay.label }}</span>
           <span v-if="!minimal && presentation.unlisted">Non répertoriée</span>
           <span v-if="!minimal && admin && presentation.published === false">Non publié</span>
+          <span
+            v-if="!minimal && admin && presentation.sharedCount"
+            class="inline-flex items-center gap-0.5"
+            :title="`${presentation.sharedCount} accès partagé${presentation.sharedCount > 1 ? 's' : ''}`"
+          >
+            <UIcon
+              name="i-lucide-users"
+              class="size-3"
+            />
+            {{ presentation.sharedCount }}
+          </span>
           <span v-if="!minimal">{{ presentation.theme }}</span>
         </div>
 

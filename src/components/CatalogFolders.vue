@@ -15,6 +15,10 @@ const props = defineProps<{
 }>()
 
 const folders = computed(() => buildCatalogFolders(props.items, props.projects ?? []))
+
+// Folder master keys (privileged payloads only), for the "shared" hint.
+const sharedBySlug = computed(() =>
+  new Map((props.projects ?? []).map(p => [p.slug, p.sharedCount ?? 0])))
 </script>
 
 <template>
@@ -45,6 +49,17 @@ const folders = computed(() => buildCatalogFolders(props.items, props.projects ?
               <template v-if="folder.themes.length">
                 · {{ folder.themes.join(', ') }}
               </template>
+              <span
+                v-if="sharedBySlug.get(folder.routeSlug)"
+                class="inline-flex items-center gap-0.5"
+                :title="`${sharedBySlug.get(folder.routeSlug)} accès partagé(s) au dossier`"
+              >
+                · <UIcon
+                  name="i-lucide-users"
+                  class="size-3"
+                />
+                {{ sharedBySlug.get(folder.routeSlug) }}
+              </span>
             </p>
           </div>
         </div>

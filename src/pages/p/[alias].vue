@@ -15,11 +15,18 @@ if (resolved.value?.frozenUrl) {
 }
 
 const { presentationData, error: loadError } = usePresentation(`p-${alias}`, `/api/p/${alias}`)
+const { user } = useAppSession()
 
 const error = computed(() => resolveError.value || loadError.value)
 // Same three closed doors as /slides/<slug>: only the explicit server flag
 // bounces to the password prompt; a plain 401 asks to sign in instead.
-const requiresPassword = computed(() => (error.value as any)?.data?.requiresPassword === true)
+// ofetch nests the server's createError payload under data.data; a direct h3
+// error keeps it at data. Read both so the flag survives either transport.
+const errorData = computed(() => {
+  const err = error.value as any
+  return err?.data?.data ?? err?.data
+})
+const requiresPassword = computed(() => errorData.value?.requiresPassword === true)
 const needsLogin = computed(() => !requiresPassword.value && (error.value as any)?.statusCode === 401)
 const forbidden = computed(() => (error.value as any)?.statusCode === 403)
 
@@ -54,6 +61,7 @@ watch(requiresPassword, (needsPassword) => {
       v-else-if="forbidden"
       title="Accès refusé"
       message="Votre compte n'a pas accès à cette présentation."
+      :account-login="user?.login"
     />
     <DeckError
       v-else-if="error && !requiresPassword"

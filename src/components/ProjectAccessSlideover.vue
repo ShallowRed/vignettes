@@ -45,6 +45,10 @@ const { grants, removeGrant, busy } = sharing
           >
             <span class="text-sm font-medium">{{ grant.login }}</span>
             <span class="text-xs text-muted">{{ grant.role === 'editor' ? 'Édition' : 'Lecture' }}</span>
+            <span
+              v-if="grant.invited"
+              class="text-xs text-dimmed"
+            >· jamais connecté</span>
             <div class="flex-1" />
             <UButton
               icon="i-lucide-x"

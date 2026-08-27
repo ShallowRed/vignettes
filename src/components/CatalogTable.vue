@@ -247,6 +247,17 @@ function clearSelection() {
             v-if="isFrozen(row.original)"
             class="text-muted"
           >{{ row.original.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
+          <span
+            v-if="row.original.sharedCount"
+            class="inline-flex items-center gap-0.5 text-xs text-muted"
+            :title="`${row.original.sharedCount} accès partagé${row.original.sharedCount > 1 ? 's' : ''}`"
+          >
+            <UIcon
+              name="i-lucide-users"
+              class="size-3"
+            />
+            {{ row.original.sharedCount }}
+          </span>
         </div>
       </template>
 

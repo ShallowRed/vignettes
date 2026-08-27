@@ -17,6 +17,8 @@ export interface UpdateDeckMetaInput {
   project: string | null
   theme: string | null
   alias: string | null
+  /** Plain password for a semi-private deck, hashed server-side; null clears it. */
+  accessPassword?: string | null
 }
 
 /** Deck writes. `trash` is a soft-delete (reversible from the corbeille). */

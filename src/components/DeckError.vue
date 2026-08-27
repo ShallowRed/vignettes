@@ -6,6 +6,8 @@ defineProps<{
   title?: string
   message?: string
   loginRedirect?: string
+  /** The signed-in login, for a 403: names the account and offers to switch. */
+  accountLogin?: string
 }>()
 </script>
 
@@ -25,6 +27,13 @@ defineProps<{
     >
       Se connecter
     </NuxtLink>
+    <p
+      v-if="accountLogin"
+      class="deck-error__account"
+    >
+      Connecté en tant que <strong>{{ accountLogin }}</strong> ·
+      <a href="/auth/logout">changer de compte</a>
+    </p>
     <NuxtLink
       to="/"
       class="deck-error__back"
@@ -77,6 +86,16 @@ defineProps<{
 
 .deck-error__login:hover {
   background: #1d4ed8;
+}
+
+.deck-error__account {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.deck-error__account a {
+  color: #93c5fd;
 }
 
 .deck-error__back {

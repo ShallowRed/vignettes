@@ -7,12 +7,19 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const { presentationData, error } = usePresentation(slug)
+const { user } = useAppSession()
 
 // The server distinguishes the three closed doors: 401 + requiresPassword flag
 // (semi-private, ask for the deck password), plain 401 (private, ask to sign
 // in), 403 (signed in but not granted). Only the flag decides the unlock
 // bounce — a plain 401 must NOT land on a password prompt it can never satisfy.
-const requiresPassword = computed(() => (error.value as any)?.data?.requiresPassword === true)
+// ofetch nests the server's createError payload under data.data; a direct h3
+// error keeps it at data. Read both so the flag survives either transport.
+const errorData = computed(() => {
+  const err = error.value as any
+  return err?.data?.data ?? err?.data
+})
+const requiresPassword = computed(() => errorData.value?.requiresPassword === true)
 const needsLogin = computed(() => !requiresPassword.value && (error.value as any)?.statusCode === 401)
 const forbidden = computed(() => (error.value as any)?.statusCode === 403)
 
@@ -46,6 +53,7 @@ watch(requiresPassword, (needsPassword) => {
       v-else-if="forbidden"
       title="Accès refusé"
       message="Votre compte n'a pas accès à cette présentation."
+      :account-login="user?.login"
     />
     <DeckError
       v-else-if="error && !requiresPassword"
