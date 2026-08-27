@@ -19,4 +19,6 @@ export interface GrantSummary {
   role: DeckGrant
   /** The account was pre-provisioned by invitation and never logged in. */
   invited?: boolean
+  /** ISO date after which the grant no longer resolves; null/absent = permanent. */
+  expiresAt?: string | null
 }

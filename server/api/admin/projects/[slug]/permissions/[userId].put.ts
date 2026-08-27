@@ -5,7 +5,11 @@ import { assertOwner } from '../../../../../utils/access'
 import { useProjectPermissionStore } from '../../../../../utils/sources'
 import { useUserStore } from '../../../../../utils/users'
 
-const BodySchema = z.object({ role: DeckGrantSchema }).strict()
+const BodySchema = z.object({
+  role: DeckGrantSchema,
+  // ISO date in the future, or null/absent for a permanent grant.
+  expiresAt: z.string().datetime().nullable().optional().refine(v => v == null || new Date(v) > new Date(), 'expiresAt must be in the future'),
+}).strict()
 
 /**
  * PUT /api/admin/projects/:slug/permissions/:userId — grant editor/viewer on a
@@ -30,6 +34,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Unknown user' })
   }
 
-  await useProjectPermissionStore().set(slug, userId, parsed.data.role, owner.login ?? 'unknown')
+  await useProjectPermissionStore().set(slug, userId, parsed.data.role, owner.login ?? 'unknown', parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null)
   return { ok: true, project: slug, userId, role: parsed.data.role }
 })

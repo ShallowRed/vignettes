@@ -86,6 +86,8 @@ export const deckPermissions = sqliteTable('deck_permissions', {
   role: text('role').notNull(),
   grantedBy: text('granted_by').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  /** Null = no expiry. Past = the grant no longer resolves (kept listed for the owner). */
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
 }, table => [primaryKey({ columns: [table.deckSlug, table.userId] })])
 
 /**
@@ -98,4 +100,6 @@ export const projectPermissions = sqliteTable('project_permissions', {
   role: text('role').notNull(),
   grantedBy: text('granted_by').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  /** Null = no expiry. Past = the grant no longer resolves (kept listed for the owner). */
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
 }, table => [primaryKey({ columns: [table.projectSlug, table.userId] })])

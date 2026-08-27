@@ -14,7 +14,9 @@ const {
   grantableUsers,
   grantUserId,
   grantRole,
+  grantDays,
   grantRoleItems,
+  grantDurationItems,
   addGrant,
   inviteProvider,
   inviteHandle,
@@ -50,6 +52,12 @@ const isGoogle = computed(() => inviteProvider.value === 'google')
         v-model="grantRole"
         :items="grantRoleItems"
         class="w-28"
+      />
+      <USelect
+        v-model="grantDays"
+        :items="grantDurationItems"
+        class="w-28"
+        aria-label="Durée de l'accès"
       />
       <UButton
         icon="i-lucide-user-plus"

@@ -9,6 +9,14 @@ export const GRANT_ROLE_ITEMS = [
   { label: 'Édition', value: 'editor' as DeckGrant },
 ]
 
+/** Grant duration presets; the value is a day count (0 = permanent). */
+export const GRANT_DURATION_ITEMS = [
+  { label: 'Illimité', value: 0 },
+  { label: '7 jours', value: 7 },
+  { label: '30 jours', value: 30 },
+  { label: '90 jours', value: 90 },
+]
+
 /**
  * Sharing (per-deck or per-project grants), unified for both slideovers. Owner
  * only. The grants + users lists are Pinia Colada queries (deduped app-wide by
@@ -40,6 +48,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
 
   const grantUserId = ref<number | undefined>(undefined)
   const grantRole = ref<DeckGrant>('viewer')
+  const grantDays = ref(0)
 
   function invalidateGrants() {
     return queryCache.invalidateQueries({ key: sharingKey(scope) })
@@ -49,8 +58,17 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
   }
 
   const { mutate: submitGrant, isLoading: adding } = useMutation({
-    mutation: () => permissionsApi.set(requestFetch, scope(), grantUserId.value!, grantRole.value),
-    onSuccess() { grantUserId.value = undefined },
+    mutation: () => permissionsApi.set(
+      requestFetch,
+      scope(),
+      grantUserId.value!,
+      grantRole.value,
+      grantDays.value > 0 ? new Date(Date.now() + grantDays.value * 86_400_000).toISOString() : null,
+    ),
+    onSuccess() {
+      grantUserId.value = undefined
+      grantDays.value = 0
+    },
     onError: e => onError(e, 'Échec du partage'),
     onSettled: invalidateGrants,
   })
@@ -101,7 +119,9 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     grantableUsers,
     grantUserId,
     grantRole,
+    grantDays,
     grantRoleItems: GRANT_ROLE_ITEMS,
+    grantDurationItems: GRANT_DURATION_ITEMS,
     addGrant,
     removeGrant: (userId: number) => submitRemove(userId),
     inviteProvider,

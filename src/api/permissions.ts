@@ -13,8 +13,8 @@ function scopePath(scope: PermissionScope): string {
 export const permissionsApi = {
   list: (fetch: Fetcher, scope: PermissionScope) =>
     fetch<GrantSummary[]>(scopePath(scope)),
-  set: (fetch: Fetcher, scope: PermissionScope, userId: number, role: DeckGrant) =>
-    fetch(`${scopePath(scope)}/${userId}`, { method: 'PUT', body: { role } }),
+  set: (fetch: Fetcher, scope: PermissionScope, userId: number, role: DeckGrant, expiresAt?: string | null) =>
+    fetch(`${scopePath(scope)}/${userId}`, { method: 'PUT', body: { role, ...(expiresAt !== undefined ? { expiresAt } : {}) } }),
   remove: (fetch: Fetcher, scope: PermissionScope, userId: number) =>
     fetch(`${scopePath(scope)}/${userId}`, { method: 'DELETE' }),
 }

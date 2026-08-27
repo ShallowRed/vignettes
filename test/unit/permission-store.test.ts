@@ -22,6 +22,21 @@ describe('permission store', () => {
     await expect(store.get('not-in-db-yet', 1)).resolves.toBe('editor')
   })
 
+  it('an expired grant no longer resolves but stays listed for the owner', async () => {
+    await store.set('deck-a', 1, 'editor', 'lucas', new Date(Date.now() - 1000))
+    await expect(store.get('deck-a', 1)).resolves.toBeNull()
+    expect((await store.listForUser(1)).size).toBe(0)
+    const listed = await store.listForDeck('deck-a')
+    expect(listed).toHaveLength(1)
+    expect(listed[0].expiresAt!.getTime()).toBeLessThan(Date.now())
+  })
+
+  it('a future expiry resolves until its date', async () => {
+    await store.set('deck-a', 1, 'viewer', 'lucas', new Date(Date.now() + 86_400_000))
+    await expect(store.get('deck-a', 1)).resolves.toBe('viewer')
+    expect((await store.listForUser(1)).get('deck-a')).toBe('viewer')
+  })
+
   it('scopes grants to the deck and user pair', async () => {
     await store.set('deck-a', 1, 'editor', 'lucas')
     await store.set('deck-a', 2, 'viewer', 'lucas')

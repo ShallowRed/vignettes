@@ -266,6 +266,11 @@ const audience = computed(() => {
                 v-if="grant.invited"
                 class="text-xs text-dimmed"
               >· jamais connecté</span>
+              <span
+                v-if="grant.expiresAt"
+                class="text-xs"
+                :class="new Date(grant.expiresAt) < new Date() ? 'text-error' : 'text-dimmed'"
+              >· {{ new Date(grant.expiresAt) < new Date() ? 'expiré' : `expire le ${new Date(grant.expiresAt).toLocaleDateString('fr-FR')}` }}</span>
               <div class="flex-1" />
               <UButton
                 icon="i-lucide-x"
