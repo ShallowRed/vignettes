@@ -9,8 +9,13 @@ const roleDisplay = computed(() => ROLE_CONFIG[role.value])
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
   [{ type: 'label', label: user.value?.login || user.value?.name || 'Compte', avatar: user.value?.avatar ? { src: user.value.avatar } : undefined }],
-  ...(role.value === 'owner'
-    ? [[{ label: 'Comptes', icon: 'i-lucide-users', to: '/users' }]]
+  // Management entries live here rather than as bare header icons: they are
+  // occasional destinations, not primary navigation.
+  ...(privileged.value
+    ? [[
+        ...(role.value === 'owner' ? [{ label: 'Comptes', icon: 'i-lucide-users', to: '/users' }] : []),
+        { label: 'Corbeille', icon: 'i-lucide-trash-2', to: '/trash' },
+      ]]
     : []),
   [{ label: 'Se déconnecter', icon: 'i-lucide-log-out', to: '/auth/logout', external: true }],
 ])
@@ -31,14 +36,6 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     </template>
 
     <template #right>
-      <UButton
-        v-if="privileged"
-        to="/trash"
-        icon="i-lucide-trash-2"
-        color="neutral"
-        variant="ghost"
-        aria-label="Corbeille"
-      />
       <UColorModeButton />
 
       <!-- Route through /login so every configured provider is offered
