@@ -19,10 +19,35 @@ import { catalogKeys, presentationsQuery, projectsQuery } from '~/queries'
  *    with the new role. `useQueryCache` is resolved in setup (never in the
  *    callback) to keep the injection context — see error PINIA_COLADA_C0001.
  */
+// One poll per page, not per component: the first `useCatalog` on the client
+// starts it, the last one leaving stops it. Two SQLite reads every 30 s while
+// the tab is visible, so a grant or a publish done elsewhere shows up on its own.
+const CATALOG_POLL_MS = 30_000
+let pollTimer: ReturnType<typeof setInterval> | undefined
+let pollers = 0
+
 export function useCatalog() {
   const { privileged } = useAppSession()
   const requestFetch = useRequestFetch()
   const queryCache = useQueryCache()
+
+  if (import.meta.client) {
+    onMounted(() => {
+      pollers++
+      pollTimer ??= setInterval(() => {
+        if (document.visibilityState !== 'visible')
+          return
+        queryCache.invalidateQueries({ key: catalogKeys.presentations })
+        queryCache.invalidateQueries({ key: catalogKeys.projects })
+      }, CATALOG_POLL_MS)
+    })
+    onUnmounted(() => {
+      if (--pollers === 0 && pollTimer) {
+        clearInterval(pollTimer)
+        pollTimer = undefined
+      }
+    })
+  }
 
   const presentationsQ = useQuery(presentationsQuery(requestFetch))
   const projectsQ = useQuery(projectsQuery(requestFetch))
