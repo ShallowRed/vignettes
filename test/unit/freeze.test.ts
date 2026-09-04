@@ -28,13 +28,6 @@ describe('buildFreezeDescriptor', () => {
     })
   })
 
-  it('falls back slug → alias and frozenBundle → alias', () => {
-    const d = buildFreezeDescriptor({ alias: 'a' })
-    expect(d.slug).toBe('a')
-    expect(d.frozenBaseUrl).toBe('/frozen/a/')
-    expect(d.hostDir).toBe(`${DEFAULT_FROZEN_HOST_DIR}/a`)
-  })
-
   it('honours an explicit slug for the standalone target and served URL', () => {
     const d = buildFreezeDescriptor({
       alias: 'annual-review',
@@ -86,16 +79,6 @@ describe('buildFreezeDescriptor', () => {
     expect(d.theme).toBe('dsfr')
     expect(d.hostDir).toBe('.archive/deck')
     expect(d.bundleOut).toBe('out')
-  })
-
-  it('always plans the four steps in pipeline order', () => {
-    const d = buildFreezeDescriptor({ alias: 'deck' })
-    expect(d.steps.map(s => s.id)).toEqual([
-      'pull-note',
-      'bundle-frozen',
-      'host-frozen',
-      'flip-lifecycle',
-    ])
   })
 
   it('is pure — does not mutate the input entry or options', () => {

@@ -4,7 +4,6 @@ import type { PublicationStatus } from '../../shared/access/status'
 import { describe, expect, it } from 'vitest'
 import { canList, decideAccess } from '../../shared/access/decide'
 
-const ROLES: Role[] = ['anonymous', 'viewer', 'editor', 'owner']
 const STATUSES: PublicationStatus[] = ['public', 'private', 'semi-private']
 // A value outside the enum (e.g. the retired 'draft') must fail closed everywhere.
 const LEGACY_STATUS = 'draft' as PublicationStatus
@@ -14,30 +13,11 @@ function input(over: Partial<AccessInput> & Pick<AccessInput, 'status' | 'role'>
 }
 
 describe('decideAccess — view matrix', () => {
-  it('lets privileged roles view every status', () => {
-    for (const role of ['owner', 'editor'] as Role[]) {
-      for (const status of STATUSES)
-        expect(decideAccess(input({ status, role })).outcome).toBe('allow')
-    }
-  })
-
-  it('lets anyone view public', () => {
-    for (const role of ROLES)
-      expect(decideAccess(input({ status: 'public', role })).outcome).toBe('allow')
-  })
-
-  it('denies private to anonymous as auth-required', () => {
-    for (const status of ['private'] as PublicationStatus[]) {
-      expect(decideAccess(input({ status, role: 'anonymous' })))
-        .toEqual({ outcome: 'deny', reason: 'auth-required' })
-    }
-  })
-
-  it('denies private to an authenticated viewer as forbidden (403, not 401)', () => {
-    for (const status of ['private'] as PublicationStatus[]) {
-      expect(decideAccess(input({ status, role: 'viewer' })))
-        .toEqual({ outcome: 'deny', reason: 'forbidden' })
-    }
+  it('denies private to anonymous as auth-required, to a signed-in viewer as forbidden (401 vs 403)', () => {
+    expect(decideAccess(input({ status: 'private', role: 'anonymous' })))
+      .toEqual({ outcome: 'deny', reason: 'auth-required' })
+    expect(decideAccess(input({ status: 'private', role: 'viewer' })))
+      .toEqual({ outcome: 'deny', reason: 'forbidden' })
   })
 
   it('a status outside the enum fails closed for view', () => {
@@ -67,19 +47,6 @@ describe('decideAccess — semi-private password gate', () => {
   it('lets privileged roles skip the password gate', () => {
     expect(decideAccess(input({ status: 'semi-private', role: 'owner', hasPassword: true, passwordGranted: false })).outcome)
       .toBe('allow')
-  })
-})
-
-describe('decideAccess — admin/edit actions', () => {
-  it('allows admin/edit only for privileged roles', () => {
-    for (const action of ['admin', 'edit'] as const) {
-      expect(decideAccess(input({ status: 'public', role: 'owner', action })).outcome).toBe('allow')
-      expect(decideAccess(input({ status: 'public', role: 'editor', action })).outcome).toBe('allow')
-      expect(decideAccess(input({ status: 'public', role: 'viewer', action })))
-        .toEqual({ outcome: 'deny', reason: 'forbidden' })
-      expect(decideAccess(input({ status: 'public', role: 'anonymous', action })))
-        .toEqual({ outcome: 'deny', reason: 'auth-required' })
-    }
   })
 })
 

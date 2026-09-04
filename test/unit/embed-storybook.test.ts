@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   detectAssetRoots,
@@ -61,7 +62,7 @@ describe('detectAssetRoots', () => {
   })
 })
 
-describe('sTORYBOOK_FREEZE_STEPS', () => {
+describe('storybook freeze steps', () => {
   it('declares the four embed passes in adapter order', () => {
     expect(STORYBOOK_FREEZE_STEPS.map(s => s.id)).toEqual([
       'prune',
@@ -73,7 +74,7 @@ describe('sTORYBOOK_FREEZE_STEPS', () => {
 
   it('points each step at its implementing script', () => {
     for (const step of STORYBOOK_FREEZE_STEPS) {
-      expect(step.script).toMatch(/^scripts\/.+\.js$/)
+      expect(existsSync(step.script), step.script).toBe(true)
       expect(step.description.length).toBeGreaterThan(0)
     }
   })

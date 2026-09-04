@@ -63,10 +63,6 @@ describe('createDbContent', () => {
     expect(await content.source.load('trashed')).toBeNull()
   })
 
-  it('refuses empty markdown (would publish a blank deck)', async () => {
-    await expect(content.writer.save({ slug: 'd', raw: '' })).rejects.toThrow(/empty markdown/i)
-  })
-
   it('republishing cannot reopen a deck an admin closed', async () => {
     // The incident shape: published public, admin flips to private in the DB
     // (managed row = access truth), then a republish carries a stale

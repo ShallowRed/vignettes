@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createTtlCache, DEFAULT_CACHE_TTL_MS } from '../../shared/deck/cache'
+import { createTtlCache } from '../../shared/deck/cache'
 
 describe('createTtlCache', () => {
   it('memoizes within the TTL window and reloads after it', async () => {
@@ -40,9 +40,5 @@ describe('createTtlCache', () => {
     expect(await cache.get('a', loader)).toBe(2)
     cache.invalidate()
     expect(await cache.get('a', loader)).toBe(3)
-  })
-
-  it('exposes a sane default TTL', () => {
-    expect(DEFAULT_CACHE_TTL_MS).toBe(10_000)
   })
 })

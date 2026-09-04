@@ -1,38 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { isDeckSlug, prepareDeckWrite } from '../../shared/deck/source'
 
-describe('prepareDeckWrite', () => {
-  it('derives the flat storage key from the slug', () => {
-    const prepared = prepareDeckWrite({ slug: 'my-deck', raw: '# x' })
-    expect(prepared.key).toBe('my-deck.md')
-    expect(prepared.slug).toBe('my-deck')
-    expect(prepared.raw).toBe('# x')
-  })
-
-  it('rejects slugs with path traversal or slashes', () => {
-    for (const slug of ['../etc/passwd', 'a/b', '.hidden', 'a:b', ''])
-      expect(() => prepareDeckWrite({ slug, raw: 'x' })).toThrow(/invalid slug/i)
-  })
-
-  it('accepts typical slugs (letters, digits, dash, underscore)', () => {
-    for (const slug of ['deck', 'my-deck', 'deck_2', 'annual-review-2026', 'A1'])
-      expect(prepareDeckWrite({ slug, raw: 'x' }).slug).toBe(slug)
-  })
-
-  it('refuses to write empty markdown (would wipe the deck)', () => {
-    expect(() => prepareDeckWrite({ slug: 'd', raw: '' }))
-      .toThrow(/empty markdown/i)
-  })
-})
-
 describe('isDeckSlug', () => {
-  it('accepts valid slugs', () => {
-    for (const slug of ['deck', 'my-deck', 'deck_2', 'A1'])
+  it('accepts letters, digits, dash and underscore', () => {
+    for (const slug of ['deck', 'my-deck', 'deck_2', 'annual-review-2026', 'A1'])
       expect(isDeckSlug(slug)).toBe(true)
   })
 
-  it('rejects traversal, separators and empty names', () => {
+  it('rejects traversal, separators, dotfiles, spaces and empty names', () => {
     for (const name of ['../etc/passwd', 'a/b', '.hidden', 'public:deck', 'a b', ''])
       expect(isDeckSlug(name)).toBe(false)
+  })
+})
+
+describe('prepareDeckWrite', () => {
+  it('derives the flat storage key from the slug', () => {
+    expect(prepareDeckWrite({ slug: 'my-deck', raw: '# x' })).toEqual({ key: 'my-deck.md', slug: 'my-deck', raw: '# x' })
+  })
+
+  it('refuses an invalid slug and empty markdown (a blank save would wipe the deck)', () => {
+    expect(() => prepareDeckWrite({ slug: 'a/b', raw: 'x' })).toThrow(/invalid slug/i)
+    expect(() => prepareDeckWrite({ slug: 'd', raw: '' })).toThrow(/empty markdown/i)
   })
 })

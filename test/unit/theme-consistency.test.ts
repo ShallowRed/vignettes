@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { checkThemeConsistency } from '../../shared/theme/consistency'
 
@@ -51,19 +52,10 @@ describe('checkThemeConsistency', () => {
     expect(report.ok).toBe(true)
   })
 
-  it('the real repo CSS set matches the manifest (no drift)', () => {
-    const report = checkThemeConsistency({
-      cssFiles: ['dsfr', 'dsfr-alt', 'dsfr-standalone', 'brand', 'minimal'],
-    })
-    expect(report.ok).toBe(true)
-    expect(report.missingTokens).toEqual([])
-    expect(report.missingCss).toEqual([])
-  })
-
-  it('defaults tokens to KNOWN_THEMES when not provided', () => {
-    const report = checkThemeConsistency({
-      cssFiles: ['dsfr', 'dsfr-alt', 'dsfr-standalone', 'minimal', 'brand'],
-    })
-    expect(report.missingCss).toEqual([])
+  it('the repo has no drift between tokens, source dirs and compiled css', () => {
+    const cssFiles = readdirSync('public/themes').filter(f => f.endsWith('.css')).map(f => f.replace(/\.css$/, ''))
+    const sourceDirs = readdirSync('themes', { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name)
+    const report = checkThemeConsistency({ cssFiles, sourceDirs })
+    expect(report.warnings).toEqual([])
   })
 })

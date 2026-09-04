@@ -19,7 +19,7 @@ describe('mergeRevealConfig', () => {
   })
 })
 
-describe('eMBED_SANDBOX', () => {
+describe('embed sandbox', () => {
   it('omits top-navigation so embeds cannot hijack the window', () => {
     expect(EMBED_SANDBOX).not.toContain('allow-top-navigation')
     expect(EMBED_SANDBOX).toContain('allow-scripts')

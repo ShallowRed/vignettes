@@ -52,7 +52,7 @@ describe('decideFetchAction (fail-closed policy)', () => {
     })
   })
 
-  it('fAILS (never empty) on CI without a token', () => {
+  it('fails (never empty) on CI without a token', () => {
     expect(decideFetchAction(ciNoToken, false).action).toBe('fail')
   })
 
