@@ -3,13 +3,18 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { isPrivileged } from '#shared/access'
+import { isDeckSlug } from '#shared/deck'
 import { isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { imageExtFor, MAX_MEDIA_BYTES, mediaObjectKey } from '#shared/storage/media-s3'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { assertCanEditDeck } from '../utils/access'
 import { getActorRole } from '../utils/actor'
 
 /**
- * POST /api/media — upload an image. Auth-gated to privileged roles. The file is
+ * POST /api/media?deck=<slug> — upload an image. Allowed to privileged roles, and
+ * to anyone who may edit the named deck (an `editor` grant): the editor offers
+ * paste/drop to every writer, so the upload must follow the same right or a
+ * collaborator hits a 403 mid-edit. The file is
  * content-hashed and stored in the frozen bucket under `media/` (falling back to
  * a local `.media/` dir when no S3 creds are configured, e.g. in dev). Returns an
  * app-relative `/media/<hash>.<ext>` src so the stored markdown never hardcodes a
@@ -18,10 +23,14 @@ import { getActorRole } from '../utils/actor'
 export default defineEventHandler(async (event) => {
   const role = await getActorRole(event)
   if (!isPrivileged(role)) {
-    throw createError({
-      statusCode: role === 'anonymous' ? 401 : 403,
-      statusMessage: 'Owner or editor role required',
-    })
+    const deck = getQuery(event).deck
+    if (typeof deck !== 'string' || !isDeckSlug(deck)) {
+      throw createError({
+        statusCode: role === 'anonymous' ? 401 : 403,
+        statusMessage: 'Owner or editor role required, or an editor grant on the deck being edited',
+      })
+    }
+    await assertCanEditDeck(event, deck)
   }
 
   const parts = await readMultipartFormData(event)
