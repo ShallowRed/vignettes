@@ -65,7 +65,7 @@ const peers = ref<{ name: string, color: string }[]>([])
 // requires edit rights, so an anonymous internal fetch would 401.
 const requestFetch = useRequestFetch()
 const { data, error } = await useAsyncData(`edit-${slug}`, () =>
-  requestFetch<{ content: string, status?: string, title?: string, from?: 'draft' | 'published' | 'file', writable?: boolean, stamp?: number | null }>(
+  requestFetch<{ content: string, status?: string, title?: string, from?: 'draft' | 'published' | 'file', writable?: boolean, stamp?: number | null, publishedRaw?: string | null, publishedAt?: number | null }>(
     `/api/presentations/${slug}`,
     { query: { draft: '' } },
   ))
@@ -77,6 +77,46 @@ const dirty = computed(() => !collabEnabled.value && raw.value !== lastSaved.val
 // Solo concurrency token: the draft stamp we loaded, echoed on save so the
 // server refuses to overwrite someone else's newer draft (409).
 const draftStamp = ref<number | null | undefined>(undefined)
+
+// Publication state: the served text, to tell whether the draft holds changes
+// the visitors do not see yet. Unknown (null) until the collab document synced.
+const publishedRaw = ref<string | null>(null)
+const publishedAt = ref<number | null>(null)
+const docSynced = ref(false)
+const synced = ref(true)
+const unpublished = computed<boolean | null>(() => {
+  if (collabEnabled.value && !docSynced.value)
+    return null
+  if (publishedRaw.value === null)
+    return true
+  return raw.value !== publishedRaw.value
+})
+const publishedAtLabel = computed(() =>
+  publishedAt.value ? new Date(publishedAt.value).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : null)
+const publicationLabel = computed(() =>
+  publishedRaw.value === null ? 'Jamais publié' : unpublished.value ? 'Modifications non publiées' : 'Publié à jour')
+const publicationHint = computed(() => {
+  const when = publishedAtLabel.value ? ` le ${publishedAtLabel.value}` : ''
+  if (publishedRaw.value === null)
+    return 'Les visiteurs ne voient encore rien : publiez le brouillon.'
+  return unpublished.value
+    ? `Les visiteurs voient la version publiée${when}. Publiez pour la mettre à jour.`
+    : `Le brouillon est identique à la version publiée${when}.`
+})
+const collabLabel = computed(() => {
+  if (collabStatus.value === 'disconnected')
+    return 'Hors ligne'
+  if (collabStatus.value !== 'connected' || !docSynced.value)
+    return 'Connexion…'
+  return synced.value ? 'Brouillon synchronisé' : 'Enregistrement…'
+})
+const collabDotClass = computed(() =>
+  collabStatus.value === 'disconnected' ? 'bg-error' : collabStatus.value === 'connected' && docSynced.value && synced.value ? 'bg-success' : 'bg-warning')
+const COLLAB_HINT = 'Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.'
+
+function initials(name: string): string {
+  return name.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
+}
 
 if (error.value) {
   loadError.value = (error.value as any)?.statusMessage || 'Failed to load deck'
@@ -93,6 +133,8 @@ else if (data.value) {
     lastSaved.value = data.value.content
   }
   draftStamp.value = data.value.stamp ?? null
+  publishedRaw.value = data.value.publishedRaw ?? null
+  publishedAt.value = data.value.publishedAt ?? null
 }
 
 const statusDisplay = computed(() => STATUS_CONFIG[deckStatus.value as keyof typeof STATUS_CONFIG])
@@ -256,6 +298,14 @@ async function startCollab() {
   provider.on('disconnect', () => {
     collabStatus.value = 'disconnected'
   })
+  provider.on('synced', () => {
+    docSynced.value = true
+  })
+  // Edits not yet acknowledged by the server: the header says so instead of
+  // claiming they are saved.
+  provider.on('unsyncedChanges', (e: { number: number }) => {
+    synced.value = e.number === 0
+  })
 
   const ytext = ydoc.getText('codemirror')
   // Mirror the live Y.Text into `raw` so the preview reparses on every change
@@ -367,6 +417,8 @@ async function publish() {
       lastSaved.value = raw.value
     }
     await $fetch(`/api/presentations/${slug}/publish`, { method: 'POST' })
+    publishedRaw.value = raw.value
+    publishedAt.value = Date.now()
     publishState.value = 'published'
     saveMessage.value = 'Publié'
     setTimeout(() => {
@@ -451,28 +503,28 @@ async function onMetaSaved() {
         v-if="statusDisplay"
         class="text-xs text-muted"
       >{{ statusDisplay.label }}</span>
-      <span
-        v-if="loadedFrom && loadedFrom !== 'draft'"
-        class="text-xs text-muted"
-      >{{ loadedFrom === 'published' ? 'Depuis le publié' : 'Depuis le fichier' }}</span>
-
       <template v-if="collabEnabled">
-        <UTooltip :text="collabStatus === 'connected' ? 'Édition en temps réel : vos modifications sont partagées instantanément' : 'Connexion au temps réel…'">
+        <UTooltip :text="COLLAB_HINT">
           <span class="flex items-center gap-1.5 text-xs text-muted">
             <span
               class="size-1.5 rounded-full"
-              :class="collabStatus === 'connected' ? 'bg-success' : collabStatus === 'disconnected' ? 'bg-error' : 'bg-warning'"
+              :class="collabDotClass"
             />
-            {{ collabStatus === 'connected' ? 'Temps réel' : collabStatus === 'disconnected' ? 'Hors ligne' : 'Connexion…' }}
+            {{ collabLabel }}
           </span>
         </UTooltip>
-        <span
-          v-for="peer in peers"
-          :key="peer.name + peer.color"
-          class="text-xs font-medium truncate max-w-32"
-          :style="{ color: peer.color }"
-          :title="`${peer.name} édite en ce moment`"
-        >{{ peer.name }}</span>
+        <div
+          v-if="peers.length"
+          class="flex items-center -space-x-1"
+        >
+          <span
+            v-for="peer in peers"
+            :key="peer.name + peer.color"
+            class="grid place-items-center size-6 rounded-full text-[10px] font-semibold text-white ring-2 ring-default"
+            :style="{ backgroundColor: peer.color }"
+            :title="`${peer.name} édite en ce moment`"
+          >{{ initials(peer.name) }}</span>
+        </div>
         <UButton
           v-if="collabStatus === 'disconnected'"
           label="Passer en solo"
@@ -485,7 +537,7 @@ async function onMetaSaved() {
       </template>
       <UTooltip
         v-else-if="writable"
-        text="Mode solo : enregistrement manuel, protégé contre l'écrasement d'une version plus récente"
+        text="Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente"
       >
         <UButton
           label="Solo"
@@ -496,6 +548,22 @@ async function onMetaSaved() {
           :to="`/edit/${slug}`"
           external
         />
+      </UTooltip>
+
+      <UTooltip
+        v-if="writable && unpublished !== null"
+        :text="publicationHint"
+      >
+        <span
+          class="flex items-center gap-1.5 text-xs"
+          :class="unpublished ? 'text-warning' : 'text-muted'"
+        >
+          <span
+            class="size-1.5 rounded-full"
+            :class="unpublished ? 'bg-warning' : 'bg-success'"
+          />
+          {{ publicationLabel }}
+        </span>
       </UTooltip>
 
       <div class="flex-1" />
@@ -532,9 +600,23 @@ async function onMetaSaved() {
         />
       </UTooltip>
 
+      <UTooltip
+        v-if="writable"
+        text="Aperçu du brouillon, tel qu'il sera publié"
+      >
+        <UButton
+          icon="i-lucide-eye"
+          color="neutral"
+          variant="ghost"
+          aria-label="Aperçu du brouillon"
+          :to="`/slides/${slug}?draft`"
+          target="_blank"
+          external
+        />
+      </UTooltip>
       <UButton
         v-if="!collabEnabled"
-        label="Enregistrer"
+        label="Enregistrer le brouillon"
         icon="i-lucide-save"
         color="neutral"
         variant="subtle"
@@ -542,13 +624,15 @@ async function onMetaSaved() {
         :disabled="!!loadError || !writable || !dirty"
         @click="save"
       />
-      <UButton
-        label="Publier"
-        icon="i-lucide-send"
-        :loading="publishState === 'publishing'"
-        :disabled="!!loadError || !writable"
-        @click="publish"
-      />
+      <UTooltip :text="unpublished === false ? 'Rien à publier : la version publiée est à jour' : 'Copie le brouillon vers la version que voient les visiteurs'">
+        <UButton
+          label="Publier"
+          icon="i-lucide-send"
+          :loading="publishState === 'publishing'"
+          :disabled="!!loadError || !writable || unpublished === false"
+          @click="publish"
+        />
+      </UTooltip>
       <UTooltip :text="followCursor ? 'Suivi de la diapo au curseur : activé' : 'Suivre la diapo au curseur'">
         <UButton
           icon="i-lucide-crosshair"
