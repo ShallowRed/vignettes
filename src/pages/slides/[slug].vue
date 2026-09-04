@@ -6,7 +6,9 @@ definePageMeta({
 const route = useRoute()
 const slug = route.params.slug as string
 
-const { presentationData, error } = usePresentation(slug)
+// `?draft`: an editor previews the working draft the way it will be published.
+const draftPreview = 'draft' in route.query
+const { presentationData, error } = usePresentation(slug, undefined, { draft: draftPreview })
 const { user } = useAppSession()
 
 // The server distinguishes the three closed doors: 401 + requiresPassword flag
@@ -35,6 +37,22 @@ watch(requiresPassword, (needsPassword) => {
   <div class="presentation-page">
     <!-- No <ClientOnly>: SSR-safe markup must prerender for the frozen bundle. -->
     <template v-if="presentationData && presentationData.slides.length > 0">
+      <div
+        v-if="draftPreview"
+        class="tailwind-app fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-3 bg-warning text-white text-sm py-1.5 px-4"
+      >
+        <UIcon
+          name="i-lucide-eye"
+          class="size-4"
+        />
+        Aperçu du brouillon, non publié
+        <NuxtLink
+          :to="`/edit/${slug}`"
+          class="underline"
+        >
+          Ouvrir l'éditeur
+        </NuxtLink>
+      </div>
       <RevealPresentation
         :theme="presentationData.metadata.theme"
         :config="presentationData.metadata.reveal"
