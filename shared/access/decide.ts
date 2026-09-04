@@ -93,3 +93,12 @@ export function canList(input: ListInput): boolean {
     return false
   return status === 'public'
 }
+
+/**
+ * Whether the actor may write: a privileged role, or an `editor` grant on the
+ * target (a deck, or the folder a new deck goes into). Every server-side edit
+ * check and every edit affordance in the catalog goes through this one rule.
+ */
+export function mayEdit(role: Role, grant?: DeckGrant): boolean {
+  return decideAccess({ status: 'private', role, action: 'edit', grant, hasPassword: false, passwordGranted: false }).outcome === 'allow'
+}

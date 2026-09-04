@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { assertCanEditDeck, assertOwner, gateDeckAccess } from '../../server/utils/access'
+import { assertCanEditDeck, assertOwner, assertPrivileged, gateDeckAccess } from '../../server/utils/access'
 import { hashAccessPassword } from '../../server/utils/password'
 import { resetRateLimits } from '../../server/utils/rate-limit'
 import { useDeckMeta, usePermissionStore } from '../../server/utils/sources'
@@ -22,6 +22,16 @@ describe('assertOwner', () => {
   it('allows an owner', async () => {
     await seedAccount(1, 'boss', 'owner')
     await expect(assertOwner(asUser(1, 'boss'))).resolves.toMatchObject({ role: 'owner' })
+  })
+})
+
+describe('assertPrivileged', () => {
+  it('rejects anonymous (401) and a viewer (403), allows an editor', async () => {
+    await expect(assertPrivileged(anon())).rejects.toMatchObject({ statusCode: 401 })
+    await seedAccount(2, 'viewer', 'viewer')
+    await expect(assertPrivileged(asUser(2, 'viewer'))).rejects.toMatchObject({ statusCode: 403 })
+    await seedAccount(3, 'ed', 'editor')
+    await expect(assertPrivileged(asUser(3, 'ed'))).resolves.toMatchObject({ role: 'editor' })
   })
 })
 

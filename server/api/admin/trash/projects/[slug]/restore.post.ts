@@ -1,17 +1,14 @@
-import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
-import { getActorRole } from '../../../../../utils/actor'
-import { useProjectStore } from '../../../../../utils/sources'
-
 /**
  * POST /api/admin/trash/projects/:slug/restore — restore a project and every
  * deck currently trashed under it (the folder comes back whole).
  */
+import { assertPrivileged } from '../../../../../utils/access'
+
+import { useProjectStore } from '../../../../../utils/sources'
+
 export default defineEventHandler(async (event) => {
-  const role = await getActorRole(event)
-  if (!isPrivileged(role)) {
-    throw createError({ statusCode: role === 'anonymous' ? 401 : 403, statusMessage: 'Owner or editor role required' })
-  }
+  await assertPrivileged(event)
 
   const slug = getRouterParam(event, 'slug')
   if (!slug || !isDeckSlug(slug)) {

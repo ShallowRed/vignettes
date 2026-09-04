@@ -1,22 +1,16 @@
 import type { TrashListing } from '#shared/trash'
-import { isPrivileged } from '#shared/access'
-import { getActorRole } from '../../../utils/actor'
-import { useDeckMeta, useProjectStore } from '../../../utils/sources'
-
 /**
  * GET /api/admin/trash — the corbeille: trashed projects (each with its deck
  * count) and standalone trashed decks. Decks trashed *with* a project are omitted
  * here — they are represented by, and restored/purged with, their project entry.
  * Privileged only.
  */
+import { assertPrivileged } from '../../../utils/access'
+
+import { useDeckMeta, useProjectStore } from '../../../utils/sources'
+
 export default defineEventHandler(async (event): Promise<TrashListing> => {
-  const role = await getActorRole(event)
-  if (!isPrivileged(role)) {
-    throw createError({
-      statusCode: role === 'anonymous' ? 401 : 403,
-      statusMessage: 'Owner or editor role required',
-    })
-  }
+  await assertPrivileged(event)
 
   const [projects, allDecks] = await Promise.all([
     useProjectStore().listTrashed(),

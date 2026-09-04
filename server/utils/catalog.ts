@@ -1,7 +1,7 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
-import { canList, isPrivileged } from '#shared/access'
+import { canList, isPrivileged, mayEdit } from '#shared/access'
 import { UNGROUPED_PROJECT } from '#shared/presentations'
 import { count } from 'drizzle-orm'
 import { deckPermissions, projectPermissions } from '../db/schema'
@@ -36,10 +36,9 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   const privileged = isPrivileged(actor.role)
   const decks = await useDeckMeta().listManaged()
   const shared = privileged ? grantCounts(deckPermissions, 'deckSlug') : undefined
-  // Editing follows the effective grant, not the global role: an `editor` grant
-  // (per-deck or inherited from the folder) is exactly what assertCanEditDeck
-  // accepts server-side, so the catalog must report the same capability.
-  const canEdit = (slug: string) => privileged || grants.get(slug) === 'editor'
+  // The same rule as assertCanEditDeck, so the card's pencil matches what the
+  // server accepts.
+  const canEdit = (slug: string) => mayEdit(actor.role, grants.get(slug))
 
   return decks
     // A deck with no published version has nothing to serve: only those who can

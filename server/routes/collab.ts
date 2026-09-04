@@ -1,9 +1,9 @@
 import type { Peer } from 'crossws'
-import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
+import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'
-import { useDeckMeta, useGrants } from '../utils/sources'
+import { useDeckMeta } from '../utils/sources'
 
 type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleConnection']>
 
@@ -38,9 +38,7 @@ export default defineWebSocketHandler({
       throw new Response('A ?deck=<slug> parameter is required', { status: 400 })
 
     const actor = await getActorFromRequest(request)
-    const granted = actor.id != null
-      && await useGrants().get(deck, actor.id).catch(() => undefined) === 'editor'
-    if (!isPrivileged(actor.role) && !granted)
+    if (!await canActorEditDeck(actor, deck))
       throw new Response('Editing requires an owner/editor role or an editor grant on this deck', { status: 401 })
 
     // A trashed deck is not editable: refuse the collab session until it is

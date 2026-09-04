@@ -7,7 +7,7 @@
  * version. Refused while a collab room is open — overwriting the live CRDT with
  * a fresh document would fork it. A solo save carries the `stamp` it loaded:
  * when someone else saved since, it is refused (409, `data.conflict`) rather
- * than silently replacing their work — last-writer-wins is not acceptable.
+ * than silently replacing their work.
  */
 
 import { prepareDeckWrite } from '#shared/deck'

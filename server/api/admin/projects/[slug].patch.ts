@@ -1,8 +1,13 @@
-import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
 import { PROJECT_ICONS } from '#shared/projects'
 import { z } from 'zod'
-import { getActorRole } from '../../../utils/actor'
+/**
+ * PATCH /api/admin/projects/:slug — rename, recolor, reorder, or change the slug
+ * of a project. Privileged only. Changing the slug cascades to the project's
+ * decks and grants (simple cascade: old `/projects/<slug>` links stop resolving).
+ */
+import { assertPrivileged } from '../../../utils/access'
+
 import { useProjectStore } from '../../../utils/sources'
 
 const PatchSchema = z.object({
@@ -13,19 +18,8 @@ const PatchSchema = z.object({
   order: z.number().int().optional(),
 }).strict()
 
-/**
- * PATCH /api/admin/projects/:slug — rename, recolor, reorder, or change the slug
- * of a project. Privileged only. Changing the slug cascades to the project's
- * decks and grants (simple cascade: old `/projects/<slug>` links stop resolving).
- */
 export default defineEventHandler(async (event) => {
-  const role = await getActorRole(event)
-  if (!isPrivileged(role)) {
-    throw createError({
-      statusCode: role === 'anonymous' ? 401 : 403,
-      statusMessage: 'Owner or editor role required',
-    })
-  }
+  await assertPrivileged(event)
 
   const slug = getRouterParam(event, 'slug')
   if (!slug || !isDeckSlug(slug)) {

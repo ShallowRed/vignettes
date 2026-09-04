@@ -1,8 +1,13 @@
-import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
 import { PROJECT_ICONS } from '#shared/projects'
 import { z } from 'zod'
-import { getActorRole } from '../../../utils/actor'
+/**
+ * POST /api/admin/projects — create a project (a first-class catalog folder).
+ * The slug is derived from the title and disambiguated. Privileged only, like
+ * deck creation.
+ */
+import { assertPrivileged } from '../../../utils/access'
+
 import { useProjectStore } from '../../../utils/sources'
 
 const CreateSchema = z.object({
@@ -13,19 +18,8 @@ const CreateSchema = z.object({
   slug: z.string().optional(),
 }).strict()
 
-/**
- * POST /api/admin/projects — create a project (a first-class catalog folder).
- * The slug is derived from the title and disambiguated. Privileged only, like
- * deck creation.
- */
 export default defineEventHandler(async (event) => {
-  const role = await getActorRole(event)
-  if (!isPrivileged(role)) {
-    throw createError({
-      statusCode: role === 'anonymous' ? 401 : 403,
-      statusMessage: 'Owner or editor role required',
-    })
-  }
+  await assertPrivileged(event)
 
   const parsed = CreateSchema.safeParse(await readBody(event))
   if (!parsed.success) {

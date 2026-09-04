@@ -2,7 +2,7 @@ import type { DeckGrant, Lifecycle, PublicationStatus } from '#shared/access'
 import type { H3Event } from 'h3'
 import type { Actor } from './actor'
 import process from 'node:process'
-import { decideAccess } from '#shared/access'
+import { decideAccess, isPrivileged, mayEdit } from '#shared/access'
 import { getActor } from './actor'
 import { verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
@@ -67,19 +67,19 @@ export async function gateDeckAccess(event: H3Event, opts: GateOptions): Promise
   }
 }
 
+/**
+ * Whether this actor may edit this deck: the shared `mayEdit` rule on their
+ * effective grant. Used by the HTTP guard below and by the collab upgrade, which
+ * maps the answer to a WebSocket response instead of an H3 error.
+ */
+export async function canActorEditDeck(actor: Actor, slug: string): Promise<boolean> {
+  return mayEdit(actor.role, await resolveGrant(actor, slug))
+}
+
 /** 403/401 unless the actor may edit this deck (privileged role or editor grant). */
 export async function assertCanEditDeck(event: H3Event, slug: string): Promise<Actor> {
   const actor = await getActor(event)
-  const grant = await resolveGrant(actor, slug)
-  const decision = decideAccess({
-    status: 'private',
-    role: actor.role,
-    action: 'edit',
-    grant,
-    hasPassword: false,
-    passwordGranted: false,
-  })
-  if (decision.outcome !== 'allow') {
+  if (!await canActorEditDeck(actor, slug)) {
     throw createError({
       statusCode: actor.role === 'anonymous' ? 401 : 403,
       statusMessage: 'Editing requires an owner/editor role or an editor grant on this deck',
@@ -89,6 +89,18 @@ export async function assertCanEditDeck(event: H3Event, slug: string): Promise<A
   // refused) until restored from the corbeille.
   if (await useDeckMeta().isTrashed(slug))
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
+  return actor
+}
+
+/** 403/401 unless the actor's global role is `owner` or `editor` (catalog administration). */
+export async function assertPrivileged(event: H3Event): Promise<Actor> {
+  const actor = await getActor(event)
+  if (!isPrivileged(actor.role)) {
+    throw createError({
+      statusCode: actor.role === 'anonymous' ? 401 : 403,
+      statusMessage: 'Owner or editor role required',
+    })
+  }
   return actor
 }
 
