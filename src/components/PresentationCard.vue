@@ -3,7 +3,9 @@ import type { PresentationListItem } from '#shared/presentations'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 
-// Catalog card. `admin` adds management details and actions for privileged viewers.
+// Catalog card. `admin` adds management details and the actions menu (privileged
+// roles only). Editing is separate: it follows the deck's own `canEdit`, so a
+// collaborator holding an `editor` grant gets the pencil without the rest.
 const props = defineProps<{
   presentation: PresentationListItem
   admin?: boolean
@@ -18,8 +20,14 @@ const emit = defineEmits<{
 
 const frozen = computed(() => isFrozen(props.presentation))
 
+// A frozen deck is read-only whatever the role.
+const canEdit = computed(() => !frozen.value && (props.admin === true || props.presentation.canEdit === true))
+const hasMenu = computed(() => props.admin === true && !frozen.value)
+const hasActions = computed(() => canEdit.value || hasMenu.value)
+
 const to = computed(() => {
-  if (props.admin && props.presentation.published === false && !frozen.value)
+  // Nothing to show yet: send whoever may edit it straight to the editor.
+  if (canEdit.value && props.presentation.published === false)
     return `/edit/${props.presentation.slug}`
   return deckPath(props.presentation)
 })
@@ -55,11 +63,14 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
       <!-- Admin actions pinned to the card's top-right corner (z-10 clears the
            stretched-link overlay so the trigger stays clickable). -->
       <div
-        v-if="admin && !frozen"
+        v-if="hasActions"
         class="absolute top-2 right-2 z-10 flex items-center gap-0.5"
         @click.stop.prevent
       >
-        <UTooltip text="Éditer le contenu">
+        <UTooltip
+          v-if="canEdit"
+          text="Éditer le contenu"
+        >
           <UButton
             icon="i-lucide-pencil"
             color="neutral"
@@ -70,6 +81,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           />
         </UTooltip>
         <UDropdownMenu
+          v-if="hasMenu"
           :items="adminActions"
           :content="{ align: 'end' }"
         >
@@ -87,12 +99,12 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
         <div class="flex items-start justify-between gap-3">
           <h2
             class="font-semibold text-highlighted leading-snug line-clamp-2"
-            :class="{ 'pr-14': admin && !frozen }"
+            :class="hasActions ? (canEdit && hasMenu ? 'pr-14' : 'pr-8') : ''"
           >
             {{ presentation.title }}
           </h2>
           <UIcon
-            v-if="!(admin && !frozen)"
+            v-if="!hasActions"
             name="i-lucide-arrow-up-right"
             class="shrink-0 size-4 text-dimmed mt-0.5"
           />

@@ -36,11 +36,15 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   const privileged = isPrivileged(actor.role)
   const decks = await useDeckMeta().listManaged()
   const shared = privileged ? grantCounts(deckPermissions, 'deckSlug') : undefined
+  // Editing follows the effective grant, not the global role: an `editor` grant
+  // (per-deck or inherited from the folder) is exactly what assertCanEditDeck
+  // accepts server-side, so the catalog must report the same capability.
+  const canEdit = (slug: string) => privileged || grants.get(slug) === 'editor'
 
   return decks
     // A deck with no published version has nothing to serve: only those who can
     // edit it should see it listed.
-    .filter(deck => deck.published || privileged)
+    .filter(deck => deck.published || canEdit(deck.slug))
     .map(deck => ({
       slug: deck.slug,
       title: deck.title,
@@ -51,6 +55,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       unlisted: deck.unlisted,
       alias: deck.alias,
       lifecycle: deck.lifecycle,
+      ...(canEdit(deck.slug) ? { canEdit: true } : {}),
       ...(privileged
         ? {
             published: deck.published,

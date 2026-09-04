@@ -18,6 +18,12 @@ export interface PresentationListItem {
   lifecycle?: Lifecycle
   /** Privileged only: false until a first publish gives the deck servable content. */
   published?: boolean
+  /**
+   * This actor may edit this deck: a global editor/owner, or the holder of an
+   * `editor` grant on it (or on its folder). Drives the card's edit affordance,
+   * which must not follow the global role alone.
+   */
+  canEdit?: boolean
   /** Privileged only: a semi-private deck without one is unreachable (fail-closed). */
   hasPassword?: boolean
   /** Privileged only: number of per-deck grants (folder master keys not included). */
