@@ -36,11 +36,12 @@ definePageMeta({ layout: false })
 
 const route = useRoute()
 const slug = route.params.slug as string
-// Real-time collaboration is opt-in via ?collab. Without it, the editor
-// is the solo CodeMirror editor.
-const collabEnabled = computed(() => 'collab' in route.query)
+// Real-time collaboration is the default: every writer of a deck edits the same
+// CRDT document. `?solo` opts out: a plain CodeMirror editor with explicit,
+// conflict-checked saves.
+const soloRequested = computed(() => 'solo' in route.query)
 
-const { privileged } = useAppSession()
+const { privileged, user } = useAppSession()
 const colorMode = useColorMode()
 const toast = useToast()
 
@@ -54,23 +55,28 @@ const loadError = ref<string | null>(null)
 const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 const saveMessage = ref('')
 
-// Collaboration state.
+// Collaboration state. `peers` lists the other connected people by name.
 const collabStatus = ref<'connecting' | 'connected' | 'disconnected'>('connecting')
 const peerCount = ref(0)
+const peers = ref<{ name: string, color: string }[]>([])
 
 // Load the working draft (falls back to published version, then file).
 // useRequestFetch: the SSR pass must re-emit the session cookie — `?draft`
 // requires edit rights, so an anonymous internal fetch would 401.
 const requestFetch = useRequestFetch()
 const { data, error } = await useAsyncData(`edit-${slug}`, () =>
-  requestFetch<{ content: string, status?: string, title?: string, from?: 'draft' | 'published' | 'file', writable?: boolean }>(
+  requestFetch<{ content: string, status?: string, title?: string, from?: 'draft' | 'published' | 'file', writable?: boolean, stamp?: number | null }>(
     `/api/presentations/${slug}`,
     { query: { draft: '' } },
   ))
 
 const writable = computed(() => data.value?.writable !== false)
+const collabEnabled = computed(() => writable.value && !soloRequested.value)
 // In solo mode the draft is only "unsaved" when it differs from what the server has.
 const dirty = computed(() => !collabEnabled.value && raw.value !== lastSaved.value)
+// Solo concurrency token: the draft stamp we loaded, echoed on save so the
+// server refuses to overwrite someone else's newer draft (409).
+const draftStamp = ref<number | null | undefined>(undefined)
 
 if (error.value) {
   loadError.value = (error.value as any)?.statusMessage || 'Failed to load deck'
@@ -86,6 +92,7 @@ else if (data.value) {
     raw.value = data.value.content
     lastSaved.value = data.value.content
   }
+  draftStamp.value = data.value.stamp ?? null
 }
 
 const statusDisplay = computed(() => STATUS_CONFIG[deckStatus.value as keyof typeof STATUS_CONFIG])
@@ -163,7 +170,7 @@ const shortcutKeymap = keymap.of([
 
 // Image upload (paste / drop): uploads to /api/media and inserts an ::Image
 // directive at the caret/drop position.
-const { imageUploadHandlers } = useEditorImageUpload(writable)
+const { imageUploadHandlers } = useEditorImageUpload(writable, slug)
 
 // Appended by startCollab (yCollab + remote-caret styling + Yjs undo keymap).
 const collabExtensions = shallowRef<Extension[]>([])
@@ -258,14 +265,24 @@ async function startCollab() {
   }
   ytext.observe(syncRaw)
 
-  // Give this client an identity for remote-cursor display.
+  // Remote carets show the account name, with a colour derived from the login
+  // so it stays the same across reloads.
   const palette = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#008080']
+  const login = user.value?.login ?? 'anonyme'
+  const hue = [...login].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
   provider.awareness?.setLocalStateField('user', {
-    name: `Éditeur ${Math.floor(Math.random() * 1000)}`,
-    color: palette[Math.floor(Math.random() * palette.length)],
+    name: user.value?.name || login,
+    color: palette[hue % palette.length],
   })
   provider.awareness?.on('change', () => {
-    peerCount.value = provider.awareness ? provider.awareness.getStates().size : 0
+    const states = provider.awareness?.getStates()
+    peerCount.value = states?.size ?? 0
+    peers.value = states
+      ? [...states.entries()]
+          .filter(([id]) => id !== provider.awareness?.clientID)
+          .map(([, state]) => state.user as { name: string, color: string })
+          .filter(Boolean)
+      : []
   })
 
   // yCollab wires sync + local awareness; yRemoteSelectionsTheme is
@@ -310,7 +327,11 @@ async function save() {
   saveState.value = 'saving'
   try {
     const saved = raw.value
-    await $fetch(`/api/presentations/${slug}`, { method: 'PUT', body: { raw: saved } })
+    const res = await $fetch<{ stamp?: number | null }>(`/api/presentations/${slug}`, {
+      method: 'PUT',
+      body: { raw: saved, stamp: draftStamp.value ?? null },
+    })
+    draftStamp.value = res.stamp ?? null
     lastSaved.value = saved
     loadedFrom.value = 'draft'
     saveState.value = 'saved'
@@ -322,7 +343,10 @@ async function save() {
   }
   catch (e: any) {
     saveState.value = 'error'
-    saveMessage.value = e?.statusMessage || e?.message || 'Échec de l\'enregistrement'
+    // A 409 means someone saved this draft after we loaded it.
+    saveMessage.value = e?.statusCode === 409 || e?.data?.data?.conflict || e?.data?.conflict
+      ? 'Quelqu\'un a enregistré ce brouillon entre-temps : rechargez la page pour repartir de sa version (vos modifications resteraient à reporter).'
+      : e?.statusMessage || e?.message || 'Échec de l\'enregistrement'
   }
 }
 
@@ -335,7 +359,11 @@ async function publish() {
   try {
     // Solo mode: make sure the draft carries the current text before deriving.
     if (!collabEnabled.value) {
-      await $fetch(`/api/presentations/${slug}`, { method: 'PUT', body: { raw: raw.value } })
+      const res = await $fetch<{ stamp?: number | null }>(`/api/presentations/${slug}`, {
+        method: 'PUT',
+        body: { raw: raw.value, stamp: draftStamp.value ?? null },
+      })
+      draftStamp.value = res.stamp ?? null
       lastSaved.value = raw.value
     }
     await $fetch(`/api/presentations/${slug}/publish`, { method: 'POST' })
@@ -428,10 +456,47 @@ async function onMetaSaved() {
         class="text-xs text-muted"
       >{{ loadedFrom === 'published' ? 'Depuis le publié' : 'Depuis le fichier' }}</span>
 
-      <span
-        v-if="collabEnabled"
-        class="text-xs text-muted"
-      >{{ collabStatus === 'connected' ? `Collab (${peerCount})` : collabStatus }}</span>
+      <template v-if="collabEnabled">
+        <UTooltip :text="collabStatus === 'connected' ? 'Édition en temps réel : vos modifications sont partagées instantanément' : 'Connexion au temps réel…'">
+          <span class="flex items-center gap-1.5 text-xs text-muted">
+            <span
+              class="size-1.5 rounded-full"
+              :class="collabStatus === 'connected' ? 'bg-success' : collabStatus === 'disconnected' ? 'bg-error' : 'bg-warning'"
+            />
+            {{ collabStatus === 'connected' ? 'Temps réel' : collabStatus === 'disconnected' ? 'Hors ligne' : 'Connexion…' }}
+          </span>
+        </UTooltip>
+        <span
+          v-for="peer in peers"
+          :key="peer.name + peer.color"
+          class="text-xs font-medium truncate max-w-32"
+          :style="{ color: peer.color }"
+          :title="`${peer.name} édite en ce moment`"
+        >{{ peer.name }}</span>
+        <UButton
+          v-if="collabStatus === 'disconnected'"
+          label="Passer en solo"
+          color="neutral"
+          variant="link"
+          size="xs"
+          :to="`/edit/${slug}?solo`"
+          external
+        />
+      </template>
+      <UTooltip
+        v-else-if="writable"
+        text="Mode solo : enregistrement manuel, protégé contre l'écrasement d'une version plus récente"
+      >
+        <UButton
+          label="Solo"
+          icon="i-lucide-user"
+          color="neutral"
+          variant="link"
+          size="xs"
+          :to="`/edit/${slug}`"
+          external
+        />
+      </UTooltip>
 
       <div class="flex-1" />
 

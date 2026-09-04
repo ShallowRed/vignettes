@@ -9,13 +9,14 @@ import { safeInsertPos } from '~/utils/editor-commands'
  * so the editor page's setup stays about the document, not file I/O. `writable`
  * gates it — a read-only editor ignores pasted/dropped files.
  */
-export function useEditorImageUpload(writable: Ref<boolean>) {
+export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
   const toast = useToast()
 
   async function uploadImage(file: File): Promise<string> {
     const body = new FormData()
     body.append('file', file)
-    const res = await $fetch<{ src: string }>('/api/media', { method: 'POST', body })
+    // The server checks the upload against the actor's rights on this deck.
+    const res = await $fetch<{ src: string }>('/api/media', { method: 'POST', body, query: { deck: slug } })
     return res.src
   }
 
