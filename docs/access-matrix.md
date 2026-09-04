@@ -19,10 +19,10 @@ découvrabilité) ; l'adaptateur HTTP dans `server/utils/access.ts`.
 
 | Axe | Valeurs | Décide de | Ne décide PAS de |
 |---|---|---|---|
-| `status` | `public` / `semi-private` / `private` | qui peut **ouvrir** | — |
+| `status` | `public` / `semi-private` / `private` | qui peut **ouvrir** | rien |
 | `unlisted` | bool | présence au **catalogue** public | l'ouverture (le lien direct marche) |
 | `lifecycle` | `live` / `frozen` / `archived` | présence au catalogue + mode de service (bundle statique) | l'ouverture (une archivée privée reste privée) |
-| `published` | dérivé (`published_version_id`) | s'il existe un contenu servable ; un deck non publié n'est listé qu'aux éditeurs | — |
+| `published` | dérivé (`published_version_id`) | s'il existe un contenu servable ; un deck non publié n'est listé qu'aux éditeurs | rien |
 | `managed` | bool | quelle source fait foi pour les métadonnées (base vs frontmatter) | l'accès lui-même |
 
 ## Sémantique des statuts
@@ -30,7 +30,7 @@ découvrabilité) ; l'adaptateur HTTP dans `server/utils/access.ts`.
 - **public** : ouvert à tous, listé à tous (sauf `unlisted`/archivé).
 - **semi-private** (« Mot de passe ») : ouvert avec le mot de passe du deck
   (cookie 24 h, tentatives limitées à 10/5 min par IP). **Fail-closed** : sans
-  hash défini, personne n'ouvre — l'UI bloque l'enregistrement de cet état sans
+  hash défini, personne n'ouvre ; l'UI bloque l'enregistrement de cet état sans
   mot de passe. Jamais listé au public (atteint par lien).
 - **private** : rôles privilégiés (Éditeur/Owner globaux) et titulaires d'un
   grant. Jamais listé au public.
@@ -63,5 +63,33 @@ uniquement, alors que les métadonnées (statut compris) sont ouvertes aux
 éditeurs. C'est volontaire pour un produit solo : moins de surface d'escalade
 (un éditeur ne peut pas s'ouvrir des accès), moins de cas à tester. Si le
 produit devient réellement multi-tenant, la granularité « owner de projet »
-(gérer les accès de son seul dossier) est la première marche à construire —
-pas avant.
+(gérer les accès de son seul dossier) est la première extension à construire,
+et seulement à ce moment-là.
+
+## Collaborateurs (rôle global `viewer` + grant `editor`)
+
+Un compte invité qui ne détient qu'un grant `editor` (deck ou dossier) doit
+pouvoir travailler comme un éditeur sur ce périmètre. Ce que le serveur lui
+accepte, et que l'UI lui montre :
+
+| Action | Collaborateur (grant `editor`) | Où |
+|---|---|---|
+| Ouvrir l'éditeur, enregistrer, publier | oui, sur le deck du grant | `assertCanEditDeck` |
+| Rejoindre la session temps réel | oui, sur le deck du grant | `canActorEditDeck` (upgrade) |
+| Téléverser une image | oui, via `?deck=<slug>` vérifié contre le grant | `api/media.post.ts` |
+| Créer une présentation | oui, dans un dossier où il a un grant `editor` | `assertCanCreateInProject` |
+| Voir le crayon au catalogue | oui (`canEdit` par deck, `myGrant` par dossier) | `mayEdit` dans `utils/catalog.ts` |
+| Modifier les métadonnées d'accès (statut, mot de passe, dossier) | non : rôle global éditeur/owner | `PATCH /:slug` |
+| Gérer les accès, corbeille, comptes | non : owner | |
+
+## Édition concurrente
+
+- L'éditeur ouvre **en temps réel par défaut** (Yjs via Hocuspocus dans Nitro) :
+  chaque frappe est fusionnée, la présence affiche le nom des pairs.
+  `?solo` désactive la session pour un deck donné (enregistrement manuel ; le
+  lien est proposé quand la connexion au temps réel est perdue).
+- Une sauvegarde solo porte le `stamp` du brouillon chargé ; si quelqu'un a
+  enregistré entre-temps, le serveur refuse (`409`, `data.conflict`) au lieu
+  d'écraser. Un client sans `stamp` reste accepté.
+- Le seed depuis le publié est sérialisé par deck : deux premières connexions
+  simultanées ne dupliquent pas le contenu.
