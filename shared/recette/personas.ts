@@ -25,7 +25,7 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     name: 'Recette Owner',
     role: 'owner',
     label: 'Owner',
-    summary: 'Tout : contenu, métadonnées, accès, comptes, corbeille.',
+    summary: 'Contenu, métadonnées, accès, comptes, corbeille.',
   },
   {
     key: 'editor',
@@ -34,7 +34,7 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     name: 'Recette Éditeur',
     role: 'editor',
     label: 'Éditeur global',
-    summary: 'Édite et publie tout, modifie les métadonnées. Ne gère ni les accès ni les comptes.',
+    summary: 'Édite, publie, modifie les métadonnées. Pas les accès ni les comptes.',
   },
   {
     key: 'viewer',
@@ -43,7 +43,7 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     name: 'Recette Lecteur',
     role: 'viewer',
     label: 'Lecteur sans accès',
-    summary: 'Connecté, aucun accès accordé : voit le catalogue public seulement.',
+    summary: 'Connecté sans accès accordé : catalogue public seulement.',
   },
   {
     key: 'collab',
@@ -52,7 +52,7 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     name: 'Recette Collaborateur',
     role: 'viewer',
     label: 'Collaborateur',
-    summary: 'Lecteur avec la clé maîtresse « éditeur » du dossier partagé, et un accès lecture sur la présentation « Lecture seule ».',
+    summary: 'Clé maîtresse éditeur sur le dossier partagé, lecture sur « Lecture seule ».',
   },
   {
     key: 'expired',
@@ -61,7 +61,7 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     name: 'Recette Accès expiré',
     role: 'viewer',
     label: 'Accès expiré',
-    summary: 'Sa clé maîtresse sur le dossier partagé a expiré hier : à traiter comme un lecteur sans accès.',
+    summary: 'Clé maîtresse expirée hier : équivaut à un lecteur sans accès.',
   },
 ]
 

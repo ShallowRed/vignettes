@@ -48,41 +48,40 @@ const SCENARIOS: { key: string, title: string, steps: Step[] }[] = [
     key: 'anonymous',
     title: 'Visiteur non connecté',
     steps: [
-      { text: 'Le catalogue montre « Recette · Publique » et rien d\'autre du jeu de données.', to: '/' },
-      { text: `« Mot de passe » demande le mot de passe « ${RECETTE_PASSWORD} », puis s'ouvre.`, to: '/slides/recette-mdp' },
-      { text: '« Privée » renvoie vers la page de connexion.', to: '/slides/recette-privee' },
-      { text: '« Non listée » s\'ouvre par son lien direct.', to: '/slides/recette-non-listee' },
-      { text: '« Corbeille » répond « introuvable ».', to: '/slides/recette-corbeille' },
+      { text: 'Catalogue : seule « Publique » apparaît.', to: '/' },
+      { text: `« Mot de passe » demande « ${RECETTE_PASSWORD} » puis s'ouvre.`, to: '/slides/recette-mdp' },
+      { text: '« Privée » renvoie à la connexion.', to: '/slides/recette-privee' },
+      { text: '« Non listée » s\'ouvre par lien direct.', to: '/slides/recette-non-listee' },
+      { text: '« Corbeille » est introuvable.', to: '/slides/recette-corbeille' },
     ],
   },
   {
     key: 'viewer',
     title: 'Lecteur sans accès',
     steps: [
-      { text: 'Même catalogue que le visiteur ; le dossier partagé n\'apparaît pas.', to: '/' },
-      { text: '« Privée » est refusée (accès interdit, pas une demande de connexion).', to: '/slides/recette-privee' },
-      { text: 'Le dossier partagé ouvert par son lien se présente comme vide ou privé.', to: '/projects/recette-partage' },
+      { text: 'Même catalogue que le visiteur.', to: '/' },
+      { text: '« Privée » est refusée (accès interdit).', to: '/slides/recette-privee' },
+      { text: 'Le dossier partagé se présente vide.', to: '/projects/recette-partage' },
     ],
   },
   {
     key: 'collab',
     title: 'Collaborateur',
     steps: [
-      { text: 'Le dossier partagé liste « Publique », « Mot de passe » et « Brouillon », chacune avec le crayon.', to: '/projects/recette-partage' },
-      { text: 'Le bouton « Nouvelle présentation » est présent dans ce dossier, et le choix de dossier se limite à celui-ci.', to: '/projects/recette-partage' },
-      { text: 'L\'éditeur de « Publique » affiche « Temps réel ». Ouvrez-le dans un second onglet : le texte tapé apparaît des deux côtés, avec le nom du pair.', to: '/edit/recette-public' },
-      { text: 'Coller ou déposer une image dans l\'éditeur l\'insère (upload autorisé par l\'accès au dossier).', to: '/edit/recette-public' },
-      { text: '« Mot de passe » s\'ouvre sans demander le mot de passe.', to: '/slides/recette-mdp' },
-      { text: '« Lecture seule » s\'ouvre, mais sa carte n\'a pas de crayon.', to: '/' },
-      { text: '« Privée » est refusée.', to: '/slides/recette-privee' },
-      { text: 'Aucune carte n\'offre la modification des métadonnées ni le partage.', to: '/' },
+      { text: 'Dossier partagé : « Publique », « Mot de passe », « Brouillon », chacune avec le crayon, et le bouton « Nouvelle présentation ».', to: '/projects/recette-partage' },
+      { text: 'Éditeur de « Publique » : « Brouillon synchronisé » ; dans un second onglet, le texte tapé apparaît avec l\'initiale du pair.', to: '/edit/recette-public' },
+      { text: 'Une image collée dans l\'éditeur s\'insère.', to: '/edit/recette-public' },
+      { text: 'Après une modification, « Modifications non publiées » dans l\'en-tête et sur la carte ; « Publier » remet à jour.', to: '/edit/recette-public' },
+      { text: '« Mot de passe » s\'ouvre sans mot de passe.', to: '/slides/recette-mdp' },
+      { text: '« Lecture seule » s\'ouvre, sans crayon sur sa carte.', to: '/' },
+      { text: '« Privée » est refusée ; aucune carte ne propose métadonnées ni partage.', to: '/slides/recette-privee' },
     ],
   },
   {
     key: 'expired',
     title: 'Accès expiré',
     steps: [
-      { text: 'Se comporte comme le lecteur sans accès : dossier partagé invisible, « Publique » seule visible.', to: '/' },
+      { text: 'Comme le lecteur sans accès : « Publique » seule visible.', to: '/' },
       { text: 'L\'éditeur de « Publique » est refusé.', to: '/edit/recette-public' },
     ],
   },
@@ -90,19 +89,17 @@ const SCENARIOS: { key: string, title: string, steps: Step[] }[] = [
     key: 'editor',
     title: 'Éditeur global',
     steps: [
-      { text: 'Tout le jeu de données est listé, « Brouillon » compris, avec crayon et métadonnées.', to: '/' },
+      { text: 'Tout le jeu de données, « Brouillon » compris, avec crayon et métadonnées.', to: '/' },
       { text: 'La corbeille contient « Corbeille », restaurable.', to: '/trash' },
-      { text: 'La page des comptes est refusée.', to: '/users' },
-      { text: 'Les panneaux de partage sont en lecture seule.', to: '/projects/recette-partage' },
+      { text: 'La page des comptes est refusée ; les panneaux de partage sont en lecture seule.', to: '/users' },
     ],
   },
   {
     key: 'owner',
     title: 'Owner',
     steps: [
-      { text: `Les comptes listent les cinq personas et l'invité « ${RECETTE_INVITED_HANDLE} » (badge invité).`, to: '/users' },
-      { text: 'L\'accès au dossier partagé montre le collaborateur (éditeur), l\'accès expiré (expiré) et l\'invité (lecture).', to: '/projects/recette-partage' },
-      { text: 'Modifier un accès en ligne, en ajouter un à la volée par e-mail Google, le retirer.', to: '/projects/recette-partage' },
+      { text: `Comptes : les cinq personas et l'invité « ${RECETTE_INVITED_HANDLE} ».`, to: '/users' },
+      { text: 'Accès du dossier partagé : collaborateur (éditeur), accès expiré (expiré), invité (lecture). Modifier, ajouter par e-mail, retirer.', to: '/projects/recette-partage' },
     ],
   },
 ]
@@ -126,7 +123,7 @@ useHead({ title: 'Recette · Nuxt Slides' })
       <h1 class="text-xl font-semibold text-highlighted">
         Recette
       </h1>
-      <span class="text-sm text-muted">jeu de données et personas de test</span>
+      <span class="text-sm text-muted">jeu de données et comptes de test</span>
     </div>
 
     <UAlert
@@ -134,8 +131,7 @@ useHead({ title: 'Recette · Nuxt Slides' })
       icon="i-lucide-eye-off"
       color="neutral"
       variant="subtle"
-      title="Le kit de recette n'est pas activé sur cet environnement"
-      description="Il n'existe qu'en staging et en développement."
+      title="Kit de recette désactivé sur cet environnement"
     />
 
     <UAlert
@@ -153,7 +149,7 @@ useHead({ title: 'Recette · Nuxt Slides' })
         color="neutral"
         variant="subtle"
         :title="`Connecté en tant que ${data.current.login ?? 'personne'} (${data.current.role})`"
-        :description="`Kit ouvert par ${data.owner}. Le laissez-passer vaut 12 heures dans ce navigateur.`"
+        :description="`Laissez-passer de ${data.owner}, valable 12 heures.`"
         :actions="data.current.login !== data.owner
           ? [{ label: 'Revenir à mon compte', icon: 'i-lucide-undo-2', to: personaLink('me', '/recette'), external: true }]
           : []"
@@ -183,10 +179,8 @@ useHead({ title: 'Recette · Nuxt Slides' })
           </div>
         </template>
         <p class="text-sm text-muted">
-          Deux dossiers (« Dossier partagé », « Dossier privé »), huit présentations couvrant chaque statut
-          (publique, mot de passe, brouillon, privée, non listée, archivée, lecture seule dans Divers, corbeille),
-          cinq comptes et un invité. Tout porte le préfixe <code>recette-</code> ; la réinitialisation ne touche
-          rien d'autre.
+          Deux dossiers, huit présentations (un par statut), cinq comptes, un invité. Préfixe <code>recette-</code> ;
+          la réinitialisation ne touche rien d'autre.
         </p>
       </UCard>
 
@@ -234,7 +228,7 @@ useHead({ title: 'Recette · Nuxt Slides' })
             <div class="flex-1 min-w-0">
               <span class="font-medium text-highlighted">Visiteur non connecté</span>
               <p class="text-sm text-muted">
-                Se déconnecter ; le laissez-passer reste valable pour revenir ici.
+                Le laissez-passer reste valable pour revenir ici.
               </p>
             </div>
             <UButton
