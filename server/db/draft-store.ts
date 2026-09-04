@@ -21,6 +21,11 @@ export function createDraftStore(db: Db): DraftStore {
       return row ? new Uint8Array(row.ydoc) : null
     },
 
+    async stamp(slug) {
+      const row = db.select({ updatedAt: deckDrafts.updatedAt }).from(deckDrafts).where(eq(deckDrafts.deckSlug, slug)).get()
+      return row ? row.updatedAt.getTime() : null
+    },
+
     async save(slug, ydoc) {
       const now = new Date()
       db.insert(decks)

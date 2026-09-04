@@ -33,6 +33,8 @@ export default defineEventHandler(async (event) => {
       title: meta?.managed ? meta.title : (splitFrontmatter(content).data.title as string | undefined),
       from: draft ? 'draft' as const : 'published' as const,
       writable: useDraftStore().isWritable(),
+      // Echoed back by a solo save so a concurrent draft is detected, not clobbered.
+      stamp: await useDraftStore().stamp(slug),
     }
   }
 

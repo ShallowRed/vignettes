@@ -53,6 +53,12 @@ export interface DraftStore {
   isWritable: () => boolean
   load: (slug: string) => Promise<Uint8Array | null>
   save: (slug: string, ydoc: Uint8Array) => Promise<void>
+  /**
+   * Last-save stamp (epoch ms), null when no draft exists. Solo saves send the
+   * stamp they loaded so the server can refuse to overwrite a draft someone
+   * else saved in between, instead of silently losing their work.
+   */
+  stamp: (slug: string) => Promise<number | null>
 }
 
 /** What to write — validated by `prepareDeckWrite`. */

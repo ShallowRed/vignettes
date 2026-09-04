@@ -5,7 +5,9 @@
  * Saving and publishing are distinct acts: this persists the draft (through the
  * `DraftStore` port); `POST /:slug/publish` turns the draft into the served
  * version. Refused while a collab room is open — overwriting the live CRDT with
- * a fresh document would fork it.
+ * a fresh document would fork it. A solo save carries the `stamp` it loaded:
+ * when someone else saved since, it is refused (409, `data.conflict`) rather
+ * than silently replacing their work — last-writer-wins is not acceptable.
  */
 
 import { prepareDeckWrite } from '#shared/deck'
@@ -37,10 +39,29 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { raw: string }' })
   }
 
+  // `stamp` is what the client loaded (null = no draft then). Undefined means a
+  // client that does not participate in the check (kept working).
+  const base = body?.stamp
+  if (base !== undefined) {
+    const current = await drafts.stamp(slug)
+    if (current !== (base ?? null)) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'This draft was saved by someone else since you opened it',
+        data: { conflict: true, stamp: current },
+      })
+    }
+  }
+
   try {
     const prepared = prepareDeckWrite({ slug, raw })
     await drafts.save(prepared.slug, markdownToYDocUpdate(prepared.raw))
-    return { ok: true, key: `draft:${prepared.slug}`, bytes: new TextEncoder().encode(prepared.raw).length }
+    return {
+      ok: true,
+      key: `draft:${prepared.slug}`,
+      bytes: new TextEncoder().encode(prepared.raw).length,
+      stamp: await drafts.stamp(prepared.slug),
+    }
   }
   catch (error: any) {
     const message = error?.message || 'Failed to save draft'
