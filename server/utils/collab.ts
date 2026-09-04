@@ -23,6 +23,11 @@ function isPinnedTo(requestParameters: URLSearchParams | undefined, documentName
 
 let instance: Hocuspocus | undefined
 
+// One seed at a time per deck: Hocuspocus loads a document once, but two clients
+// racing the very first connection could both find an empty text and stack the
+// published markdown twice. Serialising the seed makes the second wait.
+const seeding = new Map<string, Promise<void>>()
+
 /** The draft store backing collab sessions (gates the /collab route). */
 export function useDraftStore() {
   return createDraftStore(useDb())
@@ -60,14 +65,28 @@ export function useCollabServer(): Hocuspocus {
       // the live text, turning one deck into N copies.
       if (ytext.length > 0)
         return document
-      const loaded = await publishedSource.load(documentName)
-      if (!loaded) {
-        console.warn(`[collab] no markdown for "${documentName}"`)
+      const pending = seeding.get(documentName)
+      if (pending) {
+        await pending
         return document
       }
-      if (ytext.length > 0)
-        return document
-      ytext.insert(0, loaded.raw)
+      const seed = (async () => {
+        const loaded = await publishedSource.load(documentName)
+        if (!loaded) {
+          console.warn(`[collab] no markdown for "${documentName}"`)
+          return
+        }
+        if (ytext.length > 0)
+          return
+        ytext.insert(0, loaded.raw)
+      })()
+      seeding.set(documentName, seed)
+      try {
+        await seed
+      }
+      finally {
+        seeding.delete(documentName)
+      }
       return document
     },
 
