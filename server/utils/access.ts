@@ -6,7 +6,7 @@ import { decideAccess, isPrivileged, mayEdit } from '#shared/access'
 import { getActor } from './actor'
 import { verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
-import { useDeckMeta, useGrants } from './sources'
+import { useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
 
 // Semi-private decks are guarded by a shared password, so throttle guesses per
 // client and deck to keep the scrypt check from becoming a brute-force oracle.
@@ -89,6 +89,25 @@ export async function assertCanEditDeck(event: H3Event, slug: string): Promise<A
   // refused) until restored from the corbeille.
   if (await useDeckMeta().isTrashed(slug))
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
+  return actor
+}
+
+/**
+ * 403/401 unless the actor may create a deck in `project`: a privileged role
+ * anywhere, or an `editor` grant on that folder (the master key already lets
+ * them edit every deck in it).
+ */
+export async function assertCanCreateInProject(event: H3Event, project?: string): Promise<Actor> {
+  const actor = await getActor(event)
+  const folderGrant = project && actor.id
+    ? await useProjectPermissionStore().get(project, actor.id).catch(() => undefined) ?? undefined
+    : undefined
+  if (!mayEdit(actor.role, folderGrant)) {
+    throw createError({
+      statusCode: actor.role === 'anonymous' ? 401 : 403,
+      statusMessage: 'Owner or editor role required, or an editor grant on the target folder',
+    })
+  }
   return actor
 }
 

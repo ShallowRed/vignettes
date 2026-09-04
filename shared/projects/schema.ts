@@ -1,3 +1,4 @@
+import type { DeckGrant } from '../access/roles'
 import { z } from 'zod'
 
 // Schema for presentations/projects.yml (the catalog's grouping axis, slug →
@@ -38,6 +39,8 @@ export interface Project extends ProjectMeta {
   slug: string
   /** Privileged only: number of project grants (folder master keys). */
   sharedCount?: number
+  /** The requesting actor's own grant on this folder, when they hold one. */
+  myGrant?: DeckGrant
 }
 
 /**

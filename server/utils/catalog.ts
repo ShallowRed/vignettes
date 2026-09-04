@@ -7,7 +7,7 @@ import { count } from 'drizzle-orm'
 import { deckPermissions, projectPermissions } from '../db/schema'
 import { getActor } from './actor'
 import { useDb } from './db'
-import { projectDirectory, useDeckMeta, useGrants } from './sources'
+import { projectDirectory, useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
 
 /** slug → number of grants, for the privileged "shared" badges (one query). */
 function grantCounts(table: typeof deckPermissions | typeof projectPermissions, column: 'deckSlug' | 'projectSlug'): Map<string, number> {
@@ -91,8 +91,15 @@ export async function listVisibleProjects(event: H3Event): Promise<Project[]> {
     return projects.map(p => ({ ...p, sharedCount: shared.get(p.slug) ?? 0 }))
   }
 
+  // A folder grant applies to the whole folder (creating a deck inside it
+  // included); the UI shows the create button from it.
+  const mine = actor.id
+    ? await useProjectPermissionStore().listForUser(actor.id).catch(() => new Map())
+    : new Map()
   const populated = new Set(
     visible.map(p => p.project).filter((slug): slug is string => !!slug && slug !== UNGROUPED_PROJECT),
   )
-  return projects.filter(p => populated.has(p.slug))
+  return projects
+    .filter(p => populated.has(p.slug) || mine.has(p.slug))
+    .map(p => (mine.has(p.slug) ? { ...p, myGrant: mine.get(p.slug) } : p))
 }

@@ -55,9 +55,16 @@ const editProjectOpen = ref(false)
 const deleteProjectOpen = ref(false)
 const canManageProject = computed(() => isOwner.value && !isUngrouped.value)
 
-// Create a deck straight into this folder (privileged; pre-selects the project).
+// Create a deck straight into this folder: privileged roles anywhere, and a
+// collaborator holding an `editor` grant on THIS folder (the server accepts
+// exactly that). Pre-selects the project.
 const createOpen = ref(false)
 const defaultProject = computed(() => isUngrouped.value ? undefined : projectKey.value)
+const canCreateHere = computed(() =>
+  privileged.value || (!isUngrouped.value && currentProject.value?.myGrant === 'editor'))
+// A collaborator may only file a new deck under folders they can edit.
+const creatableProjects = computed(() =>
+  privileged.value ? projects.value : projects.value.filter(p => p.myGrant === 'editor'))
 
 function onProjectSaved(project: Project) {
   // The edit mutation invalidated the folders query already; a slug change also
@@ -91,7 +98,7 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
       <span class="text-sm text-muted">{{ decks.length }} présentation{{ decks.length > 1 ? 's' : '' }}</span>
       <div class="flex-1" />
       <UButton
-        v-if="privileged"
+        v-if="canCreateHere"
         icon="i-lucide-file-plus-2"
         label="Nouvelle présentation"
         size="sm"
@@ -139,7 +146,7 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
             ? 'Aucune présentation dans ce projet.'
             : 'Si ce dossier vous a été partagé, connectez-vous pour voir son contenu.'"
           variant="naked"
-          :actions="privileged
+          :actions="canCreateHere
             ? [{ label: 'Nouvelle présentation', icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
             : !loggedIn
               ? [{ label: 'Se connecter', icon: 'i-lucide-log-in', to: `/login?redirect=/projects/${routeSlug}` }]
@@ -190,7 +197,7 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
     />
     <DeckCreateModal
       v-model:open="createOpen"
-      :projects="projects"
+      :projects="creatableProjects"
       :default-project="defaultProject"
     />
   </div>

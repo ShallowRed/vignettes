@@ -1,8 +1,7 @@
-import { isPrivileged } from '#shared/access'
 import { isDeckSlug } from '#shared/deck'
 import { markdownToYDocUpdate } from '#shared/deck/ydoc'
 import { z } from 'zod'
-import { getActorRole } from '../utils/actor'
+import { assertCanCreateInProject } from '../utils/access'
 import { useDraftStore } from '../utils/collab'
 import { useDeckMeta } from '../utils/sources'
 
@@ -24,24 +23,19 @@ function starterMarkdown(input: { title: string, theme?: string, project?: strin
 }
 
 /**
- * POST /api/presentations — create a deck entirely in the database: a starter
- * draft plus a managed row in `draft` status. Creation needs a privileged role
- * (per-deck grants only escalate existing decks).
+ * POST /api/presentations: create a deck entirely in the database, a starter
+ * draft plus a managed private row. Privileged roles create anywhere; a
+ * collaborator holding an `editor` grant on a folder may create inside that
+ * folder (`assertCanCreateInProject`).
  */
 export default defineEventHandler(async (event) => {
-  const role = await getActorRole(event)
-  if (!isPrivileged(role)) {
-    throw createError({
-      statusCode: role === 'anonymous' ? 401 : 403,
-      statusMessage: 'Owner or editor role required',
-    })
-  }
-
   const parsed = CreateSchema.safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { slug, title, project?, theme? }' })
   }
   const { slug, title, project, theme } = parsed.data
+
+  await assertCanCreateInProject(event, project)
   if (!isDeckSlug(slug)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid slug (letters, digits, dashes, underscores)' })
   }
