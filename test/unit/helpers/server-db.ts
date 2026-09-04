@@ -66,6 +66,12 @@ export function stubH3Globals() {
   vi.stubGlobal('setResponseStatus', (e: any, code: number) => {
     e.status = code
   })
+  vi.stubGlobal('setUserSession', async (e: any, session: unknown) => {
+    e.sessionSet = session
+  })
+  vi.stubGlobal('sendRedirect', (e: any, url: string) => {
+    e.redirectedTo = url
+  })
 }
 
 /** An H3-ish event authenticated as the given user (role read from the db). */
