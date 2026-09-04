@@ -1,16 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { deckPermissions, decks, users } from '../../server/db/schema'
-import { useDb } from '../../server/utils/db'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDeckMeta, usePermissionStore } from '../../server/utils/sources'
-import { useUserStore } from '../../server/utils/users'
-import { useMigratedTestDb } from './helpers/server-db'
+import { seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The room is authorized at the WebSocket upgrade, from the session cookie. The
-// route wraps its hooks in Nitro's defineWebSocketHandler (identity here) and
-// resolves the actor through getActorFromRequest — swapped so each test names
-// who is knocking. Everything else (grants, trash) runs against a real schema.
-vi.stubGlobal('defineWebSocketHandler', (handler: any) => handler)
-vi.stubGlobal('createError', (e: any) => Object.assign(new Error(e.statusMessage), e))
+// route resolves the actor through getActorFromRequest, swapped so each test
+// names who is knocking; grants and trash run against the real schema.
+stubH3Globals()
+setupServerDb()
 
 const actor: { current: any } = { current: { role: 'anonymous' } }
 vi.mock('../../server/utils/actor', async importOriginal => ({
@@ -21,23 +17,11 @@ vi.mock('../../server/utils/actor', async importOriginal => ({
 const { default: collab } = await import('../../server/routes/collab')
 const knock = (deck: string) => collab.upgrade!(new Request(`http://localhost/collab?deck=${deck}`) as any)
 
-let cleanup: () => void
-
-beforeAll(() => {
-  cleanup = useMigratedTestDb()
-})
-
 beforeEach(async () => {
-  const db = useDb()
-  db.delete(deckPermissions).run()
-  db.delete(decks).run()
-  db.delete(users).run()
   await useDeckMeta().update('deck', { title: 'Deck' })
-  await useUserStore().upsertOnLogin({ id: 2, login: 'collab' }, 'viewer')
+  await seedAccount(2, 'collab', 'viewer')
   actor.current = { id: 2, login: 'collab', role: 'viewer' }
 })
-
-afterAll(() => cleanup())
 
 describe('collab room upgrade', () => {
   it('admits a collaborator holding an editor grant on the deck', async () => {

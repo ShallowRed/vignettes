@@ -1,16 +1,7 @@
 import type { PresentationListItem } from '../../shared/presentations/list-item'
 import { describe, expect, it } from 'vitest'
 import { applyCatalogQuery, countByStatus, groupByProject, UNGROUPED_PROJECT } from '../../shared/presentations/catalog-view'
-
-function item(partial: Partial<PresentationListItem> & { slug: string }): PresentationListItem {
-  return {
-    title: partial.slug,
-    theme: 'dsfr',
-    status: 'public',
-    filename: `${partial.slug}.md`,
-    ...partial,
-  }
-}
+import { listItem as item } from './helpers/fixtures'
 
 const catalog: PresentationListItem[] = [
   item({ slug: 'zeta', title: 'Zeta deck', theme: 'corporate', status: 'public' }),
@@ -57,7 +48,7 @@ describe('applyCatalogQuery', () => {
   it('combines search + filter + sort', () => {
     const big: PresentationListItem[] = [
       item({ slug: 'd1', title: 'Demo one', status: 'public' }),
-      item({ slug: 'd2', title: 'Demo two', status: 'draft' }),
+      item({ slug: 'd2', title: 'Demo two', status: 'private' }),
       item({ slug: 'x', title: 'Other', status: 'public' }),
     ]
     expect(applyCatalogQuery(big, { search: 'demo', statuses: ['public'], sortKey: 'title', sortDir: 'desc' })
@@ -99,7 +90,7 @@ describe('applyCatalogQuery — project filter', () => {
   it('combines project + status filters', () => {
     const mixed: PresentationListItem[] = [
       item({ slug: 'a', project: 'p', status: 'public' }),
-      item({ slug: 'b', project: 'p', status: 'draft' }),
+      item({ slug: 'b', project: 'p', status: 'private' }),
       item({ slug: 'c', project: 'q', status: 'public' }),
     ]
     expect(applyCatalogQuery(mixed, { projects: ['p'], statuses: ['public'] }).map(p => p.slug))

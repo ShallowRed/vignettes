@@ -1,97 +1,80 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions, projects, users } from '../../server/db/schema'
-import { useDb } from '../../server/utils/db'
-import { useProjectPermissionStore } from '../../server/utils/sources'
-import { useUserStore } from '../../server/utils/users'
-import { useMigratedTestDb } from './helpers/server-db'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
+import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
-// Drive the deck write handlers directly: the h3/Nitro auto-imports read from
-// the event object each test builds, and the stores hit a migrated temp file.
-vi.stubGlobal('defineEventHandler', (handler: any) => handler)
-vi.stubGlobal('getUserSession', async (e: any) => e.session ?? null)
-vi.stubGlobal('createError', (e: any) => Object.assign(new Error(e.statusMessage), e))
-vi.stubGlobal('getRouterParam', (e: any, name: string) => e.params?.[name])
-vi.stubGlobal('readBody', async (e: any) => e.body)
-vi.stubGlobal('getQuery', (e: any) => e.query ?? {})
-vi.stubGlobal('setResponseStatus', (e: any, code: number) => {
-  e.status = code
-})
+// Drive the write handlers directly: the h3 auto-imports read from the event
+// object each test builds, and the stores hit a migrated temp file.
+stubH3Globals()
+setupServerDb()
 
 const { default: saveDraft } = await import('../../server/api/presentations/[slug].put')
 const { default: createDeck } = await import('../../server/api/presentations.post')
+const { default: uploadMedia } = await import('../../server/api/media.post')
 
-function asUser(id: number, login: string, over: Record<string, unknown> = {}) {
-  return { session: { user: { id, login } }, ...over }
+const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
+const collab = (over: Record<string, unknown>) => asUser(10, 'collab', over)
+function save(raw: string, stamp?: number | null) {
+  return saveDraft(editor({ params: { slug: 'deck' }, body: stamp === undefined ? { raw } : { raw, stamp } }))
 }
 
-let cleanup: () => void
-
-beforeAll(() => {
-  cleanup = useMigratedTestDb()
-})
-
 beforeEach(async () => {
-  const db = useDb()
-  db.delete(deckPermissions).run()
-  db.delete(projectPermissions).run()
-  db.delete(deckVersions).run()
-  db.delete(deckDrafts).run()
-  db.delete(decks).run()
-  db.delete(projects).run()
-  db.delete(users).run()
-  await useUserStore().upsertOnLogin({ id: 3, login: 'ed' }, 'editor')
-  await useUserStore().upsertOnLogin({ id: 10, login: 'collab' }, 'viewer')
+  await seedAccount(3, 'ed', 'editor')
+  await seedAccount(10, 'collab', 'viewer')
 })
 
-afterAll(() => cleanup())
-
-const DECK = '---\ntitle: Deck\n---\n# v1\n'
-
-describe('pUT /api/presentations/:slug (solo save)', () => {
+describe('saving a draft solo (PUT /api/presentations/:slug)', () => {
   it('refuses a stale stamp instead of overwriting a newer draft', async () => {
     // First save: no draft existed, so the loaded stamp was null.
-    const first = await saveDraft(asUser(3, 'ed', { params: { slug: 'deck' }, body: { raw: DECK, stamp: null } }) as any)
+    const first = await save('# v1', null)
     expect(typeof first.stamp).toBe('number')
-    // A second writer who loaded before that save carries the old (null) stamp.
-    await expect(saveDraft(asUser(3, 'ed', { params: { slug: 'deck' }, body: { raw: '# theirs', stamp: null } }) as any))
-      .rejects
-      .toMatchObject({ statusCode: 409, data: { conflict: true } })
+    // A second writer who loaded before that save still carries null.
+    await expect(save('# theirs', null)).rejects.toMatchObject({ statusCode: 409, data: { conflict: true } })
     // The current stamp goes through.
-    await expect(saveDraft(asUser(3, 'ed', { params: { slug: 'deck' }, body: { raw: '# mine', stamp: first.stamp } }) as any))
-      .resolves
-      .toMatchObject({ ok: true })
+    await expect(save('# mine', first.stamp)).resolves.toMatchObject({ ok: true })
   })
 
   it('keeps accepting a client that sends no stamp at all', async () => {
-    await saveDraft(asUser(3, 'ed', { params: { slug: 'deck' }, body: { raw: DECK, stamp: null } }) as any)
-    await expect(saveDraft(asUser(3, 'ed', { params: { slug: 'deck' }, body: { raw: '# legacy' } }) as any))
-      .resolves
-      .toMatchObject({ ok: true })
+    await save('# v1', null)
+    await expect(save('# legacy')).resolves.toMatchObject({ ok: true })
   })
 })
 
-describe('pOST /api/presentations (create)', () => {
+describe('creating a deck (POST /api/presentations)', () => {
+  const body = (project?: string) => ({ body: { slug: 'new-deck', title: 'Nouveau', project } })
+
   it('lets a collaborator create a deck inside a folder they can edit', async () => {
     await useProjectPermissionStore().set('client', 10, 'editor', 'boss')
-    const event = asUser(10, 'collab', { body: { slug: 'new-deck', title: 'Nouveau', project: 'client' } })
-    await expect(createDeck(event as any)).resolves.toMatchObject({ slug: 'new-deck', project: 'client' })
-    expect((event as any).status).toBe(201)
+    const event = collab(body('client'))
+    await expect(createDeck(event)).resolves.toMatchObject({ slug: 'new-deck', project: 'client' })
+    expect(event.status).toBe(201)
   })
 
   it('refuses the same collaborator outside their folder (403)', async () => {
     await useProjectPermissionStore().set('client', 10, 'editor', 'boss')
-    await expect(createDeck(asUser(10, 'collab', { body: { slug: 'new-deck', title: 'Nouveau', project: 'other' } }) as any))
-      .rejects
-      .toMatchObject({ statusCode: 403 })
-    await expect(createDeck(asUser(10, 'collab', { body: { slug: 'new-deck', title: 'Nouveau' } }) as any))
-      .rejects
-      .toMatchObject({ statusCode: 403 })
+    await expect(createDeck(collab(body('other')))).rejects.toMatchObject({ statusCode: 403 })
+    await expect(createDeck(collab(body()))).rejects.toMatchObject({ statusCode: 403 })
   })
 
   it('refuses a read-only folder grant (403)', async () => {
     await useProjectPermissionStore().set('client', 10, 'viewer', 'boss')
-    await expect(createDeck(asUser(10, 'collab', { body: { slug: 'new-deck', title: 'Nouveau', project: 'client' } }) as any))
-      .rejects
-      .toMatchObject({ statusCode: 403 })
+    await expect(createDeck(collab(body('client')))).rejects.toMatchObject({ statusCode: 403 })
+  })
+})
+
+describe('uploading an image (POST /api/media)', () => {
+  it('requires a session (401) and, for a non-privileged account, a deck to check (403)', async () => {
+    await expect(uploadMedia(anon())).rejects.toMatchObject({ statusCode: 401 })
+    await expect(uploadMedia(collab({}))).rejects.toMatchObject({ statusCode: 403 })
+  })
+
+  it('refuses a read-only grant on the named deck (403)', async () => {
+    await usePermissionStore().set('deck', 10, 'viewer', 'boss')
+    await expect(uploadMedia(collab({ query: { deck: 'deck' } }))).rejects.toMatchObject({ statusCode: 403 })
+  })
+
+  it('lets an editor grant through to the upload itself', async () => {
+    await usePermissionStore().set('deck', 10, 'editor', 'boss')
+    // Past the guard, the handler complains about the (absent) file, not the right.
+    await expect(uploadMedia(collab({ query: { deck: 'deck' } }))).rejects.toMatchObject({ statusCode: 400 })
   })
 })

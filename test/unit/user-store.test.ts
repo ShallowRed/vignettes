@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { createPermissionStore } from '../../server/db/permission-store'
 import { users } from '../../server/db/schema'
 import { createUserStore } from '../../server/db/user-store'
 import { freshDb } from './helpers/db'
@@ -170,7 +171,6 @@ describe('user store', () => {
 
   describe('remove', () => {
     it('deletes the account with every grant it holds', async () => {
-      const { createPermissionStore } = await import('../../server/db/permission-store')
       const account = await store.invite({ provider: 'google', handle: 'gone@example.com' })
       await createPermissionStore(db).set('deck', account.id, 'viewer', 'boss')
       await expect(store.remove(account.id)).resolves.toBe(true)

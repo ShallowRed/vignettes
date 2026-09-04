@@ -2,20 +2,7 @@ import type { PresentationListItem } from '../../shared/presentations/list-item'
 import type { Project } from '../../shared/projects/schema'
 import { describe, expect, it } from 'vitest'
 import { buildCatalogFolders, UNGROUPED_FOLDER_SLUG } from '../../shared/presentations/folder-view'
-
-function item(partial: Partial<PresentationListItem> & { slug: string }): PresentationListItem {
-  return {
-    title: partial.slug,
-    theme: 'dsfr',
-    status: 'public',
-    filename: `${partial.slug}.md`,
-    ...partial,
-  }
-}
-
-function project(slug: string, extra: Partial<Project> = {}): Project {
-  return { slug, title: extra.title ?? slug, ...extra }
-}
+import { listItem as item, project } from './helpers/fixtures'
 
 const decks: PresentationListItem[] = [
   item({ slug: 'r1', title: 'RSE one', project: 'portail-rse', theme: 'dsfr' }),
