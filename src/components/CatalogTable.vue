@@ -269,7 +269,7 @@ function clearSelection() {
         <span
           v-else
           class="text-dimmed"
-        >—</span>
+        >Divers</span>
       </template>
 
       <template #theme-cell="{ row }">
