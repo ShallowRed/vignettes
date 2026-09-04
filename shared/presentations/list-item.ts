@@ -24,6 +24,8 @@ export interface PresentationListItem {
    * which must not follow the global role alone.
    */
   canEdit?: boolean
+  /** For whoever may edit: the draft differs from the published version. */
+  unpublishedChanges?: boolean
   /** Privileged only: a semi-private deck without one is unreachable (fail-closed). */
   hasPassword?: boolean
   /** Privileged only: number of per-deck grants (folder master keys not included). */

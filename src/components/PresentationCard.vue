@@ -120,6 +120,10 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           <span v-if="!minimal && presentation.unlisted">Non répertoriée</span>
           <span v-if="!minimal && admin && presentation.published === false">Non publié</span>
           <span
+            v-if="!minimal && canEdit && presentation.unpublishedChanges"
+            class="text-warning"
+          >Modifications non publiées</span>
+          <span
             v-if="!minimal && admin && presentation.sharedCount"
             class="inline-flex items-center gap-0.5"
             :title="`${presentation.sharedCount} accès partagé${presentation.sharedCount > 1 ? 's' : ''}`"

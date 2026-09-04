@@ -2,12 +2,14 @@ import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
 import { canList, isPrivileged, mayEdit } from '#shared/access'
+import { yDocUpdateToMarkdown } from '#shared/deck/ydoc'
 import { UNGROUPED_PROJECT } from '#shared/presentations'
-import { count } from 'drizzle-orm'
-import { deckPermissions, projectPermissions } from '../db/schema'
+import { count, eq, gte } from 'drizzle-orm'
+import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from '../db/schema'
 import { getActor } from './actor'
+import { useDraftStore } from './collab'
 import { useDb } from './db'
-import { projectDirectory, useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
+import { projectDirectory, useDbContent, useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
 
 /** slug → number of grants, for the privileged "shared" badges (one query). */
 function grantCounts(table: typeof deckPermissions | typeof projectPermissions, column: 'deckSlug' | 'projectSlug'): Map<string, number> {
@@ -17,6 +19,26 @@ function grantCounts(table: typeof deckPermissions | typeof projectPermissions, 
   return new Map(
     useDb().select({ slug: col, n: count() }).from(table).groupBy(col).all().map(r => [r.slug, r.n]),
   )
+}
+
+/**
+ * Decks whose draft holds changes the published version does not. Drafts saved
+ * since the publish are the candidates (one query); a text comparison confirms
+ * them, because a draft seeded from the published text is newer without differing.
+ */
+async function unpublishedChanges(candidates: Set<string>): Promise<Set<string>> {
+  if (candidates.size === 0)
+    return new Set()
+  const rows = useDb().select({ slug: deckDrafts.deckSlug }).from(deckDrafts).innerJoin(decks, eq(decks.slug, deckDrafts.deckSlug)).innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId)).where(gte(deckDrafts.updatedAt, deckVersions.publishedAt)).all()
+  const changed = new Set<string>()
+  for (const { slug } of rows) {
+    if (!candidates.has(slug))
+      continue
+    const [draft, published] = await Promise.all([useDraftStore().load(slug), useDbContent().source.load(slug)])
+    if (draft && published && yDocUpdateToMarkdown(draft) !== published.raw)
+      changed.add(slug)
+  }
+  return changed
 }
 
 /**
@@ -39,6 +61,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   // The same rule as assertCanEditDeck, so the card's pencil matches what the
   // server accepts.
   const canEdit = (slug: string) => mayEdit(actor.role, grants.get(slug))
+  const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d.slug)).map(d => d.slug)))
 
   return decks
     // A deck with no published version has nothing to serve: only those who can
@@ -55,6 +78,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       alias: deck.alias,
       lifecycle: deck.lifecycle,
       ...(canEdit(deck.slug) ? { canEdit: true } : {}),
+      ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),
       ...(privileged
         ? {
             published: deck.published,

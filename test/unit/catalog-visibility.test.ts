@@ -2,8 +2,10 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { decks } from '../../server/db/schema'
 import { listVisiblePresentations, listVisibleProjects } from '../../server/utils/catalog'
+import { useDraftStore } from '../../server/utils/collab'
 import { useDb } from '../../server/utils/db'
-import { useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
+import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
+import { markdownToYDocUpdate } from '../../shared/deck/ydoc'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The catalog reports capability, not role: an `editor` grant is what the server
@@ -53,5 +55,27 @@ describe('listVisibleProjects', () => {
     await useProjectPermissionStore().set('client', 10, 'editor', 'boss')
     const folders = await listVisibleProjects(collab())
     expect(folders.find(p => p.slug === 'client')?.myGrant).toBe('editor')
+  })
+})
+
+describe('unpublished changes', () => {
+  const DECK = '---\ntitle: Live\nstatus: public\n---\n# v1\n'
+
+  it('flags, for whoever may edit, a draft that differs from the published text', async () => {
+    await seedAccount(3, 'ed', 'editor')
+    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
+    await useDraftStore().save('live', markdownToYDocUpdate(DECK.replace('# v1', '# v2')))
+    const listed = await listVisiblePresentations(asUser(3, 'ed'))
+    expect(listed.find(d => d.slug === 'live')?.unpublishedChanges).toBe(true)
+    // A visitor never learns about drafts.
+    expect((await listVisiblePresentations(anon())).find(d => d.slug === 'live')?.unpublishedChanges).toBeUndefined()
+  })
+
+  it('stays quiet when the draft only repeats the published text', async () => {
+    await seedAccount(3, 'ed', 'editor')
+    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
+    await useDraftStore().save('live', markdownToYDocUpdate(DECK))
+    const listed = await listVisiblePresentations(asUser(3, 'ed'))
+    expect(listed.find(d => d.slug === 'live')?.unpublishedChanges).toBeUndefined()
   })
 })
