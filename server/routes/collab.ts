@@ -29,7 +29,7 @@ function toWebSocketLike(peer: Peer) {
  * Hocuspocus handshake reveals the document name. Authorization mirrors the HTTP
  * edit rule: a privileged role, or an `editor` grant on THIS deck — so a deck can
  * be shared with an outside collaborator without making them a global editor.
- * `collab.ts` (server/utils) then pins the socket to that same deck.
+ * `collab.ts` (server/utils) then holds every hook to that same deck.
  */
 export default defineWebSocketHandler({
   async upgrade(request) {
@@ -52,7 +52,10 @@ export default defineWebSocketHandler({
   },
 
   open(peer) {
-    connections.set(peer.id, useCollabServer().handleConnection(toWebSocketLike(peer), peer.request))
+    // The deck the upgrade authorized becomes the connection context that every
+    // Hocuspocus hook sees (`CollabContext`).
+    const deck = new URL(peer.request.url).searchParams.get('deck') ?? ''
+    connections.set(peer.id, useCollabServer().handleConnection(toWebSocketLike(peer), peer.request, { deck }))
   },
 
   message(peer, message) {

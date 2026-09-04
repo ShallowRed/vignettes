@@ -9,15 +9,22 @@ import { publishedSource } from './sources'
 const TEXT_FIELD = 'codemirror'
 
 /**
- * The socket is authorized for ONE deck at upgrade time (`/collab?deck=<slug>`).
- * Hocuspocus lets a client name any document afterwards, so every document hook
- * re-checks that the requested name is the deck the connection was granted.
+ * The socket is authorized for ONE deck at upgrade time (`/collab?deck=<slug>`);
+ * the route hands that deck to Hocuspocus as the connection context. Hocuspocus
+ * lets a client name any document afterwards, so the load and message hooks
+ * check the requested name against the pinned deck. The store hook does not:
+ * only updates that passed the message check reach a document, and the earlier
+ * store-time check (on request parameters the hook never receives) silently
+ * dropped every save.
  */
-function isPinnedTo(requestParameters: URLSearchParams | undefined, documentName: string): boolean {
-  const pinned = requestParameters?.get('deck')
-  if (pinned === documentName)
+export interface CollabContext {
+  deck: string
+}
+
+export function isPinnedTo(context: CollabContext | undefined, documentName: string): boolean {
+  if (context?.deck === documentName)
     return true
-  console.warn(`[collab] refused "${documentName}" on a socket pinned to "${pinned}"`)
+  console.warn(`[collab] refused "${documentName}" on a socket pinned to "${context?.deck}"`)
   return false
 }
 
@@ -43,13 +50,13 @@ export function useCollabServer(): Hocuspocus {
   instance ??= new Hocuspocus({
     name: 'nuxt-slides-collab',
 
-    async onLoadDocument({ documentName, document, requestParameters }) {
+    async onLoadDocument({ documentName, document, context }) {
       if (!isDeckSlug(documentName)) {
         console.warn(`[collab] invalid document name "${documentName}"`)
         return document
       }
       // Serve no content to a document the socket wasn't authorized for.
-      if (!isPinnedTo(requestParameters, documentName))
+      if (!isPinnedTo(context, documentName))
         return document
 
       const draft = await useDraftStore().load(documentName)
@@ -90,11 +97,16 @@ export function useCollabServer(): Hocuspocus {
       return document
     },
 
-    async onStoreDocument({ documentName, document, requestParameters }) {
+    // A document is loaded once and then shared by every connection that names
+    // it, so the load-time check alone would let a socket pinned to deck A push
+    // updates into an already-open deck B. Throwing here closes that socket.
+    async beforeHandleMessage({ documentName, context }) {
+      if (!isPinnedTo(context, documentName))
+        throw new Error(`Socket not authorized for "${documentName}"`)
+    },
+
+    async onStoreDocument({ documentName, document }) {
       if (!isDeckSlug(documentName))
-        return
-      // Never persist through a socket authorized for another deck.
-      if (!isPinnedTo(requestParameters, documentName))
         return
       await useDraftStore().save(documentName, Y.encodeStateAsUpdate(document))
     },
