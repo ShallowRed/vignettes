@@ -91,5 +91,10 @@ accepte, et que l'UI lui montre :
 - Une sauvegarde solo porte le `stamp` du brouillon chargé ; si quelqu'un a
   enregistré entre-temps, le serveur refuse (`409`, `data.conflict`) au lieu
   d'écraser. Un client sans `stamp` reste accepté.
+- Le brouillon et le publié sont deux textes. L'éditeur affiche « Brouillon
+  synchronisé » (temps réel), puis « Modifications non publiées » ou « Publié à
+  jour » selon que le brouillon diffère du publié ; le catalogue porte le même
+  signal sur la carte pour qui peut éditer. `/slides/<slug>?draft` montre le
+  brouillon tel qu'il sera publié, réservé à qui peut éditer.
 - Le seed depuis le publié est sérialisé par deck : deux premières connexions
   simultanées ne dupliquent pas le contenu.
