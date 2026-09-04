@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
+import { useDbContent, usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // Drive the write handlers directly: the h3 auto-imports read from the event
@@ -10,6 +10,7 @@ setupServerDb()
 const { default: saveDraft } = await import('../../server/api/presentations/[slug].put')
 const { default: createDeck } = await import('../../server/api/presentations.post')
 const { default: uploadMedia } = await import('../../server/api/media.post')
+const { default: loadDeck } = await import('../../server/api/presentations/[slug].get')
 
 const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
 const collab = (over: Record<string, unknown>) => asUser(10, 'collab', over)
@@ -76,5 +77,22 @@ describe('uploading an image (POST /api/media)', () => {
     await usePermissionStore().set('deck', 10, 'editor', 'boss')
     // Past the guard, the handler complains about the (absent) file, not the right.
     await expect(uploadMedia(collab({ query: { deck: 'deck' } }))).rejects.toMatchObject({ statusCode: 400 })
+  })
+})
+
+describe('loading a deck for edit (GET /api/presentations/:slug?draft)', () => {
+  it('returns the draft with the published text and date alongside', async () => {
+    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
+    await save('# draft', null)
+    const loaded = await loadDeck(editor({ params: { slug: 'deck' }, query: { draft: '' } }))
+    expect(loaded).toMatchObject({ content: '# draft', from: 'draft', publishedRaw: '# published' })
+    expect(typeof loaded.publishedAt).toBe('number')
+  })
+
+  it('reports a never-published deck as such', async () => {
+    await save('# draft', null)
+    await expect(loadDeck(editor({ params: { slug: 'deck' }, query: { draft: '' } })))
+      .resolves
+      .toMatchObject({ publishedRaw: null, publishedAt: null })
   })
 })

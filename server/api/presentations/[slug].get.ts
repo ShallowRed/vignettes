@@ -9,8 +9,8 @@ import { useDbContent, useDeckMeta } from '../../utils/sources'
  * database row is the status/access truth (admin edits win over the served
  * frontmatter).
  *
- * `?draft` (editors only) loads the working draft first instead — the editor
- * must show what "Enregistrer" saved, not the published version.
+ * `?draft` (editors only) loads the working draft instead, with the published
+ * text alongside so the editor can tell which changes the visitors do not see yet.
  */
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
@@ -20,8 +20,9 @@ export default defineEventHandler(async (event) => {
 
   if ('draft' in getQuery(event)) {
     await assertCanEditDeck(event, slug)
+    const store = useDbContent()
     const draft = await useDraftStore().load(slug).then(update => update && yDocUpdateToMarkdown(update))
-    const published = draft ? null : await useDbContent().source.load(slug)
+    const published = await store.source.load(slug)
     const content = draft ?? published?.raw
     if (!content) {
       throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
@@ -35,6 +36,8 @@ export default defineEventHandler(async (event) => {
       writable: useDraftStore().isWritable(),
       // Echoed back by a solo save so a concurrent draft is detected, not clobbered.
       stamp: await useDraftStore().stamp(slug),
+      publishedRaw: published?.raw ?? null,
+      publishedAt: (await store.publishedAt(slug))?.getTime() ?? null,
     }
   }
 

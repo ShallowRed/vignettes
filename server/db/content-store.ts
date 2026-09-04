@@ -12,8 +12,18 @@ type Db = BetterSQLite3Database<Record<string, unknown>>
  * deck row repointed and its catalog/access axes re-derived from the frontmatter
  * (single derivation chain — no second truth to drift).
  */
-export function createDbContent(db: Db): { source: ContentSource, writer: ContentWriter } {
+export function createDbContent(db: Db): { source: ContentSource, writer: ContentWriter, publishedAt: (slug: string) => Promise<Date | null> } {
   return {
+    /** When the served version was published; null when the deck has none. */
+    async publishedAt(slug) {
+      const row = db.select({ at: deckVersions.publishedAt })
+        .from(decks)
+        .innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId))
+        .where(eq(decks.slug, slug))
+        .get()
+      return row?.at ?? null
+    },
+
     source: {
       id: 'db',
       async load(slug) {
