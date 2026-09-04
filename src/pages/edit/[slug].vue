@@ -114,6 +114,13 @@ const collabDotClass = computed(() =>
   collabStatus.value === 'disconnected' ? 'bg-error' : collabStatus.value === 'connected' && docSynced.value && synced.value ? 'bg-success' : 'bg-warning')
 const COLLAB_HINT = 'Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.'
 
+/** Re-read the published state after someone (maybe this client) published. */
+async function refreshPublished() {
+  const res = await $fetch<{ publishedRaw?: string | null, publishedAt?: number | null }>(`/api/presentations/${slug}`, { query: { draft: '' } })
+  publishedRaw.value = res.publishedRaw ?? null
+  publishedAt.value = res.publishedAt ?? null
+}
+
 function initials(name: string): string {
   return name.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
 }
@@ -305,6 +312,15 @@ async function startCollab() {
   // claiming they are saved.
   provider.on('unsyncedChanges', (e: { number: number }) => {
     synced.value = e.number === 0
+  })
+  // The publish endpoint broadcasts to the room; every client refreshes its
+  // publication state instead of keeping the one it loaded.
+  provider.on('stateless', ({ payload }: { payload: string }) => {
+    try {
+      if (JSON.parse(payload)?.type === 'published')
+        void refreshPublished()
+    }
+    catch {}
   })
 
   const ytext = ydoc.getText('codemirror')
@@ -499,22 +515,73 @@ async function onMetaSaved() {
       </div>
 
       <!-- Editor state taxonomies stripped to plain text (clean base). -->
-      <span
-        v-if="statusDisplay"
-        class="text-xs text-muted"
-      >{{ statusDisplay.label }}</span>
-      <template v-if="collabEnabled">
-        <UTooltip :text="COLLAB_HINT">
-          <span class="flex items-center gap-1.5 text-xs text-muted">
+      <!-- State cluster: each slot keeps a minimum width so a label that changes
+           length does not push its neighbours; the presence avatars come last,
+           the only slot that grows. -->
+      <div class="hidden sm:flex items-center gap-4 text-xs whitespace-nowrap">
+        <span
+          v-if="statusDisplay"
+          class="text-muted"
+        >{{ statusDisplay.label }}</span>
+
+        <UTooltip
+          v-if="collabEnabled"
+          :text="COLLAB_HINT"
+        >
+          <span class="flex items-center gap-1.5 min-w-40 text-muted">
             <span
-              class="size-1.5 rounded-full"
+              class="size-1.5 shrink-0 rounded-full"
               :class="collabDotClass"
             />
             {{ collabLabel }}
+            <UButton
+              v-if="collabStatus === 'disconnected'"
+              label="Passer en solo"
+              color="neutral"
+              variant="link"
+              size="xs"
+              :to="`/edit/${slug}?solo`"
+              external
+            />
           </span>
         </UTooltip>
+        <UTooltip
+          v-else-if="writable"
+          text="Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente"
+        >
+          <span class="flex items-center min-w-40">
+            <UButton
+              label="Solo"
+              icon="i-lucide-user"
+              color="neutral"
+              variant="link"
+              size="xs"
+              :to="`/edit/${slug}`"
+              external
+            />
+          </span>
+        </UTooltip>
+
+        <UTooltip
+          v-if="writable"
+          :text="publicationHint"
+        >
+          <span
+            class="flex items-center gap-1.5 min-w-44"
+            :class="unpublished ? 'text-warning' : 'text-muted'"
+          >
+            <template v-if="unpublished !== null">
+              <span
+                class="size-1.5 shrink-0 rounded-full"
+                :class="unpublished ? 'bg-warning' : 'bg-success'"
+              />
+              {{ publicationLabel }}
+            </template>
+          </span>
+        </UTooltip>
+
         <div
-          v-if="peers.length"
+          v-if="collabEnabled"
           class="flex items-center -space-x-1"
         >
           <span
@@ -525,46 +592,7 @@ async function onMetaSaved() {
             :title="`${peer.name} édite en ce moment`"
           >{{ initials(peer.name) }}</span>
         </div>
-        <UButton
-          v-if="collabStatus === 'disconnected'"
-          label="Passer en solo"
-          color="neutral"
-          variant="link"
-          size="xs"
-          :to="`/edit/${slug}?solo`"
-          external
-        />
-      </template>
-      <UTooltip
-        v-else-if="writable"
-        text="Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente"
-      >
-        <UButton
-          label="Solo"
-          icon="i-lucide-user"
-          color="neutral"
-          variant="link"
-          size="xs"
-          :to="`/edit/${slug}`"
-          external
-        />
-      </UTooltip>
-
-      <UTooltip
-        v-if="writable && unpublished !== null"
-        :text="publicationHint"
-      >
-        <span
-          class="flex items-center gap-1.5 text-xs"
-          :class="unpublished ? 'text-warning' : 'text-muted'"
-        >
-          <span
-            class="size-1.5 rounded-full"
-            :class="unpublished ? 'bg-warning' : 'bg-success'"
-          />
-          {{ publicationLabel }}
-        </span>
-      </UTooltip>
+      </div>
 
       <div class="flex-1" />
 
@@ -751,3 +779,14 @@ async function onMetaSaved() {
     />
   </div>
 </template>
+
+<style>
+/* A remote caret pulses gently so a peer's activity reads at a glance. */
+@keyframes y-caret-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.cm-ySelectionCaret {
+  animation: y-caret-pulse 1.1s ease-in-out infinite;
+}
+</style>
