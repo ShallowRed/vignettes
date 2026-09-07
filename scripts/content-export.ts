@@ -56,6 +56,9 @@ const rows = db.prepare(`
   from decks d
   left join deck_versions v on v.id = d.published_version_id
   where d.managed = 1
+    and d.deleted_at is null
+    -- the staging acceptance data set is test data, never part of the archive
+    and d.slug not like 'recette-%'
   order by d.slug
 `).all() as Row[]
 
