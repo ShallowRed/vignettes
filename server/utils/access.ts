@@ -4,6 +4,7 @@ import type { Actor } from './actor'
 import process from 'node:process'
 import { decideAccess, isPrivileged, mayEdit } from '#shared/access'
 import { getActor } from './actor'
+import { contentTokenActor } from './content-token'
 import { verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
 import { useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
@@ -76,9 +77,13 @@ export async function canActorEditDeck(actor: Actor, slug: string): Promise<bool
   return mayEdit(actor.role, await resolveGrant(actor, slug))
 }
 
-/** 403/401 unless the actor may edit this deck (privileged role or editor grant). */
-export async function assertCanEditDeck(event: H3Event, slug: string): Promise<Actor> {
-  const actor = await getActor(event)
+/**
+ * 403/401 unless the actor may edit this deck (privileged role or editor grant).
+ * `contentToken` lets the route accept the content token in place of a session:
+ * only the markdown write path opts in (see `content-token.ts`).
+ */
+export async function assertCanEditDeck(event: H3Event, slug: string, opts: { contentToken?: boolean } = {}): Promise<Actor> {
+  const actor = (opts.contentToken ? contentTokenActor(event) : null) ?? await getActor(event)
   if (!await canActorEditDeck(actor, slug)) {
     throw createError({
       statusCode: actor.role === 'anonymous' ? 401 : 403,

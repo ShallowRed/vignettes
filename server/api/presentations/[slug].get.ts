@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if ('draft' in getQuery(event)) {
-    await assertCanEditDeck(event, slug)
+    await assertCanEditDeck(event, slug, { contentToken: true })
     const store = useDbContent()
     const draft = await useDraftStore().load(slug).then(update => update && yDocUpdateToMarkdown(update))
     const published = await store.source.load(slug)

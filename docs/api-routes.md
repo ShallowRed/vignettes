@@ -213,6 +213,16 @@ Clears the user session (`clearUserSession`) and redirects to `/`.
 
 ---
 
+## Content token (`server/utils/content-token.ts`)
+
+`NUXT_CONTENT_TOKEN` lets a script publish a deck from its markdown without a browser
+session: `Authorization: Bearer <token>` is accepted, as an `editor` actor named
+`content-token`, by the three routes of the markdown write path only — `PUT
+/api/presentations/[slug]` (draft), `POST /api/presentations/[slug]/publish`, `GET
+/api/presentations/[slug]?draft`. Every other guard ignores it: no upload, no catalog
+administration, no user or grant management. Unset, no bearer is ever accepted. Used by
+`scripts/content-import.ts --remote` (`mise run content:republish:prod`).
+
 ## SSG / Prerendering
 
 Behavior depends on the Nitro preset (`nuxt.config.ts`, `isNodeServer = NITRO_PRESET === node_server`).

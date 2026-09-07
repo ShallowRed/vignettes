@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
 
-  await assertCanEditDeck(event, slug)
+  await assertCanEditDeck(event, slug, { contentToken: true })
 
   const drafts = useDraftStore()
   if (!drafts.isWritable()) {

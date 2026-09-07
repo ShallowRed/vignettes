@@ -113,6 +113,21 @@ depends = ["install"]
 usage = 'arg "<slugs>"'
 run = "node scripts/content-import.ts --apply --republish=\"$usage_slugs\""
 
+[tasks."content:republish:prod:plan"]
+description = "What content:republish:prod would publish on slides.example.org (dry run): mise run content:republish:prod:plan -- <slugs>"
+depends = ["install"]
+usage = 'arg "<slugs>"'
+run = "infisical run --env=prod -- node scripts/content-import.ts --remote=https://slides.example.org --republish=\"$usage_slugs\""
+
+[tasks."content:republish:prod"]
+description = "Republish decks on slides.example.org from their stub, through the app with the content token from Infisical: mise run content:republish:prod -- <slugs> [--force]"
+depends = ["install"]
+usage = '''
+arg "<slugs>"
+flag "-f --force" help="Overwrite a draft edited online and not yet published"
+'''
+run = "infisical run --env=prod -- node scripts/content-import.ts --apply --remote=https://slides.example.org --republish=\"$usage_slugs\" ${usage_force:+--force}"
+
 [tasks.test]
 description = "Unit and golden tests"
 depends = ["install"]

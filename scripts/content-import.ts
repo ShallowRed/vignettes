@@ -17,6 +17,11 @@
  *   node scripts/content-import.ts --apply          # write
  *   node scripts/content-import.ts --db=/path/to.db # target another database
  *
+ * `--remote=<url>` sends `--republish` decks to a running instance instead of a
+ * database file, through the draft-save and publish routes, authenticated with
+ * `NUXT_CONTENT_TOKEN` (the same value the instance was started with). A deck
+ * edited online and not yet published is refused unless `--force`.
+ *
  * `--republish=<slug>[,<slug>]` takes the listed decks back from their stub even
  * when the database owns them: a new published version is written from the
  * file and the row's title and theme follow it; status, unlisted, password and
@@ -28,6 +33,7 @@ import { join } from 'node:path'
 import process from 'node:process'
 import Database from 'better-sqlite3'
 import { load as parseYaml } from 'js-yaml'
+import { applyRemoteRepublish, planRemoteRepublish } from './lib/remote-republish.ts'
 
 const ROOT = process.cwd()
 const CONTENT_DIR = join(ROOT, 'presentations')
@@ -38,6 +44,8 @@ const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5)
   ?? process.env.NUXT_DB_PATH
   ?? join(ROOT, '.data', 'slides.db')
 const REPUBLISH = new Set((args.find(a => a.startsWith('--republish='))?.slice(12) ?? '').split(',').filter(Boolean))
+const REMOTE = args.find(a => a.startsWith('--remote='))?.slice(9)
+const FORCE = args.includes('--force')
 
 const now = () => Math.floor(Date.now() / 1000)
 
@@ -105,6 +113,56 @@ const stubs = [
   // `archived/` holds frozen/archived bodies; they are decks too, reached via the registry.
   ...listStubs(join(CONTENT_DIR, 'archived')),
 ]
+
+// ── Remote ──────────────────────────────────────────────────────────────────
+
+if (REMOTE) {
+  if (REPUBLISH.size === 0) {
+    console.error('--remote demande --republish=<slug>[,<slug>] : seule la republication va vers une instance.')
+    process.exit(1)
+  }
+  const token = process.env.NUXT_CONTENT_TOKEN?.trim()
+  if (!token) {
+    console.error('NUXT_CONTENT_TOKEN absent : le jeton de contenu de l\'instance est requis (infisical run --env=prod -- …).')
+    process.exit(1)
+  }
+  try {
+    const deps = { remote: REMOTE, token, fetch: globalThis.fetch }
+    const wanted = [...REPUBLISH]
+    const found = wanted.map(slug => stubs.find(st => st.slug === slug)).filter(Boolean) as { slug: string, path: string }[]
+    for (const slug of wanted) {
+      if (!found.some(st => st.slug === slug))
+        console.log(`⚠ ${slug} : aucun stub de ce nom dans presentations/`)
+    }
+    const items = await planRemoteRepublish(deps, found.map(st => ({ slug: st.slug, raw: readFileSync(st.path, 'utf8') })), { force: FORCE })
+
+    console.log(`instance : ${REMOTE}`)
+    console.log(`mode     : ${APPLY ? 'APPLY (écriture distante)' : 'DRY-RUN (aucune écriture)'}`)
+    const label: Record<string, string> = {
+      'republish': 'à republier',
+      'create': 'à créer (accès dérivés du frontmatter)',
+      'identical': 'identique à la version publiée',
+      'unpublished-draft': 'REFUSÉ : brouillon édité en ligne et non publié (--force pour écraser)',
+    }
+    for (const item of items)
+      console.log(`  · ${item.slug} — ${label[item.action]} — ${item.title ?? item.slug}, ${item.slides} slides`)
+
+    if (!APPLY) {
+      console.log('\nDry-run terminé — rien n\'a été écrit. Relancer avec --apply pour publier.')
+      process.exit(0)
+    }
+    const results = await applyRemoteRepublish(deps, items)
+    for (const r of results)
+      console.log(`✅ ${r.slug} publié (${r.bytes} octets)`)
+    if (results.length === 0)
+      console.log('Rien à publier.')
+    process.exit(0)
+  }
+  catch (error: any) {
+    console.error(`✖ ${error?.status ? error.message : `${REMOTE} injoignable : ${error?.cause?.message ?? error?.message ?? error}`}`)
+    process.exit(1)
+  }
+}
 
 // ── Database ────────────────────────────────────────────────────────────────
 

@@ -276,7 +276,7 @@ A VS Code multi-root workspace file (`nuxt-slides.code-workspace`) includes both
 
 `mise tasks` lists the everyday commands: `dev`, `test`, `test:watch`, `lint`,
 `lint:fix`, `build`, `check` (lint + tests), `worktree`, `content:import`,
-`content:republish`. The tasks pin Node 22, which
+`content:republish`, `content:republish:prod`. The tasks pin Node 22, which
 `better-sqlite3` is built for. The pnpm scripts stay available:
 
 ```bash
@@ -323,6 +323,7 @@ pnpm generate
 
 **Deployment:**
 - Production runs as **SSR in Docker** on a self-hosted VPS (image built + auto-deployed by GitHub Actions). See the infra repo (`vps-infra`) for the container, reverse proxy and secrets setup.
+- Deck content lives in the production database, not in the image. `mise run content:republish:prod -- <slug>` publishes a deck from its stub through the app's own routes, authenticated with `NUXT_CONTENT_TOKEN` (stored in Infisical, read by the container at start and by the task at run time).
 - SSG output (`.output/public/`) can also be served from any static host (GitHub Pages, Cloudflare Pages, …) when auth/SSR isn't needed.
 
 ## Architecture

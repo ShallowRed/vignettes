@@ -55,6 +55,7 @@ export function stubH3Globals() {
   vi.stubGlobal('createError', (e: any) => Object.assign(new Error(e.statusMessage), e))
   vi.stubGlobal('getUserSession', async (e: any) => e.session ?? null)
   vi.stubGlobal('getCookie', (e: any, name: string) => e.cookies?.[name])
+  vi.stubGlobal('getRequestHeader', (e: any, name: string) => e.headers?.[name.toLowerCase()])
   vi.stubGlobal('setCookie', (e: any, name: string, value: string) => {
     ;(e.setCookies ??= {})[name] = value
   })

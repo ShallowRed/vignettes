@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
 
-  const editor = await assertCanEditDeck(event, slug)
+  const editor = await assertCanEditDeck(event, slug, { contentToken: true })
 
   // Prefer the live room over the stored draft (the store lags by the debounce).
   const live = useCollabServer().documents.get(slug)

@@ -1,0 +1,63 @@
+import { eq } from 'drizzle-orm'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { deckVersions } from '../../server/db/schema'
+import { assertOwner, assertPrivileged } from '../../server/utils/access'
+import { useDb } from '../../server/utils/db'
+import { useDeckMeta } from '../../server/utils/sources'
+import { anon, setupServerDb, stubH3Globals } from './helpers/server-db'
+
+// The content token stands in for a session on the markdown write path only.
+stubH3Globals()
+setupServerDb()
+
+const { default: saveDraft } = await import('../../server/api/presentations/[slug].put')
+const { default: publish } = await import('../../server/api/presentations/[slug]/publish.post')
+const { default: loadDeck } = await import('../../server/api/presentations/[slug].get')
+const { default: uploadMedia } = await import('../../server/api/media.post')
+
+const bearer = (token: string, over: Record<string, unknown> = {}) => anon({ headers: { authorization: `Bearer ${token}` }, ...over })
+const deck = { params: { slug: 'deck' } }
+const raw = '---\ntitle: Deck\n---\n\n# Hello\n'
+
+let previous: string | undefined
+beforeAll(() => {
+  previous = process.env.NUXT_CONTENT_TOKEN
+  process.env.NUXT_CONTENT_TOKEN = 'secret-token'
+})
+beforeEach(async () => {
+  await useDeckMeta().update('deck', { title: 'Deck' })
+})
+afterAll(() => {
+  if (previous === undefined)
+    delete process.env.NUXT_CONTENT_TOKEN
+  else process.env.NUXT_CONTENT_TOKEN = previous
+})
+
+describe('content token on the markdown write path', () => {
+  it('saves a draft and publishes it, signed as the token', async () => {
+    await expect(saveDraft(bearer('secret-token', { ...deck, body: { raw } }))).resolves.toMatchObject({ ok: true })
+    await expect(publish(bearer('secret-token', deck))).resolves.toMatchObject({ ok: true })
+    const version = useDb().select().from(deckVersions).where(eq(deckVersions.deckSlug, 'deck')).get()
+    expect(version).toMatchObject({ raw, publishedBy: 'content-token' })
+  })
+
+  it('reads the draft state the way the editor does', async () => {
+    await saveDraft(bearer('secret-token', { ...deck, body: { raw } }))
+    const state = loadDeck(bearer('secret-token', { ...deck, query: { draft: '' } }))
+    await expect(state).resolves.toMatchObject({ from: 'draft', publishedRaw: null, content: raw })
+  })
+
+  it('refuses a wrong token, and any token when none is configured (401)', async () => {
+    await expect(saveDraft(bearer('nope', { ...deck, body: { raw } }))).rejects.toMatchObject({ statusCode: 401 })
+    const token = process.env.NUXT_CONTENT_TOKEN
+    delete process.env.NUXT_CONTENT_TOKEN
+    await expect(saveDraft(bearer('secret-token', { ...deck, body: { raw } }))).rejects.toMatchObject({ statusCode: 401 })
+    process.env.NUXT_CONTENT_TOKEN = token
+  })
+
+  it('opens nothing else: media upload, privileged and owner guards stay closed (401)', async () => {
+    await expect(uploadMedia(bearer('secret-token', { query: { deck: 'deck' } }))).rejects.toMatchObject({ statusCode: 401 })
+    await expect(assertPrivileged(bearer('secret-token'))).rejects.toMatchObject({ statusCode: 401 })
+    await expect(assertOwner(bearer('secret-token'))).rejects.toMatchObject({ statusCode: 401 })
+  })
+})
