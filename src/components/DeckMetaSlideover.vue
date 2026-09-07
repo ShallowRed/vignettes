@@ -19,6 +19,8 @@ import { grantsQuery } from '~/queries'
 const props = defineProps<{
   item: PresentationListItem
   projects?: Project[]
+  /** Section to bring into view when the panel opens. */
+  focus?: 'sharing'
 }>()
 
 const emit = defineEmits<{ saved: [] }>()
@@ -107,6 +109,19 @@ const { mutate: save, isLoading: saving } = useMutation({
 // ── Sharing (per-deck grants, owner only) ───────────────────────────────────
 // Delegated to the shared `useSharing`; grants + users load only while the panel
 // is open for an owner (enabled gate). The whole bag also feeds ShareGrantForm.
+// Opened from a "Partager…" entry: bring that section into view instead of
+// leaving the reader at the top of a long panel.
+const sharingSection = useTemplateRef<HTMLElement>('sharingSection')
+watch(() => open.value && props.focus === 'sharing', (focus) => {
+  if (!focus)
+    return
+  // The panel mounts with `open` already true, so the first evaluation counts.
+  // Focusing the section (rather than scrolling it) survives the slideover's own
+  // focus handling, which otherwise pulls the body back to the top, and it puts
+  // keyboard users at the same place.
+  setTimeout(() => sharingSection.value?.focus(), 300)
+}, { immediate: true, flush: 'post' })
+
 const sharing = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && isOwner.value)
 const { grants, grantRoleItems, changeGrantRole, removeGrant, busy: sharingBusy } = sharing
 
@@ -245,7 +260,13 @@ const audience = computed(() => {
         </UFormField>
 
         <template v-if="isOwner">
-          <USeparator label="Partage" />
+          <div
+            ref="sharingSection"
+            tabindex="-1"
+            class="outline-none"
+          >
+            <USeparator label="Partage" />
+          </div>
 
           <p class="text-sm text-muted -mt-1">
             Ouvre ce deck à un compte précis au-delà de son statut.

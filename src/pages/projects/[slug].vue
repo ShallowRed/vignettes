@@ -79,7 +79,7 @@ function onProjectDeleted() {
 }
 
 // Management modals (privileged), mirroring the home console.
-const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
+const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
 </script>
 
 <template>
@@ -161,6 +161,7 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
           :presentation="presentation"
           :admin="privileged"
           @edit-meta="openMeta(presentation)"
+          @share="openMeta(presentation, 'sharing')"
           @remove="openDelete(presentation)"
         />
       </div>
@@ -171,6 +172,7 @@ const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<Pr
       v-model:open="metaOpen"
       :item="target"
       :projects="projects"
+      :focus="metaFocus"
     />
     <DeckDeleteModal
       v-if="target"

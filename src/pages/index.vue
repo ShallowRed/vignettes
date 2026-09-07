@@ -39,7 +39,7 @@ defineShortcuts({
 // Management modals (privileged): one instance at page level, targeted per deck.
 const createOpen = ref(false)
 const createProjectOpen = ref(false)
-const { target, metaOpen, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
+const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
 
 // Folder management from the cards (owner), mirroring the deck pattern: one
 // modal instance each, targeted per project by the grid's menu events.
@@ -211,6 +211,7 @@ const projectDeckCount = computed(() =>
           :admin="privileged"
           :projects="projects"
           @edit-meta="openMeta"
+          @share="(item: PresentationListItem) => openMeta(item, 'sharing')"
           @remove="openDelete"
         />
       </template>
@@ -229,6 +230,7 @@ const projectDeckCount = computed(() =>
       v-model:open="metaOpen"
       :item="target"
       :projects="projects"
+      :focus="metaFocus"
     />
     <DeckDeleteModal
       v-if="target"

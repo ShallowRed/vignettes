@@ -2,6 +2,7 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
+import { useAppSession } from '~/composables/useAppSession'
 
 // Catalog card. `admin` adds management details and the actions menu (privileged
 // roles only). Editing is separate: it follows the deck's own `canEdit`, so a
@@ -15,8 +16,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   editMeta: []
+  share: []
   remove: []
 }>()
+
+// Sharing is owner-only server-side, so the entry only shows for an owner.
+const { role } = useAppSession()
+const isOwner = computed(() => role.value === 'owner')
 
 const frozen = computed(() => isFrozen(props.presentation))
 
@@ -38,6 +44,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
   [
     { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${props.presentation.slug}` },
     { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta') },
+    ...(isOwner.value ? [{ label: 'Partager…', icon: 'i-lucide-users', onSelect: () => emit('share') }] : []),
   ],
   [
     {

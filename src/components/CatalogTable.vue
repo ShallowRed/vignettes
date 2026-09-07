@@ -5,6 +5,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 import { getPaginationRowModel, getSortedRowModel } from '@tanstack/vue-table'
 import { h, resolveComponent } from 'vue'
+import { useAppSession } from '~/composables/useAppSession'
 
 // Table view of the catalog: column sorting, client pagination, row selection
 // with bulk actions. Receives the already-filtered list (toolbar owns filtering).
@@ -16,8 +17,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   editMeta: [item: PresentationListItem]
+  share: [item: PresentationListItem]
   remove: [item: PresentationListItem]
 }>()
+// Sharing is owner-only server-side, so the entry only shows for an owner.
+const { role } = useAppSession()
+const isOwner = computed(() => role.value === 'owner')
 
 const UButton = resolveComponent('UButton')
 const UCheckbox = resolveComponent('UCheckbox')
@@ -149,6 +154,7 @@ function rowActions(item: PresentationListItem) {
           [
             { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
             { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
+            ...(isOwner.value ? [{ label: 'Partager…', icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
           ],
           [
             {
