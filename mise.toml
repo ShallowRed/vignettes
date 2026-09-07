@@ -127,6 +127,15 @@ arg "<slugs>"
 flag "-f --force" help="Overwrite a draft edited online and not yet published"
 '''
 run = "infisical run --env=prod -- node scripts/content-import.ts --apply --remote=https://slides.example.org --republish=\"$usage_slugs\" ${usage_force:+--force}"
+[tasks."content:push"]
+description = "Push stubs into the production database over SSH (dry run; --apply writes, --staging targets the staging container): mise run content:push -- <slug>[,<slug>]"
+depends = ["install"]
+usage = """
+arg "<slugs>"
+flag "--apply"
+flag "--staging"
+"""
+run = "node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
 
 [tasks.test]
 description = "Unit and golden tests"
