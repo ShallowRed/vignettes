@@ -16,6 +16,11 @@
  *   node scripts/content-import.ts                  # plan
  *   node scripts/content-import.ts --apply          # write
  *   node scripts/content-import.ts --db=/path/to.db # target another database
+ *
+ * `--republish=<slug>[,<slug>]` takes the listed decks back from their stub even
+ * when the database owns them: a new published version is written from the
+ * file and the row's title and theme follow it; status, unlisted, password and
+ * project stay as the database has them, like a publish from the editor.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
@@ -32,6 +37,7 @@ const APPLY = args.includes('--apply')
 const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5)
   ?? process.env.NUXT_DB_PATH
   ?? join(ROOT, '.data', 'slides.db')
+const REPUBLISH = new Set((args.find(a => a.startsWith('--republish='))?.slice(12) ?? '').split(',').filter(Boolean))
 
 const now = () => Math.floor(Date.now() / 1000)
 
@@ -139,8 +145,12 @@ const plan = {
   aliasesCanonical: [] as string[],
   aliasesHistorical: [] as string[],
   skippedManaged: [] as string[],
+  republish: [] as string[],
   warnings: [] as string[],
 }
+
+/** A managed deck taken back from its stub: version + content axes only. */
+const republishPlans: { slug: string, title: string | null, theme: string | null, raw: string }[] = []
 
 // Projects declared by a stub but absent from projects.yml would render as a raw
 // slug in the catalog; surface them instead of importing a half-defined project.
@@ -170,8 +180,17 @@ for (const stub of stubs) {
   const row = existing.get(stub.slug)
 
   if (row?.managed) {
-    // The database already owns this deck: never let a file overwrite it.
-    plan.skippedManaged.push(stub.slug)
+    if (!REPUBLISH.has(stub.slug)) {
+      // The database already owns this deck: never let a file overwrite it.
+      plan.skippedManaged.push(stub.slug)
+      continue
+    }
+    if (publishedRaw.get(stub.slug) === raw) {
+      plan.warnings.push(`${stub.slug} : le fichier est identique à la version publiée, rien à republier`)
+      continue
+    }
+    republishPlans.push({ slug: stub.slug, title: (data.title as string) ?? null, theme: (data.theme as string) ?? null, raw })
+    plan.republish.push(stub.slug)
     continue
   }
 
@@ -253,6 +272,13 @@ console.log(`contenu : ${CONTENT_DIR}`)
 console.log(`mode    : ${APPLY ? 'APPLY (écriture)' : 'DRY-RUN (aucune écriture)'}`)
 console.log(`\nstubs lus : ${stubs.length} · entrées de registre : ${Object.keys(registry).length} · projets yaml : ${Object.keys(projectsYml).length}`)
 
+for (const slug of REPUBLISH) {
+  if (!stubs.some(st => st.slug === slug))
+    plan.warnings.push(`${slug} : aucun stub de ce nom dans presentations/`)
+  else if (!existing.get(slug)?.managed)
+    plan.warnings.push(`${slug} : pas encore en base, il sera importé normalement`)
+}
+
 section('projets à créer', plan.projectsCreate)
 section('decks à créer', plan.decksCreate)
 section('decks à mettre à jour', plan.decksUpdate)
@@ -260,6 +286,7 @@ section('versions à publier (markdown différent)', plan.versionsInsert)
 section('alias canoniques', plan.aliasesCanonical)
 section('alias historiques', plan.aliasesHistorical)
 section('ignorés — déjà managed (la base fait foi)', plan.skippedManaged)
+section('republiés depuis le fichier (accès inchangés)', plan.republish)
 section('⚠ avertissements', plan.warnings)
 
 if (!APPLY) {
@@ -291,6 +318,7 @@ const insertVersion = db.prepare(
 )
 const pointVersion = db.prepare('update decks set published_version_id=?, updated_at=? where slug=?')
 const insertAlias = db.prepare('insert or ignore into deck_aliases (alias,deck_slug) values (?,?)')
+const retitle = db.prepare('update decks set title=coalesce(?, title), theme=coalesce(?, theme), updated_at=? where slug=?')
 
 db.transaction(() => {
   for (const [slug, p] of Object.entries(projectsYml)) {
@@ -307,6 +335,12 @@ db.transaction(() => {
 
   for (const h of historical)
     insertAlias.run(h.alias, h.slug)
+
+  for (const r of republishPlans) {
+    const res = insertVersion.run(r.slug, r.raw, 'content-import', ts)
+    pointVersion.run(res.lastInsertRowid, ts, r.slug)
+    retitle.run(r.title, r.theme, ts, r.slug)
+  }
 })()
 
 console.log('\n✅ Import appliqué.')
