@@ -746,6 +746,7 @@ async function onMetaSaved() {
             :key="preview.metadata.theme"
             :theme="preview.metadata.theme"
             :config="preview.metadata.reveal"
+            :lang="preview.metadata.lang"
           >
             <RevealSlides :presentation-data="preview" />
           </RevealPresentation>

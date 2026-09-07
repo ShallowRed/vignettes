@@ -6,6 +6,8 @@ import 'reveal.js/dist/reveal.css'
 interface Props {
   theme?: string
   config?: Partial<RevealConfig>
+  /** Deck language (frontmatter `lang`); French orthotypography applies only to French decks. */
+  lang?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -13,6 +15,8 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const revealContainer = ref<HTMLElement | null>(null)
+
+const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().startsWith('fr'))
 
 // Serialised onto `.reveal` so the frozen prerendered bundle can init Reveal with
 // the deck's frontmatter `reveal:` config, not just defaults. DDR-017 §2.a-ter.
@@ -63,7 +67,7 @@ onUnmounted(() => {
 <template>
   <div
     ref="revealContainer"
-    v-french-typography
+    v-french-typography="frenchTypography"
     class="reveal"
     :data-reveal-config="resolvedRevealConfig"
   >

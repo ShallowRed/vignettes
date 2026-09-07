@@ -46,6 +46,7 @@ watch(requiresPassword, (needsPassword) => {
       <RevealPresentation
         :theme="presentationData.metadata.theme"
         :config="presentationData.metadata.reveal"
+        :lang="presentationData.metadata.lang"
       >
         <RevealSlides :presentation-data="presentationData" />
       </RevealPresentation>
