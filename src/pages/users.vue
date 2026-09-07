@@ -68,6 +68,8 @@ const { mutate: runRemove, isLoading: removing } = useMutation({
 
 const busy = computed(() => changingRole.value || removing.value)
 
+const inviteOpen = ref(false)
+
 function dateLabel(d: Date | string) {
   return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
@@ -82,6 +84,14 @@ function dateLabel(d: Date | string) {
         Comptes
       </h1>
       <span class="text-sm text-muted">{{ accounts.length }} compte{{ accounts.length > 1 ? 's' : '' }}</span>
+      <div class="flex-1" />
+      <UButton
+        v-if="isOwner"
+        label="Ajouter un compte"
+        icon="i-lucide-user-plus"
+        size="sm"
+        @click="inviteOpen = true"
+      />
     </div>
 
     <UAlert
@@ -144,6 +154,8 @@ function dateLabel(d: Date | string) {
         />
       </li>
     </ul>
+
+    <UserInviteModal v-model:open="inviteOpen" />
 
     <UModal
       v-model:open="removeOpen"
