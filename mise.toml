@@ -1,0 +1,61 @@
+# Toolchain and everyday tasks (mise). Personal overrides go to mise.local.toml.
+
+[tools]
+# better-sqlite3 is built for this Node line; the tests fail under Node 24.
+node = "22"
+"npm:portless" = "0.11"
+
+[settings]
+# corepack shims let pnpm resolve its version from packageManager (single source of truth)
+node.corepack = true
+
+[env]
+# The local portless proxy speaks plain HTTP on 8443 behind the valet bridge,
+# which terminates TLS on 443 (see ~/.config/valet-portless-bridge/README.md).
+PORTLESS_PORT = "8443"
+PORTLESS_HTTPS = "0"
+
+[tasks.install]
+description = "Install the dependencies"
+sources = ["package.json", "pnpm-lock.yaml"]
+outputs = { auto = true }
+run = "pnpm install"
+
+[tasks.dev]
+description = "Nuxt dev server behind portless: https://nuxt-slides.localhost"
+depends = ["install"]
+run = "portless nuxt-slides pnpm dev"
+
+[tasks."dev:port"]
+description = "Nuxt dev server on a plain port (PORT, default 3000)"
+depends = ["install"]
+run = "pnpm dev"
+
+[tasks.test]
+description = "Unit and golden tests"
+depends = ["install"]
+run = "pnpm test"
+
+[tasks."test:watch"]
+description = "Tests in watch mode"
+depends = ["install"]
+run = "pnpm test:watch"
+
+[tasks.lint]
+description = "ESLint on the whole repo"
+depends = ["install"]
+run = "pnpm eslint ."
+
+[tasks."lint:fix"]
+description = "ESLint with autofix"
+depends = ["install"]
+run = "pnpm eslint . --fix"
+
+[tasks.build]
+description = "Production build (themes, then Nuxt)"
+depends = ["install"]
+run = "pnpm build"
+
+[tasks.check]
+description = "Everything the CI checks: lint + tests"
+depends = ["lint", "test"]

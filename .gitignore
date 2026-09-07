@@ -47,3 +47,6 @@ presentations/public/*--standalone.md
 
 # Docs personnelles / temporaires / audits (hors repo public)
 docs/private/
+
+# mise personal overrides
+mise.local.toml

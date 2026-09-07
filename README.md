@@ -21,14 +21,15 @@ A modern presentation system built with Nuxt 3, MDC, and reveal.js that converts
 # Clone the repository
 cd nuxt-slides
 
-# Install dependencies
-pnpm install
+# Toolchain (Node, pnpm, portless) and tasks come from mise.toml
+mise install
 
-# Start development server
-pnpm dev
+# Start the development server behind portless
+mise run dev
 ```
 
-Visit `http://localhost:3000` to see the list of presentations.
+Visit `https://nuxt-slides.localhost` to see the list of presentations
+(`mise run dev:port` serves `http://localhost:3000` instead).
 
 ### Create a Presentation
 
@@ -272,6 +273,10 @@ The CodiMD fork adds MDC component preview (syntax highlighting, layout renderin
 A VS Code multi-root workspace file (`nuxt-slides.code-workspace`) includes both repos for unified search and editing.
 
 ## Development
+
+`mise tasks` lists the everyday commands: `dev` (Nuxt behind portless), `dev:port`,
+`test`, `test:watch`, `lint`, `lint:fix`, `build`, `check` (lint + tests). The tasks
+pin Node 22, which `better-sqlite3` is built for. The pnpm scripts stay available:
 
 ```bash
 # Development server with theme compilation
