@@ -21,15 +21,15 @@ A modern presentation system built with Nuxt 3, MDC, and reveal.js that converts
 # Clone the repository
 cd nuxt-slides
 
-# Toolchain (Node, pnpm) and tasks come from mise.toml
+# Toolchain (Node, pnpm, portless) and tasks come from mise.toml
 mise install
 
-# Start the development server
+# Start the development server; the browser opens once it answers
 mise run dev
 ```
 
-Visit `http://localhost:3000` to see the list of presentations (`HOST` and
-`PORT` override the address).
+The app is served on `https://nuxt-slides.localhost` (portless picks the port;
+`mise run dev:nuxt` serves `http://localhost:3000` for tools that need a fixed port).
 
 ### Create a Presentation
 
@@ -275,7 +275,8 @@ A VS Code multi-root workspace file (`nuxt-slides.code-workspace`) includes both
 ## Development
 
 `mise tasks` lists the everyday commands: `dev`, `test`, `test:watch`, `lint`,
-`lint:fix`, `build`, `check` (lint + tests). The tasks pin Node 22, which
+`lint:fix`, `build`, `check` (lint + tests), `worktree`, `content:import`,
+`content:republish`. The tasks pin Node 22, which
 `better-sqlite3` is built for. The pnpm scripts stay available:
 
 ```bash
@@ -298,27 +299,16 @@ pnpm preview:static
 pnpm preview
 ```
 
-### Named HTTPS host (optional)
+### Working on several things at once
 
-The repository hardcodes no host: a reverse proxy stays personal. With
-[portless](https://www.npmjs.com/package/portless), a gitignored `mise.local.toml`
-wraps the server and opens the browser once it answers; `mise run dev` then serves
-`https://nuxt-slides.localhost`. Nuxt 4.2 serves its HMR websocket on the main
-port, so no Vite configuration is needed behind the proxy.
+One dev server per worktree, each with its own `.nuxt`, database and host:
 
-```toml
-[tools]
-"npm:portless" = "0.11.1"
-
-[tasks.open]
-run = "bash -c 'for u; do until curl -sfk -o /dev/null \"$u\"; do sleep 0.5; done; done; open \"${@: -1}\"' _"
-
-[tasks.dev]
-depends = ["dev:portless", "open https://nuxt-slides.localhost/"]
-
-[tasks."dev:portless"]
-run = "portless nuxt-slides mise run dev:nuxt"
+```bash
+mise run worktree -- feat/my-branch       # ../nuxt-slides.wt/feat-my-branch, ready to run
+cd ../nuxt-slides.wt/feat-my-branch && mise run dev   # http://feat-my-branch.nuxt-slides.localhost:8443
 ```
+
+`CONTRIBUTING.md` holds the rules for working in this repository.
 
 ## Static Site Generation (SSG)
 

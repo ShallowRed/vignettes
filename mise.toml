@@ -1,14 +1,20 @@
-# Toolchain and everyday tasks (mise). The dev server listens on HOST:PORT
-# (default localhost:3000); a reverse proxy or named host stays personal:
-# mise.local.toml (gitignored) overrides `dev`, see README.
+# Toolchain and everyday tasks (mise). One dev server per worktree: each has its
+# own .nuxt, its own .data/slides.db and its own portless host.
 
 [tools]
 # better-sqlite3 is built for this Node line; the tests fail under Node 24.
 node = "22"
+"npm:portless" = "0.11.1"
 
 [settings]
 # corepack shims let pnpm resolve its version from packageManager (single source of truth)
 node.corepack = true
+
+[env]
+# The local portless proxy speaks plain HTTP on 8443 behind the valet bridge,
+# which terminates TLS on 443 (see ~/.config/valet-portless-bridge/README.md).
+PORTLESS_PORT = "8443"
+PORTLESS_HTTPS = "0"
 
 [tasks.install]
 description = "Install the dependencies"
@@ -17,13 +23,95 @@ outputs = { auto = true }
 run = "pnpm install"
 
 [tasks.dev]
-description = "Nuxt dev server: http://localhost:3000 (HOST and PORT override)"
-depends = ["dev:nuxt"]
+description = "Nuxt behind portless; the browser opens once the app answers. Host: nuxt-slides.localhost, or <branch>.nuxt-slides.localhost in a worktree"
+depends = ["install"]
+run = "portless run mise run dev:serve"
+
+[tasks."dev:serve"]
+hide = true
+run = """
+mise run open "${PORTLESS_URL:-http://localhost:${PORT:-3000}}" &
+pnpm dev
+"""
 
 [tasks."dev:nuxt"]
-description = "The Nuxt dev server itself (what a proxy wraps)"
+description = "The bare Nuxt dev server on HOST:PORT (default localhost:3000), for tools that expect a fixed port"
 depends = ["install"]
 run = "pnpm dev"
+
+[tasks.open]
+description = "Wait until the URL answers, then open it. The main checkout's host goes through valet in HTTPS; a worktree host stays on the proxy in HTTP"
+run = """
+bash -c '
+u="$1"
+case "$u" in
+  http://*.localhost:8443)
+    h="${u#http://}"; h="${h%%:*}"
+    # one label before .localhost = the main checkout, covered by the bridge cert
+    [[ "$h" != *.*.* ]] && u="https://$h/"
+    ;;
+esac
+for _ in $(seq 1 240); do
+  curl -sfk -o /dev/null "$u" && { open "$u"; exit 0; }
+  sleep 0.5
+done
+echo "open: $u ne répond pas" >&2
+' _
+"""
+
+[tasks.worktree]
+description = "Create a worktree for a branch in ../nuxt-slides.wt/<branch> with deps, database and content, ready for `mise run dev`"
+usage = 'arg "<branch>"'
+run = """
+set -e
+branch="$usage_branch"
+name="${branch//\\//-}"
+dir="$(dirname "$PWD")/nuxt-slides.wt/$name"
+if git show-ref --verify --quiet "refs/heads/$branch"; then
+  git worktree add "$dir" "$branch"
+else
+  git worktree add -b "$branch" "$dir"
+fi
+cd "$dir"
+git submodule update --init --depth 1 presentations
+mise install
+pnpm install
+mise run db:migrate
+mise run content:import
+echo
+echo "Prêt : cd $dir && mise run dev   (http://$name.nuxt-slides.localhost:8443)"
+"""
+
+[tasks."worktree:remove"]
+description = "Remove a worktree created by `worktree` (the branch stays)"
+usage = 'arg "<branch>"'
+run = """
+set -e
+branch="$usage_branch"
+name="${branch//\\//-}"
+git worktree remove --force "$(dirname "$PWD")/nuxt-slides.wt/$name"
+"""
+
+[tasks."db:migrate"]
+description = "Apply the migrations to .data/slides.db (or NUXT_DB_PATH)"
+depends = ["install"]
+run = "node scripts/db-migrate.ts"
+
+[tasks."content:plan"]
+description = "What content:import would do (dry run)"
+depends = ["install"]
+run = "node scripts/content-import.ts"
+
+[tasks."content:import"]
+description = "Import the stubs of presentations/ that the database does not own yet"
+depends = ["install"]
+run = "node scripts/content-import.ts --apply"
+
+[tasks."content:republish"]
+description = "Republish decks from their stub even when the database owns them: mise run content:republish -- <slug>[,<slug>]"
+depends = ["install"]
+usage = 'arg "<slugs>"'
+run = "node scripts/content-import.ts --apply --republish=\"$usage_slugs\""
 
 [tasks.test]
 description = "Unit and golden tests"
