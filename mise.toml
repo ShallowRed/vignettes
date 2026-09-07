@@ -1,19 +1,14 @@
-# Toolchain and everyday tasks (mise). Personal overrides go to mise.local.toml.
+# Toolchain and everyday tasks (mise). The dev server listens on HOST:PORT
+# (default localhost:3000); a reverse proxy or named host stays personal:
+# mise.local.toml (gitignored) overrides `dev`, see README.
 
 [tools]
 # better-sqlite3 is built for this Node line; the tests fail under Node 24.
 node = "22"
-"npm:portless" = "0.11"
 
 [settings]
 # corepack shims let pnpm resolve its version from packageManager (single source of truth)
 node.corepack = true
-
-[env]
-# The local portless proxy speaks plain HTTP on 8443 behind the valet bridge,
-# which terminates TLS on 443 (see ~/.config/valet-portless-bridge/README.md).
-PORTLESS_PORT = "8443"
-PORTLESS_HTTPS = "0"
 
 [tasks.install]
 description = "Install the dependencies"
@@ -22,12 +17,11 @@ outputs = { auto = true }
 run = "pnpm install"
 
 [tasks.dev]
-description = "Nuxt dev server behind portless: https://nuxt-slides.localhost"
-depends = ["install"]
-run = "portless nuxt-slides pnpm dev"
+description = "Nuxt dev server: http://localhost:3000 (HOST and PORT override)"
+depends = ["dev:nuxt"]
 
-[tasks."dev:port"]
-description = "Nuxt dev server on a plain port (PORT, default 3000)"
+[tasks."dev:nuxt"]
+description = "The Nuxt dev server itself (what a proxy wraps)"
 depends = ["install"]
 run = "pnpm dev"
 
