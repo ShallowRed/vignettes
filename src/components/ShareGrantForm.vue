@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { useSharing } from '~/composables/useSharing'
+import { handleField, IDENTITY_PROVIDER_ITEMS } from '#shared/access'
 
 /**
  * The add-grant form shared by the deck and project sharing panels: pick a known
@@ -36,11 +37,8 @@ watch(noGrantable, (none) => {
     showInvite.value = true
 }, { immediate: true })
 
-const providerItems = [
-  { label: 'Google', value: 'google' },
-  { label: 'GitHub', value: 'github' },
-]
 const isGoogle = computed(() => inviteProvider.value === 'google')
+const field = computed(() => handleField(inviteProvider.value))
 </script>
 
 <template>
@@ -87,9 +85,9 @@ const isGoogle = computed(() => inviteProvider.value === 'google')
       label="Autoriser un compte qui ne s'est jamais connecté…"
       icon="i-lucide-user-plus"
       color="neutral"
-      variant="link"
-      size="xs"
-      class="self-start px-0"
+      variant="subtle"
+      size="sm"
+      block
       @click="showInvite = true"
     />
     <form
@@ -97,21 +95,19 @@ const isGoogle = computed(() => inviteProvider.value === 'google')
       class="flex flex-col gap-1.5"
       @submit.prevent="invite"
     >
-      <span class="text-sm font-medium text-default">
-        {{ isGoogle ? 'Adresse du compte Google' : 'Nom d\'utilisateur GitHub' }}
-      </span>
+      <span class="text-sm font-medium text-default">{{ field.label }}</span>
       <div class="flex items-center gap-2">
         <USelect
           v-model="inviteProvider"
-          :items="providerItems"
+          :items="IDENTITY_PROVIDER_ITEMS"
           class="w-28"
           aria-label="Fournisseur de connexion"
         />
         <UInput
           v-model="inviteHandle"
           :type="isGoogle ? 'email' : 'text'"
-          :placeholder="isGoogle ? 'prenom.nom@gmail.com' : 'nom-utilisateur'"
-          :aria-label="isGoogle ? 'Adresse du compte Google' : 'Nom d\'utilisateur GitHub'"
+          :placeholder="field.placeholder"
+          :aria-label="field.label"
           autofocus
           class="flex-1"
         />

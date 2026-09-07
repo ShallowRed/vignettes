@@ -1,4 +1,5 @@
-import type { DeckGrant, GrantSummary, PermissionScope, UserAccount } from '#shared/access'
+import type { DeckGrant, GrantSummary, IdentityProvider, PermissionScope, UserAccount } from '#shared/access'
+import { isProviderHandle } from '#shared/access'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { permissionsApi, usersApi } from '~/api'
 import { grantsQuery, sharingKey, usersQuery } from '~/queries'
@@ -102,16 +103,9 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
   // account (server-side), immediately selectable in the picker — the grant then
   // goes through the normal flow above. Works for both providers: a Google email
   // or a GitHub username.
-  const inviteProvider = ref<'github' | 'google'>('google')
+  const inviteProvider = ref<IdentityProvider>('google')
   const inviteHandle = ref('')
-  // Coarse shape check to enable the button; the endpoint zod-validates for real.
-  const inviteValid = computed(() => {
-    const handle = inviteHandle.value.trim()
-    if (inviteProvider.value === 'github')
-      return handle.length > 0 && !handle.includes('@')
-    const [local, domain, ...rest] = handle.split('@')
-    return rest.length === 0 && !!local && !!domain && domain.includes('.')
-  })
+  const inviteValid = computed(() => isProviderHandle(inviteProvider.value, inviteHandle.value))
   const { mutate: submitInvite, isLoading: inviting } = useMutation({
     mutation: () => usersApi.invite(requestFetch, inviteProvider.value, inviteHandle.value.trim()),
     async onSuccess(account) {
