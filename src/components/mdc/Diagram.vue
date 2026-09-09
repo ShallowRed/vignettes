@@ -14,7 +14,7 @@ interface Props {
   rows?: string | number
   /** Rank direction for the automatic layout: left to right or top to bottom. */
   direction?: 'LR' | 'TB'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   fragments?: boolean
   dim?: boolean
   /** Card width in px for the automatic layout (grid cells size their own). */
@@ -284,8 +284,8 @@ onBeforeUnmount(() => observer?.disconnect())
             viewBox="0 0 10 10"
             refX="9"
             refY="5"
-            markerWidth="8"
-            markerHeight="8"
+            markerWidth="5"
+            markerHeight="5"
             orient="auto-start-reverse"
           >
             <path
@@ -326,6 +326,7 @@ onBeforeUnmount(() => observer?.disconnect())
   margin: 0.5em 0;
 }
 
+.diagram--xs { --scheme-picto: 2.6em; font-size: 0.66em; }
 .diagram--sm { --scheme-picto: 3.2em; font-size: 0.72em; }
 .diagram--md { --scheme-picto: 4.5em; font-size: 0.85em; }
 .diagram--lg { --scheme-picto: 6em; font-size: 0.95em; }
@@ -359,11 +360,11 @@ onBeforeUnmount(() => observer?.disconnect())
 .diagram__edge path {
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.5;
+  stroke-width: 1.5;
 }
 
 .diagram__edge--dashed path {
-  stroke-dasharray: 6 6;
+  stroke-dasharray: 5 5;
 }
 
 .diagram__edge text {
