@@ -42,6 +42,8 @@ export function useReveal(
 
     // Dynamic import to avoid SSR issues.
     const { default: Reveal } = await import('reveal.js')
+    // Speaker view (key S): reads each slide's `aside.notes`.
+    const { default: RevealNotes } = await import('reveal.js/plugin/notes/notes.esm.js')
 
     // The import above yields to the event loop; a fast route change can unmount
     // the deck in that gap, nulling `container.value`. Constructing Reveal then
@@ -52,7 +54,7 @@ export function useReveal(
 
     const mergedConfig = mergeRevealConfig(config)
 
-    revealInstance = new Reveal(container.value, mergedConfig)
+    revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [RevealNotes] })
     await revealInstance.initialize()
 
     // Sync to pick up Vue-rendered content (lightbox, previews, fragments won't

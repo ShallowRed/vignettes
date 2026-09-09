@@ -26,6 +26,7 @@ export const RevealConfigSchema = z
     touch: z.boolean().optional(),
     loop: z.boolean().optional(),
     fragments: z.boolean().optional(),
+    fragmentInURL: z.boolean().optional(),
     help: z.boolean().optional(),
     showNotes: z.boolean().optional(),
     autoPlayMedia: z.boolean().nullable().optional(),

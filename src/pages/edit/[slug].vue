@@ -745,7 +745,7 @@ async function onMetaSaved() {
             ref="previewInstance"
             :key="preview.metadata.theme"
             :theme="preview.metadata.theme"
-            :config="preview.metadata.reveal"
+            :config="{ ...preview.metadata.reveal, fragments: false }"
             :lang="preview.metadata.lang"
           >
             <RevealSlides :presentation-data="preview" />

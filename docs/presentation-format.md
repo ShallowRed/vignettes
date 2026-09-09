@@ -492,11 +492,108 @@ function demo() {
 
 ## Reveal.js Features
 
-### Fragments (Progressive Display)
-Not yet implemented. Future: Add `{.fragment}` class support.
+### Fragments (progressive display)
+Wrap the content in a `Fragments` container: each direct child (each item of a
+direct list) becomes a Reveal fragment, revealed one step at a time with the
+arrow keys.
 
-### Speaker Notes
-Not yet implemented. Future: Add `::notes` component.
+```markdown
+:::Fragments{effect="fade-up" :dim="true"}
+- first point
+- second point
+- third point
+:::
+```
+
+Props: `effect` (Reveal fragment effect, default `fade-in`: `fade-up`, `fade-left`,
+`grow`, `highlight-current-blue`, …), `dim` (earlier fragments fade to 40 % once a
+later one is current). Inline text also takes the class directly: `**mot**{.fragment}`.
+
+Set `reveal.fragmentInURL: true` in the frontmatter to address a fragment state
+from the URL (`#/h/v/f`), for screenshots and deep links.
+
+### Speaker notes and speaker view
+```markdown
+### Slide title
+
+Visible content.
+
+::Notes
+Said, not shown. Markdown is fine: lists, **bold**, links.
+::
+```
+The `Notes` leaf renders Reveal's `<aside class="notes">`: hidden in the deck,
+shown in the speaker view opened with the `S` key (current slide, next slide,
+notes, timer).
+
+### Diagram: cards placed on a grid or by dagre, linked by drawn arrows
+```markdown
+:::Diagram{layout="grid" cols="3"}
+::Node{id="loi" at="1,2" picto="document/contract" title="Textes de loi"}
+::
+::Node{id="reg" at="2,2" picto="digital/data-visualization" title="Registre"}
+Une fiche par règle
+::
+::Node{id="ami" at="3,1" picto="digital/application" title="AMI" :planned="true"}
+::
+::Edge{from="loi" to="reg" label="fonde"}
+::
+::Edge{from="reg" to="ami" :dashed="true"}
+::
+:::
+```
+`layout="grid"` places each `Node` at `at="col,row"` (`span="cols,rows"`);
+`layout="auto"` ignores `at` and lets dagre rank the nodes (`direction="LR"` or
+`"TB"`, `nodeWidth` in px). `Diagram` props: `gap` (`"row col"` CSS lengths),
+`route` (`curve`, default, or `orthogonal` elbows), `cards` (`outlined` white
+cards with a border, default, or `plain`), plus `size`, `dim` and `fragments` as
+on `Scheme`.
+
+`Edge` draws an arrow between two node ids: `label`, `dashed`, `route` per edge,
+and `anchors="right,top"` to force the sides it leaves and enters by (geometry
+decides otherwise). `planned` gives a node a dashed frame. `variant="entity"`
+turns a node into a left-aligned box whose caption lists attributes, one per
+list item, for data-model diagrams. Nodes are fragments in writing order and
+each edge appears with the later of its nodes; `step="2"` on a node or edge
+overrides that.
+
+### Tags: the registry's qualified tags and their values
+```markdown
+::Tags{axis="règle" values="référencée:grey,documentée:blue,vérifiée:purple,exécutable:green"}
+Ce que la fiche permet de faire.
+::
+```
+One row per axis: the axis name, then a tag « axis : value » per entry of
+`values` (`value:tone`, tones `neutral` | `green` | `blue` | `purple` | `yellow` |
+`grey`, the registry's palette). The default slot is a caption under the row.
+`active="exécutable"` keeps that tag at full strength and fades the others.
+
+`RuleCard` shows a rule the way the registry lists it: `producer`, `domain`,
+`title`, `meta` (a small line under the text), `tags` in the same
+`axis:value:tone` form stacked on the right, and the description in the slot.
+
+### Mermaid, revealed step by step
+`::Mermaid{steps="A,B|C|D"}` turns the flowchart nodes of each group into a
+fragment (edges follow their later node). Keep node ids free of `-` and `_`.
+
+### Scheme: pictogram steps that build up as you speak
+```markdown
+### Toute décision publique est calculée quelque part
+
+:::Scheme
+::Step{n="1" picto="buildings/city-hall" title="Des règles"}
+Les administrations les produisent.
+::
+::Step{n="2" picto="digital/coding" title="Du code"}
+::
+:::
+```
+`Scheme` lays its `Step` children in a row linked by arrows. Each step is a
+fragment by default (`:fragments="false"` to show the whole row at once); with
+`dim` (default `true`) the steps already shown fade once a later one is current,
+and the current step gets an accent frame. `size`: `sm` | `md` | `lg` (pictogram
+size). `Step` props: `picto` (path under `public/pictograms/`, see its README for
+the DSFR list), `title`, `n` (number badge); the default slot is the caption.
 
 ### Backgrounds
 Implemented. Per-slide `:slide-background{image=...}`, a frontmatter `backgrounds:` block,

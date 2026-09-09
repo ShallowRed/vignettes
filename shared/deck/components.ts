@@ -59,6 +59,15 @@ export const DECK_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Highlight' },
   { name: 'StoryFrame' },
   { name: 'Screens' },
+  { name: 'Notes', aliases: ['notes'] },
+  { name: 'Fragments', aliases: ['fragments'] },
+  { name: 'Scheme', aliases: ['scheme'] },
+  { name: 'Step', aliases: ['step'] },
+  { name: 'Diagram', aliases: ['diagram'] },
+  { name: 'Node', component: 'DiagramNode', aliases: ['node'] },
+  { name: 'Edge', component: 'DiagramEdge', aliases: ['edge'] },
+  { name: 'Tags', aliases: ['tags'] },
+  { name: 'RuleCard', aliases: ['rule-card'] },
 ] as const
 
 /** Build `{ authoringName: VueComponent }` from the contract (name + aliases). */

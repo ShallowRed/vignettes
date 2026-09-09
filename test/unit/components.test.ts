@@ -29,6 +29,15 @@ describe('buildComponentMap', () => {
     expect(map['full-screen-image']).toBe('FullScreenImage')
   })
 
+  it('registers the progressive-disclosure components under their lowercase aliases', () => {
+    expect(map.notes).toBe('Notes')
+    expect(map.fragments).toBe('Fragments')
+    expect(map.scheme).toBe('Scheme')
+    expect(map.step).toBe('Step')
+    expect(map.Node).toBe('DiagramNode')
+    expect(map.edge).toBe('DiagramEdge')
+  })
+
   it('does not register slide-background (it is an annotation, not a component)', () => {
     expect(map['slide-background']).toBeUndefined()
   })
