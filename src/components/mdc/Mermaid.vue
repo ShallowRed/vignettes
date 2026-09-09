@@ -1,9 +1,44 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { inject, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 
 const props = defineProps<{
   theme?: 'default' | 'dark' | 'forest' | 'neutral'
+  /** Reveal steps as node-id groups: `A,B|C|D` shows A and B, then C, then D; edges follow their later node. */
+  steps?: string
 }>()
+const revealSync = inject<(() => void) | undefined>('revealSync', undefined)
+
+// Flowchart node ids look like `flowchart-A-12`, edge paths like `L_A_B_0`; node ids
+// in the source must stay free of `-` and `_` for the edge match.
+function applySteps(svgRoot: SVGElement, steps: string) {
+  const groups = steps.split('|').map(g => g.split(',').map(id => id.trim()).filter(Boolean))
+  const stepOf = new Map<string, number>()
+  groups.forEach((ids, i) => ids.forEach(id => stepOf.set(id, i)))
+  const mark = (el: Element, index: number) => {
+    el.classList.add('fragment')
+    el.setAttribute('data-fragment-index', String(index))
+  }
+  svgRoot.querySelectorAll('g.node').forEach((g) => {
+    const m = g.id.match(/^(?:flowchart|graph)-(.+)-\d+$/)
+    const step = m ? stepOf.get(m[1]) : undefined
+    if (step !== undefined)
+      mark(g, step)
+  })
+  const edgeStep = (id: string) => {
+    const m = id.match(/^L[-_]([^-_]+)[-_]([^-_]+)[-_]\d+$/)
+    if (!m)
+      return undefined
+    const a = stepOf.get(m[1])
+    const b = stepOf.get(m[2])
+    return a === undefined || b === undefined ? undefined : Math.max(a, b)
+  }
+  svgRoot.querySelectorAll('path.flowchart-link, g.edgeLabel').forEach((el) => {
+    const id = el.id || el.getAttribute('data-id') || ''
+    const step = edgeStep(id.replace(/^L-L/, 'L'))
+    if (step !== undefined)
+      mark(el, step)
+  })
+}
 const container = ref<HTMLElement | null>(null)
 const hiddenSlot = ref<HTMLElement | null>(null)
 const fullscreenOverlay = ref<HTMLElement | null>(null)
@@ -213,6 +248,13 @@ onMounted(async () => {
   try {
     const { svg } = await mermaid.render(diagramId, code)
     container.value.innerHTML = svg
+    if (props.steps) {
+      const svgRoot = container.value.querySelector('svg')
+      if (svgRoot)
+        applySteps(svgRoot, props.steps)
+      await nextTick()
+      revealSync?.()
+    }
   }
   catch (error) {
     console.error('Mermaid rendering error:', error)

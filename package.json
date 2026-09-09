@@ -31,6 +31,7 @@
     "@codemirror/language": "catalog:",
     "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
+    "@dagrejs/dagre": "catalog:",
     "@hocuspocus/provider": "catalog:",
     "@hocuspocus/server": "catalog:",
     "@iconify/vue": "catalog:",
