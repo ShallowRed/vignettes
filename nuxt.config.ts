@@ -59,6 +59,10 @@ export default defineNuxtConfig({
   vite: {
     // Tailwind's vite plugin comes with @nuxt/ui; only the app watchers here.
     plugins: [themeWatcher(), presentationWatcher()],
+    // The SSR Vite server runs in middleware mode with `hmr: false`; Vite then
+    // still opens an unused websocket server on 24678, which collides with any
+    // other Vite dev server on the machine. It has no client: drop it.
+    $server: { server: { ws: false } },
   },
 
   app: {
