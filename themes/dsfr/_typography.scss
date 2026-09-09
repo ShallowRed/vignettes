@@ -35,6 +35,9 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  // The gradient only paints inside the box: with the tight display leading,
+  // descenders fell outside it and lost their fill.
+  padding-bottom: 0.14em;
 }
 
 .reveal h2 {
