@@ -10,18 +10,31 @@ interface Props {
   /** Cells spanned as `cols,rows`. */
   span?: string
   picto?: string
+  /** Remix icon instead of a pictogram. */
+  icon?: string
+  /** A DSFR illustrative colour for the icon and the title. */
+  color?: string
   title?: string
   n?: string | number
   planned?: boolean
   /** Fragment step; defaults to the writing order. */
   step?: string | number
-  /** `entity`: left-aligned box whose caption lists attributes, one per list item. */
-  variant?: 'card' | 'entity'
+  /**
+   * `entity`: left-aligned box whose caption lists attributes, one per list item.
+   * `flow`: a pill for the data that travels between two machines.
+   * `plain`: title and caption without a card, for a row or column heading.
+   */
+  variant?: 'card' | 'entity' | 'flow' | 'plain'
+  /** Fills the card with the accent: the one node the screen is about. */
+  emphasis?: boolean
+  /** Pictogram above the text or beside it; defaults to the diagram's `tiles`. */
+  orientation?: 'column' | 'row'
 }
 
 const props = defineProps<Props>()
 
 const registry = inject(DIAGRAM, null)
+const orientation = computed(() => props.orientation ?? registry?.tiles ?? 'column')
 const el = ref<HTMLElement | null>(null)
 
 const gridStyle = computed(() => {
@@ -50,14 +63,17 @@ onMounted(() => {
   <div
     ref="el"
     class="diagram-node"
-    :class="{ 'diagram-node--entity': variant === 'entity' }"
+    :class="[variant ? `diagram-node--${variant}` : undefined, { 'diagram-node--emphasis': emphasis }]"
     :style="gridStyle"
   >
     <PictoCard
       :picto="picto"
+      :icon="icon"
+      :color="color"
       :title="title"
       :n="n"
       :planned="planned"
+      :orientation="orientation"
     >
       <slot />
     </PictoCard>
@@ -65,6 +81,51 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* The data in transit: a pill in the accent tint, one line in the regular
+   weight, so it reads as a message between two machines and not as a third one. */
+.diagram-node--flow :deep(.picto-card) {
+  padding: 0.5em 1.1em;
+  border-radius: 999px;
+  background: var(--accent-soft, #e3e3fd);
+  border: none;
+  text-align: center;
+}
+
+.diagram-node--flow :deep(.picto-card__title) {
+  font-size: 0.9em;
+  font-weight: 400;
+  color: var(--dsfr-blue-france-sun-113, #000091);
+}
+
+/* A heading in the grid: no card, the title in the running text colour. */
+.diagram-node.diagram-node--plain :deep(.picto-card),
+.diagram-node.diagram-node--plain.current-fragment :deep(.picto-card) {
+  padding: 0.2em 0;
+  background: none;
+  border: none;
+  text-align: left;
+  align-items: flex-start;
+  box-shadow: none;
+}
+
+.diagram-node.diagram-node--flow.current-fragment :deep(.picto-card) {
+  background: var(--accent-soft, #e3e3fd);
+}
+
+.diagram-node--plain :deep(.picto-card__title) {
+  color: var(--text-title, #161616);
+}
+
+.diagram-node.diagram-node--emphasis :deep(.picto-card) {
+  background: var(--accent-soft, #e3e3fd);
+  border-color: var(--accent, #000091);
+}
+
+.diagram-node--emphasis :deep(.picto-card__title),
+.diagram-node--emphasis :deep(.picto-card__icon) {
+  color: var(--dsfr-blue-france-sun-113, #000091);
+}
+
 .diagram-node--entity :deep(.picto-card) {
   align-items: stretch;
   text-align: left;

@@ -66,6 +66,9 @@ export const DECK_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Diagram', aliases: ['diagram'] },
   { name: 'Node', component: 'DiagramNode', aliases: ['node'] },
   { name: 'Edge', component: 'DiagramEdge', aliases: ['edge'] },
+  { name: 'Area', component: 'DiagramArea', aliases: ['area'] },
+  { name: 'JsonTour', aliases: ['json-tour'] },
+  { name: 'Zone', component: 'JsonZone', aliases: ['zone'] },
   { name: 'Tags', aliases: ['tags'] },
   { name: 'RuleCard', aliases: ['rule-card'] },
 ] as const

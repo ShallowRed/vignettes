@@ -36,6 +36,15 @@ describe('buildComponentMap', () => {
     expect(map.step).toBe('Step')
     expect(map.Node).toBe('DiagramNode')
     expect(map.edge).toBe('DiagramEdge')
+    expect(map.Area).toBe('DiagramArea')
+    expect(map.area).toBe('DiagramArea')
+  })
+
+  it('registers the json tour and its zones', () => {
+    expect(map.JsonTour).toBe('JsonTour')
+    expect(map['json-tour']).toBe('JsonTour')
+    expect(map.Zone).toBe('JsonZone')
+    expect(map.zone).toBe('JsonZone')
   })
 
   it('does not register slide-background (it is an annotation, not a component)', () => {

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { inject } from 'vue'
-import { SCHEME_ARROWS, SCHEME_FRAGMENTS } from '~/config/injection-keys'
+import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '~/config/injection-keys'
 
 // One card of a `:::Scheme`, preceded by an arrow after the first one.
 interface Props {
   /** Pictogram path relative to /pictograms, e.g. `digital/coding`. */
   picto?: string
+  /** Remix icon instead of a pictogram. */
+  icon?: string
   title?: string
   /** Step number shown in a badge. */
   n?: string | number
@@ -15,6 +17,7 @@ defineProps<Props>()
 
 const asFragment = inject(SCHEME_FRAGMENTS, true)
 const withArrow = inject(SCHEME_ARROWS, true)
+const orientation = inject(SCHEME_TILES, 'column')
 </script>
 
 <template>
@@ -41,8 +44,10 @@ const withArrow = inject(SCHEME_ARROWS, true)
     <PictoCard
       class="scheme-step__card"
       :picto="picto"
+      :icon="icon"
       :title="title"
       :n="n"
+      :orientation="orientation"
     >
       <slot />
     </PictoCard>

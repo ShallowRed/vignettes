@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide } from 'vue'
-import { SCHEME_ARROWS, SCHEME_FRAGMENTS } from '~/config/injection-keys'
+import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '~/config/injection-keys'
 
 // A row of `::Step` cards linked by arrows, each step a Reveal fragment by
 // default so the diagram builds up as the speaker talks.
@@ -12,6 +12,8 @@ interface Props {
   /** Link the steps with arrows (`:arrows="false"` for a plain row of cards). */
   arrows?: boolean
   size?: 'sm' | 'md' | 'lg'
+  /** Card shape for every `::Step`: pictogram above the text, or beside it. */
+  tiles?: 'column' | 'row'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -19,10 +21,12 @@ const props = withDefaults(defineProps<Props>(), {
   dim: true,
   arrows: true,
   size: 'md',
+  tiles: 'column',
 })
 
 provide(SCHEME_FRAGMENTS, props.fragments)
 provide(SCHEME_ARROWS, props.arrows)
+provide(SCHEME_TILES, props.tiles)
 </script>
 
 <template>

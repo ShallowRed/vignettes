@@ -6,10 +6,14 @@ import { computed } from 'vue'
 interface Props {
   axis: string
   values: string
+  /** Text shown for the axis; defaults to the axis name itself. */
+  label?: string
   /** The value to keep at full strength; the other tags of the row fade. */
   active?: string
   /** Axis name above the tags instead of beside them (narrow columns). */
   stack?: boolean
+  /** The label, then each tag, as Reveal fragments in that order. */
+  fragments?: boolean
 }
 
 const props = defineProps<Props>()
@@ -26,12 +30,15 @@ const tags = computed(() => props.values.split(',').map((entry) => {
     :class="{ 'tags--stack': stack }"
   >
     <div class="tags__row">
-      <span class="tags__axis">{{ axis }}</span>
+      <span
+        class="tags__axis"
+        :class="{ fragment: fragments }"
+      >{{ label ?? axis }}</span>
       <span
         v-for="t in tags"
         :key="t.value"
         class="qtag"
-        :class="[`qtag--${t.tone}`, { 'qtag--faded': active && t.value !== active, 'qtag--active': active && t.value === active }]"
+        :class="[`qtag--${t.tone}`, { 'fragment': fragments, 'qtag--faded': active && t.value !== active, 'qtag--active': active && t.value === active }]"
       >
         <span class="qtag__axis">{{ axis }}</span>
         <span class="qtag__value">{{ t.value }}</span>
@@ -111,10 +118,7 @@ const tags = computed(() => props.values.split(',').map((entry) => {
 
 .tags--stack .tags__axis {
   flex: 0 0 100%;
-  font-size: 0.8em;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-mention, #666);
+  margin-bottom: 0.1em;
 }
 
 .tags--stack .tags__text {

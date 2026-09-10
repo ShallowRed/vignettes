@@ -11,6 +11,8 @@ import { DIAGRAM } from '~/config/injection-keys'
 interface Props {
   layout?: 'grid' | 'auto'
   cols?: string | number
+  /** Column tracks as a CSS `grid-template-columns` value; overrides `cols`. */
+  columns?: string
   rows?: string | number
   /** Rank direction for the automatic layout: left to right or top to bottom. */
   direction?: 'LR' | 'TB'
@@ -27,6 +29,8 @@ interface Props {
   route?: 'curve' | 'orthogonal'
   /** Card surface: `outlined` (white card with a border, default) or `plain`. */
   cards?: 'outlined' | 'plain'
+  /** Card shape for every `::Node`: pictogram above the text, or beside it. */
+  tiles?: 'column' | 'row'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -41,11 +45,13 @@ const props = withDefaults(defineProps<Props>(), {
   gap: '1.2em 3em',
   route: 'curve',
   cards: 'outlined',
+  tiles: 'column',
 })
 
 const root = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLElement | null>(null)
 const svg = ref<SVGSVGElement | null>(null)
+const svgLabels = ref<SVGSVGElement | null>(null)
 const revealSync = inject<(() => void) | undefined>('revealSync', undefined)
 
 const nodes: DiagramNodeRegistration[] = []
@@ -53,6 +59,7 @@ const edges: DiagramEdgeRegistration[] = []
 
 provide(DIAGRAM, {
   fragments: props.fragments,
+  tiles: props.tiles,
   registerNode: node => nodes.push(node),
   registerEdge: edge => edges.push(edge),
 })
@@ -63,7 +70,8 @@ const canvasStyle = ref<Record<string, string>>({})
 const scale = ref(1)
 
 interface Box { left: number, top: number, width: number, height: number }
-const paths = ref<{ d: string, label?: string, lx: number, ly: number, labelAnchor: string, dashed?: boolean, index: number }[]>([])
+const paths = ref<{ d: string, label?: string, lx: number, ly: number, labelAnchor: string, dashed?: boolean, arrow: boolean, index: number }[]>([])
+const plates = ref<(Box | null)[]>([])
 
 function stepIndex(node: DiagramNodeRegistration) {
   return node.step ?? nodes.indexOf(node)
@@ -185,33 +193,64 @@ function draw() {
     return [{
       d,
       label: e.label,
-      lx: labelAbove ? mid[0] : mid[0] + 10,
-      ly: labelAbove ? mid[1] - 12 : mid[1],
+      lx: labelAbove ? mid[0] : mid[0] + 14,
+      ly: labelAbove ? mid[1] - 14 : mid[1],
       labelAnchor: labelAbove ? 'middle' : 'start',
       dashed: e.dashed,
+      arrow: e.arrow !== false,
       index: edgeIndex(e),
     }]
   })
-  if (svg.value && canvas.value) {
-    svg.value.setAttribute('viewBox', `0 0 ${canvas.value.offsetWidth} ${canvas.value.offsetHeight}`)
+  if (canvas.value) {
+    const viewBox = `0 0 ${canvas.value.offsetWidth} ${canvas.value.offsetHeight}`
+    svg.value?.setAttribute('viewBox', viewBox)
+    svgLabels.value?.setAttribute('viewBox', viewBox)
   }
 }
 
 // Reveal marks the fragments it knew when the slide was shown; an edge drawn
 // later follows the state of its two cards.
 function syncEdgeVisibility() {
-  if (!props.fragments || !svg.value)
+  if (!props.fragments)
     return
-  const groups = svg.value.querySelectorAll<SVGGElement>('.diagram__edge')
+  const lines = svg.value?.querySelectorAll<SVGGElement>('.diagram__edge') ?? []
+  const labels = svgLabels.value?.querySelectorAll<SVGGElement>('.diagram__edge') ?? []
   edges.forEach((e, i) => {
-    const g = groups[i]
     const from = nodes.find(n => n.id === e.from)?.el
     const to = nodes.find(n => n.id === e.to)?.el
-    if (!g || !from || !to)
+    if (!from || !to)
       return
     const shown = from.classList.contains('visible') && to.classList.contains('visible')
-    g.classList.toggle('visible', shown)
+    lines[i]?.classList.toggle('visible', shown)
+    labels[i]?.classList.toggle('visible', shown)
   })
+}
+
+// A label can land over a card when the gap is narrower than the words; the
+// plate measured here keeps it readable wherever it falls. `getBBox` throws on
+// a slide Reveal is not showing, so the measurement waits for a laid-out slide.
+function measurePlates() {
+  if (!svgLabels.value || !root.value?.offsetWidth) {
+    plates.value = []
+    return
+  }
+  const labelled = paths.value.filter(p => p.label)
+  const texts = svgLabels.value.querySelectorAll<SVGTextElement>('text')
+  const boxes = new Map<number, Box>()
+  labelled.forEach((p, i) => {
+    const text = texts[i]
+    if (!text)
+      return
+    try {
+      const b = text.getBBox()
+      if (b.width)
+        boxes.set(paths.value.indexOf(p), { left: b.x - 5, top: b.y - 2, width: b.width + 10, height: b.height + 4 })
+    }
+    catch {
+      // The slide has no layout yet; the next draw measures it.
+    }
+  })
+  plates.value = paths.value.map((_, i) => boxes.get(i) ?? null)
 }
 
 let lastPaths = ''
@@ -222,6 +261,7 @@ function drawAndSync() {
     return
   lastPaths = serialized
   nextTick(() => {
+    measurePlates()
     syncEdgeVisibility()
     revealSync?.()
   })
@@ -270,7 +310,7 @@ onBeforeUnmount(() => observer?.disconnect())
       ref="canvas"
       class="diagram__canvas"
       :style="layout === 'grid'
-        ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gridTemplateRows: rowCount ? `repeat(${rowCount}, auto)` : undefined }
+        ? { gridTemplateColumns: props.columns ?? `repeat(${columns}, minmax(0, 1fr))`, gridTemplateRows: rowCount ? `repeat(${rowCount}, auto)` : undefined }
         : canvasStyle"
     >
       <svg
@@ -303,7 +343,35 @@ onBeforeUnmount(() => observer?.disconnect())
         >
           <path
             :d="p.d"
-            marker-end="url(#diagram-arrow)"
+            :marker-end="p.arrow ? 'url(#diagram-arrow)' : undefined"
+          />
+        </g>
+      </svg>
+      <slot />
+      <!-- Cards carry a Reveal fragment, whose opacity puts them in the same
+           paint layer as the arrows and above them in document order. The
+           labels ride in a second layer after the cards so they stay legible
+           when a gap is narrower than the words. -->
+      <svg
+        ref="svgLabels"
+        class="diagram__edges diagram__edges--labels"
+        aria-hidden="true"
+      >
+        <g
+          v-for="(p, i) in paths"
+          :key="i"
+          class="diagram__edge"
+          :class="{ fragment: fragments }"
+          :data-fragment-index="fragments ? p.index : undefined"
+        >
+          <rect
+            v-if="plates[i]"
+            class="diagram__label-plate"
+            :x="plates[i]!.left"
+            :y="plates[i]!.top"
+            :width="plates[i]!.width"
+            :height="plates[i]!.height"
+            rx="3"
           />
           <text
             v-if="p.label"
@@ -314,7 +382,6 @@ onBeforeUnmount(() => observer?.disconnect())
           >{{ p.label }}</text>
         </g>
       </svg>
-      <slot />
     </div>
   </div>
 </template>
@@ -326,10 +393,10 @@ onBeforeUnmount(() => observer?.disconnect())
   margin: 0.5em 0;
 }
 
-.diagram--xs { --scheme-picto: 2.6em; font-size: 0.66em; }
-.diagram--sm { --scheme-picto: 3.2em; font-size: 0.72em; }
-.diagram--md { --scheme-picto: 4.5em; font-size: 0.85em; }
-.diagram--lg { --scheme-picto: 6em; font-size: 0.95em; }
+.diagram--xs { --scheme-picto: 2.6em; --diagram-label: 1.05em; font-size: 0.66em; }
+.diagram--sm { --scheme-picto: 3.2em; --diagram-label: 0.95em; font-size: 0.72em; }
+.diagram--md { --scheme-picto: 4.5em; --diagram-label: 0.85em; font-size: 0.85em; }
+.diagram--lg { --scheme-picto: 6em; --diagram-label: 0.8em; font-size: 0.95em; }
 
 .diagram :deep(.picto-card) {
   padding: 0.8em 0.6em 0.7em;
@@ -347,8 +414,16 @@ onBeforeUnmount(() => observer?.disconnect())
   align-items: center;
 }
 
+/* A region drawn as a header band reaches above its first row; the canvas
+   keeps that band for it so the text above the diagram stays clear. */
+.diagram--grid:has(.diagram-area--header) .diagram__canvas {
+  padding-top: 2.4em;
+}
+
+/* Paint order, bottom up: the regions, the lines, the cards, the labels. */
 .diagram__edges {
   position: absolute;
+  z-index: 1;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -367,16 +442,27 @@ onBeforeUnmount(() => observer?.disconnect())
   stroke-dasharray: 5 5;
 }
 
+/* Labels keep their own scale: the size classes shrink the cards, and a label
+   that shrank with them stopped being readable on a projected slide. */
 .diagram__edge text {
-  font-size: 0.8em;
+  font-size: var(--diagram-label, 0.8em);
   fill: var(--text-default, #161616);
-  stroke: var(--surface, #fff);
-  stroke-width: 5;
-  paint-order: stroke;
   font-family: inherit;
 }
 
+.diagram__edges--labels {
+  z-index: 3;
+}
+
+.diagram__label-plate {
+  fill: var(--surface, #fff);
+  stroke: #ecebfd;
+  stroke-width: 1;
+}
+
 .diagram :deep(.diagram-node) {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;

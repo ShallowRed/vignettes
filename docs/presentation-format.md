@@ -546,8 +546,11 @@ Une fiche par règle
 `layout="auto"` ignores `at` and lets dagre rank the nodes (`direction="LR"` or
 `"TB"`, `nodeWidth` in px). `Diagram` props: `gap` (`"row col"` CSS lengths),
 `route` (`curve`, default, or `orthogonal` elbows), `cards` (`outlined` white
-cards with a border, default, or `plain`), plus `size`, `dim` and `fragments` as
-on `Scheme`.
+cards with a border, default, or `plain`), `tiles` (`column`, default, the
+pictogram above the text, or `row`, beside it), plus `size`, `dim` and
+`fragments` as on `Scheme`. `size="xs"` suits a stack of cards that has to leave
+room for the arrows and their labels; a node takes `orientation` to override the
+diagram's `tiles`.
 
 `Edge` draws an arrow between two node ids: `label`, `dashed`, `route` per edge,
 and `anchors="right,top"` to force the sides it leaves and enters by (geometry
@@ -556,6 +559,38 @@ turns a node into a left-aligned box whose caption lists attributes, one per
 list item, for data-model diagrams. Nodes are fragments in writing order and
 each edge appears with the later of its nodes; `step="2"` on a node or edge
 overrides that.
+
+A node takes `icon="ri:calculator-line"` (a Remix icon) in place of `picto`
+when a pictogram would weigh too much on a dense diagram, and `color` (a DSFR
+illustrative colour such as `green-emeraude`, `blue-france`,
+`orange-terre-battue`, `purple-glycine`; the list is in
+`src/config/dsfr-palette.ts`) to tint its icon and title. `variant="flow"` makes
+a small box for the data that travels between two machines: the caption is the
+verb phrase, one line in the regular weight, and two edges link it to the
+machines, the first with `:arrow="false"` so only the arrival carries a head.
+`variant="plain"` drops the card for a row heading; `:emphasis="true"` fills the
+one card the screen is about with the accent. `columns="1fr 1.4fr 1fr"` on the
+diagram sets the column tracks when the flows need more room than the machines.
+
+`Area` boxes a region of the grid and names the machine, or the party, that the
+cards inside it run on:
+```markdown
+:::Diagram{layout="grid" cols="5" tiles="row"}
+::Area{at="1,1" span="1,2" title="Registre" icon="ri:git-branch-line" color="blue-france" label="header"}
+::
+::Node{id="fiche" at="1,1" icon="ri:file-text-line" color="blue-france" title="metadata.jsonld"}
+::
+::Node{id="desc" at="2,1" variant="flow" title="les entrées et leur type"}
+décrit
+::
+:::
+```
+It takes the same `at` and `span` as a node, plus `title`, `picto` or `icon`,
+`color`, `tone` (`neutral`, a dashed outline, or `subject`, a tinted box for the
+region the story follows) and `label` (`legend`, the title on the top border,
+or `header`, a centred band above the cards). It is drawn behind the cards, so
+an arrow leaving it reads as data going from one machine to another; its label
+rides above them. Regions are not fragments.
 
 ### Tags: the registry's qualified tags and their values
 ```markdown
@@ -567,6 +602,8 @@ One row per axis: the axis name, then a tag « axis : value » per entry of
 `values` (`value:tone`, tones `neutral` | `green` | `blue` | `purple` | `yellow` |
 `grey`, the registry's palette). The default slot is a caption under the row.
 `active="exécutable"` keeps that tag at full strength and fades the others.
+`label` replaces the axis name in the row's heading (« Chaque règle peut être »)
+and `:fragments="true"` reveals that heading, then each tag, one step at a time.
 
 `RuleCard` shows a rule the way the registry lists it: `producer`, `domain`,
 `title`, `meta` (a small line under the text), `tags` in the same
@@ -592,8 +629,36 @@ Les administrations les produisent.
 fragment by default (`:fragments="false"` to show the whole row at once); with
 `dim` (default `true`) the steps already shown fade once a later one is current,
 and the current step gets an accent frame. `size`: `sm` | `md` | `lg` (pictogram
-size). `Step` props: `picto` (path under `public/pictograms/`, see its README for
+size), `tiles`: `column` (default) or `row` for the pictogram beside the text.
+`Step` props: `picto` (path under `public/pictograms/`, see its README for
 the DSFR list), `title`, `n` (number badge); the default slot is the caption.
+
+### JsonTour: a file read beside the description of what it holds
+```markdown
+:::JsonTour{file="example-service / metadata.jsonld" size="xs" height="430px" panel="46%"}
+::Zone{lines="2-8" picto="custom/fiche" title="Identité et propriétaire"}
+Un profil SEMIC, un identifiant, l'organisme qui répond de la règle
+::
+::Zone{lines="9-12" picto="custom/regle" title="Base légale"}
+Le texte dont la règle est la transcription
+::
+
+```json
+{ … }
+```
+
+:::
+```
+The fenced code block of the default slot becomes a panel pinned to the right of
+the slide; each `Zone` is a fragment that highlights the `lines` it names and
+scrolls the panel to them. `lines` takes `12` or `12-24`, counted from the first
+line of the fence. `JsonTour` props: `file` (the name above the panel), `height`
+(panel height in slide pixels, the deck being 1280x720), `panel` (its width),
+`size` (`xs` | `sm` | `md`, the zone cards' scale) and `fragments`. `Zone` props:
+`lines`, `picto`, `title`, `n`, and `step` to override the writing order.
+
+With `:fragments="false"` the first zone stays highlighted, which is what the
+editor preview shows.
 
 ### Backgrounds
 Implemented. Per-slide `:slide-background{image=...}`, a frontmatter `backgrounds:` block,

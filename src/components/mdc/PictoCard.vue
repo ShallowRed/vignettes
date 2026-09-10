@@ -1,26 +1,42 @@
 <script setup lang="ts">
+import { normalizeIconName } from '#shared/deck'
 import { computed } from 'vue'
+import { paletteVars } from '~/config/dsfr-palette'
 
-// The card shared by `::Step` (schemes) and `::Node` (diagrams): a DSFR pictogram,
-// a number badge, a title and a caption.
+// The card shared by `::Step` (schemes) and `::Node` (diagrams): a DSFR pictogram
+// or a Remix icon, a number badge, a title and a caption.
 interface Props {
   /** Pictogram path relative to /pictograms, e.g. `digital/coding`. */
   picto?: string
+  /** Remix icon (`ri:server-line`), for a dense diagram where a pictogram is too much. */
+  icon?: string
   title?: string
   n?: string | number
   /** Target state (dashed frame), as opposed to what runs today. */
   planned?: boolean
+  /** `row` sets the pictogram beside the text instead of above it. */
+  orientation?: 'column' | 'row'
+  /** A DSFR illustrative colour for the icon and the title. */
+  color?: string
 }
 
 const props = defineProps<Props>()
 
 const pictoSrc = computed(() => (props.picto ? `/pictograms/${props.picto}.svg` : undefined))
+const iconName = computed(() => (props.icon ? normalizeIconName(props.icon) : undefined))
+const style = computed(() => paletteVars(props.color))
 </script>
 
 <template>
   <div
     class="picto-card"
-    :class="{ 'picto-card--planned': planned }"
+    :class="{
+      'picto-card--planned': planned,
+      'picto-card--row': orientation === 'row',
+      'picto-card--icon': !!iconName && !pictoSrc,
+      'picto-card--colored': !!color,
+    }"
+    :style="style"
   >
     <span
       v-if="n !== undefined && n !== ''"
@@ -32,14 +48,22 @@ const pictoSrc = computed(() => (props.picto ? `/pictograms/${props.picto}.svg` 
       :src="pictoSrc"
       alt=""
     >
-    <p
-      v-if="title"
-      class="picto-card__title"
-    >
-      {{ title }}
-    </p>
-    <div class="picto-card__text">
-      <slot />
+    <Icon
+      v-else-if="iconName"
+      :name="iconName"
+      class="picto-card__icon"
+      mode="svg"
+    />
+    <div class="picto-card__body">
+      <p
+        v-if="title"
+        class="picto-card__title"
+      >
+        {{ title }}
+      </p>
+      <div class="picto-card__text">
+        <slot />
+      </div>
     </div>
   </div>
 </template>
@@ -57,8 +81,40 @@ const pictoSrc = computed(() => (props.picto ? `/pictograms/${props.picto}.svg` 
   transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
+.picto-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  min-width: 0;
+  width: 100%;
+}
+
 .picto-card--planned {
   border: 2px dashed var(--accent, #000091);
+}
+
+/* Pictogram beside the text: the card keeps one line of title and stays short,
+   which leaves the vertical room for the arrows and their labels. */
+.picto-card--row {
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  gap: 0.8em;
+  padding: 0.7em 0.9em;
+}
+
+.picto-card--row .picto-card__picto,
+.picto-card--row .picto-card__icon {
+  flex: 0 0 auto;
+}
+
+.picto-card--row .picto-card__body {
+  gap: 0.15em;
+}
+
+.picto-card--row .picto-card__n {
+  position: static;
+  flex: 0 0 auto;
 }
 
 .picto-card__n {
@@ -83,11 +139,27 @@ const pictoSrc = computed(() => (props.picto ? `/pictograms/${props.picto}.svg` 
   object-fit: contain;
 }
 
+/* An icon is a glyph, so it takes about a third of a pictogram's footprint. */
+.picto-card__icon {
+  width: calc(var(--scheme-picto, 6em) * 0.5);
+  height: calc(var(--scheme-picto, 6em) * 0.5);
+  color: var(--tone-text, var(--text-title, #161616));
+}
+
+.picto-card--row .picto-card__icon {
+  width: calc(var(--scheme-picto, 6em) * 0.6);
+  height: calc(var(--scheme-picto, 6em) * 0.6);
+}
+
 .picto-card__title {
   margin: 0;
   font-weight: 700;
   line-height: 1.25;
   color: var(--text-title, #161616);
+}
+
+.picto-card--colored .picto-card__title {
+  color: var(--tone-text);
 }
 
 .picto-card__text {
