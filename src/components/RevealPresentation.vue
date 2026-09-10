@@ -11,10 +11,17 @@ interface Props {
   config?: Partial<RevealConfig>
   /** Deck language (frontmatter `lang`); French orthotypography applies only to French decks. */
   lang?: string
+  /**
+   * Show the print/PDF button. Off for the editor preview: the button is fixed to
+   * the viewport, where it lands on the editor header, and it sends the CURRENT
+   * url to `?print-pdf`, which only makes sense on a deck page.
+   */
+  printButton?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   theme: 'dsfr',
+  printButton: true,
 })
 
 const revealContainer = ref<HTMLElement | null>(null)
@@ -148,7 +155,7 @@ onUnmounted(() => {
       </a>
     </div>
     <button
-      v-if="!isPrintMode"
+      v-if="!isPrintMode && printButton"
       type="button"
       class="print-pdf-button"
       title="Imprimer / exporter en PDF"
