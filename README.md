@@ -1,363 +1,112 @@
-# Nuxt Slides
+# nuxt-slides
 
-A modern presentation system built with Nuxt 3, MDC, and reveal.js that converts Markdown Component files into beautiful slide decks.
+A self-hosted catalog and editor for Markdown slide decks. Decks are written in MDC (Markdown with Vue components), rendered with reveal.js, edited collaboratively in the browser, and published as immutable versions with per-deck access rules.
 
-## Features
+## What it does
 
-- 🚀 **Nuxt 3** - Modern Vue framework with SSR/SSG support
-- 📝 **MDC Support** - Write presentations in Markdown with Vue components
-- 🎨 **Multiple Themes** - DSFR and Minimal themes included
-- 📊 **reveal.js** - Professional presentation framework
-- 🔧 **Custom Components** - Columns, Quote, Image, media layouts, and more
-- 🎯 **File-based Routing** - Auto-discover presentations from `presentations/` folder
-- ⬇️ **Vertical Slides** - Support for both `----` markers and `###` headings
-- 🎭 **Dynamic Theming** - Per-presentation theme selection
+- **Catalog**: decks grouped in project folders, filtered by status and project, with a trash for reversible deletion.
+- **Editor**: a CodeMirror editor with a live preview, real-time collaboration (Yjs over Hocuspocus), image paste and drop, and a draft that stays separate from what readers see.
+- **Publishing**: publishing a draft creates a new immutable version; the catalog shows which decks have unpublished changes; `?draft` previews the draft on the deck page.
+- **Access control**: four global roles (anonymous, viewer, editor, owner), four publication statuses (public, private, semi-private with a password, draft), per-deck and per-project grants for collaborators, and pre-provisioned invitations by GitHub or Google handle.
+- **Themes**: reveal.js themes compiled from SCSS, with a DSFR theme (the French state design system) and a minimal theme; each deck picks its theme in its frontmatter.
+- **Slide components**: columns, quotes, images with lightbox, media layouts, live Storybook embeds, Mermaid diagrams, JSON tours, speaker notes, fragments, and more.
+- **Print**: any deck exports to PDF through reveal.js print mode.
+- **Frozen bundles**: a deck can be frozen into a self-contained static bundle served from object storage, under the same access rules as the live deck.
 
-## Quick Start
-
-### Installation
+## Quick start
 
 ```bash
-# Clone the repository
-cd nuxt-slides
-
-# Toolchain (Node, pnpm, portless) and tasks come from mise.toml
-mise install
-
-# Start the development server; the browser opens once it answers
-mise run dev
+mise install          # Node 22, pnpm, portless
+mise run dev          # opens https://nuxt-slides.localhost once the app answers
 ```
 
-The app is served on `https://nuxt-slides.localhost` (portless picks the port;
-`mise run dev:nuxt` serves `http://localhost:3000` for tools that need a fixed port).
+In development, `/auth/dev-login?role=owner` signs you in without OAuth. Create a deck from the catalog, or import the example stubs from `presentations/` with `mise run content:import`.
 
-### Create a Presentation
+`mise run dev:nuxt` serves the bare Nuxt dev server on `http://localhost:3000` for tools that need a fixed port.
 
-Create a new `.md` file in the `presentations/` directory:
+## Writing a deck
+
+A deck is one Markdown file with a frontmatter block:
 
 ```markdown
 ---
-title: "My Presentation"
-theme: dsfr  # or 'minimal'
+title: My deck
+theme: dsfr
 ---
 
-# First Slide
+# Title slide
 
-Welcome to my presentation
+## First section
 
----
+Content.
 
-# Second Slide
+### A vertical slide
 
-This is the second slide
-```
+More content.
 
-## Project Structure
-
-```
-nuxt-slides/
-├── src/
-│   ├── app.vue            # Root component
-│   ├── pages/
-│   │   ├── index.vue      # List all presentations
-│   │   └── slides/
-│   │       └── [slug].vue # Dynamic presentation route
-│   ├── components/
-│   │   ├── RevealPresentation.vue  # reveal.js wrapper
-│   │   ├── IconInline.vue          # Inline icon (Iconify)
-│   │   └── mdc/           # Custom MDC components
-│   │       ├── Columns.vue
-│   │       ├── Quote.vue
-│   │       ├── Image.vue
-│   │       ├── FullScreenImage.vue
-│   │       ├── Iframe.vue
-│   │       ├── Mermaid.vue
-│   │       └── PreviewLink.vue
-│   ├── composables/       # Reusable logic
-│   ├── config/            # Presentation & theme config
-│   └── server/
-│       └── api/           # API endpoints
-├── presentations/         # Your presentation files (.md)
-├── themes/               # Theme SCSS source files
-└── public/
-    └── themes/          # Compiled CSS themes
-```
-
-## Presentation Format
-
-### Frontmatter
-
-Every presentation should start with frontmatter:
-
-```yaml
----
-title: Presentation Title
-theme: dsfr # or 'minimal'
-transition: slide # optional
-center: true # optional
----
-```
-
-### Horizontal Slides
-
-Separate slides with `---` (3 dashes):
-
-```markdown
-# First Slide
-
----
-
-# Second Slide
-
----
-
-# Third Slide
-```
-
-### Vertical Slides
-
-Within a horizontal slide, create vertical slides using:
-
-**Method 1: Four dashes**
-```markdown
-# Main Topic
-
-----
-
-More details
-
-----
-
-Even more details
-```
-
-**Method 2: H3 headings**
-```markdown
-### First Vertical
-
-Content
-
-### Second Vertical
-
-Content
-```
-
-## MDC Components
-
-### Columns
-
-```markdown
-:::Columns
-::column
-Left content
-::
-::column
-Right content
-::
-:::
-```
-
-### Quote
-
-```markdown
-::Quote{author="Author Name" source="Source"}
-Quoted text here
+::Quote{author="Someone"}
+A quote.
 ::
 ```
 
-### Image
+`#` opens the title slide, `##` starts a horizontal slide, `###` a vertical one, and `---` also separates slides. The component reference, the frontmatter schema, backgrounds, and the Storybook embed syntax are in [docs/presentation-format.md](docs/presentation-format.md), [docs/backgrounds.md](docs/backgrounds.md), and [docs/theme-system.md](docs/theme-system.md).
 
-```markdown
-::Image{src="/path/to/image.png" alt="Description" width="60%"}
-Optional caption text
-::
-```
+## Content model
 
-### Media Layout
+The database is the only runtime source of content. Each deck has a draft (a Yjs document), a list of published versions, and a pointer to the version readers see. The `presentations/` submodule is an archive of deck stubs, exported from production and imported into new instances:
 
-```markdown
-### Slide Title
-:layout{name="media-right" src="https://example.com" type="iframe"}
+| Task | Effect |
+|------|--------|
+| `mise run content:plan` | What an import would do, without writing |
+| `mise run content:import` | Import the stubs the database does not own yet |
+| `mise run content:republish -- <slug>` | New published version from the stub, access rules untouched |
+| `mise run content:push -- <slug> --apply` | Same, on a deployed instance over SSH |
 
-Description text next to the iframe.
-```
+## Access model
 
-Supported layouts: `media-right`, `media-left`, `media-right-wide`, `media-left-wide`, `media-right-xwide`, `media-left-xwide` (caption rail + dominant media), `media-below` / `media-above` (stacked), `media-cover` (full-bleed with floating caption). The heading and body render in a content column alongside the media.
+A request on a deck is decided by a pure function of the actor's role, the deck's status, the grants the actor holds, and the password cookie for semi-private decks. Owners and editors see everything; viewers see public decks plus what they were granted; anonymous readers see public decks. Owners manage accounts, roles, grants, and the trash. The full decision tree is in [docs/access-matrix.md](docs/access-matrix.md).
 
-Supported props: `src` (required unless `story` is set), `type` (`iframe` or `image`), `alt`, `title`, `lightbox`, `fit` (`cover` by default, or `contain` for a floating image without container chrome).
+Sign-in uses GitHub or Google OAuth. Accounts are identified by provider and provider id; an owner can invite a handle before its first login so that grants apply immediately.
 
-#### Several screens on one slide
+## Deployment
 
-Compare multiple stories or screenshots side by side with `Screens` + `StoryFrame`:
+The app builds into a Docker image (`Dockerfile`) that runs the Nitro server on port 3000 with a SQLite database on a volume. At start, `docker-entrypoint.sh` fetches the runtime secrets from Infisical with a machine identity and injects them into the process; `run-app.sh` then restores the database from object storage when the volume is empty and runs the app under Litestream replication. Without bucket credentials the app starts on the local database alone.
 
-```markdown
-:::Screens{cols="3" gap="1rem"}
-::StoryFrame{story="my-component--a" ratio="desktop" label="Option A" lightbox}
-::
-::StoryFrame{story="my-component--b" ratio="desktop" label="Option B" lightbox}
-::
-::StoryFrame{story="my-component--c" ratio="desktop" label="Option C" lightbox}
-::
-:::
-```
+GitHub Actions builds the image on every push to `main` and `staging`, publishes it to GHCR, and deploys it over SSH to the matching environment. Docs-only commits do not trigger a build.
 
-`StoryFrame` resolves a `story` id against the frontmatter `storybook` root (or takes a raw `src`), with `ratio` (`desktop`, `wide`, `mobile`, `portrait`, `16/9`…), `fit`, `label`, and `lightbox` props.
+### Configuration
 
-#### Live Storybook embeds
+| Variable | Role |
+|----------|------|
+| `NUXT_SESSION_PASSWORD` | Session cookie secret, 32 characters minimum |
+| `NUXT_OAUTH_GITHUB_CLIENT_ID`, `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub sign-in |
+| `NUXT_OAUTH_GOOGLE_CLIENT_ID`, `NUXT_OAUTH_GOOGLE_CLIENT_SECRET` | Google sign-in; the login page hides providers without credentials |
+| `NUXT_OWNER_LOGINS`, `NUXT_EDITOR_LOGINS` | Handles that receive the owner and editor roles at login |
+| `NUXT_DB_PATH` | SQLite file, `.data/slides.db` by default |
+| `NUXT_CONTENT_TOKEN` | Bearer token that lets `content:republish:prod` publish without a session |
+| `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica |
+| `NUXT_RECETTE_ENABLED` | Enables the acceptance kit (`/recette`) outside development |
 
-Declare a `storybook` base URL in the frontmatter, then reference a story by id with the `story` prop:
-
-```markdown
----
-title: "Design iterations"
-storybook: http://localhost:6006
----
-
-### My component, live
-:layout{name="media-right-wide" story="my-component--page" lightbox="true"}
-
-What we are testing, next to the live story.
-```
-
-The `story` value (`<componentId>--<storyName>`) resolves to `<storybook>/iframe.html?id=<story>&viewMode=story` and renders as a live iframe — slides stay in sync with the design system, no screenshots to regenerate.
-
-For the full component reference, see [docs/presentation-format.md](./docs/presentation-format.md).
-
-## Themes
-
-### DSFR Theme
-Based on the French Government Design System (Système de Design de l'État Français):
-- Professional and official
-- Blue color scheme
-- Marianne font family
-
-### Minimal Theme
-Clean and modern design:
-- Simple and elegant
-- Light color scheme
-- Helvetica font family
-
-## Private Presentations
-
-Non-public presentations (private, semi-private, draft) are stored in a separate private repository and synced at build time in CI (GitHub Actions) via `scripts/fetch-presentations.js`. The main repository is meant to stay open source.
-
-> **Note (2026-07-13):** this repo is **temporarily private**; the plan is to make it public
-> again after a git-history cleanup. This has **no effect on deployment** (the GHCR image stays
-> public). See [docs/repo-visibility.md](./docs/repo-visibility.md).
-
-| Status | Access | Rendering |
-|--------|--------|-----------|
-| public | open | SSG |
-| semi-private | password/auth | SSR |
-| draft | admin | SSR |
-| private | GitHub OAuth | SSR |
-
-See [docs/private-presentations.md](./docs/private-presentations.md) for setup.
-
-## Two-Repository Setup
-
-This project spans two codebases:
-
-| Repo | Role | Local path |
-|------|------|------------|
-| `ShallowRed/nuxt-slides` | Presentation renderer (Nuxt 3) | `~/Projects/nuxt-slides` |
-| `ShallowRed/codimd` | Live markdown editor (CodiMD fork) | `~/Projects/codimd` |
-
-The CodiMD fork adds MDC component preview (syntax highlighting, layout rendering) so authors can preview slides while editing. It deploys to Scalingo separately.
-
-**Remotes for CodiMD:**
-- `origin` → `ShallowRed/codimd` (our fork on GitHub)
-- `upstream` → `hackmdio/codimd` (upstream)
-- `scalingo` → Scalingo deployment
-
-A VS Code multi-root workspace file (`nuxt-slides.code-workspace`) includes both repos for unified search and editing.
+`.env.example` lists them with comments. Locally, `.env` is read by Nuxt; in production the variables come from Infisical.
 
 ## Development
 
-`mise tasks` lists the everyday commands: `dev`, `test`, `test:watch`, `lint`,
-`lint:fix`, `build`, `check` (lint + tests), `worktree`, `content:import`,
-`content:republish`, `content:republish:prod`. The tasks pin Node 22, which
-`better-sqlite3` is built for. The pnpm scripts stay available:
-
 ```bash
-# Development server with theme compilation
-pnpm dev
-
-# Watch and rebuild specific theme during development
-pnpm dev:theme dsfr
-
-# Build for production (SSR)
-pnpm build
-
-# Generate static site (SSG)
-pnpm generate
-
-# Preview static build
-pnpm preview:static
-
-# Preview production build
-pnpm preview
+mise run test         # vitest: unit and golden tests
+mise run lint         # eslint
+mise run check        # lint and tests, what the CI runs
+mise run build        # themes, then Nuxt
 ```
 
-### Working on several things at once
-
-One dev server per worktree, each with its own `.nuxt`, database and host:
+Several branches can run at the same time, each in its own worktree with its own database and host name:
 
 ```bash
-mise run worktree -- feat/my-branch       # ../nuxt-slides.wt/feat-my-branch, ready to run
-cd ../nuxt-slides.wt/feat-my-branch && mise run dev   # http://feat-my-branch.nuxt-slides.localhost:8443
+mise run worktree -- feat/my-branch      # ../nuxt-slides.wt/feat-my-branch, ready to run
+cd ../nuxt-slides.wt/feat-my-branch && mise run dev
 ```
 
-`CONTRIBUTING.md` holds the rules for working in this repository.
-
-## Static Site Generation (SSG)
-
-This project fully supports static site generation. All presentations are automatically discovered and pre-rendered at build time.
-
-```bash
-# Generate static site
-pnpm generate
-
-# Output is in .output/public/ - ready to deploy!
-```
-
-**Deployment:**
-- Production runs as **SSR in Docker** on a self-hosted VPS (image built + auto-deployed by GitHub Actions). See the infra repo (`vps-infra`) for the container, reverse proxy and secrets setup.
-- Deck content lives in the production database, not in the image. `mise run content:republish:prod -- <slug>` publishes a deck from its stub through the app's own routes, authenticated with `NUXT_CONTENT_TOKEN` (stored in Infisical, read by the container at start and by the task at run time).
-- SSG output (`.output/public/`) can also be served from any static host (GitHub Pages, Cloudflare Pages, …) when auth/SSR isn't needed.
-
-## Architecture
-
-This project follows clean architecture principles with clear separation of concerns:
-- **Types**: Centralized type definitions
-- **Config**: Configuration constants
-- **Composables**: Reusable business logic
-- **Components**: Presentational components
-- **Pages**: Route pages
-
-For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md).
-
-## Navigation
-
-### Keyboard Shortcuts
-- `→` / `←` - Navigate horizontal slides
-- `↓` / `↑` - Navigate vertical slides
-- `Space` - Next slide
-- `Esc` - Slide overview
-- `F` - Fullscreen
-- `S` - Speaker notes (if enabled)
-
-## Technologies
-
-- [Nuxt 3](https://nuxt.com/) - The Intuitive Vue Framework
-- [@nuxtjs/mdc](https://github.com/nuxt-content/mdc) - MDC Parser for Nuxt
-- [reveal.js](https://revealjs.com/) - HTML Presentation Framework
-- [Sass](https://sass-lang.com/) - CSS Preprocessor
+The repository layout: `src/` holds the Nuxt app, `server/` the Nitro routes and database stores, `shared/` the framework-agnostic domain (deck resolution, access decisions, theme tokens) imported as `#shared`, `themes/` the SCSS sources compiled to `public/themes/`, `scripts/` the content and build tools, `test/` the vitest suites. [docs/architecture.md](docs/architecture.md) describes the layers, [docs/api-routes.md](docs/api-routes.md) the HTTP API, [docs/composables.md](docs/composables.md) the client composables, and [docs/recette-staging.md](docs/recette-staging.md) the acceptance kit.
 
 ## License
 
 MIT
-
-## Credits
-
-Built with ❤️ using Nuxt + MDC + reveal.js

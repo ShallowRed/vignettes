@@ -137,14 +137,14 @@ Displays text larger than usual for slides with few words but strong messages.
 
 ```markdown
 ::Highlight
-Un **catalogue de règles** au service de la *transparence algorithmique*
+A **single sentence** with a *strong* message
 ::
 ```
 
 With size and variant:
 ```markdown
 ::Highlight{size="lg" variant="accent"}
-La mutualisation réduit les coûts de **60%**
+Shared services cut costs by **60%**
 ::
 ```
 

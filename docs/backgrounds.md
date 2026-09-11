@@ -15,7 +15,7 @@ Add `:slide-background{image="..."}` anywhere in a slide's content (typically ri
 
 ```markdown
 ## Section title
-:slide-background{image="/backgrounds/as-content.png"}
+:slide-background{image="/backgrounds/slide-bg-subtle.png"}
 
 Slide body content here...
 ```

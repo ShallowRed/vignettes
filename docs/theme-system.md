@@ -246,8 +246,7 @@ absent. It deliberately does NOT import `themes/shared/` (which depends on
 }
 ```
 
-All build commands compile themes first. Compiled CSS is copied to
-`.output/public/themes/` for SSG hosting.
+All build commands compile themes first. Compiled CSS ships in `.output/public/themes/`.
 
 ---
 

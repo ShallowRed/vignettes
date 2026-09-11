@@ -1,15 +1,14 @@
 name: Build and publish Docker image
 
-# Construit l'image SSR et la pousse sur GHCR (privée : elle contient le contenu
-# privé baké au build). Le VPS pull ensuite un tag épinglé (voir vps-infra).
+# Construit l'image SSR et la pousse sur GHCR. L'image ne contient que le code :
+# le contenu vit dans la base de données de chaque instance.
 #
-# Le token de contenu (PRESENTATIONS_REPO_TOKEN) n'est PAS un secret GitHub : il
-# est récupéré depuis Infisical au runtime du workflow via OIDC (machine identity,
-# gratuit en CE) — aucun credential statique dans GitHub. Il est ensuite passé au
-# build en secret BuildKit (jamais écrit dans une couche de l'image).
+# Après le build, le job `deploy` se connecte au VPS en SSH et met à jour le
+# conteneur sur le sha exact qui vient d'être construit : push sur `staging`
+# pour la préproduction, push sur `main` pour la production.
 #
-# Après le build, le job `deploy` (push sur main) se connecte au VPS en SSH et
-# met à jour le conteneur sur le sha exact qui vient d'être construit (CD).
+# La clé SSH de déploiement n'est pas un secret GitHub : le job la lit dans
+# Infisical via OIDC (machine identity), sans credential statique côté GitHub.
 #
 # Prérequis (Settings > Secrets and variables > Actions > Variables) :
 #   INFISICAL_API_URL             : URL de l'instance Infisical (non versionnée ici)
@@ -17,8 +16,7 @@ name: Build and publish Docker image
 #   INFISICAL_PROJECT_SLUG        : slug du projet Infisical hébergeant les secrets
 #   VPS_HOST, VPS_USER            : hôte + user SSH du VPS (pour le job deploy)
 # Côté Infisical : machine identity OIDC (trust du repo) avec accès LECTURE au
-# projet/env, hébergeant les secrets PRESENTATIONS_REPO_TOKEN (build) et
-# VPS_SSH_KEY (clé privée de déploiement, utilisée par le job deploy).
+# projet/env, hébergeant le secret VPS_SSH_KEY (clé privée de déploiement).
 
 on:
   push:

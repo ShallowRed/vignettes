@@ -54,11 +54,7 @@ nuxt-auth-utils' own `useUserSession` does not expose). Cached in `useState`
 - `user`: computed `{ login, name, avatar } | null`
 - `refresh`: () => re-fetch `/api/auth/session`
 
-**SSR / prerender note**: the session is resolved with `useRequestFetch()` (forwards
-the cookie server-side). Because `/`, `/login` and public slides are **prerendered**,
-their baked payload is logged-out; the composable therefore re-resolves the session
-once on the client after hydration (`onNuxtReady`) so the header reflects the real
-auth state everywhere (not just on SSR routes like `/admin`).
+**SSR note**: the session is resolved once per page request by `server/middleware/app-session.ts` and seeded into `useState` during SSR, so the header renders the same auth branch on the server and on the client.
 
 ---
 

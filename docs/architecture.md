@@ -3,17 +3,18 @@
 ## System Overview
 Nuxt 4 presentation system converting MDC markdown to reveal.js slides. Ports-and-adapters
 architecture: an isomorphic domain core (`shared/`) sits between the client app (`src/`) and
-the Nitro server (`server/`). Runs SSR in production; SSG is a secondary mode.
+the Nitro server (`server/`). Every page renders per request in production; the only prerendered output is the single-deck bundle mode.
 
 ## Core Stack
-- Nuxt ^4.2.1 (SSR default, hybrid route rules, file-based routing)
-- @nuxtjs/mdc ^0.19.1 (markdown parsing, Vue component support)
-- nuxt-auth-utils ^0.5.25 (session/GitHub OAuth) + @nuxt/icon ^2.1.0 (SVG icons)
-- reveal.js ^5.2.1 (presentation framework, client-only)
-- Tailwind CSS ^4.1.17 + daisyUI ^5 (app-shell UI; slides themed via SCSS)
-- zod ^4 (deck metadata + config validation)
-- SASS ^1.94.2 (theme compilation)
-- pnpm@10.24.0 (package manager, catalog in pnpm-workspace.yaml), Node >=22
+- Nuxt 4 (SSR, file-based routing) with Nitro's `node_server` preset
+- @nuxtjs/mdc (markdown parsing, Vue component support)
+- reveal.js (presentation framework, client-only)
+- SQLite through better-sqlite3 and drizzle-orm; migrations in `server/db/migrations`
+- Yjs + Hocuspocus (collaborative draft), CodeMirror 6 (editor)
+- nuxt-auth-utils (session, GitHub and Google OAuth)
+- @nuxt/ui + Tailwind CSS (app shell), Pinia Colada (client queries); slides themed via SCSS
+- zod (deck metadata + config validation), sass (theme compilation)
+- pnpm (catalog in pnpm-workspace.yaml), Node 22, vitest
 
 ## Directory Structure
 Three top-level layers at the REPO ROOT: `src/` (Nuxt client app, `srcDir: 'src/'`),
@@ -59,31 +60,35 @@ src/                                # Nuxt app (srcDir)
 │       ├── SplitSlide.vue         # Split layout
 │       ├── PreviewLink.vue        # Link with preview thumbnail
 │       └── StoryFrame.vue / Screens.vue   # Storybook story embeds
+├── api/, queries/                 # Typed HTTP client + Pinia Colada queries and mutations
 ├── pages/
-│   ├── index.vue                  # Presentation catalog (useAsyncData)
-│   ├── login.vue                  # Login (GitHub OAuth)
-│   ├── admin/index.vue            # Admin dashboard (middleware/admin.ts)
-│   ├── forbidden.vue
-│   ├── unlock/[slug].vue          # Password-unlock for protected decks
-│   ├── p/[alias].vue              # Live frozen-deck alias route
-│   └── slides/
-│       ├── [slug].vue             # Presentation viewer
-│       └── codimd/[noteId].vue    # Direct CodiMD note viewer
+│   ├── index.vue                  # Catalog: project folders, filters, deck cards
+│   ├── projects/[slug].vue        # One folder's decks
+│   ├── slides/[slug].vue          # Deck viewer (published version, or `?draft`)
+│   ├── edit/[slug].vue            # Collaborative editor with live preview
+│   ├── p/[alias].vue              # Alias route: live deck, or redirect to its frozen bundle
+│   ├── unlock/[slug].vue          # Password prompt for semi-private decks
+│   ├── users.vue                  # Accounts and global roles (owner)
+│   ├── trash.vue                  # Restore or erase trashed decks and folders
+│   ├── recette.vue                # Acceptance kit (owner, flag-gated)
+│   └── login.vue
 
 server/                             # Nitro server (repo root, NOT under src/)
 ├── api/
-│   ├── presentations.get.ts       # List presentations (catalog wire contract)
-│   ├── presentations/[slug].get.ts # Get one presentation's resolved content
-│   ├── projects.get.ts            # Project registry
-│   ├── p/[alias].get.ts           # Frozen-deck alias resolution
-│   ├── codimd/[noteId].get.ts     # Fetch a CodiMD/HackMD note
-│   ├── auth/session.get.ts        # Current session
-│   └── admin/hash-password.post.ts
-├── routes/auth/                    # github.get.ts (OAuth), logout.get.ts
-├── middleware/alias-redirect.ts
-├── plugins/                        # nuxtout-deck.ts, theme-consistency.ts (boot checks)
-└── utils/                          # I/O adapters: access, actor, codimd, deck-resolution,
-                                    #   password, presentations, projects, registry, sources
+│   ├── presentations*.ts          # Catalog, deck read, create, draft save, publish, trash
+│   ├── projects.get.ts, p/[alias].get.ts, media.post.ts
+│   ├── admin/                     # Deck metadata, projects, trash, users, grants
+│   ├── auth/                      # session.get.ts, providers.get.ts
+│   └── recette/                   # Acceptance kit seed + status
+├── routes/
+│   ├── auth/                      # github, google, logout, dev-login, recette
+│   ├── collab.ts                  # Hocuspocus over Nitro's WebSocket
+│   ├── media/[...path].ts         # Uploaded images (object storage or .media/)
+│   └── frozen/[...path].ts        # Frozen bundle assets, behind the deck's access gate
+├── db/                            # drizzle schema, migrations, stores (content, draft, permissions, projects, users)
+├── middleware/                     # alias-redirect.ts, app-session.ts
+├── plugins/                        # migrations.ts (boot), theme-consistency.ts, nuxtout-deck.ts (bundle mode)
+└── utils/                          # Adapters: access, actor, catalog, collab, content-token, db, password, rate-limit, recette, sources, users
 
 shared/                             # Isomorphic domain core (#shared alias) — see below
 ├── deck/        # deck resolution, parser port, schema, frontmatter, merge, presets, cache
@@ -96,7 +101,7 @@ shared/                             # Isomorphic domain core (#shared alias) —
 └── build/       # bundle toggles, freeze descriptor, public-deck discovery
 
 public/themes/               # Compiled CSS themes (generated)
-presentations/               # Source markdown stubs + registry.yml + projects.yml
+presentations/               # Archive submodule: deck stubs exported from production, registry.yml, projects.yml
 themes/                      # SCSS theme source files
 scripts/build-themes.js      # Theme compilation script
 plugins/theme-watcher.js     # Vite plugin for theme hot-reload
@@ -135,7 +140,7 @@ adapter (e.g. `shared/access` decision logic ↔ `server/utils/access.ts` sessio
 
 ## Data Flow
 ```
-[.md stub / remote note] → [server/utils sources] → [resolveDeck (#shared/deck)] → [API route JSON]
+[published version in SQLite] → [server/utils/sources] → [resolveDeck (#shared/deck)] → [API route JSON]
                                                                                          ↓
 [API route] → [usePresentation] → [PARSERS[parserIdFor(metadata)].parse()] → [Slide[]]
                     ↓                         (parser port #shared/deck + src/utils/slide-ast.ts)
@@ -152,7 +157,7 @@ adapter (e.g. `shared/access` decision logic ↔ `server/utils/access.ts` sessio
 
 ### Separation of Concerns
 - **Types** (`src/types/`): Shared TypeScript interfaces
-- **Config** (`src/config/`): Constants and registries, no reactive state — `presentation.ts` (MDC mappings, backgrounds), `layouts.ts` (layout strategy registry), `injection-keys.ts` (typed provide/inject keys). Deck/CodiMD presets now live in `shared/deck/presets.ts` (derived from theme tokens).
+- **Config** (`src/config/`): Constants and registries, no reactive state — `presentation.ts` (MDC mappings, backgrounds), `layouts.ts` (layout strategy registry), `injection-keys.ts` (typed provide/inject keys). Deck presets live in `shared/deck/presets.ts` (derived from theme tokens).
 - **Shared** (`shared/`): isomorphic domain core imported via `#shared` — see "Shared Domain Layer".
 - **Server** (`server/`): Nitro API routes + `server/utils/` I/O adapters over the shared ports.
 - **Utils** (`src/utils/`): Pure, stateless functions — `slide-ast.ts` (MDC AST → Slide[] conversion), `slide-rendering.ts` (class/background/media helpers), `slugify.ts`, etc.
@@ -160,21 +165,11 @@ adapter (e.g. `shared/access` decision logic ↔ `server/utils/access.ts` sessio
 - **Components**: Presentation only; `SlideContent.vue` owns inner rendering, `RevealSlides.vue` owns section scaffolding
 - **Pages**: Composition, no logic
 
-### Rendering Strategy (hybrid, SSR-first)
-Production runs SSR via the Nitro `node-server` preset (see Deployment). Route rules in
-`nuxt.config.ts` mix prerender (SSG) and SSR per route:
-- `/`, `/login`, `/slides/public/**`, `/api/presentations` → prerendered (SSG)
-- `/slides/**`, `/unlock/**`, `/admin/**`, `/api/presentations/**` → SSR (cookies/auth)
-- All data fetching uses `useAsyncData`; `usePresentation` uses `useRequestFetch` so a
-  logged-in user's session cookie is forwarded when loading a protected deck during SSR.
-- Reveal.js dynamically imported client-side only.
-- Public presentation routes auto-discovered at build time via the `nitro:config` hook
-  (`discoverPublicSlugs` from `#shared/build`). Under the `node-server` preset the hook only
-  prerenders the `/slides/<slug>` pages — their `/api/presentations/<slug>` JSON is served in
-  SSR at runtime to avoid a file/dir (EISDIR) collision on the real filesystem, and link
-  crawling is disabled so the build never follows `/auth/github` (which needs OAuth secrets).
-- Bundle mode (`BUNDLE_ONLY_SLUG`, DDR-017) freezes a single deck to a self-contained,
-  JS-free static bundle (`noScripts` + inline all CSS).
+### Rendering Strategy (SSR)
+Production runs SSR via the Nitro `node_server` preset (see Deployment). Every page and API route renders per request: the catalog and the decks depend on the session and on the database, neither of which exists at build time, so `nuxt.config.ts` sets no prerender rule outside bundle mode.
+- Data fetching goes through Pinia Colada queries (`src/queries`) over the typed client in `src/api`; SSR requests forward the session cookie with `useRequestFetch`.
+- Reveal.js is imported client-side only.
+- Bundle mode (`BUNDLE_ONLY_SLUG`) prerenders one deck and its API JSON into a self-contained, JS-free static bundle (`noScripts`, inlined CSS); `server/plugins/nuxtout-deck.ts` turns the page into a standalone Reveal document.
 
 ### Slide Parsing Rules
 1. **H1**: Title slide (single, keeps content together until first H2)
@@ -262,42 +257,31 @@ Presentation viewer page.
 - Renders with RevealPresentation + MDCRenderer
 - Handles loading/error states
 
-## Build & Prerender Implementation
+## Build
 
-### Route Discovery
-`nuxt.config.ts` → `hooks['nitro:config']`:
-- Calls `discoverPublicSlugs('presentations/')` (`#shared/build`) — public decks are found by
-  parsing stub frontmatter (status), not by listing `public/`.
-- Generates prerender routes: `/slides/${slug}` (+ `/api/presentations/${slug}` when NOT the
-  `node-server` preset).
-- Pushes to `nitroConfig.prerender.routes`.
+1. `pnpm build` runs `build:themes` first (`build-theme-tokens.ts` then `build-themes.js`), then `nuxt build`.
+2. `server/plugins/migrations.ts` applies pending migrations at boot: the repo folder in development, the copy shipped with the output in production.
+3. Output lands in `.output/` (server + public); the Docker runtime stage ships that folder only.
 
-### Build Process
-1. `prebuild`/`pregenerate` → `scripts/fetch-presentations.js` fetches the private content.
-2. `pnpm build` (SSR, default) / `pnpm generate` (SSG) → runs `build:themes` first
-   (`build-theme-tokens.ts` then `build-themes.js`).
-3. Discovers public presentation routes via the `nitro:config` hook.
-4. Prerenders public pages/JSON; SSR routes handled at runtime.
-5. Outputs to `.output/` (server + public).
+In bundle mode (`BUNDLE_ONLY_SLUG`), `nuxt generate` prerenders the one deck and skips the SPA fallbacks (`prerender:generate` hook).
 
 ### Client Hydration
-- Initial load: SSR or prerendered HTML
+- Initial load: SSR HTML
 - Hydration: Vue takes over (except JS-free frozen bundles)
 - Navigation: client-side routing
-- Data: fetches JSON from the presentations API
+- Data: JSON from the API routes, cached by Pinia Colada
 
 ## Configuration Files
 
 ### nuxt.config.ts
 - srcDir: 'src/' (server/ and shared/ stay at repo root)
-- modules: ['@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/icon']
+- modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui']
 - vite.plugins: [tailwindcss(), themeWatcher(), presentationWatcher()] for dev hot-reload
-- routeRules: hybrid prerender/SSR (see Rendering Strategy)
-- nitro: serverAssets (`presentations/`), publicAssets (`.frozen/`, `.frozen-mirror/` for
-  frozen bundles, DDR-018), prerender (crawlLinks disabled under node-server)
-- runtimeConfig: `codimdUrl`, `hackmdApiToken`, `sourceCacheTtlMs` (server-only)
-- `node-server` preset detection (`NITRO_PRESET`) toggles the EISDIR-avoidance behaviour
-- hooks['nitro:config']: public route discovery via `#shared/build`
+- routeRules: prerender rules exist in bundle mode only (see Rendering Strategy)
+- nitro: `experimental.websocket` for the collaboration route, prerender disabled outside bundle mode
+- runtimeConfig: `sourceCacheTtlMs` (server-only); OAuth credentials and access lists are read from the environment by nuxt-auth-utils and `shared/access`
+- hooks['nitro:config']: in bundle mode, restricts prerendering to the bundle's deck and its API JSON
+- hooks['nitro:build:public-assets']: copies `server/db/migrations` next to the server output for the boot-time migration plugin
 
 ### src/config/presentation.ts
 ```ts
@@ -327,8 +311,8 @@ interface RevealConfig { hash?: boolean, center?: boolean, ... }
 ### package.json
 - `dev`: `nuxt dev` (theme watcher runs via the Vite plugin)
 - `dev:themes`: Builds themes → starts dev server
-- `build`: Builds themes → SSR build (prebuild fetches private content)
-- `generate`: Builds themes → static generation (pregenerate fetches content)
+- `build`: Builds themes → SSR build
+- `generate`: Builds themes → static generation (bundle mode)
 - `build:themes`: `build-theme-tokens.ts` → `build-themes.js` (compiles all SCSS themes)
 - `dev:theme`: Watch-compile themes
 - `hash-password`: Generate a password hash for a protected deck
@@ -366,7 +350,6 @@ Create composable implementing `{ parseSlides }` interface, swap in usePresentat
 Add to DEFAULT_REVEAL_CONFIG or pass custom config to RevealPresentation.
 
 ## Performance Optimizations
-- Hybrid rendering: public pages prerendered (SSG), protected/dynamic served SSR
 - Source cache: shared TTL cache (`shared/deck/cache`) over content sources + registry
 - Code splitting: Reveal.js loaded client-side only
 - Lazy loading: Themes loaded on demand
@@ -377,10 +360,7 @@ Add to DEFAULT_REVEAL_CONFIG or pass custom config to RevealPresentation.
 Production is SSR, not static hosting:
 - Nitro `node-server` preset (`NITRO_PRESET=node_server`), built into a multi-stage
   `Dockerfile` (deps → build → `node:22-slim` runtime with `.output/` only).
-- Private content (the `presentations/` submodule) is baked into the image at build time,
-  so the GHCR image is PRIVATE and a content change means a rebuild.
-- `.github/workflows/docker-publish.yml` builds + pushes the image to GHCR and, on push to
-  `main`, deploys to a self-hosted VPS over SSH (infra lives in a separate `vps-infra` repo).
-- Runtime secrets are pulled from a self-hosted Infisical instance by `docker-entrypoint.sh`
-  (`infisical run`) — secrets never touch disk. Build-time secrets come from Infisical via CI.
-- SSG (`pnpm generate`) and single-deck frozen bundles remain as secondary/static modes.
+- Content lives in the SQLite database on a volume; the image holds code only, so a content change never rebuilds it. `run-app.sh` restores the database from object storage on an empty volume and runs the app under Litestream replication.
+- `.github/workflows/docker-publish.yml` builds + pushes the image to GHCR and deploys it over SSH: push to `staging` deploys the staging instance, push to `main` the production one (infra lives in a separate `vps-infra` repo).
+- Runtime secrets are pulled from a self-hosted Infisical instance by `docker-entrypoint.sh` (`infisical run`); secrets never touch disk.
+- Single-deck frozen bundles (`make bundle-frozen`) are the static mode, served by `/frozen/**` behind the deck's access gate.
