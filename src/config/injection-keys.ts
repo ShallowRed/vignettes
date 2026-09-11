@@ -45,6 +45,8 @@ export interface JsonTourZoneRegistration {
   el: HTMLElement
   /** Line range highlighted in the file, `12` or `12-24`. */
   lines?: string
+  /** Area highlighted on the tour's image, `x,y,w,h` in percent of the image. */
+  spot?: string
   step?: number
 }
 export interface JsonTourRegistry {

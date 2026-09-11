@@ -660,6 +660,24 @@ line of the fence. `JsonTour` props: `file` (the name above the panel), `height`
 With `:fragments="false"` the first zone stays highlighted, which is what the
 editor preview shows.
 
+`:stack="true"` puts the panel under the zones at full width, for a narrow column beside a media pane. `image` (with `alt`) shows a screenshot on the right of the tour, and each `Zone` names with `spot="x,y,w,h"`, in percent of the image, the area the current zone frames on it while the rest of the screen dims:
+
+````md
+:::JsonTour{size="xs" height="190px" :stack="true" image="/images/catalogue-review/metadata/record.png" alt="The record page"}
+::Zone{lines="2-5" spot="9.5,3.5,45,10" title="One European profile for every rule"}
+CPSV-AP 3.2.0, the public service vocabulary of SEMIC
+::
+::Zone{lines="7" spot="13,62,25,9.5" title="What it produces"}
+An amount, and the explanation of the calculation
+::
+
+```json
+{ … }
+```
+
+:::
+````
+
 ### Backgrounds
 Implemented. Per-slide `:slide-background{image=...}`, a frontmatter `backgrounds:` block,
 and theme-level defaults (`THEME_BACKGROUNDS`) drive Reveal's `data-background-image`.

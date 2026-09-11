@@ -15,6 +15,11 @@ interface Props {
   panel?: string
   size?: 'xs' | 'sm' | 'md'
   fragments?: boolean
+  /** Put the code panel under the zones, full width, for a narrow column beside a media pane. */
+  stack?: boolean
+  /** Screenshot shown beside the tour; the current zone's `spot` is highlighted on it. */
+  image?: string
+  alt?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,10 +27,21 @@ const props = withDefaults(defineProps<Props>(), {
   panel: '47%',
   size: 'sm',
   fragments: true,
+  stack: false,
 })
 
 const root = ref<HTMLElement | null>(null)
 const zones: JsonTourZoneRegistration[] = []
+// `x,y,w,h` of the current zone on the image, in percent; null hides the spot.
+const spot = ref<{ x: number, y: number, w: number, h: number } | null>(null)
+
+function parseSpot(value: string | undefined) {
+  const parts = (value ?? '').split(',').map(v => Number.parseFloat(v.trim()))
+  if (parts.length !== 4 || parts.some(v => Number.isNaN(v)))
+    return null
+  const [x, y, w, h] = parts as [number, number, number, number]
+  return { x, y, w, h }
+}
 
 provide(JSON_TOUR, {
   fragments: props.fragments,
@@ -73,8 +89,12 @@ function follow() {
   // needs only mean something once the slide has its size.
   if (!lines.length || !root.value?.offsetWidth)
     return
+  // The fade at the panel's edges only means something when there is more file
+  // than the panel shows.
+  root.value.classList.toggle('json-tour--scrolls', !!pre && pre.scrollHeight > pre.clientHeight + 1)
   const current = zones.find(z => z.el.classList.contains('current-fragment'))
     ?? (props.fragments ? undefined : zones[0])
+  spot.value = parseSpot(current?.spot)
   const active = current ? parseRange(current.lines) : null
   lines.forEach((line, i) => {
     const on = !!active && i + 1 >= active[0] && i + 1 <= active[1]
@@ -139,16 +159,32 @@ onBeforeUnmount(() => {
   <div
     ref="root"
     class="json-tour"
-    :class="`json-tour--${size}`"
+    :class="[`json-tour--${size}`, { 'json-tour--stack': stack, 'json-tour--shot': image }]"
     :style="{ '--json-tour-height': height, '--json-tour-panel': panel }"
   >
-    <p
-      v-if="file"
-      class="json-tour__file"
+    <div class="json-tour__body">
+      <p
+        v-if="file"
+        class="json-tour__file"
+      >
+        {{ file }}
+      </p>
+      <slot />
+    </div>
+    <figure
+      v-if="image"
+      class="json-tour__shot"
     >
-      {{ file }}
-    </p>
-    <slot />
+      <img
+        :src="image"
+        :alt="alt ?? ''"
+      >
+      <div
+        class="json-tour__spot"
+        :class="{ 'json-tour__spot--on': spot }"
+        :style="spot ? { left: `${spot.x}%`, top: `${spot.y}%`, width: `${spot.w}%`, height: `${spot.h}%` } : undefined"
+      />
+    </figure>
   </div>
 </template>
 
@@ -190,13 +226,81 @@ onBeforeUnmount(() => {
   font-size: 0.6em;
   line-height: 1.55;
   scrollbar-width: none;
-  /* The panel shows a window on a longer file: the first and last lines fade
-     out so a half-line at the edge reads as the file continuing. */
+}
+
+/* The panel shows a window on a longer file: the first and last lines fade
+   out so a half-line at the edge reads as the file continuing. */
+.json-tour--scrolls :deep(pre) {
   mask-image: linear-gradient(to bottom, transparent, #000 1.6em, #000 calc(100% - 1.6em), transparent);
 }
 
 .json-tour :deep(pre)::-webkit-scrollbar {
   display: none;
+}
+
+/* With an image: the zones and the panel on the left, the screenshot on the
+   right, and a frame that travels to the current zone's spot while the rest of
+   the screen dims. */
+.json-tour--shot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+  gap: 0 1.6em;
+  align-items: start;
+  padding-right: 0;
+}
+
+.json-tour__shot {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 6px 24px rgb(0 0 145 / 12%);
+}
+
+.json-tour__shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.json-tour__spot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border: 3px solid var(--accent, #000091);
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgb(255 255 255 / 55%);
+  opacity: 0;
+  transition: top 0.45s ease, left 0.45s ease, width 0.45s ease, height 0.45s ease, opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.json-tour__spot--on {
+  opacity: 1;
+}
+
+/* Stacked: the zones sit above the panel, which takes the whole column. */
+.json-tour--stack {
+  min-height: 0;
+  padding-right: 0;
+}
+
+.json-tour--stack .json-tour__file {
+  position: static;
+  width: auto;
+  margin: 0 0 0.3em;
+}
+
+.json-tour--stack :deep(pre) {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  height: auto;
+  max-height: var(--json-tour-height);
+  margin-top: 0.5em;
 }
 
 .json-tour :deep(pre .line) {

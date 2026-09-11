@@ -7,6 +7,8 @@ import { JSON_TOUR } from '~/config/injection-keys'
 interface Props {
   /** Line range in the file, `12` or `12-24`. */
   lines?: string
+  /** Area to highlight on the tour's image, `x,y,w,h` in percent. */
+  spot?: string
   picto?: string
   title?: string
   n?: string | number
@@ -22,7 +24,7 @@ const step = computed(() => (props.step === undefined || props.step === '' ? und
 
 onMounted(() => {
   if (el.value && registry)
-    registry.registerZone({ el: el.value, lines: props.lines, step: step.value })
+    registry.registerZone({ el: el.value, lines: props.lines, spot: props.spot, step: step.value })
 })
 </script>
 
