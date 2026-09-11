@@ -62,6 +62,7 @@ The database is the only runtime source of content. Each deck has a draft (a Yjs
 | `mise run content:republish -- <slug>` | New published version from the stub, access rules untouched |
 | `mise run content:push -- <slug> --apply` | Same, on a deployed instance over SSH |
 | `mise run theme:push -- <name> --apply` | Publish a theme of the content space to the object storage the deployed instances serve it from |
+| `mise run assets:push --apply` | Mirror `presentations/assets/` (images, backgrounds, pictograms referenced by decks) to the same object storage |
 
 ## Access model
 

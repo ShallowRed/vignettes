@@ -57,7 +57,12 @@ Les composants MDC sont compilés dans l'application et ne suivent pas un dossie
 
 ## Assets de deck
 
-Règle : `public/` ne contient que ce dont l'application a besoin ; toute image de deck passe par le magasin `media` (clé = hash du contenu, bucket, route `/media/<hash>`). `content:import` téléverse `assets/` de l'espace de contenu et réécrit les `src` des stubs vers `/media/<hash>`. Une migration ponctuelle traite les références actuelles vers `public/images/` et `public/backgrounds/` : téléversement, réécriture des stubs, republication. Le hash rend l'opération idempotente et l'archive reste autoportante. Le contrôle d'accès par deck sur les images privées devient possible sans réécrire les decks.
+Règle : `public/` ne contient que ce dont l'application a besoin. Deux magasins pour les images de deck :
+
+- les téléversements de l'éditeur vont dans `media` (clé = hash du contenu, bucket, route `/media/<hash>`) ;
+- les fichiers de l'archive vivent dans `assets/<préfixe>/` de l'espace de contenu (`images`, `backgrounds`, `pictograms`) et gardent leur URL : `/images/x.png` est servi depuis `assets/images/x.png` du bucket sur une instance déployée (`mise run assets:push --apply` le remplit, fichiers inchangés ignorés), depuis le dossier de contenu en développement. Les fichiers que l'application embarque sous les mêmes préfixes (`public/pictograms/`, `public/images/placeholder.svg`) restent statiques et servis en premier.
+
+Adresser les assets par chemin plutôt que par hash évite de réécrire les decks publiés et les brouillons en ligne : le déplacement des fichiers hors du dépôt de code ne change aucune URL. Le contrôle d'accès par deck sur les images privées reste possible dans ces routes sans réécrire les decks.
 
 ## Bundles gelés
 
@@ -67,6 +72,6 @@ Le stockage `frozen/<alias>/` et la route `/frozen/**` derrière la garde d'acc�
 
 1. `theme-kit` et `theme-dsfr` en packages du workspace ; manifestes ; génération des tokens. Vérification : CSS compilé identique avant et après pour chaque thème existant.
 2. Extraction des marques `brand-a` et `brand` vers l'espace de contenu ; suppression de `dsfr-alt`, dont la base DSFR et les marques reprennent le rôle de démonstration.
-3. Assets : `assets/` dans l'espace de contenu, import vers `media`, migration des références actuelles.
+3. Assets : `assets/` dans l'espace de contenu, routes `/images`, `/backgrounds`, `/pictograms` servies depuis le bucket, `assets:push`.
 4. Bundles : paramétrage par deck, tâches mise, retrait du `Makefile`.
 5. Purge des chemins de marque et de client dans l'historique, puis renommage du projet.

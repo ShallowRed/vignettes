@@ -147,6 +147,14 @@ flag "--apply"
 """
 run = "infisical run --env=prod -- node scripts/theme-push.ts \"$usage_names\" ${usage_apply:+--apply}"
 
+[tasks."assets:push"]
+description = "Mirror the deck assets of the content space (presentations/assets) to the bucket the deployed app serves them from (dry run; --apply uploads)"
+depends = ["install"]
+usage = """
+flag "--apply"
+"""
+run = "infisical run --env=prod -- node scripts/assets-push.ts ${usage_apply:+--apply}"
+
 [tasks.test]
 description = "Unit and golden tests"
 depends = ["install"]

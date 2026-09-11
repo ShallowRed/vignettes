@@ -16,27 +16,4 @@ Utilisation dans un deck : `::Step{picto="digital/coding"}` ou `![](/pictograms/
 | map | airport, location-france, luggage, map |
 | system | connection-lost, error, information, notification, padlock, success, system, technical-error, warning |
 
-| custom (dessinés pour le registre, même grammaire) | regle, code, modele, registre, fiche, cas-de-test, decision, explication, verification, examen, certification, calcul-mobile, moteur, paquet, traitement, courrier, passeport, cadenas |
-
-Les pictogrammes custom dérivent d'un natif posé sur le guide DSFR (trait de 2 px, formes clés de 56 et 48 × 72, points décoratifs), et partagent deux jetons : le § rouge dit « la règle », le § entre accolades bleues dit « son modèle ».
-
-| custom | natif d'origine | lecture |
-|--------|-----------------|---------|
-| regle | leisure/book | la règle, ouverte comme un livre |
-| code | digital/coding | la règle traduite en programme |
-| modele | jeton seul | le modèle de calcul, { § } |
-| registre | document/document | le document qui référence des modèles |
-| fiche | document/national-identity-card | la fiche d'un modèle |
-| cas-de-test | document/vehicle-registration | un dossier anonymisé, coché |
-| decision | institutions/justice | la règle, pivot de l'arbitrage |
-| explication | system/information | la règle expliquée |
-| verification | system/technical-error | le modèle contrôlé en boucle |
-| examen | digital/search | le modèle passé à la loupe |
-| certification | document/tax-stamp | le timbre officiel apposé sur la règle |
-| calcul-mobile | digital/application | le modèle sur le téléphone, le résultat en bulle |
-| moteur | system/system | la règle au cœur de l'engrenage |
-| paquet | document/document-download | le modèle à télécharger |
-| traitement | system/flow-settings | la règle au cœur d'un traitement |
-| courrier | digital/mail-send | le courrier scellé par la règle |
-| passeport | document/passport | le passeport de la règle |
-| cadenas | system/padlock | la règle verrouillée |
+Un espace de contenu ajoute ses propres pictogrammes dans `assets/pictograms/<dossier>/` ; ils se chargent par la même URL `/pictograms/<dossier>/<nom>.svg`, servie depuis le bucket ou le dossier de contenu (voir `docs/theme-packaging.md`).

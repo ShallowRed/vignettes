@@ -83,6 +83,7 @@ A grant never lowers what the global role already allows; `strongerGrant` in `sh
 | `GET /media/<hash>.<ext>` | Uploaded image, streamed from object storage or the local `.media/` directory |
 | `GET /frozen/<bundle>/...` | Asset of a frozen bundle, served after `gateDeckAccess` on the bundle's deck |
 | `GET /themes/<name>.css`, `GET /themes/<name>/assets/...` | Tenant theme files streamed from object storage; the application's own themes are static files served before this route |
+| `GET /images/...`, `GET /backgrounds/...`, `GET /pictograms/...` | Deck assets of the content space, from object storage on a deployment or from `presentations/assets/` in development; files the application ships under `public/` with the same prefix are static and served first |
 | `POST /api/admin/themes/reload` | Owner: re-read the published tenant themes now instead of waiting for the cache |
 
 ## Acceptance kit
