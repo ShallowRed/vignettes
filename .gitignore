@@ -50,3 +50,6 @@ docs/private/
 
 # mise personal overrides
 mise.local.toml
+
+# Compiled themes and their copied assets (`pnpm build:themes`)
+public/themes/

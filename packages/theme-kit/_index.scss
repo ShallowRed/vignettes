@@ -11,11 +11,10 @@
  * exist.
  *
  * Usage from a theme entry:
- *   @use '../shared' as *;
+ *   @use 'pkg:@nuxt-slides/theme-kit';
  */
 
 @forward 'semantic-tokens';
-@forward 'tokens.generated';
 @forward 'reveal-patches';
 @forward 'spacing';
 @forward 'media-layouts';

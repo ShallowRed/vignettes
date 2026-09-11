@@ -1,7 +1,7 @@
 /**
- * Boot-time warning for theme drift between the compiled `public/themes/*.css`
- * and the SCSS source dirs (e.g. a theme whose CSS is missing → 404 stylesheet).
- * Non-fatal: never throws, no-ops if the dirs are absent.
+ * Boot-time warning for theme drift between the generated tokens, the compiled
+ * `public/themes/*.css` and the theme directories (application and content
+ * space). Non-fatal: never throws, no-ops if the dirs are absent.
  */
 
 import { existsSync, readdirSync } from 'node:fs'
@@ -26,11 +26,14 @@ export default defineNitroPlugin(() => {
     .filter(f => f.endsWith('.css'))
     .map(f => f.slice(0, -'.css'.length))
 
-  const themesSrc = join(cwd, 'themes')
-  const sourceDirs = existsSync(themesSrc)
-    ? safeReaddir(themesSrc, { withFileTypes: true })
-        .filter(e => e.isDirectory())
-        .map(e => e.name)
+  const themeRoots = [
+    join(cwd, 'themes'),
+    join(cwd, process.env.NUXT_CONTENT_DIR || 'presentations', 'themes'),
+  ].filter(dir => existsSync(dir))
+  const sourceDirs = themeRoots.length
+    ? themeRoots.flatMap(dir => safeReaddir(dir, { withFileTypes: true })
+        .filter(e => e.isDirectory() && existsSync(join(dir, e.name, 'theme.json')))
+        .map(e => e.name))
     : undefined
 
   const report = checkThemeConsistency({ cssFiles, sourceDirs })

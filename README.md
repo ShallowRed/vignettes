@@ -8,7 +8,7 @@ A self-hosted catalog and editor for Markdown slide decks. Decks are written in 
 - **Editor**: a CodeMirror editor with a live preview, real-time collaboration (Yjs over Hocuspocus), image paste and drop, and a draft that stays separate from what readers see.
 - **Publishing**: publishing a draft creates a new immutable version; the catalog shows which decks have unpublished changes; `?draft` previews the draft on the deck page.
 - **Access control**: four global roles (anonymous, viewer, editor, owner), four publication statuses (public, private, semi-private with a password, draft), per-deck and per-project grants for collaborators, and pre-provisioned invitations by GitHub or Google handle.
-- **Themes**: reveal.js themes compiled from SCSS, with a DSFR theme (the French state design system) and a minimal theme; each deck picks its theme in its frontmatter.
+- **Themes**: reveal.js themes compiled from SCSS on an engine package, with a brand-neutral DSFR base (the French state design system) made to be extended, a minimal theme, and a tenant's own brands shipped next to its decks; each deck picks its theme in its frontmatter.
 - **Slide components**: columns, quotes, images with lightbox, media layouts, live Storybook embeds, Mermaid diagrams, JSON tours, speaker notes, fragments, and more.
 - **Print**: any deck exports to PDF through reveal.js print mode.
 - **Frozen bundles**: a deck can be frozen into a self-contained static bundle served from object storage, under the same access rules as the live deck.
@@ -105,7 +105,7 @@ mise run worktree -- feat/my-branch      # ../nuxt-slides.wt/feat-my-branch, rea
 cd ../nuxt-slides.wt/feat-my-branch && mise run dev
 ```
 
-The repository layout: `src/` holds the Nuxt app, `server/` the Nitro routes and database stores, `shared/` the framework-agnostic domain (deck resolution, access decisions, theme tokens) imported as `#shared`, `themes/` the SCSS sources compiled to `public/themes/`, `scripts/` the content and build tools, `test/` the vitest suites. [docs/architecture.md](docs/architecture.md) describes the layers, [docs/api-routes.md](docs/api-routes.md) the HTTP API, [docs/composables.md](docs/composables.md) the client composables, and [docs/recette-staging.md](docs/recette-staging.md) the acceptance kit.
+The repository layout: `src/` holds the Nuxt app, `server/` the Nitro routes and database stores, `shared/` the framework-agnostic domain (deck resolution, access decisions, theme tokens) imported as `#shared`, `packages/` the theme engine and the DSFR base, `themes/` the application themes compiled to `public/themes/`, `scripts/` the content and build tools, `test/` the vitest suites. [docs/architecture.md](docs/architecture.md) describes the layers, [docs/api-routes.md](docs/api-routes.md) the HTTP API, [docs/composables.md](docs/composables.md) the client composables, and [docs/recette-staging.md](docs/recette-staging.md) the acceptance kit.
 
 ## License
 

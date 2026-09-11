@@ -1,5 +1,5 @@
 import type { DeckMeta } from './schema'
-import { KNOWN_THEMES } from '../theme/tokens'
+import { isKnownTheme } from '../theme/tokens'
 import { splitFrontmatter, stringifyDocument } from './frontmatter'
 import { parseDeckMeta } from './schema'
 
@@ -51,7 +51,7 @@ export function resolveDeck(input: ResolveDeckInput): ResolvedDeck {
   // Unknown themes are recorded, not rejected, so a CSS-only theme or a typo
   // surfaces in provenance without taking a production deck dark.
   const warnings: string[] = []
-  if (typeof meta.theme === 'string' && !KNOWN_THEMES.includes(meta.theme))
+  if (typeof meta.theme === 'string' && !isKnownTheme(meta.theme))
     warnings.push(`unknown theme "${meta.theme}" (no tokens entry)`)
 
   const body = stub != null ? stubDoc.body : ''

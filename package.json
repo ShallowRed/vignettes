@@ -8,12 +8,11 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "nuxt dev",
-    "dev:themes": "pnpm build:themes && nuxt dev",
-    "dev:theme": "node scripts/build-themes.js --watch",
+    "dev": "pnpm build:themes && nuxt dev",
+    "dev:theme": "node scripts/build-themes.ts --watch",
     "build": "pnpm build:themes && nuxt build",
-    "build:themes": "node scripts/build-theme-tokens.ts && node scripts/build-themes.js",
-    "build:theme": "node scripts/build-themes.js",
+    "build:themes": "node scripts/build-theme-tokens.ts && node scripts/build-themes.ts",
+    "build:theme": "node scripts/build-themes.ts",
     "generate": "pnpm build:themes && nuxt generate",
     "preview": "nuxt preview",
     "preview:static": "pnpm generate && nuxt preview",
@@ -61,8 +60,11 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
+    "@gouvfr/dsfr": "^1.15.3",
     "@iconify-json/lucide": "catalog:",
     "@iconify-json/ri": "catalog:",
+    "@nuxt-slides/theme-dsfr": "workspace:*",
+    "@nuxt-slides/theme-kit": "workspace:*",
     "@nuxt/icon": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/js-yaml": "catalog:",

@@ -1,0 +1,6 @@
+{
+  "name": "minimal",
+  "lang": "fr",
+  "parser": "separator",
+  "reveal": { "slideNumber": true }
+}

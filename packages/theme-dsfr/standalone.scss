@@ -15,7 +15,7 @@
 @use 'variables' as *;
 // Self-hosted Marianne. On our domain (frozen decks) the /fonts URLs resolve; in
 // a HackMD paste they fall back to the system stack, as before.
-@use '../shared/fonts';
+@use 'fonts';
 
 // ============================================
 // 1. Standard Reveal.js CSS custom properties
@@ -139,7 +139,7 @@ body {
 
 .reveal h2 em {
   font-style: normal;
-  color: $as-contrast-title-em;
+  color: $dsfr-blue-france-main-525;
 }
 
 .reveal h3 em {
@@ -152,10 +152,6 @@ body {
   font-weight: 800;
   color: var(--dsfr-blue-france-main-525);
   margin-bottom: $dsfr-spacing-medium;
-  background: linear-gradient(89deg, #2828b2 30.04%, #8f8ffc 100.41%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .reveal h2 {

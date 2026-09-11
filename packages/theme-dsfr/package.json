@@ -1,0 +1,27 @@
+{
+  "name": "@nuxt-slides/theme-dsfr",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Base theme for nuxt-slides following the French state design system (DSFR): palette, Marianne typography, dsfr-layout scale. Brand-neutral, made to be extended.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "sass": "./index.scss"
+    },
+    "./fonts": {
+      "sass": "./_fonts.scss"
+    },
+    "./variables": {
+      "sass": "./_variables.scss"
+    },
+    "./standalone": {
+      "sass": "./standalone.scss"
+    }
+  },
+  "files": [
+    "*.scss"
+  ],
+  "peerDependencies": {
+    "@nuxt-slides/theme-kit": "workspace:*"
+  }
+}

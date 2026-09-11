@@ -1,47 +1,40 @@
-import { mkdirSync, watch, writeFileSync } from 'node:fs'
-import * as sass from 'sass'
-import { themes } from '../themes/themes.config.js'
+import { existsSync, readdirSync, watch } from 'node:fs'
+import { join } from 'node:path'
+import process from 'node:process'
+import { compileTheme } from '../scripts/lib/theme-build.ts'
+import { discoverThemes } from '../scripts/lib/theme-registry.ts'
 
-// Dev theme watcher — watch only, no startup compile (committed public/themes/*.css are used as-is;
-// compilation is opt-in via `pnpm build:themes`). Editing SCSS recompiles that theme and triggers HMR.
+// Dev theme watcher: watch only, the compile at server start comes from `pnpm dev`
+// (`build:themes`). Editing a theme, a package or a brand in the content space
+// recompiles the themes concerned and reloads the page.
 export default function themeWatcherPlugin() {
-  function compileTheme({ name, input, output }) {
-    try {
-      const result = sass.compile(input, {
-        style: 'expanded',
-        sourceMap: false,
-      })
-
-      mkdirSync('public/themes', { recursive: true })
-      writeFileSync(output, result.css)
-      console.log(`✓ ${name} theme compiled`)
-    }
-    catch (error) {
-      console.error(`✗ Error compiling ${name} theme:`, error.message)
-    }
-  }
-
   return {
     name: 'theme-watcher',
 
     configureServer(server) {
-      themes.forEach(({ name, input, output, watchDir, watchExtraDirs }) => {
-        const dirs = [watchDir, ...(watchExtraDirs ?? [])]
+      const root = process.cwd()
+      const themes = discoverThemes(root)
+      const packagesDir = join(root, 'packages')
+      const packages = existsSync(packagesDir) ? readdirSync(packagesDir).map(d => join(packagesDir, d)) : []
 
-        dirs.forEach((dir) => {
-          watch(dir, { recursive: true }, (eventType, filename) => {
-            if (filename && filename.endsWith('.scss')) {
-              console.log(`\n📝 ${name} theme changed, recompiling...`)
-              compileTheme({ name, input, output })
+      const recompile = (targets, filename) => {
+        console.log(`\n📝 ${filename} changed, recompiling ${targets.map(t => t.name).join(', ')}`)
+        targets.forEach(theme => compileTheme(root, theme))
+        server.ws.send({ type: 'full-reload', path: '*' })
+      }
 
-              server.ws.send({
-                type: 'full-reload',
-                path: '*',
-              })
-            }
-          })
+      for (const theme of themes) {
+        watch(theme.dir, { recursive: true }, (_event, filename) => {
+          if (filename && filename.endsWith('.scss'))
+            recompile([theme], filename)
         })
-      })
+      }
+      for (const dir of packages) {
+        watch(dir, { recursive: true }, (_event, filename) => {
+          if (filename && filename.endsWith('.scss'))
+            recompile(themes, filename)
+        })
+      }
     },
   }
 }

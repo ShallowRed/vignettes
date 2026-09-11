@@ -261,12 +261,21 @@ importers:
       '@antfu/eslint-config':
         specifier: 'catalog:'
         version: 6.4.2(@vue/compiler-sfc@3.5.25)(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)(vitest@4.1.9(@types/node@24.10.1)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.94.2)(terser@5.44.1)(tsx@4.23.1)(yaml@2.8.2)))
+      '@gouvfr/dsfr':
+        specifier: ^1.15.3
+        version: 1.15.3
       '@iconify-json/lucide':
         specifier: 'catalog:'
         version: 1.2.117
       '@iconify-json/ri':
         specifier: 'catalog:'
         version: 1.2.6
+      '@nuxt-slides/theme-dsfr':
+        specifier: workspace:*
+        version: link:packages/theme-dsfr
+      '@nuxt-slides/theme-kit':
+        specifier: workspace:*
+        version: link:packages/theme-kit
       '@nuxt/icon':
         specifier: 'catalog:'
         version: 2.1.0(magicast@0.5.1)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.94.2)(terser@5.44.1)(tsx@4.23.1)(yaml@2.8.2))(vue@3.5.25(typescript@5.9.3))
@@ -294,6 +303,14 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.9(@types/node@24.10.1)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.94.2)(terser@5.44.1)(tsx@4.23.1)(yaml@2.8.2))
+
+  packages/theme-dsfr:
+    dependencies:
+      '@nuxt-slides/theme-kit':
+        specifier: workspace:*
+        version: link:../theme-kit
+
+  packages/theme-kit: {}
 
 packages:
 
@@ -1358,6 +1375,10 @@ packages:
 
   '@floating-ui/vue@1.1.11':
     resolution: {integrity: sha512-HzHKCNVxnGS35r9fCHBc3+uCnjw9IWIlCPL683cGgM9Kgj2BiAl8x1mS7vtvP6F9S/e/q4O6MApwSHj8hNLGfw==}
+
+  '@gouvfr/dsfr@1.15.3':
+    resolution: {integrity: sha512-R9AALZc1LfZjtytWZMOaUIOHWTkllBZ/sZlsL8TpKZVgF3qUKXt/uNYh+L1D1Fh4p92ZqWxbtNcebsigBZe5pQ==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
   '@hocuspocus/common@4.4.0':
     resolution: {integrity: sha512-cPSlPu/ws2JzBHW6OzctyaQMyDCq/YUS4nhXSbyMdkQwJzhjCkvfmmRnVtcmgLR3TBLaNwToNDwR/mNaJFOYsg==}
@@ -8439,6 +8460,8 @@ snapshots:
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
+
+  '@gouvfr/dsfr@1.15.3': {}
 
   '@hocuspocus/common@4.4.0':
     dependencies:

@@ -1,0 +1,9 @@
+{
+  "name": "dsfr",
+  "lang": "fr",
+  "parser": "separator",
+  "reveal": { "slideNumber": true, "width": 1200, "height": 800 },
+  "assets": [
+    { "from": "node_modules/@gouvfr/dsfr/dist/fonts", "to": "fonts", "match": "^Marianne-[A-Za-z]+\\.woff2?$" }
+  ]
+}

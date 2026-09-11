@@ -21,9 +21,6 @@ export interface ThemeConsistencyReport {
   missingTokens: string[]
 }
 
-/** Infrastructure dirs, not user-selectable themes. */
-const NON_THEME_DIRS = new Set(['presets', 'shared'])
-
 export function checkThemeConsistency(input: ThemeConsistencyInput): ThemeConsistencyReport {
   const tokens = new Set(input.tokens ?? KNOWN_THEMES)
   const css = new Set(input.cssFiles)
@@ -46,7 +43,7 @@ export function checkThemeConsistency(input: ThemeConsistencyInput): ThemeConsis
   // SCSS source dir with no compiled CSS means `build:themes` didn't emit it.
   if (input.sourceDirs) {
     const orphanSources = input.sourceDirs
-      .filter(name => !NON_THEME_DIRS.has(name) && !css.has(name))
+      .filter(name => !css.has(name))
       .sort()
     for (const name of orphanSources) {
       warnings.push(

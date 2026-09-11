@@ -66,7 +66,7 @@ describe('resolveSlideBackground (precedence preserved)', () => {
   })
 
   it('falls back to theme tokens by heading level', () => {
-    expect(resolveSlideBackground({ headingLevel: 'h1' }, 'brand')).toBe('/backgrounds/brand-slide-contrast.png')
+    expect(resolveSlideBackground({ headingLevel: 'h1' }, 'brand')).toBe('/themes/brand/assets/slide-contrast.png')
   })
 
   it('returns undefined for a theme with no backgrounds', () => {
@@ -91,7 +91,7 @@ describe('collectAssets + pipeline', () => {
     const kinds = assets.map(a => a.kind)
     expect(kinds).toContain('storybook')
     expect(kinds).toContain('image')
-    expect(assets.some(a => a.url === '/backgrounds/brand-slide-contrast.png')).toBe(true)
+    expect(assets.some(a => a.url === '/themes/brand/assets/slide-contrast.png')).toBe(true)
   })
 
   it('buildDeckModel runs the default pipeline and fills assets', () => {

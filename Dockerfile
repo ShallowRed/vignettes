@@ -19,6 +19,8 @@ WORKDIR /app
 # ---- deps : install isolé pour maximiser le cache de couche ----
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY packages/theme-kit/package.json packages/theme-kit/
+COPY packages/theme-dsfr/package.json packages/theme-dsfr/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 

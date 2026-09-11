@@ -1,4 +1,5 @@
 import type { Ref } from 'vue'
+import { resolveThemeName } from '#shared/theme'
 
 export function useTheme(themeName: Ref<string> | string) {
   let themeLink: HTMLLinkElement | null = null
@@ -10,7 +11,7 @@ export function useTheme(themeName: Ref<string> | string) {
 
     themeLink = document.createElement('link')
     themeLink.rel = 'stylesheet'
-    themeLink.href = `/themes/${theme}.css`
+    themeLink.href = `/themes/${resolveThemeName(theme)}.css`
     document.head.appendChild(themeLink)
   }
 

@@ -1,14 +1,12 @@
 /**
- * DSFR skin — Typography (colors, gradients, font-family).
- *
- * Sizes, weights, margins, line-heights, text-align and slide-h3 rhythm live
- * in `themes/presets/dsfr-layout/`. This file holds only the *visual*
- * decisions specific to DSFR.
+ * DSFR base typography: colors and font-family. Sizes, weights, margins,
+ * line-heights and the slide-h3 rhythm come from the dsfr-layout preset.
+ * Section dividers (slide-h2) are read on the light surface here; a brand with
+ * contrast background images overrides their colors.
  */
 
 @use 'variables' as *;
 
-// Headers (color + font-family — sizes/weights are in the dsfr-layout preset)
 .reveal h1,
 .reveal h2,
 .reveal h3,
@@ -19,11 +17,7 @@
   font-family: $dsfr-font-family;
 }
 
-.reveal h2 em {
-  font-style: normal;
-  color: $as-contrast-title-em;
-}
-
+.reveal h2 em,
 .reveal h3 em {
   font-style: normal;
   color: $dsfr-blue-france-main-525;
@@ -31,13 +25,6 @@
 
 .reveal h1 {
   color: var(--dsfr-blue-france-main-525);
-  background: linear-gradient(89deg, #2828B2 30.04%, #8F8FFC 100.41%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  // The gradient only paints inside the box: with the tight display leading,
-  // descenders fell outside it and lost their fill.
-  padding-bottom: 0.14em;
 }
 
 .reveal h2 {
@@ -58,7 +45,6 @@
   color: var(--dsfr-text-mention);
 }
 
-// Section dividers — colors only (flex skeleton from shared, sizes from preset)
 .reveal section.slide-h2 {
   h1,
   h2,
@@ -66,11 +52,11 @@
   h4,
   h5,
   h6 {
-    color: var(--dsfr-grey-950) !important;
+    color: var(--dsfr-text-title) !important;
   }
 
   p {
-    color: var(--dsfr-grey-625) !important;
+    color: var(--dsfr-text-mention) !important;
   }
 }
 

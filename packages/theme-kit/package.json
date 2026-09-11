@@ -1,0 +1,19 @@
+{
+  "name": "@nuxt-slides/theme-kit",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Engine CSS layer for nuxt-slides themes: semantic token contract, Reveal patches, media layouts, slide structure, scale presets.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "sass": "./_index.scss"
+    },
+    "./presets/dsfr-layout": {
+      "sass": "./presets/dsfr-layout/_index.scss"
+    }
+  },
+  "files": [
+    "*.scss",
+    "presets"
+  ]
+}

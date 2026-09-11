@@ -1,10 +1,11 @@
 import type { RevealConfig, ThemeBackgrounds } from '../deck/schema'
+import { THEME_ALIASES, THEME_TOKENS } from './tokens.generated'
 
-// Single source of truth for the data side of a theme (backgrounds, Reveal
-// dimensions). shared/deck/presets.ts, the client THEME_BACKGROUNDS, and
-// scripts/build-theme-tokens.ts all derive from it. Colors stay authored in SCSS.
+// The data side of a theme (backgrounds, Reveal dimensions, language, parser),
+// generated from each theme's `theme.json` by scripts/build-theme-tokens.ts.
+// Colors stay authored in SCSS.
 export interface ThemeTokens {
-  /** Must match `public/themes/<name>.css` and `themes/<name>/`. */
+  /** Matches `public/themes/<name>.css` and the theme directory. */
   name: string
   backgrounds?: ThemeBackgrounds
   reveal?: RevealConfig
@@ -12,80 +13,25 @@ export interface ThemeTokens {
   parser?: 'heading' | 'separator'
 }
 
-export const THEME_TOKENS: Record<string, ThemeTokens> = {
-  'dsfr': {
-    name: 'dsfr',
-    lang: 'fr',
-    parser: 'separator',
-    backgrounds: {
-      h1: '/backgrounds/slide-bg-default.png',
-      h2: '/backgrounds/slide-bg-contrast.png',
-      h3: '/backgrounds/slide-bg-subtle.png',
-    },
-    reveal: {
-      slideNumber: true,
-      width: 1200,
-      height: 800,
-    },
-  },
-  'dsfr-alt': {
-    // DSFR skin swapping only colors/typography, so same backgrounds and dimensions.
-    name: 'dsfr-alt',
-    lang: 'fr',
-    parser: 'separator',
-    backgrounds: {
-      h1: '/backgrounds/slide-bg-default.png',
-      h2: '/backgrounds/slide-bg-contrast.png',
-      h3: '/backgrounds/slide-bg-subtle.png',
-    },
-    reveal: {
-      slideNumber: true,
-      width: 1200,
-      height: 800,
-    },
-  },
-  'dsfr-standalone': {
-    // Self-contained DSFR variant that paints its own backgrounds, so no
-    // background images here.
-    name: 'dsfr-standalone',
-    lang: 'fr',
-    parser: 'separator',
-    reveal: {
-      slideNumber: true,
-      width: 1200,
-      height: 800,
-    },
-  },
-  'minimal': {
-    name: 'minimal',
-    lang: 'fr',
-    parser: 'separator',
-    reveal: {
-      slideNumber: true,
-    },
-  },
-  'brand': {
-    name: 'brand',
-    lang: 'fr',
-    parser: 'separator',
-    backgrounds: {
-      h1: '/backgrounds/brand-slide-contrast.png',
-      h2: '/backgrounds/brand-slide-contrast.png',
-      h3: '/backgrounds/brand-slide-subtle.png',
-    },
-    reveal: {
-      slideNumber: true,
-      width: 1200,
-      height: 800,
-    },
-  },
-}
+export { THEME_ALIASES, THEME_TOKENS }
 
-/** Also used to validate frontmatter. */
+/** Canonical theme names; aliases are accepted on input and resolved with {@link resolveThemeName}. */
 export const KNOWN_THEMES = Object.keys(THEME_TOKENS)
 
+/** The theme a frontmatter name points to: itself, or the theme that declares it as an alias. */
+export function resolveThemeName(name: string): string
+export function resolveThemeName(name?: string): string | undefined
+export function resolveThemeName(name?: string): string | undefined {
+  return name ? (THEME_ALIASES[name] ?? name) : undefined
+}
+
+export function isKnownTheme(name: string): boolean {
+  return resolveThemeName(name) in THEME_TOKENS
+}
+
 export function getThemeTokens(name?: string): ThemeTokens | undefined {
-  return name ? THEME_TOKENS[name] : undefined
+  const canonical = resolveThemeName(name)
+  return canonical ? THEME_TOKENS[canonical] : undefined
 }
 
 export const THEME_BACKGROUNDS: Record<string, ThemeBackgrounds> = Object.fromEntries(

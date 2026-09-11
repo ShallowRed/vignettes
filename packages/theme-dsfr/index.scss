@@ -1,0 +1,68 @@
+/**
+ * Base DSFR theme for reveal.js presentations, after the Système de Design de
+ * l'État. Brand-neutral: light surfaces, bleu France accents, Marianne type.
+ * A brand extends it with `@use 'pkg:@nuxt-slides/theme-dsfr';` and adds its
+ * own rules and background images.
+ */
+
+@use 'variables' as *;
+@use 'fonts';
+@use 'pkg:@nuxt-slides/theme-kit';
+@use 'pkg:@nuxt-slides/theme-kit/presets/dsfr-layout';
+@use 'base';
+@use 'typography';
+@use 'components';
+@use 'utilities';
+
+// Generate CSS custom properties from Sass variables
+:root {
+  // Primary colors - Bleu France
+  --dsfr-blue-france-sun-113: #{$dsfr-blue-france-sun-113};
+  --dsfr-blue-france-main-525: #{$dsfr-blue-france-main-525};
+  --dsfr-blue-france-850: #{$dsfr-blue-france-850};
+  --dsfr-blue-france-925: #{$dsfr-blue-france-925};
+  --dsfr-blue-france-950: #{$dsfr-blue-france-950};
+  --dsfr-blue-france-975: #{$dsfr-blue-france-975};
+
+  // Secondary colors - Rouge Marianne
+  --dsfr-red-marianne-main-472: #{$dsfr-red-marianne-main-472};
+  --dsfr-red-marianne-850: #{$dsfr-red-marianne-850};
+  --dsfr-red-marianne-925: #{$dsfr-red-marianne-925};
+
+  // Accent colors
+  --dsfr-green-emeraude-main-632: #{$dsfr-green-emeraude-main-632};
+  --dsfr-green-emeraude-950: #{$dsfr-green-emeraude-950};
+
+  // Neutral colors
+  --dsfr-grey-950: #{$dsfr-grey-950};
+  --dsfr-grey-1000: #{$dsfr-grey-1000};
+  --dsfr-grey-200: #{$dsfr-grey-200};
+  --dsfr-grey-425: #{$dsfr-grey-425};
+  --dsfr-grey-625: #{$dsfr-grey-625};
+
+  // Text colors
+  --dsfr-text-title: #{$dsfr-text-title};
+  --dsfr-text-default: #{$dsfr-text-default};
+  --dsfr-text-mention: #{$dsfr-text-mention};
+
+  // Backgrounds
+  --dsfr-background-default: #{$dsfr-background-default};
+  --dsfr-background-alt: #{$dsfr-background-alt};
+  --dsfr-background-contrast: #{$dsfr-background-contrast};
+
+  // Borders
+  --dsfr-border-default: #{$dsfr-border-default};
+  --dsfr-border-action: #{$dsfr-border-action};
+
+  // Neutral semantic tokens (the theme-kit contract) mapped to the DSFR palette,
+  // so theme-agnostic code references --accent, --surface-contrast, etc.
+  --accent: var(--dsfr-blue-france-main-525);
+  --accent-soft: var(--dsfr-blue-france-850);
+  --accent-bg: var(--dsfr-blue-france-950);
+  --surface: var(--dsfr-background-default);
+  --surface-contrast: var(--dsfr-background-contrast);
+  --on-contrast: var(--dsfr-grey-1000);
+  --text-default: var(--dsfr-text-default);
+  --text-title: var(--dsfr-text-title);
+  --text-mention: var(--dsfr-text-mention);
+}

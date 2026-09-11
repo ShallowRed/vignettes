@@ -100,10 +100,12 @@ shared/                             # Isomorphic domain core (#shared alias) —
 ├── projects/    # project-registry schema
 └── build/       # bundle toggles, freeze descriptor, public-deck discovery
 
-public/themes/               # Compiled CSS themes (generated)
+packages/theme-kit/          # Engine CSS layer (semantic tokens, Reveal patches, layouts, presets)
+packages/theme-dsfr/         # Brand-neutral DSFR base theme
+public/themes/               # Compiled CSS themes and copied assets (build output)
 presentations/               # Archive submodule: deck stubs exported from production, registry.yml, projects.yml
-themes/                      # SCSS theme source files
-scripts/build-themes.js      # Theme compilation script
+themes/                      # Application themes: a manifest, an SCSS entry, assets/
+scripts/build-themes.ts      # Theme compilation (manifests in themes/ and in the content space)
 plugins/theme-watcher.js     # Vite plugin for theme hot-reload
 plugins/presentation-watcher.js
 ```
@@ -182,20 +184,13 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 8. **`:layout{name="..." ...}`**: Slide-level layout annotation. Unlike full-slide components, preserves header/body split. Supports `media-right`, `media-left`, `media-right-wide`, and `media-left-wide` for two-column layouts with media, plus extra props such as `fit="contain|cover"`. The layout name is resolved to a `LayoutStrategy` via `getLayoutStrategy()` in `src/config/layouts.ts` — add a new entry there to extend without touching the template.
 
 ### Theme System
-Layered SCSS architecture (foundation → preset → skin):
-- `themes/shared/` — engine-level CSS shipped with every theme (Reveal patches,
-  MDC `display: contents` bridge, media-layout grid, slide-h1/h2/h3 flex
-  skeleton, quicklinks, neutral semantic tokens).
-- `themes/presets/<name>/` — reusable layout/scale packages (heading sizes,
-  rhythm). Skin-agnostic on colors and font-family. Currently: `dsfr-layout`.
-- `themes/<name>/` — skins (colors, gradients, font-family). A skin imports
-  the foundation, optionally a preset, and sets the `--accent`, `--surface`,
-  ... semantic tokens.
-- `themes/themes.config.js` — single source of truth for the build pipeline
-  (consumed by `scripts/build-themes.js` and `plugins/theme-watcher.js`).
-- Compiled to `public/themes/[name].css`, loaded dynamically via `<link>`.
-- Per-presentation selection via frontmatter (`theme: <name>`).
-- Hot-reload in dev via Vite plugin (watches own dir + `watchExtraDirs`).
+Three layers:
+- `packages/theme-kit` (`@nuxt-slides/theme-kit`): engine-level CSS shipped with every theme (Reveal patches, MDC `display: contents` bridge, media-layout grid, slide-h1/h2/h3 flex skeleton, quicklinks, neutral semantic tokens, the `dsfr-layout` scale preset).
+- `packages/theme-dsfr` (`@nuxt-slides/theme-dsfr`): the brand-neutral DSFR base (palette, Marianne, light surfaces), usable as is and made to be extended.
+- `themes/<name>/` in the application and in the content space (`NUXT_CONTENT_DIR/themes`): a `theme.json` manifest (language, parser, Reveal defaults, backgrounds, aliases), an SCSS entry that `@use`s the packages through sass's `pkg:` importer, and `assets/`.
+- `scripts/build-theme-tokens.ts` generates `shared/theme/tokens.generated.ts` from the manifests; `scripts/build-themes.ts` compiles to `public/themes/<name>.css` and copies assets to `public/themes/<name>/`.
+- Per-presentation selection via frontmatter (`theme: <name>`), aliases resolved by `resolveThemeName`; the CSS is loaded via `<link>`.
+- Hot-reload in dev via Vite plugin (watches theme directories and `packages/`).
 
 See `docs/theme-system.md` for the full reference and the recipe to
 create a new theme.
@@ -259,7 +254,7 @@ Presentation viewer page.
 
 ## Build
 
-1. `pnpm build` runs `build:themes` first (`build-theme-tokens.ts` then `build-themes.js`), then `nuxt build`.
+1. `pnpm build` runs `build:themes` first (`build-theme-tokens.ts` then `build-themes.ts`), then `nuxt build`.
 2. `server/plugins/migrations.ts` applies pending migrations at boot: the repo folder in development, the copy shipped with the output in production.
 3. Output lands in `.output/` (server + public); the Docker runtime stage ships that folder only.
 
@@ -313,23 +308,22 @@ interface RevealConfig { hash?: boolean, center?: boolean, ... }
 - `dev:themes`: Builds themes → starts dev server
 - `build`: Builds themes → SSR build
 - `generate`: Builds themes → static generation (bundle mode)
-- `build:themes`: `build-theme-tokens.ts` → `build-themes.js` (compiles all SCSS themes)
+- `build:themes`: `build-theme-tokens.ts` → `build-themes.ts` (registry, then every theme)
 - `dev:theme`: Watch-compile themes
 - `hash-password`: Generate a password hash for a protected deck
 - `test` / `test:watch`: Vitest
 
-### scripts/build-themes.js
-- Reads themes/ directory
-- Compiles SCSS → CSS via sass.compile()
-- Outputs to public/themes/
+### scripts/build-themes.ts
+- Discovers themes by manifest (`scripts/lib/theme-registry.ts`)
+- Compiles SCSS → CSS via sass with the `pkg:` importer (`scripts/lib/theme-build.ts`)
+- Outputs to public/themes/ (CSS and copied assets)
 - Supports --watch flag
 - Accepts theme name argument
 
 ### plugins/theme-watcher.js
 Vite plugin for dev mode:
-- Watches themes/ directory
-- Triggers full-reload on SCSS changes
-- Compiles via sass.compile() in buildStart hook
+- Watches theme directories and packages/
+- Recompiles the themes concerned and triggers a full reload
 
 ## Extension Points
 
@@ -337,8 +331,8 @@ Vite plugin for dev mode:
 Create composable implementing `{ parseSlides }` interface, swap in usePresentation.
 
 ### New Theme
-1. Create `themes/[name]/[name].scss`
-2. Run `pnpm build:theme [name]`
+1. Create `themes/[name]/theme.json` and `themes/[name]/[name].scss` (in the application or in the content space)
+2. Run `pnpm build:themes`
 3. Use `theme: [name]` in frontmatter
 
 ### New MDC Component
