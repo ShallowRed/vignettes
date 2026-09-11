@@ -1,11 +1,10 @@
 import type { RevealConfig, ThemeBackgrounds } from '../deck/schema'
-import { THEME_ALIASES, THEME_TOKENS } from './tokens.generated'
+import { THEME_ALIASES as BUILT_IN_ALIASES, THEME_TOKENS as BUILT_IN_TOKENS } from './tokens.generated'
 
 // The data side of a theme (backgrounds, Reveal dimensions, language, parser),
-// generated from each theme's `theme.json` by scripts/build-theme-tokens.ts.
-// Colors stay authored in SCSS.
+// declared by each theme's `theme.json`. Colors stay authored in SCSS.
 export interface ThemeTokens {
-  /** Matches `public/themes/<name>.css` and the theme directory. */
+  /** Matches `/themes/<name>.css` and the theme directory. */
   name: string
   backgrounds?: ThemeBackgrounds
   reveal?: RevealConfig
@@ -13,27 +12,53 @@ export interface ThemeTokens {
   parser?: 'heading' | 'separator'
 }
 
-export { THEME_ALIASES, THEME_TOKENS }
+export interface ThemeRegistry {
+  tokens: Record<string, ThemeTokens>
+  /** Frontmatter names that resolve to another theme (declared by a theme's `aliases`). */
+  aliases: Record<string, string>
+}
+
+// The registry starts with the application's own themes (generated at build time
+// from their manifests). Tenant themes arrive at runtime: the server loads them
+// from the content space or the object storage, and the universal plugin seeds
+// the client with the same registry, so both sides resolve names identically.
+const BUILT_IN: ThemeRegistry = { tokens: BUILT_IN_TOKENS, aliases: BUILT_IN_ALIASES }
+let current: ThemeRegistry = BUILT_IN
+
+export function builtInThemeRegistry(): ThemeRegistry {
+  return BUILT_IN
+}
+
+/** Replace the runtime registry with the built-in themes plus `extra` (tenant themes win on conflicts). */
+export function setThemeRegistry(extra: Partial<ThemeRegistry> | null | undefined): ThemeRegistry {
+  current = {
+    tokens: { ...BUILT_IN.tokens, ...(extra?.tokens ?? {}) },
+    aliases: { ...BUILT_IN.aliases, ...(extra?.aliases ?? {}) },
+  }
+  return current
+}
+
+export function getThemeRegistry(): ThemeRegistry {
+  return current
+}
 
 /** Canonical theme names; aliases are accepted on input and resolved with {@link resolveThemeName}. */
-export const KNOWN_THEMES = Object.keys(THEME_TOKENS)
+export function knownThemes(): string[] {
+  return Object.keys(current.tokens)
+}
 
 /** The theme a frontmatter name points to: itself, or the theme that declares it as an alias. */
 export function resolveThemeName(name: string): string
 export function resolveThemeName(name?: string): string | undefined
 export function resolveThemeName(name?: string): string | undefined {
-  return name ? (THEME_ALIASES[name] ?? name) : undefined
+  return name ? (current.aliases[name] ?? name) : undefined
 }
 
 export function isKnownTheme(name: string): boolean {
-  return resolveThemeName(name) in THEME_TOKENS
+  return resolveThemeName(name) in current.tokens
 }
 
 export function getThemeTokens(name?: string): ThemeTokens | undefined {
   const canonical = resolveThemeName(name)
-  return canonical ? THEME_TOKENS[canonical] : undefined
+  return canonical ? current.tokens[canonical] : undefined
 }
-
-export const THEME_BACKGROUNDS: Record<string, ThemeBackgrounds> = Object.fromEntries(
-  Object.values(THEME_TOKENS).map(t => [t.name, t.backgrounds ?? {}]),
-)

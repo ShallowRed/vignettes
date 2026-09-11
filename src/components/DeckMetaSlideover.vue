@@ -4,7 +4,7 @@ import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { STATUS_CONFIG } from '#shared/presentations'
-import { KNOWN_THEMES } from '#shared/theme'
+import { knownThemes } from '#shared/theme'
 import { useMutation, useQuery } from '@pinia/colada'
 import { deckApi } from '~/api'
 import { useAppSession } from '~/composables/useAppSession'
@@ -79,7 +79,7 @@ const projectItems = computed(() => [
   ...(props.projects ?? []).map(p => ({ label: p.title ?? p.slug, value: p.slug })),
 ])
 
-const themeItems = KNOWN_THEMES.map(name => ({ label: name, value: name }))
+const themeItems = knownThemes().map(name => ({ label: name, value: name }))
 
 function close() {
   open.value = false

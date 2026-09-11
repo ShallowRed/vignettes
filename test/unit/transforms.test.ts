@@ -1,5 +1,5 @@
 import type { Slide } from '../../shared/deck/model'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   buildDeckModel,
   collectAssets,
@@ -8,6 +8,18 @@ import {
   resolveSlideMedia,
   runTransforms,
 } from '../../shared/render/transforms'
+import { setThemeRegistry } from '../../shared/theme/tokens'
+
+// A tenant theme with backgrounds, registered the way the server does at runtime.
+beforeAll(() => setThemeRegistry({
+  tokens: {
+    brand: {
+      name: 'brand',
+      backgrounds: { h1: '/themes/brand/assets/slide-contrast.png', h2: '/themes/brand/assets/slide-contrast.png', h3: '/themes/brand/assets/slide-subtle.png' },
+    },
+  },
+}))
+afterAll(() => setThemeRegistry(null))
 
 describe('resolveSlideMedia (extracted from SlideContent.mediaParts)', () => {
   it('returns null without layoutProps or src', () => {

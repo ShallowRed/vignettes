@@ -1,15 +1,18 @@
 /**
- * Boot-time warning for theme drift between the generated tokens, the compiled
+ * Boot-time warning for theme drift between the registry, the compiled
  * `public/themes/*.css` and the theme directories (application and content
- * space). Non-fatal: never throws, no-ops if the dirs are absent.
+ * space). Runs after the tenant themes are registered, so a brand compiled from
+ * the content space counts as known. Non-fatal: never throws, no-ops if the dirs
+ * are absent.
  */
 
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { checkThemeConsistency } from '#shared/theme'
+import { loadTenantThemes } from '../utils/themes'
 
-export default defineNitroPlugin(() => {
+export default defineNitroPlugin(async () => {
   let cwd: string
   try {
     cwd = process.cwd()
@@ -21,6 +24,13 @@ export default defineNitroPlugin(() => {
   const publicThemes = join(cwd, 'public', 'themes')
   if (!existsSync(publicThemes))
     return
+
+  try {
+    await loadTenantThemes()
+  }
+  catch {
+    // Reported by the registry plugin; the check below still runs on the built-in themes.
+  }
 
   const cssFiles = safeReaddir(publicThemes)
     .filter(f => f.endsWith('.css'))

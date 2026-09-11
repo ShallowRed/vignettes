@@ -36,7 +36,11 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 | `entry` | SCSS entry, `<name>.scss` by default |
 | `assets` | Extra directories copied under `public/themes/<name>/`: `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root |
 
-`shared/theme/tokens.generated.ts` is generated from the manifests by `scripts/build-theme-tokens.ts` and committed; it feeds `KNOWN_THEMES`, `THEME_ALIASES`, `getThemeTokens` and `THEME_BACKGROUNDS` in `shared/theme/tokens.ts`. Frontmatter accepts canonical names and aliases; `resolveThemeName` maps a name to the theme whose CSS is loaded.
+`shared/theme/tokens.generated.ts` is generated from the manifests of the application's themes by `scripts/build-theme-tokens.ts` and committed; it seeds the runtime registry in `shared/theme/tokens.ts` (`knownThemes`, `resolveThemeName`, `isKnownTheme`, `getThemeTokens`). Frontmatter accepts canonical names and aliases; `resolveThemeName` maps a name to the theme whose CSS is loaded.
+
+## Tenant themes at runtime
+
+Themes of the content space are not part of the image. `mise run theme:push -- <name>[,<name>] --apply` compiles them locally and uploads `themes/<name>.css`, `themes/<name>/assets/`, and `themes/<name>/tokens.json` to the bucket, then rebuilds `themes/index.json` from every published theme. On a deployment, `server/utils/themes.ts` reads that index (cached for a minute; `POST /api/admin/themes/reload` forces it), merges it with the themes found on disk in the content space (development), and applies the result with `setThemeRegistry`. The `theme-registry` server middleware hands the registry to page requests and the universal plugin `src/plugins/theme-registry.ts` seeds the client with it, so both sides resolve names, aliases and backgrounds identically. `/themes/**` (`server/routes/themes/[...path].ts`) streams the files from the bucket for names that have no static file under `public/themes/`.
 
 ## The semantic token contract
 

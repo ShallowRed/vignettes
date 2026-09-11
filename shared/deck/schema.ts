@@ -54,7 +54,7 @@ export const DeckMetaSchema = z
   .object({
     title: z.string().optional(),
     lang: z.string().optional(),
-    /** Free string; existence is checked separately (KNOWN_THEMES) so a CSS-only theme isn't rejected. */
+    /** Free string; existence is checked separately (isKnownTheme) so a CSS-only theme isn't rejected. */
     theme: z.string().optional(),
     parser: z.enum(['heading', 'separator']).optional(),
     storybook: z.string().optional(),

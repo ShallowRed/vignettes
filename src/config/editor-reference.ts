@@ -1,6 +1,6 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { KNOWN_THEMES } from '#shared/theme'
+import { knownThemes } from '#shared/theme'
 import { SLIDE_LAYOUT_REGISTRY } from './layouts'
 
 /**
@@ -30,7 +30,7 @@ export interface FrontmatterKey {
 
 export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'title', description: 'Titre de la présentation', snippet: 'title: "${Titre}"' },
-  { key: 'theme', description: 'Thème visuel du deck', values: KNOWN_THEMES, snippet: 'theme: ${dsfr}' },
+  { key: 'theme', description: 'Thème visuel du deck', values: knownThemes(), snippet: 'theme: ${dsfr}' },
   { key: 'project', description: 'Projet de rattachement au catalogue', snippet: 'project: ${slug-du-projet}' },
   { key: 'status', description: 'Statut de publication (la base prend le dessus pour les decks gérés)', values: PUBLICATION_STATUSES, snippet: 'status: ${draft}' },
   { key: 'parser', description: 'Découpage des diapos : heading (titres) ou separator (---)', values: ['heading', 'separator'], snippet: 'parser: ${heading}' },

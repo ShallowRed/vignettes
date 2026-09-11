@@ -82,6 +82,8 @@ A grant never lowers what the global role already allows; `strongerGrant` in `sh
 | `GET /collab` (WebSocket) | Hocuspocus endpoint; the connection is pinned to one deck and checked against the same edit right as `PUT` |
 | `GET /media/<hash>.<ext>` | Uploaded image, streamed from object storage or the local `.media/` directory |
 | `GET /frozen/<bundle>/...` | Asset of a frozen bundle, served after `gateDeckAccess` on the bundle's deck |
+| `GET /themes/<name>.css`, `GET /themes/<name>/assets/...` | Tenant theme files streamed from object storage; the application's own themes are static files served before this route |
+| `POST /api/admin/themes/reload` | Owner: re-read the published tenant themes now instead of waiting for the cache |
 
 ## Acceptance kit
 

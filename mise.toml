@@ -138,6 +138,15 @@ flag "--staging"
 """
 run = "node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
 
+[tasks."theme:push"]
+description = "Publish tenant themes (content space) to the bucket the deployed app serves them from (dry run; --apply uploads): mise run theme:push -- <name>[,<name>]"
+depends = ["install"]
+usage = """
+arg "<names>"
+flag "--apply"
+"""
+run = "infisical run --env=prod -- node scripts/theme-push.ts \"$usage_names\" ${usage_apply:+--apply}"
+
 [tasks.test]
 description = "Unit and golden tests"
 depends = ["install"]

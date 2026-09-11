@@ -1,11 +1,11 @@
-import { KNOWN_THEMES } from './tokens'
+import { knownThemes } from './tokens'
 
 // Pure, fs-free cross-check of a theme's three declarations that can drift:
 // tokens manifest, compiled public/themes/<name>.css, and SCSS source themes/<name>/.
 // The caller reads the directories; this only compares names.
 
 export interface ThemeConsistencyInput {
-  /** Defaults to {@link KNOWN_THEMES}. */
+  /** Defaults to {@link knownThemes}. */
   tokens?: readonly string[]
   /** Base names of the compiled `public/themes/*.css` files. */
   cssFiles: readonly string[]
@@ -22,7 +22,7 @@ export interface ThemeConsistencyReport {
 }
 
 export function checkThemeConsistency(input: ThemeConsistencyInput): ThemeConsistencyReport {
-  const tokens = new Set(input.tokens ?? KNOWN_THEMES)
+  const tokens = new Set(input.tokens ?? knownThemes())
   const css = new Set(input.cssFiles)
   const warnings: string[] = []
 

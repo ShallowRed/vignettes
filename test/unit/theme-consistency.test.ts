@@ -49,7 +49,9 @@ describe('checkThemeConsistency', () => {
     const sourceDirs = readdirSync('themes', { withFileTypes: true })
       .filter(d => d.isDirectory() && existsSync(`themes/${d.name}/theme.json`))
       .map(d => d.name)
-    const report = checkThemeConsistency({ cssFiles, sourceDirs })
+    // Tenant themes compiled from the content space also land in public/themes;
+    // they are registered at runtime, so only the application's themes are compared.
+    const report = checkThemeConsistency({ cssFiles: cssFiles.filter(name => sourceDirs.includes(name)), sourceDirs })
     expect(report.warnings).toEqual([])
   })
 })

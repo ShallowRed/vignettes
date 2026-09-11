@@ -1,9 +1,9 @@
 /**
- * Compilation of one theme: SCSS entry to `public/themes/<name>.css`, then the
- * theme's `assets/` and the extra copies its manifest declares to
- * `public/themes/<name>/`. Packages resolve through sass's `pkg:` importer from
- * the project root, so a brand in the content space reaches `@nuxt-slides/*`
- * without a node_modules of its own.
+ * Compilation of one theme: SCSS entry to `<out>/<name>.css`, then the theme's
+ * `assets/` and the extra copies its manifest declares to `<out>/<name>/`.
+ * Packages resolve through sass's `pkg:` importer from the project root, so a
+ * brand in the content space reaches `@nuxt-slides/*` without a node_modules of
+ * its own. The default output is `public/themes/`, what the application serves.
  */
 import type { DiscoveredTheme } from './theme-registry.ts'
 import { cpSync, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -14,8 +14,7 @@ export function themesOutDir(root: string): string {
   return join(root, 'public/themes')
 }
 
-export function compileTheme(root: string, theme: DiscoveredTheme): boolean {
-  const outDir = themesOutDir(root)
+export function compileTheme(root: string, theme: DiscoveredTheme, outDir = themesOutDir(root)): boolean {
   mkdirSync(outDir, { recursive: true })
   try {
     const result = sass.compile(theme.entry, {
@@ -24,7 +23,7 @@ export function compileTheme(root: string, theme: DiscoveredTheme): boolean {
       importers: [new sass.NodePackageImporter(root)],
     })
     writeFileSync(join(outDir, `${theme.name}.css`), result.css)
-    copyAssets(root, theme)
+    copyAssets(root, theme, outDir)
     console.log(`✓ ${theme.name}`)
     return true
   }
@@ -34,8 +33,8 @@ export function compileTheme(root: string, theme: DiscoveredTheme): boolean {
   }
 }
 
-function copyAssets(root: string, theme: DiscoveredTheme) {
-  const target = join(themesOutDir(root), theme.name)
+function copyAssets(root: string, theme: DiscoveredTheme, outDir: string) {
+  const target = join(outDir, theme.name)
   rmSync(target, { recursive: true, force: true })
   const own = join(theme.dir, 'assets')
   if (existsSync(own))

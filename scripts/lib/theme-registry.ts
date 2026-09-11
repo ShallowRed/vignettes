@@ -5,8 +5,9 @@
  * `presentations/` by default), so a tenant ships its brands next to its decks.
  *
  * Pure filesystem reads, no Nuxt import: shared by the build scripts, the dev
- * watcher plugin and the token generator.
+ * watcher plugin, the token generator and the server's runtime loader.
  */
+import type { ThemeRegistry, ThemeTokens } from '../../shared/theme/tokens.ts'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -14,7 +15,7 @@ import process from 'node:process'
 export interface ThemeAssetCopy {
   /** Source directory, resolved from the project root (a node_modules path works). */
   from: string
-  /** Destination under `public/themes/<name>/`. */
+  /** Destination under `<out>/<name>/`. */
   to: string
   /** Regular expression a file name must match to be copied. */
   match?: string
@@ -92,6 +93,24 @@ export function themeAssetUrl(name: string, path: string): string {
   return `/themes/${name}/${path.replace(/^\.\//, '')}`
 }
 
+/** The runtime tokens a manifest declares, background paths turned into public URLs. */
+export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
+  const { name, lang, parser, reveal, backgrounds } = manifest
+  const tokens: ThemeTokens = { name }
+  if (lang)
+    tokens.lang = lang
+  if (parser)
+    tokens.parser = parser
+  if (backgrounds) {
+    tokens.backgrounds = Object.fromEntries(
+      Object.entries(backgrounds).map(([level, path]) => [level, themeAssetUrl(name, path)]),
+    )
+  }
+  if (reveal)
+    tokens.reveal = reveal as ThemeTokens['reveal']
+  return tokens
+}
+
 /** Alias map, tenant themes (content) taking precedence over application ones. */
 export function themeAliases(themes: DiscoveredTheme[]): { aliases: Record<string, string>, warnings: string[] } {
   const aliases: Record<string, string> = {}
@@ -109,6 +128,14 @@ export function themeAliases(themes: DiscoveredTheme[]): { aliases: Record<strin
     }
   }
   return { aliases, warnings }
+}
+
+/** Registry (tokens + aliases) of a set of discovered themes. */
+export function registryOf(themes: DiscoveredTheme[]): ThemeRegistry {
+  return {
+    tokens: Object.fromEntries(themes.map(t => [t.name, manifestTokens(t.manifest)])),
+    aliases: themeAliases(themes).aliases,
+  }
 }
 
 export function checkExtends(themes: DiscoveredTheme[]): string[] {

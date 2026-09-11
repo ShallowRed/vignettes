@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
 import { isDeckSlug } from '#shared/deck'
-import { KNOWN_THEMES } from '#shared/theme'
+import { knownThemes } from '#shared/theme'
 import { useMutation } from '@pinia/colada'
 import { deckApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
@@ -40,7 +40,7 @@ const projectItems = computed(() => [
   ...(props.projects ?? []).map(p => ({ label: p.title ?? p.slug, value: p.slug })),
 ])
 
-const themeItems = KNOWN_THEMES.map(name => ({ label: name, value: name }))
+const themeItems = knownThemes().map(name => ({ label: name, value: name }))
 
 function close() {
   open.value = false
