@@ -16,7 +16,7 @@ export interface ResolveDeckInput {
   strict?: boolean
   label?: string
   /**
-   * Rewrite the deck's `storybook:` base. A frozen bundle carries its own copy of
+   * Rewrite the deck's `storybook:` base. A frozen bundle embeds its own copy of
    * the Storybook, so its embeds must point inside the bundle instead of at the
    * design system's server. Decks without story embeds are unaffected.
    */

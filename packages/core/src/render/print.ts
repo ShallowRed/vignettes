@@ -3,15 +3,8 @@ import type { RevealConfig } from '../deck/schema'
 import { mergeRevealConfig } from './reveal'
 
 /**
- * Print / PDF writer.
- *
- * A writer consumes the `DeckModel` and emits everything a caller needs to render
- * the deck for print, reusing reveal.js's native `?print-pdf` mode rather than
- * adding a second rendering engine. Pure and serializable, so it is the same on
- * client, server, and in a CLI export.
- *
- * It also carries the `DeckRenderer` port type: `revealLive`, `revealFrozen` and
- * `print` are writers of one shape.
+ * Print writer: what a caller needs to render a deck through reveal.js's own
+ * `?print-pdf` mode. Serializable, so client, server and a CLI share it.
  */
 
 /** What a renderer produces from a deck model, kept generic over its output. */
@@ -21,12 +14,7 @@ export interface RenderOutput<T = unknown> {
   output: T
 }
 
-/**
- * The output port: every writer consumes the deck model and produces a
- * `RenderOutput`. `revealLive` (Vue), `revealFrozen` (static bundle), and `print`
- * (this module) are implementations; a `pdf`/`marp` writer would be one more,
- * never a new parser.
- */
+/** The output port: a writer consumes the deck model and produces a `RenderOutput`. */
 export interface DeckRenderer<T = unknown> {
   readonly id: string
   render: (model: DeckModel) => RenderOutput<T>

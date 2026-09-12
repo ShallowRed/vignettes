@@ -1,13 +1,8 @@
 /**
- * The single component & syntax contract. Declarative spec consumed by the slide
- * parser and the MDC component map. Pure data + pure string functions, so it
- * stays framework-free and unit-testable.
+ * The component and annotation contract of the deck dialect, as data.
  */
 
-/**
- * A `:tag{...}` directive the parser extracts into the `Slide` and removes from
- * the body. Deliberately NOT an MDC component — never reaches `MDCRenderer`.
- */
+/** A `:tag{...}` directive the parser extracts into the `Slide` and removes from the body. */
 export interface DeckAnnotation {
   tag: string
   description: string
@@ -23,10 +18,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
 
 export const ANNOTATION_TAGS: readonly string[] = DECK_ANNOTATIONS.map(a => a.tag)
 
-/**
- * Extracted on its own pass (before MDC): carries a background URL the renderer
- * applies to the slide element, not the body.
- */
+/** Read on its own pass: it names a background the renderer applies to the slide element. */
 export const BACKGROUND_ANNOTATION_TAG = 'slide-background'
 
 /** Annotations stripped after the background pass. */
@@ -34,20 +26,19 @@ export const STRIPPED_ANNOTATION_TAGS: readonly string[] = ANNOTATION_TAGS.filte
   t => t !== BACKGROUND_ANNOTATION_TAG,
 )
 
-/**
- * An MDC component authored as `::Name` / `:name`. `aliases` are alternative
- * authoring names resolving to the same component.
- */
+/** An MDC component authored as `::Name` / `:name`. */
 export interface DeckComponent {
   name: string
-  /** Vue component this resolves to (defaults to `name`). */
+  /** Vue component this resolves to, when it differs from the authoring name. */
   component?: string
+  /** Other authoring names for the same component. */
   aliases?: readonly string[]
-  /** Occupies the whole slide content area (no header/body split). */
+  /** Takes the whole slide content area, so the parser keeps every child in `body`. */
   fullSlide?: boolean
 }
 
-export const DECK_COMPONENTS: readonly DeckComponent[] = [
+/** The components the render layer ships. */
+export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Quote' },
   { name: 'FullScreenImage', aliases: ['full-screen-image'], fullSlide: true },
   { name: 'Iframe' },
@@ -57,26 +48,36 @@ export const DECK_COMPONENTS: readonly DeckComponent[] = [
   { name: 'IconInline', aliases: ['i'] },
   { name: 'Columns', aliases: ['TwoColumns', 'ThreeColumns'] },
   { name: 'Highlight' },
-  { name: 'StoryFrame' },
-  { name: 'Screens' },
   { name: 'Notes', aliases: ['notes'] },
   { name: 'Fragments', aliases: ['fragments'] },
-  { name: 'Scheme', aliases: ['scheme'] },
-  { name: 'Step', aliases: ['step'] },
-  { name: 'Diagram', aliases: ['diagram'] },
-  { name: 'Node', component: 'DiagramNode', aliases: ['node'] },
-  { name: 'Edge', component: 'DiagramEdge', aliases: ['edge'] },
-  { name: 'Area', component: 'DiagramArea', aliases: ['area'] },
-  { name: 'JsonTour', aliases: ['json-tour'] },
-  { name: 'Zone', component: 'JsonZone', aliases: ['zone'] },
-  { name: 'Tags', aliases: ['tags'] },
-  { name: 'RuleCard', aliases: ['rule-card'] },
 ] as const
 
-/** Build `{ authoringName: VueComponent }` from the contract (name + aliases). */
+let registry: DeckComponent[] = [...BUILT_IN_COMPONENTS]
+
+/**
+ * Add components to the contract. An extension package or a tenant calls this
+ * before a deck is parsed or rendered, so its own `::Name` resolves and the
+ * parser knows whether it takes the whole slide. Re-registering a name replaces
+ * its entry.
+ */
+export function registerDeckComponents(components: readonly DeckComponent[]): void {
+  const added = new Set(components.map(c => c.name))
+  registry = [...registry.filter(c => !added.has(c.name)), ...components]
+}
+
+/** Back to the components the render layer ships. */
+export function resetDeckComponents(): void {
+  registry = [...BUILT_IN_COMPONENTS]
+}
+
+export function deckComponents(): readonly DeckComponent[] {
+  return registry
+}
+
+/** `{ authoringName: VueComponent }`, aliases included. */
 export function buildComponentMap(): Record<string, string> {
   const map: Record<string, string> = {}
-  for (const c of DECK_COMPONENTS) {
+  for (const c of registry) {
     const target = c.component || c.name
     map[c.name] = target
     for (const alias of c.aliases || [])
@@ -85,14 +86,14 @@ export function buildComponentMap(): Record<string, string> {
   return map
 }
 
-/** Full-slide component names (canonical + aliases): parser keeps children in `body`. */
-export const FULL_SLIDE_COMPONENT_NAMES: readonly string[] = DECK_COMPONENTS
-  .filter(c => c.fullSlide)
-  .flatMap(c => [c.name, ...(c.aliases || [])])
+/** Full-slide authoring names, canonical and aliases. */
+export function fullSlideComponentNames(): string[] {
+  return registry.filter(c => c.fullSlide).flatMap(c => [c.name, ...(c.aliases || [])])
+}
 
 /**
- * Normalise an icon name to Iconify format (`ri:home-line`). Accepts the Remix
- * CSS-class form (`ri-home-line`, first hyphen → colon) or an already-`:` form.
+ * Normalise an icon name to the Iconify form (`ri:home-line`). Accepts the Remix
+ * CSS-class form, whose first hyphen becomes the colon.
  */
 export function normalizeIconName(name: string): string {
   if (name.includes(':'))

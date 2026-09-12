@@ -13,17 +13,8 @@ export interface ContentSource {
 export type ContentSources = Partial<Record<ContentSource['id'], ContentSource>>
 
 /**
- * Content writer port.
- *
- * The symmetric counterpart of {@link ContentSource}: a single interface for
- * persisting a deck's raw markdown back to its source. The integrated editor
- * (and the "live local" replacement for CodiMD) writes through this port so the
- * markdown stays the source of truth and `resolveDeck` keeps reading exactly what
- * was authored — no second format, no second parser.
- *
- * Like the read port it lives in the framework-agnostic core; the server provides
- * the concrete adapter (e.g. `useStorage` over `presentations/`), and tests use
- * in-memory fakes.
+ * Persists a deck's raw markdown back to its source. The editor writes through
+ * this port, so the markdown stays what `resolveDeck` reads back.
  */
 export interface ContentWriter {
   /** Stable identifier of the writable target. */
@@ -96,10 +87,8 @@ export interface PreparedDeckWrite {
 }
 
 /**
- * Validate a write request and derive its default storage key — pure, so the
- * safety checks (no traversal, non-empty) are testable without touching storage.
- * Throws a descriptive error so the adapter never writes outside `presentations/`.
- * Status lives in the frontmatter of `raw`, not in the path.
+ * Validate a write request and derive its storage key. Throws when the slug
+ * could escape the content directory, or when the markdown is empty.
  */
 export function prepareDeckWrite(input: DeckWriteInput): PreparedDeckWrite {
   const { slug, raw } = input
