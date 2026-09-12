@@ -1,5 +1,5 @@
 import type { RevealConfig, ThemeBackgrounds } from '../deck/schema'
-import { THEME_ALIASES as BUILT_IN_ALIASES, THEME_TOKENS as BUILT_IN_TOKENS } from './tokens.generated'
+import { THEME_ALIASES as BUILT_IN_ALIASES, THEME_TOKENS as BUILT_IN_TOKENS } from './tokens.generated.ts'
 
 // The data side of a theme (backgrounds, Reveal dimensions, language, parser),
 // declared by each theme's `theme.json`. Colors stay authored in SCSS.

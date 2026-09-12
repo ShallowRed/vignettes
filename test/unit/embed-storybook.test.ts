@@ -63,11 +63,10 @@ describe('detectAssetRoots', () => {
 })
 
 describe('storybook freeze steps', () => {
-  it('declares the four embed passes in adapter order', () => {
+  it('declares the embed passes in the order the freeze runs them', () => {
     expect(STORYBOOK_FREEZE_STEPS.map(s => s.id)).toEqual([
       'prune',
       'rebase',
-      'mirror',
       'link',
     ])
   })

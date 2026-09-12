@@ -1,7 +1,7 @@
 /**
  * When building a bundle, turn a prerendered deck into a self-contained
  * Reveal-only page. Only ADDS what a standalone Reveal page needs — never strips
- * tags. Reveal.js + the theme are copied in by the Makefile.
+ * tags. Reveal.js and the theme are copied in by `scripts/freeze.ts`.
  */
 
 import { readBundleConfig } from '#shared/build'
@@ -43,14 +43,18 @@ export default defineNitroPlugin((nitroApp) => {
       + `try{return el?JSON.parse(el.getAttribute('data-reveal-config')):${defaultInit};}`
       + `catch(e){return ${defaultInit};}})()`
 
-  nitroApp.hooks.hook('render:html', (html) => {
-    // Rebase _nuxt/*.css links so they resolve under the bundle, not the origin root.
-    html.head = html.head.map(s => s.replace(/(href=")\/(_nuxt\/[^"]+\.css)/g, `$1${prefix}/$2`))
+  // Nuxt writes its own stylesheet links against the app base (`/` or the
+  // bundle's URL); both forms become depth-relative so the bundle resolves them
+  // wherever it is served from.
+  const base = bundle.baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const nuxtCss = new RegExp(`(href=")(?:${base}|/)(_nuxt/[^"]+\\.css)`, 'g')
 
-    html.head.push(
-      `<link rel="stylesheet" href="${prefix}/reveal/reveal.css">`,
-      `<link rel="stylesheet" href="${prefix}/themes/${theme}.css">`,
-    )
+  nitroApp.hooks.hook('render:html', (html) => {
+    html.head = html.head.map(s => s.replace(nuxtCss, `$1${prefix}/$2`))
+
+    html.head.push(`<link rel="stylesheet" href="${prefix}/reveal/reveal.css">`)
+    if (theme)
+      html.head.push(`<link rel="stylesheet" href="${prefix}/themes/${theme}.css">`)
     html.bodyAppend.push(
       `<script src="${prefix}/reveal/reveal.js"></script>`,
       `<script>Reveal.initialize(${revealInitExpr});\n${INLINE_SCALER}</script>`,

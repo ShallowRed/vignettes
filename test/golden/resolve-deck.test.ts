@@ -47,3 +47,22 @@ describe('resolveDeck — wire content is parseable back to the same meta', () =
     expect((reparsed.reveal as any).margin).toBe(0.2)
   })
 })
+
+describe('resolveDeck — storybook base override (frozen bundles)', () => {
+  it('rewrites the storybook base so a bundle embeds its own copy', () => {
+    const stub = '---\nstorybook: https://design.example\n---\n\n# x'
+    const deck = resolveDeck({ stub, storybookBase: '/frozen/talk/_storybook' })
+    expect(deck.meta.storybook).toBe('/frozen/talk/_storybook')
+    expect(splitFrontmatter(deck.content).data.storybook).toBe('/frozen/talk/_storybook')
+  })
+
+  it('leaves a deck without story embeds alone', () => {
+    const deck = resolveDeck({ stub: '---\ntheme: dsfr\n---\n\n# x', storybookBase: '/frozen/talk/_storybook' })
+    expect(deck.meta.storybook).toBeUndefined()
+  })
+
+  it('keeps the deck own base when no override is given', () => {
+    const deck = resolveDeck({ stub: '---\nstorybook: https://design.example\n---\n\n# x' })
+    expect(deck.meta.storybook).toBe('https://design.example')
+  })
+})

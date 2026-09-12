@@ -10,7 +10,6 @@ node_modules
 .data
 .cache
 dist
-dist-standalone
 export
 
 # Bundles gelés : désormais en object storage (Scaleway), plus bakés dans l'image

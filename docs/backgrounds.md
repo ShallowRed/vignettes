@@ -22,10 +22,10 @@ Slide body content here...
 ---
 theme: dsfr
 backgrounds:
-  h1: "/backgrounds/custom-title.jpg"
-  h2: "/backgrounds/custom-section.jpg"
-  h3: "/backgrounds/custom-vertical.jpg"
-  default: "/backgrounds/custom-default.jpg"
+  h1: /backgrounds/custom-title.jpg
+  h2: /backgrounds/custom-section.jpg
+  h3: /backgrounds/custom-vertical.jpg
+  default: /backgrounds/custom-default.jpg
 ---
 ```
 

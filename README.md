@@ -11,7 +11,7 @@ A self-hosted catalog and editor for Markdown slide decks. Decks are written in 
 - **Themes**: reveal.js themes compiled from SCSS on an engine package, with a brand-neutral DSFR base (the French state design system) made to be extended, a minimal theme, and a tenant's own brands shipped next to its decks; each deck picks its theme in its frontmatter.
 - **Slide components**: columns, quotes, images with lightbox, media layouts, live Storybook embeds, Mermaid diagrams, JSON tours, speaker notes, fragments, and more.
 - **Print**: any deck exports to PDF through reveal.js print mode.
-- **Frozen bundles**: a deck can be frozen into a self-contained static bundle served from object storage, under the same access rules as the live deck.
+- **Frozen bundles**: `mise run freeze -- <alias>` turns a deck into a self-contained static bundle with no server, database or JavaScript, served from object storage under the same access rules as the live deck, so a link stays alive long after the deck stops being maintained.
 
 ## Quick start
 
@@ -63,6 +63,7 @@ The database is the only runtime source of content. Each deck has a draft (a Yjs
 | `mise run content:push -- <slug> --apply` | Same, on a deployed instance over SSH |
 | `mise run theme:push -- <name> --apply` | Publish a theme of the content space to the object storage the deployed instances serve it from |
 | `mise run assets:push --apply` | Mirror `presentations/assets/` (images, backgrounds, pictograms referenced by decks) to the same object storage |
+| `mise run freeze -- <alias>` | Build a deck's frozen bundle and upload it; `--storybook <dir>` embeds a built Storybook, `--no-upload` stops after the build |
 
 ## Access model
 

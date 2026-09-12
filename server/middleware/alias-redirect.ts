@@ -1,14 +1,19 @@
+import { readBundleConfig } from '#shared/build'
 import { deckDirectory } from '../utils/sources'
 
 /**
  * 301-redirect any `/slides/<x>` that resolves to a directory entry (by alias, stub
  * slug, or historical `aliases:` path) to its canonical `/p/<alias>`, so a single
  * URL serves each deck. Decks not in the directory pass through untouched.
+ *
+ * A frozen bundle holds that one deck and nothing to canonicalise against: the
+ * redirect would prerender a stub pointing back at the live site, so bundle mode
+ * serves the deck page itself.
  */
 export default defineEventHandler(async (event) => {
   const path = event.path || ''
 
-  if (!path.startsWith('/slides/'))
+  if (!path.startsWith('/slides/') || readBundleConfig().enabled)
     return
 
   // Normalise to the form stored in the registry (`<slug>`, `codimd/<id>`…).

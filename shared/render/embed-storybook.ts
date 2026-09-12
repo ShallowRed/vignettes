@@ -37,13 +37,13 @@ export function detectAssetRoots(entryNames: Iterable<string>): string[] {
 }
 
 export interface StorybookFreezeStep {
-  id: 'prune' | 'mirror' | 'rebase' | 'link'
+  id: 'prune' | 'rebase' | 'link'
   script: string
   description: string
 }
 
-// The four passes that turn a built Storybook into a self-contained bundle embed,
-// in the order the freeze adapter runs them.
+// The passes that turn a built Storybook into a self-contained bundle embed,
+// in the order `scripts/freeze.ts` runs them.
 export const STORYBOOK_FREEZE_STEPS: readonly StorybookFreezeStep[] = [
   {
     id: 'prune',
@@ -54,11 +54,6 @@ export const STORYBOOK_FREEZE_STEPS: readonly StorybookFreezeStep[] = [
     id: 'rebase',
     script: 'scripts/rebase-storybook-assets.js',
     description: 'Rebase root-absolute asset URLs to bundle-relative so the iframe self-resolves',
-  },
-  {
-    id: 'mirror',
-    script: 'scripts/mirror-storybook-assets.js',
-    description: 'Mirror remaining asset roots to the origin-root safety net (non-rebased consumers)',
   },
   {
     id: 'link',

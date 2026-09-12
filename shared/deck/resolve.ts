@@ -15,6 +15,12 @@ export interface ResolveDeckInput {
   /** Throw on invalid frontmatter instead of warning (tests/tooling). */
   strict?: boolean
   label?: string
+  /**
+   * Rewrite the deck's `storybook:` base. A frozen bundle carries its own copy of
+   * the Storybook, so its embeds must point inside the bundle instead of at the
+   * design system's server. Decks without story embeds are unaffected.
+   */
+  storybookBase?: string
 }
 
 export interface DeckProvenance {
@@ -35,7 +41,7 @@ export interface ResolvedDeck {
 }
 
 export function resolveDeck(input: ResolveDeckInput): ResolvedDeck {
-  const { stub, strict, label } = input
+  const { stub, strict, label, storybookBase } = input
 
   const stubDoc = stub != null
     ? splitFrontmatter(stub)
@@ -47,6 +53,9 @@ export function resolveDeck(input: ResolveDeckInput): ResolvedDeck {
 
   // Validate once, derive types, coerce numerics.
   const { meta } = parseDeckMeta({ ...stubDoc.data }, { strict, label })
+
+  if (storybookBase && meta.storybook)
+    meta.storybook = storybookBase
 
   // Unknown themes are recorded, not rejected, so a CSS-only theme or a typo
   // surfaces in provenance without taking a production deck dark.

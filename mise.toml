@@ -18,13 +18,16 @@ PORTLESS_HTTPS = "0"
 
 [tasks.install]
 description = "Install the dependencies"
-sources = ["package.json", "pnpm-lock.yaml"]
+sources = [
+  "package.json",
+  "pnpm-lock.yaml"
+]
 outputs = { auto = true }
 run = "pnpm install"
 
 [tasks.dev]
 description = "Nuxt behind portless; the browser opens once the app answers. Host: nuxt-slides.localhost, or <branch>.nuxt-slides.localhost in a worktree"
-depends = ["install"]
+depends = [ "install" ]
 run = "portless run mise run dev:serve"
 
 [tasks."dev:serve"]
@@ -36,7 +39,7 @@ pnpm dev
 
 [tasks."dev:nuxt"]
 description = "The bare Nuxt dev server on HOST:PORT (default localhost:3000), for tools that expect a fixed port"
-depends = ["install"]
+depends = [ "install" ]
 run = "pnpm dev"
 
 [tasks.open]
@@ -94,34 +97,34 @@ git worktree remove --force "$(dirname "$PWD")/nuxt-slides.wt/$name"
 
 [tasks."db:migrate"]
 description = "Apply the migrations to .data/slides.db (or NUXT_DB_PATH)"
-depends = ["install"]
+depends = [ "install" ]
 run = "node scripts/db-migrate.ts"
 
 [tasks."content:plan"]
 description = "What content:import would do (dry run)"
-depends = ["install"]
+depends = [ "install" ]
 run = "node scripts/content-import.ts"
 
 [tasks."content:import"]
 description = "Import the stubs of presentations/ that the database does not own yet"
-depends = ["install"]
+depends = [ "install" ]
 run = "node scripts/content-import.ts --apply"
 
 [tasks."content:republish"]
 description = "Republish decks from their stub even when the database owns them: mise run content:republish -- <slug>[,<slug>]"
-depends = ["install"]
+depends = [ "install" ]
 usage = 'arg "<slugs>"'
 run = "node scripts/content-import.ts --apply --republish=\"$usage_slugs\""
 
 [tasks."content:republish:prod:plan"]
 description = "What content:republish:prod would publish on slides.example.org (dry run): mise run content:republish:prod:plan -- <slugs>"
-depends = ["install"]
+depends = [ "install" ]
 usage = 'arg "<slugs>"'
 run = "infisical run --env=prod -- node scripts/content-import.ts --remote=https://slides.example.org --republish=\"$usage_slugs\""
 
 [tasks."content:republish:prod"]
 description = "Republish decks on slides.example.org from their stub, through the app with the content token from Infisical: mise run content:republish:prod -- <slugs> [--force]"
-depends = ["install"]
+depends = [ "install" ]
 usage = '''
 arg "<slugs>"
 flag "-f --force" help="Overwrite a draft edited online and not yet published"
@@ -130,7 +133,7 @@ run = "infisical run --env=prod -- node scripts/content-import.ts --apply --remo
 
 [tasks."content:push"]
 description = "Push stubs into the production database over SSH (dry run; --apply writes, --staging targets the staging container): mise run content:push -- <slug>[,<slug>]"
-depends = ["install"]
+depends = [ "install" ]
 usage = """
 arg "<slugs>"
 flag "--apply"
@@ -140,7 +143,7 @@ run = "node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${u
 
 [tasks."theme:push"]
 description = "Publish tenant themes (content space) to the bucket the deployed app serves them from (dry run; --apply uploads): mise run theme:push -- <name>[,<name>]"
-depends = ["install"]
+depends = [ "install" ]
 usage = """
 arg "<names>"
 flag "--apply"
@@ -149,37 +152,70 @@ run = "infisical run --env=prod -- node scripts/theme-push.ts \"$usage_names\" $
 
 [tasks."assets:push"]
 description = "Mirror the deck assets of the content space (presentations/assets) to the bucket the deployed app serves them from (dry run; --apply uploads)"
-depends = ["install"]
+depends = [ "install" ]
 usage = """
 flag "--apply"
 """
 run = "infisical run --env=prod -- node scripts/assets-push.ts ${usage_apply:+--apply}"
 
+[tasks.freeze]
+description = "Freeze a published deck into a self-contained static bundle and upload it: mise run freeze -- <alias> [--storybook <built-dir>] [--dry-run] [--no-upload]"
+depends = [ "install" ]
+usage = """
+arg "<alias>"
+flag "--storybook <dir>"
+flag "--theme <name>"
+flag "--dry-run"
+flag "--no-upload"
+"""
+run = "infisical run --env=prod -- node scripts/freeze.ts \"$usage_alias\" ${usage_storybook:+--storybook \"$usage_storybook\"} ${usage_theme:+--theme \"$usage_theme\"} ${usage_dry_run:+--dry-run} ${usage_no_upload:+--no-upload}"
+
+[tasks."freeze:push"]
+description = "Upload an already built bundle of .frozen/<name> to the bucket: mise run freeze:push -- <name> [--dry-run]"
+depends = [ "install" ]
+usage = """
+arg "<name>"
+flag "--dry-run"
+"""
+run = "infisical run --env=prod -- node scripts/upload-frozen.js \"$usage_name\" ${usage_dry_run:+--dry-run}"
+
+[tasks."freeze:check"]
+description = "List the Storybook stories a deck embeds and flag the ones missing from a built Storybook: mise run freeze:check -- <deck.md> <storybook-dir>"
+depends = [ "install" ]
+usage = """
+arg "<deck>"
+arg "<storybook>"
+"""
+run = "node scripts/freeze-deck.js \"$usage_deck\" \"$usage_storybook\""
+
 [tasks.test]
 description = "Unit and golden tests"
-depends = ["install"]
+depends = [ "install" ]
 run = "pnpm test"
 
 [tasks."test:watch"]
 description = "Tests in watch mode"
-depends = ["install"]
+depends = [ "install" ]
 run = "pnpm test:watch"
 
 [tasks.lint]
 description = "ESLint on the whole repo"
-depends = ["install"]
+depends = [ "install" ]
 run = "pnpm eslint ."
 
 [tasks."lint:fix"]
 description = "ESLint with autofix"
-depends = ["install"]
+depends = [ "install" ]
 run = "pnpm eslint . --fix"
 
 [tasks.build]
 description = "Production build (themes, then Nuxt)"
-depends = ["install"]
+depends = [ "install" ]
 run = "pnpm build"
 
 [tasks.check]
 description = "Everything the CI checks: lint + tests"
-depends = ["lint", "test"]
+depends = [
+  "lint",
+  "test"
+]

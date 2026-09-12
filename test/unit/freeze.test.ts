@@ -1,84 +1,56 @@
 import { describe, expect, it } from 'vitest'
-import {
-  buildFreezeDescriptor,
-  DEFAULT_BUNDLE_OUT,
-  DEFAULT_FREEZE_THEME,
-  DEFAULT_FROZEN_HOST_DIR,
-} from '../../shared/build/freeze'
+import { buildFreezeDescriptor, DEFAULT_FROZEN_HOST_DIR } from '../../shared/build/freeze'
 
 describe('buildFreezeDescriptor', () => {
-  it('derives every value from a minimal entry with defaults', () => {
+  it('derives every value from a minimal entry', () => {
     const d = buildFreezeDescriptor({ alias: 'conference-talk' })
     expect(d).toEqual({
       alias: 'conference-talk',
       slug: 'conference-talk',
-      theme: DEFAULT_FREEZE_THEME,
-      standaloneSlug: 'conference-talk--standalone',
-      frozenBaseUrl: '/frozen/conference-talk/',
+      bundle: 'conference-talk',
+      theme: undefined,
+      baseUrl: '/frozen/conference-talk/',
       hostDir: `${DEFAULT_FROZEN_HOST_DIR}/conference-talk`,
-      bundleOut: DEFAULT_BUNDLE_OUT,
+      deckDir: 'conference-talk--standalone',
       servedUrl: '/frozen/conference-talk/slides/conference-talk--standalone/',
-      isCollaborative: false,
+      embedsStorybook: false,
       steps: [
-        { id: 'pull-note', description: expect.any(String), enabled: false },
-        { id: 'bundle-frozen', description: expect.any(String), enabled: true },
-        { id: 'host-frozen', description: expect.any(String), enabled: true },
+        { id: 'build-bundle', description: expect.any(String), enabled: true },
+        { id: 'embed-storybook', description: expect.any(String), enabled: false },
+        { id: 'host-bundle', description: expect.any(String), enabled: true },
+        { id: 'upload-bundle', description: expect.any(String), enabled: true },
         { id: 'flip-lifecycle', description: expect.any(String), enabled: true },
       ],
     })
   })
 
-  it('honours an explicit slug for the standalone target and served URL', () => {
-    const d = buildFreezeDescriptor({
-      alias: 'annual-review',
-      slug: 'annual-review-2026',
-    })
+  it('serves the deck under its own slug inside the alias bundle', () => {
+    const d = buildFreezeDescriptor({ alias: 'annual-review', slug: 'annual-review-2026' })
     expect(d.slug).toBe('annual-review-2026')
-    expect(d.standaloneSlug).toBe('annual-review-2026--standalone')
-    // The bundle is hosted under the ALIAS, served under the SLUG's standalone target.
-    expect(d.frozenBaseUrl).toBe('/frozen/annual-review/')
-    expect(d.servedUrl).toBe(
-      '/frozen/annual-review/slides/annual-review-2026--standalone/',
-    )
+    expect(d.baseUrl).toBe('/frozen/annual-review/')
+    expect(d.servedUrl).toBe('/frozen/annual-review/slides/annual-review-2026--standalone/')
   })
 
   it('hosts under frozenBundle when it differs from the alias', () => {
     const d = buildFreezeDescriptor({ alias: 'talk', frozenBundle: 'talk-v2' })
-    expect(d.frozenBaseUrl).toBe('/frozen/talk-v2/')
+    expect(d.bundle).toBe('talk-v2')
+    expect(d.baseUrl).toBe('/frozen/talk-v2/')
     expect(d.hostDir).toBe(`${DEFAULT_FROZEN_HOST_DIR}/talk-v2`)
-    expect(d.servedUrl).toBe('/frozen/talk-v2/slides/talk--standalone/')
   })
 
-  it('marks a codimd-sourced deck with a noteId as collaborative (pull-note enabled)', () => {
-    const d = buildFreezeDescriptor({ alias: 'live', source: 'codimd', noteId: 'abc123' })
-    expect(d.isCollaborative).toBe(true)
-    expect(d.steps.find(s => s.id === 'pull-note')?.enabled).toBe(true)
+  it('enables the storybook pass only when a built storybook is given', () => {
+    const without = buildFreezeDescriptor({ alias: 'deck' })
+    expect(without.steps.find(s => s.id === 'embed-storybook')?.enabled).toBe(false)
+    const with_ = buildFreezeDescriptor({ alias: 'deck' }, { storybookDir: '/tmp/sb' })
+    expect(with_.embedsStorybook).toBe(true)
+    expect(with_.steps.find(s => s.id === 'embed-storybook')?.enabled).toBe(true)
   })
 
-  it('treats a source without a noteId as NOT collaborative', () => {
-    const d = buildFreezeDescriptor({ alias: 'half', source: 'codimd' })
-    expect(d.isCollaborative).toBe(false)
-    expect(d.steps.find(s => s.id === 'pull-note')?.enabled).toBe(false)
-  })
-
-  it('treats a noteId without a source as NOT collaborative', () => {
-    const d = buildFreezeDescriptor({ alias: 'orphan', noteId: 'abc123' })
-    expect(d.isCollaborative).toBe(false)
-  })
-
-  it('supports hackmd as a collaborative source', () => {
-    const d = buildFreezeDescriptor({ alias: 'hm', source: 'hackmd', noteId: 'xyz' })
-    expect(d.isCollaborative).toBe(true)
-  })
-
-  it('overrides theme, frozen host dir and bundle out from options', () => {
-    const d = buildFreezeDescriptor(
-      { alias: 'deck' },
-      { theme: 'dsfr', frozenHostDir: '.archive', bundleOut: 'out' },
-    )
+  it('carries the deck theme and an alternate host dir', () => {
+    const d = buildFreezeDescriptor({ alias: 'deck' }, { theme: 'dsfr', frozenHostDir: '.archive' })
     expect(d.theme).toBe('dsfr')
     expect(d.hostDir).toBe('.archive/deck')
-    expect(d.bundleOut).toBe('out')
+    expect(d.steps[0].description).toContain('dsfr')
   })
 
   it('is pure — does not mutate the input entry or options', () => {

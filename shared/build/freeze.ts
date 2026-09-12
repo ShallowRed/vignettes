@@ -1,25 +1,27 @@
-// Pure, framework-free derivation of a freeze job from a registry entry,
-// consumed by scripts/freeze.js.
+// Pure derivation of a freeze job from a registry entry, consumed by
+// scripts/freeze.ts. A freeze turns one published deck into a self-contained
+// static bundle: no server, no database, no Nuxt runtime, served for good under
+// the deck's stable alias.
 
-/** Minimal registry-entry shape a freeze needs (mirrors server RegistryEntry). */
+/** Minimal registry-entry shape a freeze needs (mirrors the server's directory entry). */
 export interface FreezeRegistryEntry {
   alias: string
-  /** Defaults to alias. */
+  /** Deck slug; defaults to the alias. */
   slug?: string
-  source?: 'codimd' | 'hackmd'
-  noteId?: string
-  /** Defaults to alias. */
+  /** Bundle directory name; defaults to the alias, so the served URL never moves. */
   frozenBundle?: string
 }
 
 export interface FreezeOptions {
+  /** The deck's theme, read from the database row or its stub. */
   theme?: string
+  /** Built Storybook to embed, when the deck holds story embeds. */
+  storybookDir?: string
   frozenHostDir?: string
-  bundleOut?: string
 }
 
 export interface FreezeStep {
-  id: 'pull-note' | 'bundle-frozen' | 'host-frozen' | 'flip-lifecycle'
+  id: 'build-bundle' | 'embed-storybook' | 'host-bundle' | 'upload-bundle' | 'flip-lifecycle'
   description: string
   enabled: boolean
 }
@@ -27,20 +29,31 @@ export interface FreezeStep {
 export interface FreezeDescriptor {
   alias: string
   slug: string
-  theme: string
-  standaloneSlug: string
-  frozenBaseUrl: string
+  bundle: string
+  theme?: string
+  /** Base URL the bundle is served under, and the base its assets resolve against. */
+  baseUrl: string
+  /** Local directory the built bundle is hosted in before upload. */
   hostDir: string
-  bundleOut: string
+  /** Directory the deck page sits in inside the bundle, under `slides/`. */
+  deckDir: string
   /** Public URL the alias resolves to once frozen. */
   servedUrl: string
-  isCollaborative: boolean
+  embedsStorybook: boolean
   steps: FreezeStep[]
 }
 
-export const DEFAULT_FREEZE_THEME = 'brand'
+/**
+ * The deck page of a bundle keeps the historical `--standalone` directory name:
+ * `/p/<alias>` sends visitors there (`server/api/p/[alias].get.ts`), and bundles
+ * frozen years ago answer on that path. The suffix names the Reveal-only copy of
+ * the deck, nothing else.
+ */
+export function bundleDeckDir(slug: string): string {
+  return `${slug}--standalone`
+}
+
 export const DEFAULT_FROZEN_HOST_DIR = '.frozen'
-export const DEFAULT_BUNDLE_OUT = 'dist-standalone'
 
 export function buildFreezeDescriptor(
   entry: FreezeRegistryEntry,
@@ -48,27 +61,29 @@ export function buildFreezeDescriptor(
 ): FreezeDescriptor {
   const slug = entry.slug || entry.alias
   const bundle = entry.frozenBundle || entry.alias
-  const theme = options.theme || DEFAULT_FREEZE_THEME
   const hostRoot = options.frozenHostDir || DEFAULT_FROZEN_HOST_DIR
-  const frozenBaseUrl = `/frozen/${bundle}/`
-  const standaloneSlug = `${slug}--standalone`
-  const isCollaborative
-    = (entry.source === 'codimd' || entry.source === 'hackmd') && Boolean(entry.noteId)
+  const baseUrl = `/frozen/${bundle}/`
+  const embedsStorybook = Boolean(options.storybookDir)
 
   const steps: FreezeStep[] = [
     {
-      id: 'pull-note',
-      description: 'Rapatriate the live note body into the repo stub (keeps frontmatter)',
-      enabled: isCollaborative,
-    },
-    {
-      id: 'bundle-frozen',
-      description: `Freeze the deck into a self-contained Reveal-only bundle (theme '${theme}')`,
+      id: 'build-bundle',
+      description: `Generate the Reveal-only deck '${slug}'${options.theme ? ` with the theme '${options.theme}'` : ''}`,
       enabled: true,
     },
     {
-      id: 'host-frozen',
-      description: `Host the bundle under ${hostRoot}/${bundle}/`,
+      id: 'embed-storybook',
+      description: 'Copy the built Storybook into the bundle and rebase its asset URLs',
+      enabled: embedsStorybook,
+    },
+    {
+      id: 'host-bundle',
+      description: `Write the bundle to ${hostRoot}/${bundle}/ with its provenance`,
+      enabled: true,
+    },
+    {
+      id: 'upload-bundle',
+      description: `Upload it to the bucket under frozen/${bundle}/`,
       enabled: true,
     },
     {
@@ -78,16 +93,17 @@ export function buildFreezeDescriptor(
     },
   ]
 
+  const deckDir = bundleDeckDir(slug)
   return {
     alias: entry.alias,
     slug,
-    theme,
-    standaloneSlug,
-    frozenBaseUrl,
+    bundle,
+    theme: options.theme,
+    baseUrl,
     hostDir: `${hostRoot}/${bundle}`,
-    bundleOut: options.bundleOut || DEFAULT_BUNDLE_OUT,
-    servedUrl: `/frozen/${bundle}/slides/${standaloneSlug}/`,
-    isCollaborative,
+    deckDir,
+    servedUrl: `${baseUrl}slides/${deckDir}/`,
+    embedsStorybook,
     steps,
   }
 }

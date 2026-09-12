@@ -66,7 +66,9 @@ Adresser les assets par chemin plutôt que par hash évite de réécrire les dec
 
 ## Bundles gelés
 
-Le stockage `frozen/<alias>/` et la route `/frozen/**` derrière la garde d'accès restent. La production d'un bundle se paramètre par deck (le frontmatter porte déjà `storybook:`) et par tenant ; le thème vient du deck. Les cibles `bundle-frozen`, `upload-frozen`, `host-frozen` deviennent des tâches mise avec arguments ; `pull-note`, les cibles CodiMD et le thème par défaut `brand` disparaissent.
+Le stockage `frozen/<alias>/` et la route `/frozen/**` derrière la garde d'accès restent. `mise run freeze -- <alias>` remplace le `Makefile` : le deck vient de la base (thème, base Storybook, markdown), l'alias du registre de l'espace de contenu, et le bundle est construit puis téléversé en une commande (`--no-upload` pour s'arrêter avant, `freeze:push` pour publier plus tard). Un deck qui incruste des écrans Storybook demande `--storybook <dossier construit>` ; ce Storybook est copié dans le bundle et la base `storybook:` du deck est réécrite vers cette copie, sans dupliquer le deck.
+
+Le bundle est indépendant de l'endroit où il est servi : les feuilles de style, les images de deck et les polices y sont copiées et leurs URL rendues relatives. Le thème est résolu avant la construction (un deck sur `dsfr` aliasé vers une marque gèle la marque), et seul ce thème est embarqué, avec ce que sa feuille de style référence.
 
 ## Ordre des chantiers
 
