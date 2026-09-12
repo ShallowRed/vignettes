@@ -30,7 +30,6 @@ export/*
 # Temporary clone directory for fetching presentations
 .presentations-temp
 
-
 # Frozen bundles: built by `mise run freeze`, uploaded to object storage and
 # served by `server/routes/frozen/[...path].ts`. `.frozen/` is the local build
 # output and upload source, never committed.
@@ -48,9 +47,3 @@ mise.local.toml
 
 # Compiled themes and their copied assets (`pnpm build:themes`)
 public/themes/
-
-# Agent and editor scratch: kept locally, out of the published repository
-CONTRIBUTING.md
-.tooling/
-
-# Identity map: applied to the history once, then kept out of the published tree
