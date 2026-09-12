@@ -1,5 +1,5 @@
+import { slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
 import { describe, expect, it } from 'vitest'
-import { slideAtLine, slideRanges } from '../../src/utils/slide-map'
 
 // Maps a 1-based line to reveal indices for a given deck source.
 function at(raw: string, parser: 'heading' | 'separator', line: number) {

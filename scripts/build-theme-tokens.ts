@@ -10,7 +10,7 @@
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { checkExtends, discoverThemes, manifestTokens, themeAliases } from './lib/theme-registry.ts'
+import { checkExtends, discoverThemes, manifestTokens, themeAliases } from '@vignettes/nuxt/build/theme-registry'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outPath = join(root, 'packages/core/src/theme/tokens.generated.ts')

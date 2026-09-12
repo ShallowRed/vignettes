@@ -1,7 +1,6 @@
 import { join } from 'node:path'
 import process from 'node:process'
 import presentationWatcher from './plugins/presentation-watcher.js'
-import themeWatcher from './plugins/theme-watcher.js'
 import { readBundleConfig } from './shared/build/bundle'
 
 const bundle = readBundleConfig()
@@ -28,7 +27,7 @@ export default defineNuxtConfig({
   // @nuxt/ui registers @nuxt/icon, @nuxt/fonts and @nuxtjs/color-mode itself.
   // Pinia + Pinia Colada power the app-wide data layer (queries + mutations with
   // SSR hydration, cache invalidation and optimistic updates).
-  modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui'],
+  modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui', '@vignettes/nuxt'],
 
   css: ['~/assets/css/tailwind.css'],
 
@@ -62,8 +61,9 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    // Tailwind's vite plugin comes with @nuxt/ui; only the app watchers here.
-    plugins: [themeWatcher(), presentationWatcher()],
+    // Tailwind's vite plugin comes with @nuxt/ui; the theme watcher comes with
+    // the @vignettes/nuxt module. Only the content watcher is the app's own.
+    plugins: [presentationWatcher()],
     // The SSR Vite server runs in middleware mode with `hmr: false`; Vite then
     // still opens an unused websocket server on 24678, which collides with any
     // other Vite dev server on the machine. It has no client: drop it.

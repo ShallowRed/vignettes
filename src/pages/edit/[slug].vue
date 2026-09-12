@@ -15,22 +15,22 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
-import type { PresentationData } from '~/types/presentation'
+import type { PresentationData } from '@vignettes/nuxt/types'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
 import { parserIdFor } from '@vignettes/core/deck'
+import { buildPresentationData } from '@vignettes/nuxt/runtime/composables/usePresentation'
+import { slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '~/composables/useAppSession'
 import { useEditorImageUpload } from '~/composables/useEditorImageUpload'
-import { buildPresentationData } from '~/composables/usePresentation'
 import { projectsQuery } from '~/queries'
 import { insertSnippet, wrapSelection } from '~/utils/editor-commands'
 import { deckCompletions } from '~/utils/editor-completions'
 import { editorTheme } from '~/utils/editor-theme'
-import { slideAtLine, slideRanges } from '~/utils/slide-map'
 
 definePageMeta({ layout: false })
 

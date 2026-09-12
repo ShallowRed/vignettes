@@ -10,8 +10,8 @@ import {
   resolveThemeName,
   setThemeRegistry,
 } from '@vignettes/core/theme'
+import { discoverThemes, manifestTokens, registryOf, themeAliases } from '@vignettes/nuxt/build/theme-registry'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { discoverThemes, manifestTokens, registryOf, themeAliases } from '../../scripts/lib/theme-registry'
 import { indexOf } from '../../shared/storage/themes-s3'
 
 describe('runtime theme registry', () => {

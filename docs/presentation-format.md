@@ -6,13 +6,13 @@ Location: `presentations/[slug].md`
 ## Frontmatter Schema
 ```yaml
 ---
-title: "Presentation Title"    # Display name (optional, defaults to slug)
-theme: dsfr                    # Theme name (optional, defaults to 'dsfr')
-lang: fr                       # Deck language (optional); French typography rules apply unless it starts with another language
-transition: slide              # Reveal.js transition (optional, defaults to 'slide')
-center: true                   # Vertical centering (optional, defaults to true)
-storybook: http://localhost:6006  # Base URL of a published Storybook (optional).
-                               # Enables `:layout{story="<id>"}` live embeds (see below).
+title: Presentation Title # Display name (optional, defaults to slug)
+theme: dsfr # Theme name (optional, defaults to 'dsfr')
+lang: fr # Deck language (optional); French typography rules apply unless it starts with another language
+transition: slide # Reveal.js transition (optional, defaults to 'slide')
+center: true # Vertical centering (optional, defaults to true)
+storybook: http://localhost:6006 # Base URL of a published Storybook (optional).
+# Enables `:layout{story="<id>"}` live embeds (see below).
 # Custom fields supported for future extensions
 ---
 ```

@@ -4,7 +4,7 @@ import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from 
 import { THEMES_INDEX_KEY } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { setThemeRegistry } from '@vignettes/core/theme'
-import { discoverThemes, registryOf } from '../../scripts/lib/theme-registry.ts'
+import { discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
 
 /**
  * Tenant themes at runtime. Two sources, merged: the content space on disk

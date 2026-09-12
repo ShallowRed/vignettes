@@ -8,8 +8,8 @@ import { existsSync, readdirSync, rmSync, watch } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { compileTheme, themesOutDir } from './lib/theme-build.ts'
-import { contentDir, discoverThemes } from './lib/theme-registry.ts'
+import { compileTheme, themesOutDir } from '@vignettes/nuxt/build/theme-build'
+import { contentDir, discoverThemes } from '@vignettes/nuxt/build/theme-registry'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const packagesDir = join(root, 'packages')

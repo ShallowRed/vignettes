@@ -1,13 +1,13 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { knownThemes } from '@vignettes/core/theme'
-import { SLIDE_LAYOUT_REGISTRY } from './layouts'
+import { SLIDE_LAYOUT_REGISTRY } from '@vignettes/nuxt/layouts'
 
 /**
  * Declarative authoring reference for the writer: one dataset feeding the
  * autocompletion, the toolbar "Insérer" menu and the help panel. Descriptions
  * and snippets mirror the engine contracts (packages/core/src/deck/components.ts,
- * packages/core/src/deck/schema.ts, config/layouts.ts) — extend those first, then here.
+ * packages/core/src/deck/schema.ts, the layout registry of @vignettes/nuxt) — extend those first, then here.
  *
  * Snippet placeholders use the CodeMirror snippet syntax: `${label}`.
  */
