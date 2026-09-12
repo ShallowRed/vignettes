@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { PresentationData } from '../types/presentation'
+import { buildComponentMap } from '@vignettes/core/deck'
 import { computed, provide, resolveComponent } from 'vue'
 import { STORYBOOK_BASE } from '../config/injection-keys'
-import { MDC_COMPONENTS } from '../config/presentation'
 import { getSlideClasses, resolveSlideBackground } from '../utils/slide-rendering'
 
 const props = defineProps<{ presentationData: PresentationData }>()
@@ -18,7 +18,7 @@ provide(
 )
 
 const mdcComponents: Record<string, any> = Object.fromEntries(
-  Object.entries(MDC_COMPONENTS).map(([key, componentName]) => [
+  Object.entries(buildComponentMap()).map(([key, componentName]) => [
     key,
     resolveComponent(componentName),
   ]),

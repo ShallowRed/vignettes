@@ -1,0 +1,24 @@
+{
+  "name": "@vignettes/storybook",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Deck components that embed a live Storybook story in a slide.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/module.ts",
+    "./runtime/*": "./src/runtime/*"
+  },
+  "main": "./src/module.ts",
+  "types": "./src/module.ts",
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "@nuxt/kit": "^4.0.0",
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "@vignettes/core": "workspace:*",
+    "@vignettes/nuxt": "workspace:*"
+  }
+}

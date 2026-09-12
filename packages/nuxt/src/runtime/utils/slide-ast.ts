@@ -1,13 +1,11 @@
-// Pure, stateless MDC-AST-to-slide parsers. Two entry points, both behind the
-// shared `DeckParser` port: parseSlides (heading-based) and
-// parseSlidesFromSeparators (--- / ---- separators).
+// The two implementations of the `DeckParser` port: headings and separators.
 
 import type { MDCParserResult } from '@nuxtjs/mdc'
 import type { DeckParser, Slide } from '@vignettes/core/deck'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import {
   BACKGROUND_ANNOTATION_TAG,
-  FULL_SLIDE_COMPONENT_NAMES,
+  fullSlideComponentNames,
   STRIPPED_ANNOTATION_TAGS,
 } from '@vignettes/core/deck'
 
@@ -28,10 +26,10 @@ function isItalicParagraph(node: any): boolean {
   return children.length === 1 && children[0].type === 'element' && children[0].tag === 'em'
 }
 
-// Returns 'full' if any descendant is a full-slide layout component.
+// 'full' when a descendant takes the whole slide.
 function getSlideLayout(children: any[]): string | undefined {
   for (const node of children) {
-    if (node.type === 'element' && FULL_SLIDE_COMPONENT_NAMES.includes(node.tag))
+    if (node.type === 'element' && fullSlideComponentNames().includes(node.tag))
       return 'full'
     if (node.children) {
       const childLayout = getSlideLayout(node.children)

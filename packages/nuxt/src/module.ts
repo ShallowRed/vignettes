@@ -58,7 +58,6 @@ export default defineNuxtModule<ModuleOptions>({
 
     addPlugin(resolver.resolve('./runtime/plugins/theme-registry'))
     addPlugin(resolver.resolve('./runtime/plugins/french-typography'))
-    addPlugin(resolver.resolve('./runtime/plugins/scaled-frame.client'))
 
     if (options.watchThemes && nuxt.options.dev) {
       nuxt.options.vite.plugins ||= []

@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const layoutStrategy = computed(() => getLayoutStrategy(props.slide.layout))
 
-// Media pane resolution lives in the shared transform pipeline; null when no media.
+// null when the slide has no media.
 const mediaParts = computed(() =>
   resolveSlideMedia(props.slide.layoutProps, { storybook: props.metadata?.storybook }))
 

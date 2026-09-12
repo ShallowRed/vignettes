@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide } from 'vue'
-import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '../../config/injection-keys'
+import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '../injection-keys'
 
 // A row of `::Step` cards linked by arrows, each step a Reveal fragment by
 // default so the diagram builds up as the speaker talks.
