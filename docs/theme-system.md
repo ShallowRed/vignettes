@@ -64,7 +64,7 @@ Code that must not care which theme is active (the engine layer, MDC components 
 
 ```bash
 pnpm build:themes                       # tokens, then every theme
-pnpm build:theme brand                    # one theme
+pnpm build:theme brand                  # one theme
 node scripts/build-themes.ts --watch    # recompile on change
 ```
 
