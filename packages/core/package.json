@@ -9,13 +9,15 @@
     "./render": "./src/render/index.ts",
     "./theme": "./src/theme/index.ts",
     "./status": "./src/status.ts",
-    "./*": "./src/*.ts"
+    "./*": "./src/*.ts",
+    "./slugify": "./src/slugify.ts"
   },
   "files": [
     "src"
   ],
   "dependencies": {
     "js-yaml": "catalog:",
+    "slugify": "catalog:",
     "zod": "catalog:"
   }
 }

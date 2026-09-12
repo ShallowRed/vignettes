@@ -2,11 +2,11 @@
 import type { Project } from '#shared/projects'
 import { useMutation } from '@pinia/colada'
 import { isDeckSlug } from '@vignettes/core/deck'
+import { slugify } from '@vignettes/core/slugify'
 import { knownThemes } from '@vignettes/core/theme'
 import { deckApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
 import { useFormModal } from '~/composables/useFormModal'
-import { slugify } from '~/utils/slugify'
 
 // Create-deck modal: the deck is born in the database (draft status) and opens
 // in the editor. The slug is the user's to type; the wand fills it from the
