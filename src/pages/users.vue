@@ -24,7 +24,7 @@ const breadcrumb = [
   { label: 'Accueil', to: '/' },
   { label: 'Comptes' },
 ]
-useHead({ title: 'Comptes · Nuxt Slides' })
+useHead({ title: 'Comptes · Vignettes' })
 
 const ROLE_ITEMS = [
   { label: 'Lecteur', value: 'viewer' },

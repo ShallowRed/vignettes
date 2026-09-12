@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-slides",
+  "name": "vignettes-studio",
   "type": "module",
   "version": "1.0.0",
   "private": true,
@@ -63,8 +63,8 @@
     "@gouvfr/dsfr": "^1.15.3",
     "@iconify-json/lucide": "catalog:",
     "@iconify-json/ri": "catalog:",
-    "@nuxt-slides/theme-dsfr": "workspace:*",
-    "@nuxt-slides/theme-kit": "workspace:*",
+    "@vignettes/theme-dsfr": "workspace:*",
+    "@vignettes/theme-kit": "workspace:*",
     "@nuxt/icon": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/js-yaml": "catalog:",

@@ -31,7 +31,7 @@ const toast = useToast()
 
 const table = useTemplateRef('table')
 
-const PAGE_SIZE_KEY = 'nuxt-slides:catalog-page-size'
+const PAGE_SIZE_KEY = 'vignettes:catalog-page-size'
 const PAGE_SIZES = [10, 25, 50, 100]
 
 const sorting = ref([{ id: 'title', desc: false }])

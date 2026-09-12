@@ -1,8 +1,8 @@
 {
-  "name": "@nuxt-slides/theme-dsfr",
+  "name": "@vignettes/theme-dsfr",
   "type": "module",
   "version": "0.1.0",
-  "description": "Base theme for nuxt-slides following the French state design system (DSFR): palette, Marianne typography, dsfr-layout scale. Brand-neutral, made to be extended.",
+  "description": "Base theme for Vignettes following the French state design system (DSFR): palette, Marianne typography, dsfr-layout scale. Brand-neutral, made to be extended.",
   "license": "MIT",
   "exports": {
     ".": {
@@ -22,6 +22,6 @@
     "*.scss"
   ],
   "peerDependencies": {
-    "@nuxt-slides/theme-kit": "workspace:*"
+    "@vignettes/theme-kit": "workspace:*"
   }
 }

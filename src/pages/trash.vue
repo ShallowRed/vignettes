@@ -14,7 +14,7 @@ const breadcrumb = [
   { label: 'Accueil', to: '/' },
   { label: 'Corbeille' },
 ]
-useHead({ title: 'Corbeille · Nuxt Slides' })
+useHead({ title: 'Corbeille · Vignettes' })
 
 const restoreProject = (slug: string) => restore({ kind: 'project', slug })
 const restoreDeck = (slug: string) => restore({ kind: 'deck', slug })

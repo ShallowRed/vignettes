@@ -1,14 +1,14 @@
 /**
  * Base DSFR theme for reveal.js presentations, after the Système de Design de
  * l'État. Brand-neutral: light surfaces, bleu France accents, Marianne type.
- * A brand extends it with `@use 'pkg:@nuxt-slides/theme-dsfr';` and adds its
+ * A brand extends it with `@use 'pkg:@vignettes/theme-dsfr';` and adds its
  * own rules and background images.
  */
 
 @use 'variables' as *;
 @use 'fonts';
-@use 'pkg:@nuxt-slides/theme-kit';
-@use 'pkg:@nuxt-slides/theme-kit/presets/dsfr-layout';
+@use 'pkg:@vignettes/theme-kit';
+@use 'pkg:@vignettes/theme-kit/presets/dsfr-layout';
 @use 'base';
 @use 'typography';
 @use 'components';

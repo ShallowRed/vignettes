@@ -1,8 +1,8 @@
 {
-  "name": "@nuxt-slides/theme-kit",
+  "name": "@vignettes/theme-kit",
   "type": "module",
   "version": "0.1.0",
-  "description": "Engine CSS layer for nuxt-slides themes: semantic token contract, Reveal patches, media layouts, slide structure, scale presets.",
+  "description": "Engine CSS layer for Vignettes themes: semantic token contract, Reveal patches, media layouts, slide structure, scale presets.",
   "license": "MIT",
   "exports": {
     ".": {

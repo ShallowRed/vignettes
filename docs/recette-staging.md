@@ -8,7 +8,7 @@ de test pour chaque situation d'accès, et la liste des vérifications à faire.
 
 Le kit répond 404 tant que la variable `NUXT_RECETTE_ENABLED=1` est absente de
 l'environnement du conteneur. Elle est définie dans l'environnement Infisical
-`staging` du projet nuxt-slides et nulle part ailleurs ; en développement local le
+`staging` du projet Vignettes et nulle part ailleurs ; en développement local le
 kit est toujours actif (`import.meta.dev`). Le code vit dans `server/utils/recette.ts`,
 `server/api/recette/`, `server/routes/auth/recette.get.ts` et `src/pages/recette.vue`.
 

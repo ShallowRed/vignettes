@@ -108,7 +108,7 @@ const breadcrumb = [
   { label: 'Accueil', to: '/' },
   { label: 'Recette' },
 ]
-useHead({ title: 'Recette · Nuxt Slides' })
+useHead({ title: 'Recette · Vignettes' })
 </script>
 
 <template>

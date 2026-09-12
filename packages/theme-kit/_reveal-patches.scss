@@ -5,7 +5,7 @@
  * break the semantic flow of header/hgroup/article and full-layout slides.
  * `display: contents` makes those wrapper divs transparent in the box tree.
  *
- * These rules belong to the engine layer (nuxt-slides component contract),
+ * These rules belong to the engine layer (Vignettes component contract),
  * not to any individual theme. They were previously inside SlideContent.vue
  * <style scoped> but had to be promoted here because:
  *   - the ":deep(...)" tunnel only works while we keep the Vue component,

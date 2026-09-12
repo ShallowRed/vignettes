@@ -26,7 +26,7 @@ outputs = { auto = true }
 run = "pnpm install"
 
 [tasks.dev]
-description = "Nuxt behind portless; the browser opens once the app answers. Host: nuxt-slides.localhost, or <branch>.nuxt-slides.localhost in a worktree"
+description = "Nuxt behind portless; the browser opens once the app answers. Host: vignettes.localhost, or <branch>.vignettes.localhost in a worktree"
 depends = [ "install" ]
 run = "portless run mise run dev:serve"
 
@@ -63,13 +63,13 @@ echo "open: $u ne répond pas" >&2
 """
 
 [tasks.worktree]
-description = "Create a worktree for a branch in ../nuxt-slides.wt/<branch> with deps, database and content, ready for `mise run dev`"
+description = "Create a worktree for a branch in ../vignettes.wt/<branch> with deps, database and content, ready for `mise run dev`"
 usage = 'arg "<branch>"'
 run = """
 set -e
 branch="$usage_branch"
 name="${branch//\\//-}"
-dir="$(dirname "$PWD")/nuxt-slides.wt/$name"
+dir="$(dirname "$PWD")/vignettes.wt/$name"
 if git show-ref --verify --quiet "refs/heads/$branch"; then
   git worktree add "$dir" "$branch"
 else
@@ -82,7 +82,7 @@ pnpm install
 mise run db:migrate
 mise run content:import
 echo
-echo "Prêt : cd $dir && mise run dev   (http://$name.nuxt-slides.localhost:8443)"
+echo "Prêt : cd $dir && mise run dev   (http://$name.vignettes.localhost:8443)"
 """
 
 [tasks."worktree:remove"]
@@ -92,7 +92,7 @@ run = """
 set -e
 branch="$usage_branch"
 name="${branch//\\//-}"
-git worktree remove --force "$(dirname "$PWD")/nuxt-slides.wt/$name"
+git worktree remove --force "$(dirname "$PWD")/vignettes.wt/$name"
 """
 
 [tasks."db:migrate"]

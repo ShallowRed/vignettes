@@ -1,7 +1,7 @@
 /**
  * Shared foundation barrel.
  *
- * The "engine" CSS layer: rules that depend on the nuxt-slides Vue components
+ * The "engine" CSS layer: rules that depend on the Vignettes Vue components
  * (SlideContent, RevealSlides, MDC bridge) and on Reveal.js conventions.
  * Themes (skins) build on top of this layer, never replace it.
  *
@@ -11,7 +11,7 @@
  * exist.
  *
  * Usage from a theme entry:
- *   @use 'pkg:@nuxt-slides/theme-kit';
+ *   @use 'pkg:@vignettes/theme-kit';
  */
 
 @forward 'semantic-tokens';

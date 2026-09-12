@@ -31,7 +31,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             class="size-5"
           />
         </div>
-        <span class="text-highlighted font-bold">Nuxt Slides</span>
+        <span class="text-highlighted font-bold">Vignettes</span>
       </div>
     </template>
 

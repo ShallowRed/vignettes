@@ -1,4 +1,4 @@
-# nuxt-slides
+# Vignettes
 
 A self-hosted catalog and editor for Markdown slide decks. Decks are written in MDC (Markdown with Vue components), rendered with reveal.js, edited collaboratively in the browser, and published as immutable versions with per-deck access rules.
 
@@ -17,7 +17,7 @@ A self-hosted catalog and editor for Markdown slide decks. Decks are written in 
 
 ```bash
 mise install          # Node 22, pnpm, portless
-mise run dev          # opens https://nuxt-slides.localhost once the app answers
+mise run dev          # opens https://vignettes.localhost once the app answers
 ```
 
 In development, `/auth/dev-login?role=owner` signs you in without OAuth. Create a deck from the catalog, or import the example stubs from `presentations/` with `mise run content:import`.
@@ -104,8 +104,8 @@ mise run build        # themes, then Nuxt
 Several branches can run at the same time, each in its own worktree with its own database and host name:
 
 ```bash
-mise run worktree -- feat/my-branch      # ../nuxt-slides.wt/feat-my-branch, ready to run
-cd ../nuxt-slides.wt/feat-my-branch && mise run dev
+mise run worktree -- feat/my-branch      # ../vignettes.wt/feat-my-branch, ready to run
+cd ../vignettes.wt/feat-my-branch && mise run dev
 ```
 
 The repository layout: `src/` holds the Nuxt app, `server/` the Nitro routes and database stores, `shared/` the framework-agnostic domain (deck resolution, access decisions, theme tokens) imported as `#shared`, `packages/` the theme engine and the DSFR base, `themes/` the application themes compiled to `public/themes/`, `scripts/` the content and build tools, `test/` the vitest suites. [docs/architecture.md](docs/architecture.md) describes the layers, [docs/api-routes.md](docs/api-routes.md) the HTTP API, [docs/composables.md](docs/composables.md) the client composables, and [docs/recette-staging.md](docs/recette-staging.md) the acceptance kit.

@@ -54,7 +54,7 @@ const devRoles = [
           />
         </div>
         <h1 class="text-2xl font-bold text-highlighted">
-          Nuxt Slides
+          Vignettes
         </h1>
         <p class="text-muted mb-4">
           Connectez-vous pour gérer vos présentations
