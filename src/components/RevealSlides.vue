@@ -37,10 +37,14 @@ function getBackground(slide: { headingLevel?: string, backgroundImage?: string 
     v-for="(section, index) in presentationData?.slides ?? []"
     :key="index"
   >
-    <!-- Horizontal section with vertical slides -->
+    <!-- Horizontal section with vertical slides. The wrapper is Reveal's stack,
+         not a slide: it carries `stack-<level>` rather than `slide-<level>`, so a
+         theme rule written for a heading level cannot reach, through descendant
+         selectors, the slides nested inside. The section's own content is the
+         first of its vertical slides and keeps its `slide-<level>` class. -->
     <section
       v-if="section.verticalSlides && section.verticalSlides.length > 0"
-      :class="section.headingLevel ? `slide-${section.headingLevel}` : ''"
+      :class="section.headingLevel ? `stack-${section.headingLevel}` : ''"
       :data-background-image="getBackground(section)"
     >
       <section

@@ -104,6 +104,8 @@ Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `
 
 The engine tags each `<section>`: `slide-h1` (title slide), `slide-h2` (section divider), `slide-h3` (heading plus body). The flex skeleton comes from `packages/theme-kit/_slide-structure.scss`; themes set sizes and colors, and backgrounds come from the manifest.
 
+A section that holds vertical slides is wrapped in Reveal's stack. That wrapper carries `stack-h1` / `stack-h2` instead of a `slide-` class, and the section's own content is the first of its vertical slides, keeping its own `slide-` class. So a rule written as `.reveal section.slide-h2 h3` styles the divider alone and cannot reach the slides nested under it. Target `stack-h2` to style the wrapper itself.
+
 ## Standalone DSFR
 
 `dsfr-standalone` (`packages/theme-dsfr/standalone.scss`) targets vanilla Reveal.js pages and frozen bundles, where the Vue components are absent; it does not import the engine layer.

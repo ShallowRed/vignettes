@@ -34,7 +34,7 @@ export const RevealConfigSchema = z
     autoSlide: z.coerce.number().optional(),
     view: z.string().optional(),
     navigationMode: z.enum(['default', 'linear', 'grid']).optional(),
-    // Print / PDF options (reveal.js `?print-pdf` mode) — see shared/render/print.ts.
+    // Print / PDF options (reveal.js `?print-pdf` mode) — see ../render/print.ts.
     pdfMaxPagesPerSlide: z.coerce.number().optional(),
     pdfSeparateFragments: z.boolean().optional(),
   })
