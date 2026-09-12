@@ -6,7 +6,7 @@
 
 Un thème est aujourd'hui réparti en cinq endroits du dépôt applicatif : le SCSS dans `themes/<name>/`, la liste de compilation dans `themes/themes.config.js`, les données dans `shared/theme/tokens.ts` (fonds, dimensions Reveal, langue, parseur), les fonds dans `public/backgrounds/`, les polices dans `public/fonts/`. Ajouter le thème d'un client touche ces cinq endroits, et `KNOWN_THEMES` valide le frontmatter contre cette liste écrite à la main.
 
-Le thème `dsfr` du dépôt est déjà une marque : il lit des variables `$as-*`, ses fonds `slide-bg-*.png` sont ceux d'aides simplifiées, ses pictogrammes `custom/` ont été dessinés pour le registre de règles. `brand` est le même montage pour une autre marque. Les images de deck historiques sont des fichiers de `public/images/` référencés en chemin absolu : elles vivent dans le dépôt de code, sont publiques quel que soit le statut du deck, et ne suivent pas le deck d'une instance à l'autre. La production des bundles gelés est écrite pour un projet précis (valeurs par défaut du `Makefile`, thème `brand` par défaut).
+Le thème `dsfr` du dépôt est déjà une marque : il lit des variables `$as-*`, ses fonds et ses pictogrammes ont été dessinés pour un produit précis. Le second thème du dépôt est le même montage pour une autre marque. Les images de deck historiques sont des fichiers de `public/images/` référencés en chemin absolu : elles vivent dans le dépôt de code, sont publiques quel que soit le statut du deck, et ne suivent pas le deck d'une instance à l'autre. La production des bundles gelés est écrite pour un projet précis (valeurs par défaut du `Makefile`, thème d'une marque par défaut).
 
 ## Cible : trois couches
 
@@ -14,7 +14,7 @@ Le thème `dsfr` du dépôt est déjà une marque : il lit des variables `$as-*`
 
 **Base DSFR** (dépôt applicatif, package `theme-dsfr`) : la couche « système de design de l'État », utilisable par tout contexte public et faite pour être étendue : palette DSFR, typographie Marianne, preset `dsfr-layout`, pictogrammes officiels, orthotypographie française, fonds neutres peints en CSS. Utilisable telle quelle avec `theme: dsfr`. La fonte Marianne n'est pas sous licence MIT : le package la prend dans la dépendance npm `@gouvfr/dsfr` au build, elle n'est pas committée.
 
-**Marques** (espace de contenu du tenant) : un dossier autoporteur par marque, avec un manifeste, qui étend la base DSFR ou le moteur seul. Pour ce tenant : `brand-a` (l'actuel `dsfr` moins ce qui remonte en base, plus ses fonds, ses pictogrammes et ses variables) et `brand`.
+**Marques** (espace de contenu du tenant) : un dossier autoporteur par marque, avec un manifeste, qui étend la base DSFR ou le moteur seul. Ici, deux marques : l'actuel `dsfr` moins ce qui remonte en base, plus ses fonds, ses pictogrammes et ses variables, et un second thème déjà en place.
 
 ## Espace de contenu
 
@@ -30,7 +30,7 @@ presentations/
       theme.json
       brand-a.scss
       assets/          # fonds, pictogrammes propres à la marque
-    brand/
+    brand-b/
 ```
 
 Un autre utilisateur fait pareil avec son propre dépôt ou un simple dossier. Le dépôt applicatif ne contient que le moteur, la base DSFR, `minimal`, et les composants génériques.
@@ -73,7 +73,7 @@ Le bundle est indépendant de l'endroit où il est servi : les feuilles de style
 ## Ordre des chantiers
 
 1. `theme-kit` et `theme-dsfr` en packages du workspace ; manifestes ; génération des tokens. Vérification : CSS compilé identique avant et après pour chaque thème existant.
-2. Extraction des marques `brand-a` et `brand` vers l'espace de contenu ; suppression de `dsfr-alt`, dont la base DSFR et les marques reprennent le rôle de démonstration.
+2. Extraction des deux marques vers l'espace de contenu ; suppression de `dsfr-alt`, dont la base DSFR et les marques reprennent le rôle de démonstration.
 3. Assets : `assets/` dans l'espace de contenu, routes `/images`, `/backgrounds`, `/pictograms` servies depuis le bucket, `assets:push`.
 4. Bundles : paramétrage par deck, tâches mise, retrait du `Makefile`.
 5. Purge des chemins de marque et de client dans l'historique, puis renommage du projet.
