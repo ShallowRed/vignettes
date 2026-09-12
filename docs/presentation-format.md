@@ -224,11 +224,11 @@ frontmatter `storybook` root (or takes a raw `src`).
 ### Five postures, side by side
 
 :::Screens{cols="5" gap="1rem"}
-::StoryFrame{story="vitrine-accueil-scenario-a--page" ratio="portrait" label="A · Acquisition" lightbox}
+::StoryFrame{story="home-scenario-a--page" ratio="portrait" label="A · Landing" lightbox}
 ::
-::StoryFrame{story="vitrine-accueil-scenario-b--page" ratio="portrait" label="B · Aiguillage" lightbox}
+::StoryFrame{story="home-scenario-b--page" ratio="portrait" label="B · Routing" lightbox}
 ::
-::StoryFrame{story="vitrine-accueil-scenario-c--page" ratio="portrait" label="C · Hub" lightbox}
+::StoryFrame{story="home-scenario-c--page" ratio="portrait" label="C · Hub" lightbox}
 ::
 :::
 ```
@@ -529,16 +529,16 @@ notes, timer).
 ### Diagram: cards placed on a grid or by dagre, linked by drawn arrows
 ```markdown
 :::Diagram{layout="grid" cols="3"}
-::Node{id="loi" at="1,2" picto="document/contract" title="Textes de loi"}
+::Node{id="src" at="1,2" picto="document/contract" title="Sources"}
 ::
-::Node{id="reg" at="2,2" picto="digital/data-visualization" title="Registre"}
-Une fiche par règle
+::Node{id="cat" at="2,2" picto="digital/data-visualization" title="Catalogue"}
+One entry per source
 ::
-::Node{id="ami" at="3,1" picto="digital/application" title="AMI" :planned="true"}
+::Node{id="api" at="3,1" picto="digital/application" title="API" :planned="true"}
 ::
-::Edge{from="loi" to="reg" label="fonde"}
+::Edge{from="src" to="cat" label="feeds"}
 ::
-::Edge{from="reg" to="ami" :dashed="true"}
+::Edge{from="cat" to="api" :dashed="true"}
 ::
 :::
 ```
@@ -592,22 +592,22 @@ or `header`, a centred band above the cards). It is drawn behind the cards, so
 an arrow leaving it reads as data going from one machine to another; its label
 rides above them. Regions are not fragments.
 
-### Tags: the registry's qualified tags and their values
+### Tags: qualified tags and the values of an axis
 ```markdown
-::Tags{axis="règle" values="référencée:grey,documentée:blue,vérifiée:purple,exécutable:green"}
-Ce que la fiche permet de faire.
+::Tags{axis="status" values="draft:grey,reviewed:blue,approved:purple,published:green"}
+What each state allows.
 ::
 ```
 One row per axis: the axis name, then a tag « axis : value » per entry of
 `values` (`value:tone`, tones `neutral` | `green` | `blue` | `purple` | `yellow` |
-`grey`, the registry's palette). The default slot is a caption under the row.
-`active="exécutable"` keeps that tag at full strength and fades the others.
-`label` replaces the axis name in the row's heading (« Chaque règle peut être »)
+`grey`). The default slot is a caption under the row.
+`active="published"` keeps that tag at full strength and fades the others.
+`label` replaces the axis name in the row's heading (« An article can be »)
 and `:fragments="true"` reveals that heading, then each tag, one step at a time.
 
-`RuleCard` shows a rule the way the registry lists it: `producer`, `domain`,
-`title`, `meta` (a small line under the text), `tags` in the same
-`axis:value:tone` form stacked on the right, and the description in the slot.
+`RuleCard` shows one entry of a catalogue: `producer`, `domain`, `title`, `meta`
+(a small line under the text), `tags` in the same `axis:value:tone` form stacked
+on the right, and the description in the slot.
 
 ### Mermaid, revealed step by step
 `::Mermaid{steps="A,B|C|D"}` turns the flowchart nodes of each group into a
@@ -615,13 +615,13 @@ fragment (edges follow their later node). Keep node ids free of `-` and `_`.
 
 ### Scheme: pictogram steps that build up as you speak
 ```markdown
-### Toute décision publique est calculée quelque part
+### From the source to the slide
 
 :::Scheme
-::Step{n="1" picto="buildings/city-hall" title="Des règles"}
-Les administrations les produisent.
+::Step{n="1" picto="document/document" title="A document"}
+Written in markdown.
 ::
-::Step{n="2" picto="digital/coding" title="Du code"}
+::Step{n="2" picto="digital/coding" title="A deck"}
 ::
 :::
 ```
@@ -635,12 +635,12 @@ the DSFR list), `title`, `n` (number badge); the default slot is the caption.
 
 ### JsonTour: a file read beside the description of what it holds
 ```markdown
-:::JsonTour{file="record / metadata.jsonld" size="xs" height="430px" panel="46%"}
-::Zone{lines="2-8" picto="custom/fiche" title="Identité et propriétaire"}
-Un profil SEMIC, un identifiant, l'organisme qui répond de la règle
+:::JsonTour{file="deck.json" size="xs" height="430px" panel="46%"}
+::Zone{lines="2-8" picto="document/document" title="Identity"}
+A name, an owner, a version
 ::
-::Zone{lines="9-12" picto="custom/regle" title="Base légale"}
-Le texte dont la règle est la transcription
+::Zone{lines="9-12" picto="digital/coding" title="Content"}
+The slides the deck holds
 ::
 
 ```json
@@ -663,12 +663,12 @@ editor preview shows.
 `:stack="true"` puts the panel under the zones at full width, for a narrow column beside a media pane. `image` (with `alt`) shows a screenshot on the right of the tour, and each `Zone` names with `spot="x,y,w,h"`, in percent of the image, the area the current zone frames on it while the rest of the screen dims:
 
 ````md
-:::JsonTour{size="xs" height="190px" :stack="true" image="/images/metadata/record.png" alt="The record page"}
-::Zone{lines="2-5" spot="9.5,3.5,45,10" title="One European profile for every rule"}
-CPSV-AP 3.2.0, the public service vocabulary of SEMIC
+:::JsonTour{size="xs" height="190px" :stack="true" image="/images/example/record.png" alt="The record page"}
+::Zone{lines="2-5" spot="9.5,3.5,45,10" title="The identity block"}
+Name, owner and version, as the page shows them
 ::
 ::Zone{lines="7" spot="13,62,25,9.5" title="What it produces"}
-An amount, and the explanation of the calculation
+The rendered outcome
 ::
 
 ```json
