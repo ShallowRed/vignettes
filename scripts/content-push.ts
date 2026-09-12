@@ -18,8 +18,8 @@
  * is reported, not created.
  *
  * Host and containers come from the environment: CONTENT_PUSH_SSH (vps-perso),
- * CONTENT_PUSH_CONTAINER (nuxt-slides), CONTENT_PUSH_STAGING_CONTAINER
- * (nuxt-slides-staging).
+ * CONTENT_PUSH_CONTAINER (vignettes), CONTENT_PUSH_STAGING_CONTAINER
+ * (vignettes-staging).
  */
 
 import { Buffer } from 'node:buffer'
@@ -40,8 +40,8 @@ if (slugs.length === 0) {
 
 const SSH = process.env.CONTENT_PUSH_SSH || 'vps-perso'
 const CONTAINER = STAGING
-  ? (process.env.CONTENT_PUSH_STAGING_CONTAINER || 'nuxt-slides-staging')
-  : (process.env.CONTENT_PUSH_CONTAINER || 'nuxt-slides')
+  ? (process.env.CONTENT_PUSH_STAGING_CONTAINER || 'vignettes-staging')
+  : (process.env.CONTENT_PUSH_CONTAINER || 'vignettes')
 const CONTENT_DIR = join(process.cwd(), 'presentations')
 
 interface Stub {
