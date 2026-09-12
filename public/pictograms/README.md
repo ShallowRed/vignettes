@@ -16,4 +16,4 @@ Utilisation dans un deck : `::Step{picto="digital/coding"}` ou `![](/pictograms/
 | map | airport, location-france, luggage, map |
 | system | connection-lost, error, information, notification, padlock, success, system, technical-error, warning |
 
-Un espace de contenu ajoute ses propres pictogrammes dans `assets/pictograms/<dossier>/` ; ils se chargent par la même URL `/pictograms/<dossier>/<nom>.svg`, servie depuis le bucket ou le dossier de contenu (voir `docs/theme-packaging.md`).
+Un espace de contenu ajoute ses propres pictogrammes dans `assets/pictograms/<dossier>/` ; ils se chargent par la même URL `/pictograms/<dossier>/<nom>.svg`, servie depuis le bucket ou le dossier de contenu.

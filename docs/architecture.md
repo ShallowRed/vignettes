@@ -1,15 +1,13 @@
 # Vignettes Architecture
 
 ## System Overview
-Nuxt 4 presentation system converting MDC markdown to reveal.js slides. Ports-and-adapters
-architecture: a framework-free deck core (`packages/core`, `@vignettes/core`) and the studio's own domain (`shared/`) sit between the client app (`src/`) and
-the Nitro server (`server/`). Every page renders per request in production; the only prerendered output is the single-deck bundle mode.
+A Nuxt 4 application that turns MDC markdown into reveal.js slides. Ports and adapters: a framework-free deck core answers what a deck is, the render module draws it, and the studio adds the catalog, the access rules and the editor around it. Every page renders per request in production; the single-deck bundle is the only prerendered output.
 
 ## Core Stack
 - Nuxt 4 (SSR, file-based routing) with Nitro's `node_server` preset
 - @nuxtjs/mdc (markdown parsing, Vue component support)
 - reveal.js (presentation framework, client-only)
-- SQLite through better-sqlite3 and drizzle-orm; migrations in `server/db/migrations`
+- SQLite through better-sqlite3 and drizzle-orm; migrations in `layers/studio/server/db/migrations`
 - Yjs + Hocuspocus (collaborative draft), CodeMirror 6 (editor)
 - nuxt-auth-utils (session, GitHub and Google OAuth)
 - @nuxt/ui + Tailwind CSS (app shell), Pinia Colada (client queries); slides themed via SCSS
@@ -147,10 +145,10 @@ application and ships its TypeScript sources (`build.transpile` for Vite,
 
 ## Data Flow
 ```
-[published version in SQLite] → [server/utils/sources] → [resolveDeck (@vignettes/core/deck)] → [API route JSON]
+[published version in SQLite] → [studio server adapters] → [resolveDeck (@vignettes/core/deck)] → [API route JSON]
                                                                                          ↓
 [API route] → [usePresentation] → [PARSERS[parserIdFor(metadata)].parse()] → [Slide[]]
-                    ↓                         (parser port @vignettes/core/deck + src/utils/slide-ast.ts)
+                    ↓                         (parser port of @vignettes/core/deck, implemented in @vignettes/nuxt)
              [useAsyncData caching]
                     ↓
         [RevealPresentation + MDCRenderer]
@@ -162,21 +160,11 @@ application and ships its TypeScript sources (`build.transpile` for Vite,
 
 ## Key Patterns
 
-### Separation of Concerns
-- **Types** (`src/types/`): Shared TypeScript interfaces
-- **Config** (`src/config/`): Constants and registries, no reactive state — `presentation.ts` (MDC mappings, backgrounds), `layouts.ts` (layout strategy registry), `injection-keys.ts` (typed provide/inject keys). Theme data lives in `@vignettes/core/theme`.
-- **Shared** (`shared/`): isomorphic domain core imported via `#shared` — see "Shared Domain Layer".
-- **Server** (`server/`): Nitro API routes + `server/utils/` I/O adapters over the shared ports.
-- **Utils** (`src/utils/`): Pure, stateless functions — `slide-ast.ts` (MDC AST → Slide[] conversion), `slide-rendering.ts` (class/background/media helpers), `slugify.ts`, etc.
-- **Composables** (`src/composables/`): Reactive derived state and business logic — `useSlideIds.ts`, `usePresentation.ts`, etc.
-- **Components**: Presentation only; `SlideContent.vue` owns inner rendering, `RevealSlides.vue` owns section scaffolding
-- **Pages**: Composition, no logic
-
 ### Rendering Strategy (SSR)
 Production runs SSR via the Nitro `node_server` preset (see Deployment). Every page and API route renders per request: the catalog and the decks depend on the session and on the database, neither of which exists at build time, so `nuxt.config.ts` sets no prerender rule outside bundle mode.
-- Data fetching goes through Pinia Colada queries (`src/queries`) over the typed client in `src/api`; SSR requests forward the session cookie with `useRequestFetch`.
+- Data fetching goes through Pinia Colada queries over a typed client; SSR requests forward the session cookie with `useRequestFetch`.
 - Reveal.js is imported client-side only.
-- Bundle mode (`BUNDLE_ONLY_SLUG`) prerenders one deck and its API JSON into a self-contained, JS-free static bundle (`noScripts`, inlined CSS); `server/plugins/nuxtout-deck.ts` turns the page into a standalone Reveal document.
+- Bundle mode (`BUNDLE_ONLY_SLUG`) prerenders one deck and its API JSON into a self-contained, JS-free static bundle (`noScripts`, inlined CSS); a Nitro plugin turns the page into a standalone Reveal document.
 
 ### Slide Parsing Rules
 1. **H1**: Title slide (single, keeps content together until first H2)
@@ -186,81 +174,23 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 5. Each slide tagged with `headingLevel` for CSS classes (`slide-h1`, `slide-h2`, etc.)
 6. **`:slide-background{image="..."}`**: Inline override for per-slide background image; extracted and removed from rendered output by the parser.
 7. **Full-slide components** (list in `FULL_SLIDE_COMPONENTS`): skip header/body split, render all children in `body`. CSS class `layout-full` applied.
-8. **`:layout{name="..." ...}`**: Slide-level layout annotation. Unlike full-slide components, preserves header/body split. Supports `media-right`, `media-left`, `media-right-wide`, and `media-left-wide` for two-column layouts with media, plus extra props such as `fit="contain|cover"`. The layout name is resolved to a `LayoutStrategy` via `getLayoutStrategy()` in `src/config/layouts.ts` — add a new entry there to extend without touching the template.
+8. **`:layout{name="..." ...}`**: Slide-level layout annotation. Unlike full-slide components, preserves header/body split. Supports `media-right`, `media-left`, `media-right-wide`, and `media-left-wide` for two-column layouts with media, plus extra props such as `fit="contain|cover"`. The layout name is resolved to a `LayoutStrategy` by the layout registry of `@vignettes/nuxt`.
 
 ### Theme System
 Three layers:
 - `packages/theme-kit` (`@vignettes/theme-kit`): engine-level CSS shipped with every theme (Reveal patches, MDC `display: contents` bridge, media-layout grid, slide-h1/h2/h3 flex skeleton, quicklinks, neutral semantic tokens, the `dsfr-layout` scale preset).
 - `packages/theme-dsfr` (`@vignettes/theme-dsfr`): the brand-neutral DSFR base (palette, Marianne, light surfaces), usable as is and made to be extended.
 - `themes/<name>/` in the application and in the content space (`NUXT_CONTENT_DIR/themes`): a `theme.json` manifest (language, parser, Reveal defaults, backgrounds, aliases), an SCSS entry that `@use`s the packages through sass's `pkg:` importer, and `assets/`.
-- `scripts/build-theme-tokens.ts` generates `packages/core/src/theme/tokens.generated.ts` from the manifests; `scripts/build-themes.ts` compiles to `public/themes/<name>.css` and copies assets to `public/themes/<name>/`.
+- `pnpm build:themes` generates the token module from the manifests, compiles each theme to `public/themes/<name>.css` and copies its assets.
 - Per-presentation selection via frontmatter (`theme: <name>`), aliases resolved by `resolveThemeName`; the CSS is loaded via `<link>`.
-- Hot-reload in dev via Vite plugin (watches theme directories and `packages/`).
+- In development the render module watches the theme directories and reloads the page.
 
-See `docs/theme-system.md` for the full reference and the recipe to
-create a new theme.
-
-## Component Responsibilities
-
-### usePresentation(slug)
-Loads presentation data. Returns `{ presentationData, error, status, refresh }` from useAsyncData.
-- Fetches `/api/presentations/${slug}`
-- Parses MDC via `parseMarkdown`
-- Extracts frontmatter metadata
-- Calls `parseSlides()` or `parseSlidesFromSeparators()` from `src/utils/slide-ast.ts`
-
-### src/utils/slide-ast.ts
-Pure MDC AST → Slide[] conversion. Not a composable — no Vue reactivity.
-- `parseSlides(ast)`: heading-based parser (H1/H2/H3)
-- `parseSlidesFromSeparators(rawContent)`: separator-based parser (--- / ----)
-- `createSlide(children)`: builds a single Slide from AST nodes
-- `getHeadingLevel(children)`: finds first heading tag in children
-
-### useReveal(container, config)
-Manages Reveal.js instance. Returns `{ initialize, destroy, getInstance }`.
-- Dynamic imports reveal.js
-- Merges config with defaults
-- Handles initialization/cleanup
-
-### useTheme(themeName)
-Theme CSS management. Returns `{ loadTheme, unloadTheme, watchTheme }`.
-- Creates/removes `<link>` elements
-- Watches reactive theme changes
-
-### RevealPresentation.vue
-Thin wrapper component.
-- Props: theme, transition, center, config
-- Uses useTheme + useReveal
-- Lifecycle: onMounted (initialize), onUnmounted (cleanup)
-- Provides slot for slide content
-
-### RevealSlides.vue
-Iterates `PresentationData.slides` and emits Reveal.js `<section>` scaffolding.
-- Uses `useSlideIds` for deduplicated HTML ids
-- Uses `getSlideClasses` / `resolveSlideBackground` from `utils/slide-rendering`
-- Delegates inner rendering entirely to `<SlideContent>`
-- No layout branching — purely structural
-
-### SlideContent.vue
-Renders the content of a single slide according to its layout strategy.
-- Calls `getLayoutStrategy(slide.layout)` from `src/config/layouts.ts`
-- `'full'` strategy: single `MDCRenderer` for the whole slide
-- `'default'` strategy: hgroup/header + article + optional media pane + quicklink
-- Uses `getMediaFit`, `quicklinkParts` from `utils/slide-rendering`
-- Adding a new layout that changes the component tree: add a strategy to `config/layouts.ts` and a branch here
-
-### pages/slides/[slug].vue
-Presentation viewer page.
-- Extracts slug from route
-- Calls usePresentation(slug)
-- Maps MDC components via resolveComponent
-- Renders with RevealPresentation + MDCRenderer
-- Handles loading/error states
+`docs/theme-system.md` holds the full reference.
 
 ## Build
 
 1. `pnpm build` runs `build:themes` first (`build-theme-tokens.ts` then `build-themes.ts`), then `nuxt build`.
-2. `server/plugins/migrations.ts` applies pending migrations at boot: the repo folder in development, the copy shipped with the output in production.
+2. A Nitro plugin applies pending migrations at boot: the repo folder in development, the copy shipped with the output in production.
 3. Output lands in `.output/` (server + public); the Docker runtime stage ships that folder only.
 
 In bundle mode (`BUNDLE_ONLY_SLUG`), `nuxt generate` prerenders the one deck and skips the SPA fallbacks (`prerender:generate` hook).
@@ -271,89 +201,13 @@ In bundle mode (`BUNDLE_ONLY_SLUG`), `nuxt generate` prerenders the one deck and
 - Navigation: client-side routing
 - Data: JSON from the API routes, cached by Pinia Colada
 
-## Configuration Files
+## Extending
 
-### nuxt.config.ts
-- srcDir: 'src/' (server/ and shared/ stay at repo root)
-- modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui']
-- vite.plugins: [tailwindcss(), themeWatcher(), presentationWatcher()] for dev hot-reload
-- routeRules: prerender rules exist in bundle mode only (see Rendering Strategy)
-- nitro: `experimental.websocket` for the collaboration route, prerender disabled outside bundle mode
-- runtimeConfig: `sourceCacheTtlMs` (server-only); OAuth credentials and access lists are read from the environment by nuxt-auth-utils and `shared/access`
-- hooks['nitro:config']: in bundle mode, restricts prerendering to the bundle's deck and its API JSON
-- hooks['nitro:build:public-assets']: copies `server/db/migrations` next to the server output for the boot-time migration plugin
+A **theme** is a directory with a manifest and an SCSS entry, in the application or in the content space; `docs/theme-system.md` holds the recipe.
 
-### src/config/presentation.ts
-```ts
-DEFAULT_METADATA = { theme: 'dsfr', transition: 'slide', center: true }
-DEFAULT_REVEAL_CONFIG = { hash: true, slideNumber: 'c/t', ... }
-MDC_COMPONENTS = { ThreeColumns: 'ThreeColumns', TwoColumns: 'TwoColumns', ... }
-```
+A **component** is a Vue file plus an entry declared with `registerDeckComponents`, which a Nuxt module or the application does in a plugin. `@vignettes/schemas` and `@vignettes/storybook` are two such modules, and the application declares `RuleCard` the same way.
 
-### src/config/layouts.ts
-```ts
-type LayoutStrategy = 'full' | 'default'
-SLIDE_LAYOUT_REGISTRY: Record<string, LayoutStrategy> // maps layout names to rendering strategy
-getLayoutStrategy(layout?: string): LayoutStrategy    // falls back to 'default'
-```
-Extend here to add new layout strategies without touching component templates.
-
-### src/types/presentation.ts
-```ts
-interface Slide { body: any, verticalSlides?: Slide[], headingLevel?: string }
-interface PresentationMetadata { theme: string, transition: string, center: boolean }
-interface PresentationData { slides: Slide[], metadata: PresentationMetadata }
-interface RevealConfig { hash?: boolean, center?: boolean, ... }
-```
-
-## Scripts
-
-### package.json
-- `dev`: `nuxt dev` (theme watcher runs via the Vite plugin)
-- `dev:themes`: Builds themes → starts dev server
-- `build`: Builds themes → SSR build
-- `generate`: Builds themes → static generation (bundle mode)
-- `build:themes`: `build-theme-tokens.ts` → `build-themes.ts` (registry, then every theme)
-- `dev:theme`: Watch-compile themes
-- `hash-password`: Generate a password hash for a protected deck
-- `test` / `test:watch`: Vitest
-
-### scripts/build-themes.ts
-- Discovers themes by manifest (`scripts/lib/theme-registry.ts`)
-- Compiles SCSS → CSS via sass with the `pkg:` importer (`scripts/lib/theme-build.ts`)
-- Outputs to public/themes/ (CSS and copied assets)
-- Supports --watch flag
-- Accepts theme name argument
-
-### plugins/theme-watcher.js
-Vite plugin for dev mode:
-- Watches theme directories and packages/
-- Recompiles the themes concerned and triggers a full reload
-
-## Extension Points
-
-### New Slide Parser
-Create composable implementing `{ parseSlides }` interface, swap in usePresentation.
-
-### New Theme
-1. Create `themes/[name]/theme.json` and `themes/[name]/[name].scss` (in the application or in the content space)
-2. Run `pnpm build:themes`
-3. Use `theme: [name]` in frontmatter
-
-### New MDC Component
-1. Create `src/components/mdc/Component.vue`
-2. Add to `MDC_COMPONENTS` in config
-3. Use `::component-name` in markdown
-
-### Reveal.js Plugins
-Add to DEFAULT_REVEAL_CONFIG or pass custom config to RevealPresentation.
-
-## Performance Optimizations
-- Source cache: shared TTL cache (`@vignettes/core/deck`) over content sources + registry
-- Code splitting: Reveal.js loaded client-side only
-- Lazy loading: Themes loaded on demand
-- Caching: useAsyncData deduplicates by key
-- Tree-shaking: Unused MDC components removed
+A **parser** implements the `DeckParser` port of `@vignettes/core/deck` and joins the `PARSERS` registry of the render module.
 
 ## Deployment
 Production is SSR, not static hosting:

@@ -1,8 +1,8 @@
 # Matrice d'accès et de visibilité
 
 Qui peut ouvrir quoi, et qui voit quoi au catalogue. La décision pure vit dans
-`shared/access/decide.ts` (`decideAccess` pour l'ouverture, `canList` pour la
-découvrabilité) ; l'adaptateur HTTP dans `server/utils/access.ts`.
+`layers/studio/shared/access/decide.ts` (`decideAccess` pour l'ouverture, `canList` pour la
+découvrabilité) ; l'adaptateur HTTP dans `layers/studio/server/utils/access.ts`.
 
 ## Arbre de décision (une requête sur un deck)
 

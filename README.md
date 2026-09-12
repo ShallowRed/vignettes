@@ -108,7 +108,7 @@ mise run worktree -- feat/my-branch      # ../vignettes.wt/feat-my-branch, ready
 cd ../vignettes.wt/feat-my-branch && mise run dev
 ```
 
-The repository layout: `src/` holds the Nuxt app, `server/` the Nitro routes and database stores, `shared/` the framework-agnostic domain (deck resolution, access decisions, theme tokens) imported as `#shared`, `packages/` the theme engine and the DSFR base, `themes/` the application themes compiled to `public/themes/`, `scripts/` the content and build tools, `test/` the vitest suites. [docs/architecture.md](docs/architecture.md) describes the layers, [docs/api-routes.md](docs/api-routes.md) the HTTP API, [docs/composables.md](docs/composables.md) the client composables, and [docs/recette-staging.md](docs/recette-staging.md) the acceptance kit.
+The repository layout: `packages/` holds the published units, from the deck core to the Nuxt render module and the themes; `layers/studio/` the application a tenant extends, with its own `src/`, `server/` and `shared/`; the root is one such tenant, with its themes in `themes/`, its content in `presentations/`, its tools in `scripts/` and its suites in `test/`. [docs/architecture.md](docs/architecture.md) describes the whole, [docs/api-routes.md](docs/api-routes.md) the HTTP API, and [docs/recette-staging.md](docs/recette-staging.md) the acceptance kit.
 
 ## License
 
