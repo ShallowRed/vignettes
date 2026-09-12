@@ -3,7 +3,7 @@ import { isDeckSlug, prepareDeckWrite } from '../../shared/deck/source'
 
 describe('isDeckSlug', () => {
   it('accepts letters, digits, dash and underscore', () => {
-    for (const slug of ['deck', 'my-deck', 'deck_2', 'annual-review-2026', 'A1'])
+    for (const slug of ['deck', 'my-deck', 'deck_2', 'deck-2026', 'A1'])
       expect(isDeckSlug(slug)).toBe(true)
   })
 

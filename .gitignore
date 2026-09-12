@@ -48,3 +48,7 @@ mise.local.toml
 
 # Compiled themes and their copied assets (`pnpm build:themes`)
 public/themes/
+
+# Agent and editor scratch: kept locally, out of the published repository
+CONTRIBUTING.md
+.tooling/
