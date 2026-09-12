@@ -43,6 +43,8 @@
     "@types/node": "catalog:",
     "@vignettes/core": "workspace:*",
     "@vignettes/nuxt": "workspace:*",
+    "@vignettes/schemas": "workspace:*",
+    "@vignettes/storybook": "workspace:*",
     "@vignettes/typographie": "workspace:*",
     "better-sqlite3": "catalog:",
     "codemirror": "catalog:",

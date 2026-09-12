@@ -27,7 +27,7 @@ export default defineNuxtConfig({
   // @nuxt/ui registers @nuxt/icon, @nuxt/fonts and @nuxtjs/color-mode itself.
   // Pinia + Pinia Colada power the app-wide data layer (queries + mutations with
   // SSR hydration, cache invalidation and optimistic updates).
-  modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui', '@vignettes/nuxt'],
+  modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui', '@vignettes/nuxt', '@vignettes/schemas', '@vignettes/storybook'],
 
   css: ['~/assets/css/tailwind.css'],
 
