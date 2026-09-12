@@ -1,8 +1,8 @@
-import type { Role } from '../../shared/access'
-import type { AccessAction } from '../../shared/access/decide'
+import type { Role } from '../../layers/studio/shared/access'
+import type { AccessAction } from '../../layers/studio/shared/access/decide'
 import { describe, expect, it } from 'vitest'
-import { canList, decideAccess } from '../../shared/access'
-import { PUBLICATION_STATUSES } from '../../shared/access/status'
+import { canList, decideAccess } from '../../layers/studio/shared/access'
+import { PUBLICATION_STATUSES } from '../../layers/studio/shared/access/status'
 
 // Golden snapshot of the whole access policy: every role × status × action.
 const ROLES: Role[] = ['anonymous', 'viewer', 'editor', 'owner']

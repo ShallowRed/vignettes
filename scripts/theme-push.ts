@@ -10,7 +10,7 @@
  * Dry run by default; the bucket credentials come from the environment
  * (`infisical run --env=prod -- ...`).
  */
-import type { PublishedTheme } from '../shared/storage/themes-s3.ts'
+import type { PublishedTheme } from '../layers/studio/shared/storage/themes-s3.ts'
 import { Buffer } from 'node:buffer'
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -18,8 +18,8 @@ import { dirname, extname, join, relative } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../shared/storage/frozen-s3.ts'
-import { CONTENT_TYPES, indexOf, themeObjectKey, THEMES_INDEX_KEY, tokensKeyOf } from '../shared/storage/themes-s3.ts'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../layers/studio/shared/storage/frozen-s3.ts'
+import { CONTENT_TYPES, indexOf, themeObjectKey, THEMES_INDEX_KEY, tokensKeyOf } from '../layers/studio/shared/storage/themes-s3.ts'
 import { compileTheme } from './lib/theme-build.ts'
 import { checkExtends, discoverThemes, manifestTokens } from './lib/theme-registry.ts'
 

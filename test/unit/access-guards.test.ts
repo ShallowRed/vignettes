@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { assertCanEditDeck, assertOwner, assertPrivileged, gateDeckAccess } from '../../server/utils/access'
-import { hashAccessPassword } from '../../server/utils/password'
-import { resetRateLimits } from '../../server/utils/rate-limit'
-import { useDeckMeta, usePermissionStore } from '../../server/utils/sources'
+import { assertCanEditDeck, assertOwner, assertPrivileged, gateDeckAccess } from '../../layers/studio/server/utils/access'
+import { hashAccessPassword } from '../../layers/studio/server/utils/password'
+import { resetRateLimits } from '../../layers/studio/server/utils/rate-limit'
+import { useDeckMeta, usePermissionStore } from '../../layers/studio/server/utils/sources'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 stubH3Globals()

@@ -1,6 +1,6 @@
-import type { PresentationListItem } from '../../shared/presentations/list-item'
+import type { PresentationListItem } from '../../layers/studio/shared/presentations/list-item'
 import { describe, expect, it } from 'vitest'
-import { applyCatalogQuery, countByStatus, groupByProject, UNGROUPED_PROJECT } from '../../shared/presentations/catalog-view'
+import { applyCatalogQuery, countByStatus, groupByProject, UNGROUPED_PROJECT } from '../../layers/studio/shared/presentations/catalog-view'
 import { listItem as item } from './helpers/fixtures'
 
 const catalog: PresentationListItem[] = [

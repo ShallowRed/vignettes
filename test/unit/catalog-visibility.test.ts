@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { decks } from '../../server/db/schema'
-import { listVisiblePresentations, listVisibleProjects } from '../../server/utils/catalog'
-import { useDraftStore } from '../../server/utils/collab'
-import { useDb } from '../../server/utils/db'
-import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
-import { markdownToYDocUpdate } from '../../shared/collab/ydoc'
+import { decks } from '../../layers/studio/server/db/schema'
+import { listVisiblePresentations, listVisibleProjects } from '../../layers/studio/server/utils/catalog'
+import { useDraftStore } from '../../layers/studio/server/utils/collab'
+import { useDb } from '../../layers/studio/server/utils/db'
+import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
+import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The catalog reports capability, not role: an `editor` grant is what the server

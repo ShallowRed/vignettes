@@ -13,7 +13,7 @@
  * Usage: node scripts/freeze.ts <alias> [--storybook <dir>] [--theme <name>]
  *                               [--dry-run] [--no-upload] [--db <path>]
  */
-import type { FreezeDescriptor } from '../shared/build/freeze.ts'
+import type { FreezeDescriptor } from '../layers/studio/shared/build/freeze.ts'
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -23,8 +23,8 @@ import { splitFrontmatter } from '@vignettes/core/deck/frontmatter'
 import { resolveThemeName, setThemeRegistry } from '@vignettes/core/theme/tokens'
 import Database from 'better-sqlite3'
 import { load as parseYaml } from 'js-yaml'
-import { bundleStorybookUrl } from '../shared/build/bundle.ts'
-import { buildFreezeDescriptor } from '../shared/build/freeze.ts'
+import { bundleStorybookUrl } from '../layers/studio/shared/build/bundle.ts'
+import { buildFreezeDescriptor } from '../layers/studio/shared/build/freeze.ts'
 import { buildReducedPublic, copyDeckAssets, rebaseCssUrls } from './lib/bundle-assets.ts'
 import { contentDir, discoverThemes, registryOf } from './lib/theme-registry.ts'
 

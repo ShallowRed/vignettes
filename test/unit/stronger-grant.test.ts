@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { strongerGrant } from '../../shared/access/roles'
+import { strongerGrant } from '../../layers/studio/shared/access/roles'
 
 describe('strongerGrant — folding a deck grant with its project grant', () => {
   it('returns the only grant when just one scope is set', () => {

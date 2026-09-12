@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createDraftStore } from '../../server/db/draft-store'
-import { decks } from '../../server/db/schema'
+import { createDraftStore } from '../../layers/studio/server/db/draft-store'
+import { decks } from '../../layers/studio/server/db/schema'
 import { freshDb } from './helpers/db'
 
 describe('createDraftStore', () => {

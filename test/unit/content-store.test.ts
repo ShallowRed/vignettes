@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createDbContent } from '../../server/db/content-store'
-import { decks, deckVersions } from '../../server/db/schema'
+import { createDbContent } from '../../layers/studio/server/db/content-store'
+import { decks, deckVersions } from '../../layers/studio/server/db/schema'
 import { freshDb } from './helpers/db'
 
 const DECK = `---

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readRoleMap, resolveRole } from '../../shared/access/resolve-role'
+import { readRoleMap, resolveRole } from '../../layers/studio/shared/access/resolve-role'
 
 describe('readRoleMap', () => {
   it('parses comma-separated logins, trimmed and lowercased', () => {

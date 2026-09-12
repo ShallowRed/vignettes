@@ -6,7 +6,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   resolve: {
     alias: {
-      '#shared': fileURLToPath(new URL('./shared', import.meta.url)),
+      '#shared': fileURLToPath(new URL('./layers/studio/shared', import.meta.url)),
     },
   },
   test: {

@@ -7,9 +7,9 @@ import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
-import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions, projectPermissions, projects, users } from '../../../server/db/schema'
-import { useDb } from '../../../server/utils/db'
-import { useUserStore } from '../../../server/utils/users'
+import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions, projectPermissions, projects, users } from '../../../layers/studio/server/db/schema'
+import { useDb } from '../../../layers/studio/server/utils/db'
+import { useUserStore } from '../../../layers/studio/server/utils/users'
 import { MIGRATIONS_DIR } from './db'
 
 /**

@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createPermissionStore } from '../../server/db/permission-store'
-import { users } from '../../server/db/schema'
-import { createUserStore } from '../../server/db/user-store'
+import { createPermissionStore } from '../../layers/studio/server/db/permission-store'
+import { users } from '../../layers/studio/server/db/schema'
+import { createUserStore } from '../../layers/studio/server/db/user-store'
 import { freshDb } from './helpers/db'
 
 describe('user store', () => {

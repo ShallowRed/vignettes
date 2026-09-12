@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createDeckMeta } from '../../server/db/deck-meta'
-import { createDbDirectory } from '../../server/db/directory'
-import { createProjectStore } from '../../server/db/project-store'
-import { decks, projectPermissions, projects } from '../../server/db/schema'
+import { createDeckMeta } from '../../layers/studio/server/db/deck-meta'
+import { createDbDirectory } from '../../layers/studio/server/db/directory'
+import { createProjectStore } from '../../layers/studio/server/db/project-store'
+import { decks, projectPermissions, projects } from '../../layers/studio/server/db/schema'
 import { freshDb, NOW, seedUser } from './helpers/db'
 
 describe('project store — lifecycle + trash', () => {

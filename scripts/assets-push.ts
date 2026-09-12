@@ -14,9 +14,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
 import process from 'node:process'
 import { ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
-import { DECK_ASSET_PREFIXES, deckAssetKey } from '../shared/storage/deck-assets.ts'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../shared/storage/frozen-s3.ts'
-import { CONTENT_TYPES } from '../shared/storage/themes-s3.ts'
+import { DECK_ASSET_PREFIXES, deckAssetKey } from '../layers/studio/shared/storage/deck-assets.ts'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../layers/studio/shared/storage/frozen-s3.ts'
+import { CONTENT_TYPES } from '../layers/studio/shared/storage/themes-s3.ts'
 import { contentDir } from './lib/theme-registry.ts'
 
 const root = join(import.meta.dirname, '..')

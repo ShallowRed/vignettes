@@ -1,14 +1,14 @@
 import { join } from 'node:path'
 import process from 'node:process'
+import { readBundleConfig } from './layers/studio/shared/build/bundle'
 import presentationWatcher from './plugins/presentation-watcher.js'
-import { readBundleConfig } from './shared/build/bundle'
 
 const bundle = readBundleConfig()
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-27',
 
-  srcDir: 'src/',
+  extends: ['./layers/studio'],
 
   // Frozen bundles build against a reduced public/ to avoid shipping ~11MB of
   // photos + all theme backgrounds.
@@ -28,8 +28,6 @@ export default defineNuxtConfig({
   // Pinia + Pinia Colada power the app-wide data layer (queries + mutations with
   // SSR hydration, cache invalidation and optimistic updates).
   modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui', '@vignettes/nuxt', '@vignettes/schemas', '@vignettes/storybook'],
-
-  css: ['~/assets/css/tailwind.css'],
 
   // Workspace packages ship TypeScript sources: transpiled by Vite, inlined by Nitro.
   build: {
@@ -166,7 +164,7 @@ export default defineNuxtConfig({
       // migrations: read at boot by the migration plugin (drizzle needs a real
       // folder next to the bundle). Content is served from the database, so
       // presentations/ is no longer shipped.
-      const srcDir = join(process.cwd(), 'server/db/migrations')
+      const srcDir = join(process.cwd(), 'layers/studio/server/db/migrations')
       const destDir = join(nitro.options.output.serverDir, 'migrations')
       try {
         await cp(srcDir, destDir, { recursive: true })

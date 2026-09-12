@@ -1,19 +1,19 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { deckVersions } from '../../server/db/schema'
-import { assertOwner, assertPrivileged } from '../../server/utils/access'
-import { useDb } from '../../server/utils/db'
-import { useDeckMeta } from '../../server/utils/sources'
+import { deckVersions } from '../../layers/studio/server/db/schema'
+import { assertOwner, assertPrivileged } from '../../layers/studio/server/utils/access'
+import { useDb } from '../../layers/studio/server/utils/db'
+import { useDeckMeta } from '../../layers/studio/server/utils/sources'
 import { anon, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The content token stands in for a session on the markdown write path only.
 stubH3Globals()
 setupServerDb()
 
-const { default: saveDraft } = await import('../../server/api/presentations/[slug].put')
-const { default: publish } = await import('../../server/api/presentations/[slug]/publish.post')
-const { default: loadDeck } = await import('../../server/api/presentations/[slug].get')
-const { default: uploadMedia } = await import('../../server/api/media.post')
+const { default: saveDraft } = await import('../../layers/studio/server/api/presentations/[slug].put')
+const { default: publish } = await import('../../layers/studio/server/api/presentations/[slug]/publish.post')
+const { default: loadDeck } = await import('../../layers/studio/server/api/presentations/[slug].get')
+const { default: uploadMedia } = await import('../../layers/studio/server/api/media.post')
 
 const bearer = (token: string, over: Record<string, unknown> = {}) => anon({ headers: { authorization: `Bearer ${token}` }, ...over })
 const deck = { params: { slug: 'deck' } }

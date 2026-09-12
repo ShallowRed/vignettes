@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseProjects, slugifyProject } from '../../shared/projects/schema'
+import { parseProjects, slugifyProject } from '../../layers/studio/shared/projects/schema'
 
 describe('slugifyProject', () => {
   it('lowercases, strips accents and collapses to dashes', () => {

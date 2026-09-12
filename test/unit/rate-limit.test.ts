@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { hitRateLimit, resetRateLimits } from '../../server/utils/rate-limit'
+import { hitRateLimit, resetRateLimits } from '../../layers/studio/server/utils/rate-limit'
 
 describe('hitRateLimit', () => {
   beforeEach(resetRateLimits)

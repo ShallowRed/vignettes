@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { deckAliases, deckPermissions, decks, deckVersions, users } from '../../server/db/schema'
+import { deckAliases, deckPermissions, decks, deckVersions, users } from '../../layers/studio/server/db/schema'
 import { freshDb, NOW, seedDeck, seedUser } from './helpers/db'
 
 // Constraints the migrations must define: the stores rely on them rather than

@@ -14,7 +14,7 @@ import {
   frozenObjectKey,
   isFrozenS3Configured,
   makeFrozenS3Client,
-} from '../shared/storage/frozen-s3.ts'
+} from '../layers/studio/shared/storage/frozen-s3.ts'
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',

@@ -1,8 +1,8 @@
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { useDeckMeta, useGrants } from '../../server/utils/sources'
-import { useUserStore } from '../../server/utils/users'
-import { RECETTE_INVITED_HANDLE, RECETTE_PERSONAS } from '../../shared/recette/personas'
+import { useDeckMeta, useGrants } from '../../layers/studio/server/utils/sources'
+import { useUserStore } from '../../layers/studio/server/utils/users'
+import { RECETTE_INVITED_HANDLE, RECETTE_PERSONAS } from '../../layers/studio/shared/recette/personas'
 import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The kit is gated twice: the environment flag, then an owner session (which
@@ -13,9 +13,9 @@ setupServerDb()
 process.env.NUXT_SESSION_PASSWORD = 'recette-test-password-with-32-chars'
 process.env.NUXT_RECETTE_ENABLED = '1'
 
-const { default: status } = await import('../../server/api/recette/status.get')
-const { default: seed } = await import('../../server/api/recette/seed.post')
-const { default: openAs } = await import('../../server/routes/auth/recette.get')
+const { default: status } = await import('../../layers/studio/server/api/recette/status.get')
+const { default: seed } = await import('../../layers/studio/server/api/recette/seed.post')
+const { default: openAs } = await import('../../layers/studio/server/routes/auth/recette.get')
 
 const persona = (key: string) => RECETTE_PERSONAS.find(p => p.key === key)!
 

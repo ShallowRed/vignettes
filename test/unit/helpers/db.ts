@@ -3,9 +3,9 @@ import process from 'node:process'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { decks, users } from '../../../server/db/schema'
+import { decks, users } from '../../../layers/studio/server/db/schema'
 
-export const MIGRATIONS_DIR = join(process.cwd(), 'server/db/migrations')
+export const MIGRATIONS_DIR = join(process.cwd(), 'layers/studio/server/db/migrations')
 
 /** A fixed clock for rows whose timestamps do not matter to the test. */
 export const NOW = new Date(1700000000000)

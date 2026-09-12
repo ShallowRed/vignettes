@@ -1,8 +1,8 @@
 import { Buffer } from 'node:buffer'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createDeckMeta } from '../../server/db/deck-meta'
-import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions } from '../../server/db/schema'
+import { createDeckMeta } from '../../layers/studio/server/db/deck-meta'
+import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions } from '../../layers/studio/server/db/schema'
 import { freshDb, NOW, seedDeck, seedUser } from './helpers/db'
 
 describe('deck meta', () => {

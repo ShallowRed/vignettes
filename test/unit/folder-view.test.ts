@@ -1,7 +1,7 @@
-import type { PresentationListItem } from '../../shared/presentations/list-item'
-import type { Project } from '../../shared/projects/schema'
+import type { PresentationListItem } from '../../layers/studio/shared/presentations/list-item'
+import type { Project } from '../../layers/studio/shared/projects/schema'
 import { describe, expect, it } from 'vitest'
-import { buildCatalogFolders, UNGROUPED_FOLDER_SLUG } from '../../shared/presentations/folder-view'
+import { buildCatalogFolders, UNGROUPED_FOLDER_SLUG } from '../../layers/studio/shared/presentations/folder-view'
 import { listItem as item, project } from './helpers/fixtures'
 
 const decks: PresentationListItem[] = [

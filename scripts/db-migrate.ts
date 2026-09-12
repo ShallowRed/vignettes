@@ -13,5 +13,5 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 
 const path = process.env.NUXT_DB_PATH || '.data/slides.db'
 mkdirSync(dirname(path), { recursive: true })
-migrate(drizzle(new Database(path)), { migrationsFolder: join(process.cwd(), 'server/db/migrations') })
+migrate(drizzle(new Database(path)), { migrationsFolder: join(process.cwd(), 'layers/studio/server/db/migrations') })
 console.log(`migrations appliquées sur ${path}`)

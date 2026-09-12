@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useDeckMeta, usePermissionStore } from '../../server/utils/sources'
+import { useDeckMeta, usePermissionStore } from '../../layers/studio/server/utils/sources'
 import { seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The room is authorized at the WebSocket upgrade, from the session cookie. The
@@ -9,12 +9,12 @@ stubH3Globals()
 setupServerDb()
 
 const actor: { current: any } = { current: { role: 'anonymous' } }
-vi.mock('../../server/utils/actor', async importOriginal => ({
+vi.mock('../../layers/studio/server/utils/actor', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getActorFromRequest: async () => actor.current,
 }))
 
-const { default: collab } = await import('../../server/routes/collab')
+const { default: collab } = await import('../../layers/studio/server/routes/collab')
 const knock = (deck: string) => collab.upgrade!(new Request(`http://localhost/collab?deck=${deck}`) as any)
 
 beforeEach(async () => {

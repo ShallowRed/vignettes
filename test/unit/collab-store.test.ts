@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
-import { useCollabServer, useDraftStore } from '../../server/utils/collab'
-import { useDbContent } from '../../server/utils/sources'
-import { yDocUpdateToMarkdown } from '../../shared/collab/ydoc'
+import { useCollabServer, useDraftStore } from '../../layers/studio/server/utils/collab'
+import { useDbContent } from '../../layers/studio/server/utils/sources'
+import { yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // Drive the Hocuspocus hooks the way the server does, with the payload shapes

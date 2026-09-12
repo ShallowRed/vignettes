@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../shared/collab/ydoc'
+import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 
 describe('deck ydoc helpers', () => {
   it('round-trips markdown through a Y.Doc update', () => {

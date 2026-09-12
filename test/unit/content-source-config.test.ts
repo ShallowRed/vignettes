@@ -3,7 +3,7 @@ import {
   decideFetchAction,
   DEFAULT_CONTENT_FOLDERS,
   readContentSourceConfig,
-} from '../../shared/content/source-config'
+} from '../../layers/studio/shared/content/source-config'
 
 describe('readContentSourceConfig', () => {
   it('defaults to a submodule source locally (no CI)', () => {

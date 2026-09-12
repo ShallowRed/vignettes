@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildFreezeDescriptor, DEFAULT_FROZEN_HOST_DIR } from '../../shared/build/freeze'
+import { buildFreezeDescriptor, DEFAULT_FROZEN_HOST_DIR } from '../../layers/studio/shared/build/freeze'
 
 describe('buildFreezeDescriptor', () => {
   it('derives every value from a minimal entry', () => {

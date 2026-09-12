@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createDbDirectory } from '../../server/db/directory'
-import { deckAliases, projects } from '../../server/db/schema'
+import { createDbDirectory } from '../../layers/studio/server/db/directory'
+import { deckAliases, projects } from '../../layers/studio/server/db/schema'
 import { freshDb, NOW, seedDeck } from './helpers/db'
 
 describe('db directory', () => {

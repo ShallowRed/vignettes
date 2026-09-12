@@ -1,8 +1,8 @@
-import type { AccessInput } from '../../shared/access/decide'
-import type { Role } from '../../shared/access/roles'
-import type { PublicationStatus } from '../../shared/access/status'
+import type { AccessInput } from '../../layers/studio/shared/access/decide'
+import type { Role } from '../../layers/studio/shared/access/roles'
+import type { PublicationStatus } from '../../layers/studio/shared/access/status'
 import { describe, expect, it } from 'vitest'
-import { canList, decideAccess } from '../../shared/access/decide'
+import { canList, decideAccess } from '../../layers/studio/shared/access/decide'
 
 const STATUSES: PublicationStatus[] = ['public', 'private', 'semi-private']
 // A value outside the enum (e.g. the retired 'draft') must fail closed everywhere.

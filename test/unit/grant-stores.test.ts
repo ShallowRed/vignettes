@@ -1,7 +1,7 @@
-import type { DeckGrant } from '../../shared/access'
+import type { DeckGrant } from '../../layers/studio/shared/access'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createPermissionStore } from '../../server/db/permission-store'
-import { createProjectPermissionStore } from '../../server/db/project-permission-store'
+import { createPermissionStore } from '../../layers/studio/server/db/permission-store'
+import { createProjectPermissionStore } from '../../layers/studio/server/db/project-permission-store'
 import { freshDb, seedUser } from './helpers/db'
 
 // Deck grants and folder master keys are two tables with one contract: the same

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useDbContent, usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
+import { useDbContent, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // Drive the write handlers directly: the h3 auto-imports read from the event
@@ -7,10 +7,10 @@ import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpe
 stubH3Globals()
 setupServerDb()
 
-const { default: saveDraft } = await import('../../server/api/presentations/[slug].put')
-const { default: createDeck } = await import('../../server/api/presentations.post')
-const { default: uploadMedia } = await import('../../server/api/media.post')
-const { default: loadDeck } = await import('../../server/api/presentations/[slug].get')
+const { default: saveDraft } = await import('../../layers/studio/server/api/presentations/[slug].put')
+const { default: createDeck } = await import('../../layers/studio/server/api/presentations.post')
+const { default: uploadMedia } = await import('../../layers/studio/server/api/media.post')
+const { default: loadDeck } = await import('../../layers/studio/server/api/presentations/[slug].get')
 
 const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
 const collab = (over: Record<string, unknown>) => asUser(10, 'collab', over)

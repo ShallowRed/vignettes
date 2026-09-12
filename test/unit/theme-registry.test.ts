@@ -12,7 +12,7 @@ import {
 } from '@vignettes/core/theme'
 import { discoverThemes, manifestTokens, registryOf, themeAliases } from '@vignettes/nuxt/build/theme-registry'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { indexOf } from '../../shared/storage/themes-s3'
+import { indexOf } from '../../layers/studio/shared/storage/themes-s3'
 
 describe('runtime theme registry', () => {
   afterEach(() => setThemeRegistry(null))

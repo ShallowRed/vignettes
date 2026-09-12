@@ -17,12 +17,12 @@ the Nitro server (`server/`). Every page renders per request in production; the 
 - pnpm (catalog in pnpm-workspace.yaml), Node 22, vitest
 
 ## Directory Structure
-Three top-level layers at the REPO ROOT: `src/` (Nuxt client app, `srcDir: 'src/'`),
-`server/` (Nitro server — NOT under `src/`), and `shared/` (isomorphic domain core,
-imported via the `#shared` alias). See "Shared Domain Layer" below.
+The repository holds three kinds of code. `packages/` are published units that know nothing about this instance: the deck core, the Nuxt render module, the two extension modules, the themes and the orthotypography. `layers/studio/` is the application a tenant extends: catalog, access, accounts, editor, collaboration, trash, acceptance kit, with its own `src/`, `server/` and `shared/`. The repository root is one such tenant: it extends the layer, installs the modules, and adds its themes, its brand component and its deployment.
+
+Inside the layer, files import each other by relative path, since `~` resolves to the application's source directory and never to a layer's. The layer redeclares `#shared` so it keeps pointing at the domain it carries.
 
 ```
-src/                                # Nuxt app (srcDir)
+layers/studio/src/                  # the studio's Nuxt app (its own srcDir)
 ├── app.vue, layouts/, middleware/, plugins/
 ├── types/presentation.ts          # Type definitions (Slide, PresentationMetadata, RevealConfig)
 ├── config/
@@ -71,7 +71,7 @@ src/                                # Nuxt app (srcDir)
 │   ├── recette.vue                # Acceptance kit (owner, flag-gated)
 │   └── login.vue
 
-server/                             # Nitro server (repo root, NOT under src/)
+layers/studio/server/               # the studio's Nitro server
 ├── api/
 │   ├── presentations*.ts          # Catalog, deck read, create, draft save, publish, trash
 │   ├── projects.get.ts, p/[alias].get.ts, media.post.ts
@@ -88,15 +88,7 @@ server/                             # Nitro server (repo root, NOT under src/)
 ├── plugins/                        # migrations.ts (boot), theme-consistency.ts, nuxtout-deck.ts (bundle mode)
 └── utils/                          # Adapters: access, actor, catalog, collab, content-token, db, password, rate-limit, recette, sources, users
 
-packages/core/src/                  # @vignettes/core: the deck core, framework-free (see below)
-├── deck/        # deck resolution, parser port, schema, frontmatter, model, cache
-├── render/      # reveal config, Storybook embed, transform pipeline, print writer
-├── theme/       # theme tokens (single source of truth) + consistency check
-└── status.ts    # publication status and lifecycle vocabulary
-
-packages/typographie/src/           # @vignettes/typographie: French orthotypography directive
-
-shared/                             # Studio domain (#shared alias) — see below
+layers/studio/shared/               # studio domain, reached through #shared
 ├── access/      # roles, publication status, access-decision matrix (pure)
 ├── collab/      # markdown ↔ Y.Doc conversion
 ├── content/     # content-source config + fetch policy
@@ -104,34 +96,39 @@ shared/                             # Studio domain (#shared alias) — see belo
 ├── projects/    # project-registry schema
 └── build/       # bundle toggles, freeze descriptor, public-deck discovery
 
+packages/core/               # @vignettes/core: dialect, schema, model, resolution, transforms, theme tokens
+packages/nuxt/               # @vignettes/nuxt: Reveal layer, authoring components, parsers, theme pipeline
+packages/schemas/            # @vignettes/schemas: pictogram steps, drawn diagrams, guided file reading
+packages/storybook/          # @vignettes/storybook: story embeds and their scaling
+packages/typographie/        # @vignettes/typographie: French orthotypography directive
 packages/theme-kit/          # Engine CSS layer (semantic tokens, Reveal patches, layouts, presets)
 packages/theme-dsfr/         # Brand-neutral DSFR base theme
 public/themes/               # Compiled CSS themes and copied assets (build output)
 presentations/               # Archive submodule: deck stubs exported from production, registry.yml, projects.yml
 themes/                      # Application themes: a manifest, an SCSS entry, assets/
 scripts/build-themes.ts      # Theme compilation (manifests in themes/ and in the content space)
-plugins/theme-watcher.js     # Vite plugin for theme hot-reload
-plugins/presentation-watcher.js
+plugins/presentation-watcher.js  # Vite plugin watching the content directory
 ```
 
-## Shared Domain Layer (`shared/`, `#shared` alias)
-The core of the current architecture is a ports-and-adapters (hexagonal) design. `shared/`
-holds framework-agnostic, I/O-free, unit- and golden-testable domain logic that both the
-client (`src/`) and the Nitro server (`server/`) import via `#shared/...`. Ports (interfaces
-/ pure functions) live in `shared/`; adapters (session, crypto, HTTP, filesystem, YAML I/O)
-live in `server/utils/`. As a rule: a `shared/<x>` module has a matching `server/utils/<x>`
-adapter (e.g. `shared/access` decision logic ↔ `server/utils/access.ts` session/crypto).
+## Domain layer (`#shared`, inside the studio layer)
+Ports and adapters: `layers/studio/shared/` holds framework-free, I/O-free domain logic that
+both the client and the Nitro server import through `#shared/...`; the adapters that touch
+session, crypto, filesystem or YAML sit in `layers/studio/server/utils/`. A `shared/<x>`
+module usually has a matching `server/utils/<x>` adapter, as `shared/access` has
+`server/utils/access.ts`.
 
-The deck core itself is the workspace package `@vignettes/core` (`packages/core/`), which depends on nothing in the application and ships its TypeScript sources (`build.transpile` for Vite, `nitro.externals.inline` for the server bundle). `shared/` keeps the studio's own domain (access, catalog, projects, trash, collaboration, storage, build).
+The deck core is the workspace package `@vignettes/core`, which depends on nothing in the
+application and ships its TypeScript sources (`build.transpile` for Vite,
+`nitro.externals.inline` for the server bundle).
 
 - **`@vignettes/core/deck`** — "what is the config of this deck?". `resolveDeck()` is the pure pivot
   the three deck routes converge on: it merges layers (preset → stub → note-frontmatter
   whitelist), validates once through the zod `DeckMetaSchema`, and returns metadata + body +
   provenance. Also exposes the **parser port**: `ParserId = 'heading' | 'separator'`,
   `parserIdFor(meta)`, and the `DeckParser` contract. The concrete parsers depend on the MDC
-  runtime so their implementations stay in `src/utils/slide-ast.ts` (`PARSERS` registry);
+  runtime, so they live in the render module (`PARSERS` registry);
   `usePresentation` selects one via `PARSERS[parserIdFor(metadata)]`.
-- **`@vignettes/core/render`** — the "writer" side of the deck hexagon: shared Reveal config defaults,
+- **`@vignettes/core/render`** — the writer side: Reveal config defaults,
   iframe sandbox policy, asset-URL rebasing, Storybook embed URL shape, named transforms, print writer.
 - **`@vignettes/core/theme`** — theme **tokens** are the single source of truth for a theme's data
   (backgrounds, Reveal dimensions), from which presets, backgrounds, and the generated SCSS

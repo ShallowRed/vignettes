@@ -6,7 +6,7 @@
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
-import { DECK_ASSET_PREFIXES, deckAssetLocalPath } from '../../shared/storage/deck-assets.ts'
+import { DECK_ASSET_PREFIXES, deckAssetLocalPath } from '../../layers/studio/shared/storage/deck-assets.ts'
 
 /**
  * Copy `public/` into `outDir`, keeping only the frozen deck's theme and what
