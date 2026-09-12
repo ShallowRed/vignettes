@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RevealConfig } from '../types/presentation'
+import type { RevealConfig } from '../types/presentation.ts'
 import { buildPrintPdfUrl, buildPrintView, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { computed, nextTick, onMounted, onUnmounted, provide, toRef } from 'vue'
 import 'reveal.js/dist/reveal.css'

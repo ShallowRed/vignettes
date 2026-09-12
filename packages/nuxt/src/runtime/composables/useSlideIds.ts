@@ -1,4 +1,4 @@
-import type { Slide } from '../types/presentation'
+import type { Slide } from '../types/presentation.ts'
 import { getTextContent, slugify } from '@vignettes/core/slugify'
 import { computed } from 'vue'
 

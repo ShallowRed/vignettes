@@ -1,6 +1,6 @@
-import type { PublicationStatus } from '../status'
-import { PublicationStatusSchema } from '../status'
-import { splitFrontmatter } from './frontmatter'
+import type { PublicationStatus } from '../status.ts'
+import { PublicationStatusSchema } from '../status.ts'
+import { splitFrontmatter } from './frontmatter.ts'
 
 /** Closed default: a missing/invalid status MUST fail closed. Never default more open. */
 export const DEFAULT_STATUS: PublicationStatus = 'private'

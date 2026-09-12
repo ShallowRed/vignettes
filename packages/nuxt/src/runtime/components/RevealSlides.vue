@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { PresentationData } from '../types/presentation'
+import type { PresentationData } from '../types/presentation.ts'
 import { buildComponentMap } from '@vignettes/core/deck'
 import { computed, provide, resolveComponent } from 'vue'
-import { STORYBOOK_BASE } from '../config/injection-keys'
-import { getSlideClasses, resolveSlideBackground } from '../utils/slide-rendering'
+import { STORYBOOK_BASE } from '../config/injection-keys.ts'
+import { getSlideClasses, resolveSlideBackground } from '../utils/slide-rendering.ts'
 
 const props = defineProps<{ presentationData: PresentationData }>()
 

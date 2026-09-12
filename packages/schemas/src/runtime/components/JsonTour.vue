@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { JsonTourZoneRegistration } from '../injection-keys'
+import type { JsonTourZoneRegistration } from '../injection-keys.ts'
 import { nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
-import { JSON_TOUR } from '../injection-keys'
+import { JSON_TOUR } from '../injection-keys.ts'
 
 // A file read alongside the description of what it holds. The `::Zone` children
 // are Reveal fragments; the current one highlights its line range in the code

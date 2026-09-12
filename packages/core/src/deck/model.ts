@@ -1,4 +1,4 @@
-import type { DeckMeta } from './schema'
+import type { DeckMeta } from './schema.ts'
 
 /**
  * Deck intermediate representation: parsers (readers) produce a `DeckModel`,

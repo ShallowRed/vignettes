@@ -1,7 +1,7 @@
-import type { AssetRef, DeckModel, Slide } from '../deck/model'
-import type { DeckMeta, ThemeBackgrounds } from '../deck/schema'
-import { getThemeTokens } from '../theme/tokens'
-import { buildStoryUrl } from './storybook'
+import type { AssetRef, DeckModel, Slide } from '../deck/model.ts'
+import type { DeckMeta, ThemeBackgrounds } from '../deck/schema.ts'
+import { getThemeTokens } from '../theme/tokens.ts'
+import { buildStoryUrl } from './storybook.ts'
 
 // Named, pure, composable transform steps over the deck model: media resolution,
 // background resolution, asset collection, and the pipeline runner.

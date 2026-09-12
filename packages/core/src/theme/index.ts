@@ -1,2 +1,2 @@
-export * from './consistency'
-export * from './tokens'
+export * from './consistency.ts'
+export * from './tokens.ts'

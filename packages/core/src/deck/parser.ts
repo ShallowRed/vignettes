@@ -1,5 +1,5 @@
-import type { Slide } from './model'
-import type { DeckMeta } from './schema'
+import type { Slide } from './model.ts'
+import type { DeckMeta } from './schema.ts'
 
 /**
  * Framework-agnostic parser contract. Implementations (heading, separator) depend

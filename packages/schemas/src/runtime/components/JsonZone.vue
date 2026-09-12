@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref } from 'vue'
-import { JSON_TOUR } from '../injection-keys'
+import { JSON_TOUR } from '../injection-keys.ts'
 
 // One described area of a `:::JsonTour`: a card whose fragment highlights the
 // lines it names in the file beside it.

@@ -1,6 +1,6 @@
-import type { DeckModel } from '../deck/model'
-import type { RevealConfig } from '../deck/schema'
-import { mergeRevealConfig } from './reveal'
+import type { DeckModel } from '../deck/model.ts'
+import type { RevealConfig } from '../deck/schema.ts'
+import { mergeRevealConfig } from './reveal.ts'
 
 /**
  * Print writer: what a caller needs to render a deck through reveal.js's own

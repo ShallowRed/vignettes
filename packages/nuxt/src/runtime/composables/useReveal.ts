@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import type { RevealConfig } from '../types/presentation'
+import type { RevealConfig } from '../types/presentation.ts'
 import { EMBED_SANDBOX, mergeRevealConfig } from '@vignettes/core/render'
 
 export function useReveal(

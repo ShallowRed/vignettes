@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DiagramSide } from '../injection-keys'
+import type { DiagramSide } from '../injection-keys.ts'
 import { inject, onMounted } from 'vue'
-import { DIAGRAM } from '../injection-keys'
+import { DIAGRAM } from '../injection-keys.ts'
 
 // An arrow between two `::Node` ids; drawn by the enclosing `:::Diagram`.
 interface Props {

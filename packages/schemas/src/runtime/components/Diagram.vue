@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DiagramEdgeRegistration, DiagramNodeRegistration, DiagramSide } from '../injection-keys'
+import type { DiagramEdgeRegistration, DiagramNodeRegistration, DiagramSide } from '../injection-keys.ts'
 import dagre from '@dagrejs/dagre'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
-import { DIAGRAM } from '../injection-keys'
+import { DIAGRAM } from '../injection-keys.ts'
 
 // Pictogram cards (`::Node`) linked by drawn arrows (`::Edge`). `layout="grid"`
 // places the cards where their `at` says; `layout="auto"` lets dagre place

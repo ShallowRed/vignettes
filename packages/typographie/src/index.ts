@@ -1,3 +1,3 @@
-export { vFrenchTypography } from './directive'
-export { DomTextTransformer } from './dom-text-transformer'
-export { transformerTexte } from './french-typography'
+export { vFrenchTypography } from './directive.ts'
+export { DomTextTransformer } from './dom-text-transformer.ts'
+export { transformerTexte } from './french-typography.ts'

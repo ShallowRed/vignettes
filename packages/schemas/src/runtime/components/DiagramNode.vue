@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref } from 'vue'
-import { DIAGRAM } from '../injection-keys'
+import { DIAGRAM } from '../injection-keys.ts'
 
 // One card of a `:::Diagram`, addressed by `id` from the `::Edge` children.
 interface Props {

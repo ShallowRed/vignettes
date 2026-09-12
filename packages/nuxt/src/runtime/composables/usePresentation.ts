@@ -1,9 +1,9 @@
-import type { PresentationData } from '../types/presentation'
+import type { PresentationData } from '../types/presentation.ts'
 import { useAsyncData, useRequestFetch } from '#imports'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import { parserIdFor } from '@vignettes/core/deck'
-import { DEFAULT_METADATA } from '../config/presentation'
-import { PARSERS } from '../utils/slide-ast'
+import { DEFAULT_METADATA } from '../config/presentation.ts'
+import { PARSERS } from '../utils/slide-ast.ts'
 
 /**
  * Parse raw deck markdown into `PresentationData`: the single client-side parse

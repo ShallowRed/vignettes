@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { normalizeIconName } from '@vignettes/core/deck'
 import { computed } from 'vue'
-import { paletteVars } from '../dsfr-palette'
+import { paletteVars } from '../dsfr-palette.ts'
 
 // A named region of a `:::Diagram` grid: the machine, or the party, that the
 // cards inside it run on. Drawn behind the cards, so edges crossing it read as

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { STORYBOOK_BASE } from '@vignettes/nuxt/runtime/config/injection-keys'
 import { computed, inject } from 'vue'
-import { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '../storybook'
+import { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '../storybook.ts'
 
 // Embeds a Storybook story (by id, resolved against the deck's `storybook` root) or an
 // arbitrary iframe/image. Iframes render at a logical width (`previewWidth`) and scale down

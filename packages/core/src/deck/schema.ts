@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PublicationStatusSchema } from '../status'
+import { PublicationStatusSchema } from '../status.ts'
 
 /**
  * Single source of truth for a deck's validated config: centralizes validation,

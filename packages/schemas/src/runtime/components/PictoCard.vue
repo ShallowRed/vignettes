@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { normalizeIconName } from '@vignettes/core/deck'
 import { computed } from 'vue'
-import { paletteVars } from '../dsfr-palette'
+import { paletteVars } from '../dsfr-palette.ts'
 
 // The card shared by `::Step` (schemes) and `::Node` (diagrams): a DSFR pictogram
 // or a Remix icon, a number badge, a title and a caption.

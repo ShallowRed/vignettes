@@ -1,4 +1,4 @@
-import { knownThemes } from './tokens'
+import { knownThemes } from './tokens.ts'
 
 // Pure, fs-free cross-check of a theme's three declarations that can drift:
 // tokens manifest, compiled public/themes/<name>.css, and SCSS source themes/<name>/.

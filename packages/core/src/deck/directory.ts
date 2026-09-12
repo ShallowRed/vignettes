@@ -1,4 +1,4 @@
-import type { Lifecycle } from '../status'
+import type { Lifecycle } from '../status.ts'
 
 /**
  * `DeckDirectory` port: the diffusion registry — stable aliases, lifecycle and

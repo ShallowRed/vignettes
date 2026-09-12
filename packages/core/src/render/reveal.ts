@@ -1,4 +1,4 @@
-import type { RevealConfig } from '../deck/schema'
+import type { RevealConfig } from '../deck/schema.ts'
 
 // Shared render helpers for the live composable and the frozen bundle: Reveal
 // defaults, the iframe sandbox policy, and asset-URL rebasing.

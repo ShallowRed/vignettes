@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { PresentationMetadata, Slide } from '../types/presentation'
+import type { PresentationMetadata, Slide } from '../types/presentation.ts'
 import MDCRenderer from '@nuxtjs/mdc/runtime/components/MDCRenderer.vue'
 import { EMBED_SANDBOX, resolveSlideMedia } from '@vignettes/core/render'
 import { computed } from 'vue'
-import { getLayoutStrategy } from '../config/layouts'
-import { quicklinkParts } from '../utils/slide-rendering'
+import { getLayoutStrategy } from '../config/layouts.ts'
+import { quicklinkParts } from '../utils/slide-rendering.ts'
 
 const props = defineProps<{
   slide: Slide

@@ -1,7 +1,7 @@
-import type { DeckMeta } from './schema'
-import { isKnownTheme } from '../theme/tokens'
-import { splitFrontmatter, stringifyDocument } from './frontmatter'
-import { parseDeckMeta } from './schema'
+import type { DeckMeta } from './schema.ts'
+import { isKnownTheme } from '../theme/tokens.ts'
+import { splitFrontmatter, stringifyDocument } from './frontmatter.ts'
+import { parseDeckMeta } from './schema.ts'
 
 /**
  * The single deck resolver. Pure: takes already-fetched raw markdown (I/O lives

@@ -1,4 +1,4 @@
-import type { Slide } from '../types/presentation'
+import type { Slide } from '../types/presentation.ts'
 import { getMediaFit, resolveSlideBackground } from '@vignettes/core/render'
 
 export { getMediaFit, resolveSlideBackground }
