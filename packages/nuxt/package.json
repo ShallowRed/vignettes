@@ -1,0 +1,32 @@
+{
+  "name": "@vignettes/nuxt",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Nuxt module that renders a deck: the Reveal layer, the authoring components, the slide parsers, the theme pipeline and the French orthotypography directive.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/module.ts",
+    "./types": "./src/runtime/types/presentation.ts",
+    "./layouts": "./src/runtime/config/layouts.ts",
+    "./build/*": "./src/build/*.ts",
+    "./runtime/*": "./src/runtime/*"
+  },
+  "main": "./src/module.ts",
+  "types": "./src/module.ts",
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "@nuxt/kit": "^4.0.0",
+    "@nuxtjs/mdc": "*",
+    "mermaid": "*",
+    "reveal.js": "*",
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "@vignettes/core": "workspace:*",
+    "@vignettes/theme-kit": "workspace:*",
+    "@vignettes/typographie": "workspace:*",
+    "sass": "catalog:"
+  }
+}
