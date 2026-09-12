@@ -124,8 +124,8 @@ const SEED_DECKS: SeedDeck[] = [
   { slug: `${RECETTE_PREFIX}privee`, title: 'Recette · Privée', status: 'private', project: RECETTE_FOLDERS.private, theme: 'dsfr', note: 'Réservée aux rôles privilégiés ; un lecteur connecté reçoit 403, un anonyme 401.' },
   { slug: `${RECETTE_PREFIX}non-listee`, title: 'Recette · Non listée', status: 'public', project: RECETTE_FOLDERS.private, theme: 'dsfr', unlisted: true, note: 'Publique mais absente du catalogue public ; le lien direct fonctionne.' },
   { slug: `${RECETTE_PREFIX}archivee`, title: 'Recette · Archivée', status: 'public', project: RECETTE_FOLDERS.private, theme: 'dsfr', lifecycle: 'archived', note: 'Archivée : hors catalogue public, lien direct fonctionnel.' },
-  { slug: `${RECETTE_PREFIX}lecture`, title: 'Recette · Lecture seule', status: 'private', theme: 'brand', note: 'Sans dossier (Divers). Le collaborateur la voit en lecture seule, sans crayon.' },
-  { slug: `${RECETTE_PREFIX}corbeille`, title: 'Recette · Corbeille', status: 'private', project: RECETTE_FOLDERS.private, theme: 'brand', trashed: true, note: 'À la corbeille : 404 partout, restaurable par un rôle privilégié.' },
+  { slug: `${RECETTE_PREFIX}lecture`, title: 'Recette · Lecture seule', status: 'private', theme: 'minimal', note: 'Sans dossier (Divers). Le collaborateur la voit en lecture seule, sans crayon.' },
+  { slug: `${RECETTE_PREFIX}corbeille`, title: 'Recette · Corbeille', status: 'private', project: RECETTE_FOLDERS.private, theme: 'minimal', trashed: true, note: 'À la corbeille : 404 partout, restaurable par un rôle privilégié.' },
 ]
 
 function markdownFor(deck: SeedDeck): string {

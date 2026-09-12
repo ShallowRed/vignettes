@@ -52,3 +52,5 @@ public/themes/
 # Agent and editor scratch: kept locally, out of the published repository
 CONTRIBUTING.md
 .tooling/
+
+# Identity map: applied to the history once, then kept out of the published tree

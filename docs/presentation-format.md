@@ -635,7 +635,7 @@ the DSFR list), `title`, `n` (number badge); the default slot is the caption.
 
 ### JsonTour: a file read beside the description of what it holds
 ```markdown
-:::JsonTour{file="example-service / metadata.jsonld" size="xs" height="430px" panel="46%"}
+:::JsonTour{file="record / metadata.jsonld" size="xs" height="430px" panel="46%"}
 ::Zone{lines="2-8" picto="custom/fiche" title="Identité et propriétaire"}
 Un profil SEMIC, un identifiant, l'organisme qui répond de la règle
 ::
@@ -663,7 +663,7 @@ editor preview shows.
 `:stack="true"` puts the panel under the zones at full width, for a narrow column beside a media pane. `image` (with `alt`) shows a screenshot on the right of the tour, and each `Zone` names with `spot="x,y,w,h"`, in percent of the image, the area the current zone frames on it while the rest of the screen dims:
 
 ````md
-:::JsonTour{size="xs" height="190px" :stack="true" image="/images/catalogue-review/metadata/record.png" alt="The record page"}
+:::JsonTour{size="xs" height="190px" :stack="true" image="/images/metadata/record.png" alt="The record page"}
 ::Zone{lines="2-5" spot="9.5,3.5,45,10" title="One European profile for every rule"}
 CPSV-AP 3.2.0, the public service vocabulary of SEMIC
 ::

@@ -95,10 +95,10 @@ describe('manifest discovery', () => {
 describe('published index', () => {
   it('folds published themes into tokens and aliases', () => {
     const index = indexOf([
-      { tokens: { name: 'brand' }, aliases: [], publishedAt: '2026-09-11' },
+      { tokens: { name: 'brand-b' }, aliases: [], publishedAt: '2026-09-11' },
       { tokens: { name: 'brand-a' }, aliases: ['dsfr'], publishedAt: '2026-09-11' },
     ])
-    expect(Object.keys(index.tokens)).toEqual(['brand-a', 'brand'])
+    expect(Object.keys(index.tokens)).toEqual(['brand-a', 'brand-b'])
     expect(index.aliases).toEqual({ dsfr: 'brand-a' })
   })
 })

@@ -110,18 +110,18 @@ describe('user store', () => {
 
     it('gmail spellings of one inbox are one account: dedupe and claim', async () => {
       // Gmail ignores dots and +suffixes; googlemail.com aliases gmail.com.
-      const stub = await store.invite({ provider: 'google', handle: 'marie.durand.brand@gmail.com' })
-      const again = await store.invite({ provider: 'google', handle: 'camillemartin.brand+test@googlemail.com' })
+      const stub = await store.invite({ provider: 'google', handle: 'marie.durand@gmail.com' })
+      const again = await store.invite({ provider: 'google', handle: 'mariedurand+test@googlemail.com' })
       expect(again.id).toBe(stub.id)
       // Google reports a canonical spelling that differs from the invited one.
       const claimed = await store.upsertOAuthLogin(
-        { provider: 'google', providerId: '31415926535897932384', login: 'camillemartin.brand@gmail.com' },
+        { provider: 'google', providerId: '31415926535897932384', login: 'mariedurand@gmail.com' },
         'viewer',
         { claimInvited: true },
       )
       expect(claimed.id).toBe(stub.id)
       // The stored login becomes the canonical spelling.
-      expect(db.select().from(users).where(eq(users.id, stub.id)).get()!.login).toBe('camillemartin.brand@gmail.com')
+      expect(db.select().from(users).where(eq(users.id, stub.id)).get()!.login).toBe('mariedurand@gmail.com')
     })
 
     it('keeps dots significant outside gmail', async () => {
