@@ -1,4 +1,4 @@
-import { yDocUpdateToMarkdown } from '#shared/deck/ydoc'
+import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { assertCanEditDeck } from '../../../utils/access'
 import { useCollabServer, useDraftStore } from '../../../utils/collab'
 import { useDbContent } from '../../../utils/sources'

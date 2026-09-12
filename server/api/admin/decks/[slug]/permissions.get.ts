@@ -1,4 +1,4 @@
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { assertOwner } from '../../../../utils/access'
 import { usePermissionStore } from '../../../../utils/sources'
 

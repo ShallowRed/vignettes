@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import type { RevealConfig } from '~/types/presentation'
-import { EMBED_SANDBOX, mergeRevealConfig } from '#shared/render'
+import { EMBED_SANDBOX, mergeRevealConfig } from '@vignettes/core/render'
 
 export function useReveal(
   container: Ref<HTMLElement | null>,

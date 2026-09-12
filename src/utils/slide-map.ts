@@ -1,4 +1,4 @@
-import type { ParserId } from '#shared/deck'
+import type { ParserId } from '@vignettes/core/deck'
 
 /**
  * Editor-only source-to-slide mapping. The published render path parses markdown

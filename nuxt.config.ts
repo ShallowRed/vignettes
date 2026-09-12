@@ -32,6 +32,11 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/tailwind.css'],
 
+  // Workspace packages ship TypeScript sources: transpiled by Vite, inlined by Nitro.
+  build: {
+    transpile: ['@vignettes/core', '@vignettes/typographie'],
+  },
+
   ui: {
     // Reveal themes own their typography; keep the system font stack for the app.
     fonts: false,
@@ -68,7 +73,7 @@ export default defineNuxtConfig({
   app: {
     baseURL: bundle.baseUrl,
     head: {
-      title: 'Nuxt Slides',
+      title: 'Vignettes',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -109,6 +114,10 @@ export default defineNuxtConfig({
     // Experimental until Nitro v3; carries the /collab realtime endpoint.
     experimental: {
       websocket: true,
+    },
+
+    externals: {
+      inline: ['@vignettes/core', '@vignettes/typographie'],
     },
 
     prerender: {

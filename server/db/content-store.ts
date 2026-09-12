@@ -1,6 +1,6 @@
-import type { ContentSource, ContentWriter } from '#shared/deck'
+import type { ContentSource, ContentWriter } from '@vignettes/core/deck'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '#shared/deck'
+import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { and, eq, isNull } from 'drizzle-orm'
 import { decks, deckVersions } from './schema'
 

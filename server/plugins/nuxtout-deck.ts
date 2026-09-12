@@ -5,7 +5,7 @@
  */
 
 import { readBundleConfig } from '#shared/build'
-import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls } from '#shared/render'
+import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls } from '@vignettes/core/render'
 
 // Iframe scaler, inlined after Reveal.initialize (a separate <script src> gets
 // detached by Reveal). Mirrors public/scaled-frame.js; reads client size rather

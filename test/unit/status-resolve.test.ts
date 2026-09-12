@@ -1,5 +1,5 @@
+import { DEFAULT_STATUS, resolveDeckStatus } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_STATUS, resolveDeckStatus } from '../../shared/deck/status-resolve'
 
 function stub(frontmatter: string): string {
   return `---\n${frontmatter}\n---\n\n# Body\n`

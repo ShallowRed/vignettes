@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { normalizeIconName } from '#shared/deck'
+import { normalizeIconName } from '@vignettes/core/deck'
 import { computed } from 'vue'
 import { paletteVars } from '~/config/dsfr-palette'
 

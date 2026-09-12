@@ -1,5 +1,5 @@
-import type { ThemeRegistry } from '#shared/theme'
-import { setThemeRegistry } from '#shared/theme'
+import type { ThemeRegistry } from '@vignettes/core/theme'
+import { setThemeRegistry } from '@vignettes/core/theme'
 
 /**
  * Seed the theme registry on both sides of the render. The server middleware

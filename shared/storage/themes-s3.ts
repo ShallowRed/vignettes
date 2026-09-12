@@ -4,7 +4,7 @@
 // `themes/index.json` the push script rebuilds, which the server reads at boot.
 // Nuxt-free so the push script and the serving route share it.
 
-import type { ThemeRegistry, ThemeTokens } from '../theme/tokens'
+import type { ThemeRegistry, ThemeTokens } from '@vignettes/core/theme'
 
 export const THEMES_INDEX_KEY = 'themes/index.json'
 

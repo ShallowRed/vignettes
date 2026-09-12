@@ -1,6 +1,6 @@
 import type { DeckGrant } from '#shared/access'
-import type { ContentSource, DeckDirectory } from '#shared/deck'
 import type { ProjectDirectory } from '#shared/projects'
+import type { ContentSource, DeckDirectory } from '@vignettes/core/deck'
 import { strongerGrant } from '#shared/access'
 import { eq } from 'drizzle-orm'
 import { createDbContent } from '../db/content-store'

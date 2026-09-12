@@ -1,6 +1,6 @@
 # Background images
 
-Each `<section>` receives a `data-background-image` attribute resolved by `resolveSlideBackground` in `shared/render/transforms.ts`, in this order:
+Each `<section>` receives a `data-background-image` attribute resolved by `resolveSlideBackground` in `packages/core/src/render/transforms.ts`, in this order:
 
 1. the per-slide annotation `:slide-background{image="..."}`, extracted by the parser and never rendered;
 2. the `backgrounds:` block of the deck frontmatter;

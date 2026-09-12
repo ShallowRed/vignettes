@@ -1,5 +1,5 @@
+import { createTtlCache } from '@vignettes/core/deck'
 import { describe, expect, it, vi } from 'vitest'
-import { createTtlCache } from '../../shared/deck/cache'
 
 describe('createTtlCache', () => {
   it('memoizes within the TTL window and reloads after it', async () => {

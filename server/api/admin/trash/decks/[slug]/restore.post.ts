@@ -1,4 +1,4 @@
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 /** POST /api/admin/trash/decks/:slug/restore — bring a trashed deck back. */
 import { assertPrivileged } from '../../../../../utils/access'
 

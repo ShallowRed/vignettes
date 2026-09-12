@@ -1,5 +1,5 @@
+import { isDeckSlug, prepareDeckWrite } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
-import { isDeckSlug, prepareDeckWrite } from '../../shared/deck/source'
 
 describe('isDeckSlug', () => {
   it('accepts letters, digits, dash and underscore', () => {

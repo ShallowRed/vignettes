@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { resolveDeckStatus } from '../deck/status-resolve'
+import { resolveDeckStatus } from '@vignettes/core/deck'
 
 // Build-time discovery of public deck slugs for prerendering (SSG). Status lives
 // in frontmatter; the legacy `public/` folder is used as fallback for un-migrated

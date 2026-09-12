@@ -1,14 +1,14 @@
-import type { DeckModel } from '../../shared/deck/model'
-import { describe, expect, it } from 'vitest'
+import type { DeckModel } from '@vignettes/core/deck'
 import {
   buildPrintPdfUrl,
   buildPrintView,
   createPrintRenderer,
   DEFAULT_PRINT_HEIGHT,
   DEFAULT_PRINT_WIDTH,
+  DEFAULT_REVEAL_CONFIG,
   PRINT_PDF_QUERY,
-} from '../../shared/render/print'
-import { DEFAULT_REVEAL_CONFIG } from '../../shared/render/reveal'
+} from '@vignettes/core/render'
+import { describe, expect, it } from 'vitest'
 
 function model(reveal?: DeckModel['meta']['reveal']): DeckModel {
   return { meta: { reveal }, slides: [], assets: [] }

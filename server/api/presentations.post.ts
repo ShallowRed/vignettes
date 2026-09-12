@@ -1,5 +1,5 @@
-import { isDeckSlug } from '#shared/deck'
-import { markdownToYDocUpdate } from '#shared/deck/ydoc'
+import { markdownToYDocUpdate } from '#shared/collab/ydoc'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { assertCanCreateInProject } from '../utils/access'
 import { useDraftStore } from '../utils/collab'

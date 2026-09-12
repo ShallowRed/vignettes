@@ -2,9 +2,6 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { discoverThemes, manifestTokens, registryOf, themeAliases } from '../../scripts/lib/theme-registry'
-import { indexOf } from '../../shared/storage/themes-s3'
 import {
   builtInThemeRegistry,
   getThemeTokens,
@@ -12,7 +9,10 @@ import {
   knownThemes,
   resolveThemeName,
   setThemeRegistry,
-} from '../../shared/theme/tokens'
+} from '@vignettes/core/theme'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { discoverThemes, manifestTokens, registryOf, themeAliases } from '../../scripts/lib/theme-registry'
+import { indexOf } from '../../shared/storage/themes-s3'
 
 describe('runtime theme registry', () => {
   afterEach(() => setThemeRegistry(null))

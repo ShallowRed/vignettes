@@ -34,6 +34,8 @@
     "@hocuspocus/server": "catalog:",
     "@iconify/vue": "catalog:",
     "@lezer/highlight": "catalog:",
+    "@vignettes/core": "workspace:*",
+    "@vignettes/typographie": "workspace:*",
     "@nuxt/ui": "catalog:",
     "@nuxtjs/mdc": "catalog:",
     "@pinia/colada": "catalog:",

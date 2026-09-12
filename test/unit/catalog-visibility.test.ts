@@ -5,7 +5,7 @@ import { listVisiblePresentations, listVisibleProjects } from '../../server/util
 import { useDraftStore } from '../../server/utils/collab'
 import { useDb } from '../../server/utils/db'
 import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../server/utils/sources'
-import { markdownToYDocUpdate } from '../../shared/deck/ydoc'
+import { markdownToYDocUpdate } from '../../shared/collab/ydoc'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The catalog reports capability, not role: an `editor` grant is what the server

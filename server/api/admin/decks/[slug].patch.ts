@@ -1,5 +1,5 @@
 import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { getActorRole } from '../../../utils/actor'
 import { hashAccessPassword } from '../../../utils/password'

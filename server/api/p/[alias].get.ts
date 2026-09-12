@@ -1,4 +1,4 @@
-import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '#shared/deck'
+import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { gateDeckAccess } from '../../utils/access'
 import { deckDirectory, publishedSource, useDeckMeta } from '../../utils/sources'
 

@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { resolveThemeName } from '#shared/theme'
+import { resolveThemeName } from '@vignettes/core/theme'
 
 export function useTheme(themeName: Ref<string> | string) {
   let themeLink: HTMLLinkElement | null = null

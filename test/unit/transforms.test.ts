@@ -1,5 +1,4 @@
-import type { Slide } from '../../shared/deck/model'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import type { Slide } from '@vignettes/core/deck'
 import {
   buildDeckModel,
   collectAssets,
@@ -7,8 +6,9 @@ import {
   resolveSlideBackground,
   resolveSlideMedia,
   runTransforms,
-} from '../../shared/render/transforms'
-import { setThemeRegistry } from '../../shared/theme/tokens'
+} from '@vignettes/core/render'
+import { setThemeRegistry } from '@vignettes/core/theme'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // A tenant theme with backgrounds, registered the way the server does at runtime.
 beforeAll(() => setThemeRegistry({

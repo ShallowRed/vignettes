@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest'
 import {
   serializeFrontmatter,
   splitFrontmatter,
   stringifyDocument,
   stripFrontmatter,
-} from '../../shared/deck/frontmatter'
+} from '@vignettes/core/deck'
+import { describe, expect, it } from 'vitest'
 
 describe('splitFrontmatter', () => {
   it('parses nested keys the legacy flat parser dropped (margins bug)', () => {

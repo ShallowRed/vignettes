@@ -1,5 +1,5 @@
-import { isDeckSlug } from '#shared/deck'
 import { PROJECT_ICONS } from '#shared/projects'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 /**
  * POST /api/admin/projects — create a project (a first-class catalog folder).

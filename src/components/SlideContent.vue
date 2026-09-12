@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PresentationMetadata, Slide } from '~/types/presentation'
-import { EMBED_SANDBOX, resolveSlideMedia } from '#shared/render'
 import MDCRenderer from '@nuxtjs/mdc/runtime/components/MDCRenderer.vue'
+import { EMBED_SANDBOX, resolveSlideMedia } from '@vignettes/core/render'
 import { getLayoutStrategy } from '~/config/layouts'
 import { quicklinkParts } from '~/utils/slide-rendering'
 

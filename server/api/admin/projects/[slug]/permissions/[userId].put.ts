@@ -1,5 +1,5 @@
 import { DeckGrantSchema } from '#shared/access'
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { assertOwner } from '../../../../../utils/access'
 import { useProjectPermissionStore } from '../../../../../utils/sources'

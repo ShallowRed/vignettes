@@ -1,5 +1,5 @@
 import type { Slide } from '~/types/presentation'
-import { getMediaFit, resolveSlideBackground } from '#shared/render'
+import { getMediaFit, resolveSlideBackground } from '@vignettes/core/render'
 
 export { getMediaFit, resolveSlideBackground }
 

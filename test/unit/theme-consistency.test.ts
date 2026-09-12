@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs'
+import { checkThemeConsistency } from '@vignettes/core/theme'
 import { describe, expect, it } from 'vitest'
-import { checkThemeConsistency } from '../../shared/theme/consistency'
 
 describe('checkThemeConsistency', () => {
   it('reports ok when tokens and css match exactly', () => {

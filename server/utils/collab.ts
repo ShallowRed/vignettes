@@ -1,5 +1,5 @@
-import { isDeckSlug } from '#shared/deck'
 import { Hocuspocus } from '@hocuspocus/server'
+import { isDeckSlug } from '@vignettes/core/deck'
 import * as Y from 'yjs'
 import { createDraftStore } from '../db/draft-store'
 import { useDb } from './db'
@@ -48,7 +48,7 @@ export function useDraftStore() {
  */
 export function useCollabServer(): Hocuspocus {
   instance ??= new Hocuspocus({
-    name: 'nuxt-slides-collab',
+    name: 'vignettes-collab',
 
     async onLoadDocument({ documentName, document, context }) {
       if (!isDeckSlug(documentName)) {

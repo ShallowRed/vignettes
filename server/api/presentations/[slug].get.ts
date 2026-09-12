@@ -1,6 +1,6 @@
 import { readBundleConfig } from '#shared/build'
-import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '#shared/deck'
-import { yDocUpdateToMarkdown } from '#shared/deck/ydoc'
+import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
+import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { assertCanEditDeck, gateDeckAccess } from '../../utils/access'
 import { useDraftStore } from '../../utils/collab'
 import { useDbContent, useDeckMeta } from '../../utils/sources'

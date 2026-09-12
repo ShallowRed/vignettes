@@ -4,7 +4,7 @@ export default antfu({
   vue: true,
   // Drizzle rewrites these on every `drizzle-kit generate` (no trailing newline),
   // so linting them only invites `--fix` to churn generated files.
-  ignores: ['server/db/migrations/**', 'shared/theme/tokens.generated.ts'],
+  ignores: ['server/db/migrations/**', 'packages/core/src/theme/tokens.generated.ts'],
   rules: {
     'no-console': 'off',
     'no-debugger': 'off',

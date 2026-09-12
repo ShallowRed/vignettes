@@ -1,7 +1,6 @@
-import type { DeckModel } from '../../shared/deck/model'
+import type { DeckModel } from '@vignettes/core/deck'
+import { DECK_MODEL_VERSION, parseDeckModel, parserIdFor, serializeDeckModel } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
-import { DECK_MODEL_VERSION, parseDeckModel, serializeDeckModel } from '../../shared/deck/model'
-import { parserIdFor } from '../../shared/deck/parser'
 
 describe('deckModel IR serialization (audit §5.8)', () => {
   const model: DeckModel = {

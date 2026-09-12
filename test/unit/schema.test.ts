@@ -1,5 +1,5 @@
+import { parseDeckMeta } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
-import { parseDeckMeta } from '../../shared/deck/schema'
 
 describe('parseDeckMeta', () => {
   it('coerces numeric reveal options coming from strings', () => {

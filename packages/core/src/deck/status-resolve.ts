@@ -1,5 +1,5 @@
-import type { PublicationStatus } from '../access/status'
-import { PublicationStatusSchema } from '../access/status'
+import type { PublicationStatus } from '../status'
+import { PublicationStatusSchema } from '../status'
 import { splitFrontmatter } from './frontmatter'
 
 /** Closed default: a missing/invalid status MUST fail closed. Never default more open. */

@@ -2,14 +2,14 @@
 // shared `DeckParser` port: parseSlides (heading-based) and
 // parseSlidesFromSeparators (--- / ---- separators).
 
-import type { DeckParser, Slide } from '#shared/deck'
 import type { MDCParserResult } from '@nuxtjs/mdc'
+import type { DeckParser, Slide } from '@vignettes/core/deck'
+import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import {
   BACKGROUND_ANNOTATION_TAG,
   FULL_SLIDE_COMPONENT_NAMES,
   STRIPPED_ANNOTATION_TAGS,
-} from '#shared/deck'
-import { parseMarkdown } from '@nuxtjs/mdc/runtime'
+} from '@vignettes/core/deck'
 
 export function getHeadingLevel(children: any[]): string | undefined {
   if (!children || children.length === 0)

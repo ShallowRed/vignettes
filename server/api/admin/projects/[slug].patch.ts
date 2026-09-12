@@ -1,5 +1,5 @@
-import { isDeckSlug } from '#shared/deck'
 import { PROJECT_ICONS } from '#shared/projects'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 /**
  * PATCH /api/admin/projects/:slug — rename, recolor, reorder, or change the slug

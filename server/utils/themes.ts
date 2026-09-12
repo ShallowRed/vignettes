@@ -1,9 +1,9 @@
-import type { ThemeRegistry } from '#shared/theme'
+import type { ThemeRegistry } from '@vignettes/core/theme'
 import process from 'node:process'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { THEMES_INDEX_KEY } from '#shared/storage/themes-s3'
-import { setThemeRegistry } from '#shared/theme'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { setThemeRegistry } from '@vignettes/core/theme'
 import { discoverThemes, registryOf } from '../../scripts/lib/theme-registry.ts'
 
 /**

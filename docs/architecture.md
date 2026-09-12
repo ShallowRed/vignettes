@@ -1,8 +1,8 @@
-# Nuxt Slides Architecture
+# Vignettes Architecture
 
 ## System Overview
 Nuxt 4 presentation system converting MDC markdown to reveal.js slides. Ports-and-adapters
-architecture: an isomorphic domain core (`shared/`) sits between the client app (`src/`) and
+architecture: a framework-free deck core (`packages/core`, `@vignettes/core`) and the studio's own domain (`shared/`) sit between the client app (`src/`) and
 the Nitro server (`server/`). Every page renders per request in production; the only prerendered output is the single-deck bundle mode.
 
 ## Core Stack
@@ -23,7 +23,7 @@ imported via the `#shared` alias). See "Shared Domain Layer" below.
 
 ```
 src/                                # Nuxt app (srcDir)
-├── app.vue, layouts/, middleware/, plugins/, directives/
+├── app.vue, layouts/, middleware/, plugins/
 ├── types/presentation.ts          # Type definitions (Slide, PresentationMetadata, RevealConfig)
 ├── config/
 │   ├── presentation.ts            # Constants (defaults, MDC component mappings)
@@ -33,11 +33,9 @@ src/                                # Nuxt app (srcDir)
 │   ├── slide-ast.ts               # MDC AST → Slide[] + PARSERS registry (pure, stateless)
 │   ├── slide-rendering.ts         # Pure helpers: quicklinkParts, getMediaFit, getSlideClasses, resolveSlideBackground
 │   ├── slugify.ts                 # slugify + getTextContent
-│   ├── storybook.ts               # Storybook embed helpers
-│   ├── french-typography.ts       # French spacing rules
-│   └── dom-text-transformer.ts    # DOM text utilities
+│   └── storybook.ts               # Storybook embed helpers
 ├── composables/                   # Reactive state & business logic
-│   ├── usePresentation.ts         # Data loading with useAsyncData (delegates to #shared/deck parser port)
+│   ├── usePresentation.ts         # Data loading with useAsyncData (delegates to the core parser port)
 │   ├── useAppSession.ts           # Auth session state
 │   ├── useSlideIds.ts             # Deduplicated HTML ids for slides
 │   ├── useReveal.ts               # Reveal.js lifecycle management
@@ -90,12 +88,18 @@ server/                             # Nitro server (repo root, NOT under src/)
 ├── plugins/                        # migrations.ts (boot), theme-consistency.ts, nuxtout-deck.ts (bundle mode)
 └── utils/                          # Adapters: access, actor, catalog, collab, content-token, db, password, rate-limit, recette, sources, users
 
-shared/                             # Isomorphic domain core (#shared alias) — see below
-├── deck/        # deck resolution, parser port, schema, frontmatter, merge, presets, cache
-├── access/      # roles, publication status, access-decision matrix (pure)
-├── content/     # content-source config + fetch policy
-├── render/      # reveal config, Storybook embed, transform pipeline (writer side)
+packages/core/src/                  # @vignettes/core: the deck core, framework-free (see below)
+├── deck/        # deck resolution, parser port, schema, frontmatter, model, cache
+├── render/      # reveal config, Storybook embed, transform pipeline, print writer
 ├── theme/       # theme tokens (single source of truth) + consistency check
+└── status.ts    # publication status and lifecycle vocabulary
+
+packages/typographie/src/           # @vignettes/typographie: French orthotypography directive
+
+shared/                             # Studio domain (#shared alias) — see below
+├── access/      # roles, publication status, access-decision matrix (pure)
+├── collab/      # markdown ↔ Y.Doc conversion
+├── content/     # content-source config + fetch policy
 ├── presentations/ # catalog wire contract + status display config
 ├── projects/    # project-registry schema
 └── build/       # bundle toggles, freeze descriptor, public-deck discovery
@@ -118,22 +122,26 @@ client (`src/`) and the Nitro server (`server/`) import via `#shared/...`. Ports
 live in `server/utils/`. As a rule: a `shared/<x>` module has a matching `server/utils/<x>`
 adapter (e.g. `shared/access` decision logic ↔ `server/utils/access.ts` session/crypto).
 
-- **`shared/deck`** — "what is the config of this deck?". `resolveDeck()` is the pure pivot
+The deck core itself is the workspace package `@vignettes/core` (`packages/core/`), which depends on nothing in the application and ships its TypeScript sources (`build.transpile` for Vite, `nitro.externals.inline` for the server bundle). `shared/` keeps the studio's own domain (access, catalog, projects, trash, collaboration, storage, build).
+
+- **`@vignettes/core/deck`** — "what is the config of this deck?". `resolveDeck()` is the pure pivot
   the three deck routes converge on: it merges layers (preset → stub → note-frontmatter
   whitelist), validates once through the zod `DeckMetaSchema`, and returns metadata + body +
   provenance. Also exposes the **parser port**: `ParserId = 'heading' | 'separator'`,
   `parserIdFor(meta)`, and the `DeckParser` contract. The concrete parsers depend on the MDC
   runtime so their implementations stay in `src/utils/slide-ast.ts` (`PARSERS` registry);
   `usePresentation` selects one via `PARSERS[parserIdFor(metadata)]`.
-- **`shared/access`** — "may this actor view/list/admin this deck?". Pure `Role`,
-  `PublicationStatus`, `decideAccess`/`canList` capability matrix, env login→role resolution.
-- **`shared/content`** — declared content-source config + pure fetch-policy decision
-  (replaces the implicit submodule + token + ad-hoc-script tangle).
-- **`shared/render`** — the "writer" side of the deck hexagon: shared Reveal config defaults,
-  iframe sandbox policy, asset-URL rebasing, Storybook embed URL shape, named transforms.
-- **`shared/theme`** — theme **tokens** are the single source of truth for a theme's data
+- **`@vignettes/core/render`** — the "writer" side of the deck hexagon: shared Reveal config defaults,
+  iframe sandbox policy, asset-URL rebasing, Storybook embed URL shape, named transforms, print writer.
+- **`@vignettes/core/theme`** — theme **tokens** are the single source of truth for a theme's data
   (backgrounds, Reveal dimensions), from which presets, backgrounds, and the generated SCSS
   partial derive; `consistency` cross-checks tokens ↔ compiled CSS ↔ source at boot.
+- **`@vignettes/core/status`** — the publication status and lifecycle vocabulary, re-exported by `shared/access`.
+- **`shared/access`** — "may this actor view/list/admin this deck?". Pure `Role`,
+  `PublicationStatus`, `decideAccess`/`canList` capability matrix, env login→role resolution.
+- **`shared/collab`** — markdown ↔ Y.Doc conversion for the collaborative draft.
+- **`shared/content`** — declared content-source config + pure fetch-policy decision
+  (replaces the implicit submodule + token + ad-hoc-script tangle).
 - **`shared/presentations`** — catalog wire contract + status display config, shared by
   `GET /api/presentations` and the home/admin pages.
 - **`shared/projects`** — project-registry schema (YAML I/O in `server/utils/projects.ts`).
@@ -142,10 +150,10 @@ adapter (e.g. `shared/access` decision logic ↔ `server/utils/access.ts` sessio
 
 ## Data Flow
 ```
-[published version in SQLite] → [server/utils/sources] → [resolveDeck (#shared/deck)] → [API route JSON]
+[published version in SQLite] → [server/utils/sources] → [resolveDeck (@vignettes/core/deck)] → [API route JSON]
                                                                                          ↓
 [API route] → [usePresentation] → [PARSERS[parserIdFor(metadata)].parse()] → [Slide[]]
-                    ↓                         (parser port #shared/deck + src/utils/slide-ast.ts)
+                    ↓                         (parser port @vignettes/core/deck + src/utils/slide-ast.ts)
              [useAsyncData caching]
                     ↓
         [RevealPresentation + MDCRenderer]
@@ -159,7 +167,7 @@ adapter (e.g. `shared/access` decision logic ↔ `server/utils/access.ts` sessio
 
 ### Separation of Concerns
 - **Types** (`src/types/`): Shared TypeScript interfaces
-- **Config** (`src/config/`): Constants and registries, no reactive state — `presentation.ts` (MDC mappings, backgrounds), `layouts.ts` (layout strategy registry), `injection-keys.ts` (typed provide/inject keys). Deck presets live in `shared/deck/presets.ts` (derived from theme tokens).
+- **Config** (`src/config/`): Constants and registries, no reactive state — `presentation.ts` (MDC mappings, backgrounds), `layouts.ts` (layout strategy registry), `injection-keys.ts` (typed provide/inject keys). Theme data lives in `@vignettes/core/theme`.
 - **Shared** (`shared/`): isomorphic domain core imported via `#shared` — see "Shared Domain Layer".
 - **Server** (`server/`): Nitro API routes + `server/utils/` I/O adapters over the shared ports.
 - **Utils** (`src/utils/`): Pure, stateless functions — `slide-ast.ts` (MDC AST → Slide[] conversion), `slide-rendering.ts` (class/background/media helpers), `slugify.ts`, etc.
@@ -185,10 +193,10 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 
 ### Theme System
 Three layers:
-- `packages/theme-kit` (`@nuxt-slides/theme-kit`): engine-level CSS shipped with every theme (Reveal patches, MDC `display: contents` bridge, media-layout grid, slide-h1/h2/h3 flex skeleton, quicklinks, neutral semantic tokens, the `dsfr-layout` scale preset).
-- `packages/theme-dsfr` (`@nuxt-slides/theme-dsfr`): the brand-neutral DSFR base (palette, Marianne, light surfaces), usable as is and made to be extended.
+- `packages/theme-kit` (`@vignettes/theme-kit`): engine-level CSS shipped with every theme (Reveal patches, MDC `display: contents` bridge, media-layout grid, slide-h1/h2/h3 flex skeleton, quicklinks, neutral semantic tokens, the `dsfr-layout` scale preset).
+- `packages/theme-dsfr` (`@vignettes/theme-dsfr`): the brand-neutral DSFR base (palette, Marianne, light surfaces), usable as is and made to be extended.
 - `themes/<name>/` in the application and in the content space (`NUXT_CONTENT_DIR/themes`): a `theme.json` manifest (language, parser, Reveal defaults, backgrounds, aliases), an SCSS entry that `@use`s the packages through sass's `pkg:` importer, and `assets/`.
-- `scripts/build-theme-tokens.ts` generates `shared/theme/tokens.generated.ts` from the manifests; `scripts/build-themes.ts` compiles to `public/themes/<name>.css` and copies assets to `public/themes/<name>/`.
+- `scripts/build-theme-tokens.ts` generates `packages/core/src/theme/tokens.generated.ts` from the manifests; `scripts/build-themes.ts` compiles to `public/themes/<name>.css` and copies assets to `public/themes/<name>/`.
 - Per-presentation selection via frontmatter (`theme: <name>`), aliases resolved by `resolveThemeName`; the CSS is loaded via `<link>`.
 - Hot-reload in dev via Vite plugin (watches theme directories and `packages/`).
 
@@ -344,7 +352,7 @@ Create composable implementing `{ parseSlides }` interface, swap in usePresentat
 Add to DEFAULT_REVEAL_CONFIG or pass custom config to RevealPresentation.
 
 ## Performance Optimizations
-- Source cache: shared TTL cache (`shared/deck/cache`) over content sources + registry
+- Source cache: shared TTL cache (`@vignettes/core/deck`) over content sources + registry
 - Code splitting: Reveal.js loaded client-side only
 - Lazy loading: Themes loaded on demand
 - Caching: useAsyncData deduplicates by key

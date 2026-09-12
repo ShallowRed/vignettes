@@ -1,4 +1,4 @@
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { assertOwner } from '../../../../utils/access'
 import { useCollabServer } from '../../../../utils/collab'
 import { useDeckMeta } from '../../../../utils/sources'

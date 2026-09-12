@@ -9,7 +9,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
-import { checkThemeConsistency } from '#shared/theme'
+import { checkThemeConsistency } from '@vignettes/core/theme'
 import { loadTenantThemes } from '../utils/themes'
 
 export default defineNitroPlugin(async () => {

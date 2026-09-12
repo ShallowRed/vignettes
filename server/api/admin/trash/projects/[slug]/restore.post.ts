@@ -1,4 +1,4 @@
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 /**
  * POST /api/admin/trash/projects/:slug/restore — restore a project and every
  * deck currently trashed under it (the folder comes back whole).

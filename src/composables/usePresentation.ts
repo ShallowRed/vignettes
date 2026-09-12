@@ -1,6 +1,6 @@
 import type { PresentationData } from '~/types/presentation'
-import { parserIdFor } from '#shared/deck'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
+import { parserIdFor } from '@vignettes/core/deck'
 import { DEFAULT_METADATA } from '~/config/presentation'
 import { PARSERS } from '~/utils/slide-ast'
 

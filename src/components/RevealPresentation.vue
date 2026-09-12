@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RevealConfig } from '~/types/presentation'
-import { buildPrintPdfUrl, buildPrintView, mergeRevealConfig, PRINT_PDF_QUERY } from '#shared/render'
+import { buildPrintPdfUrl, buildPrintView, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import 'reveal.js/dist/reveal.css'
 // With `?print-pdf` in the URL, Reveal adds `reveal-print` to <html> and this
 // stylesheet lays the deck out one slide per page.
@@ -56,7 +56,7 @@ function reopenPrintDialog() {
 }
 
 // Serialised onto `.reveal` so the frozen prerendered bundle can init Reveal with
-// the deck's frontmatter `reveal:` config, not just defaults. DDR-017 §2.a-ter.
+// the deck's frontmatter `reveal:` config, not just defaults.
 const resolvedRevealConfig = computed(() =>
   JSON.stringify(mergeRevealConfig(props.config)))
 

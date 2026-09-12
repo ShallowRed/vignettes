@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates `shared/theme/tokens.generated.ts` from the manifests of the
+ * Generates `packages/core/src/theme/tokens.generated.ts` from the manifests of the
  * application's own themes (`themes/`), so the runtime (frontmatter validation,
  * background images, deck dimensions, theme pickers) starts with the same
  * declarations the SCSS build compiles. Tenant themes from the content space are
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url'
 import { checkExtends, discoverThemes, manifestTokens, themeAliases } from './lib/theme-registry.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const outPath = join(root, 'shared/theme/tokens.generated.ts')
+const outPath = join(root, 'packages/core/src/theme/tokens.generated.ts')
 
 const all = discoverThemes(root)
 for (const warning of [...themeAliases(all).warnings, ...checkExtends(all)])

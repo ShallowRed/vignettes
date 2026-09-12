@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_REVEAL_CONFIG,
   EMBED_SANDBOX,
   mergeRevealConfig,
   rebaseAssetUrls,
-} from '../../shared/render/reveal'
+} from '@vignettes/core/render'
+import { describe, expect, it } from 'vitest'
 
 describe('mergeRevealConfig', () => {
   it('returns the defaults when no deck config is given', () => {

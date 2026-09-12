@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // normalizeIconName accepts both Iconify (`ri:home-line`) and Remix CSS-class (`ri-home-line`) forms.
-import { normalizeIconName } from '#shared/deck'
+import { normalizeIconName } from '@vignettes/core/deck'
 
 interface Props {
   name: string

@@ -3,21 +3,18 @@ import type { RevealConfig } from '../deck/schema'
 import { mergeRevealConfig } from './reveal'
 
 /**
- * Print / PDF writer (audit §5.8 / §4.5 Pandoc writers, P1bis #14).
+ * Print / PDF writer.
  *
- * The audit calls a clean print/PDF output "trivial once the IR + Renderer port
- * exist — without touching the parser". This module is exactly that: a writer
- * that consumes the `DeckModel` and emits everything a caller needs to render the
- * deck for print, reusing reveal.js's native `?print-pdf` mode rather than adding
- * a second rendering engine. No new parser, no Vue — pure and serializable, so it
- * is the same on client, server, and in a future CLI export.
+ * A writer consumes the `DeckModel` and emits everything a caller needs to render
+ * the deck for print, reusing reveal.js's native `?print-pdf` mode rather than
+ * adding a second rendering engine. Pure and serializable, so it is the same on
+ * client, server, and in a CLI export.
  *
- * It also materializes the `DeckRenderer` port type that §5.8 names but that the
- * P1bis render helpers ({@link mergeRevealConfig}, sandbox, rebasing) had left
- * implicit — `revealLive` / `revealFrozen` / `print` are now writers of one shape.
+ * It also carries the `DeckRenderer` port type: `revealLive`, `revealFrozen` and
+ * `print` are writers of one shape.
  */
 
-/** What a renderer produces from a deck model — kept generic over its output. */
+/** What a renderer produces from a deck model, kept generic over its output. */
 export interface RenderOutput<T = unknown> {
   /** Stable id of the renderer that produced this (`reveal-live`, `print`, …). */
   renderer: string
@@ -25,7 +22,7 @@ export interface RenderOutput<T = unknown> {
 }
 
 /**
- * The output port (§5.8): every writer consumes the IR and produces a
+ * The output port: every writer consumes the deck model and produces a
  * `RenderOutput`. `revealLive` (Vue), `revealFrozen` (static bundle), and `print`
  * (this module) are implementations; a `pdf`/`marp` writer would be one more,
  * never a new parser.

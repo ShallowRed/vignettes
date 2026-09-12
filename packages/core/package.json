@@ -1,0 +1,21 @@
+{
+  "name": "@vignettes/core",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Deck core: the markdown dialect contract, the deck schema and model, deck resolution, render transforms and theme tokens. Framework-free.",
+  "license": "MIT",
+  "exports": {
+    "./deck": "./src/deck/index.ts",
+    "./render": "./src/render/index.ts",
+    "./theme": "./src/theme/index.ts",
+    "./status": "./src/status.ts",
+    "./*": "./src/*.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "js-yaml": "catalog:",
+    "zod": "catalog:"
+  }
+}

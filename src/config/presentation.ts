@@ -1,6 +1,6 @@
 import type { PresentationMetadata } from '~/types/presentation'
-import { buildComponentMap, FULL_SLIDE_COMPONENT_NAMES } from '#shared/deck'
-import { DEFAULT_REVEAL_CONFIG } from '#shared/render'
+import { buildComponentMap, FULL_SLIDE_COMPONENT_NAMES } from '@vignettes/core/deck'
+import { DEFAULT_REVEAL_CONFIG } from '@vignettes/core/render'
 
 export const DEFAULT_METADATA: PresentationMetadata = {
   theme: 'minimal',

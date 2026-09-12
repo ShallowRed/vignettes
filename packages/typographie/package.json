@@ -1,0 +1,16 @@
+{
+  "name": "@vignettes/typographie",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "French orthotypography for rendered DOM text: non-breaking spaces before double punctuation, French quotes, and a Vue directive that applies the rules to a subtree and keeps them applied as it changes.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  }
+}

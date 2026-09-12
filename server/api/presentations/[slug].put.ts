@@ -10,8 +10,8 @@
  * than silently replacing their work.
  */
 
-import { prepareDeckWrite } from '#shared/deck'
-import { markdownToYDocUpdate } from '#shared/deck/ydoc'
+import { markdownToYDocUpdate } from '#shared/collab/ydoc'
+import { prepareDeckWrite } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../../utils/access'
 import { useCollabServer, useDraftStore } from '../../utils/collab'
 

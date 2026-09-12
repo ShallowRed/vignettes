@@ -1,4 +1,4 @@
-import type { Lifecycle } from '../access/status'
+import type { Lifecycle } from '../status'
 
 /**
  * `DeckDirectory` port: the diffusion registry — stable aliases, lifecycle and

@@ -1,4 +1,4 @@
-import type { DraftStore } from '#shared/deck'
+import type { DraftStore } from '@vignettes/core/deck'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { Buffer } from 'node:buffer'
 import { eq } from 'drizzle-orm'

@@ -1,4 +1,4 @@
-import type { RevealConfig, Slide, ThemeBackgrounds } from '#shared/deck'
+import type { RevealConfig, Slide, ThemeBackgrounds } from '@vignettes/core/deck'
 
 export type { RevealConfig, Slide, ThemeBackgrounds }
 

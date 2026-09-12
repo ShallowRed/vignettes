@@ -1,6 +1,5 @@
+import { resolveDeck, splitFrontmatter } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
-import { splitFrontmatter } from '../../shared/deck/frontmatter'
-import { resolveDeck } from '../../shared/deck/resolve'
 
 describe('resolveDeck — stub frontmatter is the only truth', () => {
   const stub = [

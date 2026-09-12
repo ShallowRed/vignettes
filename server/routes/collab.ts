@@ -1,5 +1,5 @@
 import type { Peer } from 'crossws'
-import { isDeckSlug } from '#shared/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'

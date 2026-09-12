@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest'
 import {
   BACKGROUND_ANNOTATION_TAG,
   buildComponentMap,
   normalizeIconName,
   STRIPPED_ANNOTATION_TAGS,
-} from '../../shared/deck/components'
+} from '@vignettes/core/deck'
+import { describe, expect, it } from 'vitest'
 
 describe('annotation contract', () => {
   it('strips every annotation except the background one (handled separately)', () => {

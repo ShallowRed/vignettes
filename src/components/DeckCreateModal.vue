@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { Project } from '#shared/projects'
-import { isDeckSlug } from '#shared/deck'
-import { knownThemes } from '#shared/theme'
 import { useMutation } from '@pinia/colada'
+import { isDeckSlug } from '@vignettes/core/deck'
+import { knownThemes } from '@vignettes/core/theme'
 import { deckApi } from '~/api'
 import { useCatalogCache } from '~/composables/useCatalog'
 import { useFormModal } from '~/composables/useFormModal'

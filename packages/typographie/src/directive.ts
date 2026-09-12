@@ -1,6 +1,6 @@
 import type { Directive } from 'vue'
-import { DomTextTransformer } from '~/utils/dom-text-transformer'
-import { transformerTexte } from '~/utils/french-typography'
+import { DomTextTransformer } from './dom-text-transformer'
+import { transformerTexte } from './french-typography'
 
 const observers = new WeakMap<HTMLElement, MutationObserver>()
 

@@ -4,8 +4,8 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 ## Layers
 
-1. **Engine**, package `@nuxt-slides/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `dsfr-layout` scale preset. Themes build on this layer and never replace it.
-2. **DSFR base**, package `@nuxt-slides/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `dsfr-layout` scale, light surfaces. Usable as is (`theme: dsfr`) and made to be extended. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
+1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `dsfr-layout` scale preset. Themes build on this layer and never replace it.
+2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `dsfr-layout` scale, light surfaces. Usable as is (`theme: dsfr`) and made to be extended. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
 3. **Themes and brands**: `themes/<name>/` in the application (`dsfr`, `dsfr-standalone`, `minimal`) and `themes/<name>/` in the content space (`NUXT_CONTENT_DIR`, `presentations/` by default) for a tenant's brands. A brand extends the DSFR base or the engine alone.
 
 ## Manifest
@@ -36,7 +36,7 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 | `entry` | SCSS entry, `<name>.scss` by default |
 | `assets` | Extra directories copied under `public/themes/<name>/`: `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root |
 
-`shared/theme/tokens.generated.ts` is generated from the manifests of the application's themes by `scripts/build-theme-tokens.ts` and committed; it seeds the runtime registry in `shared/theme/tokens.ts` (`knownThemes`, `resolveThemeName`, `isKnownTheme`, `getThemeTokens`). Frontmatter accepts canonical names and aliases; `resolveThemeName` maps a name to the theme whose CSS is loaded.
+`packages/core/src/theme/tokens.generated.ts` is generated from the manifests of the application's themes by `scripts/build-theme-tokens.ts` and committed; it seeds the runtime registry in `packages/core/src/theme/tokens.ts` (`knownThemes`, `resolveThemeName`, `isKnownTheme`, `getThemeTokens`). Frontmatter accepts canonical names and aliases; `resolveThemeName` maps a name to the theme whose CSS is loaded.
 
 ## Tenant themes at runtime
 
@@ -68,7 +68,7 @@ pnpm build:theme brand                  # one theme
 node scripts/build-themes.ts --watch    # recompile on change
 ```
 
-`scripts/lib/theme-registry.ts` discovers the themes; `scripts/lib/theme-build.ts` compiles one theme with sass and its `pkg:` importer, so `@use 'pkg:@nuxt-slides/theme-kit'` resolves from the application's `node_modules` wherever the theme directory is. `plugins/theme-watcher.js` watches theme directories and `packages/` during `nuxt dev` and reloads the page after a recompile. `server/plugins/theme-consistency.ts` warns at boot when a theme directory, its compiled CSS and the generated tokens disagree.
+`scripts/lib/theme-registry.ts` discovers the themes; `scripts/lib/theme-build.ts` compiles one theme with sass and its `pkg:` importer, so `@use 'pkg:@vignettes/theme-kit'` resolves from the application's `node_modules` wherever the theme directory is. `plugins/theme-watcher.js` watches theme directories and `packages/` during `nuxt dev` and reloads the page after a recompile. `server/plugins/theme-consistency.ts` warns at boot when a theme directory, its compiled CSS and the generated tokens disagree.
 
 ## Writing a theme
 
@@ -76,8 +76,8 @@ A brand on the DSFR base:
 
 ```scss
 // presentations/themes/mybrand/mybrand.scss
-@use 'pkg:@nuxt-slides/theme-dsfr/variables' as *;
-@use 'pkg:@nuxt-slides/theme-dsfr';
+@use 'pkg:@vignettes/theme-dsfr/variables' as *;
+@use 'pkg:@vignettes/theme-dsfr';
 
 .reveal h1 { color: #0000cc; }
 .reveal section.slide-h2 h2 { color: var(--dsfr-grey-950) !important; }
@@ -87,7 +87,7 @@ A theme on the engine alone, with its own scale:
 
 ```scss
 // themes/mytheme/mytheme.scss
-@use 'pkg:@nuxt-slides/theme-kit';
+@use 'pkg:@vignettes/theme-kit';
 
 :root {
   --accent: #e63946;
@@ -98,7 +98,7 @@ A theme on the engine alone, with its own scale:
 .reveal h1 { font-size: 3em; }
 ```
 
-Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `pkg:@nuxt-slides/theme-kit/presets/dsfr-layout` gives a theme the DSFR sizes without its colors.
+Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `pkg:@vignettes/theme-kit/presets/dsfr-layout` gives a theme the DSFR sizes without its colors.
 
 ## Slides by heading level
 
@@ -111,6 +111,6 @@ The engine tags each `<section>`: `slide-h1` (title slide), `slide-h2` (section 
 ## Troubleshooting
 
 - Stylesheet 404: `public/themes/<name>.css` is missing; run `pnpm build:themes`.
-- A deck reports an unknown theme: the name is neither a directory with a manifest nor an alias; check `shared/theme/tokens.generated.ts`.
+- A deck reports an unknown theme: the name is neither a directory with a manifest nor an alias; check `packages/core/src/theme/tokens.generated.ts`.
 - Changes in a package do not show: the watcher recompiles every theme on a `packages/` change; a hard refresh may be needed.
 - `assets "node_modules/..." not found`: install dependencies, the DSFR fonts come from `@gouvfr/dsfr`.

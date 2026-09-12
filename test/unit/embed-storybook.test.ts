@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
 import {
   detectAssetRoots,
   isStorybookRuntime,
   STORYBOOK_FREEZE_STEPS,
   STORYBOOK_RUNTIME,
-} from '../../shared/render/embed-storybook'
+} from '@vignettes/core/render'
+import { describe, expect, it } from 'vitest'
 
 describe('isStorybookRuntime', () => {
   it('flags the named runtime shell, manifests and bundle dirs', () => {
