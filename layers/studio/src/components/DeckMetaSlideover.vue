@@ -13,8 +13,10 @@ import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
 
 /**
- * Deck management panel: catalog/access metadata through the admin PATCH, plus
- * per-deck sharing grants (owner only). Reused by the catalog and the editor.
+ * Deck settings panel, in three tabs: the deck itself (title, folder, theme,
+ * address), who can open it (visibility, catalog, sharing grants for the owner)
+ * and its versions. Metadata saves through the admin PATCH; grants apply as soon
+ * as they are added. Reused by the catalog and the editor.
  */
 const props = defineProps<{
   item: PresentationListItem
@@ -75,10 +77,28 @@ const passwordReady = computed(() => state.password.trim().length >= 8)
 const passwordMissing = computed(() =>
   state.status === 'semi-private' && !props.item.hasPassword && !passwordReady.value)
 
+const STATUS_DESCRIPTIONS: Record<PublicationStatus, string> = {
+  'public': 'Tout le monde peut l\'ouvrir.',
+  'semi-private': 'Toute personne ayant le mot de passe.',
+  'private': 'Les comptes Éditeur et Owner, et les accès individuels.',
+}
 const statusItems = PUBLICATION_STATUSES.map(status => ({
   label: STATUS_CONFIG[status].label,
+  description: STATUS_DESCRIPTIONS[status],
   value: status,
 }))
+
+type Tab = 'general' | 'access' | 'versions'
+const tab = ref<Tab>('general')
+watch(open, (now) => {
+  if (now)
+    tab.value = props.focus === 'sharing' ? 'access' : 'general'
+}, { immediate: true })
+const tabs = computed(() => [
+  { label: 'Général', icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
+  { label: 'Accès et partage', icon: STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const },
+  { label: 'Versions', icon: 'i-lucide-layers', value: 'versions', slot: 'versions' as const },
+])
 
 const projectItems = computed(() => [
   { label: 'Sans projet', value: NONE },
@@ -185,234 +205,300 @@ const audience = computed(() => {
   <USlideover
     v-model:open="open"
     :title="item.title"
-    :description="`Métadonnées de ${item.slug}`"
+    :description="`Réglages de ${item.slug}`"
+    :ui="{ content: 'max-w-2xl', body: 'p-0 sm:p-0' }"
   >
     <template #body>
-      <div class="flex flex-col gap-5">
-        <UAlert
-          color="neutral"
-          variant="subtle"
-          icon="i-lucide-eye"
-          title="Qui peut ouvrir cette présentation"
-          :description="audience"
-        />
+      <UTabs
+        v-model="tab"
+        :items="tabs"
+        variant="link"
+        :ui="{ root: 'gap-0', list: 'sticky top-0 z-10 bg-default px-4 sm:px-6', content: 'px-4 sm:px-6' }"
+      >
+        <!-- Each setting reads as a row: what it is on the left, its control on
+             the right. -->
+        <template #general>
+          <div class="settings">
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Titre
+                </p>
+              </div>
+              <UInput
+                v-model="state.title"
+                class="w-full"
+                aria-label="Titre"
+              />
+            </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Dossier
+                </p>
+                <p class="settings__hint">
+                  Où la présentation est rangée dans le catalogue.
+                </p>
+              </div>
+              <USelect
+                v-model="state.project"
+                :items="projectItems"
+                class="w-full"
+                aria-label="Dossier"
+              />
+            </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Thème
+                </p>
+              </div>
+              <USelect
+                v-model="state.theme"
+                :items="[{ label: 'Par défaut (dsfr)', value: NONE }, ...themeItems]"
+                class="w-full"
+                aria-label="Thème"
+              />
+            </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Adresse stable
+                </p>
+                <p class="settings__hint">
+                  Un lien qui ne change pas si l'identifiant change. Vide, la présentation n'en a pas.
+                </p>
+              </div>
+              <UInput
+                v-model="state.alias"
+                placeholder="mon-alias"
+                class="w-full font-mono"
+                :ui="{ base: 'ps-9', leading: 'ps-3' }"
+                aria-label="Alias"
+              >
+                <template #leading>
+                  <span class="text-sm text-dimmed">/p/</span>
+                </template>
+              </UInput>
+            </div>
+          </div>
+        </template>
 
-        <UFormField
-          label="Titre"
-          required
-        >
-          <UInput
-            v-model="state.title"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Accès"
-          description="Qui peut ouvrir le contenu."
-        >
-          <USelect
-            v-model="state.status"
-            :items="statusItems"
-            class="w-full"
-          />
-        </UFormField>
-
-        <div
-          v-if="state.status === 'semi-private'"
-          class="rounded-lg bg-muted p-3 flex flex-col gap-2"
-        >
-          <p class="text-xs font-medium text-muted uppercase tracking-wide">
-            Mot de passe
-          </p>
-          <p class="text-xs text-muted">
-            {{ item.hasPassword
-              ? 'Un mot de passe est défini. Saisissez-en un nouveau pour le remplacer.'
-              : 'Aucun mot de passe défini pour le moment.' }}
-          </p>
-          <UInput
-            v-model="state.password"
-            type="password"
-            placeholder="Minimum 8 caractères"
-            class="w-full"
-          />
-          <UAlert
-            v-if="passwordMissing"
-            color="warning"
-            variant="subtle"
-            icon="i-lucide-triangle-alert"
-            title="Sans mot de passe, la présentation serait inaccessible à tous."
-          />
-        </div>
-
-        <div class="rounded-lg bg-muted p-3 flex flex-col gap-3">
-          <p class="text-xs font-medium text-muted uppercase tracking-wide">
-            Catalogue
-          </p>
-          <UFormField
-            label="Non répertoriée"
-            description="Accessible par lien mais absente du catalogue."
-          >
-            <USwitch v-model="state.unlisted" />
-          </UFormField>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <UFormField label="Projet">
-            <USelect
-              v-model="state.project"
-              :items="projectItems"
-              class="w-full"
+        <template #access>
+          <div class="settings">
+            <UAlert
+              class="mt-4"
+              color="neutral"
+              variant="subtle"
+              icon="i-lucide-eye"
+              title="Qui peut ouvrir cette présentation"
+              :description="audience"
             />
-          </UFormField>
-          <UFormField label="Thème">
-            <USelect
-              v-model="state.theme"
-              :items="[{ label: 'Par défaut (dsfr)', value: NONE }, ...themeItems]"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Visibilité
+                </p>
+              </div>
+              <div class="flex flex-col gap-3">
+                <URadioGroup
+                  v-model="state.status"
+                  :items="statusItems"
+                  variant="card"
+                  :ui="{ fieldset: 'gap-2' }"
+                  aria-label="Visibilité"
+                />
+                <template v-if="state.status === 'semi-private'">
+                  <UInput
+                    v-model="state.password"
+                    type="password"
+                    :placeholder="item.hasPassword ? 'Nouveau mot de passe (8 caractères minimum)' : 'Mot de passe (8 caractères minimum)'"
+                    class="w-full"
+                    aria-label="Mot de passe"
+                  />
+                  <p
+                    v-if="item.hasPassword"
+                    class="settings__hint"
+                  >
+                    Un mot de passe est défini. Saisissez-en un nouveau pour le remplacer.
+                  </p>
+                  <UAlert
+                    v-if="passwordMissing"
+                    color="warning"
+                    variant="subtle"
+                    icon="i-lucide-triangle-alert"
+                    title="Sans mot de passe, la présentation serait inaccessible à tous."
+                  />
+                </template>
+              </div>
+            </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Non répertoriée
+                </p>
+                <p class="settings__hint">
+                  Accessible par lien mais absente du catalogue.
+                </p>
+              </div>
+              <USwitch
+                v-model="state.unlisted"
+                aria-label="Non répertoriée"
+              />
+            </div>
 
-        <div class="rounded-lg bg-muted p-3 flex flex-col gap-3">
-          <p class="text-xs font-medium text-muted uppercase tracking-wide">
-            Versions
-          </p>
-          <div class="grid grid-cols-1 sm:grid-cols-[1fr_8rem] gap-3">
-            <UFormField
-              label="Famille"
-              description="Les versions d'une même présentation partagent une carte."
+            <div
+              v-if="isOwner"
+              ref="sharingSection"
+              tabindex="-1"
+              class="settings__row outline-none"
             >
+              <div>
+                <p class="settings__label">
+                  Accès individuels
+                </p>
+                <p class="settings__hint">
+                  Ouvrent la présentation à un compte précis, au-delà de sa visibilité. Chaque accès s'applique dès son ajout.
+                </p>
+              </div>
+              <div class="flex flex-col gap-3">
+                <ul
+                  v-if="grants.length > 0"
+                  class="flex flex-col gap-2"
+                >
+                  <li
+                    v-for="grant in grants"
+                    :key="grant.userId"
+                    class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2"
+                  >
+                    <span class="text-sm font-medium">{{ grant.login }}</span>
+                    <USelect
+                      :model-value="grant.role"
+                      :items="grantRoleItems"
+                      size="xs"
+                      class="w-24"
+                      :disabled="sharingBusy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
+                      :aria-label="`Rôle de ${grant.login}`"
+                      @update:model-value="(r: any) => changeGrantRole(grant, r)"
+                    />
+                    <span
+                      v-if="grant.invited"
+                      class="text-xs text-dimmed"
+                    >· jamais connecté</span>
+                    <span
+                      v-if="grant.expiresAt"
+                      class="text-xs"
+                      :class="new Date(grant.expiresAt) < new Date() ? 'text-error' : 'text-dimmed'"
+                    >· {{ new Date(grant.expiresAt) < new Date() ? 'expiré' : `expire le ${new Date(grant.expiresAt).toLocaleDateString('fr-FR')}` }}</span>
+                    <div class="flex-1" />
+                    <UButton
+                      icon="i-lucide-x"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      :disabled="sharingBusy"
+                      aria-label="Retirer l'accès"
+                      @click="removeGrant(grant.userId)"
+                    />
+                  </li>
+                </ul>
+                <p
+                  v-else
+                  class="text-sm text-dimmed"
+                >
+                  Aucun accès individuel.
+                </p>
+
+                <div
+                  v-if="projectGrants.length"
+                  class="rounded-lg bg-muted p-3 flex flex-col gap-2"
+                >
+                  <p class="text-xs font-medium text-muted uppercase tracking-wide">
+                    Via le dossier (clé maîtresse)
+                  </p>
+                  <ul class="flex flex-col gap-1">
+                    <li
+                      v-for="grant in projectGrants"
+                      :key="grant.userId"
+                      class="flex items-center gap-2 text-sm"
+                    >
+                      <span>{{ grant.login }}</span>
+                      <span class="text-xs text-muted">{{ grant.role === 'editor' ? 'Édition' : 'Lecture' }}</span>
+                      <span
+                        v-if="grant.invited"
+                        class="text-xs text-dimmed"
+                      >· jamais connecté</span>
+                    </li>
+                  </ul>
+                  <p class="text-xs text-dimmed">
+                    Se gère depuis « Gérer l'accès » du dossier.
+                  </p>
+                </div>
+
+                <ShareGrantForm :sharing="sharing" />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template #versions>
+          <div class="settings">
+            <p class="settings__hint pt-4">
+              Les versions d'une même présentation, par langue ou par format, partagent une carte dans le dossier.
+            </p>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Famille
+                </p>
+                <p class="settings__hint">
+                  Le nom commun des versions.
+                </p>
+              </div>
               <UInputMenu
                 v-model="state.family"
                 :items="familyItems"
                 create-item
                 placeholder="Aucune"
                 class="w-full"
+                aria-label="Famille"
                 @create="addFamily"
               />
-            </UFormField>
-            <UFormField
-              label="Variante"
-              description="FR, EN, Vidéo…"
-            >
+            </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Variante
+                </p>
+                <p class="settings__hint">
+                  Le libellé de cette version sur la carte : FR, EN, Vidéo…
+                </p>
+              </div>
               <UInput
                 v-model="state.variantLabel"
                 class="w-full"
+                aria-label="Variante"
               />
-            </UFormField>
-          </div>
-          <UFormField
-            label="Remplacée par"
-            description="La présentation passe dans les anciennes versions du dossier."
-          >
-            <USelect
-              v-model="state.supersededBy"
-              :items="replacementItems"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
-        <UFormField
-          label="Alias"
-          help="Adresse stable /p/<alias> ; vide = pas d'alias."
-        >
-          <UInput
-            v-model="state.alias"
-            placeholder="mon-alias"
-            class="w-full font-mono"
-          />
-        </UFormField>
-
-        <template v-if="isOwner">
-          <div
-            ref="sharingSection"
-            tabindex="-1"
-            class="outline-none"
-          >
-            <USeparator label="Partage" />
-          </div>
-
-          <p class="text-sm text-muted -mt-1">
-            Ouvre ce deck à un compte précis au-delà de son statut.
-          </p>
-
-          <ul
-            v-if="grants.length > 0"
-            class="flex flex-col gap-2"
-          >
-            <li
-              v-for="grant in grants"
-              :key="grant.userId"
-              class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2"
-            >
-              <span class="text-sm font-medium">{{ grant.login }}</span>
+            </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  Remplacée par
+                </p>
+                <p class="settings__hint">
+                  La présentation passe dans les anciennes versions du dossier.
+                </p>
+              </div>
               <USelect
-                :model-value="grant.role"
-                :items="grantRoleItems"
-                size="xs"
-                class="w-24"
-                :disabled="sharingBusy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
-                :aria-label="`Rôle de ${grant.login}`"
-                @update:model-value="(r: any) => changeGrantRole(grant, r)"
+                v-model="state.supersededBy"
+                :items="replacementItems"
+                class="w-full"
+                aria-label="Remplacée par"
               />
-              <span
-                v-if="grant.invited"
-                class="text-xs text-dimmed"
-              >· jamais connecté</span>
-              <span
-                v-if="grant.expiresAt"
-                class="text-xs"
-                :class="new Date(grant.expiresAt) < new Date() ? 'text-error' : 'text-dimmed'"
-              >· {{ new Date(grant.expiresAt) < new Date() ? 'expiré' : `expire le ${new Date(grant.expiresAt).toLocaleDateString('fr-FR')}` }}</span>
-              <div class="flex-1" />
-              <UButton
-                icon="i-lucide-x"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                :disabled="sharingBusy"
-                aria-label="Retirer l'accès"
-                @click="removeGrant(grant.userId)"
-              />
-            </li>
-          </ul>
-          <p
-            v-else
-            class="text-sm text-dimmed"
-          >
-            Aucun accès individuel.
-          </p>
-
-          <div
-            v-if="projectGrants.length"
-            class="rounded-lg bg-muted p-3 flex flex-col gap-2"
-          >
-            <p class="text-xs font-medium text-muted uppercase tracking-wide">
-              Via le dossier (clé maîtresse)
-            </p>
-            <ul class="flex flex-col gap-1">
-              <li
-                v-for="grant in projectGrants"
-                :key="grant.userId"
-                class="flex items-center gap-2 text-sm"
-              >
-                <span>{{ grant.login }}</span>
-                <span class="text-xs text-muted">{{ grant.role === 'editor' ? 'Édition' : 'Lecture' }}</span>
-                <span
-                  v-if="grant.invited"
-                  class="text-xs text-dimmed"
-                >· jamais connecté</span>
-              </li>
-            </ul>
-            <p class="text-xs text-dimmed">
-              Se gère depuis « Gérer l'accès » du dossier.
-            </p>
+            </div>
           </div>
-
-          <ShareGrantForm :sharing="sharing" />
         </template>
-      </div>
+      </UTabs>
     </template>
 
     <template #footer>
@@ -434,3 +520,41 @@ const audience = computed(() => {
     </template>
   </USlideover>
 </template>
+
+<style scoped>
+.settings {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 1.5rem;
+}
+
+.settings__row {
+  display: grid;
+  gap: 0.5rem 1.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.settings__row:last-child {
+  border-bottom: 0;
+}
+
+@media (min-width: 640px) {
+  .settings__row {
+    grid-template-columns: 13rem 1fr;
+    align-items: start;
+  }
+}
+
+.settings__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ui-text-highlighted);
+}
+
+.settings__hint {
+  margin-top: 0.125rem;
+  font-size: 0.8125rem;
+  color: var(--ui-text-muted);
+}
+</style>
