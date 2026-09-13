@@ -12,7 +12,7 @@ export default defineNuxtConfig({
 })
 ```
 
-The module registers its components globally, since a deck body names them in markdown and they are resolved at render time. It exposes `usePresentation`, `useReveal`, `useTheme` and the slide helpers as auto-imports, and installs the plugins that seed the theme registry and the typography directive.
+The module registers the authoring components globally, since a deck body names them in markdown and they are resolved at render time. `RevealPresentation` and `RevealSlides` are ordinary components, so their stylesheets are linked in the server-rendered page. `RevealPresentation` links the theme stylesheet in the document head and covers the deck with a loading veil until Reveal, the theme and the fonts are ready. It exposes `usePresentation`, `useReveal`, `useTheme` and the slide helpers as auto-imports, and installs the plugins that seed the theme registry and the typography directive.
 
 The host owns the routes and the content: it decides which page renders a deck, and where the markdown comes from. A page is as short as:
 

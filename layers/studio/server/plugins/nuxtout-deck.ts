@@ -1,7 +1,8 @@
 /**
  * When building a bundle, turn a prerendered deck into a self-contained
- * Reveal-only page. Only ADDS what a standalone Reveal page needs — never strips
- * tags. Reveal.js and the theme are copied in by `scripts/freeze.ts`.
+ * Reveal-only page: its stylesheets become depth-relative, and Reveal is
+ * initialized by an inline script. Reveal.js and the theme are copied in by
+ * `@vignettes/freeze`.
  */
 
 import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls } from '@vignettes/core/render'
@@ -23,6 +24,12 @@ var tries=0;function tick(){scan();if(++tries<20){requestAnimationFrame(tick);}}
 requestAnimationFrame(tick);
 if(window.Reveal&&Reveal.on){Reveal.on('ready',scan);Reveal.on('slidechanged',scan);Reveal.on('resize',scan);}
 })();`
+
+// The bundle has no Vue runtime, so this script lifts the loading veil that
+// RevealPresentation renders, once Reveal is ready and the fonts are loaded, or
+// after 4 seconds.
+const LIFT_VEIL = `function liftVeil(){var v=document.querySelector('.deck-veil');`
+  + `if(v)v.classList.add('deck-veil--lifted');}setTimeout(liftVeil,4000);`
 
 export default defineNitroPlugin((nitroApp) => {
   const bundle = readBundleConfig()
@@ -48,16 +55,19 @@ export default defineNitroPlugin((nitroApp) => {
   // wherever it is served from.
   const base = bundle.baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const nuxtCss = new RegExp(`(href=")(?:${base}|/)(_nuxt/[^"]+\\.css)`, 'g')
+  const themeLink = /<link[^>]*\sdata-deck-theme[^>]*>/g
 
   nitroApp.hooks.hook('render:html', (html) => {
-    html.head = html.head.map(s => s.replace(nuxtCss, `$1${prefix}/$2`))
+    // The app's theme link is root-absolute; the bundle links its own copy below.
+    html.head = html.head.map(s => s.replace(nuxtCss, `$1${prefix}/$2`).replace(themeLink, ''))
 
     html.head.push(`<link rel="stylesheet" href="${prefix}/reveal/reveal.css">`)
     if (theme)
       html.head.push(`<link rel="stylesheet" href="${prefix}/themes/${theme}.css">`)
     html.bodyAppend.push(
       `<script src="${prefix}/reveal/reveal.js"></script>`,
-      `<script>Reveal.initialize(${revealInitExpr});\n${INLINE_SCALER}</script>`,
+      `<script>${LIFT_VEIL}\nReveal.initialize(${revealInitExpr})`
+      + `.then(function(){return document.fonts.ready;}).then(liftVeil);\n${INLINE_SCALER}</script>`,
     )
     // Rebase the deck's own root-absolute asset URLs under the bundle prefix.
     html.body = html.body.map(chunk => rebaseAssetUrls(chunk, prefix))

@@ -1,40 +1,59 @@
-import type { Ref } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
 import { resolveThemeName } from '@vignettes/core/theme'
-import { watch } from 'vue'
+import { computed, toValue } from 'vue'
 
-export function useTheme(themeName: Ref<string> | string) {
-  let themeLink: HTMLLinkElement | null = null
+const THEME_LINK_SELECTOR = 'link[data-deck-theme]'
 
-  function loadTheme(theme: string) {
-    if (themeLink?.parentNode) {
-      themeLink.parentNode.removeChild(themeLink)
-    }
+/**
+ * Links the deck theme stylesheet from the document head. The link is part of
+ * the server-rendered HTML, so the browser applies the theme before the first
+ * paint. The link follows the theme when it changes and leaves the head with the
+ * component.
+ */
+export function useTheme(themeName: MaybeRefOrGetter<string>) {
+  const href = computed(() => `/themes/${resolveThemeName(toValue(themeName))}.css`)
 
-    themeLink = document.createElement('link')
-    themeLink.rel = 'stylesheet'
-    themeLink.href = `/themes/${resolveThemeName(theme)}.css`
-    document.head.appendChild(themeLink)
-  }
+  useHead({
+    link: [computed(() => ({
+      'key': 'deck-theme',
+      'rel': 'stylesheet',
+      'href': href.value,
+      'data-deck-theme': '',
+      'tagPriority': 'low' as const,
+    }))],
+  })
 
-  function unloadTheme() {
-    if (themeLink?.parentNode) {
-      themeLink.parentNode.removeChild(themeLink)
-      themeLink = null
-    }
-  }
+  /**
+   * Resolves once the current theme stylesheet is applied, or has failed to
+   * load. After a client-side navigation the head receives the link after the
+   * component has mounted, so the head is observed until the link appears.
+   */
+  function themeReady(): Promise<void> {
+    return new Promise((resolve) => {
+      const expected = new URL(href.value, document.baseURI).href
+      const findLink = () => [...document.querySelectorAll<HTMLLinkElement>(THEME_LINK_SELECTOR)]
+        .find(link => link.href === expected)
 
-  function watchTheme() {
-    if (isRef(themeName)) {
-      watch(themeName, (newTheme: string) => {
-        if (newTheme)
-          loadTheme(newTheme)
+      const waitFor = (link: HTMLLinkElement) => {
+        if (link.sheet?.href === expected)
+          return resolve()
+        link.addEventListener('load', () => resolve(), { once: true })
+        link.addEventListener('error', () => resolve(), { once: true })
+      }
+
+      const link = findLink()
+      if (link)
+        return waitFor(link)
+      const observer = new MutationObserver(() => {
+        const inserted = findLink()
+        if (!inserted)
+          return
+        observer.disconnect()
+        waitFor(inserted)
       })
-    }
+      observer.observe(document.head, { childList: true, subtree: true, attributeFilter: ['href'] })
+    })
   }
 
-  return {
-    loadTheme,
-    unloadTheme,
-    watchTheme,
-  }
+  return { themeReady }
 }

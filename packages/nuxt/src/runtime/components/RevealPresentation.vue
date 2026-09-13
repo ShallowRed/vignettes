@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RevealConfig } from '../types/presentation.ts'
 import { buildPrintPdfUrl, buildPrintView, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
-import { computed, nextTick, onMounted, onUnmounted, provide, toRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, toRef } from 'vue'
 import 'reveal.js/dist/reveal.css'
 // With `?print-pdf` in the URL, Reveal adds `reveal-print` to <html> and this
 // stylesheet lays the deck out one slide per page.
@@ -61,7 +61,14 @@ function reopenPrintDialog() {
 const resolvedRevealConfig = computed(() =>
   JSON.stringify(mergeRevealConfig(props.config)))
 
-const { loadTheme, unloadTheme, watchTheme } = useTheme(toRef(props, 'theme'))
+const { themeReady } = useTheme(toRef(props, 'theme'))
+
+// The veil covers the deck until Reveal has laid it out with the theme and its
+// fonts, so the reader never sees the unstyled slides or the change of scale.
+// After 4 seconds it lifts anyway, so a failed stylesheet or font leaves the
+// deck readable.
+const ready = ref(false)
+const VEIL_MAX_MS = 4000
 
 const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, effectiveConfig)
 
@@ -89,9 +96,11 @@ function handleAnchorClick(event: MouseEvent) {
 }
 
 onMounted(async () => {
-  loadTheme(props.theme)
-  watchTheme()
-  await initialize()
+  const liftTimer = setTimeout(() => ready.value = true, VEIL_MAX_MS)
+  await Promise.all([initialize(), themeReady()])
+  await document.fonts.ready
+  clearTimeout(liftTimer)
+  ready.value = true
   revealContainer.value?.addEventListener('click', handleAnchorClick)
 
   // Reveal computes its print pagination during initialize(), but the Vue/MDC
@@ -116,7 +125,6 @@ onMounted(async () => {
 onUnmounted(() => {
   revealContainer.value?.removeEventListener('click', handleAnchorClick)
   destroy()
-  unloadTheme()
 })
 </script>
 
@@ -127,6 +135,15 @@ onUnmounted(() => {
     class="reveal"
     :data-reveal-config="resolvedRevealConfig"
   >
+    <!-- The veil precedes the slides so the browser paints it before them. -->
+    <div
+      class="deck-veil"
+      :class="{ 'deck-veil--lifted': ready }"
+      role="status"
+    >
+      <span class="deck-veil__spinner" />
+      <span class="deck-veil__label">Chargement de la présentation</span>
+    </div>
     <div class="slides">
       <slot />
     </div>
@@ -183,6 +200,68 @@ onUnmounted(() => {
 .reveal {
   width: 100%;
   height: 100vh;
+}
+
+.deck-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: var(--surface, #fff);
+  transition: opacity 150ms ease, visibility 0s linear 150ms;
+}
+
+.deck-veil--lifted {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* The spinner appears only after a second, so a fast load shows a plain surface. */
+.deck-veil__spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid color-mix(in srgb, var(--accent, #000091) 20%, transparent);
+  border-top-color: var(--accent, #000091);
+  border-radius: 50%;
+  opacity: 0;
+  animation: deck-veil-spin 800ms linear infinite, deck-veil-appear 200ms ease 1s forwards;
+}
+
+.deck-veil--lifted .deck-veil__spinner {
+  animation-play-state: paused;
+}
+
+.deck-veil__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes deck-veil-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes deck-veil-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-veil {
+    transition: none;
+  }
+
+  .deck-veil__spinner {
+    animation: deck-veil-appear 0s linear 1s forwards;
+  }
 }
 
 .print-pdf-button {
@@ -259,7 +338,8 @@ onUnmounted(() => {
 /* Never let on-screen controls bleed into the print/PDF render. */
 @media print {
   .print-pdf-button,
-  .print-overlay {
+  .print-overlay,
+  .deck-veil {
     display: none !important;
   }
 }
