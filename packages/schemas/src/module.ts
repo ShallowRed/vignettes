@@ -21,6 +21,8 @@ export default defineNuxtModule({
     nuxt.options.nitro.externals.inline ||= []
     nuxt.options.nitro.externals.inline.push(runtime)
 
+    nuxt.options.css.push(resolver.resolve('./runtime/palette.css'))
+
     addComponentsDir({
       path: resolver.resolve('./runtime/components'),
       pathPrefix: false,

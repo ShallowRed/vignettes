@@ -1,0 +1,78 @@
+/**
+ * Default tints of the explanation cards, from the DSFR illustrative palette.
+ * A theme redefines any of these properties to colour the cards its own way.
+ */
+
+:root {
+  --palette-blue-france-bg: #f5f5fe;
+  --palette-blue-france-main: #6a6af4;
+  --palette-blue-france-text: #000091;
+
+  --palette-blue-ecume-bg: #f4f6fe;
+  --palette-blue-ecume-main: #465f9d;
+  --palette-blue-ecume-text: #2f4077;
+
+  --palette-blue-cumulus-bg: #f3f6fe;
+  --palette-blue-cumulus-main: #417dc4;
+  --palette-blue-cumulus-text: #3558a2;
+
+  --palette-green-tilleul-verveine-bg: #fef7da;
+  --palette-green-tilleul-verveine-main: #b7a73f;
+  --palette-green-tilleul-verveine-text: #66673d;
+
+  --palette-green-bourgeon-bg: #e6feda;
+  --palette-green-bourgeon-main: #68a532;
+  --palette-green-bourgeon-text: #447049;
+
+  --palette-green-emeraude-bg: #e3fdeb;
+  --palette-green-emeraude-main: #00a95f;
+  --palette-green-emeraude-text: #297254;
+
+  --palette-green-menthe-bg: #dffdf7;
+  --palette-green-menthe-main: #009081;
+  --palette-green-menthe-text: #37635f;
+
+  --palette-green-archipel-bg: #e5fbfd;
+  --palette-green-archipel-main: #009099;
+  --palette-green-archipel-text: #006a6f;
+
+  --palette-yellow-tournesol-bg: #fef6e3;
+  --palette-yellow-tournesol-main: #c8aa39;
+  --palette-yellow-tournesol-text: #716043;
+
+  --palette-yellow-moutarde-bg: #fef5e8;
+  --palette-yellow-moutarde-main: #c3992a;
+  --palette-yellow-moutarde-text: #695240;
+
+  --palette-orange-terre-battue-bg: #fef4f2;
+  --palette-orange-terre-battue-main: #e4794a;
+  --palette-orange-terre-battue-text: #755348;
+
+  --palette-brown-cafe-creme-bg: #fbf6ed;
+  --palette-brown-cafe-creme-main: #d1b781;
+  --palette-brown-cafe-creme-text: #685c48;
+
+  --palette-brown-caramel-bg: #fbf5f2;
+  --palette-brown-caramel-main: #c08c65;
+  --palette-brown-caramel-text: #845d48;
+
+  --palette-brown-opera-bg: #fbf5f2;
+  --palette-brown-opera-main: #bd987a;
+  --palette-brown-opera-text: #745b47;
+
+  --palette-beige-gris-galet-bg: #f9f6f2;
+  --palette-beige-gris-galet-main: #aea397;
+  --palette-beige-gris-galet-text: #6a6156;
+
+  --palette-pink-macaron-bg: #fef4f2;
+  --palette-pink-macaron-main: #e18b76;
+  --palette-pink-macaron-text: #8d533e;
+
+  --palette-pink-tuile-bg: #fef4f3;
+  --palette-pink-tuile-main: #ce614a;
+  --palette-pink-tuile-text: #a94645;
+
+  --palette-purple-glycine-bg: #fef3fd;
+  --palette-purple-glycine-main: #a558a0;
+  --palette-purple-glycine-text: #6e445a;
+}
