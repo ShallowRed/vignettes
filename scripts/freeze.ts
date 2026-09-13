@@ -26,7 +26,7 @@ import { load as parseYaml } from 'js-yaml'
 import { bundleStorybookUrl } from '../layers/studio/shared/build/bundle.ts'
 import { buildFreezeDescriptor } from '../layers/studio/shared/build/freeze.ts'
 import { buildReducedPublic, copyDeckAssets, rebaseCssUrls } from './lib/bundle-assets.ts'
-import { contentDir, discoverThemes, registryOf } from './lib/theme-registry.ts'
+import { contentDir, discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
 
 const root = import.meta.dirname ? join(import.meta.dirname, '..') : process.cwd()
 const args = process.argv.slice(2)

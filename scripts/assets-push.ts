@@ -17,7 +17,7 @@ import { ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { DECK_ASSET_PREFIXES, deckAssetKey } from '../layers/studio/shared/storage/deck-assets.ts'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../layers/studio/shared/storage/frozen-s3.ts'
 import { CONTENT_TYPES } from '../layers/studio/shared/storage/themes-s3.ts'
-import { contentDir } from './lib/theme-registry.ts'
+import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 
 const root = join(import.meta.dirname, '..')
 const apply = process.argv.includes('--apply')
