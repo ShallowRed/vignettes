@@ -26,7 +26,7 @@ outputs = { auto = true }
 run = "pnpm install"
 
 [tasks.dev]
-description = "Nuxt behind portless; the browser opens once the app answers. Host: vignettes.localhost, or <branch>.vignettes.localhost in a worktree"
+description = "Nuxt behind portless; the browser opens once the app answers. Host: vignettes-studio.localhost, or <branch>.vignettes-studio.localhost in a worktree"
 depends = [ "install" ]
 run = "portless run mise run dev:serve"
 
@@ -82,7 +82,7 @@ pnpm install
 mise run db:migrate
 mise run content:import
 echo
-echo "Prêt : cd $dir && mise run dev   (http://$name.vignettes.localhost:8443)"
+echo "Prêt : cd $dir && mise run dev   (http://$name.vignettes-studio.localhost:8443)"
 """
 
 [tasks."worktree:remove"]

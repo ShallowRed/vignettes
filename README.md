@@ -17,7 +17,7 @@ A self-hosted catalog and editor for Markdown slide decks. Decks are written in 
 
 ```bash
 mise install          # Node 22, pnpm, portless
-mise run dev          # opens https://vignettes.localhost once the app answers
+mise run dev          # opens https://vignettes-studio.localhost once the app answers
 ```
 
 In development, `/auth/dev-login?role=owner` signs you in without OAuth. Create a deck from the catalog, or import the example stubs from `presentations/` with `mise run content:import`.
