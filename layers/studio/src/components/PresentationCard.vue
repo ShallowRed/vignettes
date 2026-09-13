@@ -25,6 +25,8 @@ const emit = defineEmits<{
 }>()
 
 const selectedSlug = ref(props.presentation.slug)
+// The actions stay visible while their menu is open, the pointer being on the menu.
+const menuOpen = ref(false)
 const deck = computed(() => props.variants?.find(v => v.slug === selectedSlug.value) ?? props.presentation)
 
 // Sharing is owner-only server-side, so the entry only shows for an owner.
@@ -95,7 +97,8 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
              focus (z-10 clears the stretched-link overlay). -->
         <div
           v-if="hasActions"
-          class="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
+          class="absolute top-2 right-2 z-10 flex items-center gap-1 transition-opacity"
+          :class="menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100'"
           @click.stop.prevent
         >
           <UTooltip
@@ -105,22 +108,25 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
             <UButton
               icon="i-lucide-pencil"
               color="neutral"
-              variant="solid"
+              variant="outline"
               size="xs"
+              class="bg-default/90 backdrop-blur-sm hover:bg-accented active:bg-accented active:ring-inverted/40 active:scale-95 transition"
               :to="`/edit/${deck.slug}`"
               aria-label="Éditer le contenu"
             />
           </UTooltip>
           <UDropdownMenu
             v-if="hasMenu"
+            v-model:open="menuOpen"
             :items="adminActions"
             :content="{ align: 'end' }"
           >
             <UButton
               icon="i-lucide-ellipsis"
               color="neutral"
-              variant="solid"
+              variant="outline"
               size="xs"
+              class="bg-default/90 backdrop-blur-sm hover:bg-accented active:bg-accented active:ring-inverted/40 active:scale-95 transition data-[state=open]:bg-accented"
               aria-label="Actions"
             />
           </UDropdownMenu>
