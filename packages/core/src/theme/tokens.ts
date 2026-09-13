@@ -3,10 +3,32 @@ import { THEME_ALIASES as BUILT_IN_ALIASES, THEME_TOKENS as BUILT_IN_TOKENS } fr
 
 // The data side of a theme (backgrounds, Reveal dimensions, language, parser),
 // declared by each theme's `theme.json`. Colors stay authored in SCSS.
+/**
+ * What a catalog card needs to draw a deck's title slide without the theme's
+ * stylesheet: the type, the colors of the title and the text, and the surface
+ * shown when the slide has no background image.
+ */
+export interface ThemePreview {
+  fontFamily?: string
+  /** Stylesheet declaring the font faces, loaded by the pages that show previews. */
+  fontsStylesheet?: string
+  titleColor?: string
+  /** A gradient painted through the letters of the title. */
+  titleGradient?: string
+  textColor?: string
+  surface?: string
+  /**
+   * Colors for a first slide of another heading level, whose background differs.
+   * `titleGradient: 'none'` removes the gradient.
+   */
+  levels?: Partial<Record<'h1' | 'h2' | 'h3', Pick<ThemePreview, 'titleColor' | 'titleGradient' | 'textColor'>>>
+}
+
 export interface ThemeTokens {
   /** Matches `/themes/<name>.css` and the theme directory. */
   name: string
   backgrounds?: ThemeBackgrounds
+  preview?: ThemePreview
   reveal?: RevealConfig
   lang?: string
   parser?: 'heading' | 'separator'

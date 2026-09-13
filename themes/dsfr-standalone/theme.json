@@ -2,5 +2,12 @@
   "name": "dsfr-standalone",
   "lang": "fr",
   "parser": "separator",
-  "reveal": { "slideNumber": true, "width": 1200, "height": 800 }
+  "reveal": { "slideNumber": true, "width": 1200, "height": 800 },
+  "preview": {
+    "fontFamily": "Marianne, Arial, sans-serif",
+    "fonts": "pkg:@vignettes/theme-dsfr/fonts",
+    "titleColor": "#000091",
+    "textColor": "#3a3a3a",
+    "surface": "#ffffff"
+  }
 }

@@ -2,29 +2,20 @@
 import type { PresentationData } from '@vignettes/nuxt/types'
 
 // A deck as the studio shows it: the Reveal presentation with the commands of
-// whoever may edit it (editing the current slide, the draft, the folder), the
-// draft banner, and the miniature mode of the catalog cards.
+// whoever may edit it (editing the current slide, the draft, the folder) and the
+// draft banner.
 const props = defineProps<{
   slug?: string
   presentationData: PresentationData
   /** The working draft, previewed the way it will be published. */
   draft?: boolean
-  /** The first slide alone, without commands, for a catalog card. */
-  thumbnail?: boolean
 }>()
-
-const shownData = computed(() => props.thumbnail
-  ? { ...props.presentationData, slides: props.presentationData.slides.slice(0, 1) }
-  : props.presentationData)
-const revealConfig = computed(() => props.thumbnail
-  ? { ...props.presentationData.metadata.reveal, controls: false, progress: false, slideNumber: false, keyboard: false, hash: false, transition: 'none' as const }
-  : props.presentationData.metadata.reveal)
 
 // The deck renders without this answer, so it loads after the page.
 const { data: viewer } = useFetch<{ canEdit: boolean, unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
   server: false,
   lazy: true,
-  immediate: Boolean(props.slug) && !props.thumbnail,
+  immediate: Boolean(props.slug),
   default: () => ({ canEdit: false }),
 })
 
@@ -51,7 +42,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
 
 <template>
   <div
-    v-if="draft && !thumbnail"
+    v-if="draft"
     class="tailwind-app fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-3 bg-warning text-white text-sm py-1.5 px-4"
   >
     <UIcon
@@ -67,14 +58,13 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
     </NuxtLink>
   </div>
   <RevealPresentation
-    :class="{ 'has-draft-banner': draft && !thumbnail }"
-    :theme="shownData.metadata.theme"
-    :config="revealConfig"
-    :lang="shownData.metadata.lang"
-    :controls="!thumbnail"
+    :class="{ 'has-draft-banner': draft }"
+    :theme="presentationData.metadata.theme"
+    :config="presentationData.metadata.reveal"
+    :lang="presentationData.metadata.lang"
     @ready="onReady"
   >
-    <RevealSlides :presentation-data="shownData" />
+    <RevealSlides :presentation-data="presentationData" />
     <template
       v-if="viewer.canEdit"
       #controls-before

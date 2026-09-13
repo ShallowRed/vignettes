@@ -7,7 +7,7 @@
  * Pure filesystem reads, no Nuxt import: shared by the build scripts, the dev
  * watcher plugin, the token generator and the server's runtime loader.
  */
-import type { ThemeRegistry, ThemeTokens } from '@vignettes/core/theme/tokens'
+import type { ThemePreview, ThemeRegistry, ThemeTokens } from '@vignettes/core/theme/tokens'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -33,6 +33,11 @@ export interface ThemeManifest {
   reveal?: Record<string, unknown>
   /** Background images per heading level, relative to the theme directory or absolute URLs. */
   backgrounds?: Partial<Record<'h1' | 'h2' | 'h3' | 'default', string>>
+  /**
+   * The title slide as a catalog card draws it. `fonts` names a sass module
+   * declaring the font faces, compiled to `<name>/preview-fonts.css`.
+   */
+  preview?: Omit<ThemePreview, 'fontsStylesheet'> & { fonts?: string }
   /** SCSS entry, `<name>.scss` by default. */
   entry?: string
   /** Extra directories copied next to the theme's own `assets/`. */
@@ -86,6 +91,9 @@ export function discoverThemes(root: string): DiscoveredTheme[] {
   return [...found.values()].sort((a, b) => a.name.localeCompare(b.name))
 }
 
+/** The font faces of a theme's preview, next to its assets. */
+export const PREVIEW_FONTS_FILE = 'preview-fonts.css'
+
 /** Public URL of a theme-relative path (`assets/x.png` under `themes/brand/` serves at `/themes/brand/assets/x.png`). */
 export function themeAssetUrl(name: string, path: string): string {
   if (/^(?:[a-z]+:)?\/\//i.test(path) || path.startsWith('/'))
@@ -95,7 +103,7 @@ export function themeAssetUrl(name: string, path: string): string {
 
 /** The runtime tokens a manifest declares, background paths turned into public URLs. */
 export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
-  const { name, lang, parser, reveal, backgrounds } = manifest
+  const { name, lang, parser, reveal, backgrounds, preview } = manifest
   const tokens: ThemeTokens = { name }
   if (lang)
     tokens.lang = lang
@@ -108,6 +116,10 @@ export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
   }
   if (reveal)
     tokens.reveal = reveal as ThemeTokens['reveal']
+  if (preview) {
+    const { fonts, ...rest } = preview
+    tokens.preview = fonts ? { ...rest, fontsStylesheet: themeAssetUrl(name, PREVIEW_FONTS_FILE) } : rest
+  }
   return tokens
 }
 

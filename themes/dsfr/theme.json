@@ -5,5 +5,12 @@
   "reveal": { "slideNumber": true, "width": 1200, "height": 800 },
   "assets": [
     { "from": "node_modules/@gouvfr/dsfr/dist/fonts", "to": "fonts", "match": "^Marianne-[A-Za-z]+\\.woff2?$" }
-  ]
+  ],
+  "preview": {
+    "fontFamily": "Marianne, Arial, sans-serif",
+    "fonts": "pkg:@vignettes/theme-dsfr/fonts",
+    "titleColor": "#000091",
+    "textColor": "#3a3a3a",
+    "surface": "#ffffff"
+  }
 }

@@ -1,10 +1,12 @@
-import type { PresentationListItem } from '#shared/presentations'
+import type { DeckPreview, PresentationListItem, TitleSlide } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
 import { canList, isPrivileged, mayEdit } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
-import { UNGROUPED_PROJECT } from '#shared/presentations'
+import { readTitleSlide, UNGROUPED_PROJECT } from '#shared/presentations'
 import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
+import { resolveSlideBackground } from '@vignettes/core/render'
+import { resolveThemeName } from '@vignettes/core/theme'
 import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 import { count, eq, gte } from 'drizzle-orm'
 import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from '../db/schema'
@@ -12,6 +14,7 @@ import { getActor } from './actor'
 import { useDraftStore } from './collab'
 import { useDb } from './db'
 import { projectDirectory, useDbContent, useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
+import { loadTenantThemes } from './themes'
 
 /** slug → number of grants, for the privileged "shared" badges (one query). */
 function grantCounts(table: typeof deckPermissions | typeof projectPermissions, column: 'deckSlug' | 'projectSlug'): Map<string, number> {
@@ -49,6 +52,7 @@ interface DeckStats {
   updatedAt: number
   /** Last draft save, in milliseconds, which counts only for whoever may edit. */
   draftSavedAt?: number
+  titleSlide: TitleSlide
 }
 
 /** Slide count and dates of every published deck, from one query. */
@@ -63,7 +67,24 @@ function deckStats(): Map<string, DeckStats> {
     slideCount: slideRanges(row.raw, parserIdFor(splitFrontmatter(row.raw).data)).length,
     updatedAt: Math.max(row.updatedAt.getTime(), row.publishedAt.getTime()),
     draftSavedAt: row.draftSavedAt?.getTime(),
+    titleSlide: readTitleSlide(row.raw),
   }]))
+}
+
+function deckPreview(stats: DeckStats | undefined, theme: string): Pick<PresentationListItem, 'preview'> {
+  if (!stats)
+    return {}
+  const { title, pretitle, subtitle, headingLevel, backgroundImage, backgrounds } = stats.titleSlide
+  const resolved = resolveThemeName(theme)
+  const preview: DeckPreview = {
+    theme: resolved,
+    title,
+    pretitle,
+    subtitle,
+    headingLevel,
+    background: resolveSlideBackground({ headingLevel: headingLevel ?? 'h1', backgroundImage }, resolved, backgrounds),
+  }
+  return { preview }
 }
 
 function deckDates(stats: DeckStats | undefined, canEdit: boolean): Pick<PresentationListItem, 'slideCount' | 'updatedAt'> {
@@ -86,6 +107,8 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   const grants = actor.id
     ? await useGrants().listForUser(actor.id).catch(() => new Map())
     : new Map()
+  // Resolving a deck's theme and background needs the tenant themes registered.
+  await loadTenantThemes()
 
   const privileged = isPrivileged(actor.role)
   const decks = await useDeckMeta().listManaged()
@@ -114,6 +137,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       variantLabel: deck.variantLabel,
       supersededBy: deck.supersededBy,
       ...deckDates(stats.get(deck.slug), canEdit(deck.slug)),
+      ...deckPreview(stats.get(deck.slug), deck.theme || 'dsfr'),
       ...(canEdit(deck.slug) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),
       ...(privileged

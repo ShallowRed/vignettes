@@ -49,9 +49,6 @@ const to = computed(() => {
 
 const statusDisplay = computed(() => STATUS_CONFIG[deck.value.status])
 
-// A deck with nothing published, or served as a frozen bundle, has no live page to miniaturize.
-const thumbnailSrc = computed(() =>
-  frozen.value || deck.value.published === false ? undefined : `/slides/${deck.value.slug}`)
 const opensDeck = computed(() => to.value !== `/edit/${deck.value.slug}`)
 
 const updatedLabel = computed(() => {
@@ -92,7 +89,10 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
     }"
   >
     <template #body>
-      <DeckThumbnail :src="thumbnailSrc">
+      <DeckPreview
+        :preview="deck.preview"
+        :fallback-title="deck.title"
+      >
         <!-- Actions pinned to the miniature's top-right corner, shown on hover or
              focus (z-10 clears the stretched-link overlay). -->
         <div
@@ -132,7 +132,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           </UDropdownMenu>
         </div>
         <span
-          v-if="opensDeck && thumbnailSrc"
+          v-if="opensDeck && deck.preview"
           class="absolute left-2 bottom-2 flex items-center gap-1.5 rounded-full bg-inverted/85 px-3 py-1.5 text-xs font-semibold text-inverted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
         >
           <UIcon
@@ -145,7 +145,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           v-if="deck.slideCount"
           class="absolute right-2 bottom-2 rounded-md bg-black/60 px-1.5 py-0.5 text-xs text-white pointer-events-none"
         >{{ deck.slideCount }} diapo{{ deck.slideCount > 1 ? 's' : '' }}</span>
-      </DeckThumbnail>
+      </DeckPreview>
 
       <div class="flex flex-col gap-2 p-4">
         <h2 class="font-semibold text-highlighted leading-snug line-clamp-2">

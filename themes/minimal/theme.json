@@ -2,5 +2,11 @@
   "name": "minimal",
   "lang": "fr",
   "parser": "separator",
-  "reveal": { "slideNumber": true }
+  "reveal": { "slideNumber": true },
+  "preview": {
+    "fontFamily": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",
+    "titleColor": "#000000",
+    "textColor": "#444444",
+    "surface": "#ffffff"
+  }
 }

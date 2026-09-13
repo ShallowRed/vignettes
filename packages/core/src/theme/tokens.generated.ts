@@ -11,6 +11,13 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
       "slideNumber": true,
       "width": 1200,
       "height": 800
+    },
+    "preview": {
+      "fontFamily": "Marianne, Arial, sans-serif",
+      "titleColor": "#000091",
+      "textColor": "#3a3a3a",
+      "surface": "#ffffff",
+      "fontsStylesheet": "/themes/dsfr/preview-fonts.css"
     }
   },
   "dsfr-standalone": {
@@ -21,6 +28,13 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
       "slideNumber": true,
       "width": 1200,
       "height": 800
+    },
+    "preview": {
+      "fontFamily": "Marianne, Arial, sans-serif",
+      "titleColor": "#000091",
+      "textColor": "#3a3a3a",
+      "surface": "#ffffff",
+      "fontsStylesheet": "/themes/dsfr-standalone/preview-fonts.css"
     }
   },
   "minimal": {
@@ -29,6 +43,12 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
     "parser": "separator",
     "reveal": {
       "slideNumber": true
+    },
+    "preview": {
+      "fontFamily": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",
+      "titleColor": "#000000",
+      "textColor": "#444444",
+      "surface": "#ffffff"
     }
   }
 }

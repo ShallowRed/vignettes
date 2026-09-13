@@ -6,8 +6,7 @@ import { deckDirectory } from '../utils/sources'
  * slug, or historical `aliases:` path) to its canonical `/p/<alias>`, so a single
  * URL serves each deck. Decks not in the directory pass through untouched.
  *
- * `?draft` and `?thumb` are working views of the slug route, for editors and
- * catalog cards, and stay on it.
+ * `?draft` is the editors' view of the slug route and stays on it.
  *
  * A frozen bundle holds that one deck and nothing to canonicalise against: the
  * redirect would prerender a stub pointing back at the live site, so bundle mode
@@ -19,7 +18,7 @@ export default defineEventHandler(async (event) => {
   if (!path.startsWith('/slides/') || readBundleConfig().enabled)
     return
   const query = getQuery(event)
-  if ('draft' in query || 'thumb' in query)
+  if ('draft' in query)
     return
 
   // Normalise to the form stored in the registry (`<slug>`, `codimd/<id>`…).

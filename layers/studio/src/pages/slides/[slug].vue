@@ -8,8 +8,6 @@ const slug = route.params.slug as string
 
 // `?draft`: an editor previews the working draft the way it will be published.
 const draftPreview = 'draft' in route.query
-// `?thumb`: the first slide alone, for a catalog card's miniature.
-const thumbnail = 'thumb' in route.query
 const { presentationData, error } = usePresentation(slug, undefined, { draft: draftPreview })
 const { user } = useAppSession()
 
@@ -43,7 +41,6 @@ watch(requiresPassword, (needsPassword) => {
         :slug="slug"
         :presentation-data="presentationData"
         :draft="draftPreview"
-        :thumbnail="thumbnail"
       />
     </template>
 

@@ -9,6 +9,7 @@ import type { DiscoveredTheme } from './theme-registry.ts'
 import { cpSync, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as sass from 'sass'
+import { PREVIEW_FONTS_FILE } from './theme-registry.ts'
 
 export function themesOutDir(root: string): string {
   return join(root, 'public/themes')
@@ -24,6 +25,7 @@ export function compileTheme(root: string, theme: DiscoveredTheme, outDir = them
     })
     writeFileSync(join(outDir, `${theme.name}.css`), result.css)
     copyAssets(root, theme, outDir)
+    compilePreviewFonts(root, theme, outDir)
     console.log(`✓ ${theme.name}`)
     return true
   }
@@ -31,6 +33,20 @@ export function compileTheme(root: string, theme: DiscoveredTheme, outDir = them
     console.error(`✗ ${theme.name}: ${(error as Error).message}`)
     return false
   }
+}
+
+// The catalog loads only the font faces of a theme, not its whole stylesheet.
+function compilePreviewFonts(root: string, theme: DiscoveredTheme, outDir: string) {
+  const fonts = theme.manifest.preview?.fonts
+  if (!fonts)
+    return
+  const result = sass.compileString(`@use '${fonts}';`, {
+    style: 'expanded',
+    loadPaths: [theme.dir],
+    importers: [new sass.NodePackageImporter(root)],
+  })
+  mkdirSync(join(outDir, theme.name), { recursive: true })
+  writeFileSync(join(outDir, theme.name, PREVIEW_FONTS_FILE), result.css)
 }
 
 function copyAssets(root: string, theme: DiscoveredTheme, outDir: string) {

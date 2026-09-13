@@ -1,6 +1,19 @@
 import type { Lifecycle, PublicationStatus } from '../access/status'
 
 // Canonical wire contract between GET /api/presentations and the home/admin pages.
+/** What a catalog card draws of a deck: its title slide, in its theme. */
+export interface DeckPreview {
+  /** Theme name after aliases, whose preview tokens style the card. */
+  theme: string
+  title?: string
+  pretitle?: string
+  subtitle?: string
+  /** Level of the title slide's heading, which may change the theme's colors. */
+  headingLevel?: 'h1' | 'h2' | 'h3'
+  /** Background image of the title slide: its own, the deck's, or the theme's. */
+  background?: string
+}
+
 export interface PresentationListItem {
   slug: string
   title: string
@@ -36,6 +49,8 @@ export interface PresentationListItem {
   variantLabel?: string
   /** Slug of the deck that replaces this one. */
   supersededBy?: string
+  /** The title slide of the published version. */
+  preview?: DeckPreview
   /** Slides in the published version. */
   slideCount?: number
   /** Last change in milliseconds: metadata, publish, and the draft for whoever may edit. */
