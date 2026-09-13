@@ -4,13 +4,12 @@ import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
 /**
- * Writer look of the markdown pane, one palette per color mode. Markdown gets a
- * document feel (real heading sizes, styled emphasis, dimmed syntax marks)
- * rather than code-editor token colors.
+ * Look of the markdown pane, one palette per color mode. Every line has the
+ * same height so the line numbers, the folds and the current slide line up;
+ * headings stand out by weight, and MDC components by color.
  */
 
 interface Palette {
-  background: string
   text: string
   heading: string
   dimmed: string
@@ -18,36 +17,43 @@ interface Palette {
   codeBackground: string
   activeLine: string
   selection: string
+  currentSlide: string
+  component: string
+  value: string
+  literal: string
 }
 
 const LIGHT: Palette = {
-  background: '#ffffff',
   text: '#1f2937',
   heading: '#111827',
   dimmed: '#9ca3af',
   accent: '#2563eb',
   codeBackground: '#f3f4f6',
-  activeLine: '#f9fafb',
+  activeLine: '#f3f4f6',
   selection: '#bfdbfe80',
+  currentSlide: '#3b82f60d',
+  component: '#7c3aed',
+  value: '#15803d',
+  literal: '#c2410c',
 }
 
 const DARK: Palette = {
-  background: '#18181b',
   text: '#d4d4d8',
   heading: '#fafafa',
   dimmed: '#71717a',
   accent: '#60a5fa',
   codeBackground: '#27272a',
-  activeLine: '#1f1f23',
+  activeLine: '#ffffff0a',
   selection: '#1d4ed880',
+  currentSlide: '#3b82f614',
+  component: '#c4a7ff',
+  value: '#9ad29a',
+  literal: '#f0b37e',
 }
 
 function markdownHighlight(palette: Palette): Extension {
   return syntaxHighlighting(HighlightStyle.define([
-    { tag: tags.heading1, color: palette.heading, fontWeight: '700', fontSize: '1.5em' },
-    { tag: tags.heading2, color: palette.heading, fontWeight: '700', fontSize: '1.25em' },
-    { tag: tags.heading3, color: palette.heading, fontWeight: '700', fontSize: '1.1em' },
-    { tag: [tags.heading4, tags.heading5, tags.heading6], color: palette.heading, fontWeight: '700' },
+    { tag: [tags.heading1, tags.heading2, tags.heading3, tags.heading4, tags.heading5, tags.heading6], color: palette.heading, fontWeight: '700' },
     { tag: tags.strong, fontWeight: '700' },
     { tag: tags.emphasis, fontStyle: 'italic' },
     { tag: tags.strikethrough, textDecoration: 'line-through' },
@@ -55,7 +61,7 @@ function markdownHighlight(palette: Palette): Extension {
     { tag: tags.url, color: palette.accent, textDecoration: 'underline' },
     { tag: tags.monospace, backgroundColor: palette.codeBackground, borderRadius: '3px' },
     { tag: tags.quote, color: palette.dimmed, fontStyle: 'italic' },
-    { tag: tags.contentSeparator, color: palette.accent, fontWeight: '700' },
+    { tag: tags.contentSeparator, color: palette.dimmed },
     // Syntax marks (#, *, >, ```) and frontmatter fences recede behind the prose.
     { tag: [tags.processingInstruction, tags.meta, tags.punctuation], color: palette.dimmed },
     { tag: tags.comment, color: palette.dimmed, fontStyle: 'italic' },
@@ -66,19 +72,19 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
   return EditorView.theme({
     '&': {
       height: '100%',
-      fontSize: '0.925rem',
-      backgroundColor: palette.background,
+      fontSize: '13px',
+      backgroundColor: 'var(--ui-bg)',
       color: palette.text,
     },
     '.cm-scroller': {
       fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
-      lineHeight: '1.65',
+      lineHeight: '21px',
     },
     '.cm-content': {
       caretColor: palette.heading,
-      padding: '1rem 0.25rem',
+      padding: '8px 0 50vh',
     },
-    '.cm-line': { padding: '0 1rem' },
+    '.cm-line': { padding: '0 16px 0 8px' },
     '.cm-cursor, .cm-dropCursor': {
       borderLeftColor: palette.heading,
       borderLeftWidth: '2px',
@@ -89,11 +95,36 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
       backgroundColor: palette.selection,
     },
     '.cm-gutters': {
-      backgroundColor: palette.background,
+      backgroundColor: 'var(--ui-bg)',
       color: palette.dimmed,
       borderRight: 'none',
+      paddingTop: '0',
     },
-    '.cm-activeLineGutter': { backgroundColor: palette.activeLine },
+    '.cm-lineNumbers .cm-gutterElement': { minWidth: '40px', padding: '0 4px 0 12px', opacity: '0.7' },
+    '.cm-activeLineGutter': { backgroundColor: 'transparent' },
+    // The slide under the caret: a tint and a rule along its lines.
+    '.cm-current-slide': { backgroundColor: palette.currentSlide },
+    '.cm-current-slide.cm-activeLine': { backgroundColor: palette.activeLine },
+    '.cm-lineNumbers .cm-current-slide-gutter': { color: palette.accent, opacity: '1', boxShadow: `inset 3px 0 0 ${palette.accent}`, backgroundColor: palette.currentSlide },
+    '.cm-foldGutter .cm-current-slide-gutter': { backgroundColor: palette.currentSlide },
+    '.cm-foldGutter .cm-gutterElement': { width: '18px', display: 'grid', placeItems: 'center' },
+    '.cm-fold-marker': { display: 'grid', placeItems: 'center', width: '16px', height: '16px', borderRadius: '4px', color: palette.dimmed, cursor: 'pointer', opacity: '0', transition: 'opacity 120ms' },
+    '.cm-gutters:hover .cm-fold-marker, .cm-fold-marker--closed': { opacity: '1' },
+    '.cm-fold-marker:hover': { color: palette.heading, backgroundColor: palette.activeLine },
+    '.cm-fold-marker svg': { width: '14px', height: '14px' },
+    '.cm-fold-marker--closed svg': { transform: 'rotate(-90deg)' },
+    '.cm-slide-fold': { display: 'inline-flex', alignItems: 'baseline', gap: '8px', margin: '0 6px', padding: '0 8px', borderRadius: '4px', backgroundColor: palette.codeBackground, color: palette.dimmed, cursor: 'pointer', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12px' },
+    '.cm-slide-fold:hover': { color: palette.heading },
+    '.cm-slide-fold__label': { color: palette.heading, fontWeight: '600' },
+    '.cm-mdc-name': { color: palette.component },
+    '.cm-mdc-attribute': { color: palette.text },
+    '.cm-mdc-value': { color: palette.value },
+    '.cm-mdc-close': { color: palette.component, opacity: '0.7' },
+    '.cm-yaml-line, .cm-yaml-line *': { fontWeight: '400', color: palette.text },
+    '.cm-yaml-line .cm-yaml-key, .cm-yaml-line .cm-yaml-key *': { color: palette.accent },
+    '.cm-yaml-line .cm-yaml-string, .cm-yaml-line .cm-yaml-string *': { color: palette.value },
+    '.cm-yaml-line .cm-yaml-literal, .cm-yaml-line .cm-yaml-literal *': { color: palette.literal },
+    '.cm-yaml-line .cm-yaml-comment, .cm-yaml-line .cm-yaml-comment *': { color: palette.dimmed, fontStyle: 'italic' },
   }, { dark })
 }
 
