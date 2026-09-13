@@ -49,7 +49,7 @@ A quote.
 ::
 ```
 
-`#` opens the title slide, `##` starts a horizontal slide, `###` a vertical one, and `---` also separates slides. The component reference, the frontmatter schema, backgrounds, and the Storybook embed syntax are in [docs/presentation-format.md](docs/presentation-format.md), [docs/backgrounds.md](docs/backgrounds.md), and [docs/theme-system.md](docs/theme-system.md).
+`#` opens the title slide, `##` starts a horizontal slide, `###` a vertical one, and `---` also separates slides. [docs/presentation-format.md](docs/presentation-format.md) says where a deck lives here and points at the reference of each package: the dialect and the generic components in [packages/nuxt](packages/nuxt/README.md), the explanation kit in [packages/schemas](packages/schemas/README.md), the story embeds in [packages/storybook](packages/storybook/README.md).
 
 ## Content model
 
