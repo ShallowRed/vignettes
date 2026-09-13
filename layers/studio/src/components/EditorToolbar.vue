@@ -4,13 +4,12 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 
-// Markdown formatting bar; every action targets the live EditorView.
+// The markdown pane's formatting and insertion bar; every action targets the
+// live EditorView.
 const props = defineProps<{
   view?: EditorView
   disabled?: boolean
 }>()
-
-const emit = defineEmits<{ help: [] }>()
 
 function run(action: (view: EditorView) => void) {
   if (props.view)
@@ -68,7 +67,7 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-3 py-2 border-b border-default bg-default overflow-x-auto">
+  <div class="flex items-center gap-2 px-2 py-1.5 border-b border-default overflow-x-auto">
     <UDropdownMenu :items="headingItems">
       <UButton
         icon="i-lucide-heading"
@@ -156,17 +155,9 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
       </UDropdownMenu>
     </div>
 
-    <div class="flex-1" />
-    <UTooltip text="Aide et syntaxe">
-      <UButton
-        icon="i-lucide-circle-help"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        :class="btnHover"
-        aria-label="Aide et syntaxe"
-        @click="emit('help')"
-      />
-    </UTooltip>
+    <template v-if="$slots.end">
+      <div class="flex-1" />
+      <slot name="end" />
+    </template>
   </div>
 </template>

@@ -30,6 +30,7 @@ import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { projectsQuery } from '../../queries'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
+import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 
 definePageMeta({ layout: false })
@@ -52,8 +53,7 @@ const deckStatus = ref<string>('private')
 const loadedFrom = ref<'draft' | 'published' | 'file' | null>(null)
 const preview = ref<PresentationData | null>(null)
 const loadError = ref<string | null>(null)
-const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
-const saveMessage = ref('')
+const saveState = ref<'idle' | 'saving' | 'error'>('idle')
 
 // Collaboration state. `peers` lists the other connected people by name.
 const collabStatus = ref<'connecting' | 'connected' | 'disconnected'>('connecting')
@@ -110,9 +110,29 @@ const collabLabel = computed(() => {
     return 'Connexion…'
   return synced.value ? 'Brouillon synchronisé' : 'Enregistrement…'
 })
-const collabDotClass = computed(() =>
-  collabStatus.value === 'disconnected' ? 'bg-error' : collabStatus.value === 'connected' && docSynced.value && synced.value ? 'bg-success' : 'bg-warning')
 const COLLAB_HINT = 'Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.'
+
+// The server acknowledges each keystroke within a moment; the indicator shows
+// the pending state only when it lasts, so it stays still while someone types.
+const SAVING_DELAY_MS = 1200
+const savingShown = ref(false)
+let savingTimer: ReturnType<typeof setTimeout> | undefined
+watch(synced, (value) => {
+  clearTimeout(savingTimer)
+  if (value)
+    savingShown.value = false
+  else
+    savingTimer = setTimeout(() => savingShown.value = true, SAVING_DELAY_MS)
+})
+const syncIndicator = computed(() => {
+  if (collabStatus.value === 'disconnected')
+    return { icon: 'i-lucide-cloud-off', class: 'text-error', label: collabLabel.value }
+  if (collabStatus.value !== 'connected' || !docSynced.value)
+    return { icon: 'i-lucide-loader-circle', class: 'text-dimmed animate-spin', label: collabLabel.value }
+  if (savingShown.value)
+    return { icon: 'i-lucide-cloud-upload', class: 'text-warning', label: 'Enregistrement…' }
+  return { icon: 'i-lucide-cloud-check', class: 'text-muted', label: 'Brouillon synchronisé' }
+})
 
 /** Re-read the published state after someone (maybe this client) published. */
 async function refreshPublished() {
@@ -145,6 +165,13 @@ else if (data.value) {
 }
 
 const statusDisplay = computed(() => STATUS_CONFIG[deckStatus.value as keyof typeof STATUS_CONFIG])
+
+// The folder of the deck, for the path back in the header.
+const { data: viewer } = useFetch<{ canEdit: boolean, project?: string | null }>(() => `/api/presentations/${slug}/viewer`, {
+  server: false,
+  lazy: true,
+  default: () => ({ canEdit: false }),
+})
 
 // ── CodeMirror setup ────────────────────────────────────────────────────────
 
@@ -191,6 +218,9 @@ watch(followCursor, (on) => {
 // The slide under the caret, where "Présenter" opens the deck.
 const cursorSlide = computed(() => slideAtLine(slideRanges(raw.value, parserId.value), cursorLine.value))
 const cursorSlideHash = computed(() => `#/${cursorSlide.value.h}/${cursorSlide.value.v}`)
+const slideCount = computed(() => slideRanges(raw.value, parserId.value).length)
+const cursorSlideNumber = computed(() =>
+  slideRanges(raw.value, parserId.value).findIndex(range => range.h === cursorSlide.value.h && range.v === cursorSlide.value.v) + 1)
 
 // `?slide=h/v`: the deck page's edit command opens the editor on the slide it
 // showed. The caret goes to the slide's first line once the text is loaded.
@@ -253,10 +283,30 @@ const collabExtensions = shallowRef<Extension[]>([])
 const { data: projectsData } = useQuery(projectsQuery(requestFetch))
 const projects = computed<Project[]>(() => projectsData.value ?? [])
 
+const breadcrumb = computed(() => {
+  const project = projects.value.find(p => p.slug === viewer.value.project)
+  return [
+    { label: 'Accueil', to: '/' },
+    ...(project ? [{ label: project.title, to: `/projects/${project.slug}` }] : []),
+    { label: deckTitle.value || slug },
+  ]
+})
+
+// The slide proportions, so the preview frame matches the deck.
+const previewRatio = computed(() => {
+  const reveal = preview.value?.metadata?.reveal as { width?: number, height?: number } | undefined
+  return (reveal?.width ?? 960) / (reveal?.height ?? 700)
+})
+
+// Off by default: one source line per screen line keeps the line numbers, the
+// folds and the nesting of components readable.
+const wrapLines = ref(false)
+
 const extensions = computed<Extension[]>(() => [
   markdown(),
-  EditorView.lineWrapping,
+  ...(wrapLines.value ? [EditorView.lineWrapping] : []),
   highlightActiveLine(),
+  ...deckStructure(),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
   deckCompletions({ projects: projects.value.map(p => p.slug) }),
   cursorListener,
@@ -424,23 +474,23 @@ async function save() {
     draftStamp.value = res.stamp ?? null
     lastSaved.value = saved
     loadedFrom.value = 'draft'
-    saveState.value = 'saved'
-    saveMessage.value = 'Brouillon enregistré'
-    setTimeout(() => {
-      saveState.value = 'idle'
-      saveMessage.value = ''
-    }, 2500)
+    saveState.value = 'idle'
+    toast.add({ title: 'Brouillon enregistré', icon: 'i-lucide-check', color: 'success' })
   }
   catch (e: any) {
     saveState.value = 'error'
     // A 409 means someone saved this draft after we loaded it.
-    saveMessage.value = e?.statusCode === 409 || e?.data?.data?.conflict || e?.data?.conflict
-      ? 'Quelqu\'un a enregistré ce brouillon entre-temps : rechargez la page pour repartir de sa version (vos modifications resteraient à reporter).'
-      : e?.statusMessage || e?.message || 'Échec de l\'enregistrement'
+    toast.add({
+      title: e?.statusCode === 409 || e?.data?.data?.conflict || e?.data?.conflict
+        ? 'Quelqu\'un a enregistré ce brouillon entre-temps : rechargez la page pour repartir de sa version (vos modifications resteraient à reporter).'
+        : e?.statusMessage || e?.message || 'Échec de l\'enregistrement',
+      icon: 'i-lucide-triangle-alert',
+      color: 'error',
+    })
   }
 }
 
-const publishState = ref<'idle' | 'publishing' | 'published' | 'error'>('idle')
+const publishState = ref<'idle' | 'publishing' | 'error'>('idle')
 
 async function publish() {
   if (publishState.value === 'publishing')
@@ -459,16 +509,12 @@ async function publish() {
     await $fetch(`/api/presentations/${slug}/publish`, { method: 'POST' })
     publishedRaw.value = raw.value
     publishedAt.value = Date.now()
-    publishState.value = 'published'
-    saveMessage.value = 'Publié'
-    setTimeout(() => {
-      publishState.value = 'idle'
-      saveMessage.value = ''
-    }, 2500)
+    publishState.value = 'idle'
+    toast.add({ title: 'Publié', description: 'Les visiteurs voient maintenant cette version.', icon: 'i-lucide-check', color: 'success' })
   }
   catch (e: any) {
     publishState.value = 'error'
-    saveMessage.value = e?.statusMessage || e?.message || 'Échec de la publication'
+    toast.add({ title: e?.statusMessage || e?.message || 'Échec de la publication', icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 }
 
@@ -514,14 +560,15 @@ async function onMetaSaved() {
 </script>
 
 <template>
-  <div class="tailwind-app h-screen flex flex-col overflow-hidden bg-default">
-    <header class="flex items-center gap-2 px-3 h-14 shrink-0 border-b border-default">
-      <!-- The app's brand mark doubles as the way back: the same anchor as the
-           catalog header, so the editor reads as another room of the same app. -->
-      <UTooltip text="Retour au catalogue">
+  <div class="tailwind-app h-screen flex flex-col overflow-hidden bg-muted">
+    <!-- The way back reads as on the catalog pages: the brand mark, then the
+         path from the home page through the folder to this deck. The deck's
+         own state and its publication sit on the right. -->
+    <header class="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-default bg-default">
+      <UTooltip text="Retour à l'accueil">
         <NuxtLink
           to="/"
-          aria-label="Retour au catalogue"
+          aria-label="Retour à l'accueil"
           class="grid place-items-center size-8 shrink-0 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
           <UIcon
@@ -531,92 +578,11 @@ async function onMetaSaved() {
         </NuxtLink>
       </UTooltip>
 
-      <div class="flex flex-col min-w-0">
-        <span class="font-semibold text-highlighted text-sm truncate">
-          {{ deckTitle || slug }}
-        </span>
-        <span class="text-xs text-dimmed font-mono truncate">{{ slug }}</span>
-      </div>
-
-      <!-- Editor state taxonomies stripped to plain text (clean base). -->
-      <!-- State cluster: each slot keeps a minimum width so a label that changes
-           length does not push its neighbours; the presence avatars come last,
-           the only slot that grows. -->
-      <div class="hidden sm:flex items-center gap-4 text-xs whitespace-nowrap">
-        <span
-          v-if="statusDisplay"
-          class="text-muted"
-        >{{ statusDisplay.label }}</span>
-
-        <UTooltip
-          v-if="collabEnabled"
-          :text="COLLAB_HINT"
-        >
-          <span class="flex items-center gap-1.5 min-w-40 text-muted">
-            <span
-              class="size-1.5 shrink-0 rounded-full"
-              :class="collabDotClass"
-            />
-            {{ collabLabel }}
-            <UButton
-              v-if="collabStatus === 'disconnected'"
-              label="Passer en solo"
-              color="neutral"
-              variant="link"
-              size="xs"
-              :to="`/edit/${slug}?solo`"
-              external
-            />
-          </span>
-        </UTooltip>
-        <UTooltip
-          v-else-if="writable"
-          text="Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente"
-        >
-          <span class="flex items-center min-w-40">
-            <UButton
-              label="Solo"
-              icon="i-lucide-user"
-              color="neutral"
-              variant="link"
-              size="xs"
-              :to="`/edit/${slug}`"
-              external
-            />
-          </span>
-        </UTooltip>
-
-        <UTooltip
-          v-if="writable"
-          :text="publicationHint"
-        >
-          <span
-            class="flex items-center gap-1.5 min-w-44"
-            :class="unpublished ? 'text-warning' : 'text-muted'"
-          >
-            <template v-if="unpublished !== null">
-              <span
-                class="size-1.5 shrink-0 rounded-full"
-                :class="unpublished ? 'bg-warning' : 'bg-success'"
-              />
-              {{ publicationLabel }}
-            </template>
-          </span>
-        </UTooltip>
-
-        <div
-          v-if="collabEnabled"
-          class="flex items-center -space-x-1"
-        >
-          <span
-            v-for="peer in peers"
-            :key="peer.name + peer.color"
-            class="grid place-items-center size-6 rounded-full text-[10px] font-semibold text-white ring-2 ring-default"
-            :style="{ backgroundColor: peer.color }"
-            :title="`${peer.name} édite en ce moment`"
-          >{{ initials(peer.name) }}</span>
-        </div>
-      </div>
+      <UBreadcrumb
+        :items="breadcrumb"
+        class="min-w-0"
+        :ui="{ list: 'min-w-0', item: 'min-w-0', link: 'min-w-0', linkLabel: 'truncate' }"
+      />
 
       <div class="flex-1" />
 
@@ -624,95 +590,125 @@ async function onMetaSaved() {
         v-if="!writable"
         class="text-xs text-muted"
       >Lecture seule</span>
-      <span
-        v-if="saveMessage"
-        class="text-xs"
-        :class="saveState === 'error' || publishState === 'error' ? 'text-error' : 'text-success'"
-      >{{ saveMessage }}</span>
-      <UTooltip
-        v-else-if="dirty"
-        text="Modifications non enregistrées"
+
+      <div
+        v-if="collabEnabled"
+        class="flex items-center -space-x-1"
       >
-        <span class="flex items-center gap-1.5 text-xs text-warning">
-          <span class="size-1.5 rounded-full bg-warning" />
-          Non enregistré
+        <span
+          v-for="peer in peers"
+          :key="peer.name + peer.color"
+          class="grid place-items-center size-6 rounded-full text-[10px] font-semibold text-white ring-2 ring-default"
+          :style="{ backgroundColor: peer.color }"
+          :title="`${peer.name} édite en ce moment`"
+        >{{ initials(peer.name) }}</span>
+      </div>
+
+      <!-- One entry to the deck's settings drawer, which names what it holds and
+           shows the current visibility, beside the other states of the deck. -->
+      <UTooltip
+        v-if="statusDisplay"
+        :text="privileged ? 'Titre, accès, partage, dossier, thème, versions et alias' : 'Visibilité'"
+      >
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          class="shrink-0 gap-2"
+          :disabled="!privileged"
+          @click="openMeta"
+        >
+          <UIcon
+            name="i-lucide-settings-2"
+            class="size-4"
+          />
+          Partage et réglages
+          <span class="h-4 w-px bg-accented" />
+          <span class="flex items-center gap-1 text-muted">
+            <UIcon
+              :name="statusDisplay.icon"
+              class="size-3.5"
+            />
+            {{ statusDisplay.label }}
+          </span>
+        </UButton>
+      </UTooltip>
+
+      <!-- The draft state is an icon of fixed size; only a lost connection,
+           which needs an action, adds text. -->
+      <UTooltip
+        v-if="collabEnabled"
+        :text="`${syncIndicator.label}. ${COLLAB_HINT}`"
+      >
+        <span class="flex items-center gap-1.5 text-xs">
+          <UIcon
+            :name="syncIndicator.icon"
+            class="size-4.5 shrink-0"
+            :class="syncIndicator.class"
+          />
+          <template v-if="collabStatus === 'disconnected'">
+            <span class="text-error">Hors ligne</span>
+            <UButton
+              label="Passer en solo"
+              color="neutral"
+              variant="link"
+              size="xs"
+              :to="`/edit/${slug}?solo`"
+              external
+            />
+          </template>
         </span>
       </UTooltip>
+      <template v-else-if="writable">
+        <UTooltip text="Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente">
+          <UButton
+            label="Solo"
+            icon="i-lucide-user"
+            color="neutral"
+            variant="link"
+            size="xs"
+            :to="`/edit/${slug}`"
+            external
+          />
+        </UTooltip>
+        <UChip
+          :show="dirty"
+          color="warning"
+          size="lg"
+        >
+          <UButton
+            label="Enregistrer"
+            icon="i-lucide-save"
+            color="neutral"
+            variant="outline"
+            :loading="saveState === 'saving'"
+            :disabled="!!loadError || !dirty"
+            @click="save"
+          />
+        </UChip>
+      </template>
 
-      <UTooltip
-        v-if="privileged"
-        text="Métadonnées"
-      >
-        <UButton
-          icon="i-lucide-settings-2"
-          color="neutral"
-          variant="ghost"
-          aria-label="Métadonnées"
-          @click="openMeta"
-        />
-      </UTooltip>
-
-      <UTooltip
-        v-if="writable"
-        text="Aperçu du brouillon, tel qu'il sera publié"
-      >
-        <UButton
-          icon="i-lucide-eye"
-          color="neutral"
-          variant="ghost"
-          aria-label="Aperçu du brouillon"
-          :to="`/slides/${slug}?draft${cursorSlideHash}`"
-          target="_blank"
-          external
-        />
-      </UTooltip>
-      <UButton
-        v-if="!collabEnabled"
-        label="Enregistrer le brouillon"
-        icon="i-lucide-save"
-        color="neutral"
-        variant="subtle"
-        :loading="saveState === 'saving'"
-        :disabled="!!loadError || !writable || !dirty"
-        @click="save"
-      />
-      <UTooltip :text="unpublished === false ? 'Rien à publier : la version publiée est à jour' : 'Copie le brouillon vers la version que voient les visiteurs'">
-        <UButton
-          label="Publier"
-          icon="i-lucide-send"
-          :loading="publishState === 'publishing'"
-          :disabled="!!loadError || !writable || unpublished === false"
-          @click="publish"
-        />
-      </UTooltip>
-      <UTooltip :text="followCursor ? 'Suivi de la diapo au curseur : activé' : 'Suivre la diapo au curseur'">
-        <UButton
-          icon="i-lucide-crosshair"
-          color="neutral"
-          :variant="followCursor ? 'subtle' : 'ghost'"
-          aria-label="Suivre la diapo au curseur"
-          @click="toggleFollow"
-        />
-      </UTooltip>
-      <UTooltip text="Présenter depuis cette diapositive">
-        <UButton
-          icon="i-lucide-play"
-          label="Présenter"
-          color="neutral"
-          variant="subtle"
-          :href="`/slides/${slug}${cursorSlideHash}`"
-          target="_blank"
-          rel="noopener"
-        />
+      <!-- The publication state lives on its button: a dot while the draft
+           differs from what visitors see, « Publié » once they are the same. -->
+      <UTooltip :text="`${publicationLabel}. ${publicationHint}`">
+        <UChip
+          :show="writable && unpublished === true"
+          color="warning"
+          size="lg"
+        >
+          <UButton
+            :label="unpublished === false ? 'Publié' : 'Publier'"
+            :icon="unpublished === false ? 'i-lucide-check' : 'i-lucide-send'"
+            :color="unpublished === false ? 'neutral' : 'primary'"
+            :variant="unpublished === false ? 'outline' : 'solid'"
+            class="w-28 justify-center"
+            :loading="publishState === 'publishing'"
+            :disabled="!!loadError || !writable || unpublished === false"
+            @click="publish"
+          />
+        </UChip>
       </UTooltip>
     </header>
-
-    <EditorToolbar
-      v-if="!loadError"
-      :view="editorView"
-      :disabled="!writable"
-      @help="helpOpen = true"
-    />
 
     <div
       v-if="loadError"
@@ -730,65 +726,130 @@ async function onMetaSaved() {
       v-else
       class="grid grid-cols-2 flex-1 min-h-0"
     >
-      <ClientOnly>
-        <!-- Collab mode: the Y.Text owns the document (no v-model — it would fight
-             Yjs); the yCollab extension syncs the editor and we mirror into `raw`. -->
-        <Codemirror
-          v-if="collabEnabled"
-          ref="cm"
-          class="h-full overflow-auto border-r border-default"
-          :extensions="extensions"
-          :indent-with-tab="true"
-          :tab-size="2"
-        />
-        <!-- Solo mode: plain two-way binding. -->
-        <Codemirror
-          v-else
-          ref="cm"
-          v-model="cmModel"
-          class="h-full overflow-auto border-r border-default"
-          :extensions="extensions"
-          :indent-with-tab="true"
-          :tab-size="2"
-        />
-        <template #fallback>
-          <div class="h-full grid place-items-center text-muted text-sm border-r border-default">
-            Chargement de l'éditeur…
-          </div>
-        </template>
-      </ClientOnly>
-
-      <div class="relative h-full overflow-hidden bg-white">
-        <!-- Client-only: the preview is driven by CodeMirror input + an async
-             client-side reparse, so `preview` is always null on the server.
-             SSR-ing it renders the placeholder, then hydration swaps to Reveal —
-             a mismatch that crashes the minified prod build. -->
+      <!-- The source pane carries its own bar: formatting and insertion act on
+           the text below it, and the preview follows its caret. -->
+      <section
+        class="flex flex-col min-h-0 border-r border-default bg-default overflow-hidden"
+        aria-label="Source de la présentation"
+      >
+        <EditorToolbar
+          :view="editorView"
+          :disabled="!writable"
+        >
+          <template #end>
+            <UTooltip :text="followCursor ? 'Suivi de la diapositive au curseur : activé' : 'Suivre la diapositive au curseur'">
+              <UButton
+                icon="i-lucide-crosshair"
+                color="neutral"
+                :variant="followCursor ? 'soft' : 'ghost'"
+                size="sm"
+                :class="followCursor ? 'text-primary' : ''"
+                :aria-pressed="followCursor"
+                aria-label="Suivre la diapositive au curseur"
+                @click="toggleFollow"
+              />
+            </UTooltip>
+          </template>
+        </EditorToolbar>
         <ClientOnly>
-          <RevealPresentation
-            v-if="preview?.slides?.length"
-            ref="previewInstance"
-            :key="preview.metadata.theme"
-            :theme="preview.metadata.theme"
-            :config="{ ...preview.metadata.reveal, fragments: false }"
-            :lang="preview.metadata.lang"
-            :controls="false"
-            @ready="syncPreviewToCursor"
-          >
-            <RevealSlides :presentation-data="preview" />
-          </RevealPresentation>
-          <div
+          <!-- Collab mode: the Y.Text owns the document (no v-model — it would fight
+               Yjs); the yCollab extension syncs the editor and we mirror into `raw`. -->
+          <Codemirror
+            v-if="collabEnabled"
+            ref="cm"
+            class="flex-1 min-h-0 overflow-hidden"
+            :extensions="extensions"
+            :indent-with-tab="true"
+            :tab-size="2"
+          />
+          <!-- Solo mode: plain two-way binding. -->
+          <Codemirror
             v-else
-            class="h-full grid place-items-center text-muted text-sm p-8 text-center"
-          >
-            La prévisualisation s'affichera ici.
-          </div>
+            ref="cm"
+            v-model="cmModel"
+            class="flex-1 min-h-0 overflow-hidden"
+            :extensions="extensions"
+            :indent-with-tab="true"
+            :tab-size="2"
+          />
           <template #fallback>
-            <div class="h-full grid place-items-center text-muted text-sm p-8 text-center">
-              La prévisualisation s'affichera ici.
+            <div class="flex-1 grid place-items-center text-muted text-sm">
+              Chargement de l'éditeur…
             </div>
           </template>
         </ClientOnly>
-      </div>
+        <EditorStatusBar
+          v-model:wrap="wrapLines"
+          :view="editorView"
+          :slide="cursorSlideNumber"
+          :slide-count="slideCount"
+          @help="helpOpen = true"
+        />
+      </section>
+
+      <!-- The preview pane shows the slide at scale, with the commands of the
+           deck page in the same bar and the same corner. -->
+      <section
+        class="editor-stage relative min-h-0 overflow-hidden"
+        :style="{ '--ratio': previewRatio }"
+        aria-label="Aperçu"
+      >
+        <div
+          class="editor-stage__controls"
+          role="toolbar"
+          aria-label="Commandes de l'aperçu"
+        >
+          <DeckControlButton
+            label="Présenter"
+            primary
+            :to="`/slides/${slug}${cursorSlideHash}`"
+            target="_blank"
+            rel="noopener"
+          >
+            <UIcon name="i-lucide-play" />
+          </DeckControlButton>
+          <DeckControlButton
+            v-if="writable"
+            label="Aperçu du brouillon, tel qu'il sera publié"
+            :to="`/slides/${slug}?draft${cursorSlideHash}`"
+            target="_blank"
+          >
+            <UIcon name="i-lucide-eye" />
+          </DeckControlButton>
+        </div>
+
+        <div class="editor-stage__frame">
+          <!-- Client-only: the preview is driven by CodeMirror input + an async
+               client-side reparse, so `preview` is always null on the server.
+               SSR-ing it renders the placeholder, then hydration swaps to Reveal —
+               a mismatch that crashes the minified prod build. -->
+          <ClientOnly>
+            <RevealPresentation
+              v-if="preview?.slides?.length"
+              ref="previewInstance"
+              :key="preview.metadata.theme"
+              :theme="preview.metadata.theme"
+              :config="{ ...preview.metadata.reveal, fragments: false }"
+              :lang="preview.metadata.lang"
+              :controls="false"
+              @ready="syncPreviewToCursor"
+            >
+              <RevealSlides :presentation-data="preview" />
+            </RevealPresentation>
+            <div
+              v-else
+              class="h-full grid place-items-center text-muted text-sm p-8 text-center"
+            >
+              La prévisualisation s'affichera ici.
+            </div>
+            <template #fallback>
+              <div class="h-full grid place-items-center text-muted text-sm p-8 text-center">
+                La prévisualisation s'affichera ici.
+              </div>
+            </template>
+          </ClientOnly>
+        </div>
+      </section>
     </div>
 
     <DeckMetaSlideover
@@ -815,5 +876,56 @@ async function onMetaSaved() {
 }
 .cm-ySelectionCaret {
   animation: y-caret-pulse 1.1s ease-in-out infinite;
+}
+</style>
+
+<style scoped>
+.editor-stage {
+  container-type: size;
+  background: #e4e4e7;
+}
+
+.dark .editor-stage {
+  background: #0e0e11;
+}
+
+/* The same bar as the deck page's commands, always open. */
+.editor-stage__controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(22, 22, 26, 0.86);
+  border-radius: 10px;
+  /* The ring keeps the bar visible on the dark stage. */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+.editor-stage__controls > :deep(.deck-control:nth-last-child(-n + 3) .deck-control__tip) {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+/* The slide at the largest size that fits below the bar, in its proportions. */
+.editor-stage__frame {
+  position: absolute;
+  top: calc(50% + 28px);
+  left: 50%;
+  width: min(calc(100cqw - 48px), calc((100cqh - 136px) * var(--ratio)));
+  aspect-ratio: var(--ratio);
+  overflow: hidden;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%);
+}
+
+.editor-stage__frame :deep(.reveal) {
+  height: 100%;
 }
 </style>
