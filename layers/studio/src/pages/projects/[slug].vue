@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import { UNGROUPED_PROJECT } from '#shared/presentations'
+import { buildFolderContents, UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '../../composables/useAppSession'
 import { useCatalog } from '../../composables/useCatalog'
 import { useModalTarget } from '../../composables/useModalTarget'
@@ -32,8 +32,20 @@ const projectTitle = computed(() =>
     ? 'Divers'
     : (projects.value.find(p => p.slug === routeSlug.value)?.title ?? routeSlug.value))
 
+// Most recently changed first: the deck someone is working on is at the top.
 const decks = computed(() =>
-  presentations.value.filter(d => (d.project ?? UNGROUPED_PROJECT) === projectKey.value))
+  presentations.value
+    .filter(d => (d.project ?? UNGROUPED_PROJECT) === projectKey.value)
+    .toSorted((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)))
+
+const contents = computed(() => buildFolderContents(decks.value))
+const titleOf = (slug: string) => decks.value.find(d => d.slug === slug)?.title ?? slug
+
+// A theme shared by every deck is named once for the folder instead of on each card.
+const sharedTheme = computed(() => {
+  const themes = new Set(decks.value.map(d => d.theme))
+  return themes.size === 1 ? [...themes][0] : undefined
+})
 
 const breadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
@@ -133,6 +145,13 @@ const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useMod
       />
     </div>
 
+    <p
+      v-if="decks.length"
+      class="-mt-4 text-sm text-muted"
+    >
+      {{ sharedTheme ? `Thème ${sharedTheme} · ` : '' }}Triées par dernière modification
+    </p>
+
     <AsyncSection
       :status="status"
       :error="error"
@@ -156,15 +175,44 @@ const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useMod
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <PresentationCard
-          v-for="presentation in decks"
-          :key="presentation.slug"
-          :presentation="presentation"
+          v-for="entry in contents.entries"
+          :key="entry.family ?? entry.variants[0]!.slug"
+          :presentation="entry.variants[0]!"
+          :variants="entry.family ? entry.variants : undefined"
           :admin="privileged"
-          @edit-meta="openMeta(presentation)"
-          @share="openMeta(presentation, 'sharing')"
-          @remove="openDelete(presentation)"
+          @edit-meta="deck => openMeta(deck)"
+          @share="deck => openMeta(deck, 'sharing')"
+          @remove="deck => openDelete(deck)"
         />
       </div>
+
+      <UCollapsible
+        v-if="contents.superseded.length"
+        class="mt-10"
+      >
+        <UButton
+          :label="`Anciennes versions (${contents.superseded.length})`"
+          color="neutral"
+          variant="ghost"
+          trailing-icon="i-lucide-chevron-down"
+          :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform' }"
+          class="group -ml-2.5"
+        />
+        <template #content>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+            <PresentationCard
+              v-for="presentation in contents.superseded"
+              :key="presentation.slug"
+              :presentation="presentation"
+              :replaced-by="titleOf(presentation.supersededBy!)"
+              :admin="privileged"
+              @edit-meta="deck => openMeta(deck)"
+              @share="deck => openMeta(deck, 'sharing')"
+              @remove="deck => openDelete(deck)"
+            />
+          </div>
+        </template>
+      </UCollapsible>
     </AsyncSection>
 
     <DeckMetaSlideover

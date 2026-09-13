@@ -17,6 +17,9 @@ export interface UpdateDeckMetaInput {
   project: string | null
   theme: string | null
   alias: string | null
+  family: string | null
+  variantLabel: string | null
+  supersededBy: string | null
   /** Plain password for a semi-private deck, hashed server-side; null clears it. */
   accessPassword?: string | null
 }

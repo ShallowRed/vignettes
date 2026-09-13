@@ -30,6 +30,16 @@ export interface PresentationListItem {
   hasPassword?: boolean
   /** Privileged only: number of per-deck grants (folder master keys not included). */
   sharedCount?: number
+  /** Versions of one presentation share a family; the folder shows them as one card. */
+  family?: string
+  /** What sets this deck apart within its family: `FR`, `EN`, `Vidéo`. */
+  variantLabel?: string
+  /** Slug of the deck that replaces this one. */
+  supersededBy?: string
+  /** Slides in the published version. */
+  slideCount?: number
+  /** Last change in milliseconds: metadata, publish, and the draft for whoever may edit. */
+  updatedAt?: number
 }
 
 /** Canonical in-app path of a deck: stable alias when it has one, slug route otherwise. */

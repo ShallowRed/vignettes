@@ -86,3 +86,45 @@ export function buildCatalogFolders(
   }
   return folders
 }
+
+/** One card of a folder: a deck, or the versions of one presentation. */
+export interface FolderEntry {
+  /** Set when the card gathers the versions of a family. */
+  family?: string
+  /** The versions, most recently changed first; a single deck otherwise. */
+  variants: PresentationListItem[]
+}
+
+export interface FolderContents {
+  entries: FolderEntry[]
+  /** Decks another deck replaces, most recently changed first. */
+  superseded: PresentationListItem[]
+}
+
+const byRecentChange = (a: PresentationListItem, b: PresentationListItem) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)
+
+/**
+ * Shape a folder's decks into cards. A replaced deck leaves the grid for the
+ * former versions. The other decks of a family share one card, and the cards
+ * are ordered by their most recent change.
+ */
+export function buildFolderContents(decks: PresentationListItem[]): FolderContents {
+  const superseded = decks.filter(d => d.supersededBy).sort(byRecentChange)
+  const families = new Map<string, PresentationListItem[]>()
+  const entries: FolderEntry[] = []
+  for (const deck of decks.filter(d => !d.supersededBy)) {
+    if (!deck.family) {
+      entries.push({ variants: [deck] })
+      continue
+    }
+    if (!families.has(deck.family)) {
+      families.set(deck.family, [])
+      entries.push({ family: deck.family, variants: families.get(deck.family)! })
+    }
+    families.get(deck.family)!.push(deck)
+  }
+  for (const entry of entries)
+    entry.variants.sort(byRecentChange)
+  entries.sort((a, b) => byRecentChange(a.variants[0]!, b.variants[0]!))
+  return { entries, superseded }
+}

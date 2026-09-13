@@ -1,7 +1,7 @@
 import type { PresentationListItem } from '../../layers/studio/shared/presentations/list-item'
 import type { Project } from '../../layers/studio/shared/projects/schema'
 import { describe, expect, it } from 'vitest'
-import { buildCatalogFolders, UNGROUPED_FOLDER_SLUG } from '../../layers/studio/shared/presentations/folder-view'
+import { buildCatalogFolders, buildFolderContents, UNGROUPED_FOLDER_SLUG } from '../../layers/studio/shared/presentations/folder-view'
 import { listItem as item, project } from './helpers/fixtures'
 
 const decks: PresentationListItem[] = [
@@ -62,5 +62,24 @@ describe('buildCatalogFolders', () => {
 
   it('returns an empty list when there is nothing to show', () => {
     expect(buildCatalogFolders([], [])).toEqual([])
+  })
+})
+
+describe('buildFolderContents', () => {
+  const deck = item({ slug: 'solo', updatedAt: 30 })
+  const fr = item({ slug: 'talk-fr', family: 'Talk', variantLabel: 'FR', updatedAt: 10 })
+  const en = item({ slug: 'talk-en', family: 'Talk', variantLabel: 'EN', updatedAt: 40 })
+  const old = item({ slug: 'talk-v1', family: 'Talk', supersededBy: 'talk-fr', updatedAt: 50 })
+
+  it('gathers a family on one card, its most recent version first', () => {
+    const { entries } = buildFolderContents([deck, fr, en])
+    expect(entries.map(e => e.variants.map(v => v.slug))).toEqual([['talk-en', 'talk-fr'], ['solo']])
+    expect(entries[0]!.family).toBe('Talk')
+  })
+
+  it('moves a replaced deck to the former versions, even inside a family', () => {
+    const { entries, superseded } = buildFolderContents([old, fr, deck])
+    expect(superseded.map(d => d.slug)).toEqual(['talk-v1'])
+    expect(entries.flatMap(e => e.variants.map(v => v.slug))).toEqual(['solo', 'talk-fr'])
   })
 })

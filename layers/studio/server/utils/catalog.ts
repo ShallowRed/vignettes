@@ -4,6 +4,8 @@ import type { H3Event } from 'h3'
 import { canList, isPrivileged, mayEdit } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { UNGROUPED_PROJECT } from '#shared/presentations'
+import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
+import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 import { count, eq, gte } from 'drizzle-orm'
 import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from '../db/schema'
 import { getActor } from './actor'
@@ -41,6 +43,36 @@ export async function unpublishedChanges(candidates: Set<string>): Promise<Set<s
   return changed
 }
 
+interface DeckStats {
+  slideCount: number
+  /** Latest of the metadata edit and the publish, in milliseconds. */
+  updatedAt: number
+  /** Last draft save, in milliseconds, which counts only for whoever may edit. */
+  draftSavedAt?: number
+}
+
+/** Slide count and dates of every published deck, from one query. */
+function deckStats(): Map<string, DeckStats> {
+  const rows = useDb()
+    .select({ slug: decks.slug, updatedAt: decks.updatedAt, raw: deckVersions.raw, publishedAt: deckVersions.publishedAt, draftSavedAt: deckDrafts.updatedAt })
+    .from(decks)
+    .innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId))
+    .leftJoin(deckDrafts, eq(deckDrafts.deckSlug, decks.slug))
+    .all()
+  return new Map(rows.map(row => [row.slug, {
+    slideCount: slideRanges(row.raw, parserIdFor(splitFrontmatter(row.raw).data)).length,
+    updatedAt: Math.max(row.updatedAt.getTime(), row.publishedAt.getTime()),
+    draftSavedAt: row.draftSavedAt?.getTime(),
+  }]))
+}
+
+function deckDates(stats: DeckStats | undefined, canEdit: boolean): Pick<PresentationListItem, 'slideCount' | 'updatedAt'> {
+  if (!stats)
+    return {}
+  const draftSavedAt = canEdit ? stats.draftSavedAt ?? 0 : 0
+  return { slideCount: stats.slideCount, updatedAt: Math.max(stats.updatedAt, draftSavedAt) }
+}
+
 /**
  * The catalog as one actor may see it — the single access-filtered source of
  * truth shared by GET /api/presentations and GET /api/projects. Every deck is a
@@ -62,6 +94,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   // server accepts.
   const canEdit = (slug: string) => mayEdit(actor.role, grants.get(slug))
   const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d.slug)).map(d => d.slug)))
+  const stats = deckStats()
 
   return decks
     // A deck with no published version has nothing to serve: only those who can
@@ -77,6 +110,10 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       unlisted: deck.unlisted,
       alias: deck.alias,
       lifecycle: deck.lifecycle,
+      family: deck.family,
+      variantLabel: deck.variantLabel,
+      supersededBy: deck.supersededBy,
+      ...deckDates(stats.get(deck.slug), canEdit(deck.slug)),
       ...(canEdit(deck.slug) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),
       ...(privileged

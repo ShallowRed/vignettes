@@ -8,7 +8,7 @@ import { useMutation, useQuery } from '@pinia/colada'
 import { knownThemes } from '@vignettes/core/theme'
 import { deckApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
-import { useCatalogCache } from '../composables/useCatalog'
+import { useCatalog, useCatalogCache } from '../composables/useCatalog'
 import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
 
@@ -43,6 +43,9 @@ const state = reactive({
   project: NONE,
   theme: NONE,
   alias: '',
+  family: '',
+  variantLabel: '',
+  supersededBy: NONE,
   // Plain text, hashed server-side; empty = keep the stored hash untouched.
   password: '',
 })
@@ -58,6 +61,9 @@ watch(open, (now) => {
       project: props.item.project ?? NONE,
       theme: props.item.theme ?? NONE,
       alias: props.item.alias ?? '',
+      family: props.item.family ?? '',
+      variantLabel: props.item.variantLabel ?? '',
+      supersededBy: props.item.supersededBy ?? NONE,
       password: '',
     })
   }
@@ -81,6 +87,23 @@ const projectItems = computed(() => [
 
 const themeItems = knownThemes().map(name => ({ label: name, value: name }))
 
+// Families and replacements are chosen among the decks of the same folder.
+const { presentations } = useCatalog()
+const folderDecks = computed(() => presentations.value.filter(d =>
+  d.slug !== props.item.slug && (d.project ?? NONE) === state.project))
+const familyItems = ref<string[]>([])
+watch([folderDecks, open], () => {
+  familyItems.value = [...new Set(folderDecks.value.map(d => d.family).filter((f): f is string => Boolean(f)))].sort()
+}, { immediate: true })
+function addFamily(family: string) {
+  familyItems.value.push(family)
+  state.family = family
+}
+const replacementItems = computed(() => [
+  { label: 'Aucune', value: NONE },
+  ...folderDecks.value.map(d => ({ label: d.title, value: d.slug })),
+])
+
 function close() {
   open.value = false
 }
@@ -93,6 +116,9 @@ const { mutate: save, isLoading: saving } = useMutation({
     project: state.project === NONE ? null : state.project,
     theme: state.theme === NONE ? null : state.theme,
     alias: state.alias.trim() || null,
+    family: state.family.trim() || null,
+    variantLabel: state.variantLabel.trim() || null,
+    supersededBy: state.supersededBy === NONE ? null : state.supersededBy,
     ...(passwordReady.value ? { accessPassword: state.password.trim() } : {}),
   }),
   async onSuccess() {
@@ -248,6 +274,45 @@ const audience = computed(() => {
           </UFormField>
         </div>
 
+        <div class="rounded-lg bg-muted p-3 flex flex-col gap-3">
+          <p class="text-xs font-medium text-muted uppercase tracking-wide">
+            Versions
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-[1fr_8rem] gap-3">
+            <UFormField
+              label="Famille"
+              description="Les versions d'une même présentation partagent une carte."
+            >
+              <UInputMenu
+                v-model="state.family"
+                :items="familyItems"
+                create-item
+                placeholder="Aucune"
+                class="w-full"
+                @create="addFamily"
+              />
+            </UFormField>
+            <UFormField
+              label="Variante"
+              description="FR, EN, Vidéo…"
+            >
+              <UInput
+                v-model="state.variantLabel"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+          <UFormField
+            label="Remplacée par"
+            description="La présentation passe dans les anciennes versions du dossier."
+          >
+            <USelect
+              v-model="state.supersededBy"
+              :items="replacementItems"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
         <UFormField
           label="Alias"
           help="Adresse stable /p/<alias> ; vide = pas d'alias."

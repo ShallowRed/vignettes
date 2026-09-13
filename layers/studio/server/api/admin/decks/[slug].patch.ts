@@ -14,6 +14,9 @@ const PatchSchema = z.object({
   alias: z.string().min(1).nullable().optional(),
   frozenBundle: z.string().nullable().optional(),
   unlisted: z.boolean().optional(),
+  family: z.string().trim().min(1).max(120).nullable().optional(),
+  variantLabel: z.string().trim().min(1).max(40).nullable().optional(),
+  supersededBy: z.string().refine(isDeckSlug, 'Invalid slug').nullable().optional(),
   // Plain password, hashed server-side (null clears it). The UI sets it next to
   // the semi-private status so the two can no longer drift apart.
   accessPassword: z.string().min(8).max(200).nullable().optional(),
@@ -48,6 +51,9 @@ export default defineEventHandler(async (event) => {
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: `Invalid patch: ${parsed.error.issues.map(i => i.path.join('.') || i.message).join(', ')}` })
   }
+
+  if (parsed.data.supersededBy === slug)
+    throw createError({ statusCode: 400, statusMessage: 'A deck cannot replace itself' })
 
   // null clears an optional column; undefined leaves it untouched.
   const { accessPassword, ...rest } = parsed.data

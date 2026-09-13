@@ -47,12 +47,15 @@ interface Row {
   theme: string | null
   frozen_bundle: string | null
   unlisted: number
+  family: string | null
+  variant_label: string | null
+  superseded_by: string | null
   raw: string | null
 }
 
 const rows = db.prepare(`
   select d.slug, d.alias, d.title, d.status, d.lifecycle, d.project, d.theme,
-         d.frozen_bundle, d.unlisted, v.raw
+         d.frozen_bundle, d.unlisted, d.family, d.variant_label, d.superseded_by, v.raw
   from decks d
   left join deck_versions v on v.id = d.published_version_id
   where d.managed = 1
@@ -112,6 +115,9 @@ const catalog = {
     ...(r.theme ? { theme: r.theme } : {}),
     ...(r.frozen_bundle ? { frozenBundle: r.frozen_bundle } : {}),
     ...(r.unlisted ? { unlisted: true } : {}),
+    ...(r.family ? { family: r.family } : {}),
+    ...(r.variant_label ? { variantLabel: r.variant_label } : {}),
+    ...(r.superseded_by ? { supersededBy: r.superseded_by } : {}),
     ...(historical.some(h => h.deck_slug === r.slug)
       ? { aliases: historical.filter(h => h.deck_slug === r.slug).map(h => h.alias) }
       : {}),
