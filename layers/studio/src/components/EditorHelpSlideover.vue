@@ -15,7 +15,7 @@ import {
 const props = withDefaults(defineProps<{
   parser?: 'heading' | 'separator'
 }>(), {
-  parser: 'heading',
+  parser: 'separator',
 })
 
 const emit = defineEmits<{ insert: [snippet: string] }>()

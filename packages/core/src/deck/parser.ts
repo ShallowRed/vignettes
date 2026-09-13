@@ -14,7 +14,7 @@ export interface DeckParser {
   parse: (raw: string, meta: DeckMeta) => Slide[] | Promise<Slide[]>
 }
 
-/** Defaults to the heading parser. */
+/** Defaults to the separator parser: `---` opens a slide unless the deck says `parser: heading`. */
 export function parserIdFor(meta: Pick<DeckMeta, 'parser'>): ParserId {
-  return meta.parser === 'separator' ? 'separator' : 'heading'
+  return meta.parser === 'heading' ? 'heading' : 'separator'
 }

@@ -140,7 +140,7 @@ export function buildDeckModel(
     meta,
     slides,
     assets: [],
-    provenance: { parser: options.parser ?? 'heading', source: options.source },
+    provenance: { parser: options.parser ?? 'separator', source: options.source },
   }
   return runTransforms(base, options.transforms ?? DEFAULT_TRANSFORMS)
 }

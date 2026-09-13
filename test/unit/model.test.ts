@@ -29,12 +29,12 @@ describe('deckModel IR serialization (audit §5.8)', () => {
 })
 
 describe('parserIdFor', () => {
-  it('selects the separator parser when requested', () => {
-    expect(parserIdFor({ parser: 'separator' })).toBe('separator')
+  it('selects the heading parser when requested', () => {
+    expect(parserIdFor({ parser: 'heading' })).toBe('heading')
   })
 
-  it('defaults to the heading parser', () => {
-    expect(parserIdFor({})).toBe('heading')
-    expect(parserIdFor({ parser: undefined })).toBe('heading')
+  it('defaults to the separator parser', () => {
+    expect(parserIdFor({})).toBe('separator')
+    expect(parserIdFor({ parser: undefined })).toBe('separator')
   })
 })

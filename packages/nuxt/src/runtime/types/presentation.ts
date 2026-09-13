@@ -10,7 +10,7 @@ export interface PresentationMeta {
   backgrounds?: ThemeBackgrounds
   // Published Storybook root (no trailing `iframe.html`); resolves `:layout{story=…}` iframes.
   storybook?: string
-  // 'heading' splits by H1/H2/H3; 'separator' splits by --- / ----.
+  // 'separator' (the default) splits by --- / ----; 'heading' splits by H1/H2/H3.
   parser?: 'heading' | 'separator'
 }
 

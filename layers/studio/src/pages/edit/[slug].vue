@@ -522,7 +522,7 @@ async function publish() {
 
 const helpOpen = ref(false)
 const activeParser = computed<'heading' | 'separator'>(() =>
-  preview.value?.metadata?.parser === 'separator' ? 'separator' : 'heading')
+  preview.value?.metadata?.parser === 'heading' ? 'heading' : 'separator')
 
 function insertFromHelp(snippet: string) {
   helpOpen.value = false

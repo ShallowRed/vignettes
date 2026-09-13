@@ -42,7 +42,7 @@ A deck is a markdown document with frontmatter:
 title: Presentation title # defaults to the slug
 theme: dsfr # a compiled theme name, or one of its aliases
 lang: fr # French orthotypography applies unless another language
-parser: heading # heading (default) or separator
+parser: separator # separator (default) or heading
 transition: slide # Reveal transition
 center: true # vertical centering
 storybook: https://sb.example # root for live story embeds
@@ -51,7 +51,7 @@ storybook: https://sb.example # root for live story embeds
 
 ## Slides
 
-With the heading parser, `#` opens the title slide, `##` starts a horizontal slide, and `###` nests a vertical slide under it. With `parser: separator`, `---` separates horizontal slides and `----` vertical ones.
+By default, `---` separates horizontal slides and `----` vertical ones. With `parser: heading`, `#` opens the title slide, `##` starts a horizontal slide, and `###` nests a vertical slide under it.
 
 Each slide is tagged with its heading level, `slide-h1`, `slide-h2` or `slide-h3`, which themes style. A section holding vertical slides is wrapped in Reveal's stack, which carries `stack-h1` or `stack-h2` instead: the wrapper is not a slide, so a rule written for a heading level cannot reach the slides nested under it.
 
