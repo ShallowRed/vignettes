@@ -111,3 +111,9 @@ export const projectPermissions = sqliteTable('project_permissions', {
   /** Null = no expiry. Past = the grant no longer resolves (kept listed for the owner). */
   expiresAt: integer('expires_at', { mode: 'timestamp' }),
 }, table => [primaryKey({ columns: [table.projectSlug, table.userId] })])
+
+/** One row per data migration run at boot, so a rewrite of the content applies once. */
+export const dataMigrations = sqliteTable('data_migrations', {
+  name: text('name').primaryKey(),
+  appliedAt: integer('applied_at', { mode: 'timestamp' }).notNull(),
+})
