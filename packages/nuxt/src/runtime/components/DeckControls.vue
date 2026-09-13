@@ -12,6 +12,11 @@ const props = defineProps<{
 const emit = defineEmits<{ print: [] }>()
 
 const open = ref(false)
+// Once open, the commands stop clipping their width, so the tooltips below them
+// show whole; they clip again as soon as the bar folds.
+const settled = ref(false)
+const FOLD_MS = 220
+let settleTimer: ReturnType<typeof setTimeout> | undefined
 const idle = ref(false)
 const fullscreen = ref(false)
 const copied = ref(false)
@@ -45,6 +50,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimeout(idleTimer)
   clearTimeout(closeTimer)
+  clearTimeout(settleTimer)
   window.removeEventListener('pointermove', wake)
   window.removeEventListener('keydown', wake)
   document.removeEventListener('fullscreenchange', syncFullscreen)
@@ -52,12 +58,19 @@ onBeforeUnmount(() => {
 
 function show() {
   clearTimeout(closeTimer)
-  open.value = true
+  if (!open.value) {
+    open.value = true
+    settleTimer = setTimeout(() => settled.value = true, FOLD_MS)
+  }
 }
 
 function hide() {
   clearTimeout(closeTimer)
-  closeTimer = setTimeout(() => open.value = false, CLOSE_DELAY_MS)
+  closeTimer = setTimeout(() => {
+    clearTimeout(settleTimer)
+    settled.value = false
+    open.value = false
+  }, CLOSE_DELAY_MS)
 }
 
 const items = useTemplateRef<HTMLElement>('items')
@@ -98,7 +111,7 @@ async function copyLink() {
 <template>
   <div
     class="deck-controls"
-    :class="{ 'is-open': open, 'is-idle': idle && !open }"
+    :class="{ 'is-open': open, 'is-settled': settled, 'is-idle': idle && !open }"
     role="toolbar"
     aria-label="Commandes de la présentation"
     @mouseenter="show"
@@ -327,7 +340,7 @@ async function copyLink() {
 .deck-controls__items {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
   white-space: nowrap;
   /* Clips the width only, so the tooltips below the commands stay visible. */
@@ -374,8 +387,13 @@ async function copyLink() {
   background: rgba(255, 255, 255, 0.18);
 }
 
-/* The last tooltip aligns on the bar's right edge so it stays in the window. */
-.deck-controls__items > :deep(.deck-control:last-child .deck-control__tip) {
+.deck-controls.is-settled .deck-controls__fold:not(.deck-controls__fold--toggle) .deck-controls__items {
+  overflow-x: visible;
+}
+
+/* The tooltips of the last commands align on their right edge so they stay in
+   the window. */
+.deck-controls__items > :deep(:nth-last-child(-n + 4) .deck-control__tip) {
   right: 0;
   left: auto;
   transform: none;
