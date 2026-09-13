@@ -2,6 +2,7 @@
 import type { RevealConfig } from '../types/presentation.ts'
 import { buildPrintPdfUrl, buildPrintView, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref, toRef } from 'vue'
+import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
 // With `?print-pdf` in the URL, Reveal adds `reveal-print` to <html> and this
 // stylesheet lays the deck out one slide per page.
@@ -13,17 +14,21 @@ interface Props {
   /** Deck language (frontmatter `lang`); French orthotypography applies only to French decks. */
   lang?: string
   /**
-   * Show the print/PDF button. Off for the editor preview: the button is fixed to
-   * the viewport, where it lands on the editor header, and it sends the CURRENT
-   * url to `?print-pdf`, which only makes sense on a deck page.
+   * Show the commands bar. Off for the editor preview, where the bar would sit on
+   * the editor header and its commands act on the whole page.
    */
-  printButton?: boolean
+  controls?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   theme: 'dsfr',
-  printButton: true,
+  controls: true,
 })
+
+const emit = defineEmits<{
+  /** Reveal is initialized; the host can bind keys or listen to slide changes. */
+  ready: [reveal: any]
+}>()
 
 const revealContainer = ref<HTMLElement | null>(null)
 
@@ -70,6 +75,10 @@ const { themeReady } = useTheme(toRef(props, 'theme'))
 const ready = ref(false)
 const VEIL_MAX_MS = 4000
 
+// The bar is interactive only, so it renders once mounted: a frozen bundle, which
+// has no Vue runtime, shows no inert button.
+const mounted = ref(false)
+
 const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, effectiveConfig)
 
 // Let MDC components trigger a Reveal sync after dynamic content changes.
@@ -96,11 +105,14 @@ function handleAnchorClick(event: MouseEvent) {
 }
 
 onMounted(async () => {
+  mounted.value = true
   const liftTimer = setTimeout(() => ready.value = true, VEIL_MAX_MS)
   await Promise.all([initialize(), themeReady()])
   await document.fonts.ready
   clearTimeout(liftTimer)
   ready.value = true
+  if (getInstance())
+    emit('ready', getInstance())
   revealContainer.value?.addEventListener('click', handleAnchorClick)
 
   // Reveal computes its print pagination during initialize(), but the Vue/MDC
@@ -172,27 +184,24 @@ onUnmounted(() => {
         Revenir à la présentation
       </a>
     </div>
-    <button
-      v-if="!isPrintMode && printButton"
-      type="button"
-      class="print-pdf-button"
-      title="Imprimer / exporter en PDF"
-      aria-label="Imprimer ou exporter en PDF"
-      @click="openPrintView"
+    <DeckControls
+      v-if="mounted && controls && !isPrintMode"
+      :get-instance="getInstance"
+      @print="openPrintView"
     >
-      <svg
-        viewBox="0 0 24 24"
-        width="20"
-        height="20"
-        aria-hidden="true"
-        focusable="false"
+      <template
+        v-if="$slots['controls-before']"
+        #before
       >
-        <path
-          fill="currentColor"
-          d="M16 3a1 1 0 0 1 1 1v3h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2v2a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2V4a1 1 0 0 1 1-1zm-1 14H9v3h6zm4-8H5v6h2v-1a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1h2zm-2 1.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2M15 5H9v2h6z"
-        />
-      </svg>
-    </button>
+        <slot name="controls-before" />
+      </template>
+      <template
+        v-if="$slots['controls-after']"
+        #after
+      >
+        <slot name="controls-after" />
+      </template>
+    </DeckControls>
   </div>
 </template>
 
@@ -264,32 +273,6 @@ onUnmounted(() => {
   }
 }
 
-.print-pdf-button {
-  position: fixed;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 50;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.45);
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  opacity: 0.35;
-  transition: opacity 0.15s ease, background 0.15s ease;
-}
-
-.print-pdf-button:hover,
-.print-pdf-button:focus-visible {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.7);
-}
-
 .print-overlay {
   position: fixed;
   inset: 0;
@@ -337,7 +320,6 @@ onUnmounted(() => {
 
 /* Never let on-screen controls bleed into the print/PDF render. */
 @media print {
-  .print-pdf-button,
   .print-overlay,
   .deck-veil {
     display: none !important;
