@@ -8,7 +8,7 @@ const alias = route.params.alias as string
 
 // Frozen/archived aliases redirect to their static bundle; live ones render here.
 const { data: resolved, error: resolveError } = await useAsyncData(`p-resolve-${alias}`, () =>
-  $fetch<{ lifecycle: string, frozenUrl?: string }>(`/api/p/${alias}`))
+  $fetch<{ lifecycle: string, slug?: string, frozenUrl?: string }>(`/api/p/${alias}`))
 
 if (resolved.value?.frozenUrl) {
   await navigateTo(resolved.value.frozenUrl, { external: true, redirectCode: 302 })
@@ -43,13 +43,10 @@ watch(requiresPassword, (needsPassword) => {
   <div class="presentation-page">
     <!-- No <ClientOnly>: SSR-safe markup must prerender for the frozen bundle. -->
     <template v-if="presentationData && presentationData.slides.length > 0">
-      <RevealPresentation
-        :theme="presentationData.metadata.theme"
-        :config="presentationData.metadata.reveal"
-        :lang="presentationData.metadata.lang"
-      >
-        <RevealSlides :presentation-data="presentationData" />
-      </RevealPresentation>
+      <StudioDeck
+        :slug="resolved?.slug"
+        :presentation-data="presentationData"
+      />
     </template>
 
     <DeckError

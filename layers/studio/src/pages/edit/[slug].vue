@@ -21,7 +21,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { parserIdFor } from '@vignettes/core/deck'
+import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
 import { buildPresentationData } from '@vignettes/nuxt/runtime/composables/usePresentation'
 import { slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
 import Codemirror from 'vue-codemirror6'
@@ -187,6 +187,30 @@ watch(followCursor, (on) => {
   if (on)
     syncPreviewToCursor()
 })
+
+// The slide under the caret, where "Présenter" opens the deck.
+const cursorSlide = computed(() => slideAtLine(slideRanges(raw.value, parserId.value), cursorLine.value))
+const cursorSlideHash = computed(() => `#/${cursorSlide.value.h}/${cursorSlide.value.v}`)
+
+// `?slide=h/v`: the deck page's edit command opens the editor on the slide it
+// showed. The caret goes to the slide's first line once the text is loaded.
+const slideTarget = typeof route.query.slide === 'string' ? route.query.slide.split('/').map(Number) : []
+let slideTargetPending = slideTarget.length > 0 && slideTarget.every(Number.isInteger)
+watch([raw, editorView], async ([text, view]) => {
+  if (!slideTargetPending || !view || !text)
+    return
+  await nextTick()
+  const ranges = slideRanges(text, parserIdFor(splitFrontmatter(text).data))
+  const [h, v = 0] = slideTarget
+  const index = ranges.findIndex(range => range.h === h && range.v === v)
+  if (index === -1 || view.state.doc.lines < ranges[index]!.startLine)
+    return
+  slideTargetPending = false
+  const line = view.state.doc.line(ranges[index]!.startLine)
+  view.dispatch({ selection: { anchor: line.from }, effects: EditorView.scrollIntoView(line.from, { y: 'start', yMargin: 48 }) })
+  view.focus()
+  toast.add({ title: `Ouvert sur la diapositive ${index + 1} sur ${ranges.length}`, icon: 'i-lucide-pencil' })
+}, { immediate: true })
 
 function toggleFollow() {
   followCursor.value = !followCursor.value
@@ -637,7 +661,7 @@ async function onMetaSaved() {
           color="neutral"
           variant="ghost"
           aria-label="Aperçu du brouillon"
-          :to="`/slides/${slug}?draft`"
+          :to="`/slides/${slug}?draft${cursorSlideHash}`"
           target="_blank"
           external
         />
@@ -670,15 +694,15 @@ async function onMetaSaved() {
           @click="toggleFollow"
         />
       </UTooltip>
-      <UTooltip text="Ouvrir la présentation">
+      <UTooltip text="Présenter depuis cette diapositive">
         <UButton
-          icon="i-lucide-external-link"
+          icon="i-lucide-play"
+          label="Présenter"
           color="neutral"
-          variant="ghost"
-          :href="`/slides/${slug}`"
+          variant="subtle"
+          :href="`/slides/${slug}${cursorSlideHash}`"
           target="_blank"
           rel="noopener"
-          aria-label="Ouvrir la présentation"
         />
       </UTooltip>
     </header>
@@ -747,7 +771,8 @@ async function onMetaSaved() {
             :theme="preview.metadata.theme"
             :config="{ ...preview.metadata.reveal, fragments: false }"
             :lang="preview.metadata.lang"
-            :print-button="false"
+            :controls="false"
+            @ready="syncPreviewToCursor"
           >
             <RevealSlides :presentation-data="preview" />
           </RevealPresentation>

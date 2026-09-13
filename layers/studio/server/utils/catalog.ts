@@ -26,7 +26,7 @@ function grantCounts(table: typeof deckPermissions | typeof projectPermissions, 
  * since the publish are the candidates (one query); a text comparison confirms
  * them, because a draft seeded from the published text is newer without differing.
  */
-async function unpublishedChanges(candidates: Set<string>): Promise<Set<string>> {
+export async function unpublishedChanges(candidates: Set<string>): Promise<Set<string>> {
   if (candidates.size === 0)
     return new Set()
   const rows = useDb().select({ slug: deckDrafts.deckSlug }).from(deckDrafts).innerJoin(decks, eq(decks.slug, deckDrafts.deckSlug)).innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId)).where(gte(deckDrafts.updatedAt, deckVersions.publishedAt)).all()

@@ -53,5 +53,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return { lifecycle: entry.lifecycle, content: resolveDeck({ stub }).content }
+  return { lifecycle: entry.lifecycle, slug: entry.slug, content: resolveDeck({ stub }).content }
 })
