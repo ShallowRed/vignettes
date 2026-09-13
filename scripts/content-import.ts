@@ -16,6 +16,7 @@
  *   node scripts/content-import.ts                  # plan
  *   node scripts/content-import.ts --apply          # write
  *   node scripts/content-import.ts --db=/path/to.db # target another database
+ *   node scripts/content-import.ts --content=<dir>  # read another content directory
  *
  * `--remote=<url>` sends `--republish` decks to a running instance instead of a
  * database file, through the draft-save and publish routes, authenticated with
@@ -36,9 +37,9 @@ import { load as parseYaml } from 'js-yaml'
 import { applyRemoteRepublish, planRemoteRepublish } from './lib/remote-republish.ts'
 
 const ROOT = process.cwd()
-const CONTENT_DIR = join(ROOT, 'presentations')
 
 const args = process.argv.slice(2)
+const CONTENT_DIR = args.find(a => a.startsWith('--content='))?.slice(10) ?? join(ROOT, 'presentations')
 const APPLY = args.includes('--apply')
 const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5)
   ?? process.env.NUXT_DB_PATH

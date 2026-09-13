@@ -193,6 +193,11 @@ description = "Unit and golden tests"
 depends = [ "install" ]
 run = "pnpm test"
 
+[tasks."test:e2e"]
+description = "End-to-end tests on the production build, in Chromium and Firefox (first run: pnpm exec playwright install chromium firefox)"
+depends = [ "install" ]
+run = "pnpm build && pnpm test:e2e"
+
 [tasks."test:watch"]
 description = "Tests in watch mode"
 depends = [ "install" ]

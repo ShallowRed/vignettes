@@ -19,7 +19,8 @@
     "prepare": "nuxt prepare",
     "hash-password": "node scripts/hash-password.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
@@ -70,6 +71,7 @@
     "@iconify-json/lucide": "catalog:",
     "@iconify-json/ri": "catalog:",
     "@nuxt/icon": "catalog:",
+    "@playwright/test": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/js-yaml": "catalog:",
     "@vignettes/theme-dsfr": "workspace:*",
