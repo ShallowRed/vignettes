@@ -34,6 +34,7 @@ describe('buildComponentMap', () => {
     expect(map['full-screen-image']).toBe('FullScreenImage')
     expect(map.notes).toBe('Notes')
     expect(map.fragments).toBe('Fragments')
+    expect(map['deck-image']).toBe('Image')
   })
 
   it('leaves slide-background out: it is an annotation', () => {

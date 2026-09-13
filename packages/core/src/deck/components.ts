@@ -42,7 +42,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Quote' },
   { name: 'FullScreenImage', aliases: ['full-screen-image'], fullSlide: true },
   { name: 'Iframe' },
-  { name: 'Image' },
+  { name: 'Image', aliases: ['deck-image'] },
   { name: 'Mermaid' },
   { name: 'PreviewLink' },
   { name: 'IconInline', aliases: ['i'] },
@@ -51,6 +51,16 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Notes', aliases: ['notes'] },
   { name: 'Fragments', aliases: ['fragments'] },
 ] as const
+
+/**
+ * Component names the HTML pass of the MDC parser rewrites, mapped to the tag the
+ * slide parser renames them to before that pass. HTML parsing turns an `image`
+ * start tag into `img`, a void element, so `::Image` would lose its component and
+ * its slot. Each target tag is an alias of the component in the contract.
+ */
+export const HTML_REWRITTEN_COMPONENT_TAGS: Readonly<Record<string, string>> = {
+  image: 'deck-image',
+}
 
 let registry: DeckComponent[] = [...BUILT_IN_COMPONENTS]
 

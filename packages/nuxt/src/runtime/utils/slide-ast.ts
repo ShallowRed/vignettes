@@ -6,8 +6,33 @@ import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import {
   BACKGROUND_ANNOTATION_TAG,
   fullSlideComponentNames,
+  HTML_REWRITTEN_COMPONENT_TAGS,
   STRIPPED_ANNOTATION_TAGS,
 } from '@vignettes/core/deck'
+
+// Renames the MDC components whose tag the HTML pass would rewrite.
+function remarkRewrittenComponentTags() {
+  return (tree: any) => {
+    const rename = (node: any) => {
+      if (['containerComponent', 'leafComponent', 'textComponent'].includes(node.type)) {
+        const tag = HTML_REWRITTEN_COMPONENT_TAGS[String(node.name).toLowerCase()]
+        if (tag) {
+          node.name = tag
+          if (node.data?.hName)
+            node.data.hName = tag
+        }
+      }
+      node.children?.forEach(rename)
+    }
+    rename(tree)
+  }
+}
+
+function parseDeckMarkdown(md: string): Promise<MDCParserResult> {
+  return parseMarkdown(md, {
+    remark: { plugins: { 'rewritten-component-tags': { instance: remarkRewrittenComponentTags } } },
+  })
+}
 
 export function getHeadingLevel(children: any[]): string | undefined {
   if (!children || children.length === 0)
@@ -264,7 +289,7 @@ export async function parseSlidesFromSeparators(rawContent: string): Promise<Sli
     if (verticalParts.length > 1) {
       const verticalSlides: Slide[] = []
       for (const part of verticalParts) {
-        const ast = await parseMarkdown(part.trim())
+        const ast = await parseDeckMarkdown(part.trim())
         if (ast.body?.children)
           verticalSlides.push(createSlide(ast.body.children))
       }
@@ -277,7 +302,7 @@ export async function parseSlidesFromSeparators(rawContent: string): Promise<Sli
       }
     }
     else {
-      const ast = await parseMarkdown(section.trim())
+      const ast = await parseDeckMarkdown(section.trim())
       if (ast.body?.children)
         slides.push(createSlide(ast.body.children))
     }
@@ -291,7 +316,7 @@ export async function parseSlidesFromSeparators(rawContent: string): Promise<Sli
 export const headingParser: DeckParser = {
   id: 'heading',
   async parse(raw: string): Promise<Slide[]> {
-    const ast = await parseMarkdown(raw)
+    const ast = await parseDeckMarkdown(raw)
     return parseSlides(ast)
   },
 }

@@ -56,7 +56,8 @@ Texte réservé à l'orateur.
 
 ### Image
 
-::Image{src="/images/placeholder.svg" caption="Une légende" alt="Image de substitution"}
+::Image{src="/images/placeholder.svg" alt="Image de substitution"}
+Une légende
 ::
 
 ### Page intégrée

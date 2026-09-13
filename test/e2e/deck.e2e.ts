@@ -42,6 +42,8 @@ test('every authoring component renders its own markup', async ({ page, browserN
     'Columns': ['.columns', 1],
     'Fragments': ['.fragments .fragment', 2],
     'Notes': ['aside.notes', 1],
+    'Image': ['figure.image-figure img', 1],
+    'Image caption': ['figure.image-figure figcaption', 1],
     'Iframe': ['.iframe-container iframe', 1],
     'PreviewLink': ['a.preview-link', 1],
     'Mermaid': ['.mermaid-container > svg', 1],
