@@ -101,20 +101,16 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           :class="menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100'"
           @click.stop.prevent
         >
-          <UTooltip
+          <UButton
             v-if="canEdit"
-            text="Éditer le contenu"
-          >
-            <UButton
-              icon="i-lucide-pencil"
-              color="neutral"
-              variant="outline"
-              size="xs"
-              class="bg-default/90 backdrop-blur-sm hover:bg-accented active:bg-accented active:ring-inverted/40 active:scale-95 transition"
-              :to="`/edit/${deck.slug}`"
-              aria-label="Éditer le contenu"
-            />
-          </UTooltip>
+            icon="i-lucide-pencil"
+            label="Éditer"
+            color="neutral"
+            variant="outline"
+            size="xs"
+            class="bg-default/90 backdrop-blur-sm hover:bg-accented active:bg-accented active:ring-inverted/40 active:scale-95 transition"
+            :to="`/edit/${deck.slug}`"
+          />
           <UDropdownMenu
             v-if="hasMenu"
             v-model:open="menuOpen"
