@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-/** Hash a password for a presentation's `accessPassword` frontmatter.
+/**
+ * Hash a password for a presentation's `accessPassword` frontmatter.
  *  Usage: node scripts/hash-password.js <password>
  */
 

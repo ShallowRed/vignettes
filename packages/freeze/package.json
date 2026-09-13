@@ -1,0 +1,20 @@
+{
+  "name": "@vignettes/freeze",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Freezes a deck into a self-contained static bundle: reduced public directory, deck assets carried along, location-agnostic stylesheets, embedded Storybook.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./bundle": "./src/bundle.ts",
+    "./descriptor": "./src/descriptor.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@vignettes/core": "workspace:*"
+  }
+}

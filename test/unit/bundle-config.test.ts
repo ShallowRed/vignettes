@@ -1,5 +1,5 @@
+import { bundleStorybookUrl, readBundleConfig } from '@vignettes/freeze/bundle'
 import { describe, expect, it } from 'vitest'
-import { bundleStorybookUrl, readBundleConfig } from '../../layers/studio/shared/build/bundle'
 
 describe('readBundleConfig', () => {
   it('is disabled with sane defaults when no toggles are set', () => {

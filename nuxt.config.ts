@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import process from 'node:process'
-import { readBundleConfig } from './layers/studio/shared/build/bundle'
+import { readBundleConfig } from '@vignettes/freeze/bundle'
 import presentationWatcher from './plugins/presentation-watcher.js'
 
 const bundle = readBundleConfig()

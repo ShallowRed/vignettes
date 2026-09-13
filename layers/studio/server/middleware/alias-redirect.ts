@@ -1,4 +1,4 @@
-import { readBundleConfig } from '#shared/build'
+import { readBundleConfig } from '@vignettes/freeze/bundle'
 import { deckDirectory } from '../utils/sources'
 
 /**

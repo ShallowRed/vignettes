@@ -12,6 +12,13 @@ export default antfu({
     'ts/ban-ts-comment': 'off',
   },
 }, {
+  // Command-line helpers the freeze runs with node, where top-level await is the
+  // plain way to write them.
+  files: ['packages/freeze/src/*.js'],
+  rules: {
+    'antfu/no-top-level-await': 'off',
+  },
+}, {
   files: ['**/*.vue'],
   rules: {
     'vue/max-attributes-per-line': [

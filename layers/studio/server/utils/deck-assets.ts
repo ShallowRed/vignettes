@@ -3,10 +3,10 @@ import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import process from 'node:process'
-import { deckAssetKey, deckAssetLocalPath } from '#shared/storage/deck-assets'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { CONTENT_TYPES } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { deckAssetKey, deckAssetLocalPath } from '@vignettes/core/deck-assets'
 
 /**
  * Serve a deck asset of the content space (`presentations/assets/<prefix>/...`,

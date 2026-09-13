@@ -42,22 +42,22 @@ export interface StorybookFreezeStep {
   description: string
 }
 
-// The passes that turn a built Storybook into a self-contained bundle embed,
-// in the order `scripts/freeze.ts` runs them.
+// The passes that turn a built Storybook into a bundle embed, in the order the
+// freeze runs them. The scripts live in @vignettes/freeze.
 export const STORYBOOK_FREEZE_STEPS: readonly StorybookFreezeStep[] = [
   {
     id: 'prune',
-    script: 'scripts/prune-storybook-assets.js',
+    script: 'packages/freeze/src/prune-storybook-assets.js',
     description: 'Prune the built Storybook\'s staticDir assets to the set its stories reference',
   },
   {
     id: 'rebase',
-    script: 'scripts/rebase-storybook-assets.js',
+    script: 'packages/freeze/src/rebase-storybook-assets.js',
     description: 'Rebase root-absolute asset URLs to bundle-relative so the iframe self-resolves',
   },
   {
     id: 'link',
-    script: 'scripts/link-deck-css.js',
+    script: 'packages/freeze/src/link-deck-css.js',
     description: 'Link the _nuxt CSS chunks into the deck HTML so MDC component styles apply',
   },
 ]

@@ -5,12 +5,13 @@
   "description": "Deck core: the markdown dialect contract, the deck schema and model, deck resolution, render transforms and theme tokens. Framework-free.",
   "license": "MIT",
   "exports": {
-    "./deck": "./src/deck/index.ts",
-    "./render": "./src/render/index.ts",
-    "./theme": "./src/theme/index.ts",
-    "./status": "./src/status.ts",
     "./*": "./src/*.ts",
-    "./slugify": "./src/slugify.ts"
+    "./deck": "./src/deck/index.ts",
+    "./deck-assets": "./src/deck-assets.ts",
+    "./render": "./src/render/index.ts",
+    "./slugify": "./src/slugify.ts",
+    "./status": "./src/status.ts",
+    "./theme": "./src/theme/index.ts"
   },
   "files": [
     "src"

@@ -20,92 +20,25 @@ The repository holds three kinds of code. `packages/` are published units that k
 Inside the layer, files import each other by relative path, since `~` resolves to the application's source directory and never to a layer's. The layer redeclares `#shared` so it keeps pointing at the domain it carries.
 
 ```
-layers/studio/src/                  # the studio's Nuxt app (its own srcDir)
-├── app.vue, layouts/, middleware/, plugins/
-├── types/presentation.ts          # Type definitions (Slide, PresentationMetadata, RevealConfig)
-├── config/
-│   ├── presentation.ts            # Constants (defaults, MDC component mappings)
-│   ├── layouts.ts                 # Layout registry & strategy dispatch
-│   └── injection-keys.ts          # Typed Vue provide/inject keys
-├── utils/
-│   ├── slide-ast.ts               # MDC AST → Slide[] + PARSERS registry (pure, stateless)
-│   ├── slide-rendering.ts         # Pure helpers: quicklinkParts, getMediaFit, getSlideClasses, resolveSlideBackground
-│   ├── slugify.ts                 # slugify + getTextContent
-│   └── storybook.ts               # Storybook embed helpers
-├── composables/                   # Reactive state & business logic
-│   ├── usePresentation.ts         # Data loading with useAsyncData (delegates to the core parser port)
-│   ├── useAppSession.ts           # Auth session state
-│   ├── useSlideIds.ts             # Deduplicated HTML ids for slides
-│   ├── useReveal.ts               # Reveal.js lifecycle management
-│   ├── useRevealSync.ts           # Inject sync/instance in child components
-│   └── useTheme.ts                # Dynamic CSS theme loading
-├── components/
-│   ├── AppHeader.vue, PresentationCard.vue, CatalogToolbar.vue, AsyncSection.vue, DeckError.vue
-│   ├── RevealPresentation.vue     # Reveal.js wrapper component
-│   ├── RevealSlides.vue           # Section scaffolding (iterates Slide[])
-│   ├── SlideContent.vue           # Inner slide rendering (layout strategy dispatch)
-│   └── mdc/                       # Custom MDC components
-│       ├── IconInline.vue         # Inline icon (Iconify, accepts ri:name or ri-name)
-│       ├── Columns.vue / Column.vue   # multi-column layout
-│       ├── Quote.vue              # Blockquote with attribution
-│       ├── Image.vue              # Img with optional caption + Reveal.js lightbox
-│       ├── FullScreenImage.vue    # Full-bleed background image slide
-│       ├── Iframe.vue             # Embedded iframe
-│       ├── Mermaid.vue            # Mermaid diagram renderer
-│       ├── Highlight.vue          # Inline highlight
-│       ├── SplitSlide.vue         # Split layout
-│       ├── PreviewLink.vue        # Link with preview thumbnail
-│       └── StoryFrame.vue / Screens.vue   # Storybook story embeds
-├── api/, queries/                 # Typed HTTP client + Pinia Colada queries and mutations
-├── pages/
-│   ├── index.vue                  # Catalog: project folders, filters, deck cards
-│   ├── projects/[slug].vue        # One folder's decks
-│   ├── slides/[slug].vue          # Deck viewer (published version, or `?draft`)
-│   ├── edit/[slug].vue            # Collaborative editor with live preview
-│   ├── p/[alias].vue              # Alias route: live deck, or redirect to its frozen bundle
-│   ├── unlock/[slug].vue          # Password prompt for semi-private decks
-│   ├── users.vue                  # Accounts and global roles (owner)
-│   ├── trash.vue                  # Restore or erase trashed decks and folders
-│   ├── recette.vue                # Acceptance kit (owner, flag-gated)
-│   └── login.vue
+packages/
+  core/          the dialect: schema, model, deck resolution, transforms, theme tokens, component contract
+  nuxt/          the render module: Reveal layer, generic components, parsers, theme pipeline
+  schemas/       pictogram steps, drawn diagrams, guided file reading
+  storybook/     story embeds and their scaling
+  typographie/   the French orthotypography directive
+  freeze/        the static bundle of one deck, and the build toggles it reads
+  theme-kit/     engine CSS: semantic tokens, Reveal patches, layouts, scale presets
+  theme-dsfr/    the brand-neutral DSFR base
 
-layers/studio/server/               # the studio's Nitro server
-├── api/
-│   ├── presentations*.ts          # Catalog, deck read, create, draft save, publish, trash
-│   ├── projects.get.ts, p/[alias].get.ts, media.post.ts
-│   ├── admin/                     # Deck metadata, projects, trash, users, grants
-│   ├── auth/                      # session.get.ts, providers.get.ts
-│   └── recette/                   # Acceptance kit seed + status
-├── routes/
-│   ├── auth/                      # github, google, logout, dev-login, recette
-│   ├── collab.ts                  # Hocuspocus over Nitro's WebSocket
-│   ├── media/[...path].ts         # Uploaded images (object storage or .media/)
-│   └── frozen/[...path].ts        # Frozen bundle assets, behind the deck's access gate
-├── db/                            # drizzle schema, migrations, stores (content, draft, permissions, projects, users)
-├── middleware/                     # alias-redirect.ts, app-session.ts
-├── plugins/                        # migrations.ts (boot), theme-consistency.ts, nuxtout-deck.ts (bundle mode)
-└── utils/                          # Adapters: access, actor, catalog, collab, content-token, db, password, rate-limit, recette, sources, users
+layers/studio/
+  src/           pages, catalog and editor components, queries, session
+  server/        API routes, database stores and their migrations, auth, collab, asset routes
+  shared/        the domain reached through #shared: access, projects, catalog contract, trash, storage
 
-layers/studio/shared/               # studio domain, reached through #shared
-├── access/      # roles, publication status, access-decision matrix (pure)
-├── collab/      # markdown ↔ Y.Doc conversion
-├── content/     # content-source config + fetch policy
-├── presentations/ # catalog wire contract + status display config
-├── projects/    # project-registry schema
-└── build/       # bundle toggles, freeze descriptor, public-deck discovery
-
-packages/core/               # @vignettes/core: dialect, schema, model, resolution, transforms, theme tokens
-packages/nuxt/               # @vignettes/nuxt: Reveal layer, authoring components, parsers, theme pipeline
-packages/schemas/            # @vignettes/schemas: pictogram steps, drawn diagrams, guided file reading
-packages/storybook/          # @vignettes/storybook: story embeds and their scaling
-packages/typographie/        # @vignettes/typographie: French orthotypography directive
-packages/theme-kit/          # Engine CSS layer (semantic tokens, Reveal patches, layouts, presets)
-packages/theme-dsfr/         # Brand-neutral DSFR base theme
-public/themes/               # Compiled CSS themes and copied assets (build output)
-presentations/               # Archive submodule: deck stubs exported from production, registry.yml, projects.yml
-themes/                      # Application themes: a manifest, an SCSS entry, assets/
-scripts/build-themes.ts      # Theme compilation (manifests in themes/ and in the content space)
-plugins/presentation-watcher.js  # Vite plugin watching the content directory
+themes/          this instance's themes, compiled to public/themes/
+presentations/   this instance's content: deck stubs, registry.yml, projects.yml
+scripts/         content and build commands, run through mise
+test/            unit and golden suites
 ```
 
 ## Domain layer (`#shared`, inside the studio layer)
@@ -140,8 +73,7 @@ application and ships its TypeScript sources (`build.transpile` for Vite,
 - **`shared/presentations`** — catalog wire contract + status display config, shared by
   `GET /api/presentations` and the home/admin pages.
 - **`shared/projects`** — project-registry schema (YAML I/O in `server/utils/projects.ts`).
-- **`shared/build`** — standalone-bundle env toggles, freeze descriptor, public-deck
-  discovery; consumed by `nuxt.config.ts`, the frozen-bundle Nitro plugin, and freeze scripts.
+- **`shared/build`** — public-deck discovery in the content space.
 
 ## Data Flow
 ```

@@ -4,8 +4,8 @@
  * tags. Reveal.js and the theme are copied in by `scripts/freeze.ts`.
  */
 
-import { readBundleConfig } from '#shared/build'
 import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls } from '@vignettes/core/render'
+import { readBundleConfig } from '@vignettes/freeze/bundle'
 
 // Iframe scaler, inlined after Reveal.initialize (a separate <script src> gets
 // detached by Reveal). Mirrors public/scaled-frame.js; reads client size rather

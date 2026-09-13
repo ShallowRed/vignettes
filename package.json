@@ -42,6 +42,7 @@
     "@tanstack/vue-table": "catalog:",
     "@types/node": "catalog:",
     "@vignettes/core": "workspace:*",
+    "@vignettes/freeze": "workspace:*",
     "@vignettes/nuxt": "workspace:*",
     "@vignettes/schemas": "workspace:*",
     "@vignettes/storybook": "workspace:*",

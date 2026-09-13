@@ -6,7 +6,7 @@
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
-import { DECK_ASSET_PREFIXES, deckAssetLocalPath } from '../../layers/studio/shared/storage/deck-assets.ts'
+import { DECK_ASSET_PREFIXES, deckAssetLocalPath } from '@vignettes/core/deck-assets'
 
 /**
  * Copy `public/` into `outDir`, keeping only the frozen deck's theme and what
@@ -26,6 +26,12 @@ export function buildReducedPublic(root: string, outDir: string, theme?: string)
   }
 
   const themesDir = join(publicDir, 'themes')
+  if (theme && !existsSync(join(themesDir, `${theme}.css`))) {
+    throw new Error(
+      `theme "${theme}" has no compiled stylesheet in ${themesDir}. `
+      + 'The bundle would carry an unstyled deck: compile the themes first.',
+    )
+  }
   if (!existsSync(themesDir))
     return kept
 
@@ -33,10 +39,8 @@ export function buildReducedPublic(root: string, outDir: string, theme?: string)
   if (theme) {
     // Directories the theme's own CSS points into, e.g. the DSFR base fonts.
     const css = join(themesDir, `${theme}.css`)
-    if (existsSync(css)) {
-      for (const [, name] of readFileSync(css, 'utf8').matchAll(/url\(["']?\/themes\/([\w-]+)\//g))
-        wanted.add(name)
-    }
+    for (const [, name] of readFileSync(css, 'utf8').matchAll(/url\(["']?\/themes\/([\w-]+)\//g))
+      wanted.add(name)
   }
 
   mkdirSync(join(outDir, 'themes'), { recursive: true })

@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { buildReducedPublic, copyDeckAssets, referencedDeckAssets } from '@vignettes/freeze'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { buildReducedPublic, copyDeckAssets, referencedDeckAssets } from '../../scripts/lib/bundle-assets'
 
 describe('referencedDeckAssets', () => {
   it('collects the deck asset URLs of a document, deduplicated', () => {
@@ -72,5 +72,14 @@ describe('bundle asset copying', () => {
 
   it('reports a missing asset instead of failing the freeze', () => {
     expect(copyDeckAssets(root, '![](/images/gone.png)', out).missing).toEqual(['/images/gone.png'])
+  })
+})
+
+describe('buildReducedPublic', () => {
+  it('refuses a theme whose stylesheet has not been compiled', () => {
+    const root = mkdtempSync(join(tmpdir(), 'freeze-root-'))
+    mkdirSync(join(root, 'public', 'themes'), { recursive: true })
+    const out = mkdtempSync(join(tmpdir(), 'freeze-out-'))
+    expect(() => buildReducedPublic(root, out, 'brand')).toThrow(/no compiled stylesheet/)
   })
 })
