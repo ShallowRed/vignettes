@@ -44,10 +44,18 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.nitro.externals.inline ||= []
     nuxt.options.nitro.externals.inline.push(runtime)
 
-    // Unprefixed and global: the deck body names its components in markdown, so
-    // `resolveComponent('Quote')` has to find them at runtime.
+    // The Reveal shell is used by name in the host's pages, so it stays an
+    // ordinary component: its stylesheet then ships in the page's own CSS and is
+    // in the HTML from the first paint.
     addComponentsDir({
       path: resolver.resolve('./runtime/components'),
+      pathPrefix: false,
+      ignore: ['mdc/**'],
+    })
+    // The authoring components are named in markdown and resolved at runtime by
+    // `resolveComponent('Quote')`, which requires them global.
+    addComponentsDir({
+      path: resolver.resolve('./runtime/components/mdc'),
       pathPrefix: false,
       global: true,
     })
