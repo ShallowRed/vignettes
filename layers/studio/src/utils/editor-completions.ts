@@ -4,9 +4,9 @@ import { autocompletion, snippetCompletion } from '@codemirror/autocomplete'
 import {
   ANNOTATION_SNIPPETS,
   COMPONENT_SNIPPETS,
-  FRONTMATTER_KEYS,
   LAYOUT_NAMES,
 } from '../config/editor-reference'
+import { frontmatterGuide } from './editor-frontmatter'
 
 /**
  * Writer autocompletion, driven by the declarative authoring reference:
@@ -31,52 +31,6 @@ function inFrontmatter(context: CompletionContext): boolean {
       return here > 1 && here < n
   }
   return here > 1
-}
-
-function frontmatterSource(options: CompletionOptions) {
-  const keyCompletions: Completion[] = FRONTMATTER_KEYS.map(entry =>
-    snippetCompletion(entry.snippet, {
-      label: entry.key,
-      detail: entry.values ? entry.values.join(' | ') : undefined,
-      info: entry.description,
-      type: 'property',
-    }))
-
-  const valuesByKey = new Map<string, readonly string[]>(
-    FRONTMATTER_KEYS.filter(entry => entry.values).map(entry => [entry.key, entry.values!]),
-  )
-  if (options.projects?.length)
-    valuesByKey.set('project', options.projects)
-
-  return (context: CompletionContext): CompletionResult | null => {
-    if (!inFrontmatter(context))
-      return null
-
-    const line = context.state.doc.lineAt(context.pos)
-    const before = line.text.slice(0, context.pos - line.from)
-
-    // Value position: `key: partial` for a key with a closed value set.
-    const valueMatch = before.match(/^(\w+):\s+(\S*)$/)
-    if (valueMatch) {
-      const values = valuesByKey.get(valueMatch[1]!)
-      if (!values)
-        return null
-      return {
-        from: context.pos - valueMatch[2]!.length,
-        options: values.map(value => ({ label: value, type: 'enum' })),
-      }
-    }
-
-    // Key position: start of line (allow nested keys to stay unbothered).
-    const keyMatch = before.match(/^(\w*)$/)
-    if (!keyMatch || (!context.explicit && keyMatch[1] === ''))
-      return null
-    return {
-      from: line.from,
-      options: keyCompletions,
-      validFor: /^\w*$/,
-    }
-  }
 }
 
 function bodySource() {
@@ -160,8 +114,12 @@ function slashSource() {
 
 /** The full autocompletion extension for the writer. */
 export function deckCompletions(options: CompletionOptions = {}): Extension {
-  return autocompletion({
-    override: [frontmatterSource(options), slashSource(), bodySource()],
-    icons: false,
-  })
+  const frontmatter = frontmatterGuide(options)
+  return [
+    autocompletion({
+      override: [frontmatter.source, slashSource(), bodySource()],
+      icons: false,
+    }),
+    frontmatter.extension,
+  ]
 }

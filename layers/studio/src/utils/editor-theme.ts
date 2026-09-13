@@ -21,6 +21,9 @@ interface Palette {
   component: string
   value: string
   literal: string
+  error: string
+  warning: string
+  tooltip: string
 }
 
 const LIGHT: Palette = {
@@ -35,6 +38,9 @@ const LIGHT: Palette = {
   component: '#7c3aed',
   value: '#15803d',
   literal: '#c2410c',
+  error: '#dc2626',
+  warning: '#d97706',
+  tooltip: '#ffffff',
 }
 
 const DARK: Palette = {
@@ -49,6 +55,9 @@ const DARK: Palette = {
   component: '#c4a7ff',
   value: '#9ad29a',
   literal: '#f0b37e',
+  error: '#f87171',
+  warning: '#fbbf24',
+  tooltip: '#232327',
 }
 
 function markdownHighlight(palette: Palette): Extension {
@@ -120,6 +129,21 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
     '.cm-mdc-attribute': { color: palette.text },
     '.cm-mdc-value': { color: palette.value },
     '.cm-mdc-close': { color: palette.component, opacity: '0.7' },
+    '.cm-fm-problem': { textDecoration: 'underline wavy', textDecorationSkipInk: 'none', textUnderlineOffset: '3px' },
+    '.cm-fm-problem--error': { textDecorationColor: palette.error },
+    '.cm-fm-problem--warning': { textDecorationColor: palette.warning },
+    '.cm-fm-problem--info': { textDecorationColor: palette.dimmed },
+    '.cm-fm-hint': { color: palette.dimmed, fontStyle: 'italic', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12px', pointerEvents: 'none' },
+    '.cm-tooltip.cm-tooltip-hover, .cm-tooltip-autocomplete, .cm-completionInfo': { backgroundColor: palette.tooltip, color: palette.text, border: `1px solid ${palette.codeBackground}`, borderRadius: '6px', boxShadow: '0 6px 20px rgba(0, 0, 0, 0.18)' },
+    '.cm-fm-tooltip': { maxWidth: '320px', padding: '8px 10px', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12.5px', lineHeight: '1.45' },
+    '.cm-fm-tooltip p': { margin: '2px 0 0' },
+    '.cm-fm-tooltip__key': { color: palette.accent, fontWeight: '600' },
+    '.cm-fm-tooltip__values': { color: palette.dimmed, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '11.5px' },
+    '.cm-fm-tooltip__problem--error': { color: palette.error },
+    '.cm-fm-tooltip__problem--warning': { color: palette.warning },
+    '.cm-completionInfo': { padding: '8px 10px', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12.5px', maxWidth: '320px' },
+    '.cm-tooltip-autocomplete ul li[aria-selected]': { backgroundColor: palette.selection, color: palette.heading },
+    '.cm-completionDetail': { color: palette.dimmed, fontStyle: 'normal', marginLeft: '12px' },
     '.cm-yaml-line, .cm-yaml-line *': { fontWeight: '400', color: palette.text },
     '.cm-yaml-line .cm-yaml-key, .cm-yaml-line .cm-yaml-key *': { color: palette.accent },
     '.cm-yaml-line .cm-yaml-string, .cm-yaml-line .cm-yaml-string *': { color: palette.value },

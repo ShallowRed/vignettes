@@ -25,21 +25,59 @@ export interface FrontmatterKey {
   description: string
   /** Closed set of completable values, when the key has one. */
   values?: readonly string[]
+  /** The value that applies when the key is absent. */
+  default?: string
   snippet: string
+  /** Keys nested under this one. */
+  children?: readonly FrontmatterKey[]
 }
 
+const BOOLEAN = ['true', 'false'] as const
+
+/** Reveal.js options a deck commonly sets, nested under `reveal:`. */
+const REVEAL_KEYS: readonly FrontmatterKey[] = [
+  { key: 'width', description: 'Largeur de référence d\'une diapo, en pixels', default: '960', snippet: 'width: ${1280}' },
+  { key: 'height', description: 'Hauteur de référence d\'une diapo, en pixels', default: '700', snippet: 'height: ${720}' },
+  { key: 'margin', description: 'Marge autour de la diapo, en fraction de sa taille', default: '0.1', snippet: 'margin: ${0.04}' },
+  { key: 'slideNumber', description: 'Numéro de diapo : c/t (courante/total), h.v, c, ou false', values: ['"c/t"', '"h.v"', '"c"', 'true', 'false'], default: '"c/t"', snippet: 'slideNumber: ${false}' },
+  { key: 'transition', description: 'Transition entre diapos', values: ['slide', 'fade', 'none', 'convex', 'concave', 'zoom'], default: 'slide', snippet: 'transition: ${fade}' },
+  { key: 'center', description: 'Centre verticalement le contenu des diapos', values: BOOLEAN, default: 'false', snippet: 'center: ${true}' },
+  { key: 'controls', description: 'Flèches de navigation à l\'écran', values: BOOLEAN, default: 'true', snippet: 'controls: ${false}' },
+  { key: 'progress', description: 'Barre de progression en bas', values: BOOLEAN, default: 'true', snippet: 'progress: ${false}' },
+  { key: 'fragments', description: 'Affiche les fragments un par un', values: BOOLEAN, default: 'true', snippet: 'fragments: ${false}' },
+  { key: 'fragmentInURL', description: 'Inscrit le fragment courant dans l\'adresse', values: BOOLEAN, default: 'false', snippet: 'fragmentInURL: ${true}' },
+  { key: 'loop', description: 'Revient à la première diapo après la dernière', values: BOOLEAN, default: 'false', snippet: 'loop: ${true}' },
+  { key: 'navigationMode', description: 'Navigation au clavier : default, linear ou grid', values: ['default', 'linear', 'grid'], default: 'default', snippet: 'navigationMode: ${linear}' },
+  { key: 'autoSlide', description: 'Avance automatique, en millisecondes (0 : désactivée)', default: '0', snippet: 'autoSlide: ${5000}' },
+  { key: 'showNotes', description: 'Affiche les notes de l\'orateur à tous', values: BOOLEAN, default: 'false', snippet: 'showNotes: ${true}' },
+  { key: 'pdfMaxPagesPerSlide', description: 'Pages maximum par diapo à l\'export PDF', snippet: 'pdfMaxPagesPerSlide: ${1}' },
+  { key: 'pdfSeparateFragments', description: 'Une page par fragment à l\'export PDF', values: BOOLEAN, default: 'true', snippet: 'pdfSeparateFragments: ${false}' },
+]
+
+/** Background images per heading level, nested under `backgrounds:`. */
+const BACKGROUND_KEYS: readonly FrontmatterKey[] = [
+  { key: 'h1', description: 'Fond des diapos ouvertes par un titre #', snippet: 'h1: ${/backgrounds/title.svg}' },
+  { key: 'h2', description: 'Fond des diapos ouvertes par un titre ##', snippet: 'h2: ${/backgrounds/section.svg}' },
+  { key: 'h3', description: 'Fond des diapos ouvertes par un titre ###', snippet: 'h3: ${/backgrounds/subsection.svg}' },
+  { key: 'default', description: 'Fond des autres diapos', snippet: 'default: ${/backgrounds/default.svg}' },
+]
+
 export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
-  { key: 'title', description: 'Titre de la présentation', snippet: 'title: "${Titre}"' },
-  { key: 'theme', description: 'Thème visuel du deck', values: knownThemes(), snippet: 'theme: ${dsfr}' },
-  { key: 'project', description: 'Projet de rattachement au catalogue', snippet: 'project: ${slug-du-projet}' },
-  { key: 'status', description: 'Statut de publication (la base prend le dessus pour les decks gérés)', values: PUBLICATION_STATUSES, snippet: 'status: ${draft}' },
-  { key: 'parser', description: 'Découpage des diapos : heading (titres) ou separator (---)', values: ['heading', 'separator'], snippet: 'parser: ${heading}' },
-  { key: 'lang', description: 'Langue du document (fr, en…)', snippet: 'lang: ${fr}' },
-  { key: 'accessPassword', description: 'Mot de passe pour le statut semi-private', snippet: 'accessPassword: ${motdepasse}' },
-  { key: 'storybook', description: 'Racine Storybook pour les StoryFrame (URL du storybook déployé)', snippet: 'storybook: ${https://storybook.example.com}' },
-  { key: 'backgrounds', description: 'Images de fond par niveau de titre (h1/h2/h3/default)', snippet: 'backgrounds:\n  h1: ${/backgrounds/title.svg}\n  default: ${/backgrounds/default.svg}' },
-  { key: 'reveal', description: 'Options Reveal.js (transition, slideNumber, controls…)', snippet: 'reveal:\n  transition: ${slide}\n  slideNumber: ${true}' },
-] as const
+  { key: 'title', description: 'Titre de la présentation', default: 'l\'identifiant', snippet: 'title: "${Titre}"' },
+  { key: 'theme', description: 'Thème visuel', values: knownThemes(), snippet: 'theme: ${dsfr}' },
+  { key: 'parser', description: 'Découpage des diapos : separator (---) ou heading (titres)', values: ['separator', 'heading'], default: 'separator', snippet: 'parser: ${separator}' },
+  { key: 'lang', description: 'Langue du document ; la typographie française s\'applique en fr', values: ['fr', 'en'], default: 'fr', snippet: 'lang: ${fr}' },
+  { key: 'project', description: 'Dossier du catalogue (se règle aussi dans Partage et réglages)', snippet: 'project: ${slug-du-dossier}' },
+  { key: 'status', description: 'Visibilité (Partage et réglages prend le dessus une fois la présentation publiée)', values: PUBLICATION_STATUSES, default: 'private', snippet: 'status: ${private}' },
+  { key: 'unlisted', description: 'Accessible par lien mais absente du catalogue', values: BOOLEAN, default: 'false', snippet: 'unlisted: ${true}' },
+  { key: 'storybook', description: 'Adresse du Storybook déployé, pour les ::StoryFrame', snippet: 'storybook: ${https://storybook.example.com}' },
+  { key: 'backgrounds', description: 'Images de fond par niveau de titre', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
+  { key: 'reveal', description: 'Options de Reveal.js : format, numérotation, transitions…', snippet: 'reveal:\n  width: ${1280}\n  height: ${720}', children: REVEAL_KEYS },
+  { key: 'accessPassword', description: 'Mot de passe du statut semi-private (se règle plutôt dans Partage et réglages)', snippet: 'accessPassword: ${motdepasse}' },
+]
+
+/** Keys a deck may still carry from older formats; known, never suggested. */
+export const LEGACY_FRONTMATTER_KEYS: readonly string[] = ['access', 'transition', 'center']
 
 /** Components authored as `::Name … ::`, with real-world props as placeholders. */
 export const COMPONENT_SNIPPETS: readonly ReferenceSnippet[] = [
@@ -131,45 +169,43 @@ export const ANNOTATION_SNIPPETS: readonly ReferenceSnippet[] = [
 
 /**
  * Whole-slide starters with lorem placeholders, inserted from the toolbar
- * "Modèles" menu. Templates with a heading rely on the default `heading` parser
- * (a `##` opens a new slide); headingless ones lead with `---` so they break in
- * both parsers.
+ * "Modèles" menu. Each leads with `---`, which opens a slide in both parsers.
  */
 export const SLIDE_TEMPLATES: readonly ReferenceSnippet[] = [
   {
     label: 'Deux colonnes',
     description: 'Titre + deux colonnes avec sous-titres',
-    snippet: '## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Sous-titre 1}\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n::\n::column\n### ${Sous-titre 2}\n${Sed do eiusmod tempor incididunt ut labore.}\n::\n:::',
+    snippet: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Sous-titre 1}\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n::\n::column\n### ${Sous-titre 2}\n${Sed do eiusmod tempor incididunt ut labore.}\n::\n:::',
   },
   {
     label: 'Trois colonnes',
     description: 'Titre + trois colonnes',
-    snippet: '## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Colonne 1}\n${Lorem ipsum dolor sit amet.}\n::\n::column\n### ${Colonne 2}\n${Consectetur adipiscing elit.}\n::\n::column\n### ${Colonne 3}\n${Sed do eiusmod tempor.}\n::\n:::',
+    snippet: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Colonne 1}\n${Lorem ipsum dolor sit amet.}\n::\n::column\n### ${Colonne 2}\n${Consectetur adipiscing elit.}\n::\n::column\n### ${Colonne 3}\n${Sed do eiusmod tempor.}\n::\n:::',
   },
   {
     label: 'Couverture',
     description: 'Diapo de garde : titre + sous-titre',
-    snippet: '## ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
+    snippet: '---\n\n## ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
   },
   {
     label: 'Section',
     description: 'Intercalaire : surtitre + grand titre de partie',
-    snippet: '## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
+    snippet: '---\n\n## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
   },
   {
     label: 'Points clés',
     description: 'Titre + liste à puces',
-    snippet: '## ${Titre de la diapo}\n\n- ${Premier point clé}\n- ${Deuxième point clé}\n- ${Troisième point clé}',
+    snippet: '---\n\n## ${Titre de la diapo}\n\n- ${Premier point clé}\n- ${Deuxième point clé}\n- ${Troisième point clé}',
   },
   {
     label: 'Comparaison',
     description: 'Deux colonnes en vis-à-vis (avant/après, pour/contre)',
-    snippet: '## ${Titre de la comparaison}\n\n:::Columns\n::column\n### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::column\n### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
+    snippet: '---\n\n## ${Titre de la comparaison}\n\n:::Columns\n::column\n### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::column\n### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
   },
   {
     label: 'Média + texte',
     description: 'Texte à gauche, image à droite (layout media-right)',
-    snippet: '## ${Titre de la diapo}\n\n:layout{name="media-right"}\n\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n\n::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
+    snippet: '---\n\n## ${Titre de la diapo}\n\n:layout{name="media-right"}\n\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n\n::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
     label: 'Citation',
@@ -184,7 +220,7 @@ export const SLIDE_TEMPLATES: readonly ReferenceSnippet[] = [
   {
     label: 'Galerie Storybook',
     description: 'Titre + deux écrans Storybook côte à côte',
-    snippet: '## ${Titre de la démo}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n:::',
+    snippet: '---\n\n## ${Titre de la démo}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n:::',
   },
 ] as const
 
