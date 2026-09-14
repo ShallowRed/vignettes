@@ -139,8 +139,8 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
         </span>
         <span
           v-if="deck.slideCount"
-          class="absolute right-2 bottom-2 rounded-md bg-black/60 px-1.5 py-0.5 text-xs text-white pointer-events-none"
-        >{{ deck.slideCount }} diapo{{ deck.slideCount > 1 ? 's' : '' }}</span>
+          class="absolute right-0 bottom-0 bg-inverted px-2 py-1 font-mono text-[11px] leading-none tabular-nums text-inverted pointer-events-none"
+        >{{ deck.slideCount }}<span class="sr-only"> diapositive{{ deck.slideCount > 1 ? 's' : '' }}</span></span>
       </DeckPreview>
 
       <div class="flex flex-col gap-2 p-4">
