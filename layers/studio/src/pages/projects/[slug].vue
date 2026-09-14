@@ -60,18 +60,19 @@ const isOwner = computed(() => role.value === 'owner')
 const accessOpen = ref(false)
 const currentProject = computed(() => projects.value.find(p => p.slug === projectKey.value))
 const projectRef = computed(() => ({ slug: projectKey.value, title: projectTitle.value, color: currentProject.value?.color ?? null, icon: currentProject.value?.icon ?? null }))
-const canManageAccess = computed(() => isOwner.value && !isUngrouped.value)
+// Divers and a folder slug left on decks without its project row have nothing to manage.
+const canManageAccess = computed(() => isOwner.value && Boolean(currentProject.value))
 
 // Project lifecycle (owner only): edit metadata, or trash the whole folder.
 const editProjectOpen = ref(false)
 const deleteProjectOpen = ref(false)
-const canManageProject = computed(() => isOwner.value && !isUngrouped.value)
+const canManageProject = computed(() => isOwner.value && Boolean(currentProject.value))
 
 // Create a deck straight into this folder: privileged roles anywhere, and a
 // collaborator holding an `editor` grant on THIS folder (the server accepts
 // exactly that). Pre-selects the project.
 const createOpen = ref(false)
-const defaultProject = computed(() => isUngrouped.value ? undefined : projectKey.value)
+const defaultProject = computed(() => currentProject.value?.slug)
 const canCreateHere = computed(() =>
   privileged.value || (!isUngrouped.value && currentProject.value?.myGrant === 'editor'))
 // A collaborator may only file a new deck under folders they can edit.

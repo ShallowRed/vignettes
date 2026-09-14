@@ -3,7 +3,7 @@ import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { getActorRole } from '../../../utils/actor'
 import { hashAccessPassword } from '../../../utils/password'
-import { useDeckMeta } from '../../../utils/sources'
+import { useDeckMeta, useProjectStore } from '../../../utils/sources'
 
 const PatchSchema = z.object({
   title: z.string().min(1).optional(),
@@ -51,6 +51,10 @@ export default defineEventHandler(async (event) => {
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: `Invalid patch: ${parsed.error.issues.map(i => i.path.join('.') || i.message).join(', ')}` })
   }
+
+  // A deck filed under a slug with no folder would show as a folder nobody can manage.
+  if (parsed.data.project && !await useProjectStore().isLive(parsed.data.project))
+    throw createError({ statusCode: 400, statusMessage: `No folder "${parsed.data.project}"` })
 
   if (parsed.data.supersededBy === slug)
     throw createError({ statusCode: 400, statusMessage: 'A deck cannot replace itself' })

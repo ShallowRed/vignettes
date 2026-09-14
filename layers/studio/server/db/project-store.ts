@@ -57,6 +57,11 @@ export function createProjectStore(db: Db) {
       return !!db.select({ slug: projects.slug }).from(projects).where(eq(projects.slug, slug)).get()
     },
 
+    /** True if a live (not trashed) project owns this slug: a deck may be filed there. */
+    async isLive(slug: string): Promise<boolean> {
+      return !!db.select({ slug: projects.slug }).from(projects).where(and(eq(projects.slug, slug), isNull(projects.deletedAt))).get()
+    },
+
     /**
      * Change a project's slug, cascading to its decks (`decks.project`) and grants
      * (`project_permissions`). Assumes `newSlug` is validated and free. FK-safe

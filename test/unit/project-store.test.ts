@@ -29,6 +29,14 @@ describe('project store — lifecycle + trash', () => {
     expect(b.slug).toBe('mon-dossier-2')
   })
 
+  it('isLive accepts a live folder only', async () => {
+    const project = await store.create({ title: 'Dossier' })
+    expect(await store.isLive(project.slug)).toBe(true)
+    expect(await store.isLive('mutualisation')).toBe(false)
+    await store.softDelete(project.slug)
+    expect(await store.isLive(project.slug)).toBe(false)
+  })
+
   it('rename cascades the slug to decks and grants', async () => {
     const p = await store.create({ title: 'Client' })
     addDeck('deck-a', p.slug)

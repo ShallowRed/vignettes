@@ -3,7 +3,7 @@ import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { assertCanCreateInProject } from '../utils/access'
 import { useDraftStore } from '../utils/collab'
-import { useDeckMeta } from '../utils/sources'
+import { useDeckMeta, useProjectStore } from '../utils/sources'
 
 const CreateSchema = z.object({
   slug: z.string().min(1),
@@ -36,6 +36,8 @@ export default defineEventHandler(async (event) => {
   const { slug, title, project, theme } = parsed.data
 
   await assertCanCreateInProject(event, project)
+  if (project && !await useProjectStore().isLive(project))
+    throw createError({ statusCode: 400, statusMessage: `No folder "${project}"` })
   if (!isDeckSlug(slug)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid slug (letters, digits, dashes, underscores)' })
   }
