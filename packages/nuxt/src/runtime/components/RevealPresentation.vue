@@ -153,7 +153,10 @@ onUnmounted(() => {
       :class="{ 'deck-veil--lifted': ready }"
       role="status"
     >
-      <span class="deck-veil__spinner" />
+      <span
+        class="deck-veil__mark"
+        aria-hidden="true"
+      ><i /><i /><i /></span>
       <span class="deck-veil__label">Chargement de la présentation</span>
     </div>
     <div class="slides">
@@ -227,18 +230,33 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-/* The spinner appears only after a second, so a fast load shows a plain surface. */
-.deck-veil__spinner {
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 3px solid color-mix(in srgb, var(--accent, #000091) 20%, transparent);
-  border-top-color: var(--accent, #000091);
-  border-radius: 50%;
+/* Three panels that fill one after the other, shown only after a second so a
+   fast load shows a plain surface. */
+.deck-veil__mark {
+  display: grid;
+  grid-template-columns: 14fr 8fr 6fr;
+  gap: 4px;
+  width: 64px;
+  height: 36px;
   opacity: 0;
-  animation: deck-veil-spin 800ms linear infinite, deck-veil-appear 200ms ease 1s forwards;
+  animation: deck-veil-appear 200ms ease 1s forwards;
 }
 
-.deck-veil--lifted .deck-veil__spinner {
+.deck-veil__mark i {
+  background: var(--accent, #000091);
+  opacity: 0.18;
+  animation: deck-veil-fill 1200ms ease-in-out infinite;
+}
+
+.deck-veil__mark i:nth-child(2) {
+  animation-delay: 200ms;
+}
+
+.deck-veil__mark i:nth-child(3) {
+  animation-delay: 400ms;
+}
+
+.deck-veil--lifted .deck-veil__mark i {
   animation-play-state: paused;
 }
 
@@ -251,9 +269,10 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-@keyframes deck-veil-spin {
-  to {
-    transform: rotate(360deg);
+@keyframes deck-veil-fill {
+  30%,
+  60% {
+    opacity: 1;
   }
 }
 
@@ -268,8 +287,13 @@ onUnmounted(() => {
     transition: none;
   }
 
-  .deck-veil__spinner {
+  .deck-veil__mark {
     animation: deck-veil-appear 0s linear 1s forwards;
+  }
+
+  .deck-veil__mark i {
+    opacity: 1;
+    animation: none;
   }
 }
 
