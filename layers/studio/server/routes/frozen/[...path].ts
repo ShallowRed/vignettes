@@ -126,7 +126,7 @@ export default defineEventHandler(async (event) => {
   const cfg = {
     endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
     region: process.env.NUXT_FROZEN_S3_REGION || 'fr-par',
-    bucket: process.env.NUXT_FROZEN_S3_BUCKET || 'nuxt-slides-bucket',
+    bucket: process.env.NUXT_FROZEN_S3_BUCKET || 'vignettes-bucket',
     accessKeyId: process.env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
   }

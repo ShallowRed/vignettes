@@ -36,7 +36,7 @@ export function frozenS3ConfigFromEnv(env: Record<string, string | undefined>): 
   return {
     endpoint: env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
     region: env.NUXT_FROZEN_S3_REGION || 'fr-par',
-    bucket: env.NUXT_FROZEN_S3_BUCKET || 'nuxt-slides-bucket',
+    bucket: env.NUXT_FROZEN_S3_BUCKET || 'vignettes-bucket',
     accessKeyId: env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
     secretAccessKey: env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
   }
