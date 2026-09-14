@@ -571,10 +571,7 @@ async function onMetaSaved() {
           aria-label="Retour à l'accueil"
           class="grid place-items-center size-8 shrink-0 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
-          <UIcon
-            name="i-lucide-presentation"
-            class="size-5"
-          />
+          <VignettesMark class="w-5" />
         </NuxtLink>
       </UTooltip>
 

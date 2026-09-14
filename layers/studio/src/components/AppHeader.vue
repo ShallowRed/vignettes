@@ -26,10 +26,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     <template #title>
       <div class="flex items-center gap-2.5">
         <div class="grid place-items-center size-8 rounded-lg bg-primary/10 text-primary">
-          <UIcon
-            name="i-lucide-presentation"
-            class="size-5"
-          />
+          <VignettesMark class="w-5" />
         </div>
         <span class="text-highlighted font-bold">Vignettes</span>
       </div>

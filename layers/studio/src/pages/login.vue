@@ -48,10 +48,7 @@ const devRoles = [
     >
       <div class="flex flex-col items-center text-center gap-2">
         <div class="grid place-items-center size-14 rounded-2xl bg-primary/10 text-primary mb-1">
-          <UIcon
-            name="i-lucide-presentation"
-            class="size-7"
-          />
+          <VignettesMark class="w-9" />
         </div>
         <h1 class="text-2xl font-bold text-highlighted">
           Vignettes
