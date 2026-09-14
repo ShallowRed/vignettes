@@ -9,7 +9,7 @@ describe('readContentSourceConfig', () => {
   it('defaults to a submodule source locally (no CI)', () => {
     const cfg = readContentSourceConfig({})
     expect(cfg.kind).toBe('submodule')
-    expect(cfg.repo).toBe('ShallowRed/nuxt-slides-content')
+    expect(cfg.repo).toBe('ShallowRed/vignettes-content')
     expect(cfg.branch).toBe('main')
     expect(cfg.hasToken).toBe(false)
     expect(cfg.failClosed).toBe(false)
@@ -47,7 +47,7 @@ describe('decideFetchAction (fail-closed policy)', () => {
   it('clones with the declared repo/branch on CI with a token', () => {
     expect(decideFetchAction(ci, false)).toEqual({
       action: 'clone',
-      repo: 'ShallowRed/nuxt-slides-content',
+      repo: 'ShallowRed/vignettes-content',
       branch: 'main',
     })
   })
