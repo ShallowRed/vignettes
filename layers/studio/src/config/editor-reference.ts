@@ -1,5 +1,6 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import { PUBLICATION_STATUSES } from '#shared/access'
+import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 import { SLIDE_LAYOUT_REGISTRY } from '@vignettes/nuxt/layouts'
 
@@ -62,6 +63,26 @@ const BACKGROUND_KEYS: readonly FrontmatterKey[] = [
   { key: 'default', description: 'Fond des autres diapos', snippet: 'default: ${/backgrounds/default.svg}' },
 ]
 
+/** Code theme properties, nested under `code:`; a name alone also works (`code: sombre`). */
+const CODE_KEYS: readonly FrontmatterKey[] = [
+  { key: 'theme', description: 'Thème de code de départ, que les autres réglages modifient', values: Object.keys(CODE_THEMES), snippet: 'theme: ${sombre}' },
+  { key: 'background', description: 'Fond des blocs de code', snippet: 'background: "${#161616}"' },
+  { key: 'border', description: 'Bordure des blocs de code (propriété CSS border)', snippet: 'border: "${1px solid #DDDDDD}"' },
+  { key: 'text', description: 'Texte sans rôle particulier', snippet: 'text: "${#F5F5FE}"' },
+  { key: 'key', description: 'Clés (JSON, YAML)', snippet: 'key: "${#F5F5FE}"' },
+  { key: 'string', description: 'Chaînes de caractères', snippet: 'string: "${#FFCA00}"' },
+  { key: 'literal', description: 'Nombres, booléens, null', snippet: 'literal: "${#6FE49D}"' },
+  { key: 'keyword', description: 'Mots-clés du langage', snippet: 'keyword: "${#FF8D7E}"' },
+  { key: 'function', description: 'Noms de fonctions', snippet: 'function: "${#A1A1F8}"' },
+  { key: 'comment', description: 'Commentaires', snippet: 'comment: "${#A6A6A6}"' },
+  { key: 'punctuation', description: 'Accolades, crochets, virgules, deux-points', snippet: 'punctuation: "${#C1C1C1}"' },
+  { key: 'keyWeight', description: 'Graisse des clés', values: ['400', '500', '600', '700'], snippet: 'keyWeight: ${700}' },
+  { key: 'size', description: 'Corps minimal du code, en pixels de diapo (960 × 700)', snippet: 'size: ${13}' },
+  { key: 'dim', description: 'Opacité des lignes hors de la zone active d\'un JsonTour', default: '0.4', snippet: 'dim: ${0.72}' },
+  { key: 'activeBackground', description: 'Fond de la zone active d\'un JsonTour', snippet: 'activeBackground: "${#E3E3FD}"' },
+  { key: 'activeBar', description: 'Barre de la zone active d\'un JsonTour', snippet: 'activeBar: "${#000091}"' },
+]
+
 export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'title', description: 'Titre de la présentation', default: 'l\'identifiant', snippet: 'title: "${Titre}"' },
   { key: 'theme', description: 'Thème visuel', values: knownThemes(), snippet: 'theme: ${dsfr}' },
@@ -72,6 +93,7 @@ export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'unlisted', description: 'Accessible par lien mais absente du catalogue', values: BOOLEAN, default: 'false', snippet: 'unlisted: ${true}' },
   { key: 'storybook', description: 'Adresse du Storybook déployé, pour les ::StoryFrame', snippet: 'storybook: ${https://storybook.example.com}' },
   { key: 'backgrounds', description: 'Images de fond par niveau de titre', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
+  { key: 'code', description: 'Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages', values: Object.keys(CODE_THEMES), snippet: 'code: ${sombre}', children: CODE_KEYS },
   { key: 'reveal', description: 'Options de Reveal.js : format, numérotation, transitions…', snippet: 'reveal:\n  width: ${1280}\n  height: ${720}', children: REVEAL_KEYS },
   { key: 'accessPassword', description: 'Mot de passe du statut semi-private (se règle plutôt dans Partage et réglages)', snippet: 'accessPassword: ${motdepasse}' },
 ]

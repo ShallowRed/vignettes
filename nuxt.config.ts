@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import process from 'node:process'
+import { ROLES_THEME, ROLES_THEME_KEY } from '@vignettes/core/render'
 import { readBundleConfig } from '@vignettes/freeze/bundle'
 import presentationWatcher from './plugins/presentation-watcher.js'
 
@@ -52,8 +53,10 @@ export default defineNuxtConfig({
       anchorLinks: false,
     },
     highlight: {
-      // Dark, high-contrast code blocks on light slides.
-      theme: 'github-dark',
+      // Dark, high-contrast code blocks on light slides. The roles theme names the
+      // role of each token, which the deck's code theme colors (frontmatter `code`).
+      theme: { default: 'github-dark', [ROLES_THEME_KEY]: ROLES_THEME.name },
+      themes: [ROLES_THEME],
       langs: ['json', 'yaml', 'markdown', 'js', 'ts', 'bash', 'mermaid'],
     },
   },

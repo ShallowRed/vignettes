@@ -894,6 +894,7 @@ async function onMetaSaved() {
               :theme="preview.metadata.theme"
               :config="{ ...preview.metadata.reveal, fragments: previewFragments }"
               :lang="preview.metadata.lang"
+              :code="preview.metadata.code"
               :controls="false"
               @ready="syncPreviewToCursor"
             >

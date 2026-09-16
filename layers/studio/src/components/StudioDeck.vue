@@ -62,6 +62,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
     :theme="presentationData.metadata.theme"
     :config="presentationData.metadata.reveal"
     :lang="presentationData.metadata.lang"
+    :code="presentationData.metadata.code"
     @ready="onReady"
   >
     <RevealSlides :presentation-data="presentationData" />

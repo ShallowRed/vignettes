@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
   height: var(--json-tour-height);
   margin: 0;
   overflow: hidden;
-  font-size: 0.6em;
+  font-size: max(var(--code-size, 0px), 0.6em);
   line-height: 1.55;
   scrollbar-width: none;
 }
@@ -308,13 +308,13 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 0 0.5em;
   border-left: 2px solid transparent;
-  opacity: 0.4;
+  opacity: var(--code-dim, 0.4);
   transition: opacity 0.3s ease, background 0.3s ease;
 }
 
 .json-tour :deep(pre .json-tour__line--on) {
-  border-left-color: #8585f6;
-  background: rgb(255 255 255 / 8%);
+  border-left-color: var(--code-active-bar, #8585f6);
+  background: var(--code-active-background, rgb(255 255 255 / 8%));
   opacity: 1;
 }
 </style>

@@ -60,6 +60,8 @@ export const DeckMetaSchema = z
     storybook: z.string().optional(),
     backgrounds: ThemeBackgroundsSchema.optional(),
     reveal: RevealConfigSchema.optional(),
+    /** Code theme: a name from CODE_THEMES, or theme properties with an optional base `theme`. */
+    code: z.union([z.string(), z.record(z.string(), z.union([z.string(), z.number()]))]).optional(),
     /** Optional so un-migrated stubs parse; the closed default (`private`) is enforced at resolution, never here. */
     status: PublicationStatusSchema.optional(),
     /** Catalog grouping slug into `presentations/projects.yml`. */

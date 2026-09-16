@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RevealConfig } from '../types/presentation.ts'
-import { buildPrintPdfUrl, buildPrintView, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
+import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref, toRef } from 'vue'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
@@ -13,6 +13,8 @@ interface Props {
   config?: Partial<RevealConfig>
   /** Deck language (frontmatter `lang`); French orthotypography applies only to French decks. */
   lang?: string
+  /** Code theme of the deck (frontmatter `code`): a theme name, or theme properties. */
+  code?: unknown
   /**
    * Show the commands bar. Off for the editor preview, where the bar would sit on
    * the editor header and its commands act on the whole page.
@@ -31,6 +33,9 @@ const emit = defineEmits<{
 }>()
 
 const revealContainer = ref<HTMLElement | null>(null)
+
+// The code theme sets CSS variables on the deck root, read by the theme stylesheet.
+const codeStyle = computed(() => codeThemeStyle(props.code))
 
 const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().startsWith('fr'))
 
@@ -145,6 +150,7 @@ onUnmounted(() => {
     ref="revealContainer"
     v-french-typography="frenchTypography"
     class="reveal"
+    :style="codeStyle"
     :data-reveal-config="resolvedRevealConfig"
   >
     <!-- The veil precedes the slides so the browser paints it before them. -->
