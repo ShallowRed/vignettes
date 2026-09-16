@@ -23,7 +23,7 @@ import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
 import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
 import { buildPresentationData } from '@vignettes/nuxt/runtime/composables/usePresentation'
-import { slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
+import { fragmentAtLine, slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '../../composables/useAppSession'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
@@ -187,16 +187,49 @@ const editorView = computed(() => cm.value?.view)
 // data ref above, and Vue would overwrite it with the component instance on
 // mount — nuking `preview.value.slides`/`.metadata` and crashing every downstream
 // computed. Hence the distinct "previewInstance" key.
-const previewRef = useTemplateRef<{ slide: (h: number, v?: number) => void, sync: () => void }>('previewInstance')
+const previewRef = useTemplateRef<{ slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => any }>('previewInstance')
 const followCursor = ref(true)
 const cursorLine = ref(1)
 const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser }))
 
+// Fragments in the preview: the slide in its final state (every fragment shown),
+// or opened at the fragment under the caret and stepped with the preview's arrows
+// as in the deck. The choice is kept per browser.
+const FRAGMENT_STEPS_KEY = 'vignettes:editor-fragment-steps'
+const fragmentSteps = ref(false)
+onMounted(() => {
+  try {
+    fragmentSteps.value = localStorage.getItem(FRAGMENT_STEPS_KEY) === '1'
+  }
+  catch {}
+})
+
+function toggleFragmentSteps() {
+  fragmentSteps.value = !fragmentSteps.value
+  try {
+    localStorage.setItem(FRAGMENT_STEPS_KEY, fragmentSteps.value ? '1' : '0')
+  }
+  catch {}
+}
+
+// A deck whose frontmatter turns fragments off shows them all in both modes.
+const previewFragments = computed(() => fragmentSteps.value && preview.value?.metadata?.reveal?.fragments !== false)
+
+watch(previewFragments, (fragments) => {
+  previewRef.value?.getInstance()?.configure({ fragments })
+  syncPreviewToCursor()
+})
+
 function syncPreviewToCursor() {
   if (!followCursor.value || !previewRef.value)
     return
-  const { h, v } = slideAtLine(slideRanges(raw.value, parserId.value), cursorLine.value)
-  previewRef.value.slide(h, v)
+  const ranges = slideRanges(raw.value, parserId.value)
+  const { h, v } = slideAtLine(ranges, cursorLine.value)
+  // Stepped fragments open the slide at the fragment under the caret.
+  if (previewFragments.value)
+    previewRef.value.slide(h, v, fragmentAtLine(raw.value, ranges, cursorLine.value))
+  else
+    previewRef.value.slide(h, v)
 }
 
 // Track the caret line; re-sync only when it crosses into another line (typing
@@ -747,6 +780,18 @@ async function onMetaSaved() {
           :disabled="!writable"
         >
           <template #end>
+            <UTooltip :text="fragmentSteps ? 'Fragments pas à pas : l\'aperçu montre le fragment sous le curseur' : 'Afficher les fragments pas à pas'">
+              <UButton
+                icon="i-lucide-step-forward"
+                color="neutral"
+                :variant="fragmentSteps ? 'soft' : 'ghost'"
+                size="sm"
+                :class="fragmentSteps ? 'text-primary' : ''"
+                :aria-pressed="fragmentSteps"
+                aria-label="Afficher les fragments pas à pas"
+                @click="toggleFragmentSteps"
+              />
+            </UTooltip>
             <UTooltip :text="followCursor ? 'Suivi de la diapositive au curseur : activé' : 'Suivre la diapositive au curseur'">
               <UButton
                 icon="i-lucide-crosshair"
@@ -837,7 +882,7 @@ async function onMetaSaved() {
               ref="previewInstance"
               :key="preview.metadata.theme"
               :theme="preview.metadata.theme"
-              :config="{ ...preview.metadata.reveal, fragments: false }"
+              :config="{ ...preview.metadata.reveal, fragments: previewFragments }"
               :lang="preview.metadata.lang"
               :controls="false"
               @ready="syncPreviewToCursor"

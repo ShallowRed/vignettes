@@ -8,6 +8,7 @@ export function useReveal(
 ) {
   let revealInstance: any = null
   let overlayObserver: MutationObserver | null = null
+  let fragmentObserver: MutationObserver | null = null
 
   // Reveal's preview overlay creates its own iframe that escapes the sandbox we
   // put on inline embeds; without this a link clicked inside the lightbox could
@@ -36,6 +37,27 @@ export function useReveal(
     overlayObserver.observe(container.value, { childList: true, subtree: true })
   }
 
+  // With `fragments: false`, Reveal marks the fragments visible once, when it is
+  // configured. Components that lay out after mount (Diagram, JsonTour, Mermaid)
+  // add their `fragment` class later, and a Vue re-render resets the class list:
+  // those fragments would stay hidden. Mark them visible whenever they appear.
+  function showLateFragments() {
+    if (revealInstance?.getConfig().fragments !== false)
+      return
+    revealInstance.getSlidesElement()
+      ?.querySelectorAll('.fragment:not(.visible)')
+      .forEach((element: Element) => element.classList.add('visible'))
+  }
+
+  function observeFragments() {
+    const slides = revealInstance?.getSlidesElement()
+    if (!slides)
+      return
+    fragmentObserver = new MutationObserver(showLateFragments)
+    fragmentObserver.observe(slides, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] })
+    showLateFragments()
+  }
+
   async function initialize() {
     if (!container.value)
       return
@@ -62,6 +84,7 @@ export function useReveal(
     revealInstance.sync()
 
     observeOverlays()
+    observeFragments()
 
     return revealInstance
   }
@@ -83,6 +106,10 @@ export function useReveal(
     if (overlayObserver) {
       overlayObserver.disconnect()
       overlayObserver = null
+    }
+    if (fragmentObserver) {
+      fragmentObserver.disconnect()
+      fragmentObserver = null
     }
     if (revealInstance) {
       revealInstance.destroy()

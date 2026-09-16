@@ -1,4 +1,4 @@
-import { slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
+import { fragmentAtLine, slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
 import { describe, expect, it } from 'vitest'
 
 // Maps a 1-based line to reveal indices for a given deck source.
@@ -80,5 +80,74 @@ describe('slideRanges — degenerate input', () => {
   it('returns a single slide for empty or frontmatter-only decks', () => {
     expect(slideRanges('', 'heading')).toEqual([{ startLine: 1, h: 0, v: 0 }])
     expect(slideRanges('---\ntitle: X\n---\n', 'separator')).toEqual([{ startLine: 4, h: 0, v: 0 }])
+  })
+})
+
+describe('fragmentAtLine', () => {
+  const deck = [
+    '---', // 1
+    'parser: separator', // 2
+    '---', // 3
+    '### Tour', // 4
+    ':::JsonTour{file="a.json"}', // 5
+    '::Zone{lines="1-2" title="First"}', // 6
+    'first', // 7
+    '::', // 8
+    '::Zone{lines="3" title="Second"}', // 9
+    'second', // 10
+    '::', // 11
+    '```json', // 12
+    '{}', // 13
+    '```', // 14
+    ':::', // 15
+    '---', // 16
+    ':::Scheme{:fragments="false"}', // 17
+    '::Step{title="A"}', // 18
+    '::', // 19
+    ':::', // 20
+    ':::Diagram', // 21
+    '::Node{id="a" step="1"}', // 22
+    '::', // 23
+    '::Node{id="b" step="0"}', // 24
+    '::', // 25
+    '::Edge{from="a" to="b"}', // 26
+    ':::', // 27
+    '---', // 28
+    '::Fragments', // 29
+    '- one', // 30
+    '- two', // 31
+    '::', // 32
+    '', // 33
+    'after', // 34
+  ].join('\n')
+  const ranges = slideRanges(deck, 'separator')
+  const at = (line: number) => fragmentAtLine(deck, ranges, line)
+
+  it('is -1 before the first fragment and on the container line', () => {
+    expect(at(4)).toBe(-1)
+    expect(at(5)).toBe(-1)
+  })
+
+  it('counts the zones of a tour in writing order, body and close included', () => {
+    expect(at(6)).toBe(0)
+    expect(at(8)).toBe(0)
+    expect(at(9)).toBe(1)
+    expect(at(13)).toBe(1)
+  })
+
+  it('counts nothing in a container with fragments off', () => {
+    expect(at(18)).toBe(-1)
+  })
+
+  it('follows explicit steps and gives an edge the later of its nodes', () => {
+    expect(at(22)).toBe(1)
+    expect(at(24)).toBe(0)
+    expect(at(26)).toBe(1)
+  })
+
+  it('counts each item of a fragments block and stops at its close', () => {
+    expect(at(30)).toBe(0)
+    expect(at(31)).toBe(1)
+    expect(at(34)).toBe(1)
   })
 })
