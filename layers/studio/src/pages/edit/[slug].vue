@@ -30,6 +30,7 @@ import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { projectsQuery } from '../../queries'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
+import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
@@ -292,6 +293,15 @@ const shortcutKeymap = keymap.of([
     key: 'Mod-i',
     run: (view) => {
       wrapSelection(view, '*', 'texte')
+      return true
+    },
+  },
+  {
+    key: 'Shift-Alt-f',
+    run: (view) => {
+      const notice = jsonFormatNotice(formatJson(view))
+      if (notice)
+        toast.add({ ...notice, icon: 'i-lucide-braces' })
       return true
     },
   },

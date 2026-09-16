@@ -3,6 +3,7 @@ import type { EditorView } from '@codemirror/view'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
+import { formatJson, jsonFormatNotice } from '../utils/editor-json'
 
 // The markdown pane's formatting and insertion bar; every action targets the
 // live EditorView.
@@ -14,6 +15,14 @@ const props = defineProps<{
 function run(action: (view: EditorView) => void) {
   if (props.view)
     action(props.view)
+}
+
+const toast = useToast()
+
+function beautifyJson(view: EditorView) {
+  const notice = jsonFormatNotice(formatJson(view))
+  if (notice)
+    toast.add({ ...notice, icon: 'i-lucide-braces' })
 }
 
 // Ghost buttons sit on a bg-elevated rail, whose default ghost hover (also
@@ -53,6 +62,7 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
     { tooltip: 'Italique', kbds: ['meta', 'I'], icon: 'i-lucide-italic', action: view => wrapSelection(view, '*', 'texte') },
     { tooltip: 'Barré', icon: 'i-lucide-strikethrough', action: view => wrapSelection(view, '~~', 'texte') },
     { tooltip: 'Code', icon: 'i-lucide-code', action: view => wrapSelection(view, '`', 'code') },
+    { tooltip: 'Mettre en forme le JSON', kbds: ['shift', 'alt', 'F'], icon: 'i-lucide-braces', action: beautifyJson },
   ],
   [
     { tooltip: 'Liste à puces', icon: 'i-lucide-list', action: view => toggleLinePrefix(view, '- ') },
