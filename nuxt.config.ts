@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { ROLES_THEME, ROLES_THEME_KEY } from '@vignettes/core/render'
 import { readBundleConfig } from '@vignettes/freeze/bundle'
 import presentationWatcher from './plugins/presentation-watcher.js'
@@ -10,6 +11,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-27',
 
   extends: ['./layers/studio'],
+
+  alias: {
+    // MDC loads the themes it highlights with from `@shikijs/themes/<name>`.
+    [`@shikijs/themes/${ROLES_THEME.name}`]: fileURLToPath(new URL('./layers/studio/src/shiki-roles-theme.ts', import.meta.url)),
+  },
 
   // Frozen bundles build against a reduced public/ to avoid shipping ~11MB of
   // photos + all theme backgrounds.
@@ -56,7 +62,6 @@ export default defineNuxtConfig({
       // Dark, high-contrast code blocks on light slides. The roles theme names the
       // role of each token, which the deck's code theme colors (frontmatter `code`).
       theme: { default: 'github-dark', [ROLES_THEME_KEY]: ROLES_THEME.name },
-      themes: [ROLES_THEME],
       langs: ['json', 'yaml', 'markdown', 'js', 'ts', 'bash', 'mermaid'],
     },
   },
