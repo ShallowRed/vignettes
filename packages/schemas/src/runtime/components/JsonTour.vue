@@ -81,6 +81,16 @@ function parseRange(range: string | undefined): [number, number] | null {
   return [from, to || from]
 }
 
+// The panel fades at an edge only where lines are cut off: at the top once it has
+// scrolled down, at the bottom while the file goes on below.
+function markOverflow() {
+  if (!root.value || !pre)
+    return
+  const hidden = pre.scrollHeight - pre.clientHeight
+  root.value.classList.toggle('json-tour--above', hidden > 1 && pre.scrollTop > 1)
+  root.value.classList.toggle('json-tour--below', hidden > 1 && pre.scrollTop < hidden - 1)
+}
+
 // Reveal marks the current fragment by class, so the panel follows the classes
 // rather than Reveal's events: the same code then serves the editor preview,
 // where fragments are off and every zone is shown at once.
@@ -89,9 +99,7 @@ function follow() {
   // needs only mean something once the slide has its size.
   if (!lines.length || !root.value?.offsetWidth)
     return
-  // The fade at the panel's edges only means something when there is more file
-  // than the panel shows.
-  root.value.classList.toggle('json-tour--scrolls', !!pre && pre.scrollHeight > pre.clientHeight + 1)
+  markOverflow()
   const current = zones.find(z => z.el.classList.contains('current-fragment'))
     ?? (props.fragments ? undefined : zones[0])
   spot.value = parseSpot(current?.spot)
@@ -125,6 +133,7 @@ onMounted(async () => {
   await nextTick()
   pre = root.value?.querySelector('pre') ?? null
   lines = Array.from(root.value?.querySelectorAll<HTMLElement>('pre .line') ?? [])
+  pre?.addEventListener('scroll', markOverflow, { passive: true })
   for (const [i, zone] of zones.entries()) {
     if (props.fragments) {
       zone.el.classList.add('fragment')
@@ -148,6 +157,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(tween)
+  pre?.removeEventListener('scroll', markOverflow)
   observer?.disconnect()
   resize?.disconnect()
   for (const event of DECK_EVENTS)
@@ -195,7 +205,7 @@ onBeforeUnmount(() => {
   position: relative;
   box-sizing: border-box;
   width: 100%;
-  min-height: calc(var(--json-tour-height) + 1.6em);
+  min-height: calc(var(--json-tour-height) + 2.2em);
   margin: 0.4em 0;
   padding-right: calc(var(--json-tour-panel) + 1.8em);
 }
@@ -213,11 +223,12 @@ onBeforeUnmount(() => {
   font-family: var(--r-code-font, monospace);
   font-size: 0.72em;
   color: var(--text-mention, #666);
+  font-weight: 600;
 }
 
 .json-tour :deep(pre) {
   position: absolute;
-  top: 1.6em;
+  top: 2.2em;
   right: 0;
   width: var(--json-tour-panel);
   height: var(--json-tour-height);
@@ -228,9 +239,17 @@ onBeforeUnmount(() => {
   scrollbar-width: none;
 }
 
-/* The panel shows a window on a longer file: the first and last lines fade
-   out so a half-line at the edge reads as the file continuing. */
-.json-tour--scrolls :deep(pre) {
+/* The panel shows a window on a longer file: a half-line at an edge where the
+   file goes on fades out, so it reads as the file continuing. */
+.json-tour--above :deep(pre) {
+  mask-image: linear-gradient(to bottom, transparent, #000 1.6em);
+}
+
+.json-tour--below :deep(pre) {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.6em), transparent);
+}
+
+.json-tour--above.json-tour--below :deep(pre) {
   mask-image: linear-gradient(to bottom, transparent, #000 1.6em, #000 calc(100% - 1.6em), transparent);
 }
 
@@ -290,7 +309,7 @@ onBeforeUnmount(() => {
 .json-tour--stack .json-tour__file {
   position: static;
   width: auto;
-  margin: 0 0 0.3em;
+  margin: 0;
 }
 
 .json-tour--stack :deep(pre) {
@@ -300,7 +319,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: auto;
   max-height: var(--json-tour-height);
-  margin-top: 0.5em;
+  margin-top: 1em;
 }
 
 .json-tour :deep(pre .line) {
