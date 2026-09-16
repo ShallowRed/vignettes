@@ -28,6 +28,7 @@
     "@codemirror/commands": "catalog:",
     "@codemirror/lang-markdown": "catalog:",
     "@codemirror/language": "catalog:",
+    "@codemirror/search": "catalog:",
     "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
     "@dagrejs/dagre": "catalog:",

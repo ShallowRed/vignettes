@@ -1,17 +1,6 @@
-catalogMode: prefer
-
-cleanupUnusedCatalogs: true
-
-shellEmulator: true
-
-trustPolicy: no-downgrade
-
-trustPolicyExclude:
-  - chokidar@4.0.3
-  - langium@3.3.1
-  - semver@6.3.1
 packages:
   - packages/*
+
 catalog:
   '@antfu/eslint-config': ^6.4.2
   '@aws-sdk/client-s3': ^3.1085.0
@@ -19,6 +8,7 @@ catalog:
   '@codemirror/commands': ^6.10.4
   '@codemirror/lang-markdown': ^6.5.0
   '@codemirror/language': ^6.12.4
+  '@codemirror/search': ^6.5.11
   '@codemirror/state': ^6.7.0
   '@codemirror/view': ^6.43.2
   '@dagrejs/dagre': ^3.1.1
@@ -64,9 +54,22 @@ catalog:
   yjs: ^13.6.31
   zod: ^4.4.3
 
+catalogMode: prefer
+
+cleanupUnusedCatalogs: true
+
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - better-sqlite3
   - esbuild
+
+shellEmulator: true
+
+trustPolicy: no-downgrade
+
+trustPolicyExclude:
+  - chokidar@4.0.3
+  - langium@3.3.1
+  - semver@6.3.1
 
 useNodeVersion: 22.23.1

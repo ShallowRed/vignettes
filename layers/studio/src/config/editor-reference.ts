@@ -237,6 +237,16 @@ export const EDITOR_SHORTCUTS: readonly ShortcutEntry[] = [
   { keys: ['meta', 'I'], description: 'Italique' },
   { keys: ['meta', 'Z'], description: 'Annuler' },
   { keys: ['ctrl', 'space'], description: 'Ouvrir l\'autocomplétion' },
+  { keys: ['tab'], description: 'Indenter (deux espaces) ; Maj+Tab désindente' },
+  { keys: ['alt', 'arrowup'], description: 'Déplacer la ligne (Maj+Alt : la dupliquer)' },
+  { keys: ['meta', 'shift', 'K'], description: 'Supprimer la ligne' },
+  { keys: ['meta', '/'], description: 'Commenter' },
+  { keys: ['meta', 'D'], description: 'Sélectionner l\'occurrence suivante' },
+  { keys: ['meta', 'shift', 'L'], description: 'Sélectionner toutes les occurrences' },
+  { keys: ['meta', 'alt', 'arrowdown'], description: 'Ajouter un curseur (Alt+clic aussi)' },
+  { keys: ['meta', 'F'], description: 'Rechercher et remplacer' },
+  { keys: ['meta', 'enter'], description: 'Ligne vide en dessous (Maj : au-dessus)' },
+  { keys: ['alt', 'Z'], description: 'Retour à la ligne automatique' },
 ] as const
 
 /** Slide structure rules, per parser. */

@@ -30,6 +30,7 @@ import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { projectsQuery } from '../../queries'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
+import { editorKeymap } from '../../utils/editor-keymap'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 
@@ -269,6 +270,13 @@ const shortcutKeymap = keymap.of([
       return true
     },
   },
+  {
+    key: 'Alt-z',
+    run: () => {
+      toggleWrap()
+      return true
+    },
+  },
 ])
 
 // Image upload (paste / drop): uploads to /api/media and inserts an ::Image
@@ -302,6 +310,10 @@ const previewRatio = computed(() => {
 // folds and the nesting of components readable.
 const wrapLines = ref(false)
 
+function toggleWrap() {
+  wrapLines.value = !wrapLines.value
+}
+
 const extensions = computed<Extension[]>(() => [
   markdown(),
   ...(wrapLines.value ? [EditorView.lineWrapping] : []),
@@ -314,6 +326,7 @@ const extensions = computed<Extension[]>(() => [
   imageUploadHandlers,
   // Yjs owns undo in collab mode; the local history would fight it.
   ...(collabEnabled.value ? collabExtensions.value : [history(), keymap.of(historyKeymap)]),
+  editorKeymap(),
   keymap.of(defaultKeymap),
 ])
 
@@ -756,7 +769,6 @@ async function onMetaSaved() {
             ref="cm"
             class="flex-1 min-h-0 overflow-hidden"
             :extensions="extensions"
-            :indent-with-tab="true"
             :tab-size="2"
           />
           <!-- Solo mode: plain two-way binding. -->
@@ -766,7 +778,6 @@ async function onMetaSaved() {
             v-model="cmModel"
             class="flex-1 min-h-0 overflow-hidden"
             :extensions="extensions"
-            :indent-with-tab="true"
             :tab-size="2"
           />
           <template #fallback>
