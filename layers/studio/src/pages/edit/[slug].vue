@@ -28,6 +28,7 @@ import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '../../composables/useAppSession'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { projectsQuery } from '../../queries'
+import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
 import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
@@ -358,7 +359,7 @@ function toggleWrap() {
 }
 
 const extensions = computed<Extension[]>(() => [
-  markdown(),
+  markdown({ codeLanguages: CODE_LANGUAGES }),
   ...(wrapLines.value ? [EditorView.lineWrapping] : []),
   highlightActiveLine(),
   ...deckStructure(),
