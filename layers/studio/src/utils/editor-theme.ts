@@ -17,7 +17,6 @@ interface Palette {
   codeBackground: string
   activeLine: string
   selection: string
-  currentSlide: string
   component: string
   value: string
   literal: string
@@ -34,7 +33,6 @@ const LIGHT: Palette = {
   codeBackground: '#f3f4f6',
   activeLine: '#f3f4f6',
   selection: '#bfdbfe80',
-  currentSlide: '#3b82f60d',
   component: '#7c3aed',
   value: '#15803d',
   literal: '#c2410c',
@@ -51,7 +49,6 @@ const DARK: Palette = {
   codeBackground: '#27272a',
   activeLine: '#ffffff0a',
   selection: '#1d4ed880',
-  currentSlide: '#3b82f614',
   component: '#c4a7ff',
   value: '#9ad29a',
   literal: '#f0b37e',
@@ -74,6 +71,11 @@ function markdownHighlight(palette: Palette): Extension {
     // Syntax marks (#, *, >, ```) and frontmatter fences recede behind the prose.
     { tag: [tags.processingInstruction, tags.meta, tags.punctuation], color: palette.dimmed },
     { tag: tags.comment, color: palette.dimmed, fontStyle: 'italic' },
+    // Code blocks, in the colors of the frontmatter: keys, strings, literals.
+    { tag: [tags.propertyName, tags.definition(tags.propertyName)], color: palette.accent },
+    { tag: [tags.string, tags.special(tags.string)], color: palette.value },
+    { tag: [tags.number, tags.bool, tags.null, tags.atom], color: palette.literal },
+    { tag: [tags.keyword, tags.definitionKeyword, tags.modifier, tags.controlKeyword], color: palette.component },
   ]))
 }
 
@@ -112,10 +114,9 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
     '.cm-lineNumbers .cm-gutterElement': { minWidth: '40px', padding: '0 4px 0 12px', opacity: '0.7' },
     '.cm-activeLineGutter': { backgroundColor: 'transparent' },
     // The slide under the caret: a tint and a rule along its lines.
-    '.cm-current-slide': { backgroundColor: palette.currentSlide },
-    '.cm-current-slide.cm-activeLine': { backgroundColor: palette.activeLine },
-    '.cm-lineNumbers .cm-current-slide-gutter': { color: palette.accent, opacity: '1', boxShadow: `inset 3px 0 0 ${palette.accent}`, backgroundColor: palette.currentSlide },
-    '.cm-foldGutter .cm-current-slide-gutter': { backgroundColor: palette.currentSlide },
+    // The current slide shows in the gutter only: a bar and accented numbers, so
+    // the text keeps its contrast.
+    '.cm-lineNumbers .cm-current-slide-gutter': { color: palette.accent, opacity: '1', boxShadow: `inset 3px 0 0 ${palette.accent}` },
     '.cm-foldGutter .cm-gutterElement': { width: '18px', display: 'grid', placeItems: 'center' },
     '.cm-fold-marker': { display: 'grid', placeItems: 'center', width: '16px', height: '16px', borderRadius: '4px', color: palette.dimmed, cursor: 'pointer', opacity: '0', transition: 'opacity 120ms' },
     '.cm-gutters:hover .cm-fold-marker, .cm-fold-marker--closed': { opacity: '1' },
