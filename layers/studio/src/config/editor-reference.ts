@@ -247,7 +247,7 @@ export const EDITOR_SHORTCUTS: readonly ShortcutEntry[] = [
   { keys: ['meta', 'F'], description: 'Rechercher et remplacer' },
   { keys: ['meta', 'enter'], description: 'Ligne vide en dessous (Maj : au-dessus)' },
   { keys: ['alt', 'Z'], description: 'Retour à la ligne automatique' },
-  { keys: ['shift', 'alt', 'F'], description: 'Mettre en forme le bloc JSON sous le curseur (sinon tous)' },
+  { keys: ['meta', 'alt', 'L'], description: 'Mettre en forme le bloc JSON sous le curseur (sinon tous)' },
 ] as const
 
 /** Slide structure rules, per parser. */

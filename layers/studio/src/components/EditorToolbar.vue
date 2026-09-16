@@ -62,7 +62,6 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
     { tooltip: 'Italique', kbds: ['meta', 'I'], icon: 'i-lucide-italic', action: view => wrapSelection(view, '*', 'texte') },
     { tooltip: 'Barré', icon: 'i-lucide-strikethrough', action: view => wrapSelection(view, '~~', 'texte') },
     { tooltip: 'Code', icon: 'i-lucide-code', action: view => wrapSelection(view, '`', 'code') },
-    { tooltip: 'Mettre en forme le JSON', kbds: ['shift', 'alt', 'F'], icon: 'i-lucide-braces', action: beautifyJson },
   ],
   [
     { tooltip: 'Liste à puces', icon: 'i-lucide-list', action: view => toggleLinePrefix(view, '- ') },
@@ -163,6 +162,22 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
           :disabled="disabled || !view"
         />
       </UDropdownMenu>
+
+      <UTooltip
+        text="Mettre en forme le bloc JSON sous le curseur, sinon tous"
+        :kbds="['meta', 'alt', 'L']"
+      >
+        <UButton
+          icon="i-lucide-braces"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :class="btnHover"
+          label="JSON"
+          :disabled="disabled || !view"
+          @click="run(beautifyJson)"
+        />
+      </UTooltip>
     </div>
 
     <template v-if="$slots.end">

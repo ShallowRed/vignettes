@@ -297,7 +297,7 @@ const shortcutKeymap = keymap.of([
     },
   },
   {
-    key: 'Shift-Alt-f',
+    key: 'Mod-Alt-l',
     run: (view) => {
       const notice = jsonFormatNotice(formatJson(view))
       if (notice)
