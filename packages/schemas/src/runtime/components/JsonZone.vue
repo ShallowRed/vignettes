@@ -10,6 +10,8 @@ interface Props {
   /** Area to highlight on the tour's image, `x,y,w,h` in percent. */
   spot?: string
   picto?: string
+  /** Remix icon (`ri:shield-check-line`), sharper than a pictogram at the xs and sm sizes. */
+  icon?: string
   title?: string
   n?: string | number
   /** Fragment step; defaults to the writing order. */
@@ -35,6 +37,7 @@ onMounted(() => {
   >
     <PictoCard
       :picto="picto"
+      :icon="icon"
       :title="title"
       :n="n"
       orientation="row"
@@ -52,6 +55,14 @@ onMounted(() => {
 .json-tour-zone :deep(.picto-card) {
   background: var(--surface, #fff);
   border: 1px solid #e5e5f4;
+}
+
+/* An icon stays sharp at the tour's small sizes, where a pictogram's detail is
+   lost; it takes a quarter more room than in a scheme card. */
+.json-tour-zone :deep(.picto-card--row .picto-card__icon) {
+  width: calc(var(--scheme-picto, 6em) * 0.75);
+  height: calc(var(--scheme-picto, 6em) * 0.75);
+  color: var(--accent, #000091);
 }
 
 .json-tour-zone.current-fragment :deep(.picto-card) {
