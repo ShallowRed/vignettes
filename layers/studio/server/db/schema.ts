@@ -44,6 +44,22 @@ export const deckVersions = sqliteTable('deck_versions', {
   publishedAt: integer('published_at', { mode: 'timestamp' }).notNull(),
 }, table => [index('deck_versions_deck_slug_idx').on(table.deckSlug)])
 
+/**
+ * The draft as it was at some moment: taken while people edit (at most one
+ * every few minutes, plus one when the last editor leaves), on a solo save,
+ * before a restore, and on demand with a label. Pruned by `snapshotsToDrop`,
+ * except the labelled ones.
+ */
+export const deckDraftSnapshots = sqliteTable('deck_draft_snapshots', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  deckSlug: text('deck_slug').notNull().references(() => decks.slug),
+  raw: text('raw').notNull(),
+  /** Logins of the accounts that edited since the previous snapshot. */
+  authors: text('authors', { mode: 'json' }).$type<string[]>().notNull(),
+  label: text('label'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, table => [index('deck_draft_snapshots_deck_slug_idx').on(table.deckSlug)])
+
 /** Live collaborative state: the Y.Doc binary (encodeStateAsUpdate), debounced. */
 export const deckDrafts = sqliteTable('deck_drafts', {
   deckSlug: text('deck_slug').primaryKey().references(() => decks.slug),

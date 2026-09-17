@@ -7,7 +7,7 @@ import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
-import { deckAliases, deckDrafts, deckPermissions, decks, deckVersions, projectPermissions, projects, users } from '../../../layers/studio/server/db/schema'
+import { deckAliases, deckDrafts, deckDraftSnapshots, deckPermissions, decks, deckVersions, projectPermissions, projects, users } from '../../../layers/studio/server/db/schema'
 import { useDb } from '../../../layers/studio/server/utils/db'
 import { useUserStore } from '../../../layers/studio/server/utils/users'
 import { MIGRATIONS_DIR } from './db'
@@ -29,7 +29,7 @@ export function useMigratedTestDb(): () => void {
 /** Empties every table, children first, so each test starts from a blank schema. */
 export function resetTables() {
   const db = useDb()
-  for (const table of [deckPermissions, projectPermissions, deckAliases, deckDrafts, deckVersions, decks, projects, users])
+  for (const table of [deckPermissions, projectPermissions, deckAliases, deckDrafts, deckDraftSnapshots, deckVersions, decks, projects, users])
     db.delete(table).run()
 }
 

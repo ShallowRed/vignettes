@@ -7,13 +7,14 @@
  * version. Refused while a collab room is open — overwriting the live CRDT with
  * a fresh document would fork it. A solo save carries the `stamp` it loaded:
  * when someone else saved since, it is refused (409, `data.conflict`) rather
- * than silently replacing their work.
+ * than silently replacing their work. Each save also leaves a snapshot in the
+ * history.
  */
 
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
 import { prepareDeckWrite } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../../utils/access'
-import { useCollabServer, useDraftStore } from '../../utils/collab'
+import { recordDraftSnapshot, useCollabServer, useDraftStore } from '../../utils/collab'
 
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
 
-  await assertCanEditDeck(event, slug, { contentToken: true })
+  const editor = await assertCanEditDeck(event, slug, { contentToken: true })
 
   const drafts = useDraftStore()
   if (!drafts.isWritable()) {
@@ -56,6 +57,8 @@ export default defineEventHandler(async (event) => {
   try {
     const prepared = prepareDeckWrite({ slug, raw })
     await drafts.save(prepared.slug, markdownToYDocUpdate(prepared.raw))
+    // An explicit save is a moment worth keeping.
+    await recordDraftSnapshot(prepared.slug, prepared.raw, { by: editor.login, force: true })
     return {
       ok: true,
       key: `draft:${prepared.slug}`,

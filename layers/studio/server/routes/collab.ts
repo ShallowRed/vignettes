@@ -51,11 +51,12 @@ export default defineWebSocketHandler({
       throw new Response('Draft storage is unavailable on this deployment', { status: 503 })
   },
 
-  open(peer) {
-    // The deck the upgrade authorized becomes the connection context that every
-    // Hocuspocus hook sees (`CollabContext`).
+  async open(peer) {
+    // The deck the upgrade authorized, and who edits, become the connection
+    // context that every Hocuspocus hook sees (`CollabContext`).
     const deck = new URL(peer.request.url).searchParams.get('deck') ?? ''
-    connections.set(peer.id, useCollabServer().handleConnection(toWebSocketLike(peer), peer.request, { deck }))
+    const actor = await getActorFromRequest(peer.request)
+    connections.set(peer.id, useCollabServer().handleConnection(toWebSocketLike(peer), peer.request, { deck, user: actor.login ?? null }))
   },
 
   message(peer, message) {

@@ -2,6 +2,7 @@ import { Hocuspocus } from '@hocuspocus/server'
 import { isDeckSlug } from '@vignettes/core/deck'
 import * as Y from 'yjs'
 import { createDraftStore } from '../db/draft-store'
+import { createSnapshotStore } from '../db/snapshot-store'
 import { useDb } from './db'
 import { publishedSource } from './sources'
 
@@ -10,7 +11,8 @@ const TEXT_FIELD = 'codemirror'
 
 /**
  * The socket is authorized for ONE deck at upgrade time (`/collab?deck=<slug>`);
- * the route hands that deck to Hocuspocus as the connection context. Hocuspocus
+ * the route hands that deck, and the login editing, to Hocuspocus as the
+ * connection context. Hocuspocus
  * lets a client name any document afterwards, so the load and message hooks
  * check the requested name against the pinned deck. The store hook does not:
  * only updates that passed the message check reach a document, and the earlier
@@ -19,6 +21,8 @@ const TEXT_FIELD = 'codemirror'
  */
 export interface CollabContext {
   deck: string
+  /** Login of the account behind the socket; null for a content token. */
+  user?: string | null
 }
 
 export function isPinnedTo(context: CollabContext | undefined, documentName: string): boolean {
@@ -38,6 +42,64 @@ const seeding = new Map<string, Promise<void>>()
 /** The draft store backing collab sessions (gates the /collab route). */
 export function useDraftStore() {
   return createDraftStore(useDb())
+}
+
+/** The snapshots of the drafts (the fine history between two publications). */
+export function useSnapshotStore() {
+  return createSnapshotStore(useDb())
+}
+
+/** Minimum time between two automatic snapshots of a deck while it is edited. */
+export const SNAPSHOT_INTERVAL_MS = 5 * 60_000
+
+// Who edited each deck since its last snapshot.
+const contributors = new Map<string, Set<string>>()
+
+/** Note that `user` edits `slug`, for the next snapshot. */
+export function noteContributor(slug: string, user: string | null | undefined): void {
+  if (!user)
+    return
+  if (!contributors.has(slug))
+    contributors.set(slug, new Set())
+  contributors.get(slug)!.add(user)
+}
+
+function authorsOf(slug: string, extra: string[] = []): string[] {
+  return [...new Set([...(contributors.get(slug) ?? []), ...extra])]
+}
+
+/**
+ * Keep the draft as a snapshot when its text moved since the last one, with
+ * the logins that edited in between. An automatic snapshot waits
+ * SNAPSHOT_INTERVAL_MS after the previous one; a forced one (last editor
+ * leaving, solo save, restore, request) does not. Returns the id, or null when
+ * nothing was kept.
+ */
+export async function recordDraftSnapshot(slug: string, raw: string, options: { by?: string | null, force?: boolean, label?: string | null } = {}): Promise<number | null> {
+  const store = useSnapshotStore()
+  const latest = await store.latest(slug)
+  if (latest && latest.raw === raw && !options.label)
+    return null
+  if (!options.force && latest && Date.now() - latest.createdAt < SNAPSHOT_INTERVAL_MS)
+    return null
+  const id = await store.add(slug, { raw, authors: authorsOf(slug, options.by ? [options.by] : []), label: options.label })
+  contributors.delete(slug)
+  return id
+}
+
+/** The draft text: the live room when one is open (the store lags by the debounce), else the stored draft. */
+export async function currentDraftText(slug: string): Promise<string | null> {
+  const live = useCollabServer().documents.get(slug)
+  if (live)
+    return live.getText(TEXT_FIELD).toString()
+  const stored = await useDraftStore().load(slug)
+  if (!stored)
+    return null
+  const doc = new Y.Doc()
+  Y.applyUpdate(doc, stored)
+  const raw = doc.getText(TEXT_FIELD).toString()
+  doc.destroy()
+  return raw
 }
 
 /**
@@ -105,22 +167,33 @@ export function useCollabServer(): Hocuspocus {
         throw new Error(`Socket not authorized for "${documentName}"`)
     },
 
-    async onStoreDocument({ documentName, document }) {
+    async onChange({ documentName, context }) {
+      noteContributor(documentName, (context as CollabContext | undefined)?.user)
+    },
+
+    async onStoreDocument({ documentName, document, clientsCount }) {
       if (!isDeckSlug(documentName))
         return
       await useDraftStore().save(documentName, Y.encodeStateAsUpdate(document))
+      // The last editor leaving closes the editing session: keep its final state.
+      await recordDraftSnapshot(documentName, document.getText(TEXT_FIELD).toString(), { force: clientsCount === 0 })
     },
   })
   return instance
 }
 
 /**
- * Replace the whole draft text of a deck (restoring a version). The change goes
- * through the live room when one is open, so every editor receives it and
- * Hocuspocus stores it; otherwise it is applied to the stored document, whose
- * lineage a client reconnecting later still merges with.
+ * Replace the whole draft text of a deck (restoring a version or a snapshot).
+ * The text being replaced is kept as a snapshot first, so the restore can be
+ * undone from the history. The change goes through the live room when one is
+ * open, so every editor receives it and Hocuspocus stores it; otherwise it is
+ * applied to the stored document, whose lineage a client reconnecting later
+ * still merges with.
  */
-export async function replaceDraft(slug: string, raw: string): Promise<void> {
+export async function replaceDraft(slug: string, raw: string, by?: string | null): Promise<void> {
+  const current = await currentDraftText(slug)
+  if (current !== null && current !== raw)
+    await recordDraftSnapshot(slug, current, { by, force: true })
   const live = useCollabServer().documents.get(slug)
   if (live) {
     const ytext = live.getText(TEXT_FIELD)

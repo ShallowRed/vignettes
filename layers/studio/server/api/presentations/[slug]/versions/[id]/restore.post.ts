@@ -5,7 +5,8 @@ import { readVersionId } from '../../../../../utils/version-id'
 
 /**
  * Restore a version: its markdown becomes the draft, which the editors review
- * and publish again. The visitors keep seeing the current version until then.
+ * and publish again. The visitors keep seeing the current version until then,
+ * and the replaced draft stays in the history as a snapshot.
  * POST /api/presentations/:slug/versions/:id/restore
  */
 export default defineEventHandler(async (event) => {
@@ -13,7 +14,7 @@ export default defineEventHandler(async (event) => {
   if (!slug) {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
-  await assertCanEditDeck(event, slug)
+  const editor = await assertCanEditDeck(event, slug)
   if (!useDraftStore().isWritable()) {
     throw createError({ statusCode: 503, statusMessage: 'Draft storage is unavailable on this deployment' })
   }
@@ -21,6 +22,6 @@ export default defineEventHandler(async (event) => {
   if (!version) {
     throw createError({ statusCode: 404, statusMessage: 'Version not found' })
   }
-  await replaceDraft(slug, version.raw)
+  await replaceDraft(slug, version.raw, editor.login)
   return { ok: true, stamp: await useDraftStore().stamp(slug) }
 })
