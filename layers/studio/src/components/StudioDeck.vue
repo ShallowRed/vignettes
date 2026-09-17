@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { PresentationData } from '@vignettes/nuxt/types'
+import { deckPath } from '#shared/presentations'
 
-// A deck as the studio shows it: the Reveal presentation with the commands of
-// whoever may edit it (editing the current slide, the draft, the folder) and the
-// draft banner.
+// A deck as the studio shows it: the Reveal presentation with the other
+// variants of its family the visitor may open, the commands of whoever may edit
+// it (editing the current slide, the draft, the folder) and the draft banner.
 const props = defineProps<{
   slug?: string
   presentationData: PresentationData
@@ -12,12 +13,16 @@ const props = defineProps<{
 }>()
 
 // The deck renders without this answer, so it loads after the page.
-const { data: viewer } = useFetch<{ canEdit: boolean, unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
+interface Variant { slug: string, alias: string | null, title: string, variantLabel: string }
+const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
   server: false,
   lazy: true,
   immediate: Boolean(props.slug),
-  default: () => ({ canEdit: false }),
+  default: () => ({ canEdit: false, variants: [] }),
 })
+// The family shows only when there is somewhere else to go.
+const variants = computed(() => (viewer.value.variants?.length ?? 0) > 1 ? viewer.value.variants! : [])
+const variantHref = (variant: Variant) => `${deckPath({ slug: variant.slug, alias: variant.alias ?? undefined })}${props.draft ? '?draft' : ''}`
 
 const reveal = shallowRef<any>(null)
 const indices = ref({ h: 0, v: 0 })
@@ -67,10 +72,35 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
   >
     <RevealSlides :presentation-data="presentationData" />
     <template
-      v-if="viewer.canEdit"
+      v-if="viewer.canEdit || variants.length"
       #controls-before
     >
+      <span
+        v-if="variants.length"
+        class="deck-variants"
+        role="group"
+        aria-label="Variantes de la présentation"
+      >
+        <template
+          v-for="variant in variants"
+          :key="variant.slug"
+        >
+          <span
+            v-if="variant.slug === slug"
+            class="deck-variants__current"
+            aria-current="page"
+          >{{ variant.variantLabel }}</span>
+          <DeckControlButton
+            v-else
+            :label="variant.title"
+            :to="variantHref(variant)"
+          >
+            <span class="deck-variants__label">{{ variant.variantLabel }}</span>
+          </DeckControlButton>
+        </template>
+      </span>
       <DeckControlButton
+        v-if="viewer.canEdit"
         label="Éditer"
         shortcut="E"
         :to="editHref"
@@ -79,6 +109,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
         <UIcon name="i-lucide-pencil" />
       </DeckControlButton>
       <DeckControlButton
+        v-if="viewer.canEdit"
         :label="draft ? 'Voir la version publiée' : 'Voir le brouillon'"
         :to="draftHref"
         :badge="!draft && viewer.unpublishedChanges"
@@ -104,5 +135,33 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
 /* The draft banner takes the top of the window, so the commands sit below it. */
 .has-draft-banner :deep(.deck-controls) {
   top: 44px;
+}
+</style>
+
+<style scoped>
+.deck-variants {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 6px;
+  padding-right: 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.deck-variants__current,
+.deck-variants__label {
+  font: 600 13px/1 system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.deck-variants__current {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 8px;
+  color: #16161a;
+  background: #fff;
+  border-radius: 7px;
 }
 </style>
