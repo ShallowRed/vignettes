@@ -4,6 +4,7 @@ import type { HistoryRef } from '../api'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { historyApi } from '../api'
 import { deckKeys, historyEntryQuery, historyQuery } from '../queries'
+import { diffStructure } from '../utils/diff-skeleton'
 
 /**
  * The history of a deck: the draft, then the published versions and the
@@ -34,27 +35,20 @@ const selected = ref<Selection | null>(null)
 const confirming = ref(false)
 const naming = ref(false)
 const label = ref('')
-const chunks = ref<number | null>(null)
-// The number of changed passages of each entry seen since the panel opened:
-// coming back to an entry whose texts the query cache holds shows it at once.
-const chunksSeen = new Map<string, number>()
-const selectionKey = (value: Selection) => value === 'draft' ? 'draft' : `${value.kind}:${value.id}`
-function noteChunks(count: number) {
-  chunks.value = count
-  if (selected.value !== null)
-    chunksSeen.set(selectionKey(selected.value), count)
-}
-// The draft is shown on open; closing forgets the selection and the counts,
-// since the draft may change before the next opening.
+// The shape of each diff seen since the panel opened (see `structure`), with
+// the texts it was computed from: the draft may still be syncing when the
+// panel opens.
+const structures = new Map<string, { from: string, to: string, structure: ReturnType<typeof diffStructure> }>()
+// The draft is shown on open; closing forgets the selection and the diff
+// structures, since the draft may change before the next opening.
 watch(open, (now) => {
-  chunksSeen.clear()
+  structures.clear()
   selected.value = now ? 'draft' : null
   confirming.value = false
   naming.value = false
 })
-watch(selected, (value) => {
+watch(selected, () => {
   confirming.value = false
-  chunks.value = value === null ? null : chunksSeen.get(selectionKey(value)) ?? null
 })
 
 const same = (a: HistoryRef, b: HistoryRef) => a.kind === b.kind && a.id === b.id
@@ -81,30 +75,41 @@ const to = computed(() => selected.value === 'draft' ? props.draft : loaded(targ
 const from = computed(() => baseRef.value === null ? to.value : loaded(baseQ.data.value, baseRef.value))
 const firstEntry = computed(() => selected.value !== 'draft' && selected.value !== null && baseRef.value === null)
 
-// While the texts load and the diff settles, a skeleton keeps the place of the
-// summary and of the diff, so nothing moves when they arrive. It stays a
-// moment even when the texts come from the cache, instead of flashing.
-const SKELETON_MIN_MS = 400
-const pending = computed(() => selected.value !== null && (from.value === null || to.value === null || chunks.value === null))
+// The shape of the diff, from the two texts, before the editor draws it: the
+// number of changed passages for the summary, and the rows of the skeleton.
+// Kept per entry while the panel is open, so coming back to an entry whose
+// texts the query cache holds shows it at once.
+const selectionKey = (value: Selection) => value === 'draft' ? 'draft' : `${value.kind}:${value.id}`
+const structure = computed(() => {
+  if (selected.value === null || from.value === null || to.value === null)
+    return null
+  const key = selectionKey(selected.value)
+  const cached = structures.get(key)
+  if (cached && cached.from === from.value && cached.to === to.value)
+    return cached.structure
+  const computed = diffStructure(from.value, to.value)
+  structures.set(key, { from: from.value, to: to.value, structure: computed })
+  return computed
+})
+const chunks = computed(() => structure.value?.chunks ?? null)
+const skeletonRows = computed(() => structure.value?.rows ?? [])
+// The line numbers fill the gutter to its widest number, as the editor does.
+const skeletonNumber = (number: number | undefined) => String(number ?? '').padStart(structure.value?.digits ?? 1, ' ')
+
+// The diff area stays blank while the texts load, then the skeleton drawn from
+// the diff itself takes the editor's grid for a moment, and the editor replaces
+// it without moving anything. One skeleton, one shape.
+const SKELETON_MIN_MS = 300
 const skeleton = ref(false)
-let shownAt = 0
 let skeletonTimer: ReturnType<typeof setTimeout> | undefined
-watch(pending, (now) => {
+watch(structure, (now) => {
   clearTimeout(skeletonTimer)
-  if (now) {
-    skeleton.value = true
-    shownAt = Date.now()
-    return
-  }
-  const remaining = SKELETON_MIN_MS - (Date.now() - shownAt)
-  if (remaining > 0)
-    skeletonTimer = setTimeout(() => skeleton.value = false, remaining)
-  else
-    skeleton.value = false
+  skeleton.value = now !== null
+  if (now !== null)
+    skeletonTimer = setTimeout(() => skeleton.value = false, SKELETON_MIN_MS)
 }, { immediate: true })
 onBeforeUnmount(() => clearTimeout(skeletonTimer))
-
-const SKELETON_LINES = ['40%', '72%', '64%', '18%', '80%', '58%', '70%', '46%', '30%', '66%', '74%', '52%']
+const loading = computed(() => selected.value !== null && structure.value === null)
 
 function when(at: number): string {
   return new Date(at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
@@ -297,7 +302,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
                 {{ heading }}
               </p>
               <USkeleton
-                v-if="skeleton && !summary"
+                v-if="loading && !summary"
                 class="mt-1 h-3 w-56 rounded-sm"
               />
               <p
@@ -385,7 +390,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
             class="min-h-9 px-4 py-2"
           >
             <USkeleton
-              v-if="skeleton"
+              v-if="loading"
               class="h-3 w-80 rounded-sm"
             />
             <p
@@ -397,18 +402,37 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
           </div>
 
           <!-- The diff mounts under the skeleton, which lifts once it settled. -->
-          <div class="relative min-h-0 flex-1 overflow-y-auto">
+          <div class="relative min-h-0 flex-1 overflow-hidden">
             <div
               v-if="skeleton"
-              class="absolute inset-0 z-10 flex flex-col gap-3 bg-default px-6 py-4"
+              class="diff-skeleton absolute inset-0 z-10 bg-default"
               aria-hidden="true"
             >
-              <USkeleton
-                v-for="(width, index) in SKELETON_LINES"
+              <template
+                v-for="(row, index) in skeletonRows"
                 :key="index"
-                class="h-3.5 rounded-sm"
-                :style="{ width }"
-              />
+              >
+                <div
+                  v-if="row.kind === 'band'"
+                  class="diff-skeleton__line"
+                >
+                  <span class="diff-skeleton__number">{{ skeletonNumber(undefined) }}</span>
+                  <div class="diff-skeleton__band" />
+                </div>
+                <div
+                  v-else
+                  class="diff-skeleton__line"
+                  :class="`diff-skeleton__line--${row.tone}`"
+                >
+                  <span class="diff-skeleton__number">{{ skeletonNumber(row.number) }}</span>
+                  <div class="diff-skeleton__text">
+                    <span v-if="row.text">{{ row.text }}</span>
+                    <template v-else>
+                      &ZeroWidthSpace;
+                    </template>
+                  </div>
+                </div>
+              </template>
             </div>
             <DeckVersionDiff
               v-if="from !== null && to !== null"
@@ -416,7 +440,6 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
               :to="to"
               class="transition-opacity duration-200"
               :class="skeleton ? 'opacity-0' : 'opacity-100'"
-              @chunks="noteChunks"
             />
           </div>
         </section>
@@ -424,3 +447,68 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
     </template>
   </USlideover>
 </template>
+
+<style scoped>
+/* The editor's grid: 8px above the first line, a number gutter sized by its
+   widest number (40px at least, the bands after it too), lines in the writer's monospace at 21px that
+   wrap like the editor's (same font, same width, same breaking rules, same
+   paddings), a 26.8px band with 2px around it. The text of each line is drawn
+   transparent on a grey run, so the rows wrap exactly where the editor will
+   wrap them; the numbers stay invisible and only size the gutter. Nothing
+   else: the colors of the diff belong to the diff. The skeleton scrolls like
+   the editor, with the same room under the last line, so a classic scrollbar
+   takes the same width on both. */
+.diff-skeleton {
+  padding: 8px 0 50vh;
+  overflow-y: auto;
+}
+
+.diff-skeleton__line {
+  display: flex;
+  align-items: flex-start;
+}
+
+.diff-skeleton__number {
+  flex: none;
+  box-sizing: border-box;
+  min-width: 40px;
+  padding: 0 4px 0 12px;
+  font: 13px/21px ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  white-space: pre;
+  text-align: right;
+  color: transparent;
+}
+
+.diff-skeleton__text {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16px 0 8px;
+  font: 13px/21px ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  tab-size: 4;
+  white-space: break-spaces;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  color: transparent;
+}
+
+.diff-skeleton__text > span {
+  border-radius: 3px;
+  background: var(--ui-bg-elevated);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.diff-skeleton__line--removed .diff-skeleton__text {
+  padding: 0;
+  margin-left: 6px;
+}
+
+.diff-skeleton__band {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: 26.8px;
+  margin: 2px 0;
+  background: var(--ui-bg-elevated);
+}
+</style>

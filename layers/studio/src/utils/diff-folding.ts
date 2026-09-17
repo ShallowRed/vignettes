@@ -1,4 +1,4 @@
-import type { Extension } from '@codemirror/state'
+import type { Extension, Text } from '@codemirror/state'
 import type { DecorationSet } from '@codemirror/view'
 import { getChunks } from '@codemirror/merge'
 import { RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
@@ -12,10 +12,16 @@ import { Decoration, EditorView, WidgetType } from '@codemirror/view'
  */
 
 /** Lines of context kept around a change, and the shortest passage worth folding. */
-const MARGIN = 3
-const MIN_LINES = 4
+export const MARGIN = 3
+export const MIN_LINES = 4
 
-interface Passage {
+/**
+ * How far the diff searches before it gives a coarse answer: the merge view's
+ * own default, named so the skeleton computes the very same chunks.
+ */
+export const DIFF_CONFIG = { scanLimit: 500 }
+
+export interface Passage {
   /** Start of its first line and end of its last line. */
   from: number
   to: number
@@ -52,10 +58,8 @@ class FoldBand extends WidgetType {
   }
 }
 
-/** The identical passages of the document, from the chunks the merge view computed. */
-function passagesOf(view: EditorView): Passage[] {
-  const chunks = getChunks(view.state)?.chunks ?? []
-  const { doc } = view.state
+/** The identical passages of `doc`, the modified side of a diff, from its chunks. */
+export function identicalPassages(doc: Text, chunks: readonly { fromB: number, toB: number }[]): Passage[] {
   const passages: Passage[] = []
   let previousLine = 1
   for (let i = 0; ; i++) {
@@ -70,6 +74,10 @@ function passagesOf(view: EditorView): Passage[] {
     previousLine = doc.lineAt(Math.min(doc.length, chunk.toB)).number
   }
   return passages
+}
+
+function passagesOf(view: EditorView): Passage[] {
+  return identicalPassages(view.state.doc, getChunks(view.state)?.chunks ?? [])
 }
 
 function decorate(passages: Passage[], open: Set<number>): DecorationSet {

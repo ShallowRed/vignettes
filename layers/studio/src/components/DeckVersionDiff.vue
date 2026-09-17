@@ -1,21 +1,18 @@
 <script setup lang="ts">
 import type { Extension } from '@codemirror/state'
 import { markdown } from '@codemirror/lang-markdown'
-import { getChunks, unifiedMergeView } from '@codemirror/merge'
+import { unifiedMergeView } from '@codemirror/merge'
 import { EditorState } from '@codemirror/state'
 import { EditorView, lineNumbers } from '@codemirror/view'
-import { diffFolding, foldIdenticalPassages } from '../utils/diff-folding'
+import { DIFF_CONFIG, diffFolding, foldIdenticalPassages } from '../utils/diff-folding'
 import { editorTheme } from '../utils/editor-theme'
 
 /**
  * A read-only unified diff of two markdown texts, in the writer's theme: the
  * lines of `from` that `to` lacks are struck, the lines `to` adds are marked.
- * Identical passages fold and unfold. Reports the number of changed passages.
- * Two identical texts are shown plainly.
+ * Identical passages fold and unfold. Two identical texts are shown plainly.
  */
 const props = defineProps<{ from: string, to: string }>()
-
-const emit = defineEmits<{ chunks: [count: number] }>()
 
 // Lucide chevrons-up-down and chevrons-down-up, as masks so they take the text color.
 const icon = (paths: string) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`)}")`
@@ -117,7 +114,7 @@ function mount() {
         EditorView.lineWrapping,
         lineNumbers(),
         markdown(),
-        ...(props.from === props.to ? [] : [unifiedMergeView({ original: props.from, mergeControls: false }), diffFolding()]),
+        ...(props.from === props.to ? [] : [unifiedMergeView({ original: props.from, mergeControls: false, diffConfig: DIFF_CONFIG }), diffFolding()]),
         ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
         diffTheme(colorMode.value === 'dark'),
       ],
@@ -125,7 +122,6 @@ function mount() {
   })
   if (props.from !== props.to)
     foldIdenticalPassages(view)
-  emit('chunks', getChunks(view.state)?.chunks.length ?? 0)
 }
 
 onMounted(mount)
@@ -141,6 +137,11 @@ onBeforeUnmount(() => view?.destroy())
 </template>
 
 <style scoped>
+/* The editor owns the scrolling, so it knows its viewport from the first paint. */
+.version-diff {
+  height: 100%;
+}
+
 .version-diff :deep(.cm-editor) {
   height: 100%;
   font-size: 13px;
