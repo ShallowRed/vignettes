@@ -35,15 +35,26 @@ const confirming = ref(false)
 const naming = ref(false)
 const label = ref('')
 const chunks = ref<number | null>(null)
-// The draft is shown on open; closing forgets the selection.
+// The number of changed passages of each entry seen since the panel opened:
+// coming back to an entry whose texts the query cache holds shows it at once.
+const chunksSeen = new Map<string, number>()
+const selectionKey = (value: Selection) => value === 'draft' ? 'draft' : `${value.kind}:${value.id}`
+function noteChunks(count: number) {
+  chunks.value = count
+  if (selected.value !== null)
+    chunksSeen.set(selectionKey(selected.value), count)
+}
+// The draft is shown on open; closing forgets the selection and the counts,
+// since the draft may change before the next opening.
 watch(open, (now) => {
+  chunksSeen.clear()
   selected.value = now ? 'draft' : null
   confirming.value = false
   naming.value = false
 })
-watch(selected, () => {
+watch(selected, (value) => {
   confirming.value = false
-  chunks.value = null
+  chunks.value = value === null ? null : chunksSeen.get(selectionKey(value)) ?? null
 })
 
 const same = (a: HistoryRef, b: HistoryRef) => a.kind === b.kind && a.id === b.id
@@ -69,6 +80,31 @@ function loaded(data: { kind: string, id: number, raw: string } | undefined, ref
 const to = computed(() => selected.value === 'draft' ? props.draft : loaded(targetQ.data.value, targetRef.value))
 const from = computed(() => baseRef.value === null ? to.value : loaded(baseQ.data.value, baseRef.value))
 const firstEntry = computed(() => selected.value !== 'draft' && selected.value !== null && baseRef.value === null)
+
+// While the texts load and the diff settles, a skeleton keeps the place of the
+// summary and of the diff, so nothing moves when they arrive. It stays a
+// moment even when the texts come from the cache, instead of flashing.
+const SKELETON_MIN_MS = 400
+const pending = computed(() => selected.value !== null && (from.value === null || to.value === null || chunks.value === null))
+const skeleton = ref(false)
+let shownAt = 0
+let skeletonTimer: ReturnType<typeof setTimeout> | undefined
+watch(pending, (now) => {
+  clearTimeout(skeletonTimer)
+  if (now) {
+    skeleton.value = true
+    shownAt = Date.now()
+    return
+  }
+  const remaining = SKELETON_MIN_MS - (Date.now() - shownAt)
+  if (remaining > 0)
+    skeletonTimer = setTimeout(() => skeleton.value = false, remaining)
+  else
+    skeleton.value = false
+}, { immediate: true })
+onBeforeUnmount(() => clearTimeout(skeletonTimer))
+
+const SKELETON_LINES = ['40%', '72%', '64%', '18%', '80%', '58%', '70%', '46%', '30%', '66%', '74%', '52%']
 
 function when(at: number): string {
   return new Date(at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
@@ -102,16 +138,25 @@ const summary = computed(() => {
   if (firstEntry.value)
     return 'Première entrée de l\'historique'
   if (chunks.value === null)
-    return 'Comparaison…'
+    return ''
   const against = selected.value === 'draft' ? 'la version en ligne' : selectedEntry.value?.kind === 'version' ? 'la version précédente' : 'l\'entrée précédente'
   if (chunks.value === 0)
     return `Identique à ${against}`
   const passages = chunks.value === 1 ? '1 passage modifié' : `${chunks.value} passages modifiés`
   return selected.value === 'draft' ? `${passages} depuis ${against}` : selectedEntry.value?.kind === 'version' ? `${passages} par cette publication` : `${passages} depuis ${against}`
 })
-const legend = computed(() => selected.value === 'draft'
-  ? 'En vert, ce que le brouillon ajoute à la version en ligne ; en rouge, ce qu\'il en retire.'
-  : 'En vert, ce que cette entrée a ajouté ; en rouge, ce qu\'elle a retiré.')
+// The legend keeps its line whatever the state, so the diff never moves.
+const legend = computed(() => {
+  if (chunks.value === null)
+    return ''
+  if (firstEntry.value)
+    return 'Le texte complet de cette entrée.'
+  if (chunks.value === 0)
+    return 'Les deux textes sont identiques.'
+  return selected.value === 'draft'
+    ? 'En vert ce que le brouillon ajoute, en rouge ce qu\'il retire.'
+    : 'En vert ce que cette entrée a ajouté, en rouge ce qu\'elle a retiré.'
+})
 
 // What a restore would put in the draft, and whether that changes anything.
 const restoreRef = computed<HistoryRef | null>(() => selected.value === 'draft' ? (current.value ? { kind: 'version', id: current.value.id } : null) : targetRef.value)
@@ -167,10 +212,10 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
     :ui="{ content: 'max-w-5xl', body: 'p-0 sm:p-0' }"
   >
     <template #body>
-      <div class="grid h-full min-h-0 grid-cols-[18rem_minmax(0,1fr)]">
+      <div class="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] md:grid-rows-1 md:grid-cols-[18rem_minmax(0,1fr)]">
         <!-- The draft, then the entries, newest first. The served version is marked. -->
         <nav
-          class="min-h-0 overflow-y-auto border-r border-default"
+          class="max-h-56 min-h-0 overflow-y-auto border-b border-default md:max-h-none md:border-b-0 md:border-r"
           aria-label="Brouillon, versions et instantanés"
         >
           <button
@@ -251,7 +296,14 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
               <p class="text-sm font-medium text-highlighted">
                 {{ heading }}
               </p>
-              <p class="text-xs text-muted">
+              <USkeleton
+                v-if="skeleton && !summary"
+                class="mt-1 h-3 w-56 rounded-sm"
+              />
+              <p
+                v-else
+                class="text-xs text-muted"
+              >
                 {{ summary }}
               </p>
             </div>
@@ -328,26 +380,44 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
             />
           </ActionNotice>
 
-          <p
-            v-if="chunks !== null && chunks > 0"
-            class="px-4 py-2 text-xs text-muted"
+          <div
+            v-if="selected !== null"
+            class="min-h-9 px-4 py-2"
           >
-            {{ legend }}
-          </p>
+            <USkeleton
+              v-if="skeleton"
+              class="h-3 w-80 rounded-sm"
+            />
+            <p
+              v-else
+              class="text-xs text-muted"
+            >
+              {{ legend }}
+            </p>
+          </div>
 
-          <div class="min-h-0 flex-1 overflow-y-auto">
+          <!-- The diff mounts under the skeleton, which lifts once it settled. -->
+          <div class="relative min-h-0 flex-1 overflow-y-auto">
+            <div
+              v-if="skeleton"
+              class="absolute inset-0 z-10 flex flex-col gap-3 bg-default px-6 py-4"
+              aria-hidden="true"
+            >
+              <USkeleton
+                v-for="(width, index) in SKELETON_LINES"
+                :key="index"
+                class="h-3.5 rounded-sm"
+                :style="{ width }"
+              />
+            </div>
             <DeckVersionDiff
               v-if="from !== null && to !== null"
               :from="from"
               :to="to"
-              @chunks="chunks = $event"
+              class="transition-opacity duration-200"
+              :class="skeleton ? 'opacity-0' : 'opacity-100'"
+              @chunks="noteChunks"
             />
-            <p
-              v-else-if="selected !== null"
-              class="p-4 text-sm text-muted"
-            >
-              Chargement…
-            </p>
           </div>
         </section>
       </div>
