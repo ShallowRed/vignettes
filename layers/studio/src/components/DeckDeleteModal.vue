@@ -43,9 +43,7 @@ const { mutate: confirm, isLoading: pending } = useMutation({
     :description="item.title"
   >
     <template #body>
-      <UAlert
-        color="warning"
-        variant="subtle"
+      <ActionNotice
         icon="i-lucide-trash-2"
         title="Réversible"
         description="La présentation part dans la corbeille. Tu pourras la restaurer, ou la supprimer définitivement depuis la corbeille."

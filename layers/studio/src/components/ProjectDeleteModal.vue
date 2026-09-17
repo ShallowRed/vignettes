@@ -48,9 +48,7 @@ const { mutate: confirm, isLoading: pending } = useMutation({
     :description="project.title"
   >
     <template #body>
-      <UAlert
-        color="warning"
-        variant="subtle"
+      <ActionNotice
         icon="i-lucide-trash-2"
         title="Le dossier et son contenu partent à la corbeille"
         :description="deckCount > 0

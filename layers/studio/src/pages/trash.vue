@@ -186,10 +186,8 @@ async function confirmPurge() {
       :description="purgeTarget?.title"
     >
       <template #body>
-        <UAlert
-          color="error"
-          variant="subtle"
-          icon="i-lucide-triangle-alert"
+        <ActionNotice
+          tone="critical"
           title="Action irréversible"
           :description="purgeTarget?.kind === 'project'
             ? 'Le dossier et toutes ses présentations (brouillons, versions, partages) seront effacés pour de bon.'
