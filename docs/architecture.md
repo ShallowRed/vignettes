@@ -71,7 +71,9 @@ application and ships its TypeScript sources (`build.transpile` for Vite,
 - **`shared/content`** — declared content-source config + pure fetch-policy decision
   (replaces the implicit submodule + token + ad-hoc-script tangle).
 - **`shared/presentations`** — catalog wire contract + status display config, shared by
-  `GET /api/presentations` and the home/admin pages.
+  `GET /api/presentations` and the home/admin pages; the history contract and its order
+  (`history.ts`); the family rules (`family.ts`: a replacement never loops, a family stays
+  inside one folder).
 - **`shared/projects`** — project-registry schema (YAML I/O in `server/utils/projects.ts`).
 - **`shared/build`** — public-deck discovery in the content space.
 
@@ -107,6 +109,12 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 6. **`:slide-background{image="..."}`**: Inline override for per-slide background image; extracted and removed from rendered output by the parser.
 7. **Full-slide components** (list in `FULL_SLIDE_COMPONENTS`): skip header/body split, render all children in `body`. CSS class `layout-full` applied.
 8. **`:layout{name="..." ...}`**: Slide-level layout annotation. Unlike full-slide components, preserves header/body split. Supports `media-right`, `media-left`, `media-right-wide`, and `media-left-wide` for two-column layouts with media, plus extra props such as `fit="contain|cover"`. The layout name is resolved to a `LayoutStrategy` by the layout registry of `@vignettes/nuxt`.
+
+### Deck history
+A deck keeps every publication as an immutable `deck_versions` row, and its draft as `deck_draft_snapshots` rows taken while people edit (at most one every five minutes, plus one when the last editor leaves), on each solo save, before a restore, and on demand with a label. `snapshotsToDrop` in `server/db/snapshot-store.ts` prunes them: the last day whole, then one per hour for a month, then one per day, labelled ones kept, with a cap on each group. Restoring copies a version or a snapshot into the draft through the open collab room when there is one, and keeps the replaced draft as a snapshot, so the history only grows. The logins of the editors between two snapshots are gathered in process memory by the collab hooks: a restart forgets the interval, and the deployment runs one instance. Times are stored to the second; `compareHistoryEntries` orders equal seconds.
+
+### Families
+Decks that are variants of one presentation share a free-text `family` on their rows, with no row of its own, and a `variantLabel`; a deck replaced by a newer edition points at it through `supersededBy`. The folder page draws a family as one card, the viewer offers the variants the visitor may open, and `POST /api/presentations/:slug/duplicate` creates a variant or a replacing edition from a deck.
 
 ### Theme System
 Three layers:
