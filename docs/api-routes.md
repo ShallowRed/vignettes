@@ -22,6 +22,7 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 | `POST /api/presentations/:slug/publish` | may edit | Persist the draft as a new immutable version and point readers to it |
 | `GET /api/presentations/:slug/versions` | may edit | The published versions, newest first, with the one readers see marked |
 | `GET /api/presentations/:slug/versions/:id` | may edit | One published version with its markdown |
+| `POST /api/presentations/:slug/versions/:id/restore` | may edit | Copy a version into the draft, through the open collab room when there is one; readers keep the current version until the next publish |
 | `DELETE /api/presentations/:slug` | owner | Move the deck to the trash; refused while a collaboration session is open |
 | `PATCH /api/admin/decks/:slug` | privileged | Edit catalog and access metadata (title, status, project, password, theme) |
 | `POST /api/media?deck=:slug` | may edit | Upload an image; the response gives its `/media/<hash>.<ext>` URL |

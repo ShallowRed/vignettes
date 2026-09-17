@@ -113,3 +113,33 @@ export function useCollabServer(): Hocuspocus {
   })
   return instance
 }
+
+/**
+ * Replace the whole draft text of a deck (restoring a version). The change goes
+ * through the live room when one is open, so every editor receives it and
+ * Hocuspocus stores it; otherwise it is applied to the stored document, whose
+ * lineage a client reconnecting later still merges with.
+ */
+export async function replaceDraft(slug: string, raw: string): Promise<void> {
+  const live = useCollabServer().documents.get(slug)
+  if (live) {
+    const ytext = live.getText(TEXT_FIELD)
+    live.transact(() => {
+      ytext.delete(0, ytext.length)
+      ytext.insert(0, raw)
+    })
+    return
+  }
+  const drafts = useDraftStore()
+  const stored = await drafts.load(slug)
+  const doc = new Y.Doc()
+  if (stored)
+    Y.applyUpdate(doc, stored)
+  const ytext = doc.getText(TEXT_FIELD)
+  doc.transact(() => {
+    ytext.delete(0, ytext.length)
+    ytext.insert(0, raw)
+  })
+  await drafts.save(slug, Y.encodeStateAsUpdate(doc))
+  doc.destroy()
+}
