@@ -1,0 +1,1 @@
+CREATE INDEX `deck_versions_deck_slug_idx` ON `deck_versions` (`deck_slug`);

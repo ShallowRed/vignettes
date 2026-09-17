@@ -1,4 +1,4 @@
-import { blob, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { blob, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 /**
  * Deck identity + catalog/access axes. The published markdown itself lives in
@@ -31,14 +31,18 @@ export const decks = sqliteTable('decks', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
 
-/** One immutable row per publish; rollback is repointing `publishedVersionId`. */
+/**
+ * One immutable row per publish: the history of a deck. Restoring a version
+ * copies its markdown into the draft, which is then published again, so the
+ * history stays append-only.
+ */
 export const deckVersions = sqliteTable('deck_versions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   deckSlug: text('deck_slug').notNull().references(() => decks.slug),
   raw: text('raw').notNull(),
   publishedBy: text('published_by').notNull(),
   publishedAt: integer('published_at', { mode: 'timestamp' }).notNull(),
-})
+}, table => [index('deck_versions_deck_slug_idx').on(table.deckSlug)])
 
 /** Live collaborative state: the Y.Doc binary (encodeStateAsUpdate), debounced. */
 export const deckDrafts = sqliteTable('deck_drafts', {

@@ -1,5 +1,6 @@
 export * from './catalog-view'
 export * from './folder-view'
+export * from './history'
 export * from './list-item'
 export * from './status-config'
 export * from './title-slide'

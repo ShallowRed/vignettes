@@ -10,6 +10,7 @@ import { createPermissionStore } from '../db/permission-store'
 import { createProjectPermissionStore } from '../db/project-permission-store'
 import { createProjectStore } from '../db/project-store'
 import { decks } from '../db/schema'
+import { createVersionHistory } from '../db/version-history'
 import { useDb } from './db'
 
 /**
@@ -28,6 +29,11 @@ export const publishedSource: ContentSource = {
   load(slug) {
     return useDbContent().source.load(slug)
   },
+}
+
+/** The published versions of a deck, for the history panel. */
+export function useVersionHistory() {
+  return createVersionHistory(useDb())
 }
 
 /** Deck catalog/access metadata rows (truth for managed decks). */
