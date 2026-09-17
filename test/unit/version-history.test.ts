@@ -18,9 +18,9 @@ describe('createVersionHistory', () => {
 
   it('lists the versions of one deck, newest first, and marks the served one', async () => {
     const versions = await history.list('deck')
-    expect(versions.map(v => [v.publishedBy, v.bytes, v.current])).toEqual([['bob', 13, true], ['ana', 5, false]])
+    expect(versions.map(v => [v.kind, v.publishedBy, v.bytes, v.current])).toEqual([['version', 'bob', 13, true], ['version', 'ana', 5, false]])
     expect(versions[0]!.id).toBeGreaterThan(versions[1]!.id)
-    expect(typeof versions[0]!.publishedAt).toBe('number')
+    expect(typeof versions[0]!.at).toBe('number')
   })
 
   it('lists nothing for a deck without versions', async () => {
@@ -29,7 +29,7 @@ describe('createVersionHistory', () => {
 
   it('loads a version with its markdown, only under its own deck', async () => {
     const [current, first] = await history.list('deck')
-    expect(await history.load('deck', first!.id)).toMatchObject({ raw: '# one', current: false })
+    expect(await history.load('deck', first!.id)).toMatchObject({ kind: 'version', raw: '# one', current: false })
     expect(await history.load('deck', current!.id)).toMatchObject({ raw: '# two, longer', current: true })
     expect(await history.load('other', first!.id)).toBeNull()
     expect(await history.load('deck', 999)).toBeNull()

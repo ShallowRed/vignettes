@@ -3,23 +3,6 @@
  * of the draft, newest first. Read by `GET /api/presentations/:slug/history`
  * and the history panel of the editor.
  */
-export interface DeckVersionSummary {
-  id: number
-  /** Publication time, in milliseconds. */
-  publishedAt: number
-  /** Login of the account that published. */
-  publishedBy: string
-  /** Size of the markdown, in bytes. */
-  bytes: number
-  /** True for the version the visitors see. */
-  current: boolean
-}
-
-/** One version with its markdown, from `GET /api/presentations/:slug/versions/:id`. */
-export interface DeckVersionDetail extends DeckVersionSummary {
-  raw: string
-}
-
 /** A snapshot of the draft: automatic while people edit, or taken on demand with a label. */
 export interface DraftSnapshotEntry {
   kind: 'snapshot'
@@ -38,10 +21,17 @@ export interface PublishedEntry {
   id: number
   /** Publication time, in milliseconds. */
   at: number
+  /** Login of the account that published. */
   publishedBy: string
+  /** Size of the markdown, in bytes. */
   bytes: number
   /** True for the version the visitors see. */
   current: boolean
+}
+
+/** One published version with its markdown, from `GET /api/presentations/:slug/versions/:id`. */
+export interface PublishedEntryDetail extends PublishedEntry {
+  raw: string
 }
 
 /** One moment of the history, as `GET /api/presentations/:slug/history` lists them. */

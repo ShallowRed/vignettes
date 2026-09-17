@@ -40,6 +40,7 @@ describe('reading the history (GET /api/presentations/:slug/history)', () => {
     await useDbContent().writer.save({ slug: 'other', raw: '# other', actor: 'ed' })
     await expect(loadVersion(editor({ params: { slug: 'other', id: String(id) } }))).rejects.toMatchObject({ statusCode: 404 })
     await expect(loadVersion(editor({ params: { slug: 'deck', id: 'abc' } }))).rejects.toMatchObject({ statusCode: 400 })
-    await expect(loadVersion(editor(params(id)))).resolves.toMatchObject({ raw: '# v1' })
+    // The panel matches a loaded entry to the selection by kind and id.
+    await expect(loadVersion(editor(params(id)))).resolves.toMatchObject({ kind: 'version', id, raw: '# v1' })
   })
 })

@@ -1,4 +1,4 @@
-import type { DeckVersionDetail, DeckVersionSummary } from '#shared/presentations'
+import type { PublishedEntry, PublishedEntryDetail } from '#shared/presentations'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { Buffer } from 'node:buffer'
 import { and, desc, eq } from 'drizzle-orm'
@@ -16,7 +16,7 @@ export function createVersionHistory(db: Db) {
   }
 
   return {
-    async list(slug: string): Promise<DeckVersionSummary[]> {
+    async list(slug: string): Promise<PublishedEntry[]> {
       const current = currentId(slug)
       const rows = db.select({
         id: deckVersions.id,
@@ -29,8 +29,9 @@ export function createVersionHistory(db: Db) {
         .orderBy(desc(deckVersions.id))
         .all()
       return rows.map(row => ({
+        kind: 'version' as const,
         id: row.id,
-        publishedAt: row.publishedAt.getTime(),
+        at: row.publishedAt.getTime(),
         publishedBy: row.publishedBy,
         bytes: Buffer.byteLength(row.raw),
         current: row.id === current,
@@ -38,13 +39,14 @@ export function createVersionHistory(db: Db) {
     },
 
     /** Null when the version does not exist or belongs to another deck. */
-    async load(slug: string, id: number): Promise<DeckVersionDetail | null> {
+    async load(slug: string, id: number): Promise<PublishedEntryDetail | null> {
       const row = db.select().from(deckVersions).where(and(eq(deckVersions.deckSlug, slug), eq(deckVersions.id, id))).get()
       if (!row)
         return null
       return {
+        kind: 'version',
         id: row.id,
-        publishedAt: row.publishedAt.getTime(),
+        at: row.publishedAt.getTime(),
         publishedBy: row.publishedBy,
         bytes: Buffer.byteLength(row.raw),
         current: row.id === currentId(slug),
