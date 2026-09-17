@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 
-/** The `:id` of a version route as a number; 400 when it is not a positive integer. */
+/** The `:id` of a version or snapshot route as a number; 400 when it is not a positive integer. */
 export function readVersionId(event: H3Event): number {
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) {
