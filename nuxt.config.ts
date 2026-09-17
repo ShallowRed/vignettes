@@ -66,10 +66,17 @@ export default defineNuxtConfig({
     },
   },
 
+  // The desktop app keeps the worktrees of other sessions under `.claude/`,
+  // each with its `node_modules`: watching them exhausts the file descriptors
+  // of the dev server (macOS caps a process at 10 240). The frozen bundles are
+  // static output.
+  ignore: ['.claude/**', '.frozen/**'],
+
   vite: {
     // Tailwind's vite plugin comes with @nuxt/ui; the theme watcher comes with
     // the @vignettes/nuxt module. Only the content watcher is the app's own.
     plugins: [presentationWatcher()],
+    server: { watch: { ignored: ['**/.claude/**', '**/.frozen/**'] } },
     // The SSR Vite server runs in middleware mode with `hmr: false`; Vite then
     // still opens an unused websocket server on 24678, which collides with any
     // other Vite dev server on the machine. It has no client: drop it.
