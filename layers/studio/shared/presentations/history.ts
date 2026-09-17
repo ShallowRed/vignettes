@@ -47,6 +47,19 @@ export interface PublishedEntry {
 /** One moment of the history, as `GET /api/presentations/:slug/history` lists them. */
 export type HistoryEntry = PublishedEntry | DraftSnapshotEntry
 
+/**
+ * Newest first. Times are kept to the second: at the same second a snapshot
+ * comes before a version, since the draft moves after a publish, and two
+ * entries of one kind follow their ids.
+ */
+export function compareHistoryEntries(a: HistoryEntry, b: HistoryEntry): number {
+  if (a.at !== b.at)
+    return b.at - a.at
+  if (a.kind !== b.kind)
+    return a.kind === 'snapshot' ? -1 : 1
+  return b.id - a.id
+}
+
 /** One snapshot with its markdown, from `GET /api/presentations/:slug/snapshots/:id`. */
 export interface DraftSnapshotDetail extends DraftSnapshotEntry {
   raw: string

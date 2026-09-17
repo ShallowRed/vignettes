@@ -14,6 +14,8 @@ const { default: saveDraft } = await import('../../layers/studio/server/api/pres
 const { default: publish } = await import('../../layers/studio/server/api/presentations/[slug]/publish.post')
 const { default: loadDeck } = await import('../../layers/studio/server/api/presentations/[slug].get')
 const { default: uploadMedia } = await import('../../layers/studio/server/api/media.post')
+const { default: listHistory } = await import('../../layers/studio/server/api/presentations/[slug]/history.get')
+const { default: duplicate } = await import('../../layers/studio/server/api/presentations/[slug]/duplicate.post')
 
 const bearer = (token: string, over: Record<string, unknown> = {}) => anon({ headers: { authorization: `Bearer ${token}` }, ...over })
 const deck = { params: { slug: 'deck' } }
@@ -59,5 +61,10 @@ describe('content token on the markdown write path', () => {
     await expect(uploadMedia(bearer('secret-token', { query: { deck: 'deck' } }))).rejects.toMatchObject({ statusCode: 401 })
     await expect(assertPrivileged(bearer('secret-token'))).rejects.toMatchObject({ statusCode: 401 })
     await expect(assertOwner(bearer('secret-token'))).rejects.toMatchObject({ statusCode: 401 })
+  })
+
+  it('opens neither the history nor the copy of a deck', async () => {
+    await expect(listHistory(bearer('secret-token', deck))).rejects.toMatchObject({ statusCode: 401 })
+    await expect(duplicate(bearer('secret-token', { ...deck, body: { slug: 'copy', mode: 'variant' } }))).rejects.toMatchObject({ statusCode: 401 })
   })
 })

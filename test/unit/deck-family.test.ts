@@ -15,6 +15,13 @@ describe('replacementLoops', () => {
     expect(replacementLoops('b', 'a', decks)).toBe(false)
   })
 
+  it('follows a chain of replacements back to the deck', () => {
+    // v1 is replaced by v2, itself replaced by v3: v3 cannot be replaced by v1.
+    const chain = [{ slug: 'v1', supersededBy: 'v2' }, { slug: 'v2', supersededBy: 'v3' }, { slug: 'v3', supersededBy: null }]
+    expect(replacementLoops('v3', 'v1', chain)).toBe(true)
+    expect(replacementLoops('v1', 'v3', chain)).toBe(false)
+  })
+
   it('ends on a stored loop instead of spinning', () => {
     const looped = [{ slug: 'x', supersededBy: 'y' }, { slug: 'y', supersededBy: 'x' }]
     expect(replacementLoops('z', 'x', looped)).toBe(false)

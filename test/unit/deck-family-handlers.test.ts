@@ -37,6 +37,9 @@ describe('the family fields of PATCH /api/admin/decks/:slug', () => {
     await patch('talk', { family: 'Conf' })
     await expect(patch('other', { family: 'Conf' })).rejects.toMatchObject({ statusCode: 400 })
     await expect(patch('other', { family: 'Conf', project: 'client' })).resolves.toMatchObject({ family: 'Conf', project: 'client' })
+    // Moving one member to another folder would split the family.
+    await expect(patch('other', { project: 'autre' })).rejects.toMatchObject({ statusCode: 400 })
+    await expect(patch('other', { project: 'autre', family: null })).resolves.toMatchObject({ project: 'autre', family: undefined })
   })
 })
 
@@ -70,6 +73,17 @@ describe('copying a deck (POST /api/presentations/:slug/duplicate)', () => {
     await expect(copy({ slug: 'x', mode: 'clone' })).rejects.toMatchObject({ statusCode: 400 })
     await expect(duplicate(asUser(10, 'vi', { params: { slug: 'talk' }, body: { slug: 'x', mode: 'variant' } }))).rejects.toMatchObject({ statusCode: 403 })
   })
+
+  it('answers a visitor the same way for an unknown deck and a private one', async () => {
+    const body = { slug: 'x', mode: 'variant' }
+    await expect(duplicate(anon({ params: { slug: 'nope' }, body }))).rejects.toMatchObject({ statusCode: 401 })
+    await expect(duplicate(anon({ params: { slug: 'other' }, body }))).rejects.toMatchObject({ statusCode: 401 })
+  })
+
+  it('refuses a source with nothing to copy', async () => {
+    await useDeckMeta().update('empty', { title: 'Empty' })
+    await expect(copy({ slug: 'empty-2', mode: 'variant', variantLabel: 'B' }, 'empty')).rejects.toMatchObject({ statusCode: 404 })
+  })
 })
 
 describe('the variants the viewer route offers', () => {
@@ -87,9 +101,22 @@ describe('the variants the viewer route offers', () => {
     const granted = await viewer(asUser(10, 'vi', { params: { slug: 'talk' } }))
     expect(granted.variants.map(v => v.slug)).toEqual(['talk', 'talk-en', 'talk-secret'])
 
-    // A variant still unpublished has no page: the owner does not get it either.
+    // A variant still unpublished has no page: neither the owner nor a
+    // collaborator holding an editor grant on it gets it.
     await duplicate(owner({ params: { slug: 'talk' }, body: { slug: 'talk-de', mode: 'variant', variantLabel: 'DE' } }))
     const mine = await viewer(owner({ params: { slug: 'talk' } }))
     expect(mine.variants.map(v => v.slug)).toEqual(['talk', 'talk-en', 'talk-secret'])
+    await usePermissionStore().set('talk-de', 10, 'editor', 'boss')
+    const collaborator = await viewer(asUser(10, 'vi', { params: { slug: 'talk' } }))
+    expect(collaborator.variants.map(v => v.slug)).toEqual(['talk', 'talk-en', 'talk-secret'])
+  })
+
+  it('offers nothing on a trashed or frozen deck', async () => {
+    await patch('talk', { family: 'Conf', variantLabel: 'FR' })
+    await useDeckMeta().softDelete('talk')
+    await expect(viewer(owner({ params: { slug: 'talk' } }))).resolves.toEqual({ canEdit: false, variants: [] })
+    await useDeckMeta().restore('talk')
+    await patch('talk', { lifecycle: 'frozen' })
+    await expect(viewer(owner({ params: { slug: 'talk' } }))).resolves.toMatchObject({ canEdit: false })
   })
 })

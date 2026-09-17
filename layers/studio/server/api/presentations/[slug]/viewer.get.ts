@@ -10,18 +10,22 @@ import { useDeckMeta } from '../../../utils/sources'
  * and the way back to the folder. The variants come from the visitor's own
  * catalog, so a visitor learns nothing they could not list.
  */
+/** The family members the visitor may open. A member with nothing published has no page. */
+async function familyVariants(event: Parameters<typeof listVisiblePresentations>[0], slug: string) {
+  const [visible, rows] = await Promise.all([listVisiblePresentations(event), useDeckMeta().listManaged()])
+  const published = new Set(rows.filter(d => d.published).map(d => d.slug))
+  return variantsOf(slug, visible)
+    .filter(d => published.has(d.slug))
+    .map(d => ({ slug: d.slug, alias: d.alias ?? null, title: d.title, variantLabel: d.variantLabel ?? d.slug }))
+}
+
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
   if (!slug)
     throw createError({ statusCode: 400, statusMessage: 'Slug parameter is required' })
 
   const meta = await useDeckMeta().get(slug)
-  // A variant with nothing published yet has no page to open.
-  const variants = meta?.family
-    ? variantsOf(slug, await listVisiblePresentations(event))
-        .filter(d => d.published !== false)
-        .map(d => ({ slug: d.slug, alias: d.alias ?? null, title: d.title, variantLabel: d.variantLabel ?? d.slug }))
-    : []
+  const variants = meta?.family ? await familyVariants(event, slug) : []
   const actor = await getActor(event)
   if (!meta || isFrozen(meta) || !await canActorEditDeck(actor, slug))
     return { canEdit: false as const, variants }

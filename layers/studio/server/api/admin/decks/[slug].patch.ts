@@ -58,21 +58,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: `No folder "${parsed.data.project}"` })
 
   // A replacement names a live deck, and never a deck this one already
-  // replaces; a family stays inside one folder.
-  const { supersededBy, family } = parsed.data
-  if (supersededBy || family) {
+  // replaces; a family stays inside one folder, whether the patch names the
+  // family or moves the deck to another folder.
+  const { supersededBy, family, project } = parsed.data
+  if (supersededBy || family || project !== undefined) {
     const decks = await useDeckMeta().listManaged()
+    const current = decks.find(d => d.slug === slug)
     if (supersededBy) {
       if (!decks.some(d => d.slug === supersededBy))
         throw createError({ statusCode: 400, statusMessage: `No deck "${supersededBy}"` })
       if (replacementLoops(slug, supersededBy, decks))
         throw createError({ statusCode: 400, statusMessage: 'A deck cannot be replaced by itself or by a deck it replaces' })
     }
-    if (family) {
-      const project = parsed.data.project !== undefined ? parsed.data.project : decks.find(d => d.slug === slug)?.project ?? null
-      const folder = familyFolder(family, slug, decks)
-      if (folder !== undefined && folder !== project)
-        throw createError({ statusCode: 400, statusMessage: `The family "${family}" belongs to another folder` })
+    const familyAfter = family !== undefined ? family : current?.family ?? null
+    if (familyAfter) {
+      const projectAfter = project !== undefined ? project : current?.project ?? null
+      const folder = familyFolder(familyAfter, slug, decks)
+      if (folder !== undefined && folder !== projectAfter)
+        throw createError({ statusCode: 400, statusMessage: `The family "${familyAfter}" belongs to another folder` })
     }
   }
 

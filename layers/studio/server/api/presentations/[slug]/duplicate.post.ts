@@ -33,12 +33,14 @@ export default defineEventHandler(async (event) => {
   }
   const body = parsed.data
 
+  // The edit right comes first, so a refused caller cannot tell an unknown
+  // deck from a private one.
+  await assertCanEditDeck(event, slug)
   const meta = useDeckMeta()
   const source = await meta.get(slug)
   if (!source) {
     throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
   }
-  await assertCanEditDeck(event, slug)
   await assertCanCreateInProject(event, source.project)
 
   const drafts = useDraftStore()

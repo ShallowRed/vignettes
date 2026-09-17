@@ -52,7 +52,9 @@ export function useSnapshotStore() {
 /** Minimum time between two automatic snapshots of a deck while it is edited. */
 export const SNAPSHOT_INTERVAL_MS = 5 * 60_000
 
-// Who edited each deck since its last snapshot.
+// Who edited each deck since its last snapshot. Process memory: a restart
+// between two snapshots forgets the logins of the interval, and a second
+// instance would keep its own list.
 const contributors = new Map<string, Set<string>>()
 
 /** Note that `user` edits `slug`, for the next snapshot. */
@@ -87,11 +89,8 @@ export async function recordDraftSnapshot(slug: string, raw: string, options: { 
   return id
 }
 
-/** The draft text: the live room when one is open (the store lags by the debounce), else the stored draft. */
-export async function currentDraftText(slug: string): Promise<string | null> {
-  const live = useCollabServer().documents.get(slug)
-  if (live)
-    return live.getText(TEXT_FIELD).toString()
+/** The text of a stored draft, null when the deck has none. */
+async function storedDraftText(slug: string): Promise<string | null> {
   const stored = await useDraftStore().load(slug)
   if (!stored)
     return null
@@ -100,6 +99,12 @@ export async function currentDraftText(slug: string): Promise<string | null> {
   const raw = doc.getText(TEXT_FIELD).toString()
   doc.destroy()
   return raw
+}
+
+/** The draft text: the live room when one is open (the store lags by the debounce), else the stored draft. */
+export async function currentDraftText(slug: string): Promise<string | null> {
+  const live = useCollabServer().documents.get(slug)
+  return live ? live.getText(TEXT_FIELD).toString() : storedDraftText(slug)
 }
 
 /**
@@ -191,10 +196,11 @@ export function useCollabServer(): Hocuspocus {
  * still merges with.
  */
 export async function replaceDraft(slug: string, raw: string, by?: string | null): Promise<void> {
-  const current = await currentDraftText(slug)
+  // The room is read once: the text kept and the text replaced are the same.
+  const live = useCollabServer().documents.get(slug)
+  const current = live ? live.getText(TEXT_FIELD).toString() : await storedDraftText(slug)
   if (current !== null && current !== raw)
     await recordDraftSnapshot(slug, current, { by, force: true })
-  const live = useCollabServer().documents.get(slug)
   if (live) {
     const ytext = live.getText(TEXT_FIELD)
     live.transact(() => {

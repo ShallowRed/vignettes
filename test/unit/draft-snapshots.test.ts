@@ -1,5 +1,5 @@
 import { Document } from '@hocuspocus/server'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { noteContributor, recordDraftSnapshot, SNAPSHOT_INTERVAL_MS, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
 import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
 import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
@@ -25,6 +25,8 @@ async function store(doc: Document, clientsCount: number) {
 beforeEach(async () => {
   await seedAccount(3, 'ed', 'editor')
   useCollabServer().documents.delete('deck')
+})
+afterEach(() => {
   vi.useRealTimers()
 })
 

@@ -1,27 +1,8 @@
-import { assertCanEditDeck } from '../../../../../utils/access'
-import { replaceDraft, useDraftStore } from '../../../../../utils/collab'
+import { restoreIntoDraft } from '../../../../../utils/restore'
 import { useVersionHistory } from '../../../../../utils/sources'
-import { readVersionId } from '../../../../../utils/version-id'
 
 /**
- * Restore a version: its markdown becomes the draft, which the editors review
- * and publish again. The visitors keep seeing the current version until then,
- * and the replaced draft stays in the history as a snapshot.
+ * Restore a published version into the draft.
  * POST /api/presentations/:slug/versions/:id/restore
  */
-export default defineEventHandler(async (event) => {
-  const slug = getRouterParam(event, 'slug')
-  if (!slug) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
-  }
-  const editor = await assertCanEditDeck(event, slug)
-  if (!useDraftStore().isWritable()) {
-    throw createError({ statusCode: 503, statusMessage: 'Draft storage is unavailable on this deployment' })
-  }
-  const version = await useVersionHistory().load(slug, readVersionId(event))
-  if (!version) {
-    throw createError({ statusCode: 404, statusMessage: 'Version not found' })
-  }
-  await replaceDraft(slug, version.raw, editor.login)
-  return { ok: true, stamp: await useDraftStore().stamp(slug) }
-})
+export default defineEventHandler(event => restoreIntoDraft(event, { name: 'Version', load: useVersionHistory().load }))

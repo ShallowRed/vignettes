@@ -1,4 +1,5 @@
 import type { HistoryEntry } from '#shared/presentations'
+import { compareHistoryEntries } from '#shared/presentations'
 import { assertCanEditDeck } from '../../../utils/access'
 import { useSnapshotStore } from '../../../utils/collab'
 import { useVersionHistory } from '../../../utils/sources'
@@ -22,8 +23,6 @@ export default defineEventHandler(async (event) => {
     ...versions.map(v => ({ kind: 'version' as const, id: v.id, at: v.publishedAt, publishedBy: v.publishedBy, bytes: v.bytes, current: v.current })),
     ...snapshots.map(s => ({ kind: 'snapshot' as const, id: s.id, at: s.createdAt, authors: s.authors, label: s.label, bytes: s.bytes })),
   ]
-  // Times are kept to the second: at the same second the snapshot comes first,
-  // since the draft moves after a publish.
-  entries.sort((a, b) => b.at - a.at || (a.kind === b.kind ? b.id - a.id : a.kind === 'snapshot' ? -1 : 1))
+  entries.sort(compareHistoryEntries)
   return { entries }
 })

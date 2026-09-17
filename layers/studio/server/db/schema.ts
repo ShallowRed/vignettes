@@ -16,7 +16,7 @@ export const decks = sqliteTable('decks', {
   accessPasswordHash: text('access_password_hash'),
   frozenBundle: text('frozen_bundle'),
   unlisted: integer('unlisted', { mode: 'boolean' }).notNull().default(false),
-  /** Decks sharing a family are versions of one presentation (a language, a format), shown as one card. */
+  /** Decks sharing a family are variants of one presentation (a language, a format), shown as one card. A family is this free text, with no row of its own; `shared/presentations/family.ts` keeps it inside one folder. */
   family: text('family'),
   /** What sets this deck apart within its family: `FR`, `EN`, `Vidéo`. */
   variantLabel: text('variant_label'),
