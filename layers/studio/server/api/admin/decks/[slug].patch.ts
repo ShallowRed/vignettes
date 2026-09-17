@@ -1,4 +1,5 @@
 import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
+import { familyFolder, replacementLoops } from '#shared/presentations'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { getActorRole } from '../../../utils/actor'
@@ -56,8 +57,24 @@ export default defineEventHandler(async (event) => {
   if (parsed.data.project && !await useProjectStore().isLive(parsed.data.project))
     throw createError({ statusCode: 400, statusMessage: `No folder "${parsed.data.project}"` })
 
-  if (parsed.data.supersededBy === slug)
-    throw createError({ statusCode: 400, statusMessage: 'A deck cannot replace itself' })
+  // A replacement names a live deck, and never a deck this one already
+  // replaces; a family stays inside one folder.
+  const { supersededBy, family } = parsed.data
+  if (supersededBy || family) {
+    const decks = await useDeckMeta().listManaged()
+    if (supersededBy) {
+      if (!decks.some(d => d.slug === supersededBy))
+        throw createError({ statusCode: 400, statusMessage: `No deck "${supersededBy}"` })
+      if (replacementLoops(slug, supersededBy, decks))
+        throw createError({ statusCode: 400, statusMessage: 'A deck cannot be replaced by itself or by a deck it replaces' })
+    }
+    if (family) {
+      const project = parsed.data.project !== undefined ? parsed.data.project : decks.find(d => d.slug === slug)?.project ?? null
+      const folder = familyFolder(family, slug, decks)
+      if (folder !== undefined && folder !== project)
+        throw createError({ statusCode: 400, statusMessage: `The family "${family}" belongs to another folder` })
+    }
+  }
 
   // null clears an optional column; undefined leaves it untouched.
   const { accessPassword, ...rest } = parsed.data

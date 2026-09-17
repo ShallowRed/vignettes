@@ -1,4 +1,5 @@
 export * from './catalog-view'
+export * from './family'
 export * from './folder-view'
 export * from './history'
 export * from './list-item'

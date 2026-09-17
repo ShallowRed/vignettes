@@ -18,6 +18,7 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 | Route | Access | Effect |
 |-------|--------|--------|
 | `POST /api/presentations` | privileged, creation right on the project | Create a deck with starter markdown |
+| `POST /api/presentations/:slug/duplicate` | may edit, creation right on the folder | Copy the deck as a new draft: a variant of its family, or the edition replacing it |
 | `PUT /api/presentations/:slug` | may edit | Save the markdown as the draft, and keep it as a snapshot |
 | `POST /api/presentations/:slug/publish` | may edit | Persist the draft as a new immutable version and point readers to it |
 | `GET /api/presentations/:slug/history` | may edit | The published versions and the draft snapshots, newest first, with the version readers see marked |
@@ -27,7 +28,7 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 | `GET /api/presentations/:slug/snapshots/:id` | may edit | One draft snapshot with its markdown |
 | `POST /api/presentations/:slug/snapshots/:id/restore` | may edit | Copy a snapshot into the draft; the replaced draft stays as a snapshot |
 | `DELETE /api/presentations/:slug` | owner | Move the deck to the trash; refused while a collaboration session is open |
-| `PATCH /api/admin/decks/:slug` | privileged | Edit catalog and access metadata (title, status, project, password, theme) |
+| `PATCH /api/admin/decks/:slug` | privileged | Edit catalog and access metadata (title, status, project, password, theme, family, variant, replacement); a family stays inside one folder and a replacement never loops |
 | `POST /api/media?deck=:slug` | may edit | Upload an image; the response gives its `/media/<hash>.<ext>` URL |
 
 ## Projects
