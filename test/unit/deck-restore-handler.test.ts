@@ -11,7 +11,7 @@ import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/ser
 stubH3Globals()
 setupServerDb()
 
-const { default: listVersions } = await import('../../layers/studio/server/api/presentations/[slug]/versions.get')
+const { default: listHistory } = await import('../../layers/studio/server/api/presentations/[slug]/history.get')
 const { default: restoreVersion } = await import('../../layers/studio/server/api/presentations/[slug]/versions/[id]/restore.post')
 
 const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
@@ -20,8 +20,8 @@ const params = (id?: number) => ({ params: { slug: 'deck', ...(id === undefined 
 
 async function publish(raw: string) {
   await useDbContent().writer.save({ slug: 'deck', raw, actor: 'ed' })
-  const { versions } = await listVersions(editor(params()))
-  return versions[0]!.id
+  const { entries } = await listHistory(editor(params()))
+  return entries.find(e => e.kind === 'version')!.id
 }
 
 beforeEach(async () => {

@@ -21,7 +21,6 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 | `PUT /api/presentations/:slug` | may edit | Save the markdown as the draft, and keep it as a snapshot |
 | `POST /api/presentations/:slug/publish` | may edit | Persist the draft as a new immutable version and point readers to it |
 | `GET /api/presentations/:slug/history` | may edit | The published versions and the draft snapshots, newest first, with the version readers see marked |
-| `GET /api/presentations/:slug/versions` | may edit | The published versions, newest first, with the one readers see marked |
 | `GET /api/presentations/:slug/versions/:id` | may edit | One published version with its markdown |
 | `POST /api/presentations/:slug/versions/:id/restore` | may edit | Copy a version into the draft, through the open collab room when there is one; readers keep the current version until the next publish, and the replaced draft stays as a snapshot |
 | `POST /api/presentations/:slug/snapshots` | may edit | Keep the draft as it is now, with an optional label; labelled snapshots are never pruned |

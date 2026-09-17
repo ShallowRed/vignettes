@@ -7,7 +7,7 @@ import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/ser
 stubH3Globals()
 setupServerDb()
 
-const { default: listVersions } = await import('../../layers/studio/server/api/presentations/[slug]/versions.get')
+const { default: listHistory } = await import('../../layers/studio/server/api/presentations/[slug]/history.get')
 const { default: loadVersion } = await import('../../layers/studio/server/api/presentations/[slug]/versions/[id].get')
 
 const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
@@ -16,8 +16,8 @@ const params = (id?: number) => ({ params: { slug: 'deck', ...(id === undefined 
 
 async function publish(raw: string) {
   await useDbContent().writer.save({ slug: 'deck', raw, actor: 'ed' })
-  const { versions } = await listVersions(editor(params()))
-  return versions[0]!.id
+  const { entries } = await listHistory(editor(params()))
+  return entries.find(e => e.kind === 'version')!.id
 }
 
 beforeEach(async () => {
@@ -25,14 +25,14 @@ beforeEach(async () => {
   await seedAccount(10, 'vi', 'viewer')
 })
 
-describe('reading the history (GET /api/presentations/:slug/versions)', () => {
+describe('reading the history (GET /api/presentations/:slug/history)', () => {
   it('needs the edit right, like the draft', async () => {
     await publish('# v1')
-    await expect(listVersions(viewer(params()))).rejects.toMatchObject({ statusCode: 403 })
+    await expect(listHistory(viewer(params()))).rejects.toMatchObject({ statusCode: 403 })
     await usePermissionStore().set('deck', 10, 'viewer', 'ed')
-    await expect(listVersions(viewer(params()))).rejects.toMatchObject({ statusCode: 403 })
+    await expect(listHistory(viewer(params()))).rejects.toMatchObject({ statusCode: 403 })
     await usePermissionStore().set('deck', 10, 'editor', 'ed')
-    await expect(listVersions(viewer(params()))).resolves.toMatchObject({ versions: [{ current: true }] })
+    await expect(listHistory(viewer(params()))).resolves.toMatchObject({ entries: [{ kind: 'version', current: true }] })
   })
 
   it('answers 404 for a version of another deck and 400 for a malformed id', async () => {
