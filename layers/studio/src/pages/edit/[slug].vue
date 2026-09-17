@@ -587,6 +587,21 @@ function insertFromHelp(snippet: string) {
     insertSnippet(editorView.value, snippet)
 }
 
+// ── History panel ───────────────────────────────────────────────────────────
+
+const historyOpen = ref(false)
+
+// A restored version reaches a collab room through Yjs; the solo editor
+// re-reads the draft it replaced.
+async function onRestored(stamp: number | null) {
+  if (collabEnabled.value)
+    return
+  const fresh = await $fetch<{ content: string }>(`/api/presentations/${slug}`, { query: { draft: '' } })
+  raw.value = fresh.content
+  lastSaved.value = fresh.content
+  draftStamp.value = stamp
+}
+
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
 
 const metaOpen = ref(false)
@@ -657,6 +672,19 @@ async function onMetaSaved() {
           :title="`${peer.name} édite en ce moment`"
         >{{ initials(peer.name) }}</span>
       </div>
+
+      <UTooltip text="Versions publiées : comparer, restaurer">
+        <UButton
+          label="Historique"
+          icon="i-lucide-history"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          class="shrink-0"
+          :disabled="!!loadError"
+          @click="historyOpen = true"
+        />
+      </UTooltip>
 
       <!-- One entry to the deck's settings drawer, which names what it holds and
            shows the current visibility, beside the other states of the deck. -->
@@ -923,6 +951,14 @@ async function onMetaSaved() {
       :item="metaItem"
       :projects="projects"
       @saved="onMetaSaved"
+    />
+
+    <DeckHistorySlideover
+      v-model:open="historyOpen"
+      :slug="slug"
+      :draft="raw"
+      :unpublished="unpublished"
+      @restored="onRestored"
     />
 
     <EditorHelpSlideover

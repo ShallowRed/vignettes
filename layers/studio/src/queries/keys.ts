@@ -29,6 +29,8 @@ export const usersKeys = {
 export const deckKeys = {
   root: (slug: string) => ['deck', slug] as const,
   sharing: (slug: string) => ['deck', slug, 'sharing'] as const,
+  history: (slug: string) => ['deck', slug, 'history'] as const,
+  version: (slug: string, id: number) => ['deck', slug, 'history', id] as const,
 }
 
 /** Per-project sub-queries, nested under a `['project', slug]` prefix. */
