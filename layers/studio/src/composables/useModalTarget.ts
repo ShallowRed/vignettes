@@ -10,6 +10,8 @@ export function useModalTarget<T>() {
   const target = ref<T | null>(null) as Ref<T | null>
   const metaOpen = ref(false)
   const deleteOpen = ref(false)
+  const duplicateOpen = ref(false)
+  const duplicateMode = ref<'variant' | 'edition'>('variant')
   // Which part of the metadata panel to bring into view: sharing is reachable
   // straight from a card, so it must not open on the top of a long panel.
   const metaFocus = ref<'sharing' | undefined>()
@@ -23,6 +25,11 @@ export function useModalTarget<T>() {
     target.value = item
     deleteOpen.value = true
   }
+  function openDuplicate(item: T, mode: 'variant' | 'edition') {
+    target.value = item
+    duplicateMode.value = mode
+    duplicateOpen.value = true
+  }
 
-  return { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete }
+  return { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, openMeta, openDelete, openDuplicate }
 }

@@ -12,7 +12,7 @@ const props = defineProps<{
   admin?: boolean
   /** Showcase card: title-first, no status/theme chrome (everything shown is public). */
   minimal?: boolean
-  /** The versions of the presentation's family, most recent first; the card switches between them. */
+  /** The variants of the presentation's family, most recent first; the card switches between them. */
   variants?: PresentationListItem[]
   /** Title of the deck that replaces this one. */
   replacedBy?: string
@@ -21,6 +21,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   editMeta: [deck: PresentationListItem]
   share: [deck: PresentationListItem]
+  duplicate: [deck: PresentationListItem, mode: 'variant' | 'edition']
   remove: [deck: PresentationListItem]
 }>()
 
@@ -65,6 +66,10 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
     { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
     { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
     ...(isOwner.value ? [{ label: 'Partager…', icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }] : []),
+  ],
+  [
+    { label: 'Créer une variante…', icon: 'i-lucide-languages', onSelect: () => emit('duplicate', deck.value, 'variant') },
+    { label: 'Nouvelle édition…', icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', deck.value, 'edition') },
   ],
   [
     {
@@ -152,7 +157,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           v-if="variants && variants.length > 1"
           class="relative z-10 flex flex-wrap gap-1.5"
           role="group"
-          aria-label="Versions"
+          aria-label="Variantes"
         >
           <UButton
             v-for="variant in variants"

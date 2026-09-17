@@ -15,7 +15,7 @@ import { grantsQuery } from '../queries'
 /**
  * Deck settings panel, in three tabs: the deck itself (title, folder, theme,
  * address), who can open it (visibility, catalog, sharing grants for the owner)
- * and its versions. Metadata saves through the admin PATCH; grants apply as soon
+ * and its variants. Metadata saves through the admin PATCH; grants apply as soon
  * as they are added. Reused by the catalog and the editor.
  */
 const props = defineProps<{
@@ -88,7 +88,7 @@ const statusItems = PUBLICATION_STATUSES.map(status => ({
   value: status,
 }))
 
-type Tab = 'general' | 'access' | 'versions'
+type Tab = 'general' | 'access' | 'variants'
 const tab = ref<Tab>('general')
 watch(open, (now) => {
   if (now)
@@ -97,7 +97,7 @@ watch(open, (now) => {
 const tabs = computed(() => [
   { label: 'Général', icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
   { label: 'Accès et partage', icon: STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const },
-  { label: 'Versions', icon: 'i-lucide-layers', value: 'versions', slot: 'versions' as const },
+  { label: 'Variantes', icon: 'i-lucide-layers', value: 'variants', slot: 'variants' as const },
 ])
 
 const projectItems = computed(() => [
@@ -441,10 +441,10 @@ const audience = computed(() => {
           </div>
         </template>
 
-        <template #versions>
+        <template #variants>
           <div class="settings">
             <p class="settings__hint pt-4">
-              Les versions d'une même présentation, par langue ou par format, partagent une carte dans le dossier.
+              Les variantes d'une même présentation, par langue ou par format, partagent une carte dans le dossier et se rejoignent depuis le lecteur. Une édition remplacée passe dans les éditions remplacées du dossier.
             </p>
             <div class="settings__row">
               <div>
@@ -452,7 +452,7 @@ const audience = computed(() => {
                   Famille
                 </p>
                 <p class="settings__hint">
-                  Le nom commun des versions.
+                  Le nom commun des variantes.
                 </p>
               </div>
               <UInputMenu
@@ -471,7 +471,7 @@ const audience = computed(() => {
                   Variante
                 </p>
                 <p class="settings__hint">
-                  Le libellé de cette version sur la carte : FR, EN, Vidéo…
+                  Le libellé de cette variante sur la carte et dans le lecteur : FR, EN, Vidéo…
                 </p>
               </div>
               <UInput
@@ -486,7 +486,7 @@ const audience = computed(() => {
                   Remplacée par
                 </p>
                 <p class="settings__hint">
-                  La présentation passe dans les anciennes versions du dossier.
+                  La présentation passe dans les éditions remplacées du dossier.
                 </p>
               </div>
               <USelect

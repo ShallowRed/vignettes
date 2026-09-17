@@ -24,8 +24,20 @@ export interface UpdateDeckMetaInput {
   accessPassword?: string | null
 }
 
+/** Body for copying a deck as a variant of its family or as the edition replacing it. */
+export interface DuplicateDeckInput {
+  slug: string
+  mode: 'variant' | 'edition'
+  title?: string
+  variantLabel?: string
+  /** The label the source takes when it had none. */
+  sourceVariantLabel?: string
+}
+
 /** Deck writes. `trash` is a soft-delete (reversible from the corbeille). */
 export const deckApi = {
+  duplicate: (fetch: Fetcher, slug: string, body: DuplicateDeckInput) =>
+    fetch(`/api/presentations/${slug}/duplicate`, { method: 'POST', body }),
   create: (fetch: Fetcher, body: CreateDeckInput) =>
     fetch('/api/presentations', { method: 'POST', body }),
   updateMeta: (fetch: Fetcher, slug: string, body: UpdateDeckMetaInput) =>

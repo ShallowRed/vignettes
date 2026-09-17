@@ -690,7 +690,7 @@ async function onMetaSaved() {
            shows the current visibility, beside the other states of the deck. -->
       <UTooltip
         v-if="statusDisplay"
-        :text="privileged ? 'Titre, accès, partage, dossier, thème, versions et alias' : 'Visibilité'"
+        :text="privileged ? 'Titre, accès, partage, dossier, thème, variantes et alias' : 'Visibilité'"
       >
         <UButton
           color="neutral"

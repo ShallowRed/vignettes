@@ -92,7 +92,7 @@ function onProjectDeleted() {
 }
 
 // Management modals (privileged), mirroring the home console.
-const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useModalTarget<PresentationListItem>()
+const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, openMeta, openDelete, openDuplicate } = useModalTarget<PresentationListItem>()
 </script>
 
 <template>
@@ -183,6 +183,7 @@ const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useMod
           :admin="privileged"
           @edit-meta="deck => openMeta(deck)"
           @share="deck => openMeta(deck, 'sharing')"
+          @duplicate="(deck, mode) => openDuplicate(deck, mode)"
           @remove="deck => openDelete(deck)"
         />
       </div>
@@ -192,7 +193,7 @@ const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useMod
         class="mt-10"
       >
         <UButton
-          :label="`Anciennes versions (${contents.superseded.length})`"
+          :label="`Éditions remplacées (${contents.superseded.length})`"
           color="neutral"
           variant="ghost"
           trailing-icon="i-lucide-chevron-down"
@@ -209,6 +210,7 @@ const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useMod
               :admin="privileged"
               @edit-meta="deck => openMeta(deck)"
               @share="deck => openMeta(deck, 'sharing')"
+              @duplicate="(deck, mode) => openDuplicate(deck, mode)"
               @remove="deck => openDelete(deck)"
             />
           </div>
@@ -227,6 +229,12 @@ const { target, metaOpen, metaFocus, deleteOpen, openMeta, openDelete } = useMod
       v-if="target"
       v-model:open="deleteOpen"
       :item="target"
+    />
+    <DeckDuplicateModal
+      v-if="target"
+      v-model:open="duplicateOpen"
+      :item="target"
+      :mode="duplicateMode"
     />
     <ProjectAccessSlideover
       v-if="canManageAccess"

@@ -18,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   editMeta: [item: PresentationListItem]
   share: [item: PresentationListItem]
+  duplicate: [item: PresentationListItem, mode: 'variant' | 'edition']
   remove: [item: PresentationListItem]
 }>()
 // Sharing is owner-only server-side, so the entry only shows for an owner.
@@ -123,7 +124,22 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
   { accessorKey: 'project', header: sortableHeader('Projet') },
   { accessorKey: 'theme', header: sortableHeader('Thème') },
   ...(props.admin
-    ? [{ accessorKey: 'filename', header: sortableHeader('Fichier') } satisfies TableColumn<PresentationListItem>]
+    ? [
+        // The family axis, which the folder page draws as one card: the variant
+        // label, its family on hover, or the deck this one is replaced by.
+        {
+          id: 'family',
+          accessorFn: (item: PresentationListItem) => item.supersededBy ? `→ ${item.supersededBy}` : [item.family, item.variantLabel].filter(Boolean).join(' · '),
+          header: sortableHeader('Variante'),
+          cell: ({ row }: { row: { original: PresentationListItem } }) => {
+            const { family, variantLabel, supersededBy } = row.original
+            if (supersededBy)
+              return h('span', { class: 'text-muted' }, `Remplacée par ${supersededBy}`)
+            return family ? h('span', { title: family }, variantLabel ?? family) : ''
+          },
+        } satisfies TableColumn<PresentationListItem>,
+        { accessorKey: 'filename', header: sortableHeader('Fichier') } satisfies TableColumn<PresentationListItem>,
+      ]
     : []),
   {
     id: 'actions',
@@ -155,6 +171,10 @@ function rowActions(item: PresentationListItem) {
             { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
             { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
             ...(isOwner.value ? [{ label: 'Partager…', icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
+          ],
+          [
+            { label: 'Créer une variante…', icon: 'i-lucide-languages', onSelect: () => emit('duplicate', item, 'variant') },
+            { label: 'Nouvelle édition…', icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', item, 'edition') },
           ],
           [
             {
