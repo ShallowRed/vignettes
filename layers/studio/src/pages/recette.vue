@@ -255,7 +255,7 @@ useHead({ title: () => t('recette.page.pageTitle') })
               color="neutral"
               variant="subtle"
               size="sm"
-              to="/auth/logout"
+              :to="personaLink('anonymous')"
               external
             />
           </li>
@@ -271,9 +271,8 @@ useHead({ title: () => t('recette.page.pageTitle') })
             <span class="font-medium">{{ scenario.title }}</span>
             <div class="flex-1" />
             <UButton
-              v-if="scenario.key !== 'anonymous'"
-              :label="t('common.actions.signIn')"
-              icon="i-lucide-log-in"
+              :label="scenario.key === 'anonymous' ? t('common.actions.signOut') : t('common.actions.signIn')"
+              :icon="scenario.key === 'anonymous' ? 'i-lucide-log-out' : 'i-lucide-log-in'"
               color="neutral"
               variant="ghost"
               size="xs"
@@ -290,9 +289,10 @@ useHead({ title: () => t('recette.page.pageTitle') })
             <span>{{ step.text }}</span>
             <ULink
               v-if="step.to"
-              :to="step.to"
+              :to="personaLink(scenario.key, step.to)"
               class="ml-2 text-primary"
               target="_blank"
+              external
             >
               {{ t('recette.page.openStep') }}
             </ULink>

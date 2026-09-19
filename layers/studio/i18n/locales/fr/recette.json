@@ -10,7 +10,7 @@
       "signedInAsNobody": "Connecté en tant que personne ({role})",
       "pass": "Laissez-passer de {owner}, valable 12 heures.",
       "backToMyAccount": "Revenir à mon compte",
-      "openStep": "ouvrir"
+      "openStep": "ouvrir en tant que ce compte"
     },
     "dataset": {
       "title": "Jeu de données",
@@ -25,7 +25,7 @@
     },
     "personas": {
       "openAs": "Ouvrir l'application en tant que",
-      "anonymousHint": "Le laissez-passer reste valable pour revenir ici.",
+      "anonymousHint": "Ouvre l'application sans session. Le laissez-passer reste valable pour revenir ici.",
       "anonymous": {
         "label": "Visiteur non connecté"
       },

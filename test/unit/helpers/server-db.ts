@@ -71,6 +71,9 @@ export function stubH3Globals() {
   vi.stubGlobal('setUserSession', async (e: any, session: unknown) => {
     e.sessionSet = session
   })
+  vi.stubGlobal('clearUserSession', async (e: any) => {
+    e.sessionCleared = true
+  })
   vi.stubGlobal('sendRedirect', (e: any, url: string) => {
     e.redirectedTo = url
   })

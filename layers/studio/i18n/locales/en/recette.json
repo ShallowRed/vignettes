@@ -10,7 +10,7 @@
       "signedInAsNobody": "Signed in as nobody ({role})",
       "pass": "Pass of {owner}, valid for 12 hours.",
       "backToMyAccount": "Back to my account",
-      "openStep": "open"
+      "openStep": "open as this account"
     },
     "dataset": {
       "title": "Data set",
@@ -25,7 +25,7 @@
     },
     "personas": {
       "openAs": "Open the application as",
-      "anonymousHint": "The pass remains valid to come back here.",
+      "anonymousHint": "Opens the app without a session. The pass stays valid to come back here.",
       "anonymous": {
         "label": "Signed-out visitor"
       },

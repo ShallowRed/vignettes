@@ -83,6 +83,15 @@ describe('persona switch', () => {
     expect(back.redirectedTo).toBe('/')
   })
 
+  it('opens the app without a session as the anonymous visitor, and keeps the pass', async () => {
+    const pass = await ownerPass()
+    const asVisitor = asUser(1, 'boss', { cookies: { recette_pass: pass }, query: { as: 'anonymous', redirect: '/slides/recette-mdp' } })
+    await openAs(asVisitor)
+    expect(asVisitor.sessionCleared).toBe(true)
+    expect(asVisitor.sessionSet).toBeUndefined()
+    expect(asVisitor.redirectedTo).toBe('/slides/recette-mdp')
+  })
+
   it('rejects an unknown persona (400)', async () => {
     await ownerPass()
     await expect(openAs(asUser(1, 'boss', { query: { as: 'root' } }))).rejects.toMatchObject({ statusCode: 400 })

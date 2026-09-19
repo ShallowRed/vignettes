@@ -3,8 +3,9 @@ import { assertRecette } from '../../utils/recette'
 import { useUserStore } from '../../utils/users'
 
 /**
- * GET /auth/recette?as=<persona>|me&redirect=<path>: open the app as one of the
- * kit's personas, or as the owner who opened the kit (`me`). Requires the pass
+ * GET /auth/recette?as=<persona>|anonymous|me&redirect=<path>: open the app as one
+ * of the kit's personas, without a session (`anonymous`), or as the owner who
+ * opened the kit (`me`). Requires the pass
  * (see `assertRecette`). The persona account is upserted with its role, so the
  * database-first role resolution agrees with the session.
  */
@@ -14,6 +15,9 @@ export default defineEventHandler(async (event) => {
 
   if (query.as === 'me') {
     await setUserSession(event, { user: { id: pass.user.id, login: pass.user.login, name: pass.user.name, role: 'owner' } })
+  }
+  else if (query.as === 'anonymous') {
+    await clearUserSession(event)
   }
   else {
     const persona = RECETTE_PERSONAS.find(p => p.key === query.as)

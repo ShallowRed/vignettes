@@ -45,8 +45,7 @@ lecture sur le dossier partagé.
 ## Déroulé
 
 1. Se connecter avec son compte owner, ouvrir `/recette`, cliquer « Réinitialiser » pour repartir d'un jeu de données neuf.
-2. Dans chaque bloc de scénario, « Se connecter » ouvre l'application en tant que ce
-   persona sur la première page à vérifier ; chaque ligne a un lien « ouvrir ».
+2. Dans chaque bloc de scénario, chaque ligne a un lien « ouvrir en tant que ce compte » : il bascule la session du navigateur sur le persona du scénario, visiteur sans session compris, puis ouvre la page à vérifier dans un nouvel onglet.
 3. Revenir sur `/recette` (favori) pour changer de persona ou revenir à son compte.
 
 Pour tester le temps réel à deux, ouvrir l'éditeur d'une même présentation dans deux
