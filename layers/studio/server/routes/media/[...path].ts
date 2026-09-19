@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import process from 'node:process'
-import { isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { mediaObjectKey } from '#shared/storage/media-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { decideMediaAccess } from '../../utils/access'
@@ -37,13 +37,7 @@ export default defineEventHandler(async (event) => {
   if (!access.allowed)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  const cfg = {
-    endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
-    region: process.env.NUXT_FROZEN_S3_REGION || 'fr-par',
-    bucket: process.env.NUXT_FROZEN_S3_BUCKET || 'vignettes-bucket',
-    accessKeyId: process.env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
-  }
+  const cfg = frozenS3ConfigFromEnv(process.env)
 
   let body: Buffer
   let contentType: string | undefined

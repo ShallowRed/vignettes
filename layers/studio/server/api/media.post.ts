@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { isPrivileged } from '#shared/access'
-import { isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { imageExtFor, MAX_MEDIA_BYTES, mediaObjectKey } from '#shared/storage/media-s3'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { isDeckSlug } from '@vignettes/core/deck'
@@ -52,13 +52,7 @@ export default defineEventHandler(async (event) => {
   const name = `${hash}.${ext}`
 
   // Env read at runtime (NUXT_FROZEN_S3_* don't fit Nuxt's override convention).
-  const cfg = {
-    endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
-    region: process.env.NUXT_FROZEN_S3_REGION || 'fr-par',
-    bucket: process.env.NUXT_FROZEN_S3_BUCKET || 'vignettes-bucket',
-    accessKeyId: process.env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
-  }
+  const cfg = frozenS3ConfigFromEnv(process.env)
 
   if (isFrozenS3Configured(cfg)) {
     const s3 = makeFrozenS3Client(cfg)

@@ -12,10 +12,14 @@ if [ -z "${NUXT_FROZEN_S3_ACCESS_KEY_ID:-}" ] || [ -z "${NUXT_FROZEN_S3_SECRET_A
   exec node .output/server/index.mjs
 fi
 
-# Same defaults as the server code; only the credentials are secrets.
+if [ -z "${NUXT_FROZEN_S3_BUCKET:-}" ]; then
+  echo "[run-app] Credentials bucket présents mais NUXT_FROZEN_S3_BUCKET vide : arrêt, la base ne serait ni restaurée ni répliquée." >&2
+  exit 1
+fi
+
+# Same defaults as the server code.
 export NUXT_FROZEN_S3_ENDPOINT="${NUXT_FROZEN_S3_ENDPOINT:-https://s3.fr-par.scw.cloud}"
 export NUXT_FROZEN_S3_REGION="${NUXT_FROZEN_S3_REGION:-fr-par}"
-export NUXT_FROZEN_S3_BUCKET="${NUXT_FROZEN_S3_BUCKET:-vignettes-bucket}"
 
 echo "[run-app] Restore Litestream si base absente…"
 litestream restore -if-db-not-exists -if-replica-exists -config /etc/litestream.yml "$DB_PATH"

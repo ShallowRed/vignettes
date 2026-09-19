@@ -12,6 +12,7 @@ import process from 'node:process'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import {
   frozenObjectKey,
+  frozenS3ConfigFromEnv,
   isFrozenS3Configured,
   makeFrozenS3Client,
 } from '../layers/studio/shared/storage/frozen-s3.ts'
@@ -80,13 +81,7 @@ async function main() {
     process.exit(1)
   }
 
-  const config = {
-    endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
-    region: process.env.NUXT_FROZEN_S3_REGION || 'fr-par',
-    bucket: process.env.NUXT_FROZEN_S3_BUCKET || 'vignettes-bucket',
-    accessKeyId: process.env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
-  }
+  const config = frozenS3ConfigFromEnv(process.env)
 
   const files = []
   for await (const f of walk(dir)) files.push(f)
@@ -106,8 +101,8 @@ async function main() {
 
   if (!isFrozenS3Configured(config)) {
     console.error(
-      '❌ Missing S3 credentials. Set NUXT_FROZEN_S3_ACCESS_KEY_ID / '
-      + 'NUXT_FROZEN_S3_SECRET_ACCESS_KEY (via Infisical/direnv).',
+      '❌ Missing S3 configuration. Set NUXT_FROZEN_S3_BUCKET, NUXT_FROZEN_S3_ACCESS_KEY_ID '
+      + 'and NUXT_FROZEN_S3_SECRET_ACCESS_KEY (via Infisical/direnv).',
     )
     process.exit(1)
   }
