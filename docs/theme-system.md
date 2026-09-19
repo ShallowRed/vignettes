@@ -35,6 +35,7 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 | `backgrounds` | Background image per heading level (`h1`, `h2`, `h3`, `default`), relative to the theme directory or absolute URLs |
 | `entry` | SCSS entry, `<name>.scss` by default |
 | `assets` | Extra directories copied under `public/themes/<name>/`: `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root |
+| `code` | Code theme of the deck blocks by default: a name of `CODE_THEMES` (`nuit`, `sombre`, `clair`), or its properties |
 | `preview` | How the catalog draws the card of a deck on this theme, without loading the theme's stylesheet |
 
 `preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names an SCSS entry declaring the font faces, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/fonts` is the value the DSFR theme uses. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another heading level, and `titleGradient: 'none'` removes the gradient there.
@@ -79,7 +80,9 @@ Code that must not care which theme is active (the engine layer, MDC components 
 
 A deck sets the colors of its code blocks in its frontmatter (`code: sombre`, or `code: { theme: sombre, string: '#FFD700' }`). `RevealPresentation` turns that value into `--code-*` custom properties on the deck root and adds the class `reveal--code-theme`. `packages/nuxt/src/runtime/assets/code-theme.css`, which ships with the renderer, colors each token from these properties under any theme. A role the code theme omits keeps the color of the highlight theme (`mdc.highlight.theme`).
 
-A deck without a code theme carries neither the class nor the properties and keeps the code blocks of its theme. `reveal--code-block` is added when the code theme names a `background`: the renderer then paints the block.
+A deck without a code theme takes the one its theme names in its manifest (`"code": "clair"`). `clair` is the light palette: one DSFR illustrative tone per kind of value, each with a contrast of 5:1 or more against the block. When the theme names none, the deck carries neither the class nor the properties and its tokens keep the colors of the highlight theme.
+
+`reveal--code-block` is added only when the frontmatter of the deck names a `background`: the renderer then paints the block. The code theme of a theme never adds it, because the theme draws its own block.
 
 A theme reads `--code-size` as a minimum for its own size: `font-size: max(var(--code-size, 0px), 0.7em)`.
 

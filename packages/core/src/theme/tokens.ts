@@ -27,6 +27,8 @@ export interface ThemePreview {
 export interface ThemeTokens {
   /** Matches `/themes/<name>.css` and the theme directory. */
   name: string
+  /** Code theme of a deck that declares none: a name of `CODE_THEMES`, or code theme properties. */
+  code?: unknown
   backgrounds?: ThemeBackgrounds
   preview?: ThemePreview
   reveal?: RevealConfig

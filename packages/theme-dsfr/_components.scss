@@ -129,23 +129,6 @@
   background: var(--code-background, #1b1b35) !important;
 }
 
-// MDC/shiki émet les couleurs en variables CSS (--shiki-default) : cette règle les applique.
-.reveal pre.shiki span[style] {
-  color: var(--code-text, var(--shiki-default));
-}
-
-// Chaque jeton porte la classe de son rôle ; le thème de code du deck colore les rôles,
-// et à défaut la couleur du thème shiki s'applique.
-@each $role in key, string, literal, keyword, function, comment, punctuation {
-  .reveal pre.shiki span.code-#{$role} {
-    color: var(--code-#{$role}, var(--shiki-default));
-  }
-}
-
-.reveal pre.shiki span.code-key {
-  font-weight: var(--code-key-weight, inherit);
-}
-
 // Code inline dans la prose : visible et surligné (graisse + fond bleuté).
 .reveal code {
   font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;

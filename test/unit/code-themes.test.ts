@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { CODE_ROLES, CODE_THEMES, codeRolesTransformer, codeThemeStyle, resolveCodeTheme, ROLES_THEME, ROLES_THEME_KEY } from '@vignettes/core/render'
+import { builtInThemeRegistry } from '@vignettes/core/theme'
 import { codeToHtml } from 'shiki'
 import { describe, expect, it } from 'vitest'
 
@@ -95,5 +96,34 @@ describe('the stylesheet of the renderer', () => {
 
   it('applies only to a deck that declares a code theme', () => {
     expect(sheet).not.toMatch(/^\.reveal pre/m)
+  })
+})
+
+describe('the code theme a theme names', () => {
+  it('is a known code theme for every application theme', () => {
+    const { tokens } = builtInThemeRegistry()
+    const named = Object.values(tokens).filter(t => t.code)
+    expect(named.length).toBe(Object.keys(tokens).length)
+    for (const tokens of named)
+      expect(resolveCodeTheme(tokens.code)).toBeDefined()
+  })
+})
+
+describe('the light code theme', () => {
+  const hex = (h: string) => [1, 3, 5].map(i => Number.parseInt(h.slice(i, i + 2), 16) / 255)
+  const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+  const luminance = (h: string) => {
+    const [r, g, b] = hex(h).map(channel) as [number, number, number]
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  const contrast = (a: string, b: string) => {
+    const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number]
+    return (high + 0.05) / (low + 0.05)
+  }
+
+  it('reads at AA against its own block', () => {
+    const theme = CODE_THEMES.clair!
+    for (const role of [...CODE_ROLES, 'text' as const])
+      expect(contrast(theme[role] as string, theme.background!)).toBeGreaterThanOrEqual(4.5)
   })
 })

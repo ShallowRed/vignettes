@@ -31,6 +31,8 @@ export interface ThemeManifest {
   lang?: string
   parser?: 'heading' | 'separator'
   reveal?: Record<string, unknown>
+  /** Code theme of the deck blocks by default: a name of `CODE_THEMES`, or its properties. */
+  code?: unknown
   /** Background images per heading level, relative to the theme directory or absolute URLs. */
   backgrounds?: Partial<Record<'h1' | 'h2' | 'h3' | 'default', string>>
   /**
@@ -103,12 +105,14 @@ export function themeAssetUrl(name: string, path: string): string {
 
 /** The runtime tokens a manifest declares, background paths turned into public URLs. */
 export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
-  const { name, lang, parser, reveal, backgrounds, preview } = manifest
+  const { name, lang, parser, reveal, backgrounds, preview, code } = manifest
   const tokens: ThemeTokens = { name }
   if (lang)
     tokens.lang = lang
   if (parser)
     tokens.parser = parser
+  if (code)
+    tokens.code = code
   if (backgrounds) {
     tokens.backgrounds = Object.fromEntries(
       Object.entries(backgrounds).map(([level, path]) => [level, themeAssetUrl(name, path)]),

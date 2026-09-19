@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RevealConfig } from '../types/presentation.ts'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
-import { getDefaultTheme } from '@vignettes/core/theme'
+import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref } from 'vue'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
@@ -38,11 +38,16 @@ const themeName = computed(() => props.theme || getDefaultTheme())
 const revealContainer = ref<HTMLElement | null>(null)
 
 // The code theme sets CSS variables on the deck root, read by `code-theme.css`.
-const codeStyle = computed(() => codeThemeStyle(props.code))
+// A deck that declares none takes the one its theme names in its manifest.
+const deckCodeStyle = computed(() => codeThemeStyle(props.code))
+const codeStyle = computed(() => props.code == null
+  ? codeThemeStyle(getThemeTokens(themeName.value)?.code)
+  : deckCodeStyle.value)
 
+// The block is painted only when the deck's own frontmatter names a background.
 const codeClass = computed(() => ({
   'reveal--code-theme': Object.keys(codeStyle.value).length > 0,
-  'reveal--code-block': '--code-background' in codeStyle.value,
+  'reveal--code-block': '--code-background' in deckCodeStyle.value,
 }))
 
 const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().startsWith('fr'))

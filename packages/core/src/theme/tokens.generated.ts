@@ -7,6 +7,7 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
     "name": "dsfr",
     "lang": "fr",
     "parser": "separator",
+    "code": "nuit",
     "reveal": {
       "slideNumber": true,
       "width": 1200,
@@ -24,6 +25,7 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
     "name": "dsfr-standalone",
     "lang": "fr",
     "parser": "separator",
+    "code": "clair",
     "reveal": {
       "slideNumber": true,
       "width": 1200,
@@ -41,6 +43,7 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
     "name": "minimal",
     "lang": "fr",
     "parser": "separator",
+    "code": "clair",
     "reveal": {
       "slideNumber": true
     },

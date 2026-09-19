@@ -2,6 +2,7 @@
   "name": "minimal",
   "lang": "fr",
   "parser": "separator",
+  "code": "clair",
   "reveal": { "slideNumber": true },
   "preview": {
     "fontFamily": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",

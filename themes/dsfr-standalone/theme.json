@@ -2,6 +2,7 @@
   "name": "dsfr-standalone",
   "lang": "fr",
   "parser": "separator",
+  "code": "clair",
   "reveal": { "slideNumber": true, "width": 1200, "height": 800 },
   "preview": {
     "fontFamily": "Marianne, Arial, sans-serif",
