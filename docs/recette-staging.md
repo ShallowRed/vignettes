@@ -18,19 +18,22 @@ revenir à son compte (`/auth/recette?as=me`) sans repasser par OAuth.
 
 ## Jeu de données
 
-Toutes les lignes portent le préfixe `recette-`. Le bouton s'appelle « Créer » tant que le jeu de données est absent, « Réinitialiser » ensuite ; il supprime ces lignes et les recrée, sans toucher au reste de la base.
+Toutes les lignes portent le préfixe `recette-`. Le jeu de données est défini dans `server/utils/recette.ts` (`SEED_DECKS`). Une instance qui définit `NUXT_RECETTE_ENABLED=1` le crée à son démarrage quand il est absent ou incomplet (`server/plugins/recette-seed.ts`) : ajouter un deck à `SEED_DECKS` le fait apparaître au déploiement suivant. En développement, il se crée depuis la page. Le bouton s'appelle « Créer » tant que le jeu de données est incomplet, « Réinitialiser » ensuite ; il supprime ces lignes et les recrée, sans toucher au reste de la base.
+
+Chaque deck porte un bloc de code. « Publique » et « Privée » portent aussi une image téléversée, servie avec la visibilité de son deck.
 
 | Élément | Slug | Ce qu'il vérifie |
 |---|---|---|
 | Dossier partagé | `recette-partage` | clé maîtresse éditeur du collaborateur, accès expiré, invité |
 | Dossier privé | `recette-prive` | aucun accès accordé |
-| Publique | `recette-public` | visible par tous ; éditeur temps réel pour le collaborateur |
+| Publique | `recette-public` | visible par tous ; éditeur temps réel pour le collaborateur ; son image s'affiche hors connexion |
 | Mot de passe | `recette-mdp` | semi-privée, mot de passe `recette` ; le collaborateur le saute |
 | Brouillon | `recette-brouillon` | jamais publiée, listée à qui peut l'éditer |
-| Privée | `recette-privee` | 401 anonyme, 403 lecteur |
+| Privée | `recette-privee` | 401 anonyme, 403 lecteur ; son image répond 404 hors connexion |
 | Non listée | `recette-non-listee` | publique hors catalogue, lien direct |
 | Archivée | `recette-archivee` | hors catalogue public |
 | Lecture seule | `recette-lecture` | dans Divers, accès lecture du collaborateur, sans crayon |
+| English deck | `recette-english` | publique, `lang: en` : commandes du deck en anglais |
 | Corbeille | `recette-corbeille` | 404 partout, restaurable |
 
 Comptes : `recette-owner` (owner), `recette-editeur` (éditeur), `recette-lecteur`
@@ -41,7 +44,7 @@ lecture sur le dossier partagé.
 
 ## Déroulé
 
-1. Se connecter avec son compte owner, ouvrir `/recette`, cliquer « Réinitialiser ».
+1. Se connecter avec son compte owner, ouvrir `/recette`, cliquer « Réinitialiser » pour repartir d'un jeu de données neuf.
 2. Dans chaque bloc de scénario, « Se connecter » ouvre l'application en tant que ce
    persona sur la première page à vérifier ; chaque ligne a un lien « ouvrir ».
 3. Revenir sur `/recette` (favori) pour changer de persona ou revenir à son compte.
