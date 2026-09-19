@@ -25,6 +25,26 @@ sources = [
 outputs = { auto = true }
 run = "pnpm install"
 
+[tasks.setup]
+description = "First launch: write .env with a generated session secret, install the dependencies, create the database"
+depends = [ "install" ]
+run = """
+set -e
+if [ -f .env ]; then
+  echo "[setup] .env existe déjà, laissé tel quel."
+else
+  cp .env.example .env
+  secret="$(node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'))")"
+  sed -i.bak "s|change-me-to-a-random-string-of-32-chars|$secret|" .env
+  rm -f .env.bak
+  echo "[setup] .env écrit, NUXT_SESSION_PASSWORD généré."
+fi
+mise run db:migrate
+echo
+echo "Prêt : mise run dev:nuxt   puis http://localhost:3000"
+echo "Se connecter sans OAuth : http://localhost:3000/auth/dev-login?role=owner"
+"""
+
 [tasks.dev]
 description = "Nuxt behind portless; the browser opens once the app answers. Host: vignettes-studio.localhost, or <branch>.vignettes-studio.localhost in a worktree"
 depends = [ "install" ]
@@ -54,8 +74,14 @@ case "$u" in
     [[ "$h" != *.*.* ]] && u="https://$h/"
     ;;
 esac
+browse() {
+  if command -v open >/dev/null 2>&1; then open "$1"
+  elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$1"
+  else echo "Ouvrir : $1"
+  fi
+}
 for _ in $(seq 1 240); do
-  curl -sfk -o /dev/null "$u" && { open "$u"; exit 0; }
+  curl -sfk -o /dev/null "$u" && { browse "$u"; exit 0; }
   sleep 0.5
 done
 echo "open: $u ne répond pas" >&2
@@ -76,11 +102,11 @@ else
   git worktree add -b "$branch" "$dir"
 fi
 cd "$dir"
-git submodule update --init --depth 1 presentations
+git submodule update --init --depth 1 presentations || echo "[worktree] Sous-module presentations indisponible, catalogue vide."
 mise install
 pnpm install
 mise run db:migrate
-mise run content:import
+mise run content:import || true
 echo
 echo "Prêt : cd $dir && mise run dev   (http://$name.vignettes-studio.localhost:8443)"
 """
@@ -120,16 +146,16 @@ run = "node scripts/content-import.ts --apply --republish=\"$usage_slugs\""
 description = "What content:republish:prod would publish on slides.example.org (dry run): mise run content:republish:prod:plan -- <slugs>"
 depends = [ "install" ]
 usage = 'arg "<slugs>"'
-run = "infisical run --env=prod -- node scripts/content-import.ts --remote=https://slides.example.org --republish=\"$usage_slugs\""
+run = "sh scripts/with-secrets.sh node scripts/content-import.ts --remote=https://slides.example.org --republish=\"$usage_slugs\""
 
 [tasks."content:republish:prod"]
-description = "Republish decks on slides.example.org from their stub, through the app with the content token from Infisical: mise run content:republish:prod -- <slugs> [--force]"
+description = "Republish decks on the production instance from their stub, through the app with NUXT_CONTENT_TOKEN: mise run content:republish:prod -- <slugs> [--force]"
 depends = [ "install" ]
 usage = '''
 arg "<slugs>"
 flag "-f --force" help="Overwrite a draft edited online and not yet published"
 '''
-run = "infisical run --env=prod -- node scripts/content-import.ts --apply --remote=https://slides.example.org --republish=\"$usage_slugs\" ${usage_force:+--force}"
+run = "sh scripts/with-secrets.sh node scripts/content-import.ts --apply --remote=https://slides.example.org --republish=\"$usage_slugs\" ${usage_force:+--force}"
 
 [tasks."content:push"]
 description = "Push stubs into the production database over SSH (dry run; --apply writes, --staging targets the staging container): mise run content:push -- <slug>[,<slug>]"
@@ -148,7 +174,7 @@ usage = """
 arg "<names>"
 flag "--apply"
 """
-run = "infisical run --env=prod -- node scripts/theme-push.ts \"$usage_names\" ${usage_apply:+--apply}"
+run = "sh scripts/with-secrets.sh node scripts/theme-push.ts \"$usage_names\" ${usage_apply:+--apply}"
 
 [tasks."assets:push"]
 description = "Mirror the deck assets of the content space (presentations/assets) to the bucket the deployed app serves them from (dry run; --apply uploads)"
@@ -156,7 +182,7 @@ depends = [ "install" ]
 usage = """
 flag "--apply"
 """
-run = "infisical run --env=prod -- node scripts/assets-push.ts ${usage_apply:+--apply}"
+run = "sh scripts/with-secrets.sh node scripts/assets-push.ts ${usage_apply:+--apply}"
 
 [tasks.freeze]
 description = "Freeze a published deck into a self-contained static bundle and upload it: mise run freeze -- <alias> [--storybook <built-dir>] [--dry-run] [--no-upload]"
@@ -168,7 +194,7 @@ flag "--theme <name>"
 flag "--dry-run"
 flag "--no-upload"
 """
-run = "infisical run --env=prod -- node scripts/freeze.ts \"$usage_alias\" ${usage_storybook:+--storybook \"$usage_storybook\"} ${usage_theme:+--theme \"$usage_theme\"} ${usage_dry_run:+--dry-run} ${usage_no_upload:+--no-upload}"
+run = "sh scripts/with-secrets.sh node scripts/freeze.ts \"$usage_alias\" ${usage_storybook:+--storybook \"$usage_storybook\"} ${usage_theme:+--theme \"$usage_theme\"} ${usage_dry_run:+--dry-run} ${usage_no_upload:+--no-upload}"
 
 [tasks."freeze:push"]
 description = "Upload an already built bundle of .frozen/<name> to the bucket: mise run freeze:push -- <name> [--dry-run]"
@@ -177,7 +203,7 @@ usage = """
 arg "<name>"
 flag "--dry-run"
 """
-run = "infisical run --env=prod -- node scripts/upload-frozen.js \"$usage_name\" ${usage_dry_run:+--dry-run}"
+run = "sh scripts/with-secrets.sh node scripts/upload-frozen.js \"$usage_name\" ${usage_dry_run:+--dry-run}"
 
 [tasks."freeze:check"]
 description = "List the Storybook stories a deck embeds and flag the ones missing from a built Storybook: mise run freeze:check -- <deck.md> <storybook-dir>"
