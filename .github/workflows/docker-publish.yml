@@ -35,48 +35,11 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Tests unitaires, puis tests e2e sur le build de production (Chromium et
-  # Firefox). L'image n'est construite et déployée que s'ils passent.
+  # Lint, tests unitaires et tests e2e, définis une seule fois dans
+  # `checks.yml`, qui tourne aussi sur chaque pull request. L'image n'est
+  # construite et déployée que s'ils passent.
   test:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Unit tests
-        run: pnpm test
-
-      - name: Build
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
-          NUXT_TELEMETRY_DISABLED: 1
-        run: pnpm build
-
-      - name: Install browsers
-        run: pnpm exec playwright install --with-deps chromium firefox
-
-      - name: End-to-end tests
-        run: pnpm test:e2e
-
-      - name: Upload Playwright results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: test-results/
-          retention-days: 7
+    uses: ./.github/workflows/checks.yml
 
   build:
     needs: test
