@@ -25,6 +25,8 @@ const emit = defineEmits<{
   remove: [deck: PresentationListItem]
 }>()
 
+const { t } = useI18n()
+
 const selectedSlug = ref(props.presentation.slug)
 // The actions stay visible while their menu is open, the pointer being on the menu.
 const menuOpen = ref(false)
@@ -177,7 +179,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted"
         >
           <span v-if="frozen">{{ deck.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
-          <span v-else-if="!minimal && statusDisplay && deck.status !== 'public'">{{ statusDisplay.label }}</span>
+          <span v-else-if="!minimal && statusDisplay && deck.status !== 'public'">{{ t(statusDisplay.labelKey) }}</span>
           <span v-if="!minimal && deck.unlisted">Non répertoriée</span>
           <span v-if="!minimal && admin && deck.published === false">Non publié</span>
           <span

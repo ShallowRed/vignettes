@@ -1,0 +1,55 @@
+{
+  "common": {
+    "actions": {
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "restore": "Restaurer",
+      "edit": "Éditer",
+      "retry": "Réessayer",
+      "signIn": "Se connecter",
+      "signOut": "Se déconnecter",
+      "moveToTrash": "Mettre à la corbeille",
+      "deleteForever": "Supprimer définitivement",
+      "newDeck": "Nouvelle présentation",
+      "newFolder": "Nouveau dossier",
+      "backToDecks": "Retour aux présentations",
+      "fillFromTitle": "Remplir depuis le titre"
+    },
+    "fields": {
+      "title": "Titre",
+      "slug": "Slug",
+      "name": "Nom",
+      "identifier": "Identifiant",
+      "icon": "Icône",
+      "color": "Couleur",
+      "noColor": "Sans couleur",
+      "slugPlaceholder": "mon-slug",
+      "folderSlugPlaceholder": "mon-dossier"
+    },
+    "or": "ou",
+    "role": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer",
+      "anonymous": "Guest"
+    },
+    "status": {
+      "public": "Public",
+      "semiPrivate": "Mot de passe",
+      "private": "Privée"
+    },
+    "header": {
+      "account": "Compte",
+      "accounts": "Comptes",
+      "trash": "Corbeille",
+      "language": "Langue"
+    },
+    "loadError": {
+      "title": "Le chargement a échoué",
+      "description": "Ces données n'ont pas pu être lues. Réessayez dans un instant."
+    },
+    "empty": {
+      "title": "Rien à afficher"
+    }
+  }
+}

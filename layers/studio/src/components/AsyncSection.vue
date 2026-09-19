@@ -1,11 +1,4 @@
 <script setup lang="ts">
-// Declarative async-state boundary: one grammar for every data view. Render the
-// default slot when the data is ready; otherwise fall through pending → error →
-// empty. Each state has a sensible default and a named slot to override:
-//   <AsyncSection :status :error :empty="items.length === 0">
-//     ...ready content...
-//     <template #empty> ...contextual empty... </template>
-//   </AsyncSection>
 withDefaults(defineProps<{
   /** Matches Pinia Colada / useAsyncData: 'pending' until the first success. */
   status: 'pending' | 'error' | 'success' | 'idle'
@@ -24,9 +17,18 @@ withDefaults(defineProps<{
   retry: undefined,
   empty: false,
   emptyIcon: 'i-lucide-inbox',
-  emptyTitle: 'Rien à afficher',
+  emptyTitle: undefined,
   emptyDescription: undefined,
 })
+
+// Declarative async-state boundary: one grammar for every data view. Render the
+// default slot when the data is ready; otherwise fall through pending → error →
+// empty. Each state has a sensible default and a named slot to override:
+//   <AsyncSection :status :error :empty="items.length === 0">
+//     ...ready content...
+//     <template #empty> ...contextual empty... </template>
+//   </AsyncSection>
+const { t } = useI18n()
 </script>
 
 <template>
@@ -50,12 +52,12 @@ withDefaults(defineProps<{
   >
     <ActionNotice
       tone="critical"
-      title="Le chargement a échoué"
-      description="Ces données n'ont pas pu être lues. Réessayez dans un instant."
+      :title="t('common.loadError.title')"
+      :description="t('common.loadError.description')"
     >
       <UButton
         v-if="retry"
-        label="Réessayer"
+        :label="t('common.actions.retry')"
         icon="i-lucide-rotate-ccw"
         color="neutral"
         variant="subtle"
@@ -70,7 +72,7 @@ withDefaults(defineProps<{
   >
     <UEmpty
       :icon="emptyIcon"
-      :title="emptyTitle"
+      :title="emptyTitle ?? t('common.empty.title')"
       :description="emptyDescription"
       variant="naked"
       size="lg"

@@ -43,6 +43,7 @@
     "@iconify/vue": "catalog:",
     "@lezer/highlight": "catalog:",
     "@nuxt/ui": "catalog:",
+    "@nuxtjs/i18n": "catalog:",
     "@nuxtjs/mdc": "catalog:",
     "@pinia/colada": "catalog:",
     "@pinia/colada-nuxt": "catalog:",

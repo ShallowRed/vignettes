@@ -36,6 +36,8 @@ import { editorKeymap } from '../../utils/editor-keymap'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 
+const { t } = useI18n()
+
 definePageMeta({ layout: false })
 
 const route = useRoute()
@@ -711,7 +713,7 @@ async function onMetaSaved() {
               :name="statusDisplay.icon"
               class="size-3.5"
             />
-            {{ statusDisplay.label }}
+            {{ t(statusDisplay.labelKey) }}
           </span>
         </UButton>
       </UTooltip>

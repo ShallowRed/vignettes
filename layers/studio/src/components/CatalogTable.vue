@@ -21,6 +21,9 @@ const emit = defineEmits<{
   duplicate: [item: PresentationListItem, mode: 'variant' | 'edition']
   remove: [item: PresentationListItem]
 }>()
+
+const { t } = useI18n()
+
 // Sharing is owner-only server-side, so the entry only shows for an owner.
 const { role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
@@ -268,7 +271,7 @@ function clearSelection() {
 
       <template #status-cell="{ row }">
         <div class="flex items-center gap-2 text-sm">
-          <span>{{ STATUS_CONFIG[row.original.status]?.label || row.original.status }}</span>
+          <span>{{ STATUS_CONFIG[row.original.status] ? t(STATUS_CONFIG[row.original.status].labelKey) : row.original.status }}</span>
           <span
             v-if="isFrozen(row.original)"
             class="text-muted"

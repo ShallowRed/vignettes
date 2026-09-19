@@ -1,0 +1,55 @@
+{
+  "common": {
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "restore": "Restore",
+      "edit": "Edit",
+      "retry": "Retry",
+      "signIn": "Sign in",
+      "signOut": "Sign out",
+      "moveToTrash": "Move to trash",
+      "deleteForever": "Delete permanently",
+      "newDeck": "New presentation",
+      "newFolder": "New folder",
+      "backToDecks": "Back to presentations",
+      "fillFromTitle": "Fill from the title"
+    },
+    "fields": {
+      "title": "Title",
+      "slug": "Slug",
+      "name": "Name",
+      "identifier": "Identifier",
+      "icon": "Icon",
+      "color": "Color",
+      "noColor": "No color",
+      "slugPlaceholder": "my-slug",
+      "folderSlugPlaceholder": "my-folder"
+    },
+    "or": "or",
+    "role": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer",
+      "anonymous": "Guest"
+    },
+    "status": {
+      "public": "Public",
+      "semiPrivate": "Password",
+      "private": "Private"
+    },
+    "header": {
+      "account": "Account",
+      "accounts": "Accounts",
+      "trash": "Trash",
+      "language": "Language"
+    },
+    "loadError": {
+      "title": "Loading failed",
+      "description": "This data could not be read. Try again in a moment."
+    },
+    "empty": {
+      "title": "Nothing to show"
+    }
+  }
+}

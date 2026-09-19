@@ -17,6 +17,8 @@ const props = withDefaults(defineProps<{
   showSort: true,
 })
 
+const { t } = useI18n()
+
 const searchInput = useTemplateRef<{ inputRef?: HTMLInputElement }>('searchInput')
 
 defineExpose({
@@ -64,7 +66,7 @@ function isActive(status: PublicationStatus) {
 // Status filter folded into a checkbox dropdown; `onSelect.preventDefault` keeps it open.
 const statusMenuItems = computed<DropdownMenuItem[]>(() =>
   PUBLICATION_STATUSES.map(status => ({
-    label: `${STATUS_CONFIG[status].label} (${counts.value[status]})`,
+    label: `${t(STATUS_CONFIG[status].labelKey)} (${counts.value[status]})`,
     type: 'checkbox' as const,
     checked: isActive(status),
     onUpdateChecked: () => toggleStatus(status),

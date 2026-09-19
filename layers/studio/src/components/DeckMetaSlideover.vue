@@ -27,6 +27,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ saved: [] }>()
 
+const { t } = useI18n()
+
 const open = defineModel<boolean>('open', { required: true })
 
 const { role } = useAppSession()
@@ -83,7 +85,7 @@ const STATUS_DESCRIPTIONS: Record<PublicationStatus, string> = {
   'private': 'Les comptes Éditeur et Owner, et les accès individuels.',
 }
 const statusItems = PUBLICATION_STATUSES.map(status => ({
-  label: STATUS_CONFIG[status].label,
+  label: t(STATUS_CONFIG[status].labelKey),
   description: STATUS_DESCRIPTIONS[status],
   value: status,
 }))
