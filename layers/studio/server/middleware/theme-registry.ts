@@ -1,8 +1,10 @@
+import { getDefaultTheme } from '@vignettes/core/theme'
 import { loadTenantThemes } from '../utils/themes'
 
 /**
- * Hand the tenant themes to page requests, so the universal `theme-registry`
- * plugin seeds the client with the same registry the server rendered with.
+ * Hand the tenant themes and the fallback theme to page requests, so the
+ * universal `theme-registry` plugin seeds the client with the same registry and
+ * the same fallback the server rendered with.
  * Skipped for API and asset requests, like the session middleware.
  */
 export default defineEventHandler(async (event) => {
@@ -17,4 +19,5 @@ export default defineEventHandler(async (event) => {
     return
   }
   event.context.themeRegistry = await loadTenantThemes()
+  event.context.defaultTheme = getDefaultTheme()
 })

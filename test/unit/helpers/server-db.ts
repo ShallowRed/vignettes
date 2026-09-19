@@ -60,6 +60,7 @@ export function stubH3Globals() {
     ;(e.setCookies ??= {})[name] = value
   })
   vi.stubGlobal('getQuery', (e: any) => e.query ?? {})
+  vi.stubGlobal('useRuntimeConfig', (e: any) => e?.runtimeConfig ?? { public: {} })
   vi.stubGlobal('getRouterParam', (e: any, name: string) => e.params?.[name])
   vi.stubGlobal('readBody', async (e: any) => e.body)
   vi.stubGlobal('readMultipartFormData', async (e: any) => e.parts)

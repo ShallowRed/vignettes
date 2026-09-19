@@ -6,7 +6,7 @@ import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { readTitleSlide, UNGROUPED_PROJECT } from '#shared/presentations'
 import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
 import { resolveSlideBackground } from '@vignettes/core/render'
-import { resolveThemeName } from '@vignettes/core/theme'
+import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
 import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 import { count, eq, gte } from 'drizzle-orm'
 import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from '../db/schema'
@@ -109,6 +109,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
     : new Map()
   // Resolving a deck's theme and background needs the tenant themes registered.
   await loadTenantThemes()
+  const fallbackTheme = getDefaultTheme()
 
   const privileged = isPrivileged(actor.role)
   const decks = await useDeckMeta().listManaged()
@@ -126,7 +127,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
     .map(deck => ({
       slug: deck.slug,
       title: deck.title,
-      theme: deck.theme || 'dsfr',
+      theme: deck.theme || fallbackTheme,
       status: deck.status,
       filename: `${deck.slug}.md`,
       project: deck.project,
@@ -137,7 +138,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       variantLabel: deck.variantLabel,
       supersededBy: deck.supersededBy,
       ...deckDates(stats.get(deck.slug), canEdit(deck.slug)),
-      ...deckPreview(stats.get(deck.slug), deck.theme || 'dsfr'),
+      ...deckPreview(stats.get(deck.slug), deck.theme || fallbackTheme),
       ...(canEdit(deck.slug) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),
       ...(privileged

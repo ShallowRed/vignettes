@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { RevealConfig } from '../types/presentation.ts'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
-import { computed, nextTick, onMounted, onUnmounted, provide, ref, toRef } from 'vue'
+import { getDefaultTheme } from '@vignettes/core/theme'
+import { computed, nextTick, onMounted, onUnmounted, provide, ref } from 'vue'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
 // With `?print-pdf` in the URL, Reveal adds `reveal-print` to <html> and this
@@ -23,7 +24,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  theme: 'dsfr',
   controls: true,
 })
 
@@ -31,6 +31,8 @@ const emit = defineEmits<{
   /** Reveal is initialized; the host can bind keys or listen to slide changes. */
   ready: [reveal: any]
 }>()
+
+const themeName = computed(() => props.theme || getDefaultTheme())
 
 const revealContainer = ref<HTMLElement | null>(null)
 
@@ -71,7 +73,7 @@ function reopenPrintDialog() {
 const resolvedRevealConfig = computed(() =>
   JSON.stringify(mergeRevealConfig(props.config)))
 
-const { themeReady } = useTheme(toRef(props, 'theme'))
+const { themeReady } = useTheme(themeName)
 
 // The veil covers the deck until Reveal has laid it out with the theme and its
 // fonts, so the reader never sees the unstyled slides or the change of scale.

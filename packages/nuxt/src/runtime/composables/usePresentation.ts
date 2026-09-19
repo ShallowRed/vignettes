@@ -2,7 +2,7 @@ import type { PresentationData } from '../types/presentation.ts'
 import { useAsyncData, useRequestFetch } from '#imports'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import { parserIdFor } from '@vignettes/core/deck'
-import { DEFAULT_METADATA } from '../config/presentation.ts'
+import { defaultMetadata } from '../config/presentation.ts'
 import { PARSERS } from '../utils/slide-ast.ts'
 
 /**
@@ -16,7 +16,7 @@ export async function buildPresentationData(
 ): Promise<PresentationData> {
   const ast = await parseMarkdown(raw)
   const metadata = {
-    ...DEFAULT_METADATA,
+    ...defaultMetadata(),
     ...(ast.data || {}),
   }
   // The deck's `parser` mode selects heading vs separator via the shared port.
@@ -48,7 +48,7 @@ export function usePresentation(slug: string, apiUrl?: string, options: { draft?
     {
       default: () => ({
         slides: [],
-        metadata: { ...DEFAULT_METADATA },
+        metadata: defaultMetadata(),
       }),
     },
   )

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationData } from '../types/presentation.ts'
 import { buildComponentMap } from '@vignettes/core/deck'
+import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
 import { STORYBOOK_BASE } from '../config/injection-keys.ts'
 import { getSlideClasses, resolveSlideBackground } from '../utils/slide-rendering.ts'
@@ -27,7 +28,7 @@ const mdcComponents: Record<string, any> = Object.fromEntries(
 function getBackground(slide: { headingLevel?: string, backgroundImage?: string }) {
   return resolveSlideBackground(
     slide,
-    props.presentationData.metadata.theme || 'minimal',
+    props.presentationData.metadata.theme || getDefaultTheme(),
     props.presentationData.metadata.backgrounds,
   )
 }

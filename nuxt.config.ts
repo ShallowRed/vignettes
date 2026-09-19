@@ -99,6 +99,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Shared TTL (ms) for the file/registry content sources.
     sourceCacheTtlMs: process.env.NUXT_SOURCE_CACHE_TTL_MS || '',
+    public: {
+      // Theme of a deck that declares none; `NUXT_PUBLIC_DEFAULT_THEME` overrides it.
+      defaultTheme: 'dsfr',
+    },
     // Frozen-bundle S3 config is read from process.env at runtime in
     // server/routes/frozen/[...path].ts (NUXT_FROZEN_S3_* don't fit Nuxt's
     // runtime-override convention, and config is baked at build time).

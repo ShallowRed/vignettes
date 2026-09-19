@@ -84,3 +84,17 @@ export function getThemeTokens(name?: string): ThemeTokens | undefined {
   const canonical = resolveThemeName(name)
   return canonical ? current.tokens[canonical] : undefined
 }
+
+// The theme of a deck that declares none. A host names its own when it registers its themes.
+const BUILT_IN_DEFAULT_THEME = 'minimal'
+let defaultTheme = BUILT_IN_DEFAULT_THEME
+
+/** Set the fallback theme; an empty name restores the built-in one. */
+export function setDefaultTheme(name: string | null | undefined): string {
+  defaultTheme = name || BUILT_IN_DEFAULT_THEME
+  return defaultTheme
+}
+
+export function getDefaultTheme(): string {
+  return defaultTheme
+}

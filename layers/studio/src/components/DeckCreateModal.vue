@@ -3,7 +3,7 @@ import type { Project } from '#shared/projects'
 import { useMutation } from '@pinia/colada'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { slugify } from '@vignettes/core/slugify'
-import { knownThemes } from '@vignettes/core/theme'
+import { getDefaultTheme, knownThemes } from '@vignettes/core/theme'
 import { deckApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
 import { useFormModal } from '../composables/useFormModal'
@@ -24,7 +24,7 @@ const NONE = '__none__'
 
 const { state, errorMessage, runIfValid } = useFormModal(
   open,
-  () => ({ title: '', slug: '', project: props.defaultProject ?? NONE, theme: 'dsfr' }),
+  () => ({ title: '', slug: '', project: props.defaultProject ?? NONE, theme: getDefaultTheme() }),
 )
 
 // Filling from the title is an explicit act (the wand), never automatic: the

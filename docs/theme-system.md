@@ -100,6 +100,10 @@ A theme on the engine alone, with its own scale:
 
 Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `pkg:@vignettes/theme-kit/presets/dsfr-layout` gives a theme the DSFR sizes without its colors.
 
+## The fallback theme
+
+A deck whose frontmatter declares no `theme:` renders in the fallback theme of the instance. The create form preselects that theme and a catalog card previews such a deck with it. `runtimeConfig.public.defaultTheme` names it (`dsfr` in this application) and `NUXT_PUBLIC_DEFAULT_THEME` overrides it at run time. Without a host setting, `@vignettes/nuxt` falls back to `minimal`. A name that matches no registered theme is reported at boot under `[themes]` and ignored.
+
 ## Slides by heading level
 
 The engine tags each `<section>`: `slide-h1` (title slide), `slide-h2` (section divider), `slide-h3` (heading plus body). The flex skeleton comes from `packages/theme-kit/_slide-structure.scss`; themes set sizes and colors, and backgrounds come from the manifest.

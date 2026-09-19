@@ -5,7 +5,7 @@ import process from 'node:process'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { themeLocalPath, THEMES_INDEX_KEY } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
-import { setThemeRegistry } from '@vignettes/core/theme'
+import { isKnownTheme, setDefaultTheme, setThemeRegistry } from '@vignettes/core/theme'
 import { discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
 
 /**
@@ -53,8 +53,18 @@ async function resolveTenantThemes(): Promise<Partial<ThemeRegistry>> {
     aliases: { ...remote.aliases, ...local.aliases },
   }
   setThemeRegistry(registry)
+  applyDefaultTheme()
   cache = { at: Date.now(), registry }
   return registry
+}
+
+/** Applies `runtimeConfig.public.defaultTheme` once the registry can tell whether the name is known. */
+function applyDefaultTheme() {
+  const configured = useRuntimeConfig().public.defaultTheme as string | undefined
+  const unknown = Boolean(configured) && !isKnownTheme(configured!)
+  const applied = setDefaultTheme(unknown ? null : configured)
+  if (unknown)
+    console.warn(`[themes] default theme "${configured}" is not a known theme; decks without a theme fall back to "${applied}"`)
 }
 
 async function readPublishedIndex(): Promise<Partial<ThemeRegistry>> {
