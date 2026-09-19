@@ -3,6 +3,7 @@ import type { H3Event } from 'h3'
 import type { Actor } from './actor'
 import process from 'node:process'
 import { decideAccess, isPrivileged, mayEdit } from '#shared/access'
+import { accessCookieName, mintAccessPass, verifyAccessPass } from './access-pass'
 import { getActor } from './actor'
 import { contentTokenActor } from './content-token'
 import { verifyAccessPassword } from './password'
@@ -142,7 +143,7 @@ export async function assertOwner(event: H3Event): Promise<Actor> {
 
 /** Password satisfied by a prior `access_<slug>` cookie, or a valid `?password=` param (sets a 24h cookie). */
 async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: string): Promise<boolean> {
-  if (getCookie(event, `access_${slug}`) === 'granted')
+  if (verifyAccessPass(getCookie(event, accessCookieName(slug)), slug, storedHash))
     return true
 
   const password = getQuery(event).password as string | undefined
@@ -157,12 +158,13 @@ async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: st
   if (!valid)
     return false
 
-  setCookie(event, `access_${slug}`, 'granted', {
+  const pass = mintAccessPass(slug, storedHash)
+  setCookie(event, accessCookieName(slug), pass.value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24, // 24 hours
+    maxAge: pass.maxAge,
   })
   return true
 }

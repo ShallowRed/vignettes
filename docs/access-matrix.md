@@ -28,10 +28,7 @@ découvrabilité) ; l'adaptateur HTTP dans `layers/studio/server/utils/access.ts
 ## Sémantique des statuts
 
 - **public** : ouvert à tous, listé à tous (sauf `unlisted`/archivé).
-- **semi-private** (« Mot de passe ») : ouvert avec le mot de passe du deck
-  (cookie 24 h, tentatives limitées à 10/5 min par IP). **Fail-closed** : sans
-  hash défini, personne n'ouvre ; l'UI bloque l'enregistrement de cet état sans
-  mot de passe. Jamais listé au public (atteint par lien).
+- **semi-private** (« Mot de passe ») : ouvert avec le mot de passe du deck. Le cookie dure 24 h et porte une signature HMAC du slug, de l'expiration et du hash du mot de passe : changer le mot de passe invalide les cookies émis. Les tentatives sont limitées à 10 par 5 min et par IP. **Fail-closed** : sans hash défini, personne n'ouvre ; l'UI bloque l'enregistrement de cet état sans mot de passe. Jamais listé au public (atteint par lien).
 - **private** : rôles privilégiés (Éditeur/Owner globaux) et titulaires d'un
   grant. Jamais listé au public.
 
