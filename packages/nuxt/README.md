@@ -67,13 +67,23 @@ An annotation is a `:tag{...}` directive the parser reads and removes from the b
 | `:layout{name="…" …}` | slide layout and its props |
 | `:quicklink{text="…" href="…"}` | link pinned at the bottom of the slide |
 
-`:layout` takes `media-right`, `media-left`, `media-right-wide` and `media-left-wide` for a two-column slide with a media pane, plus `src`, `type`, `fit` (`cover` or `contain`) and `lightbox`.
+`:layout` names one of the layouts below and passes it `src`, `type` (`iframe` or `image`), `fit` (`cover` or `contain`) and `lightbox`. All but `full` and `grid-compact` split the slide into a content pane and a media pane; the media pane extends to the edge of the slide and the text keeps its margins.
+
+| layout | shape |
+|---|---|
+| `media-right`, `media-left` | content and media side by side, the media pane one and a half times as wide as the content |
+| `media-right-wide`, `media-left-wide` | the media pane takes more of the width and the content text shrinks |
+| `media-right-xwide`, `media-left-xwide` | the content is a narrow column of captions beside the media pane |
+| `media-below`, `media-above` | stacked: a compact heading row and a full-width media row |
+| `media-cover` | the media fills the slide, the heading and the intro are drawn over it on a translucent card |
+| `grid-compact` | no media pane: the title row shrinks to one line and the body takes the remaining height, for a tall gallery |
+| `full` | no panes: the whole slide is the body, rendered as one block |
 
 ## Components
 
 MDC uses colons, and the count says what the component wraps: `:::Name` a container of other components, `::Name` a leaf wrapping text, `:name{…}` an inline. A parent container always takes more colons than its children.
 
-The module ships the generic set: `Quote`, `Image`, `FullScreenImage`, `Iframe`, `Mermaid`, `PreviewLink`, `IconInline` (aliased `:i`), `Columns` (aliased `TwoColumns` and `ThreeColumns`), `Highlight`, `Notes` and `Fragments`.
+The module ships the generic set: `Quote`, `Image`, `FullScreenImage`, `Iframe`, `Mermaid`, `PreviewLink`, `IconInline` (aliased `:i`), `Columns` (aliased `TwoColumns` and `ThreeColumns`), `Column`, `SplitSlide`, `Highlight`, `Notes` and `Fragments`.
 
 ```markdown
 ::Image{src="/diagram.png" alt="Architecture" width="80%" :preview="true"}
@@ -88,6 +98,22 @@ Perfection is reached when there is nothing left to take away.
 ```
 
 `Notes` renders Reveal's speaker notes, shown in the speaker view opened with the `S` key. `Fragments` reveals its list items one at a time.
+
+`Columns` lays its children side by side and takes `size` (`xs` to `xl`) for their text scale. Without `Column` children it splits the body at a horizontal rule or at each `H3` or `H4`. With `Column` children the breaks are theirs, and each one takes `span` (a weight, `span="2"` beside `span="1"` gives two thirds and one third) or `ratio` (an explicit width, `ratio="2/3"`).
+
+```markdown
+:::columns{size="sm"}
+  ::column{span="2"}
+  ### The wide one
+  ::
+
+  ::column{span="1"}
+  ### The narrow one
+  ::
+:::
+```
+
+`SplitSlide` puts its own text beside a media pane inside the body, where a `:layout` splits the whole slide: use it for one block among others on a slide that keeps its normal structure. It takes `src`, `type` (`iframe` or `image`), `ratio` (`1:1`, `1:2`, `2:1`, `1:3`, `3:1`), `reverse` to put the media first, `fit` and `lightbox`.
 
 Two more modules extend the set: `@vignettes/schemas` for the explanation kit, `@vignettes/storybook` for live story embeds. A tenant declares its own components the same way, with `registerDeckComponents` from `@vignettes/core/deck`.
 
