@@ -1,16 +1,12 @@
-# Recette sur staging
+# Recette et démonstration
 
-`https://staging.slides.example.org/recette` réunit ce qu'il faut pour vérifier
-une version avant de la promouvoir en prod : un jeu de données nommé, des comptes
-de test pour chaque situation d'accès, et la liste des vérifications à faire.
+`/recette` réunit ce qu'il faut pour vérifier une version avant de la promouvoir en prod : un jeu de données nommé, des comptes de test pour chaque situation d'accès, et la liste des vérifications à faire. Sur une instance neuve, la page remplit aussi le catalogue en un clic, ce qui permet de voir l'application avec du contenu.
+
+[examples/](../examples/README.md) fournit un exemple de présentation.
 
 ## Activation
 
-Le kit répond 404 tant que la variable `NUXT_RECETTE_ENABLED=1` est absente de
-l'environnement du conteneur. Elle est définie dans l'environnement Infisical
-`staging` du projet Vignettes et nulle part ailleurs ; en développement local le
-kit est toujours actif (`import.meta.dev`). Le code vit dans `server/utils/recette.ts`,
-`server/api/recette/`, `server/routes/auth/recette.get.ts` et `src/pages/recette.vue`.
+Le kit répond 404 tant que la variable `NUXT_RECETTE_ENABLED=1` est absente de l'environnement du conteneur ; en développement local il est toujours actif (`import.meta.dev`). Sur l'instance de référence, seule l'instance de staging définit cette variable. Le code est dans `server/utils/recette.ts`, `server/api/recette/`, `server/routes/auth/recette.get.ts` et `src/pages/recette.vue`.
 
 ## Accès
 
@@ -22,8 +18,7 @@ revenir à son compte (`/auth/recette?as=me`) sans repasser par OAuth.
 
 ## Jeu de données
 
-Toutes les lignes portent le préfixe `recette-` ; « Réinitialiser » supprime ces
-lignes et les recrée, sans toucher au reste de la base.
+Toutes les lignes portent le préfixe `recette-`. Le bouton s'appelle « Créer » tant que le jeu de données est absent, « Réinitialiser » ensuite ; il supprime ces lignes et les recrée, sans toucher au reste de la base.
 
 | Élément | Slug | Ce qu'il vérifie |
 |---|---|---|
