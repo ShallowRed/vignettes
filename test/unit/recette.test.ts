@@ -1,9 +1,14 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import process from 'node:process'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { decideMediaAccess } from '../../layers/studio/server/utils/access'
+import { isRecetteSeeded, recetteImages } from '../../layers/studio/server/utils/recette'
 import { useDeckMeta, useGrants } from '../../layers/studio/server/utils/sources'
 import { useUserStore } from '../../layers/studio/server/utils/users'
 import { RECETTE_INVITED_HANDLE, RECETTE_PERSONAS } from '../../layers/studio/shared/recette/personas'
-import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
+import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The kit is gated twice: the environment flag, then an owner session (which
 // mints the pass) or the pass itself. Persona logins and the seed run against
@@ -16,6 +21,15 @@ process.env.NUXT_RECETTE_ENABLED = '1'
 const { default: status } = await import('../../layers/studio/server/api/recette/status.get')
 const { default: seed } = await import('../../layers/studio/server/api/recette/seed.post')
 const { default: openAs } = await import('../../layers/studio/server/routes/auth/recette.get')
+
+// The seeded images land in `.media/` under the working directory.
+const cwd = process.cwd()
+const workdir = mkdtempSync(join(tmpdir(), 'recette-'))
+beforeAll(() => process.chdir(workdir))
+afterAll(() => {
+  process.chdir(cwd)
+  rmSync(workdir, { recursive: true, force: true })
+})
 
 const persona = (key: string) => RECETTE_PERSONAS.find(p => p.key === key)!
 
@@ -83,7 +97,7 @@ describe('seed', () => {
     const first = await seed(asUser(1, 'boss'))
     const again = await seed(asUser(1, 'boss'))
     expect(again).toEqual(first)
-    expect(first).toMatchObject({ folders: 2, decks: 8, accounts: 6 })
+    expect(first).toMatchObject({ folders: 2, decks: 9, accounts: 6 })
     expect(await useDeckMeta().get('mine')).not.toBeNull()
 
     const grants = useGrants()
@@ -100,5 +114,24 @@ describe('seed', () => {
     const accounts = await useUserStore().list()
     expect(accounts.find(a => a.login === RECETTE_INVITED_HANDLE)).toMatchObject({ invited: true })
     expect(accounts.filter(a => a.login.startsWith('recette-'))).toHaveLength(RECETTE_PERSONAS.length)
+  })
+
+  it('seeds an image that follows the visibility of its deck', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    await seed(asUser(1, 'boss'))
+    const images = recetteImages()
+    const nameOf = (slug: string) => images[slug]!.replace('/media/', '')
+    expect(await decideMediaAccess(anon(), nameOf('recette-public'))).toMatchObject({ allowed: true })
+    expect(await decideMediaAccess(anon(), nameOf('recette-privee'))).toMatchObject({ allowed: false })
+    expect(await decideMediaAccess(asUser(1, 'boss'), nameOf('recette-privee'))).toMatchObject({ allowed: true })
+  })
+
+  it('counts the data set as present only when every deck exists', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    expect(await isRecetteSeeded()).toBe(false)
+    await seed(asUser(1, 'boss'))
+    expect(await isRecetteSeeded()).toBe(true)
+    await useDeckMeta().purge('recette-english')
+    expect(await isRecetteSeeded()).toBe(false)
   })
 })

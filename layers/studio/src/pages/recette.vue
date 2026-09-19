@@ -12,6 +12,8 @@ interface Status {
   current: { login: string | null, role: string }
   seeded: boolean
   personas: RecettePersona[]
+  /** Address of the image seeded into a deck, by deck slug. */
+  images: Record<string, string>
 }
 
 const { t } = useI18n()
@@ -51,9 +53,14 @@ const scenarios = computed<{ key: string, title: string, steps: Step[] }[]>(() =
     steps: [
       { text: t('recette.scenarios.anonymous.catalog'), to: '/' },
       { text: t('recette.scenarios.anonymous.password', { password: RECETTE_PASSWORD }), to: '/slides/recette-mdp' },
+      { text: t('recette.scenarios.anonymous.passwordOnce'), to: '/slides/recette-mdp' },
       { text: t('recette.scenarios.anonymous.private'), to: '/slides/recette-privee' },
       { text: t('recette.scenarios.anonymous.unlisted'), to: '/slides/recette-non-listee' },
       { text: t('recette.scenarios.anonymous.trashed'), to: '/slides/recette-corbeille' },
+      { text: t('recette.scenarios.anonymous.publicImage'), to: data.value?.images['recette-public'] },
+      { text: t('recette.scenarios.anonymous.privateImage'), to: data.value?.images['recette-privee'] },
+      { text: t('recette.scenarios.anonymous.code'), to: '/slides/recette-public#/3' },
+      { text: t('recette.scenarios.anonymous.englishDeck'), to: '/slides/recette-english' },
     ],
   },
   {
@@ -101,6 +108,8 @@ const scenarios = computed<{ key: string, title: string, steps: Step[] }[]>(() =
     steps: [
       { text: t('recette.scenarios.owner.accounts', { handle: RECETTE_INVITED_HANDLE }), to: '/users' },
       { text: t('recette.scenarios.owner.sharedFolderAccess'), to: '/projects/recette-partage' },
+      { text: t('recette.scenarios.owner.privateImage'), to: data.value?.images['recette-privee'] },
+      { text: t('recette.scenarios.owner.language'), to: '/' },
     ],
   },
 ])

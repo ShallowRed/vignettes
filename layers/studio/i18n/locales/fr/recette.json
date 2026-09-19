@@ -52,11 +52,16 @@
     },
     "scenarios": {
       "anonymous": {
-        "catalog": "Catalogue : seule « Publique » apparaît.",
+        "catalog": "Catalogue : seules « Publique » et « English deck » apparaissent.",
         "password": "« Mot de passe » demande « {password} » puis s'ouvre.",
         "private": "« Privée » renvoie à la connexion.",
         "unlisted": "« Non listée » s'ouvre par lien direct.",
-        "trashed": "« Corbeille » est introuvable."
+        "trashed": "« Corbeille » est introuvable.",
+        "passwordOnce": "Après le mot de passe, recharger « Mot de passe » : elle s'ouvre sans le redemander.",
+        "publicImage": "L'image de « Publique » s'affiche.",
+        "privateImage": "L'image de « Privée » est introuvable (404).",
+        "code": "Dans « Publique », le bloc de code de la quatrième diapositive est lisible sur son fond clair.",
+        "englishDeck": "« English deck » : ses commandes, en haut à droite, sont en anglais quelle que soit la langue de l'interface."
       },
       "viewer": {
         "catalog": "Même catalogue que le visiteur.",
@@ -64,7 +69,7 @@
         "sharedFolder": "Le dossier partagé se présente vide."
       },
       "collab": {
-        "sharedFolder": "Dossier partagé : « Publique », « Mot de passe », « Brouillon », chacune avec le crayon, et le bouton « Nouvelle présentation ».",
+        "sharedFolder": "Dossier partagé : « Publique », « Mot de passe », « Brouillon », « English deck », chacune avec le crayon, et le bouton « Nouvelle présentation ».",
         "sync": "Éditeur de « Publique » : « Brouillon synchronisé » ; dans un second onglet, le texte tapé apparaît avec l'initiale du pair.",
         "pasteImage": "Une image collée dans l'éditeur s'insère.",
         "unpublished": "Après une modification, « Modifications non publiées » dans l'en-tête et sur la carte ; « Publier » remet à jour.",
@@ -73,7 +78,7 @@
         "private": "« Privée » est refusée ; aucune carte ne propose métadonnées ni partage."
       },
       "expired": {
-        "catalog": "Comme le lecteur sans accès : « Publique » seule visible.",
+        "catalog": "Comme le lecteur sans accès : seules « Publique » et « English deck » sont visibles.",
         "editorDenied": "L'éditeur de « Publique » est refusé."
       },
       "editor": {
@@ -83,7 +88,9 @@
       },
       "owner": {
         "accounts": "Comptes : les cinq personas et l'invité « {handle} ».",
-        "sharedFolderAccess": "Accès du dossier partagé : collaborateur (éditeur), accès expiré (expiré), invité (lecture). Modifier, ajouter par e-mail, retirer."
+        "sharedFolderAccess": "Accès du dossier partagé : collaborateur (éditeur), accès expiré (expiré), invité (lecture). Modifier, ajouter par e-mail, retirer.",
+        "privateImage": "L'image de « Privée » s'affiche.",
+        "language": "Le bouton de langue de l'en-tête passe l'interface en anglais ; le choix tient après rechargement."
       }
     }
   }

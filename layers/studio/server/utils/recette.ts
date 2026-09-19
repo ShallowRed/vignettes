@@ -9,6 +9,7 @@ import { decks } from '../db/schema'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
 import { useDb } from './db'
+import { mediaNameOf, storeMedia } from './media-store'
 import { hashAccessPassword } from './password'
 import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore, useProjectStore } from './sources'
 import { useUserStore } from './users'
@@ -114,19 +115,37 @@ interface SeedDeck {
   password?: string
   trashed?: boolean
   draftOnly?: boolean
+  /** Deck language, written to the frontmatter; the deck chrome follows it. */
+  lang?: string
+  /** Carries a seeded image, served with the visibility of the deck. */
+  image?: boolean
   note: string
 }
 
 const SEED_DECKS: SeedDeck[] = [
-  { slug: `${RECETTE_PREFIX}public`, title: 'Recette · Publique', status: 'public', project: RECETTE_FOLDERS.shared, theme: 'minimal', note: 'Visible et ouvrable par tout le monde, y compris hors connexion.' },
+  { slug: `${RECETTE_PREFIX}public`, title: 'Recette · Publique', status: 'public', project: RECETTE_FOLDERS.shared, theme: 'minimal', image: true, note: 'Visible et ouvrable par tout le monde, y compris hors connexion.' },
   { slug: `${RECETTE_PREFIX}mdp`, title: 'Recette · Mot de passe', status: 'semi-private', project: RECETTE_FOLDERS.shared, theme: 'minimal', password: RECETTE_PASSWORD, note: `Absente du catalogue public ; le lien direct demande le mot de passe « ${RECETTE_PASSWORD} ».` },
   { slug: `${RECETTE_PREFIX}brouillon`, title: 'Recette · Brouillon', status: 'private', project: RECETTE_FOLDERS.shared, theme: 'minimal', draftOnly: true, note: 'Jamais publiée : listée seulement à qui peut l\'éditer.' },
-  { slug: `${RECETTE_PREFIX}privee`, title: 'Recette · Privée', status: 'private', project: RECETTE_FOLDERS.private, theme: 'dsfr', note: 'Réservée aux rôles privilégiés ; un lecteur connecté reçoit 403, un anonyme 401.' },
+  { slug: `${RECETTE_PREFIX}privee`, title: 'Recette · Privée', status: 'private', project: RECETTE_FOLDERS.private, theme: 'dsfr', image: true, note: 'Réservée aux rôles privilégiés ; un lecteur connecté reçoit 403, un anonyme 401.' },
   { slug: `${RECETTE_PREFIX}non-listee`, title: 'Recette · Non listée', status: 'public', project: RECETTE_FOLDERS.private, theme: 'dsfr', unlisted: true, note: 'Publique mais absente du catalogue public ; le lien direct fonctionne.' },
   { slug: `${RECETTE_PREFIX}archivee`, title: 'Recette · Archivée', status: 'public', project: RECETTE_FOLDERS.private, theme: 'dsfr', lifecycle: 'archived', note: 'Archivée : hors catalogue public, lien direct fonctionnel.' },
   { slug: `${RECETTE_PREFIX}lecture`, title: 'Recette · Lecture seule', status: 'private', theme: 'minimal', note: 'Sans dossier (Divers). Le collaborateur la voit en lecture seule, sans crayon.' },
+  { slug: `${RECETTE_PREFIX}english`, title: 'Recette · English deck', status: 'public', project: RECETTE_FOLDERS.shared, theme: 'minimal', lang: 'en', note: 'A deck whose frontmatter says `lang: en`: its controls, loading text and print overlay are in English whatever the language of the interface.' },
   { slug: `${RECETTE_PREFIX}corbeille`, title: 'Recette · Corbeille', status: 'private', project: RECETTE_FOLDERS.private, theme: 'minimal', trashed: true, note: 'À la corbeille : 404 partout, restaurable par un rôle privilégié.' },
 ]
+
+const IMAGE_MIME = 'image/svg+xml'
+
+/** The image seeded into a deck: its title on a colored ground, so each deck has its own file. */
+function imageOf(deck: SeedDeck): { name: string, data: Buffer } {
+  const data = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240"><rect width="640" height="240" fill="${deck.status === 'public' ? '#18753c' : '#000091'}"/><text x="320" y="130" text-anchor="middle" font-family="sans-serif" font-size="32" fill="#fff">${deck.title}</text></svg>`)
+  return { name: mediaNameOf(data, IMAGE_MIME)!, data }
+}
+
+/** The `/media/...` address of the image seeded into a deck, by deck slug. */
+export function recetteImages(): Record<string, string> {
+  return Object.fromEntries(SEED_DECKS.filter(deck => deck.image).map(deck => [deck.slug, `/media/${imageOf(deck).name}`]))
+}
 
 function markdownFor(deck: SeedDeck): string {
   const lines = [
@@ -134,6 +153,7 @@ function markdownFor(deck: SeedDeck): string {
     `title: "${deck.title}"`,
     `status: ${deck.status}`,
     `theme: ${deck.theme}`,
+    ...(deck.lang ? [`lang: ${deck.lang}`] : []),
     ...(deck.project ? [`project: ${deck.project}`] : []),
     '---',
     '',
@@ -150,6 +170,16 @@ function markdownFor(deck: SeedDeck): string {
     '',
     'Modifiez ce texte pour tester l\'édition et la publication.',
     '',
+    '## Un bloc de code',
+    '',
+    '```ts',
+    '// Total TTC du panier',
+    'export function total(items: Item[]): number {',
+    '  return items.reduce((sum, item) => sum + item.price * 1.2, 0)',
+    '}',
+    '```',
+    '',
+    ...(deck.image ? ['## Une image téléversée', '', `![${deck.title}](/media/${imageOf(deck).name})`, ''] : []),
   ]
   return lines.join('\n')
 }
@@ -171,6 +201,10 @@ export async function seedRecette(): Promise<SeedSummary> {
   const meta = useDeckMeta()
   for (const deck of SEED_DECKS) {
     const raw = markdownFor(deck)
+    if (deck.image) {
+      const image = imageOf(deck)
+      await storeMedia(image.name, image.data, IMAGE_MIME)
+    }
     if (deck.draftOnly) {
       await useDraftStore().save(deck.slug, markdownToYDocUpdate(raw))
       await meta.update(deck.slug, { title: deck.title, status: deck.status, project: deck.project ?? null, theme: deck.theme })
@@ -201,9 +235,11 @@ export async function seedRecette(): Promise<SeedSummary> {
   return { folders: 2, decks: SEED_DECKS.length, accounts: RECETTE_PERSONAS.length + 1 }
 }
 
-/** Whether the data set is present (its public deck exists). */
+/** Whether every deck of the data set exists. */
 export async function isRecetteSeeded(): Promise<boolean> {
-  return useDeckMeta().existsIncludingTrashed(`${RECETTE_PREFIX}public`)
+  const meta = useDeckMeta()
+  const present = await Promise.all(SEED_DECKS.map(deck => meta.existsIncludingTrashed(deck.slug)))
+  return present.every(Boolean)
 }
 
 async function resetRecette(): Promise<void> {

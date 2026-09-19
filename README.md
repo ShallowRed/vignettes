@@ -29,7 +29,7 @@ mise run setup        # .env with a generated session secret, dependencies, data
 mise run dev:nuxt     # http://localhost:3000
 ```
 
-Sign in with `/auth/dev-login?role=owner`, which answers in development only and needs no OAuth credentials. The catalog starts empty. Load the example deck with `node scripts/content-import.ts --content=examples --apply`, or open `/recette` and press "Créer" to fill the catalog with eight decks covering every access situation, plus five personas you can browse the app as.
+Sign in with `/auth/dev-login?role=owner`, which answers in development only and needs no OAuth credentials. The catalog starts empty. Load the example deck with `node scripts/content-import.ts --content=examples --apply`, or open `/recette` and press "Créer" to fill the catalog with nine decks covering every access situation, plus five personas you can browse the app as.
 
 `mise run dev` runs the same server behind a local proxy on a `.localhost` host name, which lets several branches run at once. `dev:nuxt` needs no proxy.
 

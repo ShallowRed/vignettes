@@ -52,11 +52,16 @@
     },
     "scenarios": {
       "anonymous": {
-        "catalog": "Catalog: only “Publique” appears.",
+        "catalog": "Catalog: only “Publique” and “English deck” appear.",
         "password": "“Mot de passe” asks for “{password}” then opens.",
         "private": "“Privée” sends to the sign-in page.",
         "unlisted": "“Non listée” opens through a direct link.",
-        "trashed": "“Corbeille” is not found."
+        "trashed": "“Corbeille” is not found.",
+        "passwordOnce": "After the password, reload “Mot de passe”: it opens without asking again.",
+        "publicImage": "The image of “Publique” shows.",
+        "privateImage": "The image of “Privée” is not found (404).",
+        "code": "In “Publique”, the code block of the fourth slide is readable on its light ground.",
+        "englishDeck": "“English deck”: its controls, top right, are in English whatever the language of the interface."
       },
       "viewer": {
         "catalog": "Same catalog as the visitor.",
@@ -64,7 +69,7 @@
         "sharedFolder": "The shared folder shows up empty."
       },
       "collab": {
-        "sharedFolder": "Shared folder: “Publique”, “Mot de passe”, “Brouillon”, each with the pencil, and the “New presentation” button.",
+        "sharedFolder": "Shared folder: “Publique”, “Mot de passe”, “Brouillon”, “English deck”, each with the pencil, and the “New presentation” button.",
         "sync": "Editor of “Publique”: “Draft synced”; in a second tab, the typed text appears with the initial of the peer.",
         "pasteImage": "An image pasted into the editor is inserted.",
         "unpublished": "After a change, “Unpublished changes” in the header and on the card; “Publish” brings it up to date.",
@@ -73,7 +78,7 @@
         "private": "“Privée” is denied; no card offers metadata or sharing."
       },
       "expired": {
-        "catalog": "Like the viewer without access: only “Publique” is visible.",
+        "catalog": "Like the viewer without access: only “Publique” and “English deck” are visible.",
         "editorDenied": "The editor of “Publique” is denied."
       },
       "editor": {
@@ -83,7 +88,9 @@
       },
       "owner": {
         "accounts": "Accounts: the five personas and the invited account “{handle}”.",
-        "sharedFolderAccess": "Access of the shared folder: collaborator (editor), expired access (expired), invited account (read). Change, add by email, remove."
+        "sharedFolderAccess": "Access of the shared folder: collaborator (editor), expired access (expired), invited account (read). Change, add by email, remove.",
+        "privateImage": "The image of “Privée” shows.",
+        "language": "The language button of the header switches the interface to English; the choice holds after a reload."
       }
     }
   }

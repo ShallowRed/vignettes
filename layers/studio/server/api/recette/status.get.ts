@@ -1,6 +1,6 @@
 import { RECETTE_PERSONAS } from '#shared/recette/personas'
 import { getActor } from '../../utils/actor'
-import { assertRecette, isRecetteSeeded } from '../../utils/recette'
+import { assertRecette, isRecetteSeeded, recetteImages } from '../../utils/recette'
 
 /**
  * GET /api/recette/status: the kit's state for the page. Opening it as an owner
@@ -14,5 +14,6 @@ export default defineEventHandler(async (event) => {
     current: { login: actor.login ?? null, role: actor.role },
     seeded: await isRecetteSeeded(),
     personas: RECETTE_PERSONAS,
+    images: recetteImages(),
   }
 })
