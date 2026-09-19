@@ -36,7 +36,7 @@ layers/studio/
   shared/        the domain reached through #shared: access, projects, catalog contract, trash, storage
 
 themes/          this instance's themes, compiled to public/themes/
-presentations/   this instance's content: deck stubs, registry.yml, projects.yml
+presentations/   this instance's content space, ignored by git: deck stubs, registry.yml, projects.yml
 scripts/         content and build commands, run through mise
 test/            unit and golden suites
 ```

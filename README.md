@@ -80,7 +80,7 @@ Both are pure SCSS with no dependencies, and are usable on any Reveal.js deck. [
 
 ## Content model
 
-The database is the only runtime source of content. Each deck has a draft (a Yjs document), a list of published versions, and a pointer to the version readers see. The `presentations/` submodule is the maintainer's own archive of deck stubs and is private; a clone works without it.
+The database is the only runtime source of content. Each deck has a draft (a Yjs document), a list of published versions, and a pointer to the version readers see. `presentations/` holds the content space of an instance: deck stubs, brand themes and deck assets. Git ignores it; an instance that keeps its content in a repository clones it there, and the tasks below read it. A clone works without it.
 
 | Task | Effect |
 |------|--------|

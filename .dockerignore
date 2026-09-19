@@ -1,5 +1,5 @@
 # Contexte de build Docker. On EXCLUT les artefacts et deps locaux ; on GARDE les
-# sources, presentations/ (submodule), public/, themes/, scripts/, server/, shared/, plugins/.
+# sources, public/, themes/, scripts/, server/, shared/, plugins/.
 
 .git
 .github
@@ -17,6 +17,9 @@ export
 # `.frozen-mirror/` (ancien filet origin-root) = retiré/vestigial → hors image.
 .frozen/
 .frozen-mirror/
+
+# Espace de contenu de l'instance : servi depuis la base et le bucket, jamais depuis l'image.
+presentations
 *.log
 .DS_Store
 .vscode

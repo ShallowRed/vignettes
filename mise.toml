@@ -102,7 +102,13 @@ else
   git worktree add -b "$branch" "$dir"
 fi
 cd "$dir"
-git submodule update --init --depth 1 presentations || echo "[worktree] Sous-module presentations indisponible, catalogue vide."
+# The content space of the main checkout, when it has one, is cloned into the worktree.
+content="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/presentations"
+if [ -d "$content/.git" ]; then
+  git clone --quiet --depth 1 "file://$content" presentations
+else
+  echo "[worktree] Pas d'espace de contenu dans $content, catalogue vide."
+fi
 mise install
 pnpm install
 mise run db:migrate

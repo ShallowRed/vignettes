@@ -54,3 +54,7 @@ public/themes/
 # Playwright results
 test-results/
 playwright-report/
+
+# The content space of this instance (deck stubs, brand themes, deck assets),
+# cloned from its own repository: see README.md.
+/presentations/
