@@ -26,6 +26,7 @@ const errorMessage = computed(() => {
 
 // Only offer the providers this deployment holds credentials for.
 const { data: providers } = await useFetch('/api/auth/providers')
+const noProvider = computed(() => providers.value && !providers.value.github && !providers.value.google)
 
 // Dev-only shortcut: GitHub OAuth needs secrets + a network round-trip, so local
 // iteration on gated features logs in as a synthetic per-role account instead.
@@ -66,7 +67,16 @@ const devRoles = [
           class="mb-2 text-left"
         />
 
+        <ActionNotice
+          v-if="noProvider"
+          title="Aucun fournisseur de connexion n'est configuré"
+          description="Renseignez des identifiants OAuth GitHub ou Google dans .env (voir .env.example), puis redémarrez l'instance."
+          icon="i-lucide-key-round"
+          class="w-full text-left"
+        />
+
         <UButton
+          v-if="providers?.github"
           to="/auth/github"
           external
           icon="i-lucide-github"
