@@ -2,7 +2,7 @@
 
 A self-hosted catalog and editor for Markdown slide decks. Decks are written in MDC (Markdown with Vue components), rendered with reveal.js, edited collaboratively in the browser, and published as immutable versions with per-deck access rules.
 
-The application is in French. The code, the packages and this documentation are in English.
+The interface is available in French and English. The code, the packages and this documentation are in English.
 
 ![The editor: Markdown on the left, the rendered slide on the right](docs/assets/editor.png)
 
