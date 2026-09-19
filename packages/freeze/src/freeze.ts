@@ -69,10 +69,12 @@ export function freezeDeck(run: FreezeRun): string {
       // links have been pointing at since the first bundle.
       renameSync(join(outDir, 'slides', descriptor.slug), join(outDir, 'slides', descriptor.deckDir))
 
-      // The deck renders through Reveal alone, so its Nuxt chunks are dead
-      // weight; the CSS chunks stay, linked by link-deck-css.
+      // The deck renders through Reveal alone, so its Nuxt chunks and the
+      // interface translations are dead weight; the CSS chunks stay, linked by
+      // link-deck-css.
       for (const file of listFiles(join(outDir, '_nuxt')).filter(f => f.endsWith('.js')))
         unlinkSync(file)
+      rmSync(join(outDir, '_i18n'), { recursive: true, force: true })
       rmSync(join(outDir, 'slides', descriptor.deckDir, '_payload.json'), { force: true })
 
       mkdirSync(join(outDir, 'reveal'), { recursive: true })
