@@ -156,3 +156,9 @@ Production is SSR, not static hosting:
 - `.github/workflows/docker-publish.yml` builds + pushes the image to GHCR and deploys it over SSH: push to `staging` deploys the staging instance, push to `main` the production one (infra lives in a separate `vps-infra` repo).
 - Runtime secrets are pulled from a self-hosted Infisical instance by `docker-entrypoint.sh` (`infisical run`); secrets never touch disk.
 - Single-deck frozen bundles (`mise run freeze -- <alias>`) are the static mode, served by `/frozen/**` behind the deck's access gate.
+
+### One instance at a time
+
+The application runs as a single process. Three pieces of state are kept in the memory of that process: the rate limiter of the password attempts (`server/utils/rate-limit.ts`), the editors of a deck since its last snapshot (`noteContributor` in `server/utils/collab.ts`) and the open collaborative documents of the Hocuspocus server (`useCollabServer`, same file). The SQLite file on a volume, replicated by Litestream, also accepts one writer.
+
+With a second replica, each replica would count the password attempts separately, a snapshot would credit only the editors who reached the replica that writes it, and two editors on different replicas would edit the same deck in two documents that never merge. Running several replicas requires moving these three to a shared store first.
