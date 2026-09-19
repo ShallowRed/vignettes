@@ -3,6 +3,7 @@ definePageMeta({
   layout: 'presentation',
 })
 
+const { t } = useI18n()
 const route = useRoute()
 const alias = route.params.alias as string
 
@@ -51,14 +52,14 @@ watch(requiresPassword, (needsPassword) => {
 
     <DeckError
       v-else-if="needsLogin"
-      title="Présentation privée"
-      message="Connectez-vous avec le compte auquel elle a été partagée."
+      :title="t('auth.deckError.privateTitle')"
+      :message="t('auth.deckError.privateMessage')"
       :login-redirect="`/p/${alias}`"
     />
     <DeckError
       v-else-if="forbidden"
-      title="Accès refusé"
-      message="Votre compte n'a pas accès à cette présentation."
+      :title="t('auth.deckError.forbiddenTitle')"
+      :message="t('auth.deckError.forbiddenMessage')"
       :account-login="user?.login"
     />
     <DeckError

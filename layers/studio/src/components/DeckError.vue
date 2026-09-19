@@ -9,6 +9,8 @@ defineProps<{
   /** The signed-in login, for a 403: names the account and offers to switch. */
   accountLogin?: string
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -17,28 +19,35 @@ defineProps<{
       {{ loginRedirect ? '🔒' : '⚠️' }}
     </div>
     <h1 :class="{ 'deck-error__title--info': loginRedirect }">
-      {{ title || 'Présentation indisponible' }}
+      {{ title || t('auth.deckError.defaultTitle') }}
     </h1>
-    <p>{{ message || 'Impossible de charger la présentation.' }}</p>
+    <p>{{ message || t('auth.deckError.defaultMessage') }}</p>
     <NuxtLink
       v-if="loginRedirect"
       :to="`/login?redirect=${encodeURIComponent(loginRedirect)}`"
       class="deck-error__login"
     >
-      Se connecter
+      {{ t('common.actions.signIn') }}
     </NuxtLink>
-    <p
+    <i18n-t
       v-if="accountLogin"
+      keypath="auth.deckError.signedInAs"
+      tag="p"
       class="deck-error__account"
+      scope="global"
     >
-      Connecté en tant que <strong>{{ accountLogin }}</strong> ·
-      <a href="/auth/logout">changer de compte</a>
-    </p>
+      <template #login>
+        <strong>{{ accountLogin }}</strong>
+      </template>
+      <template #switchAccount>
+        <a href="/auth/logout">{{ t('auth.deckError.switchAccount') }}</a>
+      </template>
+    </i18n-t>
     <NuxtLink
       to="/"
       class="deck-error__back"
     >
-      ← Retour aux présentations
+      ← {{ t('common.actions.backToDecks') }}
     </NuxtLink>
   </div>
 </template>

@@ -11,6 +11,7 @@ import { usersKeys } from '../queries/keys'
  * role, whether an invitation is still unclaimed, and removal. One flat table —
  * per-deck/folder access stays in the sharing panels where its context lives.
  */
+const { t, locale } = useI18n()
 const { role, user } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 const toast = useToast()
@@ -20,17 +21,17 @@ const requestFetch = useRequestFetch()
 const usersQ = useQuery({ ...usersQuery(requestFetch), enabled: () => isOwner.value })
 const accounts = computed<UserAccount[]>(() => usersQ.data.value ?? [])
 
-const breadcrumb = [
-  { label: 'Accueil', to: '/' },
-  { label: 'Comptes' },
-]
-useHead({ title: 'Comptes · Vignettes' })
+const breadcrumb = computed(() => [
+  { label: t('common.home'), to: '/' },
+  { label: t('admin.users.title') },
+])
+useHead({ title: () => t('admin.users.pageTitle') })
 
-const ROLE_ITEMS = [
-  { label: 'Lecteur', value: 'viewer' },
-  { label: 'Éditeur', value: 'editor' },
-  { label: 'Owner', value: 'owner' },
-]
+const roleItems = computed(() => [
+  { label: t('admin.role.viewer'), value: 'viewer' },
+  { label: t('admin.role.editor'), value: 'editor' },
+  { label: t('common.role.owner'), value: 'owner' },
+])
 
 function invalidate() {
   return queryCache.invalidateQueries({ key: usersKeys.all })
@@ -42,8 +43,8 @@ function onError(error: any, fallback: string) {
 const { mutate: changeRole, isLoading: changingRole } = useMutation({
   mutation: ({ id, to }: { id: number, to: Role }) =>
     usersApi.setRole(requestFetch, id, to as 'owner' | 'editor' | 'viewer'),
-  onSuccess: () => toast.add({ title: 'Rôle mis à jour', icon: 'i-lucide-check', color: 'success' }),
-  onError: e => onError(e, 'Échec du changement de rôle'),
+  onSuccess: () => toast.add({ title: t('admin.users.roleUpdated'), icon: 'i-lucide-check', color: 'success' }),
+  onError: e => onError(e, t('admin.users.roleChangeFailed')),
   onSettled: invalidate,
 })
 
@@ -59,10 +60,10 @@ const removeOpen = computed({
 const { mutate: runRemove, isLoading: removing } = useMutation({
   mutation: (id: number) => usersApi.remove(requestFetch, id),
   onSuccess() {
-    toast.add({ title: 'Compte retiré', icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('admin.users.removed'), icon: 'i-lucide-check', color: 'success' })
     removeTarget.value = null
   },
-  onError: e => onError(e, 'Échec du retrait'),
+  onError: e => onError(e, t('admin.users.removeFailed')),
   onSettled: invalidate,
 })
 
@@ -71,7 +72,7 @@ const busy = computed(() => changingRole.value || removing.value)
 const inviteOpen = ref(false)
 
 function dateLabel(d: Date | string) {
-  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString(locale.value, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 </script>
 
@@ -81,13 +82,13 @@ function dateLabel(d: Date | string) {
 
     <div class="flex items-center gap-3">
       <h1 class="text-xl font-semibold text-highlighted">
-        Comptes
+        {{ t('admin.users.title') }}
       </h1>
-      <span class="text-sm text-muted">{{ accounts.length }} compte{{ accounts.length > 1 ? 's' : '' }}</span>
+      <span class="text-sm text-muted">{{ t('admin.users.count', accounts.length) }}</span>
       <div class="flex-1" />
       <UButton
         v-if="isOwner"
-        label="Ajouter un compte"
+        :label="t('admin.users.add')"
         icon="i-lucide-user-plus"
         size="sm"
         @click="inviteOpen = true"
@@ -99,8 +100,8 @@ function dateLabel(d: Date | string) {
       color="error"
       variant="subtle"
       icon="i-lucide-lock"
-      title="Accès réservé"
-      description="La gestion des comptes est réservée au rôle Owner."
+      :title="t('admin.access.restrictedTitle')"
+      :description="t('admin.users.restrictedDescription')"
     />
 
     <ul
@@ -123,24 +124,24 @@ function dateLabel(d: Date | string) {
             <span
               v-if="account.id === user?.id"
               class="text-xs text-muted font-normal"
-            >(vous)</span>
+            >{{ t('admin.users.you') }}</span>
           </p>
           <p class="text-xs text-muted">
             <template v-if="account.invited">
-              Invitation en attente : jamais connecté
+              {{ t('admin.users.invitationPending') }}
             </template>
             <template v-else>
-              Dernière connexion {{ dateLabel(account.lastLoginAt) }}
+              {{ t('admin.users.lastLogin', { date: dateLabel(account.lastLoginAt) }) }}
             </template>
           </p>
         </div>
         <div class="flex-1" />
         <USelect
           :model-value="account.role"
-          :items="ROLE_ITEMS"
+          :items="roleItems"
           :disabled="busy || account.id === user?.id"
           class="w-32"
-          :aria-label="`Rôle de ${account.login}`"
+          :aria-label="t('admin.users.roleOf', { login: account.login })"
           @update:model-value="(to: any) => changeRole({ id: account.id, to })"
         />
         <UButton
@@ -149,7 +150,7 @@ function dateLabel(d: Date | string) {
           variant="ghost"
           size="xs"
           :disabled="busy || account.id === user?.id || account.role === 'owner'"
-          :aria-label="`Retirer ${account.login}`"
+          :aria-label="t('admin.users.remove', { login: account.login })"
           @click="removeTarget = account"
         />
       </li>
@@ -159,7 +160,7 @@ function dateLabel(d: Date | string) {
 
     <UModal
       v-model:open="removeOpen"
-      title="Retirer ce compte ?"
+      :title="t('admin.users.removeConfirmTitle')"
       :description="removeTarget?.login"
     >
       <template #body>
@@ -167,20 +168,20 @@ function dateLabel(d: Date | string) {
           color="error"
           variant="subtle"
           icon="i-lucide-triangle-alert"
-          title="Le compte et tous ses accès partagés seront retirés."
-          description="Ses présentations ne sont pas touchées (le contenu n'appartient à personne). Une nouvelle connexion avec la même identité repartira de zéro, sans accès."
+          :title="t('admin.users.removeConfirmNotice')"
+          :description="t('admin.users.removeConfirmDescription')"
         />
       </template>
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton
-            label="Annuler"
+            :label="t('common.actions.cancel')"
             color="neutral"
             variant="ghost"
             @click="removeTarget = null"
           />
           <UButton
-            label="Retirer le compte"
+            :label="t('admin.users.removeConfirmAction')"
             color="error"
             icon="i-lucide-trash-2"
             :loading="removing"

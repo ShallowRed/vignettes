@@ -1,1 +1,61 @@
-{}
+{
+  "admin": {
+    "access": {
+      "restrictedTitle": "Accès réservé"
+    },
+    "role": {
+      "viewer": "Lecteur",
+      "editor": "Éditeur"
+    },
+    "users": {
+      "pageTitle": "Comptes · Vignettes",
+      "title": "Comptes",
+      "count": "{n} compte | {n} compte | {n} comptes",
+      "add": "Ajouter un compte",
+      "restrictedDescription": "La gestion des comptes est réservée au rôle Owner.",
+      "you": "(vous)",
+      "invitationPending": "Invitation en attente : jamais connecté",
+      "lastLogin": "Dernière connexion {date}",
+      "roleOf": "Rôle de {login}",
+      "remove": "Retirer {login}",
+      "roleUpdated": "Rôle mis à jour",
+      "roleChangeFailed": "Échec du changement de rôle",
+      "removed": "Compte retiré",
+      "removeFailed": "Échec du retrait",
+      "removeConfirmTitle": "Retirer ce compte ?",
+      "removeConfirmNotice": "Le compte et tous ses accès partagés seront retirés.",
+      "removeConfirmDescription": "Ses présentations ne sont pas touchées (le contenu n'appartient à personne). Une nouvelle connexion avec la même identité repartira de zéro, sans accès.",
+      "removeConfirmAction": "Retirer le compte"
+    },
+    "invite": {
+      "title": "Ajouter un compte",
+      "description": "Le compte peut recevoir des accès avant même sa première connexion.",
+      "provider": "Fournisseur de connexion",
+      "globalRole": "Rôle global",
+      "globalRoleDescription": "Lecteur convient au partage ponctuel : les accès se donnent ensuite par présentation ou par dossier.",
+      "noEmail": "Aucun email n'est envoyé : partagez le lien vous-même. Le compte s'activera à sa première connexion {provider}.",
+      "submit": "Ajouter le compte",
+      "added": "Compte ajouté",
+      "addedDescription": "{login} peut recevoir des accès.",
+      "addFailed": "Échec de l'ajout"
+    },
+    "trash": {
+      "pageTitle": "Corbeille · Vignettes",
+      "title": "Corbeille",
+      "restrictedDescription": "La corbeille est réservée aux comptes autorisés.",
+      "emptyTitle": "Corbeille vide",
+      "emptyDescription": "Les dossiers et présentations supprimés apparaîtront ici.",
+      "folders": "Dossiers",
+      "decks": "Présentations",
+      "deckCount": "{n} présentation | {n} présentation | {n} présentations",
+      "purgeConfirmTitle": "Supprimer définitivement ?",
+      "purgeIrreversible": "Action irréversible",
+      "purgeFolderDescription": "Le dossier et toutes ses présentations (brouillons, versions, partages) seront effacés pour de bon.",
+      "purgeDeckDescription": "Brouillon, versions publiées, réglages et partages seront effacés pour de bon.",
+      "folderRestored": "Dossier restauré",
+      "deckRestored": "Présentation restaurée",
+      "purged": "Supprimé définitivement",
+      "failed": "Échec"
+    }
+  }
+}

@@ -3,6 +3,7 @@ definePageMeta({
   layout: false,
 })
 
+const { t } = useI18n()
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
@@ -35,11 +36,11 @@ async function unlock() {
   }
   catch (e: any) {
     if (e.statusCode === 403)
-      errorMessage.value = 'Mot de passe incorrect'
+      errorMessage.value = t('auth.unlock.wrongPassword')
     else if (e.statusCode === 401)
-      errorMessage.value = 'Mot de passe requis'
+      errorMessage.value = t('auth.unlock.passwordRequired')
     else
-      errorMessage.value = e.message || 'Une erreur est survenue'
+      errorMessage.value = e.message || t('auth.unlock.genericError')
   }
   finally {
     loading.value = false
@@ -61,10 +62,10 @@ async function unlock() {
           />
         </div>
         <h1 class="text-xl font-bold text-highlighted">
-          Présentation protégée
+          {{ t('auth.unlock.title') }}
         </h1>
         <p class="text-muted mb-4">
-          Cette présentation nécessite un mot de passe.
+          {{ t('auth.unlock.description') }}
         </p>
 
         <form
@@ -79,11 +80,11 @@ async function unlock() {
             :description="errorMessage"
           />
 
-          <UFormField label="Mot de passe">
+          <UFormField :label="t('auth.unlock.password')">
             <UInput
               v-model="password"
               type="password"
-              placeholder="Entrez le mot de passe"
+              :placeholder="t('auth.unlock.passwordPlaceholder')"
               icon="i-lucide-key-round"
               :disabled="loading"
               autofocus
@@ -93,7 +94,7 @@ async function unlock() {
 
           <UButton
             type="submit"
-            :label="loading ? 'Vérification…' : 'Déverrouiller'"
+            :label="loading ? t('auth.unlock.verifying') : t('auth.unlock.submit')"
             :loading="loading"
             :disabled="!password"
             block
@@ -101,14 +102,14 @@ async function unlock() {
         </form>
 
         <USeparator
-          label="ou"
+          :label="t('common.or')"
           class="my-3"
         />
 
         <UButton
           to="/"
           icon="i-lucide-arrow-left"
-          label="Retour aux présentations"
+          :label="t('common.actions.backToDecks')"
           color="neutral"
           variant="ghost"
           size="sm"

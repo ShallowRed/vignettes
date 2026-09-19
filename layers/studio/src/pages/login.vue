@@ -3,6 +3,7 @@ definePageMeta({
   layout: false,
 })
 
+const { t } = useI18n()
 const route = useRoute()
 const error = computed(() => route.query.error as string | undefined)
 
@@ -18,9 +19,9 @@ onMounted(() => {
 const errorMessage = computed(() => {
   switch (error.value) {
     case 'oauth_failed':
-      return 'L\'authentification a échoué. Veuillez réessayer.'
+      return t('auth.login.oauthFailed')
     default:
-      return error.value ? 'Authentification impossible. Veuillez réessayer.' : ''
+      return error.value ? t('auth.login.genericError') : ''
   }
 })
 
@@ -34,11 +35,11 @@ const noProvider = computed(() => providers.value && !providers.value.github && 
 const isDev = import.meta.dev
 const devRedirect = computed(() =>
   redirect.value?.startsWith('/') ? `&redirect=${encodeURIComponent(redirect.value)}` : '')
-const devRoles = [
-  { role: 'owner', label: 'Owner', icon: 'i-lucide-shield' },
-  { role: 'editor', label: 'Éditeur', icon: 'i-lucide-pencil' },
-  { role: 'viewer', label: 'Lecteur', icon: 'i-lucide-eye' },
-]
+const devRoles = computed(() => [
+  { role: 'owner', label: t('common.role.owner'), icon: 'i-lucide-shield' },
+  { role: 'editor', label: t('admin.role.editor'), icon: 'i-lucide-pencil' },
+  { role: 'viewer', label: t('admin.role.viewer'), icon: 'i-lucide-eye' },
+])
 </script>
 
 <template>
@@ -55,7 +56,7 @@ const devRoles = [
           Vignettes
         </h1>
         <p class="text-muted mb-4">
-          Connectez-vous pour gérer vos présentations
+          {{ t('auth.login.tagline') }}
         </p>
 
         <UAlert
@@ -69,8 +70,8 @@ const devRoles = [
 
         <ActionNotice
           v-if="noProvider"
-          title="Aucun fournisseur de connexion n'est configuré"
-          description="Renseignez des identifiants OAuth GitHub ou Google dans .env (voir .env.example), puis redémarrez l'instance."
+          :title="t('auth.login.noProviderTitle')"
+          :description="t('auth.login.noProviderDescription')"
           icon="i-lucide-key-round"
           class="w-full text-left"
         />
@@ -80,7 +81,7 @@ const devRoles = [
           to="/auth/github"
           external
           icon="i-lucide-github"
-          label="Se connecter avec GitHub"
+          :label="t('auth.login.withGithub')"
           color="neutral"
           size="lg"
           block
@@ -91,7 +92,7 @@ const devRoles = [
           to="/auth/google"
           external
           icon="i-ri-google-fill"
-          label="Se connecter avec Google"
+          :label="t('auth.login.withGoogle')"
           color="neutral"
           size="lg"
           block
@@ -100,7 +101,7 @@ const devRoles = [
           v-if="providers?.google"
           class="text-xs text-muted text-left"
         >
-          Un accès vous a été partagé ? Utilisez « Se connecter avec Google » avec l'adresse à laquelle il a été accordé.
+          {{ t('auth.login.sharedAccessHint') }}
         </p>
 
         <template v-if="isDev">
@@ -114,7 +115,7 @@ const devRoles = [
                 name="i-lucide-flask-conical"
                 class="size-3.5 text-warning"
               />
-              Connexion de développement (locale uniquement)
+              {{ t('auth.login.devLogin') }}
             </p>
             <div class="flex gap-2">
               <UButton
@@ -134,14 +135,14 @@ const devRoles = [
         </template>
 
         <USeparator
-          label="ou"
+          :label="t('common.or')"
           class="my-3"
         />
 
         <UButton
           to="/"
           icon="i-lucide-arrow-left"
-          label="Retour aux présentations"
+          :label="t('common.actions.backToDecks')"
           color="neutral"
           variant="ghost"
           size="sm"

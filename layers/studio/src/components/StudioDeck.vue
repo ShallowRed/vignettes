@@ -12,6 +12,8 @@ const props = defineProps<{
   draft?: boolean
 }>()
 
+const { t } = useI18n()
+
 // The deck renders without this answer, so it loads after the page.
 interface Variant { slug: string, alias: string | null, title: string, variantLabel: string }
 const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
@@ -41,7 +43,7 @@ const folderHref = computed(() => viewer.value.project ? `/projects/${viewer.val
 
 watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
   if (instance && canEdit)
-    instance.addKeyBinding({ keyCode: 69, key: 'E', description: 'Éditer cette diapositive' }, () => navigateTo(editHref.value))
+    instance.addKeyBinding({ keyCode: 69, key: 'E', description: t('auth.viewer.editSlideShortcut') }, () => navigateTo(editHref.value))
 })
 </script>
 
@@ -54,12 +56,12 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
       name="i-lucide-eye"
       class="size-4"
     />
-    Aperçu du brouillon, non publié
+    {{ t('auth.viewer.draftBanner') }}
     <NuxtLink
       :to="`/edit/${slug}`"
       class="underline"
     >
-      Ouvrir l'éditeur
+      {{ t('auth.viewer.openEditor') }}
     </NuxtLink>
   </div>
   <RevealPresentation
@@ -79,7 +81,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
         v-if="variants.length"
         class="deck-variants"
         role="group"
-        aria-label="Variantes de la présentation"
+        :aria-label="t('auth.viewer.variants')"
       >
         <template
           v-for="variant in variants"
@@ -101,7 +103,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
       </span>
       <DeckControlButton
         v-if="viewer.canEdit"
-        label="Éditer"
+        :label="t('common.actions.edit')"
         shortcut="E"
         :to="editHref"
         primary
@@ -110,7 +112,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
       </DeckControlButton>
       <DeckControlButton
         v-if="viewer.canEdit"
-        :label="draft ? 'Voir la version publiée' : 'Voir le brouillon'"
+        :label="draft ? t('auth.viewer.viewPublished') : t('auth.viewer.viewDraft')"
         :to="draftHref"
         :badge="!draft && viewer.unpublishedChanges"
       >
@@ -122,7 +124,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
       #controls-after
     >
       <DeckControlButton
-        label="Retour au dossier"
+        :label="t('auth.viewer.backToFolder')"
         :to="folderHref"
       >
         <UIcon name="i-lucide-folder-open" />

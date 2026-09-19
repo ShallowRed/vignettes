@@ -4,17 +4,18 @@ import { useTrash } from '../composables/useTrash'
 
 // The trash (corbeille): restore or permanently erase soft-deleted projects and
 // decks. Privileged users can restore; only the owner can permanently erase.
+const { t } = useI18n()
 const { role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 
 // Query + restore/purge mutations (cross-invalidate the catalog on restore).
 const { projects, decks, isEmpty, status, error, refresh, canView, busy, restore, purge } = useTrash()
 
-const breadcrumb = [
-  { label: 'Accueil', to: '/' },
-  { label: 'Corbeille' },
-]
-useHead({ title: 'Corbeille · Vignettes' })
+const breadcrumb = computed(() => [
+  { label: t('common.home'), to: '/' },
+  { label: t('admin.trash.title') },
+])
+useHead({ title: () => t('admin.trash.pageTitle') })
 
 const restoreProject = (slug: string) => restore({ kind: 'project', slug })
 const restoreDeck = (slug: string) => restore({ kind: 'deck', slug })
@@ -45,7 +46,7 @@ async function confirmPurge() {
 
     <div class="flex items-center gap-3">
       <h1 class="text-xl font-semibold text-highlighted">
-        Corbeille
+        {{ t('admin.trash.title') }}
       </h1>
     </div>
 
@@ -54,8 +55,8 @@ async function confirmPurge() {
       color="error"
       variant="subtle"
       icon="i-lucide-lock"
-      title="Accès réservé"
-      description="La corbeille est réservée aux comptes autorisés."
+      :title="t('admin.access.restrictedTitle')"
+      :description="t('admin.trash.restrictedDescription')"
     />
 
     <AsyncSection
@@ -78,8 +79,8 @@ async function confirmPurge() {
       <template #empty>
         <UEmpty
           icon="i-lucide-trash-2"
-          title="Corbeille vide"
-          description="Les dossiers et présentations supprimés apparaîtront ici."
+          :title="t('admin.trash.emptyTitle')"
+          :description="t('admin.trash.emptyDescription')"
           variant="naked"
         />
       </template>
@@ -91,7 +92,7 @@ async function confirmPurge() {
           class="flex flex-col gap-2"
         >
           <h2 class="text-sm font-medium text-muted">
-            Dossiers
+            {{ t('admin.trash.folders') }}
           </h2>
           <ul class="flex flex-col gap-2">
             <li
@@ -108,12 +109,12 @@ async function confirmPurge() {
                   {{ project.title }}
                 </p>
                 <p class="text-xs text-muted">
-                  {{ project.deckCount }} présentation{{ project.deckCount > 1 ? 's' : '' }}
+                  {{ t('admin.trash.deckCount', project.deckCount) }}
                 </p>
               </div>
               <div class="flex-1" />
               <UButton
-                label="Restaurer"
+                :label="t('common.actions.restore')"
                 icon="i-lucide-undo-2"
                 color="neutral"
                 variant="subtle"
@@ -128,7 +129,7 @@ async function confirmPurge() {
                 variant="ghost"
                 size="xs"
                 :disabled="busy"
-                aria-label="Supprimer définitivement"
+                :aria-label="t('common.actions.deleteForever')"
                 @click="purgeTarget = { kind: 'project', slug: project.slug, title: project.title }"
               />
             </li>
@@ -141,7 +142,7 @@ async function confirmPurge() {
           class="flex flex-col gap-2"
         >
           <h2 class="text-sm font-medium text-muted">
-            Présentations
+            {{ t('admin.trash.decks') }}
           </h2>
           <ul class="flex flex-col gap-2">
             <li
@@ -158,7 +159,7 @@ async function confirmPurge() {
               </p>
               <div class="flex-1" />
               <UButton
-                label="Restaurer"
+                :label="t('common.actions.restore')"
                 icon="i-lucide-undo-2"
                 color="neutral"
                 variant="subtle"
@@ -173,7 +174,7 @@ async function confirmPurge() {
                 variant="ghost"
                 size="xs"
                 :disabled="busy"
-                aria-label="Supprimer définitivement"
+                :aria-label="t('common.actions.deleteForever')"
                 @click="purgeTarget = { kind: 'deck', slug: deck.slug, title: deck.title }"
               />
             </li>
@@ -184,28 +185,28 @@ async function confirmPurge() {
 
     <UModal
       v-model:open="purgeOpen"
-      title="Supprimer définitivement ?"
+      :title="t('admin.trash.purgeConfirmTitle')"
       :description="purgeTarget?.title"
     >
       <template #body>
         <ActionNotice
           tone="critical"
-          title="Action irréversible"
+          :title="t('admin.trash.purgeIrreversible')"
           :description="purgeTarget?.kind === 'project'
-            ? 'Le dossier et toutes ses présentations (brouillons, versions, partages) seront effacés pour de bon.'
-            : 'Brouillon, versions publiées, réglages et partages seront effacés pour de bon.'"
+            ? t('admin.trash.purgeFolderDescription')
+            : t('admin.trash.purgeDeckDescription')"
         />
       </template>
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton
-            label="Annuler"
+            :label="t('common.actions.cancel')"
             color="neutral"
             variant="ghost"
             @click="purgeTarget = null"
           />
           <UButton
-            label="Supprimer définitivement"
+            :label="t('common.actions.deleteForever')"
             color="error"
             icon="i-lucide-trash-2"
             :loading="busy"

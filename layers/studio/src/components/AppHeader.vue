@@ -43,7 +43,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
         size="sm"
         variant="ghost"
         class="w-32"
-        @update:model-value="setLocale($event)"
+        @update:model-value="setLocale($event as typeof locale)"
       />
 
       <UColorModeButton />

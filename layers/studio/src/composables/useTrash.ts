@@ -15,6 +15,7 @@ export function useTrash() {
   const requestFetch = useRequestFetch()
   const queryCache = useQueryCache()
   const toast = useToast()
+  const { t } = useI18n()
   const { privileged } = useAppSession()
 
   // Trash is privileged-only: gating the query keeps an anonymous SSR pass from
@@ -36,14 +37,14 @@ export function useTrash() {
     ])
   }
   function toastError(error: any) {
-    toast.add({ title: error?.statusMessage || 'Échec', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: error?.statusMessage || t('admin.trash.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 
   const restore = useMutation({
-    mutation: (t: TrashTarget) => trashApi.restore(requestFetch, t),
-    onSuccess(_data, t) {
+    mutation: (target: TrashTarget) => trashApi.restore(requestFetch, target),
+    onSuccess(_data, target) {
       toast.add({
-        title: t.kind === 'project' ? 'Dossier restauré' : 'Présentation restaurée',
+        title: target.kind === 'project' ? t('admin.trash.folderRestored') : t('admin.trash.deckRestored'),
         icon: 'i-lucide-check',
         color: 'success',
       })
@@ -54,9 +55,9 @@ export function useTrash() {
   })
 
   const purge = useMutation({
-    mutation: (t: TrashTarget) => trashApi.purge(requestFetch, t),
+    mutation: (target: TrashTarget) => trashApi.purge(requestFetch, target),
     onSuccess() {
-      toast.add({ title: 'Supprimé définitivement', icon: 'i-lucide-check', color: 'success' })
+      toast.add({ title: t('admin.trash.purged'), icon: 'i-lucide-check', color: 'success' })
     },
     onError: toastError,
     onSettled: invalidateTrash,

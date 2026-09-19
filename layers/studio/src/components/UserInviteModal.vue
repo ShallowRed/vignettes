@@ -13,6 +13,7 @@ import { usersKeys } from '../queries/keys'
 const emit = defineEmits<{ invited: [account: UserAccount] }>()
 const open = defineModel<boolean>('open', { required: true })
 
+const { t } = useI18n()
 const toast = useToast()
 const requestFetch = useRequestFetch()
 const queryCache = useQueryCache()
@@ -23,11 +24,11 @@ const role = ref<Role>('viewer')
 const field = computed(() => handleField(provider.value))
 const valid = computed(() => isProviderHandle(provider.value, handle.value))
 
-const ROLE_ITEMS = [
-  { label: 'Lecteur', value: 'viewer' },
-  { label: 'Éditeur', value: 'editor' },
-  { label: 'Owner', value: 'owner' },
-]
+const roleItems = computed(() => [
+  { label: t('admin.role.viewer'), value: 'viewer' },
+  { label: t('admin.role.editor'), value: 'editor' },
+  { label: t('common.role.owner'), value: 'owner' },
+])
 
 watch(open, (isOpen) => {
   if (isOpen) {
@@ -46,12 +47,12 @@ const { mutate: submit, isLoading: busy } = useMutation({
   },
   async onSuccess(account) {
     await queryCache.invalidateQueries({ key: usersKeys.all })
-    toast.add({ title: 'Compte ajouté', description: `${account.login} peut recevoir des accès.`, icon: 'i-lucide-user-plus', color: 'success' })
+    toast.add({ title: t('admin.invite.added'), description: t('admin.invite.addedDescription', { login: account.login }), icon: 'i-lucide-user-plus', color: 'success' })
     open.value = false
     emit('invited', account)
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || 'Échec de l\'ajout', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: error?.statusMessage || t('admin.invite.addFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
 })
 
@@ -64,27 +65,27 @@ function add() {
 <template>
   <UModal
     v-model:open="open"
-    title="Ajouter un compte"
-    description="Le compte peut recevoir des accès avant même sa première connexion."
+    :title="t('admin.invite.title')"
+    :description="t('admin.invite.description')"
   >
     <template #body>
       <form
         class="flex flex-col gap-4"
         @submit.prevent="add"
       >
-        <UFormField :label="field.label">
+        <UFormField :label="t(field.labelKey)">
           <div class="flex items-center gap-2">
             <USelect
               v-model="provider"
               :items="IDENTITY_PROVIDER_ITEMS"
               class="w-28"
-              aria-label="Fournisseur de connexion"
+              :aria-label="t('admin.invite.provider')"
             />
             <UInput
               v-model="handle"
               :type="provider === 'google' ? 'email' : 'text'"
-              :placeholder="field.placeholder"
-              :aria-label="field.label"
+              :placeholder="t(field.placeholderKey)"
+              :aria-label="t(field.labelKey)"
               autofocus
               class="flex-1"
             />
@@ -92,32 +93,31 @@ function add() {
         </UFormField>
 
         <UFormField
-          label="Rôle global"
-          description="Lecteur convient au partage ponctuel : les accès se donnent ensuite par présentation ou par dossier."
+          :label="t('admin.invite.globalRole')"
+          :description="t('admin.invite.globalRoleDescription')"
         >
           <USelect
             v-model="role"
-            :items="ROLE_ITEMS"
+            :items="roleItems"
             class="w-full"
           />
         </UFormField>
 
         <p class="text-xs text-muted">
-          Aucun email n'est envoyé : partagez le lien vous-même. Le compte s'activera à sa première connexion
-          {{ provider === 'google' ? 'Google' : 'GitHub' }}.
+          {{ t('admin.invite.noEmail', { provider: provider === 'google' ? 'Google' : 'GitHub' }) }}
         </p>
       </form>
     </template>
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="open = false"
         />
         <UButton
-          label="Ajouter le compte"
+          :label="t('admin.invite.submit')"
           icon="i-lucide-user-plus"
           :disabled="!valid || busy"
           :loading="busy"
