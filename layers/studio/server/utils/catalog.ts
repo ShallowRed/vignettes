@@ -8,7 +8,7 @@ import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
 import { resolveSlideBackground } from '@vignettes/core/render'
 import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
 import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
-import { count, eq, gte } from 'drizzle-orm'
+import { count, eq, gte, inArray } from 'drizzle-orm'
 import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from '../db/schema'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
@@ -46,29 +46,73 @@ export async function unpublishedChanges(candidates: Set<string>): Promise<Set<s
   return changed
 }
 
-interface DeckStats {
+/** What a catalog card shows of a deck's content, read from its markdown. */
+interface VersionStats {
   slideCount: number
+  titleSlide: TitleSlide
+}
+
+interface DeckStats extends VersionStats {
   /** Latest of the metadata edit and the publish, in milliseconds. */
   updatedAt: number
   /** Last draft save, in milliseconds, which counts only for whoever may edit. */
   draftSavedAt?: number
-  titleSlide: TitleSlide
 }
 
-/** Slide count and dates of every published deck, from one query. */
+/**
+ * What the catalog reads from the markdown of a published version, by version
+ * id. A `deck_versions` row is immutable once the boot-time data migrations
+ * have run, so an entry stays valid.
+ */
+const versionStats = new Map<number, VersionStats>()
+
+function readVersionStats(raw: string): VersionStats {
+  return {
+    slideCount: slideRanges(raw, parserIdFor(splitFrontmatter(raw).data)).length,
+    titleSlide: readTitleSlide(raw),
+  }
+}
+
+/** Slide count and dates of every published deck; the markdown is read once per version. */
 function deckStats(): Map<string, DeckStats> {
-  const rows = useDb()
-    .select({ slug: decks.slug, updatedAt: decks.updatedAt, raw: deckVersions.raw, publishedAt: deckVersions.publishedAt, draftSavedAt: deckDrafts.updatedAt })
+  const db = useDb()
+  const rows = db
+    .select({ slug: decks.slug, versionId: deckVersions.id, updatedAt: decks.updatedAt, publishedAt: deckVersions.publishedAt, draftSavedAt: deckDrafts.updatedAt })
     .from(decks)
     .innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId))
     .leftJoin(deckDrafts, eq(deckDrafts.deckSlug, decks.slug))
     .all()
-  return new Map(rows.map(row => [row.slug, {
-    slideCount: slideRanges(row.raw, parserIdFor(splitFrontmatter(row.raw).data)).length,
-    updatedAt: Math.max(row.updatedAt.getTime(), row.publishedAt.getTime()),
-    draftSavedAt: row.draftSavedAt?.getTime(),
-    titleSlide: readTitleSlide(row.raw),
-  }]))
+
+  const published = new Set(rows.map(row => row.versionId))
+  // SQLite refuses a statement with more than 999 bound variables.
+  const missing = [...published].filter(id => !versionStats.has(id))
+  for (let from = 0; from < missing.length; from += 500) {
+    const batch = db
+      .select({ id: deckVersions.id, raw: deckVersions.raw })
+      .from(deckVersions)
+      .where(inArray(deckVersions.id, missing.slice(from, from + 500)))
+      .all()
+    for (const { id, raw } of batch)
+      versionStats.set(id, readVersionStats(raw))
+  }
+
+  for (const id of versionStats.keys()) {
+    if (!published.has(id))
+      versionStats.delete(id)
+  }
+
+  const stats = new Map<string, DeckStats>()
+  for (const row of rows) {
+    const version = versionStats.get(row.versionId)
+    if (!version)
+      continue
+    stats.set(row.slug, {
+      ...version,
+      updatedAt: Math.max(row.updatedAt.getTime(), row.publishedAt.getTime()),
+      draftSavedAt: row.draftSavedAt?.getTime(),
+    })
+  }
+  return stats
 }
 
 function deckPreview(stats: DeckStats | undefined, theme: string): Pick<PresentationListItem, 'preview'> {
