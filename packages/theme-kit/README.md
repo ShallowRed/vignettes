@@ -63,6 +63,14 @@ Code that works under any theme reads these custom properties only. A theme sets
 
 `_semantic-tokens.scss` declares the contract above. `_reveal-patches.scss` adapts Reveal.js defaults and bridges MDC's wrapper elements with `display: contents`. `_slide-structure.scss` is the flex skeleton of the three slide kinds the engine tags on each section: `slide-h1` for a title slide, `slide-h2` for a section divider, `slide-h3` for a heading with body. `_media-layouts.scss` is the grid behind the media layouts. `_spacing.scss` and `_quicklinks.scss` cover the spacing scale and the in-deck navigation links.
 
+## The base skin
+
+```scss
+@use 'pkg:@vignettes/theme-kit/base';
+```
+
+Applies the nine tokens to the page background, the text, the headings, the links, inline code, quotes, list markers and the navigation controls, with a system font. With the layout preset, a theme can consist of the nine tokens alone: [examples/themes](https://github.com/ShallowRed/vignettes/tree/main/examples/themes) holds a dark theme and a brand theme written that way. A theme that draws these elements itself leaves the base skin out.
+
 ## The layout preset
 
 ```scss

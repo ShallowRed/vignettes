@@ -25,6 +25,9 @@
     ".": {
       "sass": "./_index.scss"
     },
+    "./base": {
+      "sass": "./_base.scss"
+    },
     "./presets/dsfr-layout": {
       "sass": "./presets/dsfr-layout/_index.scss"
     }

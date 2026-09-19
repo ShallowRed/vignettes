@@ -109,6 +109,20 @@ A brand on the DSFR base:
 .reveal section.slide-h2 h2 { color: var(--dsfr-grey-950) !important; }
 ```
 
+A theme made of the nine tokens alone, with the base skin of the kit and the DSFR sizes (`examples/themes/exemple-sombre` and `exemple-marque` are complete examples):
+
+```scss
+@use 'pkg:@vignettes/theme-kit';
+@use 'pkg:@vignettes/theme-kit/base';
+@use 'pkg:@vignettes/theme-kit/presets/dsfr-layout';
+
+:root {
+  --accent: #c2410c;
+  --surface: #fffdf9;
+  // the seven other tokens of the contract
+}
+```
+
 A theme on the engine alone, with its own scale:
 
 ```scss
