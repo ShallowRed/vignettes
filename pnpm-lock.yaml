@@ -445,7 +445,7 @@ importers:
   packages/theme-dsfr:
     dependencies:
       '@vignettes/theme-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../theme-kit
 
   packages/theme-kit: {}

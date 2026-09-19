@@ -3,7 +3,24 @@
   "type": "module",
   "version": "0.1.0",
   "description": "Engine CSS layer for Vignettes themes: semantic token contract, Reveal patches, media layouts, slide structure, scale presets.",
+  "author": "Lucas Poulain",
   "license": "MIT",
+  "homepage": "https://github.com/ShallowRed/vignettes/tree/main/packages/theme-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShallowRed/vignettes.git",
+    "directory": "packages/theme-kit"
+  },
+  "bugs": "https://github.com/ShallowRed/vignettes/issues",
+  "keywords": [
+    "reveal.js",
+    "slides",
+    "presentation",
+    "theme",
+    "scss",
+    "sass",
+    "design-tokens"
+  ],
   "exports": {
     ".": {
       "sass": "./_index.scss"
@@ -15,5 +32,8 @@
   "files": [
     "*.scss",
     "presets"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
