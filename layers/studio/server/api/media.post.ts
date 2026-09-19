@@ -1,14 +1,9 @@
-import { createHash } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import process from 'node:process'
 import { isPrivileged } from '#shared/access'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
-import { imageExtFor, MAX_MEDIA_BYTES, mediaObjectKey } from '#shared/storage/media-s3'
-import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { MAX_MEDIA_BYTES } from '#shared/storage/media-s3'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../utils/access'
 import { getActorRole } from '../utils/actor'
+import { mediaNameOf, storeMedia } from '../utils/media-store'
 import { useDeckMeta, useMediaIndex } from '../utils/sources'
 
 /**
@@ -42,33 +37,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Expected a `file` upload' })
 
   const mime = file.type || ''
-  const ext = imageExtFor(mime)
-  if (!ext)
+  const name = mediaNameOf(file.data, mime)
+  if (!name)
     throw createError({ statusCode: 415, statusMessage: 'Unsupported image type' })
   if (file.data.length > MAX_MEDIA_BYTES)
     throw createError({ statusCode: 413, statusMessage: 'Image exceeds 10 MB' })
 
-  const hash = createHash('sha256').update(file.data).digest('hex').slice(0, 32)
-  const name = `${hash}.${ext}`
-
-  // Env read at runtime (NUXT_FROZEN_S3_* don't fit Nuxt's override convention).
-  const cfg = frozenS3ConfigFromEnv(process.env)
-
-  if (isFrozenS3Configured(cfg)) {
-    const s3 = makeFrozenS3Client(cfg)
-    await s3.send(new PutObjectCommand({
-      Bucket: cfg.bucket,
-      Key: mediaObjectKey(name),
-      Body: file.data,
-      ContentType: mime,
-      CacheControl: 'public, max-age=31536000, immutable',
-    }))
-  }
-  else {
-    const dir = join(process.cwd(), '.media')
-    await mkdir(dir, { recursive: true })
-    await writeFile(join(dir, name), file.data)
-  }
+  await storeMedia(name, file.data, mime)
 
   // The draft that references the image is saved a few seconds later.
   if (deck && await useDeckMeta().existsIncludingTrashed(deck))
