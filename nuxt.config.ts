@@ -3,7 +3,6 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { ROLES_THEME, ROLES_THEME_KEY } from '@vignettes/core/render'
 import { readBundleConfig } from '@vignettes/freeze/bundle'
-import presentationWatcher from './plugins/presentation-watcher.js'
 
 const bundle = readBundleConfig()
 
@@ -73,9 +72,6 @@ export default defineNuxtConfig({
   ignore: ['.claude/**', '.frozen/**'],
 
   vite: {
-    // Tailwind's vite plugin comes with @nuxt/ui; the theme watcher comes with
-    // the @vignettes/nuxt module. Only the content watcher is the app's own.
-    plugins: [presentationWatcher()],
     server: { watch: { ignored: ['**/.claude/**', '**/.frozen/**'] } },
     // The SSR Vite server runs in middleware mode with `hmr: false`; Vite then
     // still opens an unused websocket server on 24678, which collides with any

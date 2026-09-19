@@ -68,8 +68,6 @@ application and ships its TypeScript sources (`build.transpile` for Vite,
 - **`shared/access`** — "may this actor view/list/admin this deck?". Pure `Role`,
   `PublicationStatus`, `decideAccess`/`canList` capability matrix, env login→role resolution.
 - **`shared/collab`** — markdown ↔ Y.Doc conversion for the collaborative draft.
-- **`shared/content`** — declared content-source config + pure fetch-policy decision
-  (replaces the implicit submodule + token + ad-hoc-script tangle).
 - **`shared/presentations`** — catalog wire contract + status display config, shared by
   `GET /api/presentations` and the home/admin pages; the history contract and its order
   (`history.ts`); the family rules (`family.ts`: a replacement never loops, a family stays
