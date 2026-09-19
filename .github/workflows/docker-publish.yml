@@ -144,7 +144,7 @@ jobs:
           oidc-audience: infisical-vignettes
           project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
           env-slug: prod
-          secret-path: "/"
+          secret-path: /
 
       - name: Deploy to VPS over SSH
         env:
