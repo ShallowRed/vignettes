@@ -35,6 +35,21 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 | `backgrounds` | Background image per heading level (`h1`, `h2`, `h3`, `default`), relative to the theme directory or absolute URLs |
 | `entry` | SCSS entry, `<name>.scss` by default |
 | `assets` | Extra directories copied under `public/themes/<name>/`: `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root |
+| `preview` | How the catalog draws the card of a deck on this theme, without loading the theme's stylesheet |
+
+`preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names an SCSS entry declaring the font faces, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/fonts` is the value the DSFR theme uses. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another heading level, and `titleGradient: 'none'` removes the gradient there.
+
+```json
+{
+  "preview": {
+    "fontFamily": "Marianne, Arial, sans-serif",
+    "fonts": "pkg:@vignettes/theme-dsfr/fonts",
+    "titleColor": "#000091",
+    "textColor": "#3a3a3a",
+    "surface": "#ffffff"
+  }
+}
+```
 
 `packages/core/src/theme/tokens.generated.ts` is generated from the manifests of the application's themes by `scripts/build-theme-tokens.ts` and committed; it seeds the runtime registry in `packages/core/src/theme/tokens.ts` (`knownThemes`, `resolveThemeName`, `isKnownTheme`, `getThemeTokens`). Frontmatter accepts canonical names and aliases; `resolveThemeName` maps a name to the theme whose CSS is loaded.
 
@@ -68,7 +83,7 @@ pnpm build:theme brand                  # one theme
 node scripts/build-themes.ts --watch    # recompile on change
 ```
 
-`scripts/lib/theme-registry.ts` discovers the themes; `scripts/lib/theme-build.ts` compiles one theme with sass and its `pkg:` importer, so `@use 'pkg:@vignettes/theme-kit'` resolves from the application's `node_modules` wherever the theme directory is. `plugins/theme-watcher.js` watches theme directories and `packages/` during `nuxt dev` and reloads the page after a recompile. `server/plugins/theme-consistency.ts` warns at boot when a theme directory, its compiled CSS and the generated tokens disagree.
+`packages/nuxt/src/build/theme-registry.ts` discovers the themes; `packages/nuxt/src/build/theme-build.ts` compiles one theme with sass and its `NodePackageImporter`, so `@use 'pkg:@vignettes/theme-kit'` resolves from the application's `node_modules` wherever the theme directory is. `packages/nuxt/src/build/theme-watcher.js` watches theme directories and `packages/` during `nuxt dev` and reloads the page after a recompile. `server/plugins/theme-consistency.ts` warns at boot when a theme directory, its compiled CSS and the generated tokens disagree.
 
 ## Writing a theme
 
