@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { useDeckMessages } from '../composables/useDeckMessages.ts'
 import DeckControlButton from './DeckControlButton.vue'
 
 // The commands of a deck, gathered in the top-right corner: a discreet button
@@ -10,6 +11,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ print: [] }>()
+
+const messages = useDeckMessages()
 
 const open = ref(false)
 // Once open, the commands stop clipping their width, so the tooltips below them
@@ -113,7 +116,7 @@ async function copyLink() {
     class="deck-controls"
     :class="{ 'is-open': open, 'is-settled': settled, 'is-idle': idle && !open }"
     role="toolbar"
-    aria-label="Commandes de la présentation"
+    :aria-label="messages.controls"
     @mouseenter="show"
     @mouseleave="hide"
     @focusin="show"
@@ -132,7 +135,7 @@ async function copyLink() {
           <span class="deck-controls__separator" />
         </template>
         <DeckControlButton
-          label="Vue d’ensemble"
+          :label="messages.overview"
           shortcut="O"
           @click="toggleOverview"
         >
@@ -172,7 +175,7 @@ async function copyLink() {
           /></g></svg>
         </DeckControlButton>
         <DeckControlButton
-          label="Vue conférencier"
+          :label="messages.speakerView"
           shortcut="S"
           @click="openSpeakerView"
         >
@@ -189,7 +192,7 @@ async function copyLink() {
           /></svg>
         </DeckControlButton>
         <DeckControlButton
-          :label="fullscreen ? 'Quitter le plein écran' : 'Plein écran'"
+          :label="fullscreen ? messages.exitFullscreen : messages.enterFullscreen"
           shortcut="F"
           @click="toggleFullscreen"
         >
@@ -209,7 +212,7 @@ async function copyLink() {
         </DeckControlButton>
         <span class="deck-controls__separator" />
         <DeckControlButton
-          :label="copied ? 'Lien copié' : 'Copier le lien de cette diapositive'"
+          :label="copied ? messages.linkCopied : messages.copyLink"
           @click="copyLink"
         >
           <svg
@@ -233,7 +236,7 @@ async function copyLink() {
           ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></g></svg>
         </DeckControlButton>
         <DeckControlButton
-          label="Imprimer ou exporter en PDF"
+          :label="messages.print"
           @click="emit('print')"
         >
           <svg
@@ -264,7 +267,7 @@ async function copyLink() {
         <button
           type="button"
           class="deck-controls__toggle"
-          aria-label="Afficher les commandes"
+          :aria-label="messages.showControls"
           :aria-expanded="open"
           :tabindex="open ? -1 : 0"
           @click="openFromToggle"

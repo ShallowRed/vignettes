@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { inject, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { useDeckMessages } from '../../composables/useDeckMessages.ts'
 
 const props = defineProps<{
   theme?: 'default' | 'dark' | 'forest' | 'neutral'
   /** Reveal steps as node-id groups: `A,B|C|D` shows A and B, then C, then D; edges follow their later node. */
   steps?: string
 }>()
+
+const messages = useDeckMessages()
+
 const revealSync = inject<(() => void) | undefined>('revealSync', undefined)
 
 // Flowchart node ids look like `flowchart-A-12`, edge paths like `L_A_B_0`; node ids
@@ -292,8 +296,8 @@ onBeforeUnmount(() => {
       />
       <button
         class="expand-button"
-        aria-label="Agrandir le diagramme"
-        title="Plein écran"
+        :aria-label="messages.enlargeDiagram"
+        :title="messages.fullscreen"
         @click="openFullscreen"
       >
         <svg
@@ -352,7 +356,7 @@ onBeforeUnmount(() => {
         >
           <button
             class="mermaid-control-btn"
-            title="Zoom arrière"
+            :title="messages.zoomOut"
             @click="zoomBy(-0.15)"
           >
             <svg
@@ -372,7 +376,7 @@ onBeforeUnmount(() => {
           </button>
           <button
             class="mermaid-control-btn"
-            title="Réinitialiser"
+            :title="messages.zoomReset"
             @click="resetTransform"
           >
             <svg
@@ -392,7 +396,7 @@ onBeforeUnmount(() => {
           </button>
           <button
             class="mermaid-control-btn"
-            title="Zoom avant"
+            :title="messages.zoomIn"
             @click="zoomBy(0.15)"
           >
             <svg
@@ -417,7 +421,7 @@ onBeforeUnmount(() => {
           </button>
           <button
             class="mermaid-control-btn"
-            title="Fermer"
+            :title="messages.close"
             @click="closeFullscreen"
           >
             <svg

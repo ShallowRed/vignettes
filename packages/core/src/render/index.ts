@@ -1,4 +1,5 @@
 export * from './code-themes.ts'
+export * from './deck-messages.ts'
 export * from './embed-storybook.ts'
 export * from './print.ts'
 export * from './reveal.ts'

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { RevealConfig } from '../types/presentation.ts'
-import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
+import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref } from 'vue'
+import { DECK_MESSAGES_KEY } from '../config/injection-keys.ts'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
 import '../assets/code-theme.css'
@@ -49,6 +50,9 @@ const codeClass = computed(() => ({
   'reveal--code-theme': Object.keys(codeStyle.value).length > 0,
   'reveal--code-block': '--code-background' in deckCodeStyle.value,
 }))
+
+const messages = computed(() => deckMessages(props.lang))
+provide(DECK_MESSAGES_KEY, messages)
 
 const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().startsWith('fr'))
 
@@ -177,7 +181,7 @@ onUnmounted(() => {
         class="deck-veil__mark"
         aria-hidden="true"
       ><i /><i /><i /></span>
-      <span class="deck-veil__label">Chargement de la présentation</span>
+      <span class="deck-veil__label">{{ messages.loading }}</span>
     </div>
     <div class="slides">
       <slot />
@@ -189,22 +193,22 @@ onUnmounted(() => {
       v-if="isPrintMode"
       class="print-overlay"
     >
-      <p>Préparation de l’export PDF…</p>
+      <p>{{ messages.printPreparing }}</p>
       <p class="print-overlay__hint">
-        La fenêtre d’impression s’ouvre automatiquement — choisissez « Enregistrer en PDF ».
+        {{ messages.printHint }}
       </p>
       <button
         type="button"
         class="print-overlay__btn"
         @click="reopenPrintDialog"
       >
-        Rouvrir la fenêtre d’impression
+        {{ messages.printReopen }}
       </button>
       <a
         class="print-overlay__btn print-overlay__btn--ghost"
         :href="exitPrintUrl"
       >
-        Revenir à la présentation
+        {{ messages.printBack }}
       </a>
     </div>
     <DeckControls

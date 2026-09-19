@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDeckMessages } from '@vignettes/nuxt/runtime/composables/useDeckMessages'
 import { STORYBOOK_BASE } from '@vignettes/nuxt/runtime/config/injection-keys'
 import { computed, inject } from 'vue'
 import { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '../storybook.ts'
@@ -36,6 +37,8 @@ const props = withDefaults(defineProps<Props>(), {
   lightbox: false,
   grow: false,
 })
+
+const messages = useDeckMessages()
 
 const storybookBase = inject(STORYBOOK_BASE, undefined)
 
@@ -97,7 +100,7 @@ const scaledFrameStyle = computed(() =>
           frameborder="0"
           data-preload
         />
-        <span class="story-frame__hint">Cliquer pour agrandir</span>
+        <span class="story-frame__hint">{{ messages.enlarge }}</span>
       </a>
 
       <iframe

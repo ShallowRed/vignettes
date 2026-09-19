@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useDeckMessages } from '../../composables/useDeckMessages.ts'
+
 interface Props {
   src: string
   type?: 'iframe' | 'image'
@@ -19,6 +21,8 @@ const props = withDefaults(defineProps<Props>(), {
   ratio: '1:2',
   fit: 'cover',
 })
+
+const messages = useDeckMessages()
 </script>
 
 <template>
@@ -50,7 +54,7 @@ const props = withDefaults(defineProps<Props>(), {
           :alt="props.alt"
         >
         <div class="expand-hint">
-          <span>Cliquer pour agrandir</span>
+          <span>{{ messages.enlarge }}</span>
         </div>
       </a>
       <template v-else>

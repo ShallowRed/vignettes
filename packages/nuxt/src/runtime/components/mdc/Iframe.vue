@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useDeckMessages } from '../../composables/useDeckMessages.ts'
+
 interface Props {
   src: string
   title?: string
@@ -19,6 +21,8 @@ const props = withDefaults(defineProps<Props>(), {
   fullwidth: true,
   lightbox: false,
 })
+
+const messages = useDeckMessages()
 </script>
 
 <template>
@@ -41,7 +45,7 @@ const props = withDefaults(defineProps<Props>(), {
         data-preload
       />
       <div class="expand-hint">
-        <span>Cliquer pour agrandir</span>
+        <span>{{ messages.enlarge }}</span>
       </div>
     </a>
     <iframe
