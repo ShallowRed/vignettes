@@ -11,6 +11,7 @@ import { safeInsertPos } from '../utils/editor-commands'
  */
 export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
   const toast = useToast()
+  const { t } = useI18n()
 
   async function uploadImage(file: File): Promise<string> {
     const body = new FormData()
@@ -40,7 +41,7 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
         insertUploadedImage(view, view.state.selection.main.head, src)
       }
       catch {
-        toast.add({ title: 'Échec de l\'import de l\'image', icon: 'i-lucide-triangle-alert', color: 'error' })
+        toast.add({ title: t('editor.imageUpload.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
       }
     }
   }

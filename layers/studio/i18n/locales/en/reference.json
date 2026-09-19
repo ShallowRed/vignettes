@@ -1,1 +1,166 @@
-{}
+{
+  "reference": {
+    "help": {
+      "title": "Writer help",
+      "description": "Syntax, components and options of the slide engine.",
+      "structureHeading": "Slide structure",
+      "activeParser": "Active splitting: {active} (frontmatter {other} for the other mode).",
+      "componentsHeading": "Components",
+      "insertTooltip": "Insert into the document",
+      "insert": "Insert",
+      "annotationsHeading": "Slide annotations",
+      "layoutsIntro": "Layouts available for {annotation}:",
+      "frontmatterHeading": "Frontmatter",
+      "shortcutsHeading": "Shortcuts",
+      "completionTriggers": "The autocompletion triggers on {components}, {annotations} and in the frontmatter."
+    },
+    "structure": {
+      "headingTitle": "# Title: first slide (deck title)",
+      "headingHorizontal": "## Title: new horizontal slide",
+      "headingVertical": "### Title: vertical slide (stacked under the previous one)",
+      "headingBreak": "---: new horizontal slide without a title",
+      "separatorHorizontal": "---: new horizontal slide",
+      "separatorVertical": "----: vertical slide (stacked under the previous one)"
+    },
+    "components": {
+      "quote": "Quote with optional author, role and avatar",
+      "columns": "Side-by-side columns (::column, span for the widths)",
+      "highlight": "Highlight box (size sm/md, variant)",
+      "mermaid": "Mermaid diagram (flowchart, sequence…)",
+      "image": "Image with framing (fit, position, rounded, shadow)",
+      "fullScreenImage": "Full-screen image (fills the whole slide)",
+      "iframe": "Embedded web page (lightbox, fullwidth)",
+      "previewLink": "Link with a preview of the target",
+      "screens": "Gallery of Storybook screens (cols, gap, align)",
+      "storyFrame": "Live Storybook screen (story, ratio, previewWidth, lightbox)",
+      "icon": "Inline icon (Remix / Iconify)",
+      "iconLabel": ":i (icon)"
+    },
+    "annotations": {
+      "layout": "Layout of the slide (media-right, grid-compact, full…)",
+      "pretitle": "Text above the title (common thread, context)",
+      "subtitle": "Text below the title (section subtitle)",
+      "slideBackground": "Background image specific to this slide",
+      "quicklink": "Navigation link pinned to the bottom of the slide"
+    },
+    "templates": {
+      "twoColumns": {
+        "label": "Two columns",
+        "description": "Title + two columns with subheadings"
+      },
+      "threeColumns": {
+        "label": "Three columns",
+        "description": "Title + three columns"
+      },
+      "cover": {
+        "label": "Cover",
+        "description": "Cover slide: title + subtitle"
+      },
+      "section": {
+        "label": "Section",
+        "description": "Divider: pretitle + large part title"
+      },
+      "keyPoints": {
+        "label": "Key points",
+        "description": "Title + bulleted list"
+      },
+      "comparison": {
+        "label": "Comparison",
+        "description": "Two facing columns (before/after, pros/cons)"
+      },
+      "mediaText": {
+        "label": "Media + text",
+        "description": "Text on the left, image on the right (media-right layout)"
+      },
+      "quote": {
+        "label": "Quote",
+        "description": "Full-slide quote (author, role)"
+      },
+      "fullScreenImage": {
+        "label": "Full-screen image",
+        "description": "Image that fills the whole slide"
+      },
+      "storybookGallery": {
+        "label": "Storybook gallery",
+        "description": "Title + two Storybook screens side by side"
+      }
+    },
+    "frontmatter": {
+      "root": {
+        "title": "Title of the presentation",
+        "theme": "Visual theme",
+        "parser": "Slide splitting: separator (---) or heading (headings)",
+        "lang": "Language of the document; French typography applies in fr",
+        "project": "Catalog folder (also set in Sharing and settings)",
+        "status": "Visibility (Sharing and settings takes over once the presentation is published)",
+        "unlisted": "Reachable by link but absent from the catalog",
+        "storybook": "Address of the deployed Storybook, for the ::StoryFrame",
+        "backgrounds": "Background images per heading level",
+        "code": "Colors and font size of the code blocks: a theme (nuit, sombre, clair) or its settings",
+        "reveal": "Reveal.js options: format, numbering, transitions…",
+        "accessPassword": "Password of the semi-private status (better set in Sharing and settings)",
+        "titleDefault": "the identifier"
+      },
+      "backgrounds": {
+        "h1": "Background of the slides opened by a # heading",
+        "h2": "Background of the slides opened by a ## heading",
+        "h3": "Background of the slides opened by a ### heading",
+        "default": "Background of the other slides"
+      },
+      "code": {
+        "theme": "Starting code theme, which the other settings modify",
+        "background": "Background of the code blocks",
+        "border": "Border of the code blocks (CSS border property)",
+        "text": "Text with no particular role",
+        "key": "Keys (JSON, YAML)",
+        "string": "Strings",
+        "literal": "Numbers, booleans, null",
+        "keyword": "Language keywords",
+        "function": "Function names",
+        "comment": "Comments",
+        "punctuation": "Braces, brackets, commas, colons",
+        "keyWeight": "Font weight of the keys",
+        "size": "Minimum code font size, in slide pixels (960 × 700)",
+        "dim": "Opacity of the lines outside the active area of a JsonTour",
+        "activeBackground": "Background of the active area of a JsonTour",
+        "activeBar": "Bar of the active area of a JsonTour"
+      },
+      "reveal": {
+        "width": "Reference width of a slide, in pixels",
+        "height": "Reference height of a slide, in pixels",
+        "margin": "Margin around the slide, as a fraction of its size",
+        "slideNumber": "Slide number: c/t (current/total), h.v, c, or false",
+        "transition": "Transition between slides",
+        "center": "Centers the slide content vertically",
+        "controls": "On-screen navigation arrows",
+        "progress": "Progress bar at the bottom",
+        "fragments": "Shows fragments one at a time",
+        "fragmentInURL": "Writes the current fragment into the address",
+        "loop": "Returns to the first slide after the last one",
+        "navigationMode": "Keyboard navigation: default, linear or grid",
+        "autoSlide": "Automatic advance, in milliseconds (0: disabled)",
+        "showNotes": "Shows the speaker notes to everyone",
+        "pdfMaxPagesPerSlide": "Maximum pages per slide in the PDF export",
+        "pdfSeparateFragments": "One page per fragment in the PDF export"
+      }
+    },
+    "shortcuts": {
+      "saveDraft": "Save the draft",
+      "bold": "Bold",
+      "italic": "Italic",
+      "undo": "Undo",
+      "openCompletion": "Open the autocompletion",
+      "indent": "Indent (two spaces); Shift+Tab unindents",
+      "moveLine": "Move the line (Shift+Alt: duplicate it)",
+      "deleteLine": "Delete the line",
+      "comment": "Comment",
+      "selectNextOccurrence": "Select the next occurrence",
+      "selectAllOccurrences": "Select all occurrences",
+      "addCursor": "Add a cursor (Alt+click too)",
+      "findReplace": "Find and replace",
+      "blankLineBelow": "Blank line below (Shift: above)",
+      "lineWrap": "Line wrapping",
+      "formatJson": "Format the JSON block under the cursor (otherwise all of them)"
+    }
+  }
+}

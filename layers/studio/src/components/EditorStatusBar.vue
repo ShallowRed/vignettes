@@ -15,6 +15,8 @@ const emit = defineEmits<{ help: [] }>()
 
 const wrap = defineModel<boolean>('wrap', { default: false })
 
+const { t } = useI18n()
+
 function run(action: (view: EditorView) => unknown) {
   if (props.view) {
     action(props.view)
@@ -25,11 +27,11 @@ function run(action: (view: EditorView) => unknown) {
 
 <template>
   <div class="flex items-center gap-1 h-8 px-2 shrink-0 border-t border-default text-xs text-muted">
-    <span class="px-1 tabular-nums">Diapositive {{ slide }} sur {{ slideCount }}</span>
+    <span class="px-1 tabular-nums">{{ t('editor.statusBar.slidePosition', { slide, total: slideCount }) }}</span>
     <div class="flex-1" />
     <UButton
       icon="i-lucide-fold-vertical"
-      label="Replier les autres"
+      :label="t('editor.statusBar.foldOthers')"
       color="neutral"
       variant="ghost"
       size="xs"
@@ -38,7 +40,7 @@ function run(action: (view: EditorView) => unknown) {
     />
     <UButton
       icon="i-lucide-unfold-vertical"
-      label="Tout déplier"
+      :label="t('editor.statusBar.unfoldAll')"
       color="neutral"
       variant="ghost"
       size="xs"
@@ -51,7 +53,7 @@ function run(action: (view: EditorView) => unknown) {
     />
     <UButton
       icon="i-lucide-wrap-text"
-      label="Retour à la ligne"
+      :label="t('editor.statusBar.wrapLines')"
       color="neutral"
       :variant="wrap ? 'soft' : 'ghost'"
       size="xs"
@@ -60,7 +62,7 @@ function run(action: (view: EditorView) => unknown) {
     />
     <UButton
       icon="i-lucide-circle-help"
-      label="Aide"
+      :label="t('editor.statusBar.help')"
       color="neutral"
       variant="ghost"
       size="xs"

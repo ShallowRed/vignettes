@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS, SLIDE_TEMPLATES } from '../config/editor-reference'
+import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS, referenceLabel, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 import { formatJson, jsonFormatNotice } from '../utils/editor-json'
 
@@ -18,9 +18,10 @@ function run(action: (view: EditorView) => void) {
 }
 
 const toast = useToast()
+const { t } = useI18n()
 
 function beautifyJson(view: EditorView) {
-  const notice = jsonFormatNotice(formatJson(view))
+  const notice = jsonFormatNotice(formatJson(view), t)
   if (notice)
     toast.add({ ...notice, icon: 'i-lucide-braces' })
 }
@@ -34,11 +35,11 @@ const btnHover = 'hover:bg-accented'
 // tabbable snippet from the same reference the autocompletion uses.
 const insertItems = computed<DropdownMenuItem[][]>(() => [
   COMPONENT_SNIPPETS.map(entry => ({
-    label: entry.label,
+    label: referenceLabel(entry, t),
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
   })),
   ANNOTATION_SNIPPETS.map(entry => ({
-    label: entry.label,
+    label: referenceLabel(entry, t),
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
   })),
 ])
@@ -46,33 +47,33 @@ const insertItems = computed<DropdownMenuItem[][]>(() => [
 // Whole-slide starters (with lorem) — described in the tooltip for discoverability.
 const templateItems = computed<DropdownMenuItem[]>(() =>
   SLIDE_TEMPLATES.map(entry => ({
-    label: entry.label,
+    label: t(entry.labelKey),
     onSelect: () => run(view => insertSlideTemplate(view, entry.snippet)),
   })))
 
-const headingItems = [1, 2, 3].map(level => ({
-  label: `Titre ${level}`,
+const headingItems = computed<DropdownMenuItem[]>(() => [1, 2, 3].map(level => ({
+  label: t('editor.toolbar.heading', { level }),
   icon: `i-lucide-heading-${level}`,
   onSelect: () => run(view => setHeading(view, level)),
-}))
+})))
 
-const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: EditorView) => void }[][] = [
+const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action: (view: EditorView) => void }[][]>(() => [
   [
-    { tooltip: 'Gras', kbds: ['meta', 'B'], icon: 'i-lucide-bold', action: view => wrapSelection(view, '**', 'texte') },
-    { tooltip: 'Italique', kbds: ['meta', 'I'], icon: 'i-lucide-italic', action: view => wrapSelection(view, '*', 'texte') },
-    { tooltip: 'Barré', icon: 'i-lucide-strikethrough', action: view => wrapSelection(view, '~~', 'texte') },
-    { tooltip: 'Code', icon: 'i-lucide-code', action: view => wrapSelection(view, '`', 'code') },
+    { tooltip: t('editor.toolbar.bold'), kbds: ['meta', 'B'], icon: 'i-lucide-bold', action: view => wrapSelection(view, '**', t('editor.placeholders.text')) },
+    { tooltip: t('editor.toolbar.italic'), kbds: ['meta', 'I'], icon: 'i-lucide-italic', action: view => wrapSelection(view, '*', t('editor.placeholders.text')) },
+    { tooltip: t('editor.toolbar.strikethrough'), icon: 'i-lucide-strikethrough', action: view => wrapSelection(view, '~~', t('editor.placeholders.text')) },
+    { tooltip: t('editor.toolbar.code'), icon: 'i-lucide-code', action: view => wrapSelection(view, '`', t('editor.placeholders.code')) },
   ],
   [
-    { tooltip: 'Liste à puces', icon: 'i-lucide-list', action: view => toggleLinePrefix(view, '- ') },
-    { tooltip: 'Liste numérotée', icon: 'i-lucide-list-ordered', action: view => toggleLinePrefix(view, '1. ') },
-    { tooltip: 'Citation', icon: 'i-lucide-text-quote', action: view => toggleLinePrefix(view, '> ') },
+    { tooltip: t('editor.toolbar.bulletList'), icon: 'i-lucide-list', action: view => toggleLinePrefix(view, '- ') },
+    { tooltip: t('editor.toolbar.orderedList'), icon: 'i-lucide-list-ordered', action: view => toggleLinePrefix(view, '1. ') },
+    { tooltip: t('editor.toolbar.quote'), icon: 'i-lucide-text-quote', action: view => toggleLinePrefix(view, '> ') },
   ],
   [
-    { tooltip: 'Lien', icon: 'i-lucide-link', action: insertLink },
-    { tooltip: 'Image', icon: 'i-lucide-image', action: insertImage },
+    { tooltip: t('editor.toolbar.link'), icon: 'i-lucide-link', action: view => insertLink(view, t('editor.placeholders.text')) },
+    { tooltip: t('editor.toolbar.image'), icon: 'i-lucide-image', action: view => insertImage(view, t('editor.placeholders.imageDescription')) },
   ],
-]
+])
 </script>
 
 <template>
@@ -86,7 +87,7 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
         :class="btnHover"
         trailing-icon="i-lucide-chevron-down"
         :disabled="disabled || !view"
-        aria-label="Titre"
+        :aria-label="t('editor.toolbar.headingMenu')"
       />
     </UDropdownMenu>
 
@@ -116,14 +117,14 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
     </div>
 
     <div class="flex items-center gap-0.5 rounded-lg bg-elevated p-0.5">
-      <UTooltip text="Nouvelle diapositive">
+      <UTooltip :text="t('editor.toolbar.newSlide')">
         <UButton
           icon="i-lucide-between-horizontal-start"
           color="neutral"
           variant="ghost"
           size="sm"
           :class="btnHover"
-          label="Diapo"
+          :label="t('editor.toolbar.newSlideShort')"
           :disabled="disabled || !view"
           @click="run(insertSlideBreak)"
         />
@@ -140,7 +141,7 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
           variant="ghost"
           size="sm"
           :class="btnHover"
-          label="Modèles"
+          :label="t('editor.toolbar.templates')"
           trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
         />
@@ -157,14 +158,14 @@ const groups: { tooltip: string, kbds?: string[], icon: string, action: (view: E
           variant="ghost"
           size="sm"
           :class="btnHover"
-          label="Insérer"
+          :label="t('editor.toolbar.insert')"
           trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
         />
       </UDropdownMenu>
 
       <UTooltip
-        text="Mettre en forme le bloc JSON sous le curseur, sinon tous"
+        :text="t('editor.toolbar.formatJson')"
         :kbds="['meta', 'alt', 'L']"
       >
         <UButton

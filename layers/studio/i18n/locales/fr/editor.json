@@ -1,1 +1,115 @@
-{}
+{
+  "editor": {
+    "page": {
+      "backHome": "Retour à l'accueil",
+      "readOnly": "Lecture seule",
+      "peerEditing": "{name} édite en ce moment",
+      "anonymousPeer": "anonyme",
+      "history": "Historique",
+      "historyTooltip": "Versions publiées : comparer, restaurer",
+      "settings": "Partage et réglages",
+      "settingsTooltip": "Titre, accès, partage, dossier, thème, variantes et alias",
+      "settingsTooltipVisibilityOnly": "Visibilité",
+      "loadFailed": "Le chargement de la présentation a échoué",
+      "notFoundTitle": "Deck introuvable",
+      "backToCatalog": "Retour au catalogue",
+      "openedOnSlide": "Ouvert sur la diapositive {slide} sur {total}",
+      "metaLoadFailed": "Impossible de charger les métadonnées",
+      "sourcePane": "Source de la présentation",
+      "editorLoading": "Chargement de l'éditeur…"
+    },
+    "collab": {
+      "offline": "Hors ligne",
+      "connecting": "Connexion…",
+      "synced": "Brouillon synchronisé",
+      "saving": "Enregistrement…",
+      "hint": "Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.",
+      "switchToSolo": "Passer en solo",
+      "solo": "Solo",
+      "soloTooltip": "Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente"
+    },
+    "save": {
+      "saved": "Brouillon enregistré",
+      "conflict": "Quelqu'un a enregistré ce brouillon entre-temps : rechargez la page pour repartir de sa version (vos modifications resteraient à reporter).",
+      "failed": "Échec de l'enregistrement"
+    },
+    "publication": {
+      "publish": "Publier",
+      "published": "Publié",
+      "publishedDescription": "Les visiteurs voient maintenant cette version.",
+      "failed": "Échec de la publication",
+      "neverPublished": "Jamais publié",
+      "unpublishedChanges": "Modifications non publiées",
+      "upToDate": "Publié à jour",
+      "hintNeverPublished": "Les visiteurs ne voient encore rien : publiez le brouillon.",
+      "hintUnpublished": "Les visiteurs voient la version publiée. Publiez pour la mettre à jour.",
+      "hintUnpublishedSince": "Les visiteurs voient la version publiée le {date}. Publiez pour la mettre à jour.",
+      "hintUpToDate": "Le brouillon est identique à la version publiée.",
+      "hintUpToDateSince": "Le brouillon est identique à la version publiée le {date}."
+    },
+    "preview": {
+      "pane": "Aperçu",
+      "controls": "Commandes de l'aperçu",
+      "present": "Présenter",
+      "draftPreview": "Aperçu du brouillon, tel qu'il sera publié",
+      "placeholder": "La prévisualisation s'affichera ici.",
+      "fragmentSteps": "Afficher les fragments pas à pas",
+      "fragmentStepsActive": "Fragments pas à pas : l'aperçu montre le fragment sous le curseur",
+      "followCursor": "Suivre la diapositive au curseur",
+      "followCursorActive": "Suivi de la diapositive au curseur : activé"
+    },
+    "toolbar": {
+      "headingMenu": "Titre",
+      "heading": "Titre {level}",
+      "bold": "Gras",
+      "italic": "Italique",
+      "strikethrough": "Barré",
+      "code": "Code",
+      "bulletList": "Liste à puces",
+      "orderedList": "Liste numérotée",
+      "quote": "Citation",
+      "link": "Lien",
+      "image": "Image",
+      "newSlide": "Nouvelle diapositive",
+      "newSlideShort": "Diapo",
+      "templates": "Modèles",
+      "insert": "Insérer",
+      "formatJson": "Mettre en forme le bloc JSON sous le curseur, sinon tous"
+    },
+    "placeholders": {
+      "text": "texte",
+      "code": "code",
+      "imageDescription": "description"
+    },
+    "statusBar": {
+      "slidePosition": "Diapositive {slide} sur {total}",
+      "foldOthers": "Replier les autres",
+      "unfoldAll": "Tout déplier",
+      "wrapLines": "Retour à la ligne",
+      "help": "Aide"
+    },
+    "imageUpload": {
+      "failed": "Échec de l'import de l'image"
+    },
+    "json": {
+      "noBlock": "Aucun bloc ```json à mettre en forme",
+      "invalidLeft": "Bloc JSON invalide laissé tel quel | {n} blocs JSON invalides laissés tels quels",
+      "tourFormatted": "Bloc JSON de JsonTour mis en forme | {n} blocs JSON de JsonTour mis en forme",
+      "tourZonesMoved": "Les lignes nommées par les ::Zone ont pu se déplacer."
+    },
+    "folds": {
+      "frontmatter": "Métadonnées",
+      "unfold": "Déplier",
+      "lineCount": "{n} ligne | {n} ligne | {n} lignes"
+    },
+    "frontmatter": {
+      "describeWithDefault": "{description}. Par défaut : {value}.",
+      "defaultValue": "par défaut",
+      "block": "bloc",
+      "invalidYaml": "YAML invalide : {reason}",
+      "unknownKey": "Clé inconnue : « {key} » n'a aucun effet.",
+      "expectedValue": "Valeur attendue : {values}.",
+      "completionHint": "Ctrl + Espace : réglages disponibles"
+    }
+  }
+}

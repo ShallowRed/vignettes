@@ -6,28 +6,50 @@ import { SLIDE_LAYOUT_REGISTRY } from '@vignettes/nuxt/layouts'
 
 /**
  * Declarative authoring reference for the writer: one dataset feeding the
- * autocompletion, the toolbar "Insérer" menu and the help panel. Descriptions
+ * autocompletion, the toolbar "Insérer" menu and the help panel. Labels and
+ * descriptions are message keys of the `reference` locale file. Descriptions
  * and snippets mirror the engine contracts (packages/core/src/deck/components.ts,
  * packages/core/src/deck/schema.ts, the layout registry of @vignettes/nuxt) — extend those first, then here.
  *
  * Snippet placeholders use the CodeMirror snippet syntax: `${label}`.
  */
 
+export interface Translate {
+  (key: string): string
+  (key: string, plural: number): string
+  (key: string, named: Record<string, unknown>): string
+}
+
 export interface ReferenceSnippet {
-  /** Completion/menu label (`::Quote`, `theme`). */
+  /** Deck syntax of the entry (`::Quote`, `:layout`), shown as its label. */
   label: string
-  description: string
+  /** Message key of the label, for an entry whose label carries words. */
+  labelKey?: string
+  descriptionKey: string
   /** CodeMirror snippet template (tabbable `${…}` placeholders). */
   snippet: string
 }
 
+export interface SlideTemplate {
+  labelKey: string
+  descriptionKey: string
+  snippet: string
+}
+
+/** The label an entry displays: its translated label, or its deck syntax. */
+export function referenceLabel(entry: ReferenceSnippet, t: Translate): string {
+  return entry.labelKey ? t(entry.labelKey) : entry.label
+}
+
 export interface FrontmatterKey {
   key: string
-  description: string
+  descriptionKey: string
   /** Closed set of completable values, when the key has one. */
   values?: readonly string[]
   /** The value that applies when the key is absent. */
   default?: string
+  /** Message key of the default, when words describe it instead of a value. */
+  defaultKey?: string
   snippet: string
   /** Keys nested under this one. */
   children?: readonly FrontmatterKey[]
@@ -37,65 +59,65 @@ const BOOLEAN = ['true', 'false'] as const
 
 /** Reveal.js options a deck commonly sets, nested under `reveal:`. */
 const REVEAL_KEYS: readonly FrontmatterKey[] = [
-  { key: 'width', description: 'Largeur de référence d\'une diapo, en pixels', default: '960', snippet: 'width: ${1280}' },
-  { key: 'height', description: 'Hauteur de référence d\'une diapo, en pixels', default: '700', snippet: 'height: ${720}' },
-  { key: 'margin', description: 'Marge autour de la diapo, en fraction de sa taille', default: '0.1', snippet: 'margin: ${0.04}' },
-  { key: 'slideNumber', description: 'Numéro de diapo : c/t (courante/total), h.v, c, ou false', values: ['"c/t"', '"h.v"', '"c"', 'true', 'false'], default: '"c/t"', snippet: 'slideNumber: ${false}' },
-  { key: 'transition', description: 'Transition entre diapos', values: ['slide', 'fade', 'none', 'convex', 'concave', 'zoom'], default: 'slide', snippet: 'transition: ${fade}' },
-  { key: 'center', description: 'Centre verticalement le contenu des diapos', values: BOOLEAN, default: 'false', snippet: 'center: ${true}' },
-  { key: 'controls', description: 'Flèches de navigation à l\'écran', values: BOOLEAN, default: 'true', snippet: 'controls: ${false}' },
-  { key: 'progress', description: 'Barre de progression en bas', values: BOOLEAN, default: 'true', snippet: 'progress: ${false}' },
-  { key: 'fragments', description: 'Affiche les fragments un par un', values: BOOLEAN, default: 'true', snippet: 'fragments: ${false}' },
-  { key: 'fragmentInURL', description: 'Inscrit le fragment courant dans l\'adresse', values: BOOLEAN, default: 'false', snippet: 'fragmentInURL: ${true}' },
-  { key: 'loop', description: 'Revient à la première diapo après la dernière', values: BOOLEAN, default: 'false', snippet: 'loop: ${true}' },
-  { key: 'navigationMode', description: 'Navigation au clavier : default, linear ou grid', values: ['default', 'linear', 'grid'], default: 'default', snippet: 'navigationMode: ${linear}' },
-  { key: 'autoSlide', description: 'Avance automatique, en millisecondes (0 : désactivée)', default: '0', snippet: 'autoSlide: ${5000}' },
-  { key: 'showNotes', description: 'Affiche les notes de l\'orateur à tous', values: BOOLEAN, default: 'false', snippet: 'showNotes: ${true}' },
-  { key: 'pdfMaxPagesPerSlide', description: 'Pages maximum par diapo à l\'export PDF', snippet: 'pdfMaxPagesPerSlide: ${1}' },
-  { key: 'pdfSeparateFragments', description: 'Une page par fragment à l\'export PDF', values: BOOLEAN, default: 'true', snippet: 'pdfSeparateFragments: ${false}' },
+  { key: 'width', descriptionKey: 'reference.frontmatter.reveal.width', default: '960', snippet: 'width: ${1280}' },
+  { key: 'height', descriptionKey: 'reference.frontmatter.reveal.height', default: '700', snippet: 'height: ${720}' },
+  { key: 'margin', descriptionKey: 'reference.frontmatter.reveal.margin', default: '0.1', snippet: 'margin: ${0.04}' },
+  { key: 'slideNumber', descriptionKey: 'reference.frontmatter.reveal.slideNumber', values: ['"c/t"', '"h.v"', '"c"', 'true', 'false'], default: '"c/t"', snippet: 'slideNumber: ${false}' },
+  { key: 'transition', descriptionKey: 'reference.frontmatter.reveal.transition', values: ['slide', 'fade', 'none', 'convex', 'concave', 'zoom'], default: 'slide', snippet: 'transition: ${fade}' },
+  { key: 'center', descriptionKey: 'reference.frontmatter.reveal.center', values: BOOLEAN, default: 'false', snippet: 'center: ${true}' },
+  { key: 'controls', descriptionKey: 'reference.frontmatter.reveal.controls', values: BOOLEAN, default: 'true', snippet: 'controls: ${false}' },
+  { key: 'progress', descriptionKey: 'reference.frontmatter.reveal.progress', values: BOOLEAN, default: 'true', snippet: 'progress: ${false}' },
+  { key: 'fragments', descriptionKey: 'reference.frontmatter.reveal.fragments', values: BOOLEAN, default: 'true', snippet: 'fragments: ${false}' },
+  { key: 'fragmentInURL', descriptionKey: 'reference.frontmatter.reveal.fragmentInURL', values: BOOLEAN, default: 'false', snippet: 'fragmentInURL: ${true}' },
+  { key: 'loop', descriptionKey: 'reference.frontmatter.reveal.loop', values: BOOLEAN, default: 'false', snippet: 'loop: ${true}' },
+  { key: 'navigationMode', descriptionKey: 'reference.frontmatter.reveal.navigationMode', values: ['default', 'linear', 'grid'], default: 'default', snippet: 'navigationMode: ${linear}' },
+  { key: 'autoSlide', descriptionKey: 'reference.frontmatter.reveal.autoSlide', default: '0', snippet: 'autoSlide: ${5000}' },
+  { key: 'showNotes', descriptionKey: 'reference.frontmatter.reveal.showNotes', values: BOOLEAN, default: 'false', snippet: 'showNotes: ${true}' },
+  { key: 'pdfMaxPagesPerSlide', descriptionKey: 'reference.frontmatter.reveal.pdfMaxPagesPerSlide', snippet: 'pdfMaxPagesPerSlide: ${1}' },
+  { key: 'pdfSeparateFragments', descriptionKey: 'reference.frontmatter.reveal.pdfSeparateFragments', values: BOOLEAN, default: 'true', snippet: 'pdfSeparateFragments: ${false}' },
 ]
 
 /** Background images per heading level, nested under `backgrounds:`. */
 const BACKGROUND_KEYS: readonly FrontmatterKey[] = [
-  { key: 'h1', description: 'Fond des diapos ouvertes par un titre #', snippet: 'h1: ${/backgrounds/title.svg}' },
-  { key: 'h2', description: 'Fond des diapos ouvertes par un titre ##', snippet: 'h2: ${/backgrounds/section.svg}' },
-  { key: 'h3', description: 'Fond des diapos ouvertes par un titre ###', snippet: 'h3: ${/backgrounds/subsection.svg}' },
-  { key: 'default', description: 'Fond des autres diapos', snippet: 'default: ${/backgrounds/default.svg}' },
+  { key: 'h1', descriptionKey: 'reference.frontmatter.backgrounds.h1', snippet: 'h1: ${/backgrounds/title.svg}' },
+  { key: 'h2', descriptionKey: 'reference.frontmatter.backgrounds.h2', snippet: 'h2: ${/backgrounds/section.svg}' },
+  { key: 'h3', descriptionKey: 'reference.frontmatter.backgrounds.h3', snippet: 'h3: ${/backgrounds/subsection.svg}' },
+  { key: 'default', descriptionKey: 'reference.frontmatter.backgrounds.default', snippet: 'default: ${/backgrounds/default.svg}' },
 ]
 
 /** Code theme properties, nested under `code:`; a name alone also works (`code: sombre`). */
 const CODE_KEYS: readonly FrontmatterKey[] = [
-  { key: 'theme', description: 'Thème de code de départ, que les autres réglages modifient', values: Object.keys(CODE_THEMES), snippet: 'theme: ${sombre}' },
-  { key: 'background', description: 'Fond des blocs de code', snippet: 'background: "${#161616}"' },
-  { key: 'border', description: 'Bordure des blocs de code (propriété CSS border)', snippet: 'border: "${1px solid #DDDDDD}"' },
-  { key: 'text', description: 'Texte sans rôle particulier', snippet: 'text: "${#F5F5FE}"' },
-  { key: 'key', description: 'Clés (JSON, YAML)', snippet: 'key: "${#F5F5FE}"' },
-  { key: 'string', description: 'Chaînes de caractères', snippet: 'string: "${#FFCA00}"' },
-  { key: 'literal', description: 'Nombres, booléens, null', snippet: 'literal: "${#6FE49D}"' },
-  { key: 'keyword', description: 'Mots-clés du langage', snippet: 'keyword: "${#FF8D7E}"' },
-  { key: 'function', description: 'Noms de fonctions', snippet: 'function: "${#A1A1F8}"' },
-  { key: 'comment', description: 'Commentaires', snippet: 'comment: "${#A6A6A6}"' },
-  { key: 'punctuation', description: 'Accolades, crochets, virgules, deux-points', snippet: 'punctuation: "${#C1C1C1}"' },
-  { key: 'keyWeight', description: 'Graisse des clés', values: ['400', '500', '600', '700'], snippet: 'keyWeight: ${700}' },
-  { key: 'size', description: 'Corps minimal du code, en pixels de diapo (960 × 700)', snippet: 'size: ${13}' },
-  { key: 'dim', description: 'Opacité des lignes hors de la zone active d\'un JsonTour', default: '0.4', snippet: 'dim: ${0.72}' },
-  { key: 'activeBackground', description: 'Fond de la zone active d\'un JsonTour', snippet: 'activeBackground: "${#E3E3FD}"' },
-  { key: 'activeBar', description: 'Barre de la zone active d\'un JsonTour', snippet: 'activeBar: "${#000091}"' },
+  { key: 'theme', descriptionKey: 'reference.frontmatter.code.theme', values: Object.keys(CODE_THEMES), snippet: 'theme: ${sombre}' },
+  { key: 'background', descriptionKey: 'reference.frontmatter.code.background', snippet: 'background: "${#161616}"' },
+  { key: 'border', descriptionKey: 'reference.frontmatter.code.border', snippet: 'border: "${1px solid #DDDDDD}"' },
+  { key: 'text', descriptionKey: 'reference.frontmatter.code.text', snippet: 'text: "${#F5F5FE}"' },
+  { key: 'key', descriptionKey: 'reference.frontmatter.code.key', snippet: 'key: "${#F5F5FE}"' },
+  { key: 'string', descriptionKey: 'reference.frontmatter.code.string', snippet: 'string: "${#FFCA00}"' },
+  { key: 'literal', descriptionKey: 'reference.frontmatter.code.literal', snippet: 'literal: "${#6FE49D}"' },
+  { key: 'keyword', descriptionKey: 'reference.frontmatter.code.keyword', snippet: 'keyword: "${#FF8D7E}"' },
+  { key: 'function', descriptionKey: 'reference.frontmatter.code.function', snippet: 'function: "${#A1A1F8}"' },
+  { key: 'comment', descriptionKey: 'reference.frontmatter.code.comment', snippet: 'comment: "${#A6A6A6}"' },
+  { key: 'punctuation', descriptionKey: 'reference.frontmatter.code.punctuation', snippet: 'punctuation: "${#C1C1C1}"' },
+  { key: 'keyWeight', descriptionKey: 'reference.frontmatter.code.keyWeight', values: ['400', '500', '600', '700'], snippet: 'keyWeight: ${700}' },
+  { key: 'size', descriptionKey: 'reference.frontmatter.code.size', snippet: 'size: ${13}' },
+  { key: 'dim', descriptionKey: 'reference.frontmatter.code.dim', default: '0.4', snippet: 'dim: ${0.72}' },
+  { key: 'activeBackground', descriptionKey: 'reference.frontmatter.code.activeBackground', snippet: 'activeBackground: "${#E3E3FD}"' },
+  { key: 'activeBar', descriptionKey: 'reference.frontmatter.code.activeBar', snippet: 'activeBar: "${#000091}"' },
 ]
 
 export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
-  { key: 'title', description: 'Titre de la présentation', default: 'l\'identifiant', snippet: 'title: "${Titre}"' },
-  { key: 'theme', description: 'Thème visuel', values: knownThemes(), snippet: 'theme: ${dsfr}' },
-  { key: 'parser', description: 'Découpage des diapos : separator (---) ou heading (titres)', values: ['separator', 'heading'], default: 'separator', snippet: 'parser: ${separator}' },
-  { key: 'lang', description: 'Langue du document ; la typographie française s\'applique en fr', values: ['fr', 'en'], default: 'fr', snippet: 'lang: ${fr}' },
-  { key: 'project', description: 'Dossier du catalogue (se règle aussi dans Partage et réglages)', snippet: 'project: ${slug-du-dossier}' },
-  { key: 'status', description: 'Visibilité (Partage et réglages prend le dessus une fois la présentation publiée)', values: PUBLICATION_STATUSES, default: 'private', snippet: 'status: ${private}' },
-  { key: 'unlisted', description: 'Accessible par lien mais absente du catalogue', values: BOOLEAN, default: 'false', snippet: 'unlisted: ${true}' },
-  { key: 'storybook', description: 'Adresse du Storybook déployé, pour les ::StoryFrame', snippet: 'storybook: ${https://storybook.example.com}' },
-  { key: 'backgrounds', description: 'Images de fond par niveau de titre', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
-  { key: 'code', description: 'Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages', values: Object.keys(CODE_THEMES), snippet: 'code: ${sombre}', children: CODE_KEYS },
-  { key: 'reveal', description: 'Options de Reveal.js : format, numérotation, transitions…', snippet: 'reveal:\n  width: ${1280}\n  height: ${720}', children: REVEAL_KEYS },
-  { key: 'accessPassword', description: 'Mot de passe du statut semi-private (se règle plutôt dans Partage et réglages)', snippet: 'accessPassword: ${motdepasse}' },
+  { key: 'title', descriptionKey: 'reference.frontmatter.root.title', defaultKey: 'reference.frontmatter.root.titleDefault', snippet: 'title: "${Titre}"' },
+  { key: 'theme', descriptionKey: 'reference.frontmatter.root.theme', values: knownThemes(), snippet: 'theme: ${dsfr}' },
+  { key: 'parser', descriptionKey: 'reference.frontmatter.root.parser', values: ['separator', 'heading'], default: 'separator', snippet: 'parser: ${separator}' },
+  { key: 'lang', descriptionKey: 'reference.frontmatter.root.lang', values: ['fr', 'en'], default: 'fr', snippet: 'lang: ${fr}' },
+  { key: 'project', descriptionKey: 'reference.frontmatter.root.project', snippet: 'project: ${slug-du-dossier}' },
+  { key: 'status', descriptionKey: 'reference.frontmatter.root.status', values: PUBLICATION_STATUSES, default: 'private', snippet: 'status: ${private}' },
+  { key: 'unlisted', descriptionKey: 'reference.frontmatter.root.unlisted', values: BOOLEAN, default: 'false', snippet: 'unlisted: ${true}' },
+  { key: 'storybook', descriptionKey: 'reference.frontmatter.root.storybook', snippet: 'storybook: ${https://storybook.example.com}' },
+  { key: 'backgrounds', descriptionKey: 'reference.frontmatter.root.backgrounds', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
+  { key: 'code', descriptionKey: 'reference.frontmatter.root.code', values: Object.keys(CODE_THEMES), snippet: 'code: ${sombre}', children: CODE_KEYS },
+  { key: 'reveal', descriptionKey: 'reference.frontmatter.root.reveal', snippet: 'reveal:\n  width: ${1280}\n  height: ${720}', children: REVEAL_KEYS },
+  { key: 'accessPassword', descriptionKey: 'reference.frontmatter.root.accessPassword', snippet: 'accessPassword: ${motdepasse}' },
 ]
 
 /** Keys a deck may still carry from older formats; known, never suggested. */
@@ -105,57 +127,58 @@ export const LEGACY_FRONTMATTER_KEYS: readonly string[] = ['access', 'transition
 export const COMPONENT_SNIPPETS: readonly ReferenceSnippet[] = [
   {
     label: '::Quote',
-    description: 'Citation avec auteur, rôle et avatar optionnels',
+    descriptionKey: 'reference.components.quote',
     snippet: '::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation.}\n::',
   },
   {
     label: ':::Columns',
-    description: 'Colonnes côte à côte (::column, span pour les largeurs)',
+    descriptionKey: 'reference.components.columns',
     snippet: ':::Columns\n::column\n${Colonne 1}\n::\n::column\n${Colonne 2}\n::\n:::',
   },
   {
     label: '::Highlight',
-    description: 'Encadré de mise en avant (size sm/md, variant)',
+    descriptionKey: 'reference.components.highlight',
     snippet: '::Highlight{size="${sm}"}\n${Message clé.}\n::',
   },
   {
     label: '::Mermaid',
-    description: 'Diagramme Mermaid (flowchart, sequence…)',
+    descriptionKey: 'reference.components.mermaid',
     snippet: '::Mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n::',
   },
   {
     label: '::Image',
-    description: 'Image avec cadrage (fit, position, rounded, shadow)',
+    descriptionKey: 'reference.components.image',
     snippet: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
     label: '::FullScreenImage',
-    description: 'Image plein écran (occupe toute la diapo)',
+    descriptionKey: 'reference.components.fullScreenImage',
     snippet: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
     label: '::Iframe',
-    description: 'Page web embarquée (lightbox, fullwidth)',
+    descriptionKey: 'reference.components.iframe',
     snippet: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::',
   },
   {
     label: '::PreviewLink',
-    description: 'Lien avec aperçu de la cible',
+    descriptionKey: 'reference.components.previewLink',
     snippet: '::PreviewLink{href="${https://exemple.fr}"}\n${Libellé du lien}\n::',
   },
   {
     label: ':::Screens',
-    description: 'Galerie d\'écrans Storybook (cols, gap, align)',
+    descriptionKey: 'reference.components.screens',
     snippet: ':::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n:::',
   },
   {
     label: '::StoryFrame',
-    description: 'Écran Storybook vivant (story, ratio, previewWidth, lightbox)',
+    descriptionKey: 'reference.components.storyFrame',
     snippet: '::StoryFrame{story="${id-de-la-story}" ratio="${16/9}" previewWidth="${760}" label="${Libellé}" lightbox}\n::',
   },
   {
-    label: ':i (icône)',
-    description: 'Icône en ligne (Remix / Iconify)',
+    label: ':i',
+    labelKey: 'reference.components.iconLabel',
+    descriptionKey: 'reference.components.icon',
     snippet: ':i{name="${ri:home-line}"}',
   },
 ] as const
@@ -164,27 +187,27 @@ export const COMPONENT_SNIPPETS: readonly ReferenceSnippet[] = [
 export const ANNOTATION_SNIPPETS: readonly ReferenceSnippet[] = [
   {
     label: ':layout',
-    description: 'Mise en page de la diapo (media-right, grid-compact, full…)',
+    descriptionKey: 'reference.annotations.layout',
     snippet: ':layout{name="${media-right}"}',
   },
   {
     label: ':pretitle',
-    description: 'Texte au-dessus du titre (fil rouge, contexte)',
+    descriptionKey: 'reference.annotations.pretitle',
     snippet: ':pretitle{text="${Contexte}"}',
   },
   {
     label: ':subtitle',
-    description: 'Texte sous le titre (sous-titre de section)',
+    descriptionKey: 'reference.annotations.subtitle',
     snippet: ':subtitle{text="${Sous-titre}"}',
   },
   {
     label: ':slide-background',
-    description: 'Image de fond propre à cette diapo',
+    descriptionKey: 'reference.annotations.slideBackground',
     snippet: ':slide-background{image="${/backgrounds/exemple.svg}"}',
   },
   {
     label: ':quicklink',
-    description: 'Lien de navigation épinglé en bas de diapo',
+    descriptionKey: 'reference.annotations.quicklink',
     snippet: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}',
   },
 ] as const
@@ -193,55 +216,55 @@ export const ANNOTATION_SNIPPETS: readonly ReferenceSnippet[] = [
  * Whole-slide starters with lorem placeholders, inserted from the toolbar
  * "Modèles" menu. Each leads with `---`, which opens a slide in both parsers.
  */
-export const SLIDE_TEMPLATES: readonly ReferenceSnippet[] = [
+export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
-    label: 'Deux colonnes',
-    description: 'Titre + deux colonnes avec sous-titres',
+    labelKey: 'reference.templates.twoColumns.label',
+    descriptionKey: 'reference.templates.twoColumns.description',
     snippet: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Sous-titre 1}\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n::\n::column\n### ${Sous-titre 2}\n${Sed do eiusmod tempor incididunt ut labore.}\n::\n:::',
   },
   {
-    label: 'Trois colonnes',
-    description: 'Titre + trois colonnes',
+    labelKey: 'reference.templates.threeColumns.label',
+    descriptionKey: 'reference.templates.threeColumns.description',
     snippet: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Colonne 1}\n${Lorem ipsum dolor sit amet.}\n::\n::column\n### ${Colonne 2}\n${Consectetur adipiscing elit.}\n::\n::column\n### ${Colonne 3}\n${Sed do eiusmod tempor.}\n::\n:::',
   },
   {
-    label: 'Couverture',
-    description: 'Diapo de garde : titre + sous-titre',
+    labelKey: 'reference.templates.cover.label',
+    descriptionKey: 'reference.templates.cover.description',
     snippet: '---\n\n## ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
   },
   {
-    label: 'Section',
-    description: 'Intercalaire : surtitre + grand titre de partie',
+    labelKey: 'reference.templates.section.label',
+    descriptionKey: 'reference.templates.section.description',
     snippet: '---\n\n## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
   },
   {
-    label: 'Points clés',
-    description: 'Titre + liste à puces',
+    labelKey: 'reference.templates.keyPoints.label',
+    descriptionKey: 'reference.templates.keyPoints.description',
     snippet: '---\n\n## ${Titre de la diapo}\n\n- ${Premier point clé}\n- ${Deuxième point clé}\n- ${Troisième point clé}',
   },
   {
-    label: 'Comparaison',
-    description: 'Deux colonnes en vis-à-vis (avant/après, pour/contre)',
+    labelKey: 'reference.templates.comparison.label',
+    descriptionKey: 'reference.templates.comparison.description',
     snippet: '---\n\n## ${Titre de la comparaison}\n\n:::Columns\n::column\n### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::column\n### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
   },
   {
-    label: 'Média + texte',
-    description: 'Texte à gauche, image à droite (layout media-right)',
+    labelKey: 'reference.templates.mediaText.label',
+    descriptionKey: 'reference.templates.mediaText.description',
     snippet: '---\n\n## ${Titre de la diapo}\n\n:layout{name="media-right"}\n\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n\n::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
-    label: 'Citation',
-    description: 'Citation pleine diapo (auteur, rôle)',
+    labelKey: 'reference.templates.quote.label',
+    descriptionKey: 'reference.templates.quote.description',
     snippet: '---\n\n::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation qui marque les esprits.}\n::',
   },
   {
-    label: 'Image plein écran',
-    description: 'Image qui occupe toute la diapo',
+    labelKey: 'reference.templates.fullScreenImage.label',
+    descriptionKey: 'reference.templates.fullScreenImage.description',
     snippet: '---\n\n::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
   },
   {
-    label: 'Galerie Storybook',
-    description: 'Titre + deux écrans Storybook côte à côte',
+    labelKey: 'reference.templates.storybookGallery.label',
+    descriptionKey: 'reference.templates.storybookGallery.description',
     snippet: '---\n\n## ${Titre de la démo}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n:::',
   },
 ] as const
@@ -250,38 +273,38 @@ export const LAYOUT_NAMES: readonly string[] = Object.keys(SLIDE_LAYOUT_REGISTRY
 
 export interface ShortcutEntry {
   keys: string[]
-  description: string
+  descriptionKey: string
 }
 
 export const EDITOR_SHORTCUTS: readonly ShortcutEntry[] = [
-  { keys: ['meta', 'S'], description: 'Enregistrer le brouillon' },
-  { keys: ['meta', 'B'], description: 'Gras' },
-  { keys: ['meta', 'I'], description: 'Italique' },
-  { keys: ['meta', 'Z'], description: 'Annuler' },
-  { keys: ['ctrl', 'space'], description: 'Ouvrir l\'autocomplétion' },
-  { keys: ['tab'], description: 'Indenter (deux espaces) ; Maj+Tab désindente' },
-  { keys: ['alt', 'arrowup'], description: 'Déplacer la ligne (Maj+Alt : la dupliquer)' },
-  { keys: ['meta', 'shift', 'K'], description: 'Supprimer la ligne' },
-  { keys: ['meta', '/'], description: 'Commenter' },
-  { keys: ['meta', 'D'], description: 'Sélectionner l\'occurrence suivante' },
-  { keys: ['meta', 'shift', 'L'], description: 'Sélectionner toutes les occurrences' },
-  { keys: ['meta', 'alt', 'arrowdown'], description: 'Ajouter un curseur (Alt+clic aussi)' },
-  { keys: ['meta', 'F'], description: 'Rechercher et remplacer' },
-  { keys: ['meta', 'enter'], description: 'Ligne vide en dessous (Maj : au-dessus)' },
-  { keys: ['alt', 'Z'], description: 'Retour à la ligne automatique' },
-  { keys: ['meta', 'alt', 'L'], description: 'Mettre en forme le bloc JSON sous le curseur (sinon tous)' },
+  { keys: ['meta', 'S'], descriptionKey: 'reference.shortcuts.saveDraft' },
+  { keys: ['meta', 'B'], descriptionKey: 'reference.shortcuts.bold' },
+  { keys: ['meta', 'I'], descriptionKey: 'reference.shortcuts.italic' },
+  { keys: ['meta', 'Z'], descriptionKey: 'reference.shortcuts.undo' },
+  { keys: ['ctrl', 'space'], descriptionKey: 'reference.shortcuts.openCompletion' },
+  { keys: ['tab'], descriptionKey: 'reference.shortcuts.indent' },
+  { keys: ['alt', 'arrowup'], descriptionKey: 'reference.shortcuts.moveLine' },
+  { keys: ['meta', 'shift', 'K'], descriptionKey: 'reference.shortcuts.deleteLine' },
+  { keys: ['meta', '/'], descriptionKey: 'reference.shortcuts.comment' },
+  { keys: ['meta', 'D'], descriptionKey: 'reference.shortcuts.selectNextOccurrence' },
+  { keys: ['meta', 'shift', 'L'], descriptionKey: 'reference.shortcuts.selectAllOccurrences' },
+  { keys: ['meta', 'alt', 'arrowdown'], descriptionKey: 'reference.shortcuts.addCursor' },
+  { keys: ['meta', 'F'], descriptionKey: 'reference.shortcuts.findReplace' },
+  { keys: ['meta', 'enter'], descriptionKey: 'reference.shortcuts.blankLineBelow' },
+  { keys: ['alt', 'Z'], descriptionKey: 'reference.shortcuts.lineWrap' },
+  { keys: ['meta', 'alt', 'L'], descriptionKey: 'reference.shortcuts.formatJson' },
 ] as const
 
-/** Slide structure rules, per parser. */
+/** Slide structure rules, per parser, as message keys. */
 export const STRUCTURE_HELP = {
   heading: [
-    '# Titre : première diapo (titre du deck)',
-    '## Titre : nouvelle diapo horizontale',
-    '### Titre : diapo verticale (empilée sous la précédente)',
-    '--- : nouvelle diapo horizontale sans titre',
+    'reference.structure.headingTitle',
+    'reference.structure.headingHorizontal',
+    'reference.structure.headingVertical',
+    'reference.structure.headingBreak',
   ],
   separator: [
-    '--- : nouvelle diapo horizontale',
-    '---- : diapo verticale (empilée sous la précédente)',
+    'reference.structure.separatorHorizontal',
+    'reference.structure.separatorVertical',
   ],
 } as const

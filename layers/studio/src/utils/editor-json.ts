@@ -1,4 +1,5 @@
 import type { EditorView } from '@codemirror/view'
+import type { Translate } from '../config/editor-reference'
 
 /** A fenced code block whose info string is `json`, located by the offsets of its content. */
 export interface JsonBlock {
@@ -105,12 +106,12 @@ export function formatJson(view: EditorView): JsonFormatResult {
 }
 
 /** The toast shown after formatting, or null when blocks were formatted without anything to say. */
-export function jsonFormatNotice(result: JsonFormatResult): { title: string, description?: string, color: 'neutral' | 'warning' } | null {
+export function jsonFormatNotice(result: JsonFormatResult, t: Translate): { title: string, description?: string, color: 'neutral' | 'warning' } | null {
   if (!result.blocks)
-    return { title: 'Aucun bloc ```json à mettre en forme', color: 'neutral' }
+    return { title: t('editor.json.noBlock'), color: 'neutral' }
   if (result.invalid)
-    return { title: result.invalid > 1 ? `${result.invalid} blocs JSON invalides laissés tels quels` : 'Bloc JSON invalide laissé tel quel', color: 'warning' }
+    return { title: t('editor.json.invalidLeft', result.invalid), color: 'warning' }
   if (result.tours)
-    return { title: result.tours > 1 ? `${result.tours} blocs JSON de JsonTour mis en forme` : 'Bloc JSON de JsonTour mis en forme', description: 'Les lignes nommées par les ::Zone ont pu se déplacer.', color: 'warning' }
+    return { title: t('editor.json.tourFormatted', result.tours), description: t('editor.json.tourZonesMoved'), color: 'warning' }
   return null
 }

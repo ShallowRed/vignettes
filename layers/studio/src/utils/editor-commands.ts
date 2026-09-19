@@ -38,10 +38,10 @@ export function toggleLinePrefix(view: EditorView, prefix: string): void {
   view.focus()
 }
 
-/** Turn the selection into a link, leaving the url placeholder selected. */
-export function insertLink(view: EditorView): void {
+/** Turn the selection into a link, leaving the url placeholder selected; no selection inserts `placeholder` as its text. */
+export function insertLink(view: EditorView, placeholder: string): void {
   const { from, to } = view.state.selection.main
-  const text = view.state.sliceDoc(from, to) || 'texte'
+  const text = view.state.sliceDoc(from, to) || placeholder
   const insert = `[${text}](url)`
   const urlStart = from + text.length + 3
   view.dispatch({
@@ -86,10 +86,10 @@ export function insertSlideTemplate(view: EditorView, template: string): void {
   view.focus()
 }
 
-/** Insert an image directive, url placeholder selected. */
-export function insertImage(view: EditorView): void {
+/** Insert an image directive, url placeholder selected; no selection inserts `placeholder` as its alternative text. */
+export function insertImage(view: EditorView, placeholder: string): void {
   const { from, to } = view.state.selection.main
-  const alt = view.state.sliceDoc(from, to) || 'description'
+  const alt = view.state.sliceDoc(from, to) || placeholder
   const insert = `![${alt}](url)`
   const urlStart = from + alt.length + 4
   view.dispatch({

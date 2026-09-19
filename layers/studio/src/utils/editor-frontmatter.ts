@@ -1,7 +1,7 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
 import type { EditorState, Extension, Range } from '@codemirror/state'
 import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
-import type { FrontmatterKey } from '../config/editor-reference'
+import type { FrontmatterKey, Translate } from '../config/editor-reference'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { Decoration, hoverTooltip, ViewPlugin, WidgetType } from '@codemirror/view'
 import { load, YAMLException } from 'js-yaml'
@@ -17,6 +17,7 @@ import { FRONTMATTER_KEYS, LEGACY_FRONTMATTER_KEYS } from '../config/editor-refe
 export interface FrontmatterOptions {
   /** Folder slugs completable on `project:`. */
   projects?: readonly string[]
+  t: Translate
 }
 
 /** Last line of the frontmatter block (1-based), or 0 without a closed block. */
@@ -80,11 +81,16 @@ function siblingKeys(state: EditorState, line: number, indent: number): Set<stri
   return keys
 }
 
-function describe(field: FrontmatterKey): string {
-  return field.default ? `${field.description}. Par défaut : ${field.default}.` : `${field.description}.`
+function describe(field: FrontmatterKey, t: Translate): string {
+  const description = t(field.descriptionKey)
+  const value = field.defaultKey ? t(field.defaultKey) : field.default
+  return value ? t('editor.frontmatter.describeWithDefault', { description, value }) : `${description}.`
 }
 
 function completionSource(options: FrontmatterOptions) {
+  const { t } = options
+  const defaultLabel = t('editor.frontmatter.defaultValue')
+  const blockLabel = t('editor.frontmatter.block')
   return (context: CompletionContext): CompletionResult | null => {
     const { state } = context
     const line = state.doc.lineAt(context.pos)
@@ -100,7 +106,7 @@ function completionSource(options: FrontmatterOptions) {
         return null
       return {
         from: context.pos - valueMatch[3]!.length,
-        options: values.map(value => ({ label: value, type: 'enum', detail: value === field?.default ? 'par défaut' : undefined })),
+        options: values.map(value => ({ label: value, type: 'enum', detail: value === field?.default ? defaultLabel : undefined })),
         validFor: /^\S*$/,
       }
     }
@@ -117,8 +123,8 @@ function completionSource(options: FrontmatterOptions) {
       .filter(field => !written.has(field.key))
       .map(field => snippetCompletion(field.snippet.replaceAll('\n', `\n${' '.repeat(indent)}`), {
         label: field.key,
-        detail: field.values ? field.values.join(' | ') : field.children ? 'bloc' : undefined,
-        info: describe(field),
+        detail: field.values ? field.values.join(' | ') : field.children ? blockLabel : undefined,
+        info: describe(field, t),
         type: 'property',
       }))
     return { from: line.from + indent, options: completions, validFor: /^[\w-]*$/ }
@@ -139,7 +145,7 @@ const OPEN_VALUES = new Set(['theme', 'lang', 'slideNumber', 'project'])
 
 const unquote = (value: string) => value.replace(/^(["'])(.*)\1$/, '$2')
 
-export function frontmatterProblems(state: EditorState): Problem[] {
+export function frontmatterProblems(state: EditorState, t: Translate): Problem[] {
   const end = frontmatterEnd(state)
   if (!end)
     return []
@@ -151,7 +157,7 @@ export function frontmatterProblems(state: EditorState): Problem[] {
   catch (error) {
     if (error instanceof YAMLException) {
       const line = state.doc.line(Math.min(end - 1, Math.max(2, error.mark.line + 2)))
-      problems.push({ from: line.from, to: Math.max(line.to, line.from + 1), severity: 'error', message: `YAML invalide : ${error.reason}` })
+      problems.push({ from: line.from, to: Math.max(line.to, line.from + 1), severity: 'error', message: t('editor.frontmatter.invalidYaml', { reason: error.reason }) })
       return problems
     }
   }
@@ -170,7 +176,7 @@ export function frontmatterProblems(state: EditorState): Problem[] {
       const known = indent === 0 && LEGACY_FRONTMATTER_KEYS.includes(match[2]!)
       // Reveal takes many more options than the guide lists.
       if (!known && scope && scope.parent?.key !== 'reveal')
-        problems.push({ from: keyFrom, to: keyTo, severity: 'info', message: `Clé inconnue : « ${match[2]} » n'a aucun effet.` })
+        problems.push({ from: keyFrom, to: keyTo, severity: 'info', message: t('editor.frontmatter.unknownKey', { key: match[2] }) })
       continue
     }
     const value = match[3]!.replace(/\s#.*$/, '').trim()
@@ -180,7 +186,7 @@ export function frontmatterProblems(state: EditorState): Problem[] {
         from: valueFrom,
         to: valueFrom + value.length,
         severity: 'warning',
-        message: `Valeur attendue : ${field.values.join(', ')}.`,
+        message: t('editor.frontmatter.expectedValue', { values: field.values.join(', ') }),
       })
     }
   }
@@ -196,87 +202,95 @@ const problemMarks = {
 // ── Hint ────────────────────────────────────────────────────────────────────
 
 class HintWidget extends WidgetType {
+  constructor(readonly text: string) {
+    super()
+  }
+
   override toDOM() {
     const hint = document.createElement('span')
     hint.className = 'cm-fm-hint'
-    hint.textContent = 'Ctrl + Espace : réglages disponibles'
+    hint.textContent = this.text
     return hint
   }
 
-  override eq() {
-    return true
+  override eq(other: HintWidget) {
+    return other.text === this.text
   }
 }
 
-const hint = Decoration.widget({ widget: new HintWidget(), side: 1 })
+function checks(t: Translate): Extension {
+  const hint = Decoration.widget({ widget: new HintWidget(t('editor.frontmatter.completionHint')), side: 1 })
 
-function decorate(state: EditorState, focused: boolean): DecorationSet {
-  const ranges: Range<Decoration>[] = frontmatterProblems(state).map(problem => problemMarks[problem.severity].range(problem.from, problem.to))
-  const { head, empty } = state.selection.main
-  const line = state.doc.lineAt(head)
-  if (focused && empty && !line.text.trim() && inFrontmatter(state, line.number))
-    ranges.push(hint.range(line.to))
-  return Decoration.set(ranges, true)
+  function decorate(state: EditorState, focused: boolean): DecorationSet {
+    const ranges: Range<Decoration>[] = frontmatterProblems(state, t).map(problem => problemMarks[problem.severity].range(problem.from, problem.to))
+    const { head, empty } = state.selection.main
+    const line = state.doc.lineAt(head)
+    if (focused && empty && !line.text.trim() && inFrontmatter(state, line.number))
+      ranges.push(hint.range(line.to))
+    return Decoration.set(ranges, true)
+  }
+
+  return ViewPlugin.fromClass(class {
+    decorations: DecorationSet
+    constructor(view: EditorView) {
+      this.decorations = decorate(view.state, view.hasFocus)
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.selectionSet || update.focusChanged)
+        this.decorations = decorate(update.state, update.view.hasFocus)
+    }
+  }, { decorations: plugin => plugin.decorations })
 }
-
-const checks = ViewPlugin.fromClass(class {
-  decorations: DecorationSet
-  constructor(view: EditorView) {
-    this.decorations = decorate(view.state, view.hasFocus)
-  }
-
-  update(update: ViewUpdate) {
-    if (update.docChanged || update.selectionSet || update.focusChanged)
-      this.decorations = decorate(update.state, update.view.hasFocus)
-  }
-}, { decorations: plugin => plugin.decorations })
 
 // ── Tooltip ─────────────────────────────────────────────────────────────────
 
-const tooltip = hoverTooltip((view, pos) => {
-  const { state } = view
-  const line = state.doc.lineAt(pos)
-  if (!inFrontmatter(state, line.number))
-    return null
-  const problem = frontmatterProblems(state).find(p => p.from <= pos && pos <= p.to)
-  const match = KEY_LINE_RE.exec(line.text)
-  const keyFrom = match ? line.from + match[1]!.length : 0
-  const onKey = match && pos >= keyFrom && pos <= keyFrom + match[2]!.length
-  const field = onKey ? fieldAt(state, line.number) : undefined
-  if (!problem && !field)
-    return null
-  return {
-    pos: problem?.from ?? keyFrom,
-    end: problem?.to ?? keyFrom + match![2]!.length,
-    above: true,
-    create: () => {
-      const dom = document.createElement('div')
-      dom.className = 'cm-fm-tooltip'
-      if (field) {
-        const title = document.createElement('code')
-        title.className = 'cm-fm-tooltip__key'
-        title.textContent = field.key
-        const text = document.createElement('p')
-        text.textContent = describe(field)
-        dom.append(title, text)
-        if (field.values) {
-          const values = document.createElement('p')
-          values.className = 'cm-fm-tooltip__values'
-          values.textContent = field.values.join(' · ')
-          dom.append(values)
+function tooltip(t: Translate): Extension {
+  return hoverTooltip((view, pos) => {
+    const { state } = view
+    const line = state.doc.lineAt(pos)
+    if (!inFrontmatter(state, line.number))
+      return null
+    const problem = frontmatterProblems(state, t).find(p => p.from <= pos && pos <= p.to)
+    const match = KEY_LINE_RE.exec(line.text)
+    const keyFrom = match ? line.from + match[1]!.length : 0
+    const onKey = match && pos >= keyFrom && pos <= keyFrom + match[2]!.length
+    const field = onKey ? fieldAt(state, line.number) : undefined
+    if (!problem && !field)
+      return null
+    return {
+      pos: problem?.from ?? keyFrom,
+      end: problem?.to ?? keyFrom + match![2]!.length,
+      above: true,
+      create: () => {
+        const dom = document.createElement('div')
+        dom.className = 'cm-fm-tooltip'
+        if (field) {
+          const title = document.createElement('code')
+          title.className = 'cm-fm-tooltip__key'
+          title.textContent = field.key
+          const text = document.createElement('p')
+          text.textContent = describe(field, t)
+          dom.append(title, text)
+          if (field.values) {
+            const values = document.createElement('p')
+            values.className = 'cm-fm-tooltip__values'
+            values.textContent = field.values.join(' · ')
+            dom.append(values)
+          }
         }
-      }
-      if (problem) {
-        const text = document.createElement('p')
-        text.className = `cm-fm-tooltip__problem cm-fm-tooltip__problem--${problem.severity}`
-        text.textContent = problem.message
-        dom.append(text)
-      }
-      return { dom }
-    },
-  }
-})
+        if (problem) {
+          const text = document.createElement('p')
+          text.className = `cm-fm-tooltip__problem cm-fm-tooltip__problem--${problem.severity}`
+          text.textContent = problem.message
+          dom.append(text)
+        }
+        return { dom }
+      },
+    }
+  })
+}
 
-export function frontmatterGuide(options: FrontmatterOptions = {}): { source: ReturnType<typeof completionSource>, extension: Extension } {
-  return { source: completionSource(options), extension: [checks, tooltip] }
+export function frontmatterGuide(options: FrontmatterOptions): { source: ReturnType<typeof completionSource>, extension: Extension } {
+  return { source: completionSource(options), extension: [checks(options.t), tooltip(options.t)] }
 }

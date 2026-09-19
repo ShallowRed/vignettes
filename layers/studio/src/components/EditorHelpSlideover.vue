@@ -5,6 +5,7 @@ import {
   EDITOR_SHORTCUTS,
   FRONTMATTER_KEYS,
   LAYOUT_NAMES,
+  referenceLabel,
   STRUCTURE_HELP,
 } from '../config/editor-reference'
 
@@ -22,6 +23,8 @@ const emit = defineEmits<{ insert: [snippet: string] }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
+const { t } = useI18n()
+
 const structure = computed(() => STRUCTURE_HELP[props.parser])
 const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : 'heading'))
 </script>
@@ -29,8 +32,8 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
 <template>
   <USlideover
     v-model:open="open"
-    title="Aide du writer"
-    description="Syntaxe, composants et options du moteur de slides."
+    :title="t('reference.help.title')"
+    :description="t('reference.help.description')"
   >
     <template #body>
       <div class="flex flex-col gap-6">
@@ -40,19 +43,28 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               name="i-lucide-rows-3"
               class="size-4"
             />
-            Structure des diapos
+            {{ t('reference.help.structureHeading') }}
           </h3>
-          <p class="text-xs text-muted mb-2">
-            Découpage actif : <code class="font-mono">parser: {{ parser }}</code>
-            (frontmatter <code class="font-mono">parser: {{ otherParser }}</code> pour l'autre mode).
-          </p>
+          <i18n-t
+            keypath="reference.help.activeParser"
+            tag="p"
+            scope="global"
+            class="text-xs text-muted mb-2"
+          >
+            <template #active>
+              <code class="font-mono">parser: {{ parser }}</code>
+            </template>
+            <template #other>
+              <code class="font-mono">parser: {{ otherParser }}</code>
+            </template>
+          </i18n-t>
           <ul class="flex flex-col gap-1">
             <li
               v-for="rule in structure"
               :key="rule"
               class="text-sm font-mono text-toned"
             >
-              {{ rule }}
+              {{ t(rule) }}
             </li>
           </ul>
         </section>
@@ -65,7 +77,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               name="i-lucide-shapes"
               class="size-4"
             />
-            Composants
+            {{ t('reference.help.componentsHeading') }}
           </h3>
           <ul class="flex flex-col gap-2">
             <li
@@ -74,18 +86,18 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               class="flex items-start gap-2 rounded-lg bg-elevated px-3 py-2"
             >
               <div class="flex-1 min-w-0">
-                <code class="text-sm font-mono text-highlighted">{{ entry.label }}</code>
+                <code class="text-sm font-mono text-highlighted">{{ referenceLabel(entry, t) }}</code>
                 <p class="text-xs text-muted mt-0.5">
-                  {{ entry.description }}
+                  {{ t(entry.descriptionKey) }}
                 </p>
               </div>
-              <UTooltip text="Insérer dans le document">
+              <UTooltip :text="t('reference.help.insertTooltip')">
                 <UButton
                   icon="i-lucide-corner-down-left"
                   color="neutral"
                   variant="ghost"
                   size="xs"
-                  aria-label="Insérer"
+                  :aria-label="t('reference.help.insert')"
                   @click="emit('insert', entry.snippet)"
                 />
               </UTooltip>
@@ -101,7 +113,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               name="i-lucide-at-sign"
               class="size-4"
             />
-            Annotations de diapo
+            {{ t('reference.help.annotationsHeading') }}
           </h3>
           <ul class="flex flex-col gap-2">
             <li
@@ -110,26 +122,33 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               class="flex items-start gap-2 rounded-lg bg-elevated px-3 py-2"
             >
               <div class="flex-1 min-w-0">
-                <code class="text-sm font-mono text-highlighted">{{ entry.label }}</code>
+                <code class="text-sm font-mono text-highlighted">{{ referenceLabel(entry, t) }}</code>
                 <p class="text-xs text-muted mt-0.5">
-                  {{ entry.description }}
+                  {{ t(entry.descriptionKey) }}
                 </p>
               </div>
-              <UTooltip text="Insérer dans le document">
+              <UTooltip :text="t('reference.help.insertTooltip')">
                 <UButton
                   icon="i-lucide-corner-down-left"
                   color="neutral"
                   variant="ghost"
                   size="xs"
-                  aria-label="Insérer"
+                  :aria-label="t('reference.help.insert')"
                   @click="emit('insert', entry.snippet)"
                 />
               </UTooltip>
             </li>
           </ul>
-          <p class="text-xs text-muted mt-2">
-            Layouts disponibles pour <code class="font-mono">:layout</code> :
-          </p>
+          <i18n-t
+            keypath="reference.help.layoutsIntro"
+            tag="p"
+            scope="global"
+            class="text-xs text-muted mt-2"
+          >
+            <template #annotation>
+              <code class="font-mono">:layout</code>
+            </template>
+          </i18n-t>
           <div class="flex flex-wrap gap-1.5 mt-1.5">
             <UBadge
               v-for="name in LAYOUT_NAMES"
@@ -151,7 +170,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               name="i-lucide-file-cog"
               class="size-4"
             />
-            Frontmatter
+            {{ t('reference.help.frontmatterHeading') }}
           </h3>
           <ul class="flex flex-col gap-1.5">
             <li
@@ -165,7 +184,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
                 class="font-mono text-xs text-dimmed"
               > · {{ entry.values.join(' | ') }}</span>
               <p class="text-xs text-muted">
-                {{ entry.description }}
+                {{ t(entry.descriptionKey) }}
               </p>
             </li>
           </ul>
@@ -179,12 +198,12 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
               name="i-lucide-keyboard"
               class="size-4"
             />
-            Raccourcis
+            {{ t('reference.help.shortcutsHeading') }}
           </h3>
           <ul class="flex flex-col gap-1.5">
             <li
               v-for="entry in EDITOR_SHORTCUTS"
-              :key="entry.description"
+              :key="entry.descriptionKey"
               class="flex items-center gap-2 text-sm"
             >
               <UKbd
@@ -192,13 +211,22 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
                 :key="key"
                 :value="key"
               />
-              <span class="text-muted">{{ entry.description }}</span>
+              <span class="text-muted">{{ t(entry.descriptionKey) }}</span>
             </li>
           </ul>
-          <p class="text-xs text-muted mt-2">
-            L'autocomplétion se déclenche sur <code class="font-mono">::</code>,
-            <code class="font-mono">:</code> et dans le frontmatter.
-          </p>
+          <i18n-t
+            keypath="reference.help.completionTriggers"
+            tag="p"
+            scope="global"
+            class="text-xs text-muted mt-2"
+          >
+            <template #components>
+              <code class="font-mono">::</code>
+            </template>
+            <template #annotations>
+              <code class="font-mono">:</code>
+            </template>
+          </i18n-t>
         </section>
       </div>
     </template>

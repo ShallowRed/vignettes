@@ -1,10 +1,12 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
 import type { Extension } from '@codemirror/state'
+import type { ReferenceSnippet, Translate } from '../config/editor-reference'
 import { autocompletion, snippetCompletion } from '@codemirror/autocomplete'
 import {
   ANNOTATION_SNIPPETS,
   COMPONENT_SNIPPETS,
   LAYOUT_NAMES,
+  referenceLabel,
 } from '../config/editor-reference'
 import { frontmatterGuide } from './editor-frontmatter'
 
@@ -33,18 +35,13 @@ function inFrontmatter(context: CompletionContext): boolean {
   return here > 1
 }
 
-function bodySource() {
-  const componentCompletions: Completion[] = COMPONENT_SNIPPETS.map(entry =>
-    snippetCompletion(entry.snippet, {
-      label: entry.label,
-      info: entry.description,
-      type: 'class',
-    }))
-  const annotationCompletions: Completion[] = ANNOTATION_SNIPPETS.map(entry =>
-    snippetCompletion(entry.snippet, {
-      label: entry.label,
-      info: entry.description,
-      type: 'keyword',
+// Completions are built on each query so they follow a locale change.
+function bodySource(t: Translate) {
+  const build = (entries: readonly ReferenceSnippet[], type: string): Completion[] =>
+    entries.map(entry => snippetCompletion(entry.snippet, {
+      label: referenceLabel(entry, t),
+      info: t(entry.descriptionKey),
+      type,
     }))
 
   return (context: CompletionContext): CompletionResult | null => {
@@ -71,8 +68,8 @@ function bodySource() {
     const word = directiveMatch[3]!
     const from = context.pos - word.length - colons.length
     const options = colons.length >= 2
-      ? componentCompletions
-      : [...annotationCompletions, ...componentCompletions]
+      ? build(COMPONENT_SNIPPETS, 'class')
+      : [...build(ANNOTATION_SNIPPETS, 'keyword'), ...build(COMPONENT_SNIPPETS, 'class')]
     return { from, options, validFor: /^:{0,3}[\w-]*$/ }
   }
 }
@@ -82,19 +79,15 @@ function bodySource() {
  * name (`/quote`, `/columns`, `/layout`) and inserts the exact snippet. It gives
  * newcomers one discoverable entry point without knowing the `::`/`:` syntax.
  */
-function slashSource() {
-  const name = (label: string) => label.replace(/^:+/, '').split(/\s/)[0]!.toLowerCase()
-  const build = (entries: readonly { label: string, description: string, snippet: string }[], type: string) =>
+function slashSource(t: Translate) {
+  const name = (label: string) => label.replace(/^:+/, '').toLowerCase()
+  const build = (entries: readonly ReferenceSnippet[], type: string): Completion[] =>
     entries.map(entry => snippetCompletion(entry.snippet, {
       label: `/${name(entry.label)}`,
-      detail: entry.label,
-      info: entry.description,
+      detail: referenceLabel(entry, t),
+      info: t(entry.descriptionKey),
       type,
     }))
-  const options: Completion[] = [
-    ...build(COMPONENT_SNIPPETS, 'class'),
-    ...build(ANNOTATION_SNIPPETS, 'keyword'),
-  ]
 
   return (context: CompletionContext): CompletionResult | null => {
     if (inFrontmatter(context))
@@ -106,18 +99,21 @@ function slashSource() {
       return null
     return {
       from: context.pos - match[1]!.length - 1,
-      options,
+      options: [
+        ...build(COMPONENT_SNIPPETS, 'class'),
+        ...build(ANNOTATION_SNIPPETS, 'keyword'),
+      ],
       validFor: /^\/[\w-]*$/,
     }
   }
 }
 
 /** The full autocompletion extension for the writer. */
-export function deckCompletions(options: CompletionOptions = {}): Extension {
-  const frontmatter = frontmatterGuide(options)
+export function deckCompletions(options: CompletionOptions, t: Translate): Extension {
+  const frontmatter = frontmatterGuide({ ...options, t })
   return [
     autocompletion({
-      override: [frontmatter.source, slashSource(), bodySource()],
+      override: [frontmatter.source, slashSource(t), bodySource(t)],
       icons: false,
     }),
     frontmatter.extension,

@@ -1,5 +1,6 @@
 import type { EditorState, Extension, Range } from '@codemirror/state'
 import type { DecorationSet, ViewUpdate } from '@codemirror/view'
+import type { Translate } from '../config/editor-reference'
 import { codeFolding, foldEffect, foldGutter, foldKeymap, foldService, unfoldAll } from '@codemirror/language'
 import { Prec, RangeSet, StateField } from '@codemirror/state'
 import { Decoration, EditorView, gutterLineClass, GutterMarker, keymap, lineNumbers, MatchDecorator, ViewPlugin } from '@codemirror/view'
@@ -162,13 +163,13 @@ interface FoldSummary {
   lines: number
 }
 
-/** What a folded range stands for: its slide title, or the frontmatter. */
-function summarize(state: EditorState, range: { from: number, to: number }): FoldSummary {
+/** What a folded range stands for: its slide title, or `frontmatterLabel`. */
+function summarize(state: EditorState, range: { from: number, to: number }, frontmatterLabel: string): FoldSummary {
   const first = state.doc.lineAt(range.from)
   const last = state.doc.lineAt(range.to)
   const lines = last.number - first.number
   if (first.number === 1)
-    return { label: 'Métadonnées', lines }
+    return { label: frontmatterLabel, lines }
   if (!SEPARATOR_RE.test(first.text))
     return { label: '', lines }
   for (let n = first.number + 1; n <= last.number; n++) {
@@ -179,37 +180,41 @@ function summarize(state: EditorState, range: { from: number, to: number }): Fol
   return { label: '', lines }
 }
 
-const folding: Extension = [
-  codeFolding({
-    preparePlaceholder: summarize,
-    placeholderDOM: (_view, onclick, prepared: FoldSummary) => {
-      const element = document.createElement('span')
-      element.className = 'cm-slide-fold'
-      element.title = 'Déplier'
-      element.onclick = onclick
-      if (prepared.label) {
-        const label = document.createElement('span')
-        label.className = 'cm-slide-fold__label'
-        label.textContent = prepared.label
-        element.append(label)
-      }
-      const count = document.createElement('span')
-      count.className = 'cm-slide-fold__count'
-      count.textContent = `${prepared.lines} ligne${prepared.lines > 1 ? 's' : ''}`
-      element.append(count)
-      return element
-    },
-  }),
-  foldGutter({
-    markerDOM: (open) => {
-      const marker = document.createElement('span')
-      marker.className = `cm-fold-marker${open ? '' : ' cm-fold-marker--closed'}`
-      marker.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9l6 6l6-6"/></svg>'
-      return marker
-    },
-  }),
-  keymap.of(foldKeymap),
-]
+function folding(t: Translate): Extension {
+  const frontmatterLabel = t('editor.folds.frontmatter')
+  const unfoldLabel = t('editor.folds.unfold')
+  return [
+    codeFolding({
+      preparePlaceholder: (state, range) => summarize(state, range, frontmatterLabel),
+      placeholderDOM: (_view, onclick, prepared: FoldSummary) => {
+        const element = document.createElement('span')
+        element.className = 'cm-slide-fold'
+        element.title = unfoldLabel
+        element.onclick = onclick
+        if (prepared.label) {
+          const label = document.createElement('span')
+          label.className = 'cm-slide-fold__label'
+          label.textContent = prepared.label
+          element.append(label)
+        }
+        const count = document.createElement('span')
+        count.className = 'cm-slide-fold__count'
+        count.textContent = t('editor.folds.lineCount', prepared.lines)
+        element.append(count)
+        return element
+      },
+    }),
+    foldGutter({
+      markerDOM: (open) => {
+        const marker = document.createElement('span')
+        marker.className = `cm-fold-marker${open ? '' : ' cm-fold-marker--closed'}`
+        marker.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9l6 6l6-6"/></svg>'
+        return marker
+      },
+    }),
+    keymap.of(foldKeymap),
+  ]
+}
 
 /** Folds every slide except the one under the caret, and the frontmatter. */
 export function foldOtherSlides(view: EditorView): void {
@@ -346,11 +351,11 @@ const frontmatterHighlight = ViewPlugin.fromClass(class {
 }, { decorations: plugin => plugin.decorations })
 
 /** Everything the pane adds to CodeMirror for the deck structure. */
-export function deckStructure(): Extension[] {
+export function deckStructure(t: Translate): Extension[] {
   return [
     structureField,
     lineNumbers(),
-    folding,
+    folding(t),
     slideFolding,
     currentSlideField,
     componentHighlight,

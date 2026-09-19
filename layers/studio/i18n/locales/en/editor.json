@@ -1,1 +1,115 @@
-{}
+{
+  "editor": {
+    "page": {
+      "backHome": "Back to home",
+      "readOnly": "Read only",
+      "peerEditing": "{name} is editing right now",
+      "anonymousPeer": "anonymous",
+      "history": "History",
+      "historyTooltip": "Published versions: compare, restore",
+      "settings": "Sharing and settings",
+      "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
+      "settingsTooltipVisibilityOnly": "Visibility",
+      "loadFailed": "The deck failed to load",
+      "notFoundTitle": "Deck not found",
+      "backToCatalog": "Back to the catalog",
+      "openedOnSlide": "Opened on slide {slide} of {total}",
+      "metaLoadFailed": "Unable to load the metadata",
+      "sourcePane": "Deck source",
+      "editorLoading": "Loading the editor…"
+    },
+    "collab": {
+      "offline": "Offline",
+      "connecting": "Connecting…",
+      "synced": "Draft synced",
+      "saving": "Saving…",
+      "hint": "Draft shared in real time: every change is saved automatically and visible to the other editors.",
+      "switchToSolo": "Switch to solo",
+      "solo": "Solo",
+      "soloTooltip": "Solo mode: the draft is saved on demand, without overwriting a more recent version"
+    },
+    "save": {
+      "saved": "Draft saved",
+      "conflict": "Someone saved this draft in the meantime: reload the page to start again from their version (your changes would have to be applied again).",
+      "failed": "Saving failed"
+    },
+    "publication": {
+      "publish": "Publish",
+      "published": "Published",
+      "publishedDescription": "Visitors now see this version.",
+      "failed": "Publishing failed",
+      "neverPublished": "Never published",
+      "unpublishedChanges": "Unpublished changes",
+      "upToDate": "Published and up to date",
+      "hintNeverPublished": "Visitors do not see anything yet: publish the draft.",
+      "hintUnpublished": "Visitors see the published version. Publish to update it.",
+      "hintUnpublishedSince": "Visitors see the version published on {date}. Publish to update it.",
+      "hintUpToDate": "The draft is identical to the published version.",
+      "hintUpToDateSince": "The draft is identical to the version published on {date}."
+    },
+    "preview": {
+      "pane": "Preview",
+      "controls": "Preview commands",
+      "present": "Present",
+      "draftPreview": "Preview of the draft, as it will be published",
+      "placeholder": "The preview will appear here.",
+      "fragmentSteps": "Show fragments step by step",
+      "fragmentStepsActive": "Fragments step by step: the preview shows the fragment under the cursor",
+      "followCursor": "Follow the slide under the cursor",
+      "followCursorActive": "Following the slide under the cursor: on"
+    },
+    "toolbar": {
+      "headingMenu": "Heading",
+      "heading": "Heading {level}",
+      "bold": "Bold",
+      "italic": "Italic",
+      "strikethrough": "Strikethrough",
+      "code": "Code",
+      "bulletList": "Bulleted list",
+      "orderedList": "Numbered list",
+      "quote": "Quote",
+      "link": "Link",
+      "image": "Image",
+      "newSlide": "New slide",
+      "newSlideShort": "Slide",
+      "templates": "Templates",
+      "insert": "Insert",
+      "formatJson": "Format the JSON block under the cursor, otherwise all of them"
+    },
+    "placeholders": {
+      "text": "text",
+      "code": "code",
+      "imageDescription": "description"
+    },
+    "statusBar": {
+      "slidePosition": "Slide {slide} of {total}",
+      "foldOthers": "Fold the others",
+      "unfoldAll": "Unfold all",
+      "wrapLines": "Line wrapping",
+      "help": "Help"
+    },
+    "imageUpload": {
+      "failed": "The image upload failed"
+    },
+    "json": {
+      "noBlock": "No ```json block to format",
+      "invalidLeft": "Invalid JSON block left as is | {n} invalid JSON blocks left as is",
+      "tourFormatted": "JSON block of a JsonTour formatted | {n} JSON blocks of JsonTour formatted",
+      "tourZonesMoved": "The lines named by the ::Zone may have moved."
+    },
+    "folds": {
+      "frontmatter": "Metadata",
+      "unfold": "Unfold",
+      "lineCount": "{n} lines | {n} line | {n} lines"
+    },
+    "frontmatter": {
+      "describeWithDefault": "{description}. Default: {value}.",
+      "defaultValue": "default",
+      "block": "block",
+      "invalidYaml": "Invalid YAML: {reason}",
+      "unknownKey": "Unknown key: “{key}” has no effect.",
+      "expectedValue": "Expected value: {values}.",
+      "completionHint": "Ctrl + Space: available settings"
+    }
+  }
+}

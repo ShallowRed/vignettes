@@ -1,1 +1,166 @@
-{}
+{
+  "reference": {
+    "help": {
+      "title": "Aide du writer",
+      "description": "Syntaxe, composants et options du moteur de slides.",
+      "structureHeading": "Structure des diapos",
+      "activeParser": "Découpage actif : {active} (frontmatter {other} pour l'autre mode).",
+      "componentsHeading": "Composants",
+      "insertTooltip": "Insérer dans le document",
+      "insert": "Insérer",
+      "annotationsHeading": "Annotations de diapo",
+      "layoutsIntro": "Layouts disponibles pour {annotation} :",
+      "frontmatterHeading": "Frontmatter",
+      "shortcutsHeading": "Raccourcis",
+      "completionTriggers": "L'autocomplétion se déclenche sur {components}, {annotations} et dans le frontmatter."
+    },
+    "structure": {
+      "headingTitle": "# Titre : première diapo (titre du deck)",
+      "headingHorizontal": "## Titre : nouvelle diapo horizontale",
+      "headingVertical": "### Titre : diapo verticale (empilée sous la précédente)",
+      "headingBreak": "--- : nouvelle diapo horizontale sans titre",
+      "separatorHorizontal": "--- : nouvelle diapo horizontale",
+      "separatorVertical": "---- : diapo verticale (empilée sous la précédente)"
+    },
+    "components": {
+      "quote": "Citation avec auteur, rôle et avatar optionnels",
+      "columns": "Colonnes côte à côte (::column, span pour les largeurs)",
+      "highlight": "Encadré de mise en avant (size sm/md, variant)",
+      "mermaid": "Diagramme Mermaid (flowchart, sequence…)",
+      "image": "Image avec cadrage (fit, position, rounded, shadow)",
+      "fullScreenImage": "Image plein écran (occupe toute la diapo)",
+      "iframe": "Page web embarquée (lightbox, fullwidth)",
+      "previewLink": "Lien avec aperçu de la cible",
+      "screens": "Galerie d'écrans Storybook (cols, gap, align)",
+      "storyFrame": "Écran Storybook vivant (story, ratio, previewWidth, lightbox)",
+      "icon": "Icône en ligne (Remix / Iconify)",
+      "iconLabel": ":i (icône)"
+    },
+    "annotations": {
+      "layout": "Mise en page de la diapo (media-right, grid-compact, full…)",
+      "pretitle": "Texte au-dessus du titre (fil rouge, contexte)",
+      "subtitle": "Texte sous le titre (sous-titre de section)",
+      "slideBackground": "Image de fond propre à cette diapo",
+      "quicklink": "Lien de navigation épinglé en bas de diapo"
+    },
+    "templates": {
+      "twoColumns": {
+        "label": "Deux colonnes",
+        "description": "Titre + deux colonnes avec sous-titres"
+      },
+      "threeColumns": {
+        "label": "Trois colonnes",
+        "description": "Titre + trois colonnes"
+      },
+      "cover": {
+        "label": "Couverture",
+        "description": "Diapo de garde : titre + sous-titre"
+      },
+      "section": {
+        "label": "Section",
+        "description": "Intercalaire : surtitre + grand titre de partie"
+      },
+      "keyPoints": {
+        "label": "Points clés",
+        "description": "Titre + liste à puces"
+      },
+      "comparison": {
+        "label": "Comparaison",
+        "description": "Deux colonnes en vis-à-vis (avant/après, pour/contre)"
+      },
+      "mediaText": {
+        "label": "Média + texte",
+        "description": "Texte à gauche, image à droite (layout media-right)"
+      },
+      "quote": {
+        "label": "Citation",
+        "description": "Citation pleine diapo (auteur, rôle)"
+      },
+      "fullScreenImage": {
+        "label": "Image plein écran",
+        "description": "Image qui occupe toute la diapo"
+      },
+      "storybookGallery": {
+        "label": "Galerie Storybook",
+        "description": "Titre + deux écrans Storybook côte à côte"
+      }
+    },
+    "frontmatter": {
+      "root": {
+        "title": "Titre de la présentation",
+        "theme": "Thème visuel",
+        "parser": "Découpage des diapos : separator (---) ou heading (titres)",
+        "lang": "Langue du document ; la typographie française s'applique en fr",
+        "project": "Dossier du catalogue (se règle aussi dans Partage et réglages)",
+        "status": "Visibilité (Partage et réglages prend le dessus une fois la présentation publiée)",
+        "unlisted": "Accessible par lien mais absente du catalogue",
+        "storybook": "Adresse du Storybook déployé, pour les ::StoryFrame",
+        "backgrounds": "Images de fond par niveau de titre",
+        "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
+        "reveal": "Options de Reveal.js : format, numérotation, transitions…",
+        "accessPassword": "Mot de passe du statut semi-private (se règle plutôt dans Partage et réglages)",
+        "titleDefault": "l'identifiant"
+      },
+      "backgrounds": {
+        "h1": "Fond des diapos ouvertes par un titre #",
+        "h2": "Fond des diapos ouvertes par un titre ##",
+        "h3": "Fond des diapos ouvertes par un titre ###",
+        "default": "Fond des autres diapos"
+      },
+      "code": {
+        "theme": "Thème de code de départ, que les autres réglages modifient",
+        "background": "Fond des blocs de code",
+        "border": "Bordure des blocs de code (propriété CSS border)",
+        "text": "Texte sans rôle particulier",
+        "key": "Clés (JSON, YAML)",
+        "string": "Chaînes de caractères",
+        "literal": "Nombres, booléens, null",
+        "keyword": "Mots-clés du langage",
+        "function": "Noms de fonctions",
+        "comment": "Commentaires",
+        "punctuation": "Accolades, crochets, virgules, deux-points",
+        "keyWeight": "Graisse des clés",
+        "size": "Corps minimal du code, en pixels de diapo (960 × 700)",
+        "dim": "Opacité des lignes hors de la zone active d'un JsonTour",
+        "activeBackground": "Fond de la zone active d'un JsonTour",
+        "activeBar": "Barre de la zone active d'un JsonTour"
+      },
+      "reveal": {
+        "width": "Largeur de référence d'une diapo, en pixels",
+        "height": "Hauteur de référence d'une diapo, en pixels",
+        "margin": "Marge autour de la diapo, en fraction de sa taille",
+        "slideNumber": "Numéro de diapo : c/t (courante/total), h.v, c, ou false",
+        "transition": "Transition entre diapos",
+        "center": "Centre verticalement le contenu des diapos",
+        "controls": "Flèches de navigation à l'écran",
+        "progress": "Barre de progression en bas",
+        "fragments": "Affiche les fragments un par un",
+        "fragmentInURL": "Inscrit le fragment courant dans l'adresse",
+        "loop": "Revient à la première diapo après la dernière",
+        "navigationMode": "Navigation au clavier : default, linear ou grid",
+        "autoSlide": "Avance automatique, en millisecondes (0 : désactivée)",
+        "showNotes": "Affiche les notes de l'orateur à tous",
+        "pdfMaxPagesPerSlide": "Pages maximum par diapo à l'export PDF",
+        "pdfSeparateFragments": "Une page par fragment à l'export PDF"
+      }
+    },
+    "shortcuts": {
+      "saveDraft": "Enregistrer le brouillon",
+      "bold": "Gras",
+      "italic": "Italique",
+      "undo": "Annuler",
+      "openCompletion": "Ouvrir l'autocomplétion",
+      "indent": "Indenter (deux espaces) ; Maj+Tab désindente",
+      "moveLine": "Déplacer la ligne (Maj+Alt : la dupliquer)",
+      "deleteLine": "Supprimer la ligne",
+      "comment": "Commenter",
+      "selectNextOccurrence": "Sélectionner l'occurrence suivante",
+      "selectAllOccurrences": "Sélectionner toutes les occurrences",
+      "addCursor": "Ajouter un curseur (Alt+clic aussi)",
+      "findReplace": "Rechercher et remplacer",
+      "blankLineBelow": "Ligne vide en dessous (Maj : au-dessus)",
+      "lineWrap": "Retour à la ligne automatique",
+      "formatJson": "Mettre en forme le bloc JSON sous le curseur (sinon tous)"
+    }
+  }
+}

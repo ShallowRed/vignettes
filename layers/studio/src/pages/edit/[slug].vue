@@ -36,7 +36,7 @@ import { editorKeymap } from '../../utils/editor-keymap'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 definePageMeta({ layout: false })
 
@@ -97,25 +97,24 @@ const unpublished = computed<boolean | null>(() => {
   return raw.value !== publishedRaw.value
 })
 const publishedAtLabel = computed(() =>
-  publishedAt.value ? new Date(publishedAt.value).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : null)
+  publishedAt.value ? new Date(publishedAt.value).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' }) : null)
 const publicationLabel = computed(() =>
-  publishedRaw.value === null ? 'Jamais publié' : unpublished.value ? 'Modifications non publiées' : 'Publié à jour')
+  publishedRaw.value === null ? t('editor.publication.neverPublished') : unpublished.value ? t('editor.publication.unpublishedChanges') : t('editor.publication.upToDate'))
 const publicationHint = computed(() => {
-  const when = publishedAtLabel.value ? ` le ${publishedAtLabel.value}` : ''
   if (publishedRaw.value === null)
-    return 'Les visiteurs ne voient encore rien : publiez le brouillon.'
-  return unpublished.value
-    ? `Les visiteurs voient la version publiée${when}. Publiez pour la mettre à jour.`
-    : `Le brouillon est identique à la version publiée${when}.`
+    return t('editor.publication.hintNeverPublished')
+  const date = publishedAtLabel.value
+  if (unpublished.value)
+    return date ? t('editor.publication.hintUnpublishedSince', { date }) : t('editor.publication.hintUnpublished')
+  return date ? t('editor.publication.hintUpToDateSince', { date }) : t('editor.publication.hintUpToDate')
 })
 const collabLabel = computed(() => {
   if (collabStatus.value === 'disconnected')
-    return 'Hors ligne'
+    return t('editor.collab.offline')
   if (collabStatus.value !== 'connected' || !docSynced.value)
-    return 'Connexion…'
-  return synced.value ? 'Brouillon synchronisé' : 'Enregistrement…'
+    return t('editor.collab.connecting')
+  return synced.value ? t('editor.collab.synced') : t('editor.collab.saving')
 })
-const COLLAB_HINT = 'Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.'
 
 // The server acknowledges each keystroke within a moment; the indicator shows
 // the pending state only when it lasts, so it stays still while someone types.
@@ -135,8 +134,8 @@ const syncIndicator = computed(() => {
   if (collabStatus.value !== 'connected' || !docSynced.value)
     return { icon: 'i-lucide-loader-circle', class: 'text-dimmed animate-spin', label: collabLabel.value }
   if (savingShown.value)
-    return { icon: 'i-lucide-cloud-upload', class: 'text-warning', label: 'Enregistrement…' }
-  return { icon: 'i-lucide-cloud-check', class: 'text-muted', label: 'Brouillon synchronisé' }
+    return { icon: 'i-lucide-cloud-upload', class: 'text-warning', label: t('editor.collab.saving') }
+  return { icon: 'i-lucide-cloud-check', class: 'text-muted', label: t('editor.collab.synced') }
 })
 
 /** Re-read the published state after someone (maybe this client) published. */
@@ -151,7 +150,7 @@ function initials(name: string): string {
 }
 
 if (error.value) {
-  loadError.value = (error.value as any)?.statusMessage || 'Failed to load deck'
+  loadError.value = (error.value as any)?.statusMessage || t('editor.page.loadFailed')
 }
 else if (data.value) {
   deckStatus.value = data.value.status ?? 'private'
@@ -277,7 +276,7 @@ watch([raw, editorView], async ([text, view]) => {
   const line = view.state.doc.line(ranges[index]!.startLine)
   view.dispatch({ selection: { anchor: line.from }, effects: EditorView.scrollIntoView(line.from, { y: 'start', yMargin: 48 }) })
   view.focus()
-  toast.add({ title: `Ouvert sur la diapositive ${index + 1} sur ${ranges.length}`, icon: 'i-lucide-pencil' })
+  toast.add({ title: t('editor.page.openedOnSlide', { slide: index + 1, total: ranges.length }), icon: 'i-lucide-pencil' })
 }, { immediate: true })
 
 function toggleFollow() {
@@ -288,21 +287,21 @@ const shortcutKeymap = keymap.of([
   {
     key: 'Mod-b',
     run: (view) => {
-      wrapSelection(view, '**', 'texte')
+      wrapSelection(view, '**', t('editor.placeholders.text'))
       return true
     },
   },
   {
     key: 'Mod-i',
     run: (view) => {
-      wrapSelection(view, '*', 'texte')
+      wrapSelection(view, '*', t('editor.placeholders.text'))
       return true
     },
   },
   {
     key: 'Mod-Alt-l',
     run: (view) => {
-      const notice = jsonFormatNotice(formatJson(view))
+      const notice = jsonFormatNotice(formatJson(view), t)
       if (notice)
         toast.add({ ...notice, icon: 'i-lucide-braces' })
       return true
@@ -340,7 +339,7 @@ const projects = computed<Project[]>(() => projectsData.value ?? [])
 const breadcrumb = computed(() => {
   const project = projects.value.find(p => p.slug === viewer.value.project)
   return [
-    { label: 'Accueil', to: '/' },
+    { label: t('common.home'), to: '/' },
     ...(project ? [{ label: project.title, to: `/projects/${project.slug}` }] : []),
     { label: deckTitle.value || slug },
   ]
@@ -364,9 +363,9 @@ const extensions = computed<Extension[]>(() => [
   markdown({ codeLanguages: CODE_LANGUAGES }),
   ...(wrapLines.value ? [EditorView.lineWrapping] : []),
   highlightActiveLine(),
-  ...deckStructure(),
+  ...deckStructure(t),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
-  deckCompletions({ projects: projects.value.map(p => p.slug) }),
+  deckCompletions({ projects: projects.value.map(p => p.slug) }, t),
   cursorListener,
   shortcutKeymap,
   imageUploadHandlers,
@@ -467,10 +466,10 @@ async function startCollab() {
   // Remote carets show the account name, with a colour derived from the login
   // so it stays the same across reloads.
   const palette = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#008080']
-  const login = user.value?.login ?? 'anonyme'
-  const hue = [...login].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
+  const login = user.value?.login
+  const hue = [...(login ?? '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
   provider.awareness?.setLocalStateField('user', {
-    name: user.value?.name || login,
+    name: user.value?.name || login || t('editor.page.anonymousPeer'),
     color: palette[hue % palette.length],
   })
   provider.awareness?.on('change', () => {
@@ -534,15 +533,15 @@ async function save() {
     lastSaved.value = saved
     loadedFrom.value = 'draft'
     saveState.value = 'idle'
-    toast.add({ title: 'Brouillon enregistré', icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('editor.save.saved'), icon: 'i-lucide-check', color: 'success' })
   }
   catch (e: any) {
     saveState.value = 'error'
     // A 409 means someone saved this draft after we loaded it.
     toast.add({
       title: e?.statusCode === 409 || e?.data?.data?.conflict || e?.data?.conflict
-        ? 'Quelqu\'un a enregistré ce brouillon entre-temps : rechargez la page pour repartir de sa version (vos modifications resteraient à reporter).'
-        : e?.statusMessage || e?.message || 'Échec de l\'enregistrement',
+        ? t('editor.save.conflict')
+        : e?.statusMessage || e?.message || t('editor.save.failed'),
       icon: 'i-lucide-triangle-alert',
       color: 'error',
     })
@@ -569,11 +568,11 @@ async function publish() {
     publishedRaw.value = raw.value
     publishedAt.value = Date.now()
     publishState.value = 'idle'
-    toast.add({ title: 'Publié', description: 'Les visiteurs voient maintenant cette version.', icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('editor.publication.published'), description: t('editor.publication.publishedDescription'), icon: 'i-lucide-check', color: 'success' })
   }
   catch (e: any) {
     publishState.value = 'error'
-    toast.add({ title: e?.statusMessage || e?.message || 'Échec de la publication', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: e?.statusMessage || e?.message || t('editor.publication.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 }
 
@@ -617,7 +616,7 @@ async function openMeta() {
       metaOpen.value = true
   }
   catch {
-    toast.add({ title: 'Impossible de charger les métadonnées', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: t('editor.page.metaLoadFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 }
 
@@ -639,10 +638,10 @@ async function onMetaSaved() {
          path from the home page through the folder to this deck. The deck's
          own state and its publication sit on the right. -->
     <header class="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-default bg-default">
-      <UTooltip text="Retour à l'accueil">
+      <UTooltip :text="t('editor.page.backHome')">
         <NuxtLink
           to="/"
-          aria-label="Retour à l'accueil"
+          :aria-label="t('editor.page.backHome')"
           class="grid place-items-center size-8 shrink-0 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
           <VignettesMark class="w-5" />
@@ -660,7 +659,7 @@ async function onMetaSaved() {
       <span
         v-if="!writable"
         class="text-xs text-muted"
-      >Lecture seule</span>
+      >{{ t('editor.page.readOnly') }}</span>
 
       <div
         v-if="collabEnabled"
@@ -671,13 +670,13 @@ async function onMetaSaved() {
           :key="peer.name + peer.color"
           class="grid place-items-center size-6 rounded-full text-[10px] font-semibold text-white ring-2 ring-default"
           :style="{ backgroundColor: peer.color }"
-          :title="`${peer.name} édite en ce moment`"
+          :title="t('editor.page.peerEditing', { name: peer.name })"
         >{{ initials(peer.name) }}</span>
       </div>
 
-      <UTooltip text="Versions publiées : comparer, restaurer">
+      <UTooltip :text="t('editor.page.historyTooltip')">
         <UButton
-          label="Historique"
+          :label="t('editor.page.history')"
           icon="i-lucide-history"
           color="neutral"
           variant="outline"
@@ -692,7 +691,7 @@ async function onMetaSaved() {
            shows the current visibility, beside the other states of the deck. -->
       <UTooltip
         v-if="statusDisplay"
-        :text="privileged ? 'Titre, accès, partage, dossier, thème, variantes et alias' : 'Visibilité'"
+        :text="privileged ? t('editor.page.settingsTooltip') : t('editor.page.settingsTooltipVisibilityOnly')"
       >
         <UButton
           color="neutral"
@@ -706,7 +705,7 @@ async function onMetaSaved() {
             name="i-lucide-settings-2"
             class="size-4"
           />
-          Partage et réglages
+          {{ t('editor.page.settings') }}
           <span class="h-4 w-px bg-accented" />
           <span class="flex items-center gap-1 text-muted">
             <UIcon
@@ -722,7 +721,7 @@ async function onMetaSaved() {
            which needs an action, adds text. -->
       <UTooltip
         v-if="collabEnabled"
-        :text="`${syncIndicator.label}. ${COLLAB_HINT}`"
+        :text="`${syncIndicator.label}. ${t('editor.collab.hint')}`"
       >
         <span class="flex items-center gap-1.5 text-xs">
           <UIcon
@@ -731,9 +730,9 @@ async function onMetaSaved() {
             :class="syncIndicator.class"
           />
           <template v-if="collabStatus === 'disconnected'">
-            <span class="text-error">Hors ligne</span>
+            <span class="text-error">{{ t('editor.collab.offline') }}</span>
             <UButton
-              label="Passer en solo"
+              :label="t('editor.collab.switchToSolo')"
               color="neutral"
               variant="link"
               size="xs"
@@ -744,9 +743,9 @@ async function onMetaSaved() {
         </span>
       </UTooltip>
       <template v-else-if="writable">
-        <UTooltip text="Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente">
+        <UTooltip :text="t('editor.collab.soloTooltip')">
           <UButton
-            label="Solo"
+            :label="t('editor.collab.solo')"
             icon="i-lucide-user"
             color="neutral"
             variant="link"
@@ -761,7 +760,7 @@ async function onMetaSaved() {
           size="lg"
         >
           <UButton
-            label="Enregistrer"
+            :label="t('common.actions.save')"
             icon="i-lucide-save"
             color="neutral"
             variant="outline"
@@ -781,7 +780,7 @@ async function onMetaSaved() {
           size="lg"
         >
           <UButton
-            :label="unpublished === false ? 'Publié' : 'Publier'"
+            :label="unpublished === false ? t('editor.publication.published') : t('editor.publication.publish')"
             :icon="unpublished === false ? 'i-lucide-check' : 'i-lucide-send'"
             :color="unpublished === false ? 'neutral' : 'primary'"
             :variant="unpublished === false ? 'outline' : 'solid'"
@@ -800,9 +799,9 @@ async function onMetaSaved() {
     >
       <UEmpty
         icon="i-lucide-file-x"
-        title="Deck introuvable"
+        :title="t('editor.page.notFoundTitle')"
         :description="loadError"
-        :actions="[{ label: 'Retour au catalogue', icon: 'i-lucide-arrow-left', color: 'neutral', variant: 'subtle', to: '/' }]"
+        :actions="[{ label: t('editor.page.backToCatalog'), icon: 'i-lucide-arrow-left', color: 'neutral', variant: 'subtle', to: '/' }]"
       />
     </div>
 
@@ -814,14 +813,14 @@ async function onMetaSaved() {
            the text below it, and the preview follows its caret. -->
       <section
         class="flex flex-col min-h-0 border-r border-default bg-default overflow-hidden"
-        aria-label="Source de la présentation"
+        :aria-label="t('editor.page.sourcePane')"
       >
         <EditorToolbar
           :view="editorView"
           :disabled="!writable"
         >
           <template #end>
-            <UTooltip :text="fragmentSteps ? 'Fragments pas à pas : l\'aperçu montre le fragment sous le curseur' : 'Afficher les fragments pas à pas'">
+            <UTooltip :text="fragmentSteps ? t('editor.preview.fragmentStepsActive') : t('editor.preview.fragmentSteps')">
               <UButton
                 icon="i-lucide-step-forward"
                 color="neutral"
@@ -829,11 +828,11 @@ async function onMetaSaved() {
                 size="sm"
                 :class="fragmentSteps ? 'text-primary' : ''"
                 :aria-pressed="fragmentSteps"
-                aria-label="Afficher les fragments pas à pas"
+                :aria-label="t('editor.preview.fragmentSteps')"
                 @click="toggleFragmentSteps"
               />
             </UTooltip>
-            <UTooltip :text="followCursor ? 'Suivi de la diapositive au curseur : activé' : 'Suivre la diapositive au curseur'">
+            <UTooltip :text="followCursor ? t('editor.preview.followCursorActive') : t('editor.preview.followCursor')">
               <UButton
                 icon="i-lucide-crosshair"
                 color="neutral"
@@ -841,7 +840,7 @@ async function onMetaSaved() {
                 size="sm"
                 :class="followCursor ? 'text-primary' : ''"
                 :aria-pressed="followCursor"
-                aria-label="Suivre la diapositive au curseur"
+                :aria-label="t('editor.preview.followCursor')"
                 @click="toggleFollow"
               />
             </UTooltip>
@@ -868,7 +867,7 @@ async function onMetaSaved() {
           />
           <template #fallback>
             <div class="flex-1 grid place-items-center text-muted text-sm">
-              Chargement de l'éditeur…
+              {{ t('editor.page.editorLoading') }}
             </div>
           </template>
         </ClientOnly>
@@ -886,15 +885,15 @@ async function onMetaSaved() {
       <section
         class="editor-stage relative min-h-0 overflow-hidden"
         :style="{ '--ratio': previewRatio }"
-        aria-label="Aperçu"
+        :aria-label="t('editor.preview.pane')"
       >
         <div
           class="editor-stage__controls"
           role="toolbar"
-          aria-label="Commandes de l'aperçu"
+          :aria-label="t('editor.preview.controls')"
         >
           <DeckControlButton
-            label="Présenter"
+            :label="t('editor.preview.present')"
             primary
             :to="`/slides/${slug}${cursorSlideHash}`"
             target="_blank"
@@ -904,7 +903,7 @@ async function onMetaSaved() {
           </DeckControlButton>
           <DeckControlButton
             v-if="writable"
-            label="Aperçu du brouillon, tel qu'il sera publié"
+            :label="t('editor.preview.draftPreview')"
             :to="`/slides/${slug}?draft${cursorSlideHash}`"
             target="_blank"
           >
@@ -935,11 +934,11 @@ async function onMetaSaved() {
               v-else
               class="h-full grid place-items-center text-muted text-sm p-8 text-center"
             >
-              La prévisualisation s'affichera ici.
+              {{ t('editor.preview.placeholder') }}
             </div>
             <template #fallback>
               <div class="h-full grid place-items-center text-muted text-sm p-8 text-center">
-                La prévisualisation s'affichera ici.
+                {{ t('editor.preview.placeholder') }}
               </div>
             </template>
           </ClientOnly>
