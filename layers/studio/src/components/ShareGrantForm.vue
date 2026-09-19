@@ -11,6 +11,8 @@ import { handleField, IDENTITY_PROVIDER_ITEMS } from '#shared/access'
  */
 const props = defineProps<{ sharing: ReturnType<typeof useSharing> }>()
 
+const { t } = useI18n()
+
 const {
   usersReady,
   grantableUsers,
@@ -44,11 +46,11 @@ const field = computed(() => handleField(inviteProvider.value))
 <template>
   <div class="flex flex-col gap-2">
     <template v-if="!noGrantable">
-      <UFormField label="Ajouter un accès">
+      <UFormField :label="t('deck.grantForm.addGrant')">
         <USelect
           v-model="grantUserId"
           :items="grantableUsers"
-          placeholder="Choisir un compte"
+          :placeholder="t('deck.grantForm.chooseAccount')"
           class="w-full"
         />
       </UFormField>
@@ -57,18 +59,18 @@ const field = computed(() => handleField(inviteProvider.value))
           v-model="grantRole"
           :items="grantRoleItems"
           class="flex-1"
-          aria-label="Niveau d'accès"
+          :aria-label="t('deck.grantForm.accessLevel')"
         />
         <USelect
           v-model="grantDays"
           :items="grantDurationItems"
           class="flex-1"
-          aria-label="Durée de l'accès"
+          :aria-label="t('deck.grantForm.accessDuration')"
         />
         <UButton
           icon="i-lucide-user-plus"
           :disabled="grantUserId == null || busy"
-          aria-label="Ajouter l'accès"
+          :aria-label="t('deck.grantForm.submitGrant')"
           @click="addGrant"
         />
       </div>
@@ -77,12 +79,12 @@ const field = computed(() => handleField(inviteProvider.value))
       v-else
       class="text-sm text-dimmed"
     >
-      Tous les comptes connus ont déjà accès. Autorisez-en un nouveau :
+      {{ t('deck.grantForm.allAccountsGranted') }}
     </p>
 
     <UButton
       v-if="!showInvite"
-      label="Autoriser un compte qui ne s'est jamais connecté…"
+      :label="t('deck.grantForm.authorizeNewAccount')"
       icon="i-lucide-user-plus"
       color="neutral"
       variant="subtle"
@@ -95,24 +97,24 @@ const field = computed(() => handleField(inviteProvider.value))
       class="flex flex-col gap-1.5"
       @submit.prevent="invite"
     >
-      <span class="text-sm font-medium text-default">{{ field.label }}</span>
+      <span class="text-sm font-medium text-default">{{ t(field.labelKey) }}</span>
       <div class="flex items-center gap-2">
         <USelect
           v-model="inviteProvider"
           :items="IDENTITY_PROVIDER_ITEMS"
           class="w-28"
-          aria-label="Fournisseur de connexion"
+          :aria-label="t('deck.grantForm.provider')"
         />
         <UInput
           v-model="inviteHandle"
           :type="isGoogle ? 'email' : 'text'"
-          :placeholder="field.placeholder"
-          :aria-label="field.label"
+          :placeholder="t(field.placeholderKey)"
+          :aria-label="t(field.labelKey)"
           autofocus
           class="flex-1"
         />
         <UButton
-          label="Autoriser"
+          :label="t('deck.grantForm.authorize')"
           icon="i-lucide-user-plus"
           :disabled="!inviteValid || busy"
           :loading="busy"
@@ -120,7 +122,7 @@ const field = computed(() => handleField(inviteProvider.value))
         />
       </div>
       <p class="text-xs text-muted">
-        Aucun email n'est envoyé : partagez le lien vous-même. L'accès s'appliquera dès sa première connexion {{ isGoogle ? 'Google' : 'GitHub' }}.
+        {{ t('deck.grantForm.noEmailNotice', { provider: isGoogle ? 'Google' : 'GitHub' }) }}
       </p>
     </form>
   </div>

@@ -12,6 +12,8 @@ const props = defineProps<{
 
 const open = defineModel<boolean>('open', { required: true })
 
+const { t, locale } = useI18n()
+
 // Grants + users load only while the slideover is open (enabled gate). The
 // whole bag also feeds ShareGrantForm (add + invite-by-email).
 const sharing = useSharing(() => ({ kind: 'project', slug: props.project.slug }), () => open.value)
@@ -21,8 +23,8 @@ const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
 <template>
   <USlideover
     v-model:open="open"
-    :title="`Accès · ${project.title}`"
-    description="Ouvre tout le dossier à un compte précis."
+    :title="t('deck.projectAccess.title', { project: project.title })"
+    :description="t('deck.projectAccess.description')"
   >
     <template #body>
       <div class="flex flex-col gap-4">
@@ -31,7 +33,7 @@ const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
             name="i-lucide-key-round"
             class="size-3.5 shrink-0"
           />
-          Un accès accordé ici ouvre toutes les présentations du dossier, privées comprises.
+          {{ t('deck.projectAccess.masterKeyHint') }}
         </p>
 
         <ul
@@ -50,18 +52,18 @@ const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
               size="xs"
               class="w-24"
               :disabled="busy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
-              :aria-label="`Rôle de ${grant.login}`"
+              :aria-label="t('deck.sharing.roleOf', { login: grant.login })"
               @update:model-value="(r: any) => changeGrantRole(grant, r)"
             />
             <span
               v-if="grant.invited"
               class="text-xs text-dimmed"
-            >· jamais connecté</span>
+            >· {{ t('deck.sharing.neverSignedIn') }}</span>
             <span
               v-if="grant.expiresAt"
               class="text-xs"
               :class="new Date(grant.expiresAt) < new Date() ? 'text-error' : 'text-dimmed'"
-            >· {{ new Date(grant.expiresAt) < new Date() ? 'expiré' : `expire le ${new Date(grant.expiresAt).toLocaleDateString('fr-FR')}` }}</span>
+            >· {{ new Date(grant.expiresAt) < new Date() ? t('deck.sharing.expired') : t('deck.sharing.expiresOn', { date: new Date(grant.expiresAt).toLocaleDateString(locale) }) }}</span>
             <div class="flex-1" />
             <UButton
               icon="i-lucide-x"
@@ -69,7 +71,7 @@ const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
               variant="ghost"
               size="xs"
               :disabled="busy"
-              aria-label="Retirer l'accès"
+              :aria-label="t('deck.sharing.removeGrant')"
               @click="removeGrant(grant.userId)"
             />
           </li>
@@ -78,7 +80,7 @@ const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
           v-else
           class="text-sm text-dimmed"
         >
-          Aucun accès au dossier.
+          {{ t('deck.projectAccess.noGrants') }}
         </p>
 
         <ShareGrantForm :sharing="sharing" />

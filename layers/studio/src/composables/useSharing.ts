@@ -5,18 +5,8 @@ import { permissionsApi, usersApi } from '../api'
 import { grantsQuery, sharingKey, usersQuery } from '../queries'
 import { usersKeys } from '../queries/keys'
 
-export const GRANT_ROLE_ITEMS = [
-  { label: 'Lecture', value: 'viewer' as DeckGrant },
-  { label: 'Édition', value: 'editor' as DeckGrant },
-]
-
-/** Grant duration presets; the value is a day count (0 = permanent). */
-export const GRANT_DURATION_ITEMS = [
-  { label: 'Illimité', value: 0 },
-  { label: '7 jours', value: 7 },
-  { label: '30 jours', value: 30 },
-  { label: '90 jours', value: 90 },
-]
+/** Grant duration presets, as day counts (0 = permanent). */
+const GRANT_DURATIONS = [0, 7, 30, 90]
 
 /**
  * Sharing (per-deck or per-project grants), unified for both slideovers. Owner
@@ -32,6 +22,16 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
   const requestFetch = useRequestFetch()
   const queryCache = useQueryCache()
   const toast = useToast()
+  const { t } = useI18n()
+
+  const grantRoleItems = computed(() => [
+    { label: t('deck.sharing.roleViewer'), value: 'viewer' as DeckGrant },
+    { label: t('deck.sharing.roleEditor'), value: 'editor' as DeckGrant },
+  ])
+  const grantDurationItems = computed(() => GRANT_DURATIONS.map(days => ({
+    label: days === 0 ? t('deck.sharing.durationUnlimited') : t('deck.sharing.durationDays', days),
+    value: days,
+  })))
 
   const grantsQ = useQuery({ ...grantsQuery(requestFetch, scope), enabled })
   const usersQ = useQuery({ ...usersQuery(requestFetch), enabled })
@@ -46,7 +46,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     const granted = new Set(grants.value.map(g => g.userId))
     return knownUsers.value
       .filter(u => u.role === 'viewer' && !granted.has(u.id))
-      .map(u => ({ label: u.invited ? `${u.login} (invité)` : u.login, value: u.id }))
+      .map(u => ({ label: u.invited ? t('deck.sharing.invitedAccount', { login: u.login }) : u.login, value: u.id }))
   })
 
   const grantUserId = ref<number | undefined>(undefined)
@@ -72,12 +72,12 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
       grantUserId.value = undefined
       grantDays.value = 0
     },
-    onError: e => onError(e, 'Échec du partage'),
+    onError: e => onError(e, t('deck.sharing.grantFailed')),
     onSettled: invalidateGrants,
   })
   const { mutate: submitRemove, isLoading: removing } = useMutation({
     mutation: (userId: number) => permissionsApi.remove(requestFetch, scope(), userId),
-    onError: e => onError(e, 'Échec du retrait'),
+    onError: e => onError(e, t('deck.sharing.removeFailed')),
     onSettled: invalidateGrants,
   })
 
@@ -86,7 +86,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
   const { mutate: submitRoleChange, isLoading: changingRole } = useMutation({
     mutation: ({ userId, role, expiresAt }: { userId: number, role: DeckGrant, expiresAt: string | null }) =>
       permissionsApi.set(requestFetch, scope(), userId, role, expiresAt),
-    onError: e => onError(e, 'Échec de la modification'),
+    onError: e => onError(e, t('deck.sharing.roleChangeFailed')),
     onSettled: invalidateGrants,
   })
   function changeGrantRole(grant: GrantSummary, role: DeckGrant) {
@@ -112,9 +112,9 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
       await queryCache.invalidateQueries({ key: usersKeys.all })
       grantUserId.value = account.id
       inviteHandle.value = ''
-      toast.add({ title: 'Compte autorisé', description: `${account.login} peut maintenant recevoir un accès.`, icon: 'i-lucide-user-plus', color: 'success' })
+      toast.add({ title: t('deck.sharing.accountAuthorized'), description: t('deck.sharing.accountAuthorizedDescription', { login: account.login }), icon: 'i-lucide-user-plus', color: 'success' })
     },
-    onError: e => onError(e, 'Échec de l\'autorisation'),
+    onError: e => onError(e, t('deck.sharing.authorizeFailed')),
   })
   function invite() {
     if (inviteValid.value && !inviting.value)
@@ -129,8 +129,8 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     grantUserId,
     grantRole,
     grantDays,
-    grantRoleItems: GRANT_ROLE_ITEMS,
-    grantDurationItems: GRANT_DURATION_ITEMS,
+    grantRoleItems,
+    grantDurationItems,
     addGrant,
     changeGrantRole,
     removeGrant: (userId: number) => submitRemove(userId),

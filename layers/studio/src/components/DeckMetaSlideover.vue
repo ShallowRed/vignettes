@@ -27,7 +27,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ saved: [] }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -79,16 +79,16 @@ const passwordReady = computed(() => state.password.trim().length >= 8)
 const passwordMissing = computed(() =>
   state.status === 'semi-private' && !props.item.hasPassword && !passwordReady.value)
 
-const STATUS_DESCRIPTIONS: Record<PublicationStatus, string> = {
-  'public': 'Tout le monde peut l\'ouvrir.',
-  'semi-private': 'Toute personne ayant le mot de passe.',
-  'private': 'Les comptes Éditeur et Owner, et les accès individuels.',
+const STATUS_DESCRIPTION_KEYS: Record<PublicationStatus, string> = {
+  'public': 'deck.meta.statusDescription.public',
+  'semi-private': 'deck.meta.statusDescription.semiPrivate',
+  'private': 'deck.meta.statusDescription.private',
 }
-const statusItems = PUBLICATION_STATUSES.map(status => ({
+const statusItems = computed(() => PUBLICATION_STATUSES.map(status => ({
   label: t(STATUS_CONFIG[status].labelKey),
-  description: STATUS_DESCRIPTIONS[status],
+  description: t(STATUS_DESCRIPTION_KEYS[status]),
   value: status,
-}))
+})))
 
 type Tab = 'general' | 'access' | 'variants'
 const tab = ref<Tab>('general')
@@ -97,17 +97,20 @@ watch(open, (now) => {
     tab.value = props.focus === 'sharing' ? 'access' : 'general'
 }, { immediate: true })
 const tabs = computed(() => [
-  { label: 'Général', icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
-  { label: 'Accès et partage', icon: STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const },
-  { label: 'Variantes', icon: 'i-lucide-layers', value: 'variants', slot: 'variants' as const },
+  { label: t('deck.meta.tabGeneral'), icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
+  { label: t('deck.meta.tabAccess'), icon: STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const },
+  { label: t('deck.meta.tabVariants'), icon: 'i-lucide-layers', value: 'variants', slot: 'variants' as const },
 ])
 
 const projectItems = computed(() => [
-  { label: 'Sans projet', value: NONE },
+  { label: t('deck.meta.noFolder'), value: NONE },
   ...(props.projects ?? []).map(p => ({ label: p.title ?? p.slug, value: p.slug })),
 ])
 
-const themeItems = knownThemes().map(name => ({ label: name, value: name }))
+const themeItems = computed(() => [
+  { label: t('deck.meta.defaultTheme'), value: NONE },
+  ...knownThemes().map(name => ({ label: name, value: name })),
+])
 
 // Families and replacements are chosen among the decks of the same folder.
 const { presentations } = useCatalog()
@@ -122,7 +125,7 @@ function addFamily(family: string) {
   state.family = family
 }
 const replacementItems = computed(() => [
-  { label: 'Aucune', value: NONE },
+  { label: t('deck.meta.noReplacement'), value: NONE },
   ...folderDecks.value.map(d => ({ label: d.title, value: d.slug })),
 ])
 
@@ -144,13 +147,13 @@ const { mutate: save, isLoading: saving } = useMutation({
     ...(passwordReady.value ? { accessPassword: state.password.trim() } : {}),
   }),
   async onSuccess() {
-    toast.add({ title: 'Métadonnées enregistrées', icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('deck.meta.saved'), icon: 'i-lucide-check', color: 'success' })
     await invalidatePresentations()
     open.value = false
     emit('saved')
   },
   onError(e: any) {
-    toast.add({ title: e?.statusMessage || 'Échec de l\'enregistrement', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: e?.statusMessage || t('deck.meta.saveFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
 })
 
@@ -188,18 +191,19 @@ const projectGrants = computed<GrantSummary[]>(() =>
 // and both grant scopes — the recomposition the three separate panels lack.
 const audience = computed(() => {
   const base = state.status === 'public'
-    ? 'Tout le monde'
+    ? 'public'
     : state.status === 'semi-private'
-      ? (props.item.hasPassword || passwordReady.value
-          ? 'Toute personne ayant le mot de passe'
-          : 'Personne (aucun mot de passe défini)')
-      : 'Les comptes Éditeur/Owner'
-  const extras: string[] = []
-  if (grants.value.length)
-    extras.push(`${grants.value.length} accès direct${grants.value.length > 1 ? 's' : ''}`)
-  if (projectGrants.value.length)
-    extras.push(`${projectGrants.value.length} via le dossier`)
-  return extras.length ? `${base}, plus ${extras.join(' et ')}.` : `${base}.`
+      ? (props.item.hasPassword || passwordReady.value ? 'password' : 'noPassword')
+      : 'private'
+  const direct = grants.value.length
+  const folder = projectGrants.value.length
+  if (direct && folder)
+    return t(`deck.meta.audience.${base}.both`, { folder }, direct)
+  if (direct)
+    return t(`deck.meta.audience.${base}.direct`, direct)
+  if (folder)
+    return t(`deck.meta.audience.${base}.folder`, { folder })
+  return t(`deck.meta.audience.${base}.alone`)
 })
 </script>
 
@@ -207,7 +211,7 @@ const audience = computed(() => {
   <USlideover
     v-model:open="open"
     :title="item.title"
-    :description="`Réglages de ${item.slug}`"
+    :description="t('deck.meta.description', { slug: item.slug })"
     :ui="{ content: 'max-w-2xl', body: 'p-0 sm:p-0' }"
   >
     <template #body>
@@ -224,59 +228,59 @@ const audience = computed(() => {
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Titre
+                  {{ t('common.fields.title') }}
                 </p>
               </div>
               <UInput
                 v-model="state.title"
                 class="w-full"
-                aria-label="Titre"
+                :aria-label="t('common.fields.title')"
               />
             </div>
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Dossier
+                  {{ t('deck.meta.folder') }}
                 </p>
                 <p class="settings__hint">
-                  Où la présentation est rangée dans le catalogue.
+                  {{ t('deck.meta.folderHint') }}
                 </p>
               </div>
               <USelect
                 v-model="state.project"
                 :items="projectItems"
                 class="w-full"
-                aria-label="Dossier"
+                :aria-label="t('deck.meta.folder')"
               />
             </div>
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Thème
+                  {{ t('deck.meta.theme') }}
                 </p>
               </div>
               <USelect
                 v-model="state.theme"
-                :items="[{ label: 'Par défaut (dsfr)', value: NONE }, ...themeItems]"
+                :items="themeItems"
                 class="w-full"
-                aria-label="Thème"
+                :aria-label="t('deck.meta.theme')"
               />
             </div>
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Adresse stable
+                  {{ t('deck.meta.stableAddress') }}
                 </p>
                 <p class="settings__hint">
-                  Un lien qui ne change pas si l'identifiant change. Vide, la présentation n'en a pas.
+                  {{ t('deck.meta.stableAddressHint') }}
                 </p>
               </div>
               <UInput
                 v-model="state.alias"
-                placeholder="mon-alias"
+                :placeholder="t('deck.meta.aliasPlaceholder')"
                 class="w-full font-mono"
                 :ui="{ base: 'ps-9', leading: 'ps-3' }"
-                aria-label="Alias"
+                :aria-label="t('deck.meta.alias')"
               >
                 <template #leading>
                   <span class="text-sm text-dimmed">/p/</span>
@@ -293,13 +297,13 @@ const audience = computed(() => {
               color="neutral"
               variant="subtle"
               icon="i-lucide-eye"
-              title="Qui peut ouvrir cette présentation"
+              :title="t('deck.meta.audienceTitle')"
               :description="audience"
             />
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Visibilité
+                  {{ t('deck.meta.visibility') }}
                 </p>
               </div>
               <div class="flex flex-col gap-3">
@@ -308,28 +312,28 @@ const audience = computed(() => {
                   :items="statusItems"
                   variant="card"
                   :ui="{ fieldset: 'gap-2' }"
-                  aria-label="Visibilité"
+                  :aria-label="t('deck.meta.visibility')"
                 />
                 <template v-if="state.status === 'semi-private'">
                   <UInput
                     v-model="state.password"
                     type="password"
-                    :placeholder="item.hasPassword ? 'Nouveau mot de passe (8 caractères minimum)' : 'Mot de passe (8 caractères minimum)'"
+                    :placeholder="item.hasPassword ? t('deck.meta.newPasswordPlaceholder') : t('deck.meta.passwordPlaceholder')"
                     class="w-full"
-                    aria-label="Mot de passe"
+                    :aria-label="t('deck.meta.password')"
                   />
                   <p
                     v-if="item.hasPassword"
                     class="settings__hint"
                   >
-                    Un mot de passe est défini. Saisissez-en un nouveau pour le remplacer.
+                    {{ t('deck.meta.passwordDefinedHint') }}
                   </p>
                   <UAlert
                     v-if="passwordMissing"
                     color="warning"
                     variant="subtle"
                     icon="i-lucide-triangle-alert"
-                    title="Sans mot de passe, la présentation serait inaccessible à tous."
+                    :title="t('deck.meta.passwordMissingWarning')"
                   />
                 </template>
               </div>
@@ -337,15 +341,15 @@ const audience = computed(() => {
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Non répertoriée
+                  {{ t('deck.meta.unlisted') }}
                 </p>
                 <p class="settings__hint">
-                  Accessible par lien mais absente du catalogue.
+                  {{ t('deck.meta.unlistedHint') }}
                 </p>
               </div>
               <USwitch
                 v-model="state.unlisted"
-                aria-label="Non répertoriée"
+                :aria-label="t('deck.meta.unlisted')"
               />
             </div>
 
@@ -357,10 +361,10 @@ const audience = computed(() => {
             >
               <div>
                 <p class="settings__label">
-                  Accès individuels
+                  {{ t('deck.meta.grants') }}
                 </p>
                 <p class="settings__hint">
-                  Ouvrent la présentation à un compte précis, au-delà de sa visibilité. Chaque accès s'applique dès son ajout.
+                  {{ t('deck.meta.grantsHint') }}
                 </p>
               </div>
               <div class="flex flex-col gap-3">
@@ -380,18 +384,18 @@ const audience = computed(() => {
                       size="xs"
                       class="w-24"
                       :disabled="sharingBusy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
-                      :aria-label="`Rôle de ${grant.login}`"
+                      :aria-label="t('deck.sharing.roleOf', { login: grant.login })"
                       @update:model-value="(r: any) => changeGrantRole(grant, r)"
                     />
                     <span
                       v-if="grant.invited"
                       class="text-xs text-dimmed"
-                    >· jamais connecté</span>
+                    >· {{ t('deck.sharing.neverSignedIn') }}</span>
                     <span
                       v-if="grant.expiresAt"
                       class="text-xs"
                       :class="new Date(grant.expiresAt) < new Date() ? 'text-error' : 'text-dimmed'"
-                    >· {{ new Date(grant.expiresAt) < new Date() ? 'expiré' : `expire le ${new Date(grant.expiresAt).toLocaleDateString('fr-FR')}` }}</span>
+                    >· {{ new Date(grant.expiresAt) < new Date() ? t('deck.sharing.expired') : t('deck.sharing.expiresOn', { date: new Date(grant.expiresAt).toLocaleDateString(locale) }) }}</span>
                     <div class="flex-1" />
                     <UButton
                       icon="i-lucide-x"
@@ -399,7 +403,7 @@ const audience = computed(() => {
                       variant="ghost"
                       size="xs"
                       :disabled="sharingBusy"
-                      aria-label="Retirer l'accès"
+                      :aria-label="t('deck.sharing.removeGrant')"
                       @click="removeGrant(grant.userId)"
                     />
                   </li>
@@ -408,7 +412,7 @@ const audience = computed(() => {
                   v-else
                   class="text-sm text-dimmed"
                 >
-                  Aucun accès individuel.
+                  {{ t('deck.meta.noGrants') }}
                 </p>
 
                 <div
@@ -416,7 +420,7 @@ const audience = computed(() => {
                   class="rounded-lg bg-muted p-3 flex flex-col gap-2"
                 >
                   <p class="text-xs font-medium text-muted uppercase tracking-wide">
-                    Via le dossier (clé maîtresse)
+                    {{ t('deck.meta.folderGrants') }}
                   </p>
                   <ul class="flex flex-col gap-1">
                     <li
@@ -425,15 +429,15 @@ const audience = computed(() => {
                       class="flex items-center gap-2 text-sm"
                     >
                       <span>{{ grant.login }}</span>
-                      <span class="text-xs text-muted">{{ grant.role === 'editor' ? 'Édition' : 'Lecture' }}</span>
+                      <span class="text-xs text-muted">{{ grant.role === 'editor' ? t('deck.sharing.roleEditor') : t('deck.sharing.roleViewer') }}</span>
                       <span
                         v-if="grant.invited"
                         class="text-xs text-dimmed"
-                      >· jamais connecté</span>
+                      >· {{ t('deck.sharing.neverSignedIn') }}</span>
                     </li>
                   </ul>
                   <p class="text-xs text-dimmed">
-                    Se gère depuis « Gérer l'accès » du dossier.
+                    {{ t('deck.meta.folderGrantsHint') }}
                   </p>
                 </div>
 
@@ -446,56 +450,56 @@ const audience = computed(() => {
         <template #variants>
           <div class="settings">
             <p class="settings__hint pt-4">
-              Les variantes d'une même présentation, par langue ou par format, partagent une carte dans le dossier et se rejoignent depuis le lecteur. Une édition remplacée passe dans les éditions remplacées du dossier.
+              {{ t('deck.meta.variantsIntro') }}
             </p>
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Famille
+                  {{ t('deck.meta.family') }}
                 </p>
                 <p class="settings__hint">
-                  Le nom commun des variantes.
+                  {{ t('deck.meta.familyHint') }}
                 </p>
               </div>
               <UInputMenu
                 v-model="state.family"
                 :items="familyItems"
                 create-item
-                placeholder="Aucune"
+                :placeholder="t('deck.meta.noFamily')"
                 class="w-full"
-                aria-label="Famille"
+                :aria-label="t('deck.meta.family')"
                 @create="addFamily"
               />
             </div>
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Variante
+                  {{ t('deck.meta.variant') }}
                 </p>
                 <p class="settings__hint">
-                  Le libellé de cette variante sur la carte et dans le lecteur : FR, EN, Vidéo…
+                  {{ t('deck.meta.variantHint') }}
                 </p>
               </div>
               <UInput
                 v-model="state.variantLabel"
                 class="w-full"
-                aria-label="Variante"
+                :aria-label="t('deck.meta.variant')"
               />
             </div>
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  Remplacée par
+                  {{ t('deck.meta.supersededBy') }}
                 </p>
                 <p class="settings__hint">
-                  La présentation passe dans les éditions remplacées du dossier.
+                  {{ t('deck.meta.supersededByHint') }}
                 </p>
               </div>
               <USelect
                 v-model="state.supersededBy"
                 :items="replacementItems"
                 class="w-full"
-                aria-label="Remplacée par"
+                :aria-label="t('deck.meta.supersededBy')"
               />
             </div>
           </div>
@@ -506,13 +510,13 @@ const audience = computed(() => {
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="close"
         />
         <UButton
-          label="Enregistrer"
+          :label="t('common.actions.save')"
           icon="i-lucide-check"
           :loading="saving"
           :disabled="passwordMissing"

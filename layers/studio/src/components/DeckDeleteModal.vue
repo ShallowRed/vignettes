@@ -10,6 +10,7 @@ const props = defineProps<{ item: PresentationListItem }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
+const { t } = useI18n()
 const toast = useToast()
 const { invalidatePresentations } = useCatalogCache()
 
@@ -22,14 +23,14 @@ const { mutate: confirm, isLoading: pending } = useMutation({
   onSuccess() {
     open.value = false
     toast.add({
-      title: 'Présentation placée dans la corbeille',
+      title: t('deck.delete.trashed'),
       description: props.item.title,
       icon: 'i-lucide-trash-2',
       color: 'success',
     })
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || 'Échec de la suppression', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: error?.statusMessage || t('deck.delete.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
   // Refetch the deck listing so the trashed deck disappears from the catalog.
   onSettled: invalidatePresentations,
@@ -39,27 +40,27 @@ const { mutate: confirm, isLoading: pending } = useMutation({
 <template>
   <UModal
     v-model:open="open"
-    title="Placer dans la corbeille ?"
+    :title="t('deck.delete.title')"
     :description="item.title"
   >
     <template #body>
       <ActionNotice
         icon="i-lucide-trash-2"
-        title="Réversible"
-        description="La présentation part dans la corbeille. Tu pourras la restaurer, ou la supprimer définitivement depuis la corbeille."
+        :title="t('deck.delete.noticeTitle')"
+        :description="t('deck.delete.noticeDescription')"
       />
     </template>
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="close"
         />
         <UButton
-          label="Mettre à la corbeille"
+          :label="t('common.actions.moveToTrash')"
           color="warning"
           icon="i-lucide-trash-2"
           :loading="pending"

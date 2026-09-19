@@ -14,6 +14,8 @@ import { editorTheme } from '../utils/editor-theme'
  */
 const props = defineProps<{ from: string, to: string }>()
 
+const { t, locale } = useI18n()
+
 // Lucide chevrons-up-down and chevrons-down-up, as masks so they take the text color.
 const icon = (paths: string) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`)}")`
 const UNFOLD_ICON = icon('<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>')
@@ -114,7 +116,7 @@ function mount() {
         EditorView.lineWrapping,
         lineNumbers(),
         markdown(),
-        ...(props.from === props.to ? [] : [unifiedMergeView({ original: props.from, mergeControls: false, diffConfig: DIFF_CONFIG }), diffFolding()]),
+        ...(props.from === props.to ? [] : [unifiedMergeView({ original: props.from, mergeControls: false, diffConfig: DIFF_CONFIG }), diffFolding({ unfold: n => t('deck.diff.unfold', { n }), fold: n => t('deck.diff.fold', { n }) })]),
         ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
         diffTheme(colorMode.value === 'dark'),
       ],
@@ -125,7 +127,7 @@ function mount() {
 }
 
 onMounted(mount)
-watch(() => [props.from, props.to, colorMode.value], mount)
+watch(() => [props.from, props.to, colorMode.value, locale.value], mount)
 onBeforeUnmount(() => view?.destroy())
 </script>
 

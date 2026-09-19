@@ -20,6 +20,7 @@ const props = defineProps<{
 
 const open = defineModel<boolean>('open', { required: true })
 
+const { t } = useI18n()
 const toast = useToast()
 const { invalidatePresentations } = useCatalogCache()
 
@@ -53,7 +54,7 @@ const { mutate: runCopy, isLoading: pending } = useMutation({
   async onSuccess() {
     open.value = false
     toast.add({
-      title: isVariant.value ? 'Variante créée' : 'Nouvelle édition créée',
+      title: isVariant.value ? t('deck.duplicate.variantCreated') : t('deck.duplicate.editionCreated'),
       description: state.title.trim(),
       icon: 'i-lucide-copy-plus',
       color: 'success',
@@ -63,8 +64,8 @@ const { mutate: runCopy, isLoading: pending } = useMutation({
   },
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
-      ? `Le slug « ${state.slug} » est déjà pris.`
-      : e?.statusMessage || 'Échec de la copie'
+      ? t('deck.duplicate.slugTaken', { slug: state.slug })
+      : e?.statusMessage || t('deck.duplicate.failed')
   },
 })
 
@@ -83,10 +84,10 @@ function submit() {
 <template>
   <UModal
     v-model:open="open"
-    :title="isVariant ? 'Créer une variante' : 'Nouvelle édition'"
+    :title="isVariant ? t('deck.duplicate.variantTitle') : t('deck.duplicate.editionTitle')"
     :description="isVariant
-      ? `Une copie de « ${item.title} » dans la même famille : les deux partagent une carte et se rejoignent depuis le lecteur.`
-      : `Une copie de « ${item.title} » qui la remplace : l'ancienne passe dans les éditions remplacées du dossier.`"
+      ? t('deck.duplicate.variantDescription', { title: item.title })
+      : t('deck.duplicate.editionDescription', { title: item.title })"
   >
     <template #body>
       <form
@@ -94,7 +95,7 @@ function submit() {
         @submit.prevent="submit"
       >
         <UFormField
-          label="Titre"
+          :label="t('common.fields.title')"
           required
         >
           <UInput
@@ -105,21 +106,21 @@ function submit() {
         </UFormField>
 
         <UFormField
-          label="Slug"
-          :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
-          help="Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre."
+          :label="t('common.fields.slug')"
+          :error="slugValid ? undefined : t('deck.duplicate.slugInvalid')"
+          :help="t('deck.duplicate.slugHelp')"
         >
           <div class="flex items-center gap-2">
             <UInput
               v-model="state.slug"
-              placeholder="mon-slug"
+              :placeholder="t('common.fields.slugPlaceholder')"
               class="flex-1 font-mono"
             />
             <UButton
               icon="i-lucide-wand-sparkles"
               color="neutral"
               variant="subtle"
-              aria-label="Remplir depuis le titre"
+              :aria-label="t('common.actions.fillFromTitle')"
               @click="slugFromTitle"
             />
           </div>
@@ -131,9 +132,9 @@ function submit() {
         >
           <UFormField
             v-if="askSourceLabel"
-            label="Libellé de l'original"
+            :label="t('deck.duplicate.sourceLabel')"
             required
-            help="FR, Vidéo, Long…"
+            :help="t('deck.duplicate.sourceLabelHelp')"
           >
             <UInput
               v-model="state.sourceVariantLabel"
@@ -141,9 +142,9 @@ function submit() {
             />
           </UFormField>
           <UFormField
-            label="Libellé de la variante"
+            :label="t('deck.duplicate.variantLabel')"
             required
-            help="EN, Atelier, Court…"
+            :help="t('deck.duplicate.variantLabelHelp')"
           >
             <UInput
               v-model="state.variantLabel"
@@ -153,7 +154,7 @@ function submit() {
         </div>
 
         <p class="text-xs text-muted">
-          La copie reprend le texte {{ item.published === false ? 'du brouillon' : 'publié' }}, le dossier, le thème et les accès. Elle s'ouvre dans l'éditeur comme brouillon, sans rien publier.
+          {{ item.published === false ? t('deck.duplicate.copyNoteDraft') : t('deck.duplicate.copyNotePublished') }}
         </p>
 
         <UAlert
@@ -169,13 +170,13 @@ function submit() {
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="close"
         />
         <UButton
-          :label="isVariant ? 'Créer la variante' : 'Créer l\'édition'"
+          :label="isVariant ? t('deck.duplicate.createVariant') : t('deck.duplicate.createEdition')"
           icon="i-lucide-copy-plus"
           :loading="pending"
           :disabled="!canSubmit"

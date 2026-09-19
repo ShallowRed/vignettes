@@ -23,6 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{ restored: [stamp: number | null] }>()
 const open = defineModel<boolean>('open', { required: true })
 
+const { t, locale } = useI18n()
 const toast = useToast()
 const queryCache = useQueryCache()
 
@@ -112,63 +113,81 @@ onBeforeUnmount(() => clearTimeout(skeletonTimer))
 const loading = computed(() => selected.value !== null && structure.value === null)
 
 function when(at: number): string {
-  return new Date(at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
+  return new Date(at).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
 }
-function size(bytes: number): string {
-  return `${Math.max(1, Math.round(bytes / 1024))} Ko`
+function kilobytes(bytes: number): number {
+  return Math.max(1, Math.round(bytes / 1024))
 }
 function title(entry: HistoryEntry): string {
   return entry.kind === 'snapshot' && entry.label ? entry.label : when(entry.at)
 }
 function detail(entry: HistoryEntry): string {
+  const named = { kilobytes: kilobytes(entry.bytes) }
   if (entry.kind === 'version')
-    return `Publiée par ${entry.publishedBy} · ${size(entry.bytes)}`
-  const who = entry.authors.length ? entry.authors.join(', ') : 'Enregistrement automatique'
-  return `${entry.label ? `${when(entry.at)} · ` : ''}${who} · ${size(entry.bytes)}`
+    return t('deck.history.detailVersion', { ...named, author: entry.publishedBy })
+  const authors = entry.authors.join(', ')
+  if (entry.label) {
+    return authors
+      ? t('deck.history.detailLabeledSnapshotAuthors', { ...named, authors, when: when(entry.at) })
+      : t('deck.history.detailLabeledSnapshotAutomatic', { ...named, when: when(entry.at) })
+  }
+  return authors
+    ? t('deck.history.detailSnapshotAuthors', { ...named, authors })
+    : t('deck.history.detailSnapshotAutomatic', named)
 }
 
 const heading = computed(() => {
   if (selected.value === 'draft')
-    return 'Brouillon en cours'
+    return t('deck.history.draft')
   const entry = selectedEntry.value
   if (!entry)
     return ''
   if (entry.kind === 'version')
-    return `${entry.current ? 'Version en ligne' : 'Version'} du ${when(entry.at)}`
-  return entry.label ? `${entry.label} (instantané du ${when(entry.at)})` : `Instantané du ${when(entry.at)}`
+    return t(entry.current ? 'deck.history.headingCurrentVersion' : 'deck.history.headingVersion', { when: when(entry.at) })
+  return entry.label
+    ? t('deck.history.headingLabeledSnapshot', { label: entry.label, when: when(entry.at) })
+    : t('deck.history.headingSnapshot', { when: when(entry.at) })
 })
 const summary = computed(() => {
   if (selected.value === 'draft' && !current.value)
-    return 'Jamais publié'
+    return t('deck.history.summaryNeverPublished')
   if (firstEntry.value)
-    return 'Première entrée de l\'historique'
+    return t('deck.history.summaryFirstEntry')
   if (chunks.value === null)
     return ''
-  const against = selected.value === 'draft' ? 'la version en ligne' : selectedEntry.value?.kind === 'version' ? 'la version précédente' : 'l\'entrée précédente'
-  if (chunks.value === 0)
-    return `Identique à ${against}`
-  const passages = chunks.value === 1 ? '1 passage modifié' : `${chunks.value} passages modifiés`
-  return selected.value === 'draft' ? `${passages} depuis ${against}` : selectedEntry.value?.kind === 'version' ? `${passages} par cette publication` : `${passages} depuis ${against}`
+  const against = selected.value === 'draft' ? 'current' : selectedEntry.value?.kind === 'version' ? 'version' : 'entry'
+  if (chunks.value === 0) {
+    return t({
+      current: 'deck.history.summaryIdenticalToCurrent',
+      version: 'deck.history.summaryIdenticalToPreviousVersion',
+      entry: 'deck.history.summaryIdenticalToPreviousEntry',
+    }[against])
+  }
+  return t({
+    current: 'deck.history.summaryChangedSinceCurrent',
+    version: 'deck.history.summaryChangedByPublication',
+    entry: 'deck.history.summaryChangedSincePreviousEntry',
+  }[against], chunks.value)
 })
 // The legend keeps its line whatever the state, so the diff never moves.
 const legend = computed(() => {
   if (chunks.value === null)
     return ''
   if (firstEntry.value)
-    return 'Le texte complet de cette entrée.'
+    return t('deck.history.legendFirstEntry')
   if (chunks.value === 0)
-    return 'Les deux textes sont identiques.'
+    return t('deck.history.legendIdentical')
   return selected.value === 'draft'
-    ? 'En vert ce que le brouillon ajoute, en rouge ce qu\'il retire.'
-    : 'En vert ce que cette entrée a ajouté, en rouge ce qu\'elle a retiré.'
+    ? t('deck.history.legendDraft')
+    : t('deck.history.legendEntry')
 })
 
 // What a restore would put in the draft, and whether that changes anything.
 const restoreRef = computed<HistoryRef | null>(() => selected.value === 'draft' ? (current.value ? { kind: 'version', id: current.value.id } : null) : targetRef.value)
 const restoreLabel = computed(() => {
   if (restoreRef.value?.kind === 'version' && restoreRef.value.id === current.value?.id)
-    return 'Revenir à la version en ligne'
-  return restoreRef.value?.kind === 'snapshot' ? 'Restaurer cet instantané' : 'Restaurer cette version'
+    return t('deck.history.restoreCurrent')
+  return restoreRef.value?.kind === 'snapshot' ? t('deck.history.restoreSnapshot') : t('deck.history.restoreVersion')
 })
 const restorable = computed(() => {
   if (restoreRef.value === null)
@@ -182,8 +201,8 @@ const { mutateAsync: restore, isLoading: restoring } = useMutation({
   mutation: (ref: HistoryRef) => historyApi.restore($fetch, props.slug, ref),
   onSuccess(result) {
     toast.add({
-      title: 'Texte restauré dans le brouillon',
-      description: 'Relisez-le, puis publiez pour que les visiteurs le voient.',
+      title: t('deck.history.restored'),
+      description: t('deck.history.restoredDescription'),
       icon: 'i-lucide-check',
       color: 'success',
     })
@@ -191,19 +210,19 @@ const { mutateAsync: restore, isLoading: restoring } = useMutation({
     open.value = false
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || 'Échec de la restauration', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: error?.statusMessage || t('deck.history.restoreFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
 })
 
 const { mutateAsync: keep, isLoading: keeping } = useMutation({
   mutation: (name: string) => historyApi.snapshot($fetch, props.slug, name.trim() || undefined),
   onSuccess() {
-    toast.add({ title: 'Instantané conservé', icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('deck.history.snapshotKept'), icon: 'i-lucide-check', color: 'success' })
     naming.value = false
     label.value = ''
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || 'Échec de l\'enregistrement', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: error?.statusMessage || t('deck.history.snapshotFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
   onSettled: () => queryCache.invalidateQueries({ key: deckKeys.history(props.slug) }),
 })
@@ -212,8 +231,8 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
 <template>
   <USlideover
     v-model:open="open"
-    title="Historique"
-    :description="`Le brouillon, les versions publiées et les instantanés de ${slug}`"
+    :title="t('deck.history.title')"
+    :description="t('deck.history.description', { slug })"
     :ui="{ content: 'max-w-5xl', body: 'p-0 sm:p-0' }"
   >
     <template #body>
@@ -221,7 +240,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
         <!-- The draft, then the entries, newest first. The served version is marked. -->
         <nav
           class="max-h-56 min-h-0 overflow-y-auto border-b border-default md:max-h-none md:border-b-0 md:border-r"
-          aria-label="Brouillon, versions et instantanés"
+          :aria-label="t('deck.history.listLabel')"
         >
           <button
             type="button"
@@ -231,28 +250,28 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
             @click="selected = 'draft'"
           >
             <span class="flex items-center justify-between gap-2">
-              <span class="text-sm font-medium text-highlighted">Brouillon en cours</span>
+              <span class="text-sm font-medium text-highlighted">{{ t('deck.history.draft') }}</span>
               <UBadge
                 v-if="unpublished"
-                label="Non publié"
+                :label="t('deck.history.unpublished')"
                 color="warning"
                 variant="subtle"
                 size="sm"
               />
             </span>
-            <span class="text-xs text-muted">{{ unpublished === false ? 'Identique à la version en ligne' : 'Ce que voit l\'éditeur' }}</span>
+            <span class="text-xs text-muted">{{ unpublished === false ? t('deck.history.draftIdentical') : t('deck.history.draftHint') }}</span>
           </button>
           <p
             v-if="listQ.status.value === 'pending'"
             class="p-4 text-sm text-muted"
           >
-            Chargement…
+            {{ t('deck.history.loading') }}
           </p>
           <p
             v-else-if="!entries.length"
             class="p-4 text-sm text-muted"
           >
-            Aucune version ni instantané.
+            {{ t('deck.history.empty') }}
           </p>
           <ul v-else>
             <li
@@ -276,7 +295,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
                   </span>
                   <UBadge
                     v-if="entry.kind === 'version'"
-                    :label="entry.current ? 'En ligne' : 'Publiée'"
+                    :label="entry.current ? t('deck.history.badgeCurrent') : t('deck.history.badgePublished')"
                     :color="entry.current ? 'primary' : 'neutral'"
                     variant="subtle"
                     size="sm"
@@ -291,7 +310,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
         <!-- The selected entry, what it changed, and its restoration. -->
         <section
           class="flex min-h-0 min-w-0 flex-col"
-          aria-label="Entrée sélectionnée"
+          :aria-label="t('deck.history.selectedLabel')"
         >
           <div
             v-if="heading"
@@ -314,7 +333,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
             </div>
             <UButton
               v-if="selected === 'draft' && !naming && !confirming"
-              label="Conserver un instantané"
+              :label="t('deck.history.keepSnapshot')"
               icon="i-lucide-camera"
               color="neutral"
               variant="outline"
@@ -341,21 +360,21 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
           >
             <UInput
               v-model="label"
-              placeholder="Nom de l'instantané (facultatif)"
+              :placeholder="t('deck.history.snapshotNamePlaceholder')"
               class="w-72"
               size="sm"
               maxlength="80"
               autofocus
-              aria-label="Nom de l'instantané"
+              :aria-label="t('deck.history.snapshotName')"
             />
             <UButton
               type="submit"
-              label="Conserver"
+              :label="t('deck.history.keep')"
               size="sm"
               :loading="keeping"
             />
             <UButton
-              label="Annuler"
+              :label="t('common.actions.cancel')"
               color="neutral"
               variant="ghost"
               size="sm"
@@ -366,18 +385,18 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
           <ActionNotice
             v-if="confirming && restoreRef !== null"
             class="m-4"
-            title="Remplacer le brouillon par ce texte ?"
-            description="Le brouillon actuel reste dans l'historique comme instantané. Les visiteurs gardent la version en ligne jusqu'à la prochaine publication."
+            :title="t('deck.history.confirmTitle')"
+            :description="t('deck.history.confirmDescription')"
           >
             <UButton
-              label="Restaurer"
+              :label="t('common.actions.restore')"
               color="warning"
               size="sm"
               :loading="restoring"
               @click="restore(restoreRef)"
             />
             <UButton
-              label="Annuler"
+              :label="t('common.actions.cancel')"
               color="neutral"
               variant="ghost"
               size="sm"

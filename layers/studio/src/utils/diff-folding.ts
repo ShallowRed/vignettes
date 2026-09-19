@@ -1,7 +1,7 @@
 import type { Extension, Text } from '@codemirror/state'
 import type { DecorationSet } from '@codemirror/view'
 import { getChunks } from '@codemirror/merge'
-import { RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
+import { Facet, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 
 /**
@@ -28,6 +28,16 @@ export interface Passage {
   lines: number
 }
 
+/** The text of a band, from the number of lines of its passage. */
+export interface FoldLabels {
+  unfold: (lines: number) => string
+  fold: (lines: number) => string
+}
+
+const foldLabels = Facet.define<FoldLabels, FoldLabels>({
+  combine: values => values[0] ?? { unfold: String, fold: String },
+})
+
 const toggle = StateEffect.define<number>()
 const setPassages = StateEffect.define<Passage[]>()
 
@@ -44,7 +54,8 @@ class FoldBand extends WidgetType {
     const band = document.createElement('button')
     band.type = 'button'
     band.className = `diff-fold${this.open ? ' diff-fold--open' : ''}`
-    band.textContent = `${this.open ? 'Replier' : 'Déplier'} ${this.passage.lines} lignes identiques`
+    const labels = view.state.facet(foldLabels)
+    band.textContent = this.open ? labels.fold(this.passage.lines) : labels.unfold(this.passage.lines)
     band.addEventListener('click', () => view.dispatch({ effects: toggle.of(this.passage.from) }))
     return band
   }
@@ -119,8 +130,8 @@ const foldingField = StateField.define<Folding>({
 })
 
 /** The folds of a unified merge view created without `collapseUnchanged`; `foldIdenticalPassages` fills them once the view exists. */
-export function diffFolding(): Extension {
-  return foldingField
+export function diffFolding(labels: FoldLabels): Extension {
+  return [foldLabels.of(labels), foldingField]
 }
 
 /** Computes the passages of the view and folds them all. */
