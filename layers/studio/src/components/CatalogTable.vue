@@ -109,23 +109,23 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
     // Symmetric padding around the checkbox: the default `pe-0` makes the row-hover
     // highlight look lopsided (16px left, 0 right).
     meta: { class: { td: '[&:has([role=checkbox])]:!px-4', th: '[&:has([role=checkbox])]:!px-4' } },
-    header: ({ table: t }) => h(UCheckbox, {
-      'modelValue': t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
-      'aria-label': 'Tout sélectionner',
-      'onUpdate:modelValue': (v: boolean | 'indeterminate') => t.toggleAllPageRowsSelected(!!v),
+    header: ({ table: api }) => h(UCheckbox, {
+      'modelValue': api.getIsSomePageRowsSelected() ? 'indeterminate' : api.getIsAllPageRowsSelected(),
+      'aria-label': t('catalog.table.selectAll'),
+      'onUpdate:modelValue': (v: boolean | 'indeterminate') => api.toggleAllPageRowsSelected(!!v),
     }),
     cell: ({ row }) => h('div', { onClick: stopRowClick, class: 'flex' }, [
       h(UCheckbox, {
         'modelValue': row.getIsSelected(),
-        'aria-label': 'Sélectionner la ligne',
+        'aria-label': t('catalog.table.selectRow'),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => row.toggleSelected(!!v),
       }),
     ]),
   },
-  { accessorKey: 'title', header: sortableHeader('Titre') },
-  { accessorKey: 'status', header: sortableHeader('Statut') },
-  { accessorKey: 'project', header: sortableHeader('Projet') },
-  { accessorKey: 'theme', header: sortableHeader('Thème') },
+  { accessorKey: 'title', header: sortableHeader(t('common.fields.title')) },
+  { accessorKey: 'status', header: sortableHeader(t('catalog.fields.status')) },
+  { accessorKey: 'project', header: sortableHeader(t('catalog.fields.project')) },
+  { accessorKey: 'theme', header: sortableHeader(t('catalog.fields.theme')) },
   ...(props.admin
     ? [
         // The family axis, which the folder page draws as one card: the variant
@@ -133,15 +133,15 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
         {
           id: 'family',
           accessorFn: (item: PresentationListItem) => item.supersededBy ? `→ ${item.supersededBy}` : [item.family, item.variantLabel].filter(Boolean).join(' · '),
-          header: sortableHeader('Variante'),
+          header: sortableHeader(t('catalog.table.variantColumn')),
           cell: ({ row }: { row: { original: PresentationListItem } }) => {
             const { family, variantLabel, supersededBy } = row.original
             if (supersededBy)
-              return h('span', { class: 'text-muted' }, `Remplacée par ${supersededBy}`)
+              return h('span', { class: 'text-muted' }, t('catalog.table.replacedBy', { slug: supersededBy }))
             return family ? h('span', { title: family }, variantLabel ?? family) : ''
           },
         } satisfies TableColumn<PresentationListItem>,
-        { accessorKey: 'filename', header: sortableHeader('Fichier') } satisfies TableColumn<PresentationListItem>,
+        { accessorKey: 'filename', header: sortableHeader(t('catalog.table.fileColumn')) } satisfies TableColumn<PresentationListItem>,
       ]
     : []),
   {
@@ -162,26 +162,26 @@ function rowActions(item: PresentationListItem) {
   const defaultTarget = defaultDeckTarget(item)
   return [
     [
-      { label: 'Ouvrir', icon: 'i-lucide-arrow-up-right', to: defaultTarget },
-      { label: 'Ouvrir dans un nouvel onglet', icon: 'i-lucide-external-link', to: defaultTarget, target: '_blank' },
+      { label: t('catalog.table.open'), icon: 'i-lucide-arrow-up-right', to: defaultTarget },
+      { label: t('catalog.table.openInNewTab'), icon: 'i-lucide-external-link', to: defaultTarget, target: '_blank' },
     ],
     [
-      { label: 'Copier le lien', icon: 'i-lucide-link', onSelect: () => copyLinks([item]) },
+      { label: t('catalog.table.copyLink'), icon: 'i-lucide-link', onSelect: () => copyLinks([item]) },
     ],
     ...(props.admin && !isFrozen(item)
       ? [
           [
-            { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
-            { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
-            ...(isOwner.value ? [{ label: 'Partager…', icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
+            { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
+            { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
+            ...(isOwner.value ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
           ],
           [
-            { label: 'Créer une variante…', icon: 'i-lucide-languages', onSelect: () => emit('duplicate', item, 'variant') },
-            { label: 'Nouvelle édition…', icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', item, 'edition') },
+            { label: t('catalog.deck.createVariant'), icon: 'i-lucide-languages', onSelect: () => emit('duplicate', item, 'variant') },
+            { label: t('catalog.deck.newEdition'), icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', item, 'edition') },
           ],
           [
             {
-              label: 'Supprimer…',
+              label: t('catalog.deck.delete'),
               icon: 'i-lucide-trash-2',
               color: 'error' as const,
               onSelect: () => emit('remove', item),
@@ -207,7 +207,7 @@ async function copyLinks(items: PresentationListItem[]) {
   const urls = items.map(i => new URL(deckPath(i), window.location.origin).href)
   await navigator.clipboard.writeText(urls.join('\n'))
   toast.add({
-    title: urls.length === 1 ? 'Lien copié' : `${urls.length} liens copiés`,
+    title: t('catalog.table.linksCopied', urls.length),
     icon: 'i-lucide-clipboard-check',
     color: 'success',
   })
@@ -233,7 +233,7 @@ function exportCsv(items: PresentationListItem[]) {
   a.download = 'presentations.csv'
   a.click()
   URL.revokeObjectURL(url)
-  toast.add({ title: `${items.length} présentation(s) exportée(s)`, icon: 'i-lucide-file-down', color: 'success' })
+  toast.add({ title: t('catalog.table.exported', { n: items.length }), icon: 'i-lucide-file-down', color: 'success' })
 }
 
 function clearSelection() {
@@ -261,11 +261,11 @@ function clearSelection() {
           <span
             v-if="row.original.unlisted"
             class="text-xs text-muted"
-          >Non répertoriée</span>
+          >{{ t('catalog.deck.unlisted') }}</span>
           <span
             v-if="admin && row.original.published === false"
             class="text-xs text-muted"
-          >Non publié</span>
+          >{{ t('catalog.deck.unpublished') }}</span>
         </div>
       </template>
 
@@ -275,11 +275,11 @@ function clearSelection() {
           <span
             v-if="isFrozen(row.original)"
             class="text-muted"
-          >{{ row.original.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
+          >{{ row.original.lifecycle === 'archived' ? t('catalog.deck.archived') : t('catalog.deck.frozen') }}</span>
           <span
             v-if="row.original.sharedCount"
             class="inline-flex items-center gap-0.5 text-xs text-muted"
-            :title="`${row.original.sharedCount} accès partagé${row.original.sharedCount > 1 ? 's' : ''}`"
+            :title="t('catalog.deck.sharedAccess', row.original.sharedCount)"
           >
             <UIcon
               name="i-lucide-users"
@@ -298,7 +298,7 @@ function clearSelection() {
         <span
           v-else
           class="text-dimmed"
-        >Divers</span>
+        >{{ t('catalog.project.ungroupedTitle') }}</span>
       </template>
 
       <template #theme-cell="{ row }">
@@ -314,19 +314,19 @@ function clearSelection() {
           class="flex justify-end items-center gap-0.5"
           @click.stop
         >
-          <UTooltip text="Consulter">
+          <UTooltip :text="t('catalog.table.view')">
             <UButton
               :to="defaultDeckTarget(row.original)"
               icon="i-lucide-eye"
               color="neutral"
               variant="ghost"
               size="sm"
-              aria-label="Consulter"
+              :aria-label="t('catalog.table.view')"
             />
           </UTooltip>
           <UTooltip
             v-if="admin && !isFrozen(row.original)"
-            text="Éditer le contenu"
+            :text="t('catalog.deck.editContent')"
           >
             <UButton
               :to="`/edit/${row.original.slug}`"
@@ -334,7 +334,7 @@ function clearSelection() {
               color="neutral"
               variant="ghost"
               size="sm"
-              aria-label="Éditer"
+              :aria-label="t('common.actions.edit')"
             />
           </UTooltip>
           <UDropdownMenu
@@ -346,7 +346,7 @@ function clearSelection() {
               color="neutral"
               variant="ghost"
               size="sm"
-              aria-label="Autres actions"
+              :aria-label="t('catalog.table.moreActions')"
             />
           </UDropdownMenu>
         </div>
@@ -355,14 +355,14 @@ function clearSelection() {
 
     <div class="flex flex-wrap items-center gap-3">
       <span class="text-sm text-muted">
-        {{ shownRange.from }}–{{ shownRange.to }} sur {{ shownRange.total }}
+        {{ t('catalog.table.range', shownRange) }}
       </span>
       <USelect
         :model-value="pagination.pageSize"
-        :items="PAGE_SIZES.map(n => ({ label: `${n} / page`, value: n }))"
+        :items="PAGE_SIZES.map(n => ({ label: t('catalog.table.pageSizeOption', { size: n }), value: n }))"
         size="sm"
         class="w-28"
-        aria-label="Éléments par page"
+        :aria-label="t('catalog.table.pageSizeLabel')"
         @update:model-value="setPageSize"
       />
       <div class="flex-1" />
@@ -387,7 +387,7 @@ function clearSelection() {
       class="fixed inset-x-0 bottom-6 z-40 mx-auto flex w-max max-w-[calc(100vw-2rem)] items-center gap-1 rounded-full bg-inverted text-inverted py-1.5 pl-4 pr-2 shadow-2xl"
     >
       <span class="text-sm font-semibold whitespace-nowrap">
-        {{ selectedItems.length }} sélectionnée{{ selectedItems.length > 1 ? 's' : '' }}
+        {{ t('catalog.table.selectedCount', selectedItems.length) }}
       </span>
       <span class="mx-2 h-5 w-px bg-inverted/15" />
       <button
@@ -399,7 +399,7 @@ function clearSelection() {
           name="i-lucide-link"
           class="size-4"
         />
-        Copier les liens
+        {{ t('catalog.table.copyLinks') }}
       </button>
       <button
         type="button"
@@ -410,13 +410,13 @@ function clearSelection() {
           name="i-lucide-file-down"
           class="size-4"
         />
-        Exporter CSV
+        {{ t('catalog.table.exportCsv') }}
       </button>
       <span class="mx-1 h-5 w-px bg-inverted/15" />
       <button
         type="button"
         class="inline-flex items-center justify-center rounded-full p-1.5 transition-colors hover:bg-default/10"
-        aria-label="Effacer la sélection"
+        :aria-label="t('catalog.table.clearSelection')"
         @click="clearSelection"
       >
         <UIcon

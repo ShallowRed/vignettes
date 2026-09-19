@@ -1,1 +1,135 @@
-{}
+{
+  "catalog": {
+    "fields": {
+      "status": "Statut",
+      "project": "Projet",
+      "theme": "Thème"
+    },
+    "project": {
+      "ungroupedTitle": "Divers",
+      "none": "Sans projet"
+    },
+    "deck": {
+      "count": "{n} présentation | {n} présentation | {n} présentations",
+      "archived": "Archivée",
+      "frozen": "Gelée",
+      "unlisted": "Non répertoriée",
+      "unpublished": "Non publié",
+      "sharedAccess": "{n} accès partagé | {n} accès partagé | {n} accès partagés",
+      "editContent": "Éditer le contenu",
+      "metadata": "Métadonnées…",
+      "share": "Partager…",
+      "createVariant": "Créer une variante…",
+      "newEdition": "Nouvelle édition…",
+      "delete": "Supprimer…"
+    },
+    "folders": {
+      "edit": "Modifier…",
+      "manageAccess": "Gérer l'accès…",
+      "delete": "Supprimer…",
+      "actionsLabel": "Actions du dossier",
+      "sharedAccess": "{n} accès partagé(s) au dossier"
+    },
+    "table": {
+      "selectAll": "Tout sélectionner",
+      "selectRow": "Sélectionner la ligne",
+      "variantColumn": "Variante",
+      "fileColumn": "Fichier",
+      "replacedBy": "Remplacée par {slug}",
+      "open": "Ouvrir",
+      "openInNewTab": "Ouvrir dans un nouvel onglet",
+      "copyLink": "Copier le lien",
+      "view": "Consulter",
+      "moreActions": "Autres actions",
+      "range": "{from}–{to} sur {total}",
+      "pageSizeOption": "{size} / page",
+      "pageSizeLabel": "Éléments par page",
+      "selectedCount": "{n} sélectionnée | {n} sélectionnée | {n} sélectionnées",
+      "copyLinks": "Copier les liens",
+      "exportCsv": "Exporter CSV",
+      "clearSelection": "Effacer la sélection",
+      "linksCopied": "{n} liens copiés | Lien copié | {n} liens copiés",
+      "exported": "{n} présentation(s) exportée(s)"
+    },
+    "toolbar": {
+      "searchPlaceholder": "Rechercher…",
+      "statusFilterActive": "Statut · {count}",
+      "projectFilterActive": "Projet · {count}",
+      "clearFilters": "Effacer",
+      "sortBy": "Trier par",
+      "ascending": "Croissant",
+      "descending": "Décroissant"
+    },
+    "card": {
+      "actionsLabel": "Actions",
+      "present": "Présenter",
+      "slides": "diapositive | diapositive | diapositives",
+      "variantsLabel": "Variantes",
+      "unpublishedChanges": "Modifications non publiées",
+      "replacedBy": "Remplacée par « {title} »",
+      "updatedOn": "Modifiée le {date}"
+    },
+    "deckCreate": {
+      "description": "Un brouillon vierge, créé en base et ouvert dans l'éditeur.",
+      "titlePlaceholder": "Titre de la présentation",
+      "slugHelp": "Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre.",
+      "submit": "Créer et éditer",
+      "created": "Présentation créée",
+      "slugTaken": "Le slug « {slug} » est déjà pris."
+    },
+    "form": {
+      "slugInvalid": "Lettres, chiffres, tirets et underscores uniquement",
+      "createFailed": "Échec de la création",
+      "identifierTaken": "L'identifiant « {slug} » est déjà pris."
+    },
+    "projectCreate": {
+      "description": "Un projet pour regrouper des présentations.",
+      "namePlaceholder": "Nom du dossier",
+      "identifierHelp": "Optionnel : laissé vide, il sera dérivé du nom. La baguette le remplit depuis le nom.",
+      "fillFromName": "Remplir depuis le nom",
+      "colorHelp": "Optionnel : teinte l'icône du dossier.",
+      "submit": "Créer le dossier",
+      "created": "Dossier créé"
+    },
+    "projectEdit": {
+      "title": "Modifier le dossier",
+      "description": "Nom, couleur et identifiant.",
+      "identifierHelp": "Segment d'URL (/projects/…). Le changer casse les anciens liens du dossier.",
+      "regenerateFromName": "Régénérer depuis le nom",
+      "saved": "Dossier mis à jour",
+      "saveFailed": "Échec de la mise à jour"
+    },
+    "projectDelete": {
+      "title": "Supprimer le dossier ?",
+      "noticeTitle": "Le dossier et son contenu partent à la corbeille",
+      "noticeWithDecks": "Ce dossier et ses {n} présentation seront placés dans la corbeille. Tu pourras tout restaurer d'un coup. | Ce dossier et ses {n} présentation seront placés dans la corbeille. Tu pourras tout restaurer d'un coup. | Ce dossier et ses {n} présentations seront placés dans la corbeille. Tu pourras tout restaurer d'un coup.",
+      "noticeEmpty": "Ce dossier (vide) sera placé dans la corbeille. Tu pourras le restaurer.",
+      "trashed": "Dossier placé dans la corbeille",
+      "failed": "Échec de la suppression"
+    },
+    "home": {
+      "emptyTitle": "Aucune présentation",
+      "emptyPrivileged": "Créez un premier dossier ou une présentation pour démarrer.",
+      "emptyLoggedIn": "Rien ne vous a été partagé pour le moment.",
+      "emptyAnonymous": "Si des présentations vous ont été partagées, connectez-vous pour les voir.",
+      "modeFolders": "Dossiers",
+      "modeManage": "Gestion",
+      "visibleCount": "{visible} sur {total} présentations",
+      "noResultTitle": "Aucun résultat",
+      "noResultDescription": "Aucune présentation ne correspond à vos critères.",
+      "resetFilters": "Réinitialiser les filtres"
+    },
+    "folder": {
+      "edit": "Modifier",
+      "manageAccess": "Gérer l'accès",
+      "delete": "Supprimer",
+      "sorted": "Triées par dernière modification",
+      "sortedWithTheme": "Thème {theme} · Triées par dernière modification",
+      "emptyTitle": "Dossier vide",
+      "emptyTitleAnonymous": "Dossier privé ou vide",
+      "emptyDescription": "Aucune présentation dans ce projet.",
+      "emptyDescriptionAnonymous": "Si ce dossier vous a été partagé, connectez-vous pour voir son contenu.",
+      "supersededEditions": "Éditions remplacées ({count})"
+    }
+  }
+}

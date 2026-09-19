@@ -1,1 +1,135 @@
-{}
+{
+  "catalog": {
+    "fields": {
+      "status": "Status",
+      "project": "Project",
+      "theme": "Theme"
+    },
+    "project": {
+      "ungroupedTitle": "Miscellaneous",
+      "none": "No project"
+    },
+    "deck": {
+      "count": "{n} presentations | {n} presentation | {n} presentations",
+      "archived": "Archived",
+      "frozen": "Frozen",
+      "unlisted": "Unlisted",
+      "unpublished": "Unpublished",
+      "sharedAccess": "{n} shared accesses | {n} shared access | {n} shared accesses",
+      "editContent": "Edit the content",
+      "metadata": "Metadata…",
+      "share": "Share…",
+      "createVariant": "Create a variant…",
+      "newEdition": "New edition…",
+      "delete": "Delete…"
+    },
+    "folders": {
+      "edit": "Edit…",
+      "manageAccess": "Manage access…",
+      "delete": "Delete…",
+      "actionsLabel": "Folder actions",
+      "sharedAccess": "{n} shared access(es) to the folder"
+    },
+    "table": {
+      "selectAll": "Select all",
+      "selectRow": "Select the row",
+      "variantColumn": "Variant",
+      "fileColumn": "File",
+      "replacedBy": "Replaced by {slug}",
+      "open": "Open",
+      "openInNewTab": "Open in a new tab",
+      "copyLink": "Copy the link",
+      "view": "View",
+      "moreActions": "More actions",
+      "range": "{from}–{to} of {total}",
+      "pageSizeOption": "{size} / page",
+      "pageSizeLabel": "Items per page",
+      "selectedCount": "{n} selected",
+      "copyLinks": "Copy the links",
+      "exportCsv": "Export CSV",
+      "clearSelection": "Clear the selection",
+      "linksCopied": "{n} links copied | Link copied | {n} links copied",
+      "exported": "{n} presentation(s) exported"
+    },
+    "toolbar": {
+      "searchPlaceholder": "Search…",
+      "statusFilterActive": "Status · {count}",
+      "projectFilterActive": "Project · {count}",
+      "clearFilters": "Clear",
+      "sortBy": "Sort by",
+      "ascending": "Ascending",
+      "descending": "Descending"
+    },
+    "card": {
+      "actionsLabel": "Actions",
+      "present": "Present",
+      "slides": "slides | slide | slides",
+      "variantsLabel": "Variants",
+      "unpublishedChanges": "Unpublished changes",
+      "replacedBy": "Replaced by “{title}”",
+      "updatedOn": "Updated on {date}"
+    },
+    "deckCreate": {
+      "description": "A blank draft, created in the database and opened in the editor.",
+      "titlePlaceholder": "Title of the presentation",
+      "slugHelp": "Identifier in the URL (/slides/…). The wand fills it from the title.",
+      "submit": "Create and edit",
+      "created": "Presentation created",
+      "slugTaken": "The slug “{slug}” is already taken."
+    },
+    "form": {
+      "slugInvalid": "Letters, digits, hyphens and underscores only",
+      "createFailed": "Creation failed",
+      "identifierTaken": "The identifier “{slug}” is already taken."
+    },
+    "projectCreate": {
+      "description": "A project to group presentations.",
+      "namePlaceholder": "Name of the folder",
+      "identifierHelp": "Optional: left empty, it is derived from the name. The wand fills it from the name.",
+      "fillFromName": "Fill from the name",
+      "colorHelp": "Optional: tints the folder icon.",
+      "submit": "Create the folder",
+      "created": "Folder created"
+    },
+    "projectEdit": {
+      "title": "Edit the folder",
+      "description": "Name, color and identifier.",
+      "identifierHelp": "URL segment (/projects/…). Changing it breaks the old links to the folder.",
+      "regenerateFromName": "Regenerate from the name",
+      "saved": "Folder updated",
+      "saveFailed": "Update failed"
+    },
+    "projectDelete": {
+      "title": "Delete the folder?",
+      "noticeTitle": "The folder and its content go to the trash",
+      "noticeWithDecks": "This folder and its {n} presentations will be moved to the trash. You can restore everything at once. | This folder and its presentation will be moved to the trash. You can restore everything at once. | This folder and its {n} presentations will be moved to the trash. You can restore everything at once.",
+      "noticeEmpty": "This folder (empty) will be moved to the trash. You can restore it.",
+      "trashed": "Folder moved to the trash",
+      "failed": "Deletion failed"
+    },
+    "home": {
+      "emptyTitle": "No presentation",
+      "emptyPrivileged": "Create a first folder or a presentation to get started.",
+      "emptyLoggedIn": "Nothing has been shared with you yet.",
+      "emptyAnonymous": "If presentations have been shared with you, sign in to see them.",
+      "modeFolders": "Folders",
+      "modeManage": "Management",
+      "visibleCount": "{visible} of {total} presentations",
+      "noResultTitle": "No result",
+      "noResultDescription": "No presentation matches your criteria.",
+      "resetFilters": "Reset the filters"
+    },
+    "folder": {
+      "edit": "Edit",
+      "manageAccess": "Manage access",
+      "delete": "Delete",
+      "sorted": "Sorted by last update",
+      "sortedWithTheme": "Theme {theme} · Sorted by last update",
+      "emptyTitle": "Empty folder",
+      "emptyTitleAnonymous": "Private or empty folder",
+      "emptyDescription": "No presentation in this project.",
+      "emptyDescriptionAnonymous": "If this folder has been shared with you, sign in to see its content.",
+      "supersededEditions": "Replaced editions ({count})"
+    }
+  }
+}

@@ -40,10 +40,10 @@ const sortKey = computed({
 })
 
 // Theme is a project-coupled attribute, not a browsing axis — no theme sort/filter.
-const sortOptions: { label: string, value: SortKey }[] = [
-  { label: 'Titre', value: 'title' },
-  { label: 'Statut', value: 'status' },
-]
+const sortOptions = computed<{ label: string, value: SortKey }[]>(() => [
+  { label: t('common.fields.title'), value: 'title' },
+  { label: t('catalog.fields.status'), value: 'status' },
+])
 
 function toggleDir() {
   query.value = { ...query.value, sortDir: query.value.sortDir === 'desc' ? 'asc' : 'desc' }
@@ -104,7 +104,7 @@ const projectChips = computed(() => {
     count: present.get(slug)!,
   }))
   if (ungrouped > 0)
-    chips.push({ value: UNGROUPED_PROJECT, label: 'Sans projet', color: undefined, count: ungrouped })
+    chips.push({ value: UNGROUPED_PROJECT, label: t('catalog.project.none'), color: undefined, count: ungrouped })
   return chips
 })
 
@@ -149,7 +149,7 @@ function clearFilters() {
       ref="searchInput"
       v-model="search"
       icon="i-lucide-search"
-      placeholder="Rechercher…"
+      :placeholder="t('catalog.toolbar.searchPlaceholder')"
       class="flex-1 min-w-48"
     >
       <template #trailing>
@@ -164,7 +164,7 @@ function clearFilters() {
       :content="{ align: 'start' }"
     >
       <UButton
-        :label="activeStatusCount ? `Statut · ${activeStatusCount}` : 'Statut'"
+        :label="activeStatusCount ? t('catalog.toolbar.statusFilterActive', { count: activeStatusCount }) : t('catalog.fields.status')"
         icon="i-lucide-list-filter"
         trailing-icon="i-lucide-chevron-down"
         color="neutral"
@@ -178,7 +178,7 @@ function clearFilters() {
       :content="{ align: 'start' }"
     >
       <UButton
-        :label="activeProjectCount ? `Projet · ${activeProjectCount}` : 'Projet'"
+        :label="activeProjectCount ? t('catalog.toolbar.projectFilterActive', { count: activeProjectCount }) : t('catalog.fields.project')"
         icon="i-lucide-folder"
         trailing-icon="i-lucide-chevron-down"
         color="neutral"
@@ -188,7 +188,7 @@ function clearFilters() {
 
     <UButton
       v-if="hasActiveFilters"
-      label="Effacer"
+      :label="t('catalog.toolbar.clearFilters')"
       icon="i-lucide-filter-x"
       color="neutral"
       variant="ghost"
@@ -200,10 +200,10 @@ function clearFilters() {
         v-model="sortKey"
         :items="sortOptions"
         icon="i-lucide-arrow-down-up"
-        aria-label="Trier par"
+        :aria-label="t('catalog.toolbar.sortBy')"
         class="w-36"
       />
-      <UTooltip :text="query.sortDir === 'desc' ? 'Décroissant' : 'Croissant'">
+      <UTooltip :text="query.sortDir === 'desc' ? t('catalog.toolbar.descending') : t('catalog.toolbar.ascending')">
         <UButton
           :icon="query.sortDir === 'desc' ? 'i-lucide-arrow-down-wide-narrow' : 'i-lucide-arrow-up-narrow-wide'"
           color="neutral"

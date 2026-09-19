@@ -37,7 +37,7 @@ describe('buildCatalogFolders', () => {
   it('appends the ungrouped "Divers" bucket last, only when it holds decks', () => {
     const withUngrouped = buildCatalogFolders(decks, projects)
     const last = withUngrouped.at(-1)!
-    expect(last).toMatchObject({ routeSlug: UNGROUPED_FOLDER_SLUG, title: 'Divers', count: 1, ungrouped: true })
+    expect(last).toMatchObject({ routeSlug: UNGROUPED_FOLDER_SLUG, title: '', count: 1, ungrouped: true })
 
     const noOrphans = buildCatalogFolders(decks.filter(d => d.project), projects)
     expect(noOrphans.some(f => f.ungrouped)).toBe(false)

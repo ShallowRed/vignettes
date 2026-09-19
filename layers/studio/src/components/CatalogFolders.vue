@@ -23,6 +23,8 @@ const emit = defineEmits<{
   removeProject: [Project]
 }>()
 
+const { t } = useI18n()
+
 const folders = computed(() => buildCatalogFolders(props.items, props.projects ?? []))
 
 // Folder master keys (privileged payloads only), for the "shared" hint.
@@ -36,11 +38,11 @@ const projectBySlug = computed(() =>
 function folderActions(project: Project): DropdownMenuItem[][] {
   return [
     [
-      { label: 'Modifier…', icon: 'i-lucide-pencil', onSelect: () => emit('editProject', project) },
-      { label: 'Gérer l\'accès…', icon: 'i-lucide-users', onSelect: () => emit('manageAccess', project) },
+      { label: t('catalog.folders.edit'), icon: 'i-lucide-pencil', onSelect: () => emit('editProject', project) },
+      { label: t('catalog.folders.manageAccess'), icon: 'i-lucide-users', onSelect: () => emit('manageAccess', project) },
     ],
     [
-      { label: 'Supprimer…', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => emit('removeProject', project) },
+      { label: t('catalog.folders.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => emit('removeProject', project) },
     ],
   ]
 }
@@ -74,7 +76,7 @@ function folderActions(project: Project): DropdownMenuItem[][] {
               color="neutral"
               variant="ghost"
               size="xs"
-              aria-label="Actions du dossier"
+              :aria-label="t('catalog.folders.actionsLabel')"
             />
           </UDropdownMenu>
         </div>
@@ -87,17 +89,17 @@ function folderActions(project: Project): DropdownMenuItem[][] {
           />
           <div class="min-w-0">
             <h2 class="font-semibold text-highlighted leading-snug">
-              {{ folder.title }}
+              {{ folder.ungrouped ? t('catalog.project.ungroupedTitle') : folder.title }}
             </h2>
             <p class="text-xs text-muted mt-1">
-              {{ folder.count }} présentation{{ folder.count > 1 ? 's' : '' }}
+              {{ t('catalog.deck.count', folder.count) }}
               <template v-if="folder.themes.length">
                 · {{ folder.themes.join(', ') }}
               </template>
               <span
                 v-if="sharedBySlug.get(folder.routeSlug)"
                 class="inline-flex items-center gap-0.5"
-                :title="`${sharedBySlug.get(folder.routeSlug)} accès partagé(s) au dossier`"
+                :title="t('catalog.folders.sharedAccess', { n: sharedBySlug.get(folder.routeSlug) })"
               >
                 · <UIcon
                   name="i-lucide-users"

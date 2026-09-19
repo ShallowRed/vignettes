@@ -15,6 +15,7 @@ const props = defineProps<{ projects?: Project[], defaultProject?: string }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
+const { t } = useI18n()
 const toast = useToast()
 const { invalidatePresentations } = useCatalogCache()
 
@@ -36,7 +37,7 @@ function slugFromTitle() {
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 
 const projectItems = computed(() => [
-  { label: 'Sans projet', value: NONE },
+  { label: t('catalog.project.none'), value: NONE },
   ...(props.projects ?? []).map(p => ({ label: p.title ?? p.slug, value: p.slug })),
 ])
 
@@ -55,14 +56,14 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
   }),
   async onSuccess() {
     open.value = false
-    toast.add({ title: 'Présentation créée', description: state.title.trim(), icon: 'i-lucide-file-plus-2', color: 'success' })
+    toast.add({ title: t('catalog.deckCreate.created'), description: state.title.trim(), icon: 'i-lucide-file-plus-2', color: 'success' })
     await invalidatePresentations()
     await navigateTo(`/edit/${state.slug}`)
   },
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
-      ? `Le slug « ${state.slug} » est déjà pris.`
-      : e?.statusMessage || 'Échec de la création'
+      ? t('catalog.deckCreate.slugTaken', { slug: state.slug })
+      : e?.statusMessage || t('catalog.form.createFailed')
   },
 })
 
@@ -76,8 +77,8 @@ function submit() {
 <template>
   <UModal
     v-model:open="open"
-    title="Nouvelle présentation"
-    description="Un brouillon vierge, créé en base et ouvert dans l'éditeur."
+    :title="t('common.actions.newDeck')"
+    :description="t('catalog.deckCreate.description')"
   >
     <template #body>
       <form
@@ -85,47 +86,47 @@ function submit() {
         @submit.prevent="submit"
       >
         <UFormField
-          label="Titre"
+          :label="t('common.fields.title')"
           required
         >
           <UInput
             v-model="state.title"
-            placeholder="Titre de la présentation"
+            :placeholder="t('catalog.deckCreate.titlePlaceholder')"
             autofocus
             class="w-full"
           />
         </UFormField>
 
         <UFormField
-          label="Slug"
-          :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
-          help="Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre."
+          :label="t('common.fields.slug')"
+          :error="slugValid ? undefined : t('catalog.form.slugInvalid')"
+          :help="t('catalog.deckCreate.slugHelp')"
         >
           <div class="flex items-center gap-2">
             <UInput
               v-model="state.slug"
-              placeholder="mon-slug"
+              :placeholder="t('common.fields.slugPlaceholder')"
               class="flex-1 font-mono"
             />
             <UButton
               icon="i-lucide-wand-sparkles"
               color="neutral"
               variant="subtle"
-              aria-label="Remplir depuis le titre"
+              :aria-label="t('common.actions.fillFromTitle')"
               @click="slugFromTitle"
             />
           </div>
         </UFormField>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <UFormField label="Projet">
+          <UFormField :label="t('catalog.fields.project')">
             <USelect
               v-model="state.project"
               :items="projectItems"
               class="w-full"
             />
           </UFormField>
-          <UFormField label="Thème">
+          <UFormField :label="t('catalog.fields.theme')">
             <USelect
               v-model="state.theme"
               :items="themeItems"
@@ -147,13 +148,13 @@ function submit() {
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="close"
         />
         <UButton
-          label="Créer et éditer"
+          :label="t('catalog.deckCreate.submit')"
           icon="i-lucide-file-plus-2"
           :loading="pending"
           :disabled="!canSubmit"

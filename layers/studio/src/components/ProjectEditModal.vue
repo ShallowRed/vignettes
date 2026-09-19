@@ -13,6 +13,7 @@ import { PROJECT_COLORS, projectSwatchStyle } from '../utils/project-colors'
 const props = defineProps<{ project: { slug: string, title: string, color?: string | null, icon?: string | null } }>()
 const emit = defineEmits<{ saved: [Project] }>()
 const open = defineModel<boolean>('open', { required: true })
+const { t } = useI18n()
 const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
@@ -38,13 +39,13 @@ const { mutate: runSave, isLoading: pending } = useMutation({
     // to the decks' project, so refresh both catalog queries.
     await invalidateAll()
     open.value = false
-    toast.add({ title: 'Dossier mis à jour', description: project.title, icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('catalog.projectEdit.saved'), description: project.title, icon: 'i-lucide-check', color: 'success' })
     emit('saved', project)
   },
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
-      ? `L'identifiant « ${state.slug} » est déjà pris.`
-      : e?.statusMessage || 'Échec de la mise à jour'
+      ? t('catalog.form.identifierTaken', { slug: state.slug })
+      : e?.statusMessage || t('catalog.projectEdit.saveFailed')
   },
 })
 
@@ -62,8 +63,8 @@ function close() {
 <template>
   <UModal
     v-model:open="open"
-    title="Modifier le dossier"
-    description="Nom, couleur et identifiant."
+    :title="t('catalog.projectEdit.title')"
+    :description="t('catalog.projectEdit.description')"
   >
     <template #body>
       <form
@@ -71,7 +72,7 @@ function close() {
         @submit.prevent="submit"
       >
         <UFormField
-          label="Nom"
+          :label="t('common.fields.name')"
           required
         >
           <UInput
@@ -82,28 +83,28 @@ function close() {
         </UFormField>
 
         <UFormField
-          label="Identifiant"
-          :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
-          help="Segment d'URL (/projects/…). Le changer casse les anciens liens du dossier."
+          :label="t('common.fields.identifier')"
+          :error="slugValid ? undefined : t('catalog.form.slugInvalid')"
+          :help="t('catalog.projectEdit.identifierHelp')"
         >
           <div class="flex items-center gap-2">
             <UInput
               v-model="state.slug"
               class="flex-1 font-mono"
-              placeholder="mon-dossier"
+              :placeholder="t('common.fields.folderSlugPlaceholder')"
             />
             <UButton
               icon="i-lucide-wand-sparkles"
               color="neutral"
               variant="subtle"
-              aria-label="Régénérer depuis le nom"
+              :aria-label="t('catalog.projectEdit.regenerateFromName')"
               @click="state.slug = slugifyProject(state.title)"
             />
           </div>
         </UFormField>
 
         <UFormField
-          label="Icône"
+          :label="t('common.fields.icon')"
         >
           <div class="flex flex-wrap items-center gap-2">
             <button
@@ -123,13 +124,13 @@ function close() {
           </div>
         </UFormField>
 
-        <UFormField label="Couleur">
+        <UFormField :label="t('common.fields.color')">
           <div class="flex items-center gap-2">
             <button
               type="button"
               class="size-7 rounded-full ring-2 ring-offset-2 ring-offset-default transition bg-muted"
               :class="state.color === null ? 'ring-primary' : 'ring-transparent'"
-              aria-label="Sans couleur"
+              :aria-label="t('common.fields.noColor')"
               @click="state.color = null"
             />
             <button
@@ -158,13 +159,13 @@ function close() {
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="close"
         />
         <UButton
-          label="Enregistrer"
+          :label="t('common.actions.save')"
           icon="i-lucide-check"
           :loading="pending"
           :disabled="!canSubmit"

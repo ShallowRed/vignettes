@@ -11,6 +11,7 @@ const emit = defineEmits<{ deleted: [] }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
+const { t } = useI18n()
 const toast = useToast()
 const { removeProjectOptimistic, restoreSnapshot, invalidateAll } = useCatalogCache()
 
@@ -24,7 +25,7 @@ const { mutate: confirm, isLoading: pending } = useMutation({
   onSuccess() {
     open.value = false
     toast.add({
-      title: 'Dossier placé dans la corbeille',
+      title: t('catalog.projectDelete.trashed'),
       description: props.project.title,
       icon: 'i-lucide-trash-2',
       color: 'success',
@@ -35,7 +36,7 @@ const { mutate: confirm, isLoading: pending } = useMutation({
     // Roll the optimistic removal back, then surface the failure.
     if (snapshot)
       restoreSnapshot(snapshot)
-    toast.add({ title: error?.statusMessage || 'Échec de la suppression', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: error?.statusMessage || t('catalog.projectDelete.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
   onSettled: invalidateAll,
 })
@@ -44,29 +45,29 @@ const { mutate: confirm, isLoading: pending } = useMutation({
 <template>
   <UModal
     v-model:open="open"
-    title="Supprimer le dossier ?"
+    :title="t('catalog.projectDelete.title')"
     :description="project.title"
   >
     <template #body>
       <ActionNotice
         icon="i-lucide-trash-2"
-        title="Le dossier et son contenu partent à la corbeille"
+        :title="t('catalog.projectDelete.noticeTitle')"
         :description="deckCount > 0
-          ? `Ce dossier et ses ${deckCount} présentation${deckCount > 1 ? 's' : ''} seront placés dans la corbeille. Tu pourras tout restaurer d'un coup.`
-          : 'Ce dossier (vide) sera placé dans la corbeille. Tu pourras le restaurer.'"
+          ? t('catalog.projectDelete.noticeWithDecks', deckCount)
+          : t('catalog.projectDelete.noticeEmpty')"
       />
     </template>
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="close"
         />
         <UButton
-          label="Mettre à la corbeille"
+          :label="t('common.actions.moveToTrash')"
           color="warning"
           icon="i-lucide-trash-2"
           :loading="pending"

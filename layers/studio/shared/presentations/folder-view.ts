@@ -14,6 +14,7 @@ export const UNGROUPED_FOLDER_SLUG = 'divers'
 export interface CatalogFolder {
   /** Route segment: `/projects/<routeSlug>`. */
   routeSlug: string
+  /** Empty for the ungrouped folder, which the interface names. */
   title: string
   /** Number of visible decks in the folder. */
   count: number
@@ -76,7 +77,7 @@ export function buildCatalogFolders(
   if (ungrouped.length) {
     folders.push({
       routeSlug: UNGROUPED_FOLDER_SLUG,
-      title: 'Divers',
+      title: '',
       count: ungrouped.length,
       color: null,
       icon: null,

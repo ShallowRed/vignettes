@@ -10,6 +10,7 @@ import { projectColorStyle } from '../../utils/project-colors'
 // A project folder's contents: the decks grouped under one project, reached from
 // the folder grid via the stable /projects/<slug> route. `divers` is the
 // reserved slug for the no-project bucket.
+const { t } = useI18n()
 const route = useRoute()
 const routeSlug = computed(() => route.params.slug as string)
 const isUngrouped = computed(() => routeSlug.value === 'divers')
@@ -30,7 +31,7 @@ const {
 
 const projectTitle = computed(() =>
   isUngrouped.value
-    ? 'Divers'
+    ? t('catalog.project.ungroupedTitle')
     : (projects.value.find(p => p.slug === routeSlug.value)?.title ?? routeSlug.value))
 
 // Most recently changed first: the deck someone is working on is at the top.
@@ -49,7 +50,7 @@ const sharedTheme = computed(() => {
 })
 
 const breadcrumb = computed(() => [
-  { label: 'Accueil', to: '/' },
+  { label: t('common.home'), to: '/' },
   { label: projectTitle.value },
 ])
 
@@ -109,19 +110,19 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       <h1 class="text-xl font-semibold text-highlighted">
         {{ projectTitle }}
       </h1>
-      <span class="text-sm text-muted">{{ decks.length }} présentation{{ decks.length > 1 ? 's' : '' }}</span>
+      <span class="text-sm text-muted">{{ t('catalog.deck.count', decks.length) }}</span>
       <div class="flex-1" />
       <UButton
         v-if="canCreateHere"
         icon="i-lucide-file-plus-2"
-        label="Nouvelle présentation"
+        :label="t('common.actions.newDeck')"
         size="sm"
         @click="createOpen = true"
       />
       <UButton
         v-if="canManageProject"
         icon="i-lucide-pencil"
-        label="Modifier"
+        :label="t('catalog.folder.edit')"
         color="neutral"
         variant="subtle"
         size="sm"
@@ -130,7 +131,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       <UButton
         v-if="canManageAccess"
         icon="i-lucide-users"
-        label="Gérer l'accès"
+        :label="t('catalog.folder.manageAccess')"
         color="neutral"
         variant="subtle"
         size="sm"
@@ -139,7 +140,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       <UButton
         v-if="canManageProject"
         icon="i-lucide-trash-2"
-        label="Supprimer"
+        :label="t('catalog.folder.delete')"
         color="error"
         variant="ghost"
         size="sm"
@@ -151,7 +152,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       v-if="decks.length"
       class="-mt-4 text-sm text-muted"
     >
-      {{ sharedTheme ? `Thème ${sharedTheme} · ` : '' }}Triées par dernière modification
+      {{ sharedTheme ? t('catalog.folder.sortedWithTheme', { theme: sharedTheme }) : t('catalog.folder.sorted') }}
     </p>
 
     <AsyncSection
@@ -163,15 +164,15 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       <template #empty>
         <UEmpty
           icon="i-lucide-folder-open"
-          :title="loggedIn ? 'Dossier vide' : 'Dossier privé ou vide'"
+          :title="loggedIn ? t('catalog.folder.emptyTitle') : t('catalog.folder.emptyTitleAnonymous')"
           :description="loggedIn
-            ? 'Aucune présentation dans ce projet.'
-            : 'Si ce dossier vous a été partagé, connectez-vous pour voir son contenu.'"
+            ? t('catalog.folder.emptyDescription')
+            : t('catalog.folder.emptyDescriptionAnonymous')"
           variant="naked"
           :actions="canCreateHere
-            ? [{ label: 'Nouvelle présentation', icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
+            ? [{ label: t('common.actions.newDeck'), icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
             : !loggedIn
-              ? [{ label: 'Se connecter', icon: 'i-lucide-log-in', to: `/login?redirect=/projects/${routeSlug}` }]
+              ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=/projects/${routeSlug}` }]
               : []"
         />
       </template>
@@ -195,7 +196,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
         class="mt-10"
       >
         <UButton
-          :label="`Éditions remplacées (${contents.superseded.length})`"
+          :label="t('catalog.folder.supersededEditions', { count: contents.superseded.length })"
           color="neutral"
           variant="ghost"
           trailing-icon="i-lucide-chevron-down"

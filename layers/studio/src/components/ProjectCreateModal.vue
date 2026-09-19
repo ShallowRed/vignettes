@@ -12,6 +12,7 @@ const emit = defineEmits<{ created: [Project] }>()
 // Create-project modal: a first-class catalog folder. The slug follows the
 // title until edited by hand; the wand re-derives it on demand.
 const open = defineModel<boolean>('open', { required: true })
+const { t } = useI18n()
 const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
@@ -33,13 +34,13 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
     // Refetch the folders query so the new folder is present before we navigate.
     await invalidateAll()
     open.value = false
-    toast.add({ title: 'Dossier créé', description: project.title, icon: 'i-lucide-folder-plus', color: 'success' })
+    toast.add({ title: t('catalog.projectCreate.created'), description: project.title, icon: 'i-lucide-folder-plus', color: 'success' })
     emit('created', project)
   },
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
-      ? `L'identifiant « ${state.slug} » est déjà pris.`
-      : e?.statusMessage || 'Échec de la création'
+      ? t('catalog.form.identifierTaken', { slug: state.slug })
+      : e?.statusMessage || t('catalog.form.createFailed')
   },
 })
 
@@ -57,8 +58,8 @@ function submit() {
 <template>
   <UModal
     v-model:open="open"
-    title="Nouveau dossier"
-    description="Un projet pour regrouper des présentations."
+    :title="t('common.actions.newFolder')"
+    :description="t('catalog.projectCreate.description')"
   >
     <template #body>
       <form
@@ -66,40 +67,40 @@ function submit() {
         @submit.prevent="submit"
       >
         <UFormField
-          label="Nom"
+          :label="t('common.fields.name')"
           required
         >
           <UInput
             v-model="state.title"
-            placeholder="Nom du dossier"
+            :placeholder="t('catalog.projectCreate.namePlaceholder')"
             autofocus
             class="w-full"
           />
         </UFormField>
 
         <UFormField
-          label="Identifiant"
-          :error="slugValid ? undefined : 'Lettres, chiffres, tirets et underscores uniquement'"
-          help="Optionnel : laissé vide, il sera dérivé du nom. La baguette le remplit depuis le nom."
+          :label="t('common.fields.identifier')"
+          :error="slugValid ? undefined : t('catalog.form.slugInvalid')"
+          :help="t('catalog.projectCreate.identifierHelp')"
         >
           <div class="flex items-center gap-2">
             <UInput
               v-model="state.slug"
-              placeholder="mon-dossier"
+              :placeholder="t('common.fields.folderSlugPlaceholder')"
               class="flex-1 font-mono"
             />
             <UButton
               icon="i-lucide-wand-sparkles"
               color="neutral"
               variant="subtle"
-              aria-label="Remplir depuis le nom"
+              :aria-label="t('catalog.projectCreate.fillFromName')"
               @click="state.slug = slugifyProject(state.title)"
             />
           </div>
         </UFormField>
 
         <UFormField
-          label="Icône"
+          :label="t('common.fields.icon')"
         >
           <div class="flex flex-wrap items-center gap-2">
             <button
@@ -120,15 +121,15 @@ function submit() {
         </UFormField>
 
         <UFormField
-          label="Couleur"
-          help="Optionnel : teinte l'icône du dossier."
+          :label="t('common.fields.color')"
+          :help="t('catalog.projectCreate.colorHelp')"
         >
           <div class="flex items-center gap-2">
             <button
               type="button"
               class="size-7 rounded-full ring-2 ring-offset-2 ring-offset-default transition bg-muted"
               :class="[state.color === null ? 'ring-primary' : 'ring-transparent']"
-              aria-label="Sans couleur"
+              :aria-label="t('common.fields.noColor')"
               @click="state.color = null"
             />
             <button
@@ -157,13 +158,13 @@ function submit() {
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
         <UButton
-          label="Annuler"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
           @click="close"
         />
         <UButton
-          label="Créer le dossier"
+          :label="t('catalog.projectCreate.submit')"
           icon="i-lucide-folder-plus"
           :loading="pending"
           :disabled="!canSubmit"

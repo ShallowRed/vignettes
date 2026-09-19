@@ -25,7 +25,7 @@ const emit = defineEmits<{
   remove: [deck: PresentationListItem]
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const selectedSlug = ref(props.presentation.slug)
 // The actions stay visible while their menu is open, the pointer being on the menu.
@@ -60,22 +60,22 @@ const updatedLabel = computed(() => {
     return undefined
   const date = new Date(at)
   const sameYear = date.getFullYear() === new Date().getFullYear()
-  return `Modifiée le ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) })}`
+  return t('catalog.card.updatedOn', { date: date.toLocaleDateString(locale.value, { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) }) })
 })
 
 const adminActions = computed<DropdownMenuItem[][]>(() => [
   [
-    { label: 'Éditer le contenu', icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
-    { label: 'Métadonnées…', icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
-    ...(isOwner.value ? [{ label: 'Partager…', icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }] : []),
+    { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
+    { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
+    ...(isOwner.value ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }] : []),
   ],
   [
-    { label: 'Créer une variante…', icon: 'i-lucide-languages', onSelect: () => emit('duplicate', deck.value, 'variant') },
-    { label: 'Nouvelle édition…', icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', deck.value, 'edition') },
+    { label: t('catalog.deck.createVariant'), icon: 'i-lucide-languages', onSelect: () => emit('duplicate', deck.value, 'variant') },
+    { label: t('catalog.deck.newEdition'), icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', deck.value, 'edition') },
   ],
   [
     {
-      label: 'Supprimer…',
+      label: t('catalog.deck.delete'),
       icon: 'i-lucide-trash-2',
       color: 'error',
       onSelect: () => emit('remove', deck.value),
@@ -111,7 +111,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           <UButton
             v-if="canEdit"
             icon="i-lucide-pencil"
-            label="Éditer"
+            :label="t('common.actions.edit')"
             color="neutral"
             variant="outline"
             size="xs"
@@ -130,7 +130,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
               variant="outline"
               size="xs"
               class="bg-default/90 backdrop-blur-sm hover:bg-accented active:bg-accented active:ring-inverted/40 active:scale-95 transition data-[state=open]:bg-accented"
-              aria-label="Actions"
+              :aria-label="t('catalog.card.actionsLabel')"
             />
           </UDropdownMenu>
         </div>
@@ -142,12 +142,12 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
             name="i-lucide-play"
             class="size-3.5"
           />
-          Présenter
+          {{ t('catalog.card.present') }}
         </span>
         <span
           v-if="deck.slideCount"
           class="absolute right-0 bottom-0 bg-inverted px-2 py-1 font-mono text-[11px] leading-none tabular-nums text-inverted pointer-events-none"
-        >{{ deck.slideCount }}<span class="sr-only"> diapositive{{ deck.slideCount > 1 ? 's' : '' }}</span></span>
+        >{{ deck.slideCount }}<span class="sr-only">{{ ` ${t('catalog.card.slides', deck.slideCount)}` }}</span></span>
       </DeckPreview>
 
       <div class="flex flex-col gap-2 p-4">
@@ -159,7 +159,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           v-if="variants && variants.length > 1"
           class="relative z-10 flex flex-wrap gap-1.5"
           role="group"
-          aria-label="Variantes"
+          :aria-label="t('catalog.card.variantsLabel')"
         >
           <UButton
             v-for="variant in variants"
@@ -178,18 +178,18 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           v-if="frozen || !minimal"
           class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted"
         >
-          <span v-if="frozen">{{ deck.lifecycle === 'archived' ? 'Archivée' : 'Gelée' }}</span>
+          <span v-if="frozen">{{ deck.lifecycle === 'archived' ? t('catalog.deck.archived') : t('catalog.deck.frozen') }}</span>
           <span v-else-if="!minimal && statusDisplay && deck.status !== 'public'">{{ t(statusDisplay.labelKey) }}</span>
-          <span v-if="!minimal && deck.unlisted">Non répertoriée</span>
-          <span v-if="!minimal && admin && deck.published === false">Non publié</span>
+          <span v-if="!minimal && deck.unlisted">{{ t('catalog.deck.unlisted') }}</span>
+          <span v-if="!minimal && admin && deck.published === false">{{ t('catalog.deck.unpublished') }}</span>
           <span
             v-if="!minimal && canEdit && deck.unpublishedChanges"
             class="text-warning"
-          >Modifications non publiées</span>
+          >{{ t('catalog.card.unpublishedChanges') }}</span>
           <span
             v-if="!minimal && admin && deck.sharedCount"
             class="inline-flex items-center gap-0.5"
-            :title="`${deck.sharedCount} accès partagé${deck.sharedCount > 1 ? 's' : ''}`"
+            :title="t('catalog.deck.sharedAccess', deck.sharedCount)"
           >
             <UIcon
               name="i-lucide-users"
@@ -197,7 +197,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
             />
             {{ deck.sharedCount }}
           </span>
-          <span v-if="replacedBy">Remplacée par « {{ replacedBy }} »</span>
+          <span v-if="replacedBy">{{ t('catalog.card.replacedBy', { title: replacedBy }) }}</span>
           <span v-if="!minimal && updatedLabel">{{ updatedLabel }}</span>
         </div>
       </div>

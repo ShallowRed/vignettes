@@ -8,6 +8,7 @@ import { useModalTarget } from '../composables/useModalTarget'
 
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
+const { t } = useI18n()
 const { privileged, loggedIn, role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 
@@ -72,7 +73,7 @@ const projectDeckCount = computed(() =>
   <div class="flex flex-col gap-6">
     <!-- Same top rhythm as the folder/trash/users pages: no layout shift when
          navigating between catalog spaces. -->
-    <UBreadcrumb :items="[{ label: 'Accueil' }]" />
+    <UBreadcrumb :items="[{ label: t('common.home') }]" />
     <AsyncSection
       :status="status"
       :error="error"
@@ -82,16 +83,16 @@ const projectDeckCount = computed(() =>
       <template #empty>
         <UEmpty
           icon="i-lucide-presentation"
-          title="Aucune présentation"
+          :title="t('catalog.home.emptyTitle')"
           :description="privileged
-            ? 'Créez un premier dossier ou une présentation pour démarrer.'
+            ? t('catalog.home.emptyPrivileged')
             : loggedIn
-              ? 'Rien ne vous a été partagé pour le moment.'
-              : 'Si des présentations vous ont été partagées, connectez-vous pour les voir.'"
+              ? t('catalog.home.emptyLoggedIn')
+              : t('catalog.home.emptyAnonymous')"
           variant="naked"
           size="lg"
           :actions="!loggedIn
-            ? [{ label: 'Se connecter', icon: 'i-lucide-log-in', to: '/login' }]
+            ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: '/login' }]
             : []"
         />
         <div
@@ -100,14 +101,14 @@ const projectDeckCount = computed(() =>
         >
           <UButton
             icon="i-lucide-folder-plus"
-            label="Nouveau dossier"
+            :label="t('common.actions.newFolder')"
             color="neutral"
             variant="subtle"
             @click="createProjectOpen = true"
           />
           <UButton
             icon="i-lucide-file-plus-2"
-            label="Nouvelle présentation"
+            :label="t('common.actions.newDeck')"
             @click="createOpen = true"
           />
         </div>
@@ -130,7 +131,7 @@ const projectDeckCount = computed(() =>
               name="i-lucide-folder"
               class="size-4"
             />
-            Dossiers
+            {{ t('catalog.home.modeFolders') }}
           </button>
           <button
             type="button"
@@ -142,7 +143,7 @@ const projectDeckCount = computed(() =>
               name="i-lucide-table-2"
               class="size-4"
             />
-            Gestion
+            {{ t('catalog.home.modeManage') }}
           </button>
         </div>
 
@@ -163,7 +164,7 @@ const projectDeckCount = computed(() =>
 
         <UButton
           icon="i-lucide-folder-plus"
-          label="Nouveau dossier"
+          :label="t('common.actions.newFolder')"
           color="neutral"
           variant="subtle"
           class="shrink-0"
@@ -171,7 +172,7 @@ const projectDeckCount = computed(() =>
         />
         <UButton
           icon="i-lucide-file-plus-2"
-          label="Nouvelle présentation"
+          :label="t('common.actions.newDeck')"
           class="shrink-0"
           @click="createOpen = true"
         />
@@ -192,18 +193,18 @@ const projectDeckCount = computed(() =>
       <template v-else>
         <p class="text-sm text-muted mb-4">
           {{ visible.length === presentations.length
-            ? `${presentations.length} présentation${presentations.length > 1 ? 's' : ''}`
-            : `${visible.length} sur ${presentations.length} présentations` }}
+            ? t('catalog.deck.count', presentations.length)
+            : t('catalog.home.visibleCount', { visible: visible.length, total: presentations.length }) }}
         </p>
 
         <UEmpty
           v-if="visible.length === 0"
           icon="i-lucide-search-x"
-          title="Aucun résultat"
-          description="Aucune présentation ne correspond à vos critères."
+          :title="t('catalog.home.noResultTitle')"
+          :description="t('catalog.home.noResultDescription')"
           variant="naked"
           :actions="hasActiveFilters
-            ? [{ label: 'Réinitialiser les filtres', icon: 'i-lucide-filter-x', color: 'neutral', variant: 'subtle', onClick: resetFilters }]
+            ? [{ label: t('catalog.home.resetFilters'), icon: 'i-lucide-filter-x', color: 'neutral', variant: 'subtle', onClick: resetFilters }]
             : []"
         />
 
