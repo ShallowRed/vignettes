@@ -11,8 +11,9 @@ export interface RecettePersona {
   login: string
   name: string
   role: Exclude<Role, 'anonymous'>
-  label: string
-  summary: string
+  /** Message keys of the name and description shown on the acceptance kit page. */
+  labelKey: string
+  summaryKey: string
 }
 
 export const RECETTE_PREFIX = 'recette-'
@@ -24,8 +25,8 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     login: 'recette-owner',
     name: 'Recette Owner',
     role: 'owner',
-    label: 'Owner',
-    summary: 'Contenu, métadonnées, accès, comptes, corbeille.',
+    labelKey: 'recette.personas.owner.label',
+    summaryKey: 'recette.personas.owner.summary',
   },
   {
     key: 'editor',
@@ -33,8 +34,8 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     login: 'recette-editeur',
     name: 'Recette Éditeur',
     role: 'editor',
-    label: 'Éditeur global',
-    summary: 'Édite, publie, modifie les métadonnées. Pas les accès ni les comptes.',
+    labelKey: 'recette.personas.editor.label',
+    summaryKey: 'recette.personas.editor.summary',
   },
   {
     key: 'viewer',
@@ -42,8 +43,8 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     login: 'recette-lecteur',
     name: 'Recette Lecteur',
     role: 'viewer',
-    label: 'Lecteur sans accès',
-    summary: 'Connecté sans accès accordé : catalogue public seulement.',
+    labelKey: 'recette.personas.viewer.label',
+    summaryKey: 'recette.personas.viewer.summary',
   },
   {
     key: 'collab',
@@ -51,8 +52,8 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     login: 'recette-collab',
     name: 'Recette Collaborateur',
     role: 'viewer',
-    label: 'Collaborateur',
-    summary: 'Clé maîtresse éditeur sur le dossier partagé, lecture sur « Lecture seule ».',
+    labelKey: 'recette.personas.collab.label',
+    summaryKey: 'recette.personas.collab.summary',
   },
   {
     key: 'expired',
@@ -60,8 +61,8 @@ export const RECETTE_PERSONAS: readonly RecettePersona[] = [
     login: 'recette-expire',
     name: 'Recette Accès expiré',
     role: 'viewer',
-    label: 'Accès expiré',
-    summary: 'Clé maîtresse expirée hier : équivaut à un lecteur sans accès.',
+    labelKey: 'recette.personas.expired.label',
+    summaryKey: 'recette.personas.expired.summary',
   },
 ]
 

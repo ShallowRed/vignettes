@@ -1,1 +1,90 @@
-{}
+{
+  "recette": {
+    "page": {
+      "pageTitle": "Acceptance · Vignettes",
+      "title": "Acceptance",
+      "subtitle": "data set and test accounts",
+      "disabled": "The acceptance kit is disabled on this environment",
+      "ownerRequired": "Sign in with an owner account to open the kit",
+      "signedInAs": "Signed in as {login} ({role})",
+      "signedInAsNobody": "Signed in as nobody ({role})",
+      "pass": "Pass of {owner}, valid for 12 hours.",
+      "backToMyAccount": "Back to my account",
+      "openStep": "open"
+    },
+    "dataset": {
+      "title": "Data set",
+      "seeded": "in place",
+      "missing": "missing",
+      "reset": "Reset",
+      "create": "Create",
+      "description": "Two folders, eight presentations (one per status), five accounts, one invited account. Prefix {prefix}; the reset touches nothing else.",
+      "resetDone": "Data set reset",
+      "resetSummary": "{decks} presentations, {folders} folders, {accounts} accounts",
+      "resetFailed": "The reset failed"
+    },
+    "personas": {
+      "openAs": "Open the application as",
+      "anonymousHint": "The pass remains valid to come back here.",
+      "anonymous": {
+        "label": "Signed-out visitor"
+      },
+      "owner": {
+        "label": "Owner",
+        "summary": "Content, metadata, access, accounts, trash."
+      },
+      "editor": {
+        "label": "Global editor",
+        "summary": "Edits, publishes, changes the metadata. Neither access nor accounts."
+      },
+      "viewer": {
+        "label": "Viewer without access",
+        "summary": "Signed in with no access granted: public catalog only."
+      },
+      "collab": {
+        "label": "Collaborator",
+        "summary": "Editor master key on the shared folder, read access on “Lecture seule”."
+      },
+      "expired": {
+        "label": "Expired access",
+        "summary": "Master key expired yesterday: equivalent to a viewer without access."
+      }
+    },
+    "scenarios": {
+      "anonymous": {
+        "catalog": "Catalog: only “Publique” appears.",
+        "password": "“Mot de passe” asks for “{password}” then opens.",
+        "private": "“Privée” sends to the sign-in page.",
+        "unlisted": "“Non listée” opens through a direct link.",
+        "trashed": "“Corbeille” is not found."
+      },
+      "viewer": {
+        "catalog": "Same catalog as the visitor.",
+        "private": "“Privée” is denied (access forbidden).",
+        "sharedFolder": "The shared folder shows up empty."
+      },
+      "collab": {
+        "sharedFolder": "Shared folder: “Publique”, “Mot de passe”, “Brouillon”, each with the pencil, and the “New presentation” button.",
+        "sync": "Editor of “Publique”: “Draft synced”; in a second tab, the typed text appears with the initial of the peer.",
+        "pasteImage": "An image pasted into the editor is inserted.",
+        "unpublished": "After a change, “Unpublished changes” in the header and on the card; “Publish” brings it up to date.",
+        "password": "“Mot de passe” opens without a password.",
+        "readOnly": "“Lecture seule” opens, with no pencil on its card.",
+        "private": "“Privée” is denied; no card offers metadata or sharing."
+      },
+      "expired": {
+        "catalog": "Like the viewer without access: only “Publique” is visible.",
+        "editorDenied": "The editor of “Publique” is denied."
+      },
+      "editor": {
+        "catalog": "The whole data set, “Brouillon” included, with pencil and metadata.",
+        "trash": "The trash contains “Corbeille”, which can be restored.",
+        "accountsDenied": "The accounts page is denied; the sharing panels are read-only."
+      },
+      "owner": {
+        "accounts": "Accounts: the five personas and the invited account “{handle}”.",
+        "sharedFolderAccess": "Access of the shared folder: collaborator (editor), expired access (expired), invited account (read). Change, add by email, remove."
+      }
+    }
+  }
+}

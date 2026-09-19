@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RecettePersona } from '#shared/recette/personas'
-import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD } from '#shared/recette/personas'
+import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PREFIX } from '#shared/recette/personas'
 
 /**
  * Staging acceptance kit (owner only, staging and dev): reset the `recette-*`
@@ -14,6 +14,7 @@ interface Status {
   personas: RecettePersona[]
 }
 
+const { t } = useI18n()
 const requestFetch = useRequestFetch()
 const { data, error, refresh } = await useAsyncData('recette-status', () => requestFetch<Status>('/api/recette/status'))
 const statusCode = computed(() => (error.value as any)?.statusCode as number | undefined)
@@ -24,11 +25,11 @@ async function seed() {
   seeding.value = true
   try {
     const summary = await $fetch<{ folders: number, decks: number, accounts: number }>('/api/recette/seed', { method: 'POST' })
-    toast.add({ title: 'Jeu de données réinitialisé', description: `${summary.decks} présentations, ${summary.folders} dossiers, ${summary.accounts} comptes`, icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('recette.dataset.resetDone'), description: t('recette.dataset.resetSummary', { decks: summary.decks, folders: summary.folders, accounts: summary.accounts }), icon: 'i-lucide-check', color: 'success' })
     await refresh()
   }
   catch (e: any) {
-    toast.add({ title: e?.statusMessage || 'Réinitialisation impossible', icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: e?.statusMessage || t('recette.dataset.resetFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
   finally {
     seeding.value = false
@@ -43,72 +44,72 @@ interface Step {
 }
 
 /** What each account must observe. Links open the page to check. */
-const SCENARIOS: { key: string, title: string, steps: Step[] }[] = [
+const scenarios = computed<{ key: string, title: string, steps: Step[] }[]>(() => [
   {
     key: 'anonymous',
-    title: 'Visiteur non connecté',
+    title: t('recette.personas.anonymous.label'),
     steps: [
-      { text: 'Catalogue : seule « Publique » apparaît.', to: '/' },
-      { text: `« Mot de passe » demande « ${RECETTE_PASSWORD} » puis s'ouvre.`, to: '/slides/recette-mdp' },
-      { text: '« Privée » renvoie à la connexion.', to: '/slides/recette-privee' },
-      { text: '« Non listée » s\'ouvre par lien direct.', to: '/slides/recette-non-listee' },
-      { text: '« Corbeille » est introuvable.', to: '/slides/recette-corbeille' },
+      { text: t('recette.scenarios.anonymous.catalog'), to: '/' },
+      { text: t('recette.scenarios.anonymous.password', { password: RECETTE_PASSWORD }), to: '/slides/recette-mdp' },
+      { text: t('recette.scenarios.anonymous.private'), to: '/slides/recette-privee' },
+      { text: t('recette.scenarios.anonymous.unlisted'), to: '/slides/recette-non-listee' },
+      { text: t('recette.scenarios.anonymous.trashed'), to: '/slides/recette-corbeille' },
     ],
   },
   {
     key: 'viewer',
-    title: 'Lecteur sans accès',
+    title: t('recette.personas.viewer.label'),
     steps: [
-      { text: 'Même catalogue que le visiteur.', to: '/' },
-      { text: '« Privée » est refusée (accès interdit).', to: '/slides/recette-privee' },
-      { text: 'Le dossier partagé se présente vide.', to: '/projects/recette-partage' },
+      { text: t('recette.scenarios.viewer.catalog'), to: '/' },
+      { text: t('recette.scenarios.viewer.private'), to: '/slides/recette-privee' },
+      { text: t('recette.scenarios.viewer.sharedFolder'), to: '/projects/recette-partage' },
     ],
   },
   {
     key: 'collab',
-    title: 'Collaborateur',
+    title: t('recette.personas.collab.label'),
     steps: [
-      { text: 'Dossier partagé : « Publique », « Mot de passe », « Brouillon », chacune avec le crayon, et le bouton « Nouvelle présentation ».', to: '/projects/recette-partage' },
-      { text: 'Éditeur de « Publique » : « Brouillon synchronisé » ; dans un second onglet, le texte tapé apparaît avec l\'initiale du pair.', to: '/edit/recette-public' },
-      { text: 'Une image collée dans l\'éditeur s\'insère.', to: '/edit/recette-public' },
-      { text: 'Après une modification, « Modifications non publiées » dans l\'en-tête et sur la carte ; « Publier » remet à jour.', to: '/edit/recette-public' },
-      { text: '« Mot de passe » s\'ouvre sans mot de passe.', to: '/slides/recette-mdp' },
-      { text: '« Lecture seule » s\'ouvre, sans crayon sur sa carte.', to: '/' },
-      { text: '« Privée » est refusée ; aucune carte ne propose métadonnées ni partage.', to: '/slides/recette-privee' },
+      { text: t('recette.scenarios.collab.sharedFolder'), to: '/projects/recette-partage' },
+      { text: t('recette.scenarios.collab.sync'), to: '/edit/recette-public' },
+      { text: t('recette.scenarios.collab.pasteImage'), to: '/edit/recette-public' },
+      { text: t('recette.scenarios.collab.unpublished'), to: '/edit/recette-public' },
+      { text: t('recette.scenarios.collab.password'), to: '/slides/recette-mdp' },
+      { text: t('recette.scenarios.collab.readOnly'), to: '/' },
+      { text: t('recette.scenarios.collab.private'), to: '/slides/recette-privee' },
     ],
   },
   {
     key: 'expired',
-    title: 'Accès expiré',
+    title: t('recette.personas.expired.label'),
     steps: [
-      { text: 'Comme le lecteur sans accès : « Publique » seule visible.', to: '/' },
-      { text: 'L\'éditeur de « Publique » est refusé.', to: '/edit/recette-public' },
+      { text: t('recette.scenarios.expired.catalog'), to: '/' },
+      { text: t('recette.scenarios.expired.editorDenied'), to: '/edit/recette-public' },
     ],
   },
   {
     key: 'editor',
-    title: 'Éditeur global',
+    title: t('recette.personas.editor.label'),
     steps: [
-      { text: 'Tout le jeu de données, « Brouillon » compris, avec crayon et métadonnées.', to: '/' },
-      { text: 'La corbeille contient « Corbeille », restaurable.', to: '/trash' },
-      { text: 'La page des comptes est refusée ; les panneaux de partage sont en lecture seule.', to: '/users' },
+      { text: t('recette.scenarios.editor.catalog'), to: '/' },
+      { text: t('recette.scenarios.editor.trash'), to: '/trash' },
+      { text: t('recette.scenarios.editor.accountsDenied'), to: '/users' },
     ],
   },
   {
     key: 'owner',
-    title: 'Owner',
+    title: t('recette.personas.owner.label'),
     steps: [
-      { text: `Comptes : les cinq personas et l'invité « ${RECETTE_INVITED_HANDLE} ».`, to: '/users' },
-      { text: 'Accès du dossier partagé : collaborateur (éditeur), accès expiré (expiré), invité (lecture). Modifier, ajouter par e-mail, retirer.', to: '/projects/recette-partage' },
+      { text: t('recette.scenarios.owner.accounts', { handle: RECETTE_INVITED_HANDLE }), to: '/users' },
+      { text: t('recette.scenarios.owner.sharedFolderAccess'), to: '/projects/recette-partage' },
     ],
   },
-]
+])
 
-const breadcrumb = [
-  { label: 'Accueil', to: '/' },
-  { label: 'Recette' },
-]
-useHead({ title: 'Recette · Vignettes' })
+const breadcrumb = computed(() => [
+  { label: t('common.home'), to: '/' },
+  { label: t('recette.page.title') },
+])
+useHead({ title: () => t('recette.page.pageTitle') })
 </script>
 
 <template>
@@ -121,9 +122,9 @@ useHead({ title: 'Recette · Vignettes' })
         class="size-5 text-warning"
       />
       <h1 class="text-xl font-semibold text-highlighted">
-        Recette
+        {{ t('recette.page.title') }}
       </h1>
-      <span class="text-sm text-muted">jeu de données et comptes de test</span>
+      <span class="text-sm text-muted">{{ t('recette.page.subtitle') }}</span>
     </div>
 
     <UAlert
@@ -131,7 +132,7 @@ useHead({ title: 'Recette · Vignettes' })
       icon="i-lucide-eye-off"
       color="neutral"
       variant="subtle"
-      title="Kit de recette désactivé sur cet environnement"
+      :title="t('recette.page.disabled')"
     />
 
     <UAlert
@@ -139,8 +140,8 @@ useHead({ title: 'Recette · Vignettes' })
       icon="i-lucide-lock"
       color="warning"
       variant="subtle"
-      title="Connectez-vous avec un compte owner pour ouvrir le kit"
-      :actions="[{ label: 'Se connecter', icon: 'i-lucide-log-in', to: '/login?redirect=/recette' }]"
+      :title="t('recette.page.ownerRequired')"
+      :actions="[{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: '/login?redirect=/recette' }]"
     />
 
     <template v-else-if="data">
@@ -148,10 +149,12 @@ useHead({ title: 'Recette · Vignettes' })
         icon="i-lucide-user"
         color="neutral"
         variant="subtle"
-        :title="`Connecté en tant que ${data.current.login ?? 'personne'} (${data.current.role})`"
-        :description="`Laissez-passer de ${data.owner}, valable 12 heures.`"
+        :title="data.current.login
+          ? t('recette.page.signedInAs', { login: data.current.login, role: data.current.role })
+          : t('recette.page.signedInAsNobody', { role: data.current.role })"
+        :description="t('recette.page.pass', { owner: data.owner })"
         :actions="data.current.login !== data.owner
-          ? [{ label: 'Revenir à mon compte', icon: 'i-lucide-undo-2', to: personaLink('me', '/recette'), external: true }]
+          ? [{ label: t('recette.page.backToMyAccount'), icon: 'i-lucide-undo-2', to: personaLink('me', '/recette'), external: true }]
           : []"
       />
 
@@ -162,15 +165,15 @@ useHead({ title: 'Recette · Vignettes' })
               name="i-lucide-database"
               class="size-4 text-muted"
             />
-            <span class="font-medium">Jeu de données</span>
+            <span class="font-medium">{{ t('recette.dataset.title') }}</span>
             <UBadge
               :color="data.seeded ? 'success' : 'neutral'"
               variant="subtle"
-              :label="data.seeded ? 'en place' : 'absent'"
+              :label="data.seeded ? t('recette.dataset.seeded') : t('recette.dataset.missing')"
             />
             <div class="flex-1" />
             <UButton
-              :label="data.seeded ? 'Réinitialiser' : 'Créer'"
+              :label="data.seeded ? t('recette.dataset.reset') : t('recette.dataset.create')"
               icon="i-lucide-refresh-cw"
               size="sm"
               :loading="seeding"
@@ -178,10 +181,16 @@ useHead({ title: 'Recette · Vignettes' })
             />
           </div>
         </template>
-        <p class="text-sm text-muted">
-          Deux dossiers, huit présentations (un par statut), cinq comptes, un invité. Préfixe <code>recette-</code> ;
-          la réinitialisation ne touche rien d'autre.
-        </p>
+        <i18n-t
+          keypath="recette.dataset.description"
+          tag="p"
+          class="text-sm text-muted"
+          scope="global"
+        >
+          <template #prefix>
+            <code>{{ RECETTE_PREFIX }}</code>
+          </template>
+        </i18n-t>
       </UCard>
 
       <UCard>
@@ -191,7 +200,7 @@ useHead({ title: 'Recette · Vignettes' })
               name="i-lucide-users"
               class="size-4 text-muted"
             />
-            <span class="font-medium">Ouvrir l'application en tant que</span>
+            <span class="font-medium">{{ t('recette.personas.openAs') }}</span>
           </div>
         </template>
         <ul class="divide-y divide-default">
@@ -202,7 +211,7 @@ useHead({ title: 'Recette · Vignettes' })
           >
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
-                <span class="font-medium text-highlighted">{{ persona.label }}</span>
+                <span class="font-medium text-highlighted">{{ t(persona.labelKey) }}</span>
                 <UBadge
                   :label="persona.role"
                   color="neutral"
@@ -211,11 +220,11 @@ useHead({ title: 'Recette · Vignettes' })
                 />
               </div>
               <p class="text-sm text-muted">
-                {{ persona.summary }}
+                {{ t(persona.summaryKey) }}
               </p>
             </div>
             <UButton
-              label="Se connecter"
+              :label="t('common.actions.signIn')"
               icon="i-lucide-log-in"
               color="neutral"
               variant="subtle"
@@ -226,13 +235,13 @@ useHead({ title: 'Recette · Vignettes' })
           </li>
           <li class="flex items-start gap-4 py-3">
             <div class="flex-1 min-w-0">
-              <span class="font-medium text-highlighted">Visiteur non connecté</span>
+              <span class="font-medium text-highlighted">{{ t('recette.personas.anonymous.label') }}</span>
               <p class="text-sm text-muted">
-                Le laissez-passer reste valable pour revenir ici.
+                {{ t('recette.personas.anonymousHint') }}
               </p>
             </div>
             <UButton
-              label="Se déconnecter"
+              :label="t('common.actions.signOut')"
               icon="i-lucide-log-out"
               color="neutral"
               variant="subtle"
@@ -245,7 +254,7 @@ useHead({ title: 'Recette · Vignettes' })
       </UCard>
 
       <UCard
-        v-for="scenario in SCENARIOS"
+        v-for="scenario in scenarios"
         :key="scenario.key"
       >
         <template #header>
@@ -254,7 +263,7 @@ useHead({ title: 'Recette · Vignettes' })
             <div class="flex-1" />
             <UButton
               v-if="scenario.key !== 'anonymous'"
-              label="Se connecter"
+              :label="t('common.actions.signIn')"
               icon="i-lucide-log-in"
               color="neutral"
               variant="ghost"
@@ -276,7 +285,7 @@ useHead({ title: 'Recette · Vignettes' })
               class="ml-2 text-primary"
               target="_blank"
             >
-              ouvrir
+              {{ t('recette.page.openStep') }}
             </ULink>
           </li>
         </ol>
