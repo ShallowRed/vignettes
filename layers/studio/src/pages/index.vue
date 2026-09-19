@@ -18,6 +18,7 @@ const {
   presentationsStatus: status,
   presentationsError: error,
   projects,
+  refreshAll,
 } = useCatalog()
 
 function onProjectCreated(project: Project) {
@@ -75,6 +76,7 @@ const projectDeckCount = computed(() =>
     <AsyncSection
       :status="status"
       :error="error"
+      :retry="refreshAll"
       :empty="presentations.length === 0"
     >
       <template #empty>

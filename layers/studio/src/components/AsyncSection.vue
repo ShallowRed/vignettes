@@ -9,8 +9,10 @@
 withDefaults(defineProps<{
   /** Matches Pinia Colada / useAsyncData: 'pending' until the first success. */
   status: 'pending' | 'error' | 'success' | 'idle'
-  /** Shown in the default error slot. */
+  /** Passed to the error slot. */
   error?: { message?: string } | null
+  /** Reads the data again; the default error slot shows its button when given. */
+  retry?: () => unknown
   /** Ready-but-nothing-to-show: render the empty slot instead of the default. */
   empty?: boolean
   /** Copy for the default empty slot. */
@@ -19,6 +21,7 @@ withDefaults(defineProps<{
   emptyDescription?: string
 }>(), {
   error: null,
+  retry: undefined,
   empty: false,
   emptyIcon: 'i-lucide-inbox',
   emptyTitle: 'Rien à afficher',
@@ -45,13 +48,20 @@ withDefaults(defineProps<{
     name="error"
     :error="error"
   >
-    <UAlert
-      color="error"
-      variant="subtle"
-      icon="i-lucide-circle-alert"
-      title="Échec du chargement"
-      :description="error?.message"
-    />
+    <ActionNotice
+      tone="critical"
+      title="Le chargement a échoué"
+      description="Ces données n'ont pas pu être lues. Réessayez dans un instant."
+    >
+      <UButton
+        v-if="retry"
+        label="Réessayer"
+        icon="i-lucide-rotate-ccw"
+        color="neutral"
+        variant="subtle"
+        @click="() => { retry?.() }"
+      />
+    </ActionNotice>
   </slot>
 
   <slot

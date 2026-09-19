@@ -70,6 +70,7 @@ export function useTrash() {
     isEmpty,
     status: trashQ.status,
     error: trashQ.error,
+    refresh: () => trashQ.refresh(),
     canView: privileged,
     busy,
     restore: async (target: TrashTarget): Promise<void> => { await restore.mutateAsync(target) },

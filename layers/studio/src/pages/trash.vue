@@ -8,7 +8,7 @@ const { role } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 
 // Query + restore/purge mutations (cross-invalidate the catalog on restore).
-const { projects, decks, isEmpty, status, canView, busy, restore, purge } = useTrash()
+const { projects, decks, isEmpty, status, error, refresh, canView, busy, restore, purge } = useTrash()
 
 const breadcrumb = [
   { label: 'Accueil', to: '/' },
@@ -61,6 +61,8 @@ async function confirmPurge() {
     <AsyncSection
       v-else
       :status="status"
+      :error="error"
+      :retry="refresh"
       :empty="isEmpty"
     >
       <template #pending>

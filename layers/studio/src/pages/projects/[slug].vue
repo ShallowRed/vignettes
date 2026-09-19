@@ -25,6 +25,7 @@ const {
   presentationsStatus: status,
   presentationsError: error,
   projects,
+  refreshAll,
 } = useCatalog()
 
 const projectTitle = computed(() =>
@@ -156,6 +157,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
     <AsyncSection
       :status="status"
       :error="error"
+      :retry="refreshAll"
       :empty="decks.length === 0"
     >
       <template #empty>

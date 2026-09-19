@@ -1,5 +1,6 @@
 export * from './catalog'
 export * from './history'
 export * from './keys'
+export * from './payload'
 export * from './sharing'
 export * from './trash'

@@ -1,13 +1,15 @@
 import type { Fetcher } from '../api'
 import { catalogApi } from '../api'
 import { catalogKeys } from './keys'
+import { throughPayload } from './payload'
 
 /**
  * A grant given elsewhere must show up without a reload: the lists are stale at
  * once, so any navigation or window focus refetches them. `useCatalog` adds the
  * periodic re-read while a page stays open.
  */
-const CATALOG_FRESHNESS = { staleTime: 0 } as const
+// With `ssrCatchError`, a read that fails during SSR renders the error state of the section.
+const CATALOG_FRESHNESS = { staleTime: 0, ssrCatchError: true } as const
 
 /**
  * Declarative query options for the catalog. Colocated with the keys so a query
@@ -17,7 +19,7 @@ const CATALOG_FRESHNESS = { staleTime: 0 } as const
 export function presentationsQuery(fetch: Fetcher) {
   return {
     key: catalogKeys.presentations,
-    query: () => catalogApi.listPresentations(fetch),
+    query: () => throughPayload(catalogApi.listPresentations(fetch)),
     ...CATALOG_FRESHNESS,
   }
 }
@@ -25,7 +27,7 @@ export function presentationsQuery(fetch: Fetcher) {
 export function projectsQuery(fetch: Fetcher) {
   return {
     key: catalogKeys.projects,
-    query: () => catalogApi.listProjects(fetch),
+    query: () => throughPayload(catalogApi.listProjects(fetch)),
     ...CATALOG_FRESHNESS,
   }
 }

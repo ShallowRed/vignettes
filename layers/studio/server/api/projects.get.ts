@@ -8,11 +8,5 @@ import { listVisibleProjects } from '../utils/catalog'
  * dependent: callers must forward the session cookie (useRequestFetch in SSR).
  */
 export default defineEventHandler(async (event): Promise<Project[]> => {
-  try {
-    return await listVisibleProjects(event)
-  }
-  catch (error) {
-    console.error('Error loading projects:', error)
-    return []
-  }
+  return await listVisibleProjects(event)
 })

@@ -104,9 +104,7 @@ function deckDates(stats: DeckStats | undefined, canEdit: boolean): Pick<Present
  */
 export async function listVisiblePresentations(event: H3Event): Promise<PresentationListItem[]> {
   const actor = await getActor(event)
-  const grants = actor.id
-    ? await useGrants().listForUser(actor.id).catch(() => new Map())
-    : new Map()
+  const grants = actor.id ? await useGrants().listForUser(actor.id) : new Map()
   // Resolving a deck's theme and background needs the tenant themes registered.
   await loadTenantThemes()
   const fallbackTheme = getDefaultTheme()
@@ -179,9 +177,7 @@ export async function listVisibleProjects(event: H3Event): Promise<Project[]> {
 
   // A folder grant applies to the whole folder (creating a deck inside it
   // included); the UI shows the create button from it.
-  const mine = actor.id
-    ? await useProjectPermissionStore().listForUser(actor.id).catch(() => new Map())
-    : new Map()
+  const mine = actor.id ? await useProjectPermissionStore().listForUser(actor.id) : new Map()
   const populated = new Set(
     visible.map(p => p.project).filter((slug): slug is string => !!slug && slug !== UNGROUPED_PROJECT),
   )
