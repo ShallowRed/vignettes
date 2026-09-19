@@ -4,7 +4,8 @@ export default antfu({
   vue: true,
   // Drizzle rewrites these on every `drizzle-kit generate` (no trailing newline),
   // so linting them only invites `--fix` to churn generated files.
-  ignores: ['layers/studio/server/db/migrations/**', 'packages/core/src/theme/tokens.generated.ts'],
+  // `.claude/` holds the worktrees of the agent sessions.
+  ignores: ['layers/studio/server/db/migrations/**', 'packages/core/src/theme/tokens.generated.ts', '.claude/**'],
   rules: {
     'no-console': 'off',
     'no-debugger': 'off',
