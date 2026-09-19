@@ -75,7 +75,6 @@ application and ships its TypeScript sources (`build.transpile` for Vite,
   (`history.ts`); the family rules (`family.ts`: a replacement never loops, a family stays
   inside one folder).
 - **`shared/projects`** — project-registry schema (YAML I/O in `server/utils/projects.ts`).
-- **`shared/build`** — public-deck discovery in the content space.
 
 ## Data Flow
 ```
