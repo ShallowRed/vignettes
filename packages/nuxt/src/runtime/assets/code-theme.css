@@ -1,0 +1,46 @@
+/**
+ * The code theme of a deck. `RevealPresentation` sets the `--code-*` variables
+ * and the two classes on the deck root. A role without a variable keeps the
+ * color of the highlight theme (`mdc.highlight.theme`).
+ */
+
+.reveal--code-theme pre.shiki span[style] {
+  color: var(--code-text, var(--shiki-default));
+}
+
+.reveal--code-theme pre.shiki span.code-key {
+  color: var(--code-key, var(--shiki-default));
+  font-weight: var(--code-key-weight, inherit);
+}
+
+.reveal--code-theme pre.shiki span.code-string {
+  color: var(--code-string, var(--shiki-default));
+}
+
+.reveal--code-theme pre.shiki span.code-literal {
+  color: var(--code-literal, var(--shiki-default));
+}
+
+.reveal--code-theme pre.shiki span.code-keyword {
+  color: var(--code-keyword, var(--shiki-default));
+}
+
+.reveal--code-theme pre.shiki span.code-function {
+  color: var(--code-function, var(--shiki-default));
+}
+
+.reveal--code-theme pre.shiki span.code-comment {
+  color: var(--code-comment, var(--shiki-default));
+}
+
+.reveal--code-theme pre.shiki span.code-punctuation {
+  color: var(--code-punctuation, var(--shiki-default));
+}
+
+/* Set when the code theme names a background. */
+.reveal--code-block pre,
+.reveal--code-block pre.shiki {
+  color: var(--code-text, var(--shiki-default));
+  background: var(--code-background);
+  border: var(--code-border, none);
+}

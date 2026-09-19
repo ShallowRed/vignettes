@@ -75,6 +75,14 @@ Code that must not care which theme is active (the engine layer, MDC components 
 
 `packages/theme-kit/_semantic-tokens.scss` provides defaults so a theme still renders if it forgets one.
 
+## The code theme of a deck
+
+A deck sets the colors of its code blocks in its frontmatter (`code: sombre`, or `code: { theme: sombre, string: '#FFD700' }`). `RevealPresentation` turns that value into `--code-*` custom properties on the deck root and adds the class `reveal--code-theme`. `packages/nuxt/src/runtime/assets/code-theme.css`, which ships with the renderer, colors each token from these properties under any theme. A role the code theme omits keeps the color of the highlight theme (`mdc.highlight.theme`).
+
+A deck without a code theme carries neither the class nor the properties and keeps the code blocks of its theme. `reveal--code-block` is added when the code theme names a `background`: the renderer then paints the block.
+
+A theme reads `--code-size` as a minimum for its own size: `font-size: max(var(--code-size, 0px), 0.7em)`.
+
 ## Compilation
 
 ```bash

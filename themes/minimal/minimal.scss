@@ -244,7 +244,8 @@ body {
   width: 100%;
   margin: 1.5em 0;
   text-align: left;
-  font-size: 0.7em;
+  // `--code-size` : corps plancher du thème de code du deck (frontmatter `code`).
+  font-size: max(var(--code-size, 0px), 0.7em);
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
   line-height: 1.5;
   word-wrap: break-word;

@@ -1,4 +1,5 @@
-import { CODE_THEMES, codeRolesTransformer, codeThemeStyle, resolveCodeTheme, ROLES_THEME, ROLES_THEME_KEY } from '@vignettes/core/render'
+import { readFileSync } from 'node:fs'
+import { CODE_ROLES, CODE_THEMES, codeRolesTransformer, codeThemeStyle, resolveCodeTheme, ROLES_THEME, ROLES_THEME_KEY } from '@vignettes/core/render'
 import { codeToHtml } from 'shiki'
 import { describe, expect, it } from 'vitest'
 
@@ -81,5 +82,18 @@ describe('codeRolesTransformer', () => {
       ['string', 'Hello'],
       ['comment', '# note'],
     ])
+  })
+})
+
+describe('the stylesheet of the renderer', () => {
+  const sheet = readFileSync(new URL('../../packages/nuxt/src/runtime/assets/code-theme.css', import.meta.url), 'utf8')
+
+  it('colors every role from its variable', () => {
+    for (const role of CODE_ROLES)
+      expect(sheet).toContain(`.reveal--code-theme pre.shiki span.code-${role} {\n  color: var(--code-${role}, var(--shiki-default));`)
+  })
+
+  it('applies only to a deck that declares a code theme', () => {
+    expect(sheet).not.toMatch(/^\.reveal pre/m)
   })
 })

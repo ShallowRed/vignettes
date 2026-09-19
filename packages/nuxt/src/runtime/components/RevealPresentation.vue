@@ -5,6 +5,7 @@ import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref } from 'vue'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
+import '../assets/code-theme.css'
 // With `?print-pdf` in the URL, Reveal adds `reveal-print` to <html> and this
 // stylesheet lays the deck out one slide per page.
 import 'reveal.js/css/print/pdf.scss'
@@ -36,8 +37,13 @@ const themeName = computed(() => props.theme || getDefaultTheme())
 
 const revealContainer = ref<HTMLElement | null>(null)
 
-// The code theme sets CSS variables on the deck root, read by the theme stylesheet.
+// The code theme sets CSS variables on the deck root, read by `code-theme.css`.
 const codeStyle = computed(() => codeThemeStyle(props.code))
+
+const codeClass = computed(() => ({
+  'reveal--code-theme': Object.keys(codeStyle.value).length > 0,
+  'reveal--code-block': '--code-background' in codeStyle.value,
+}))
 
 const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().startsWith('fr'))
 
@@ -152,6 +158,7 @@ onUnmounted(() => {
     ref="revealContainer"
     v-french-typography="frenchTypography"
     class="reveal"
+    :class="codeClass"
     :style="codeStyle"
     :data-reveal-config="resolvedRevealConfig"
   >
