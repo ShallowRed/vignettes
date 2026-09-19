@@ -3,12 +3,10 @@
 # Image de l'app Nuxt (SSR / Nitro node-server), déployée en conteneur sur le VPS.
 # Build multi-stage :
 #   deps    -> `pnpm install` isolé (couche mise en cache tant que le lockfile ne bouge pas)
-#   build   -> clone le contenu privé (submodule `presentations/`) via un build-secret,
-#              puis `pnpm build` -> .output/ auto-suffisant (Nitro trace/bundle ses deps)
+#   build   -> `pnpm build` -> .output/ auto-suffisant (Nitro trace/bundle ses deps)
 #   runtime -> node:22-slim + .output/ uniquement. Pas de node_modules, pas de git.
 #
-# Le contenu privé est BAKÉ dans l'image au build (le build CI clone depuis Git) :
-# l'image GHCR doit donc rester PRIVÉE, et un changement de contenu = un rebuild.
+# L'image ne contient aucun deck : le contenu est dans la base et le bucket.
 
 FROM node:22-slim AS base
 ENV PNPM_HOME=/pnpm
@@ -28,9 +26,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# NITRO_PRESET explicite (sinon Nitro autodétecte selon l'environnement). Deck
-# content lives in the database at runtime, so the build no longer clones the
-# content repo — it needs no secret.
+# NITRO_PRESET explicite (sinon Nitro autodétecte selon l'environnement).
 ENV NITRO_PRESET=node_server
 ENV NUXT_TELEMETRY_DISABLED=1
 # The prerenderer loads the full server bundle; the default ~2GB heap OOMs.
