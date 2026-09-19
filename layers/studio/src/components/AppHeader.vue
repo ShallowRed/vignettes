@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { ROLE_CONFIG } from '#shared/access'
-import * as allUiLocales from '@nuxt/ui/locale'
 import { useAppSession } from '../composables/useAppSession'
 
 // App chrome: brand left, identity (color mode, sign-in/out, role) right.
 const { loggedIn, role, user, privileged } = useAppSession()
 const { t, locale, locales, setLocale } = useI18n()
-const uiLocales = computed(() => locales.value.map(l => allUiLocales[l.code as keyof typeof allUiLocales]))
+const localeItems = computed<DropdownMenuItem[]>(() => locales.value.map(item => ({
+  label: item.name,
+  type: 'checkbox' as const,
+  checked: item.code === locale.value,
+  onSelect: () => setLocale(item.code),
+})))
 const roleDisplay = computed(() => ROLE_CONFIG[role.value])
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
@@ -36,15 +40,17 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     </template>
 
     <template #right>
-      <ULocaleSelect
-        :model-value="locale"
-        :locales="uiLocales"
-        :aria-label="t('common.header.language')"
-        size="sm"
-        variant="ghost"
-        class="w-32"
-        @update:model-value="setLocale($event as typeof locale)"
-      />
+      <UDropdownMenu
+        :items="localeItems"
+        :content="{ align: 'end' }"
+      >
+        <UButton
+          icon="i-lucide-languages"
+          color="neutral"
+          variant="ghost"
+          :aria-label="t('common.header.language')"
+        />
+      </UDropdownMenu>
 
       <UColorModeButton />
 
