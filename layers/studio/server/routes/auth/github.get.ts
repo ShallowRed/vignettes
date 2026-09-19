@@ -14,11 +14,12 @@ export default defineOAuthGitHubEventHandler({
     // Identity is (provider, providerId); the returned internal id — equal to
     // the GitHub id for rows that predate 0010 — is what the session carries.
     // An unreachable database degrades to the env map, as before.
+    const roles = readRoleMap()
     const { id, role } = await useUserStore().upsertOAuthLogin(
       { provider: 'github', providerId: String(user.id), login: user.login, name: user.name, avatarUrl: user.avatar_url },
-      resolveRole(user.login, readRoleMap()),
+      resolveRole(user.login, roles),
       // The login is issued by GitHub itself, so it may claim an invitation.
-      { claimInvited: true },
+      { claimInvited: true, firstAccountOwns: roles.owner.length === 0 },
     ).catch(() => ({ id: user.id as number, role: resolveRole(user.login, readRoleMap()) }))
 
     await setUserSession(event, {

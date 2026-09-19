@@ -14,12 +14,14 @@ export default defineOAuthGoogleEventHandler({
   config: {},
   async onSuccess(event, { user }) {
     const login = (user.email as string).toLowerCase()
+    const roles = readRoleMap()
+    const verified = user.email_verified === true
     const { id, role } = await useUserStore().upsertOAuthLogin(
       { provider: 'google', providerId: String(user.sub), login, name: user.name, avatarUrl: user.picture },
-      resolveRole(login, readRoleMap()),
+      resolveRole(login, roles),
       // A verified email may claim a pre-provisioned invited account; an
       // unverified one must never inherit an invitation's grants.
-      { claimInvited: user.email_verified === true },
+      { claimInvited: verified, firstAccountOwns: verified && roles.owner.length === 0 },
     )
 
     await setUserSession(event, {

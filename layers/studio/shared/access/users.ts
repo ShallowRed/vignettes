@@ -42,8 +42,11 @@ export interface UserStore {
    * may claim a pre-provisioned invited account whose login matches: the
    * placeholder identity becomes the real one and every grant already attached
    * to the account applies.
+   *
+   * With `firstAccountOwns` (set when the role map names no owner), the account
+   * created in an empty table gets the owner role.
    */
-  upsertOAuthLogin: (identity: OAuthIdentity, bootstrapRole: Role, opts?: { claimInvited?: boolean }) => Promise<{ id: number, role: Role }>
+  upsertOAuthLogin: (identity: OAuthIdentity, bootstrapRole: Role, opts?: { claimInvited?: boolean, firstAccountOwns?: boolean }) => Promise<{ id: number, role: Role }>
   /**
    * Pre-provision an account by its provider handle (Google email or GitHub
    * username) so it can be granted access before its first login. Idempotent:

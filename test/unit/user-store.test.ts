@@ -77,6 +77,25 @@ describe('user store', () => {
       expect(db.select().from(users).where(eq(users.id, first.id)).get()!.name).toBe('C.')
     })
 
+    it('makes the first account an owner when the caller allows it', async () => {
+      await expect(store.upsertOAuthLogin(carol, 'viewer', { firstAccountOwns: true })).resolves.toMatchObject({ role: 'owner' })
+    })
+
+    it('gives the first account its bootstrap role otherwise', async () => {
+      await expect(store.upsertOAuthLogin(carol, 'viewer')).resolves.toMatchObject({ role: 'viewer' })
+    })
+
+    it('gives the second account its bootstrap role', async () => {
+      await store.upsertOAuthLogin(carol, 'viewer', { firstAccountOwns: true })
+      const second = await store.upsertOAuthLogin({ provider: 'github', providerId: '7', login: 'dave' }, 'viewer', { firstAccountOwns: true })
+      expect(second.role).toBe('viewer')
+    })
+
+    it('counts an invited account, so a guest signing in first stays a viewer', async () => {
+      await store.invite({ provider: 'google', handle: 'dave@example.com' })
+      await expect(store.upsertOAuthLogin(carol, 'viewer', { firstAccountOwns: true })).resolves.toMatchObject({ role: 'viewer' })
+    })
+
     it('keeps github and google identities with the same numeric tail distinct', async () => {
       const a = await store.upsertOAuthLogin({ provider: 'github', providerId: '42', login: 'gh-42' }, 'viewer')
       const b = await store.upsertOAuthLogin({ provider: 'google', providerId: '42', login: 'g42@example.com' }, 'viewer')

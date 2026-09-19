@@ -87,6 +87,7 @@ export function createUserStore(db: Db): UserStore {
           return { id: stub.id, role: readRole(stub.role) }
         }
       }
+      const firstAccount = opts?.firstAccountOwns && !db.select({ id: users.id }).from(users).limit(1).get()
       // No explicit id: SQLite mints the next rowid above every existing id,
       // so internal ids never collide with the historical GitHub-id rows.
       const row = db.insert(users)
@@ -96,7 +97,7 @@ export function createUserStore(db: Db): UserStore {
           login: identity.login,
           name: identity.name ?? null,
           avatarUrl: identity.avatarUrl ?? null,
-          role: bootstrapRole,
+          role: firstAccount ? 'owner' : bootstrapRole,
           createdAt: now,
           lastLoginAt: now,
         })
