@@ -3,94 +3,114 @@
     "page": {
       "pageTitle": "Recette · Vignettes",
       "title": "Recette",
-      "subtitle": "jeu de données et comptes de test",
-      "disabled": "Kit de recette désactivé sur cet environnement",
-      "ownerRequired": "Connectez-vous avec un compte owner pour ouvrir le kit",
-      "signedInAs": "Connecté en tant que {login} ({role})",
-      "signedInAsNobody": "Connecté en tant que personne ({role})",
-      "pass": "Laissez-passer de {owner}, valable 12 heures.",
+      "intro": "Chaque ligne ouvre sa page dans un nouvel onglet, avec le compte de son bloc.",
+      "disabled": "Le kit de recette est désactivé sur cet environnement.",
+      "ownerRequired": "Le kit de recette s'ouvre avec un compte owner.",
+      "session": "Session en cours",
+      "sessionNone": "aucune",
+      "pass": "Laissez-passer ouvert par {owner}, valable 12 heures.",
       "backToMyAccount": "Revenir à mon compte",
-      "openStep": "ouvrir en tant que ce compte"
+      "openSession": "Ouvrir cette session",
+      "currentSession": "Session en cours",
+      "progress": "{done} sur {total}",
+      "checkStep": "Marquer comme vérifié"
     },
     "dataset": {
       "title": "Jeu de données",
       "seeded": "en place",
-      "missing": "absent",
+      "missing": "incomplet",
       "reset": "Réinitialiser",
       "create": "Créer",
-      "description": "Deux dossiers, huit présentations (un par statut), cinq comptes, un invité. Préfixe {prefix} ; la réinitialisation ne touche rien d'autre.",
+      "counts": "{folders} dossiers, {decks} présentations et {accounts} comptes, tous préfixés {prefix}.",
       "resetDone": "Jeu de données réinitialisé",
       "resetSummary": "{decks} présentations, {folders} dossiers, {accounts} comptes",
-      "resetFailed": "Réinitialisation impossible"
+      "resetFailed": "La réinitialisation a échoué"
     },
     "personas": {
-      "openAs": "Ouvrir l'application en tant que",
-      "anonymousHint": "Ouvre l'application sans session. Le laissez-passer reste valable pour revenir ici.",
       "anonymous": {
-        "label": "Visiteur non connecté"
-      },
-      "owner": {
-        "label": "Owner",
-        "summary": "Contenu, métadonnées, accès, comptes, corbeille."
-      },
-      "editor": {
-        "label": "Éditeur global",
-        "summary": "Édite, publie, modifie les métadonnées. Pas les accès ni les comptes."
+        "label": "Visiteur non connecté",
+        "summary": "Aucune session."
       },
       "viewer": {
         "label": "Lecteur sans accès",
-        "summary": "Connecté sans accès accordé : catalogue public seulement."
+        "summary": "Compte connecté auquel aucun accès n'est accordé."
       },
       "collab": {
         "label": "Collaborateur",
-        "summary": "Clé maîtresse éditeur sur le dossier partagé, lecture sur « Lecture seule »."
+        "summary": "Accès éditeur sur le dossier partagé, accès lecture sur Lecture seule."
       },
       "expired": {
         "label": "Accès expiré",
-        "summary": "Clé maîtresse expirée hier : équivaut à un lecteur sans accès."
-      }
-    },
-    "scenarios": {
-      "anonymous": {
-        "catalog": "Catalogue : seules « Publique » et « English deck » apparaissent.",
-        "password": "« Mot de passe » demande « {password} » puis s'ouvre.",
-        "private": "« Privée » renvoie à la connexion.",
-        "unlisted": "« Non listée » s'ouvre par lien direct.",
-        "trashed": "« Corbeille » est introuvable.",
-        "passwordOnce": "Après le mot de passe, recharger « Mot de passe » : elle s'ouvre sans le redemander.",
-        "publicImage": "L'image de « Publique » s'affiche.",
-        "privateImage": "L'image de « Privée » est introuvable (404).",
-        "code": "Dans « Publique », le bloc de code de la quatrième diapositive est lisible sur son fond clair.",
-        "englishDeck": "« English deck » : ses commandes, en haut à droite, sont en anglais quelle que soit la langue de l'interface."
-      },
-      "viewer": {
-        "catalog": "Même catalogue que le visiteur.",
-        "private": "« Privée » est refusée (accès interdit).",
-        "sharedFolder": "Le dossier partagé se présente vide."
-      },
-      "collab": {
-        "sharedFolder": "Dossier partagé : « Publique », « Mot de passe », « Brouillon », « English deck », chacune avec le crayon, et le bouton « Nouvelle présentation ».",
-        "sync": "Éditeur de « Publique » : « Brouillon synchronisé » ; dans un second onglet, le texte tapé apparaît avec l'initiale du pair.",
-        "pasteImage": "Une image collée dans l'éditeur s'insère.",
-        "unpublished": "Après une modification, « Modifications non publiées » dans l'en-tête et sur la carte ; « Publier » remet à jour.",
-        "password": "« Mot de passe » s'ouvre sans mot de passe.",
-        "readOnly": "« Lecture seule » s'ouvre, sans crayon sur sa carte.",
-        "private": "« Privée » est refusée ; aucune carte ne propose métadonnées ni partage."
-      },
-      "expired": {
-        "catalog": "Comme le lecteur sans accès : seules « Publique » et « English deck » sont visibles.",
-        "editorDenied": "L'éditeur de « Publique » est refusé."
+        "summary": "Accès éditeur sur le dossier partagé, expiré hier."
       },
       "editor": {
-        "catalog": "Tout le jeu de données, « Brouillon » compris, avec crayon et métadonnées.",
-        "trash": "La corbeille contient « Corbeille », restaurable.",
-        "accountsDenied": "La page des comptes est refusée ; les panneaux de partage sont en lecture seule."
+        "label": "Éditeur global",
+        "summary": "Édite, publie et modifie les métadonnées de toutes les présentations."
       },
       "owner": {
-        "accounts": "Comptes : les cinq personas et l'invité « {handle} ».",
-        "sharedFolderAccess": "Accès du dossier partagé : collaborateur (éditeur), accès expiré (expiré), invité (lecture). Modifier, ajouter par e-mail, retirer.",
-        "privateImage": "L'image de « Privée » s'affiche.",
-        "language": "Le bouton de langue de l'en-tête passe l'interface en anglais ; le choix tient après rechargement."
+        "label": "Owner",
+        "summary": "Gère aussi les accès, les comptes et la corbeille."
+      }
+    },
+    "targets": {
+      "catalog": "Catalogue",
+      "home": "Accueil",
+      "sharedFolder": "Dossier partagé",
+      "accounts": "Comptes",
+      "trash": "Corbeille",
+      "deckPublic": "Publique",
+      "deckPublicCode": "Publique, diapositive 4",
+      "deckPassword": "Mot de passe",
+      "deckPasswordReload": "Mot de passe, rechargée",
+      "deckPrivate": "Privée",
+      "deckUnlisted": "Non listée",
+      "deckTrashed": "Corbeille",
+      "deckEnglish": "English deck",
+      "imagePublic": "Image de Publique",
+      "imagePrivate": "Image de Privée",
+      "editorPublic": "Éditeur de Publique"
+    },
+    "steps": {
+      "anonymous": {
+        "catalog": "Publique et English deck sont les seules présentations listées.",
+        "password": "La page demande le mot de passe {password}, puis la présentation s'ouvre.",
+        "passwordReload": "La présentation s'ouvre sans redemander le mot de passe.",
+        "private": "La page renvoie à la connexion.",
+        "unlisted": "La présentation s'ouvre par son lien direct.",
+        "trashed": "La présentation est introuvable.",
+        "imagePublic": "L'image s'affiche.",
+        "imagePrivate": "L'image est introuvable, avec une réponse 404.",
+        "code": "Le bloc de code est lisible sur son fond clair.",
+        "english": "Les commandes en haut à droite sont en anglais, même quand l'interface est en français."
+      },
+      "viewer": {
+        "catalog": "Le catalogue liste les mêmes présentations que pour le visiteur.",
+        "private": "L'accès est refusé.",
+        "sharedFolder": "Le dossier est vide."
+      },
+      "collab": {
+        "sharedFolder": "Publique, Mot de passe, Brouillon et English deck ont un crayon. Le bouton Nouvelle présentation est présent.",
+        "sync": "L'en-tête indique Brouillon synchronisé. Un texte tapé dans un second onglet apparaît avec l'initiale du pair.",
+        "pasteImage": "Une image collée s'insère dans le texte.",
+        "unpublished": "Après une modification, l'en-tête et la carte indiquent Modifications non publiées. Publier retire cette mention.",
+        "password": "La présentation s'ouvre sans mot de passe.",
+        "readOnly": "Lecture seule s'ouvre et sa carte n'a pas de crayon.",
+        "private": "L'accès est refusé. Aucune carte ne propose les métadonnées ni le partage."
+      },
+      "expired": {
+        "catalog": "Publique et English deck sont les seules présentations listées.",
+        "editorDenied": "L'accès est refusé."
+      },
+      "editor": {
+        "catalog": "Tout le jeu de données est listé, Brouillon compris, avec crayon et métadonnées.",
+        "trash": "La corbeille contient la présentation Corbeille, qui peut être restaurée.",
+        "accountsDenied": "La page est refusée. Les panneaux de partage sont en lecture seule."
+      },
+      "owner": {
+        "accounts": "La liste contient les cinq personas et l'invité {handle}.",
+        "sharedFolderAccess": "Le panneau d'accès liste le collaborateur en éditeur, l'accès expiré et l'invité en lecture. Un accès se modifie, s'ajoute par e-mail et se retire.",
+        "imagePrivate": "L'image s'affiche.",
+        "language": "Le bouton de langue passe l'interface en anglais. Le choix est conservé après rechargement."
       }
     }
   }

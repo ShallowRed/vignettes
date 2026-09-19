@@ -3,94 +3,114 @@
     "page": {
       "pageTitle": "Acceptance · Vignettes",
       "title": "Acceptance",
-      "subtitle": "data set and test accounts",
-      "disabled": "The acceptance kit is disabled on this environment",
-      "ownerRequired": "Sign in with an owner account to open the kit",
-      "signedInAs": "Signed in as {login} ({role})",
-      "signedInAsNobody": "Signed in as nobody ({role})",
-      "pass": "Pass of {owner}, valid for 12 hours.",
+      "intro": "Each line opens its page in a new tab, with the account of its block.",
+      "disabled": "The acceptance kit is disabled on this environment.",
+      "ownerRequired": "The acceptance kit opens with an owner account.",
+      "session": "Current session",
+      "sessionNone": "none",
+      "pass": "Pass opened by {owner}, valid for 12 hours.",
       "backToMyAccount": "Back to my account",
-      "openStep": "open as this account"
+      "openSession": "Open this session",
+      "currentSession": "Current session",
+      "progress": "{done} of {total}",
+      "checkStep": "Mark as checked"
     },
     "dataset": {
       "title": "Data set",
       "seeded": "in place",
-      "missing": "missing",
+      "missing": "incomplete",
       "reset": "Reset",
       "create": "Create",
-      "description": "Two folders, eight presentations (one per status), five accounts, one invited account. Prefix {prefix}; the reset touches nothing else.",
+      "counts": "{folders} folders, {decks} presentations and {accounts} accounts, all prefixed {prefix}.",
       "resetDone": "Data set reset",
       "resetSummary": "{decks} presentations, {folders} folders, {accounts} accounts",
       "resetFailed": "The reset failed"
     },
     "personas": {
-      "openAs": "Open the application as",
-      "anonymousHint": "Opens the app without a session. The pass stays valid to come back here.",
       "anonymous": {
-        "label": "Signed-out visitor"
-      },
-      "owner": {
-        "label": "Owner",
-        "summary": "Content, metadata, access, accounts, trash."
-      },
-      "editor": {
-        "label": "Global editor",
-        "summary": "Edits, publishes, changes the metadata. Neither access nor accounts."
+        "label": "Visitor, not signed in",
+        "summary": "No session."
       },
       "viewer": {
         "label": "Viewer without access",
-        "summary": "Signed in with no access granted: public catalog only."
+        "summary": "Signed-in account that was granted no access."
       },
       "collab": {
         "label": "Collaborator",
-        "summary": "Editor master key on the shared folder, read access on “Lecture seule”."
+        "summary": "Editor access to the shared folder, read access to Lecture seule."
       },
       "expired": {
         "label": "Expired access",
-        "summary": "Master key expired yesterday: equivalent to a viewer without access."
-      }
-    },
-    "scenarios": {
-      "anonymous": {
-        "catalog": "Catalog: only “Publique” and “English deck” appear.",
-        "password": "“Mot de passe” asks for “{password}” then opens.",
-        "private": "“Privée” sends to the sign-in page.",
-        "unlisted": "“Non listée” opens through a direct link.",
-        "trashed": "“Corbeille” is not found.",
-        "passwordOnce": "After the password, reload “Mot de passe”: it opens without asking again.",
-        "publicImage": "The image of “Publique” shows.",
-        "privateImage": "The image of “Privée” is not found (404).",
-        "code": "In “Publique”, the code block of the fourth slide is readable on its light ground.",
-        "englishDeck": "“English deck”: its controls, top right, are in English whatever the language of the interface."
-      },
-      "viewer": {
-        "catalog": "Same catalog as the visitor.",
-        "private": "“Privée” is denied (access forbidden).",
-        "sharedFolder": "The shared folder shows up empty."
-      },
-      "collab": {
-        "sharedFolder": "Shared folder: “Publique”, “Mot de passe”, “Brouillon”, “English deck”, each with the pencil, and the “New presentation” button.",
-        "sync": "Editor of “Publique”: “Draft synced”; in a second tab, the typed text appears with the initial of the peer.",
-        "pasteImage": "An image pasted into the editor is inserted.",
-        "unpublished": "After a change, “Unpublished changes” in the header and on the card; “Publish” brings it up to date.",
-        "password": "“Mot de passe” opens without a password.",
-        "readOnly": "“Lecture seule” opens, with no pencil on its card.",
-        "private": "“Privée” is denied; no card offers metadata or sharing."
-      },
-      "expired": {
-        "catalog": "Like the viewer without access: only “Publique” and “English deck” are visible.",
-        "editorDenied": "The editor of “Publique” is denied."
+        "summary": "Editor access to the shared folder, expired yesterday."
       },
       "editor": {
-        "catalog": "The whole data set, “Brouillon” included, with pencil and metadata.",
-        "trash": "The trash contains “Corbeille”, which can be restored.",
-        "accountsDenied": "The accounts page is denied; the sharing panels are read-only."
+        "label": "Global editor",
+        "summary": "Edits, publishes and changes the metadata of every presentation."
       },
       "owner": {
-        "accounts": "Accounts: the five personas and the invited account “{handle}”.",
-        "sharedFolderAccess": "Access of the shared folder: collaborator (editor), expired access (expired), invited account (read). Change, add by email, remove.",
-        "privateImage": "The image of “Privée” shows.",
-        "language": "The language button of the header switches the interface to English; the choice holds after a reload."
+        "label": "Owner",
+        "summary": "Also manages access, accounts and the trash."
+      }
+    },
+    "targets": {
+      "catalog": "Catalog",
+      "home": "Home",
+      "sharedFolder": "Shared folder",
+      "accounts": "Accounts",
+      "trash": "Trash",
+      "deckPublic": "Publique",
+      "deckPublicCode": "Publique, slide 4",
+      "deckPassword": "Mot de passe",
+      "deckPasswordReload": "Mot de passe, reloaded",
+      "deckPrivate": "Privée",
+      "deckUnlisted": "Non listée",
+      "deckTrashed": "Corbeille",
+      "deckEnglish": "English deck",
+      "imagePublic": "Image of Publique",
+      "imagePrivate": "Image of Privée",
+      "editorPublic": "Editor of Publique"
+    },
+    "steps": {
+      "anonymous": {
+        "catalog": "Publique and English deck are the only presentations listed.",
+        "password": "The page asks for the password {password}, then the presentation opens.",
+        "passwordReload": "The presentation opens without asking for the password again.",
+        "private": "The page sends to the sign-in.",
+        "unlisted": "The presentation opens through its direct link.",
+        "trashed": "The presentation is not found.",
+        "imagePublic": "The image shows.",
+        "imagePrivate": "The image is not found, with a 404 answer.",
+        "code": "The code block is readable on its light ground.",
+        "english": "The controls at the top right are in English, even when the interface is in French."
+      },
+      "viewer": {
+        "catalog": "The catalog lists the same presentations as for the visitor.",
+        "private": "Access is denied.",
+        "sharedFolder": "The folder is empty."
+      },
+      "collab": {
+        "sharedFolder": "Publique, Mot de passe, Brouillon and English deck have a pencil. The New presentation button is present.",
+        "sync": "The header says Draft synced. A text typed in a second tab appears with the initial of the peer.",
+        "pasteImage": "A pasted image is inserted into the text.",
+        "unpublished": "After a change, the header and the card say Unpublished changes. Publishing removes that mention.",
+        "password": "The presentation opens without a password.",
+        "readOnly": "Lecture seule opens and its card has no pencil.",
+        "private": "Access is denied. No card offers the metadata or the sharing."
+      },
+      "expired": {
+        "catalog": "Publique and English deck are the only presentations listed.",
+        "editorDenied": "Access is denied."
+      },
+      "editor": {
+        "catalog": "The whole data set is listed, Brouillon included, with pencil and metadata.",
+        "trash": "The trash contains the presentation Corbeille, which can be restored.",
+        "accountsDenied": "The page is denied. The sharing panels are read-only."
+      },
+      "owner": {
+        "accounts": "The list contains the five personas and the guest {handle}.",
+        "sharedFolderAccess": "The access panel lists the collaborator as editor, the expired access and the guest as viewer. An access can be changed, added by email and removed.",
+        "imagePrivate": "The image shows.",
+        "language": "The language button switches the interface to English. The choice is kept after a reload."
       }
     }
   }

@@ -190,6 +190,11 @@ export interface SeedSummary {
   accounts: number
 }
 
+/** What the data set holds; the accounts are the personas and the invited guest. */
+export function recetteCounts(): SeedSummary {
+  return { folders: Object.keys(RECETTE_FOLDERS).length, decks: SEED_DECKS.length, accounts: RECETTE_PERSONAS.length + 1 }
+}
+
 /** Remove every `recette-*` row (decks, folders, accounts), then recreate the set. */
 export async function seedRecette(): Promise<SeedSummary> {
   await resetRecette()
@@ -232,7 +237,7 @@ export async function seedRecette(): Promise<SeedSummary> {
   await folderGrants.set(RECETTE_FOLDERS.shared, invited.id, 'viewer', 'recette')
   await usePermissionStore().set(`${RECETTE_PREFIX}lecture`, byKey.collab!.id, 'viewer', 'recette')
 
-  return { folders: 2, decks: SEED_DECKS.length, accounts: RECETTE_PERSONAS.length + 1 }
+  return recetteCounts()
 }
 
 /** Whether every deck of the data set exists. */
