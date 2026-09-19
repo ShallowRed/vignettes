@@ -47,6 +47,8 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'PreviewLink' },
   { name: 'IconInline', aliases: ['i'] },
   { name: 'Columns', aliases: ['TwoColumns', 'ThreeColumns'] },
+  { name: 'Column', aliases: ['column'] },
+  { name: 'SplitSlide', aliases: ['split-slide'] },
   { name: 'Highlight' },
   { name: 'Notes', aliases: ['notes'] },
   { name: 'Fragments', aliases: ['fragments'] },

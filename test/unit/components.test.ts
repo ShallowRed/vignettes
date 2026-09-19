@@ -37,6 +37,14 @@ describe('buildComponentMap', () => {
     expect(map['deck-image']).toBe('Image')
   })
 
+  it('carries the column and the split slide, with their lowercase forms', () => {
+    const map = buildComponentMap()
+    expect(map.Column).toBe('Column')
+    expect(map.column).toBe('Column')
+    expect(map.SplitSlide).toBe('SplitSlide')
+    expect(map['split-slide']).toBe('SplitSlide')
+  })
+
   it('leaves slide-background out: it is an annotation', () => {
     expect(buildComponentMap()['slide-background']).toBeUndefined()
   })
