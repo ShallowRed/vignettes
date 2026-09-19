@@ -8,9 +8,17 @@ import type { ThemeRegistry, ThemeTokens } from '@vignettes/core/theme'
 
 export const THEMES_INDEX_KEY = 'themes/index.json'
 
+/** `themes/<...>` in the bucket is `.themes/<...>` on the disk of a deployment without bucket credentials. */
+export const THEMES_LOCAL_DIR = '.themes'
+
 /** Object key of a file published for a theme: `themes/<...parts>`. */
 export function themeObjectKey(...parts: string[]): string {
   return ['themes', ...parts.flatMap(p => p.split('/').filter(Boolean))].join('/')
+}
+
+/** The same file inside `THEMES_LOCAL_DIR`, as a path relative to the working directory. */
+export function themeLocalPath(...parts: string[]): string {
+  return [THEMES_LOCAL_DIR, ...parts.flatMap(p => p.split('/').filter(Boolean))].join('/')
 }
 
 /** What one theme publishes about itself, next to its CSS and assets. */

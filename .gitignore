@@ -39,6 +39,9 @@ export/*
 # `server/routes/media/[...path].ts`. Local `.media/` is the dev fallback — NOT in git.
 .media/
 
+# Tenant themes published by `scripts/theme-push.ts` on an instance without object storage.
+.themes/
+
 # Docs personnelles / temporaires / audits (hors repo public)
 docs/private/
 

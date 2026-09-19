@@ -1,16 +1,16 @@
 /**
- * Boot-time warning for theme drift between the registry, the compiled
- * `public/themes/*.css` and the theme directories (application and content
- * space). Runs after the tenant themes are registered, so a brand compiled from
- * the content space counts as known. Non-fatal: never throws, no-ops if the dirs
- * are absent.
+ * Boot-time warning for theme drift between the registry, the stylesheets a deck
+ * can actually load (`public/themes/*.css` plus the published themes served by
+ * `/themes/**`) and the theme directories (application and content space). Runs
+ * after the tenant themes are registered, so a brand compiled from the content
+ * space counts as known. Non-fatal: never throws, no-ops if the dirs are absent.
  */
 
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { checkThemeConsistency } from '@vignettes/core/theme'
-import { loadTenantThemes } from '../utils/themes'
+import { loadTenantThemes, publishedThemeNames } from '../utils/themes'
 
 export default defineNitroPlugin(async () => {
   let cwd: string
@@ -32,9 +32,10 @@ export default defineNitroPlugin(async () => {
     // Reported by the registry plugin; the check below still runs on the built-in themes.
   }
 
-  const cssFiles = safeReaddir(publicThemes)
-    .filter(f => f.endsWith('.css'))
-    .map(f => f.slice(0, -'.css'.length))
+  const cssFiles = [
+    ...safeReaddir(publicThemes).filter(f => f.endsWith('.css')).map(f => f.slice(0, -'.css'.length)),
+    ...publishedThemeNames(),
+  ]
 
   const themeRoots = [
     join(cwd, 'themes'),
