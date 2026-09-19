@@ -2,8 +2,8 @@
 /**
  * Freeze a published deck into a static bundle and upload it.
  *
- * The deck comes from the local database, the alias from the content space's
- * `registry.yml`. A deck that embeds Storybook stories needs
+ * The deck, its alias and its bundle name come from the local database. A deck
+ * that embeds Storybook stories needs
  * `--storybook <built-dir>`: that Storybook is copied into the bundle so the
  * embeds keep rendering.
  *
@@ -12,15 +12,14 @@
  */
 import type { FreezeDescriptor } from '@vignettes/freeze'
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { splitFrontmatter } from '@vignettes/core/deck/frontmatter'
 import { resolveThemeName, setThemeRegistry } from '@vignettes/core/theme/tokens'
 import { buildFreezeDescriptor, freezeDeck } from '@vignettes/freeze'
-import { contentDir, discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
+import { discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
 import Database from 'better-sqlite3'
-import { load as parseYaml } from 'js-yaml'
 
 const root = import.meta.dirname ? join(import.meta.dirname, '..') : process.cwd()
 const args = process.argv.slice(2)
@@ -41,16 +40,19 @@ if (!alias) {
   process.exit(2)
 }
 
-const registryPath = join(contentDir(root), 'registry.yml')
-if (!existsSync(registryPath))
-  fail(`registry not found: ${registryPath}`)
-const registry = (parseYaml(readFileSync(registryPath, 'utf8')) ?? {}) as Record<string, { slug?: string, frozenBundle?: string }>
-const entry = registry[alias]
-if (!entry)
-  fail(`alias "${alias}" is not in ${registryPath}`)
-
 const db = new Database(dbPath, { readonly: true, fileMustExist: true })
-const slug = entry.slug || alias
+// The alias is the canonical one of a deck, a historical one, or the slug itself.
+const target = db.prepare(`
+  select slug, frozen_bundle as frozenBundle from decks where alias = @alias or slug = @alias
+  union all
+  select d.slug, d.frozen_bundle from deck_aliases a join decks d on d.slug = a.deck_slug where a.alias = @alias
+  limit 1
+`).get({ alias }) as { slug: string, frozenBundle: string | null } | undefined
+if (!target)
+  fail(`no deck answers to "${alias}" in ${dbPath}`)
+const entry = { slug: target.slug, frozenBundle: target.frozenBundle ?? undefined }
+
+const slug = entry.slug
 const deck = db.prepare(`
   select d.slug, d.theme, v.raw
   from decks d join deck_versions v on v.id = d.published_version_id
@@ -96,8 +98,8 @@ freezeDeck({
 if (noUpload)
   console.log(`   publish later with: mise run freeze:push -- ${descriptor.bundle}`)
 
-console.log(`\n▶ flip-lifecycle — set 'lifecycle: frozen' (+ frozenBundle: ${descriptor.bundle}) for "${descriptor.alias}" in registry.yml,`)
-console.log(`  then republish the deck so /p/${descriptor.alias} redirects to ${descriptor.servedUrl}`)
+console.log(`\n▶ flip-lifecycle — set lifecycle "frozen" and frozenBundle "${descriptor.bundle}" on "${slug}" (PATCH /api/admin/decks/${slug}),`)
+console.log(`  so /p/${descriptor.alias} redirects to ${descriptor.servedUrl}`)
 console.log(`\n✓ ${descriptor.alias} frozen — served at ${descriptor.servedUrl}`)
 
 function gitCommit(): string {

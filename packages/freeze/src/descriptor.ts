@@ -1,9 +1,9 @@
-// Pure derivation of a freeze job from a registry entry, consumed by
+// Pure derivation of a freeze job from a deck entry, consumed by
 // scripts/freeze.ts. A freeze turns one published deck into a self-contained
 // static bundle: no server, no database, no Nuxt runtime, served for good under
 // the deck's stable alias.
 
-/** Minimal registry-entry shape a freeze needs (mirrors the server's directory entry). */
+/** Minimal deck-entry shape a freeze needs (mirrors the server's directory entry). */
 export interface FreezeRegistryEntry {
   alias: string
   /** Deck slug; defaults to the alias. */
@@ -88,7 +88,7 @@ export function buildFreezeDescriptor(
     },
     {
       id: 'flip-lifecycle',
-      description: `Set lifecycle: frozen (+ frozenBundle: ${bundle}) for '${entry.alias}' in registry.yml`,
+      description: `Set lifecycle 'frozen' and frozenBundle '${bundle}' on the deck '${slug}'`,
       enabled: true,
     },
   ]
