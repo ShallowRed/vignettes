@@ -1,0 +1,16 @@
+// A brand theme: the kit, its base skin and layout preset, and the nine tokens.
+@use 'pkg:@vignettes/theme-kit';
+@use 'pkg:@vignettes/theme-kit/base';
+@use 'pkg:@vignettes/theme-kit/presets/dsfr-layout';
+
+:root {
+  --accent: #c2410c;
+  --accent-soft: #fed7aa;
+  --accent-bg: #fff7ed;
+  --surface: #fffdf9;
+  --surface-contrast: #431407;
+  --on-contrast: #fffdf9;
+  --text-default: #3f3a36;
+  --text-title: #1c1917;
+  --text-mention: #78716c;
+}

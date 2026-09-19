@@ -1,0 +1,16 @@
+// A dark theme: the kit, its base skin and layout preset, and the nine tokens.
+@use 'pkg:@vignettes/theme-kit';
+@use 'pkg:@vignettes/theme-kit/base';
+@use 'pkg:@vignettes/theme-kit/presets/dsfr-layout';
+
+:root {
+  --accent: #8fb3ff;
+  --accent-soft: #2a3550;
+  --accent-bg: #1b2233;
+  --surface: #11151f;
+  --surface-contrast: #e8ecf4;
+  --on-contrast: #11151f;
+  --text-default: #c9d1e0;
+  --text-title: #ffffff;
+  --text-mention: #8a94a8;
+}
