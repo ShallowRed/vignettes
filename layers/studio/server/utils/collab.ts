@@ -1,10 +1,12 @@
+import type { DraftStore } from '@vignettes/core/deck'
+import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { Hocuspocus } from '@hocuspocus/server'
 import { isDeckSlug } from '@vignettes/core/deck'
 import * as Y from 'yjs'
 import { createDraftStore } from '../db/draft-store'
 import { createSnapshotStore } from '../db/snapshot-store'
 import { useDb } from './db'
-import { publishedSource } from './sources'
+import { publishedSource, useMediaIndex } from './sources'
 
 /** The Y.Doc text field shared with y-codemirror.next. */
 const TEXT_FIELD = 'codemirror'
@@ -39,9 +41,19 @@ let instance: Hocuspocus | undefined
 // published markdown twice. Serialising the seed makes the second wait.
 const seeding = new Map<string, Promise<void>>()
 
-/** The draft store backing collab sessions (gates the /collab route). */
-export function useDraftStore() {
-  return createDraftStore(useDb())
+/**
+ * The draft store backing collab sessions (gates the /collab route). Each save
+ * records the images the text references in the media index.
+ */
+export function useDraftStore(): DraftStore {
+  const store = createDraftStore(useDb())
+  return {
+    ...store,
+    async save(slug, ydoc) {
+      await store.save(slug, ydoc)
+      await useMediaIndex().recordFromMarkdown(slug, yDocUpdateToMarkdown(ydoc))
+    },
+  }
 }
 
 /** The snapshots of the drafts (the fine history between two publications). */

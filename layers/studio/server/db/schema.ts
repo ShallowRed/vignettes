@@ -132,6 +132,16 @@ export const projectPermissions = sqliteTable('project_permissions', {
   expiresAt: integer('expires_at', { mode: 'timestamp' }),
 }, table => [primaryKey({ columns: [table.projectSlug, table.userId] })])
 
+/**
+ * Which decks reference an uploaded image: `/media/<name>` is served with their
+ * visibility. Rows are removed only when the deck is purged.
+ */
+export const deckMedia = sqliteTable('deck_media', {
+  mediaName: text('media_name').notNull(),
+  deckSlug: text('deck_slug').notNull().references(() => decks.slug),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, table => [primaryKey({ columns: [table.mediaName, table.deckSlug] })])
+
 /** One row per data migration run at boot, so a rewrite of the content applies once. */
 export const dataMigrations = sqliteTable('data_migrations', {
   name: text('name').primaryKey(),

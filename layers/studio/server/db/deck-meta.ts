@@ -2,14 +2,14 @@ import type { Lifecycle, PublicationStatus } from '#shared/access'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { PublicationStatusSchema } from '#shared/access'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
-import { deckAliases, deckDrafts, deckDraftSnapshots, deckPermissions, decks, deckVersions } from './schema'
+import { deckAliases, deckDrafts, deckDraftSnapshots, deckMedia, deckPermissions, decks, deckVersions } from './schema'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 /** The transaction handle drizzle hands the `db.transaction` callback. */
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 /**
- * Hard-delete one deck's rows (grants, redirect aliases, draft, snapshots, versions, row)
+ * Hard-delete one deck's rows (grants, redirect aliases, draft, media keys, snapshots, versions, row)
  * inside the caller's transaction. Shared by deck purge and project purge so the
  * cascade stays defined once.
  */
@@ -17,6 +17,7 @@ export function purgeDeckRows(tx: Tx, slug: string): void {
   tx.delete(deckPermissions).where(eq(deckPermissions.deckSlug, slug)).run()
   tx.delete(deckAliases).where(eq(deckAliases.deckSlug, slug)).run()
   tx.delete(deckDrafts).where(eq(deckDrafts.deckSlug, slug)).run()
+  tx.delete(deckMedia).where(eq(deckMedia.deckSlug, slug)).run()
   tx.delete(deckDraftSnapshots).where(eq(deckDraftSnapshots.deckSlug, slug)).run()
   tx.update(decks).set({ publishedVersionId: null }).where(eq(decks.slug, slug)).run()
   tx.delete(deckVersions).where(eq(deckVersions.deckSlug, slug)).run()

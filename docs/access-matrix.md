@@ -32,6 +32,10 @@ découvrabilité) ; l'adaptateur HTTP dans `layers/studio/server/utils/access.ts
 - **private** : rôles privilégiés (Éditeur/Owner globaux) et titulaires d'un
   grant. Jamais listé au public.
 
+### Images téléversées
+
+Une image de `/media/<hash>.<ext>` est servie avec la visibilité des decks qui la référencent : la table `deck_media` associe chaque image aux decks dont le texte la cite, et la route sert le fichier dès qu'un de ces decks est ouvert au visiteur. Un refus répond 404, comme une image qu'aucun deck vivant ne référence. Les associations sont écrites au téléversement et à chaque écriture du texte d'un deck, et supprimées à la purge du deck : un deck qui a cité une image continue de l'ouvrir après l'avoir retirée de son texte.
+
 ## Grants (escalade ciblée)
 
 - **Par deck** (`deck_permissions`) : `viewer` ouvre la lecture, `editor` ouvre

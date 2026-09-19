@@ -1,9 +1,11 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { Buffer } from 'node:buffer'
 import { DECK_TEXT_FIELD } from '#shared/collab/ydoc'
+import { referencedMedia } from '#shared/storage/media-refs'
 import { eq } from 'drizzle-orm'
 import * as Y from 'yjs'
-import { dataMigrations, deckDrafts, deckVersions } from './schema'
+import { recordDeckMedia } from './media-index'
+import { dataMigrations, deckDrafts, deckDraftSnapshots, deckVersions } from './schema'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
@@ -67,8 +69,27 @@ function explicitHeadingParser(db: Db): void {
   }
 }
 
+/** Records in `deck_media` the images that the versions, snapshots and drafts written before that table reference. */
+function indexExistingDeckMedia(db: Db): void {
+  const texts: { slug: string, raw: string }[] = [
+    ...db.select({ slug: deckVersions.deckSlug, raw: deckVersions.raw }).from(deckVersions).all(),
+    ...db.select({ slug: deckDraftSnapshots.deckSlug, raw: deckDraftSnapshots.raw }).from(deckDraftSnapshots).all(),
+  ]
+
+  for (const draft of db.select({ deckSlug: deckDrafts.deckSlug, ydoc: deckDrafts.ydoc }).from(deckDrafts).all()) {
+    const doc = new Y.Doc()
+    Y.applyUpdate(doc, new Uint8Array(draft.ydoc))
+    texts.push({ slug: draft.deckSlug, raw: doc.getText(DECK_TEXT_FIELD).toString() })
+    doc.destroy()
+  }
+
+  for (const { slug, raw } of texts)
+    recordDeckMedia(db, slug, referencedMedia(raw))
+}
+
 const DATA_MIGRATIONS: { name: string, run: (db: Db) => void }[] = [
   { name: 'explicit-heading-parser', run: explicitHeadingParser },
+  { name: 'index-existing-deck-media', run: indexExistingDeckMedia },
 ]
 
 export function runDataMigrations(db: Db): void {

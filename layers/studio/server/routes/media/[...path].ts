@@ -5,13 +5,14 @@ import process from 'node:process'
 import { isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { mediaObjectKey } from '#shared/storage/media-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { decideMediaAccess } from '../../utils/access'
 
 /**
- * Public media server: `/media/<hash>.<ext>` streams an uploaded image from the
- * frozen bucket (falling back to the local `.media/` dir when no S3 creds). Keys
- * are content-hashed, so assets are immutable and cached forever. Public for now;
- * per-deck gating (private images) is a later step — the app-relative src means
- * we can add it here without rewriting stored decks.
+ * Media server: `/media/<hash>.<ext>` streams an uploaded image from the frozen
+ * bucket (falling back to the local `.media/` dir when no S3 creds). Keys are
+ * content-hashed, so assets are immutable. An image is served with the
+ * visibility of the decks that reference it (`decideMediaAccess`), and a shared
+ * cache may keep it only when all of them are public.
  */
 
 const MIME: Record<string, string> = {
@@ -30,6 +31,11 @@ export default defineEventHandler(async (event) => {
   // Defence in depth against path traversal.
   if (!name || name.includes('..'))
     throw createError({ statusCode: 400, statusMessage: 'Bad request' })
+
+  // 404 rather than 403, which would tell which hashes exist.
+  const access = await decideMediaAccess(event, name)
+  if (!access.allowed)
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
   const cfg = {
     endpoint: process.env.NUXT_FROZEN_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud',
@@ -68,7 +74,7 @@ export default defineEventHandler(async (event) => {
   const resolvedType = contentType || MIME[extname(name).toLowerCase()] || 'application/octet-stream'
   setResponseHeader(event, 'Content-Type', resolvedType)
   setResponseHeader(event, 'Content-Length', body.byteLength)
-  setResponseHeader(event, 'Cache-Control', 'public, max-age=31536000, immutable')
+  setResponseHeader(event, 'Cache-Control', access.public ? 'public, max-age=31536000, immutable' : 'private, max-age=31536000, immutable')
   // Uploaded files are user-supplied. Stop the browser from sniffing them into an
   // executable type, and sandbox SVG (which can embed inline script) so nothing
   // runs when one is opened as a top-level document. Inline <img> use is unaffected.

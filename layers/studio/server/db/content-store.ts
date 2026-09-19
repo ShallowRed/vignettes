@@ -1,7 +1,9 @@
 import type { ContentSource, ContentWriter } from '@vignettes/core/deck'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { referencedMedia } from '#shared/storage/media-refs'
 import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { and, eq, isNull } from 'drizzle-orm'
+import { recordDeckMedia } from './media-index'
 import { decks, deckVersions } from './schema'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
@@ -95,6 +97,7 @@ export function createDbContent(db: Db): { source: ContentSource, writer: Conten
             .returning({ id: deckVersions.id })
             .get()!
           tx.update(decks).set({ publishedVersionId: version.id }).where(eq(decks.slug, prepared.slug)).run()
+          recordDeckMedia(tx, prepared.slug, referencedMedia(prepared.raw))
         })
 
         return { key: `db:${prepared.slug}`, bytes: new TextEncoder().encode(prepared.raw).length }

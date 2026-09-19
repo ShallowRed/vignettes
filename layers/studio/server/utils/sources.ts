@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 import { createDbContent } from '../db/content-store'
 import { createDeckMeta } from '../db/deck-meta'
 import { createDbDirectory } from '../db/directory'
+import { createMediaIndex } from '../db/media-index'
 import { createPermissionStore } from '../db/permission-store'
 import { createProjectPermissionStore } from '../db/project-permission-store'
 import { createProjectStore } from '../db/project-store'
@@ -39,6 +40,11 @@ export function useVersionHistory() {
 /** Deck catalog/access metadata rows (truth for managed decks). */
 export function useDeckMeta() {
   return createDeckMeta(useDb())
+}
+
+/** Which decks reference each uploaded image (the visibility of `/media/**`). */
+export function useMediaIndex() {
+  return createMediaIndex(useDb())
 }
 
 /** Per-deck permission grants. */

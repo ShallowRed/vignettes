@@ -1,4 +1,4 @@
-import type { DeckGrant, Lifecycle, PublicationStatus } from '#shared/access'
+import type { AccessDecision, DeckGrant, Lifecycle, PublicationStatus } from '#shared/access'
 import type { H3Event } from 'h3'
 import type { Actor } from './actor'
 import process from 'node:process'
@@ -8,7 +8,7 @@ import { getActor } from './actor'
 import { contentTokenActor } from './content-token'
 import { verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
-import { useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
+import { useDeckMeta, useGrants, useMediaIndex, useProjectPermissionStore } from './sources'
 
 // Semi-private decks are guarded by a shared password, so throttle guesses per
 // client and deck to keep the scrypt check from becoming a brute-force oracle.
@@ -40,8 +40,8 @@ async function resolveGrant(actor: Actor, slug: string): Promise<DeckGrant | und
   return await useGrants().get(slug, actor.id).catch(() => undefined) ?? undefined
 }
 
-/** Throws `createError` on deny/needs-password; returns normally on allow. */
-export async function gateDeckAccess(event: H3Event, opts: GateOptions): Promise<void> {
+/** The access decision for this request on this deck, before its mapping to HTTP. */
+export async function decideDeckAccess(event: H3Event, opts: GateOptions): Promise<AccessDecision> {
   const { slug, status, lifecycle, storedHash } = opts
   const actor = await getActor(event)
   const grant = await resolveGrant(actor, slug)
@@ -50,7 +50,12 @@ export async function gateDeckAccess(event: H3Event, opts: GateOptions): Promise
     ? await resolvePasswordGrant(event, slug, storedHash!)
     : false
 
-  const decision = decideAccess({ status, lifecycle, role: actor.role, grant, hasPassword, passwordGranted })
+  return decideAccess({ status, lifecycle, role: actor.role, grant, hasPassword, passwordGranted })
+}
+
+/** Throws `createError` on deny/needs-password; returns normally on allow. */
+export async function gateDeckAccess(event: H3Event, opts: GateOptions): Promise<void> {
+  const decision = await decideDeckAccess(event, opts)
 
   switch (decision.outcome) {
     case 'allow':
@@ -67,6 +72,31 @@ export async function gateDeckAccess(event: H3Event, opts: GateOptions): Promise
         statusMessage: decision.reason === 'forbidden' ? 'Forbidden' : 'Authentication required',
       })
   }
+}
+
+/**
+ * An uploaded image is allowed to a request that may view one of the live decks
+ * referencing it. `public` tells whether all of them are public.
+ */
+export async function decideMediaAccess(event: H3Event, mediaName: string): Promise<{ allowed: boolean, public: boolean }> {
+  const meta = useDeckMeta()
+  const decks = (await Promise.all((await useMediaIndex().decksFor(mediaName)).map(slug => meta.get(slug))))
+    .filter(deck => deck !== null)
+
+  let allowed = false
+  for (const deck of decks) {
+    const decision = await decideDeckAccess(event, {
+      slug: deck.slug,
+      status: deck.status,
+      lifecycle: deck.lifecycle,
+      storedHash: deck.accessPasswordHash,
+    })
+    if (decision.outcome === 'allow') {
+      allowed = true
+      break
+    }
+  }
+  return { allowed, public: decks.length > 0 && decks.every(deck => deck.status === 'public') }
 }
 
 /**

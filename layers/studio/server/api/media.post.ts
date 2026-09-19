@@ -9,6 +9,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../utils/access'
 import { getActorRole } from '../utils/actor'
+import { useDeckMeta, useMediaIndex } from '../utils/sources'
 
 /**
  * POST /api/media?deck=<slug> — upload an image. Allowed to privileged roles, and
@@ -18,13 +19,15 @@ import { getActorRole } from '../utils/actor'
  * content-hashed and stored in the frozen bucket under `media/` (falling back to
  * a local `.media/` dir when no S3 creds are configured, e.g. in dev). Returns an
  * app-relative `/media/<hash>.<ext>` src so the stored markdown never hardcodes a
- * bucket URL (lets us later gate serving without touching deck content).
+ * bucket URL. The upload records the deck in the media index, which `/media/**`
+ * reads to decide who may see the image.
  */
 export default defineEventHandler(async (event) => {
+  const query = getQuery(event).deck
+  const deck = typeof query === 'string' && isDeckSlug(query) ? query : undefined
   const role = await getActorRole(event)
   if (!isPrivileged(role)) {
-    const deck = getQuery(event).deck
-    if (typeof deck !== 'string' || !isDeckSlug(deck)) {
+    if (!deck) {
       throw createError({
         statusCode: role === 'anonymous' ? 401 : 403,
         statusMessage: 'Owner or editor role required, or an editor grant on the deck being edited',
@@ -72,6 +75,10 @@ export default defineEventHandler(async (event) => {
     await mkdir(dir, { recursive: true })
     await writeFile(join(dir, name), file.data)
   }
+
+  // The draft that references the image is saved a few seconds later.
+  if (deck && await useDeckMeta().existsIncludingTrashed(deck))
+    await useMediaIndex().record(deck, [name])
 
   return { src: `/media/${name}` }
 })
