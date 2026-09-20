@@ -66,6 +66,17 @@ describe('recette kit gate', () => {
     const [payload] = pass.split('.')
     await expect(status(asUser(2, 'v', { cookies: { recette_pass: `${payload}.forged` } }))).rejects.toMatchObject({ statusCode: 403 })
   })
+
+  it('refuses the pass once its holder stopped being an owner', async () => {
+    const pass = await ownerPass()
+    await useUserStore().setRole(1, 'viewer')
+    try {
+      await expect(status(asUser(2, 'v', { cookies: { recette_pass: pass } }))).rejects.toMatchObject({ statusCode: 403 })
+    }
+    finally {
+      await useUserStore().setRole(1, 'owner')
+    }
+  })
 })
 
 describe('persona switch', () => {

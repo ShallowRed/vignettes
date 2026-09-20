@@ -101,11 +101,13 @@ function readStub(slug: string): Stub {
 }
 
 // Runs inside the container: SQL only, the decisions above mirrored per stub.
+// The payload is prepended to this module, so it travels on stdin: a deck body
+// and its access-password hash never reach the remote command line.
 const REMOTE = String.raw`
 import Database from 'better-sqlite3'
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
-const { stubs, apply } = JSON.parse(Buffer.from(process.env.PUSH_B64, 'base64').toString())
+const { stubs, apply } = JSON.parse(Buffer.from(PUSH_B64, 'base64').toString())
 const db = new Database(process.env.NUXT_DB_PATH || '/app/.data/slides.db')
 const now = Math.floor(Date.now() / 1000)
 const out = []
@@ -150,8 +152,8 @@ console.log(`mode    : ${APPLY ? 'APPLY' : 'DRY-RUN (aucune écriture)'}\n`)
 
 const result = spawnSync('ssh', [
   SSH,
-  `sudo docker exec -i -w /app/.output/server -e PUSH_B64=${payload} ${CONTAINER} node --input-type=module -`,
-], { input: REMOTE, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  `sudo docker exec -i -w /app/.output/server ${CONTAINER} node --input-type=module -`,
+], { input: `const PUSH_B64 = ${JSON.stringify(payload)}\n${REMOTE}`, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
 
 if (result.status !== 0) {
   console.error(result.stderr || result.stdout)

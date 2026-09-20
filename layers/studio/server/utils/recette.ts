@@ -81,7 +81,10 @@ export function readRecettePass(event: H3Event): RecettePass | null {
 
 /**
  * 404 when the kit is off; 403 unless the request comes from an owner (who then
- * receives the pass) or carries a valid pass.
+ * receives the pass) or carries a pass whose holder is still an owner. The
+ * second check is what keeps the pass from outliving the role: the session of a
+ * persona is not an owner, so the pass has to be accepted on its own, and the
+ * role it stands for is read from the database on every call.
  */
 export async function assertRecette(event: H3Event): Promise<RecettePass> {
   if (!isRecetteEnabled())
@@ -93,8 +96,8 @@ export async function assertRecette(event: H3Event): Promise<RecettePass> {
     return mintRecettePass(event, { id: actor.id, login: actor.login, name })
   }
   const pass = readRecettePass(event)
-  if (!pass)
-    throw createError({ statusCode: 403, statusMessage: 'Le kit de recette s\'ouvre avec un compte owner' })
+  if (!pass || await useUserStore().getRole(pass.user.id) !== 'owner')
+    throw createError({ statusCode: 403, statusMessage: 'Le kit de recette s\'ouvre avec un compte propriétaire' })
   return pass
 }
 
