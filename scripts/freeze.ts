@@ -98,7 +98,7 @@ freezeDeck({
 if (noUpload)
   console.log(`   publish later with: mise run freeze:push -- ${descriptor.bundle}`)
 
-console.log(`\n▶ flip-lifecycle — set lifecycle "frozen" and frozenBundle "${descriptor.bundle}" on "${slug}" (PATCH /api/admin/decks/${slug}),`)
+console.log(`\n▶ flip-lifecycle: set lifecycle "frozen" and frozenBundle "${descriptor.bundle}" on "${slug}" (PATCH /api/admin/decks/${slug}),`)
 console.log(`  so /p/${descriptor.alias} redirects to ${descriptor.servedUrl}`)
 console.log(`\n✓ ${descriptor.alias} frozen — served at ${descriptor.servedUrl}`)
 

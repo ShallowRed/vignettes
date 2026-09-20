@@ -19,6 +19,6 @@ freezeDeck({
 })
 ```
 
-The caller brings the deck, the way to publish it and, on a host whose build is not `pnpm generate` or whose deck pages are not under `slides/<slug>`, `build` and `deckPath`. The package does the rest. It builds the application in bundle mode against a reduced public directory holding only the deck's theme and what that theme's stylesheet points at, carries the assets the deck references, makes every stylesheet URL relative so the bundle renders wherever it is served, embeds a built Storybook when the deck shows stories, and writes the markdown and a provenance record beside the output.
+The caller brings the deck and the way to publish it. `build` names the command that generates the static site, `pnpm generate` by default, and `deckPath` where that site puts the deck page, `slides/<slug>` by default. The package builds the application in bundle mode against a reduced public directory holding only the deck's theme and what that theme's stylesheet points at, carries the assets the deck references, makes every stylesheet URL relative so the bundle renders wherever it is served, embeds a built Storybook when the deck shows stories, and writes the markdown and a provenance record beside the output.
 
 `readBundleConfig` from `@vignettes/freeze/bundle` reads the environment the build sets, and belongs in the host's Nuxt configuration.

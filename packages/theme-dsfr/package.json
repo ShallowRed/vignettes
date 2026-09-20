@@ -2,7 +2,7 @@
   "name": "@vignettes/theme-dsfr",
   "type": "module",
   "version": "0.1.0",
-  "description": "Base theme for Vignettes following the French state design system (DSFR): palette, Marianne typography, dsfr-layout scale. Brand-neutral, made to be extended.",
+  "description": "Base theme for Vignettes following the French state design system (DSFR): palette, Marianne typography, layout scale. Made to be extended.",
   "author": "Lucas Poulain",
   "license": "MIT",
   "homepage": "https://github.com/ShallowRed/vignettes/tree/main/packages/theme-dsfr#readme",

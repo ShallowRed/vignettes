@@ -11,8 +11,8 @@ The interface is available in French and English. The code, the packages and thi
 - **Catalog**: decks grouped in project folders, filtered by status and project, with a trash for reversible deletion.
 - **Editor**: a CodeMirror editor with a live preview, real-time collaboration (Yjs over Hocuspocus), image paste and drop, and a draft that stays separate from what readers see.
 - **Publishing**: publishing a draft creates a new immutable version; the catalog shows which decks have unpublished changes; `?draft` previews the draft on the deck page.
-- **Access control**: four global roles (anonymous, viewer, editor, owner), four publication statuses (public, private, semi-private with a password, draft), per-deck and per-project grants for collaborators, and pre-provisioned invitations by GitHub or Google handle.
-- **Themes**: reveal.js themes compiled from SCSS on an engine package, with a brand-neutral DSFR base (the French state design system) made to be extended, a minimal theme, and a tenant's own brands shipped next to its decks; each deck picks its theme in its frontmatter.
+- **Access control**: four global roles (anonymous, viewer, editor, owner), three publication statuses (public, private, semi-private with a password) and an unlisted flag that keeps a deck out of the catalog, per-deck and per-project grants for collaborators, and pre-provisioned invitations by GitHub or Google handle.
+- **Themes**: reveal.js themes compiled from SCSS on an engine package, with a DSFR base (the French state design system) that carries the palette and the typography and is made to be extended, a minimal theme, and a tenant's own brands shipped next to its decks; each deck picks its theme in its frontmatter.
 - **Slide components**: columns, quotes, images with lightbox, media layouts, live Storybook embeds, Mermaid diagrams, JSON tours, speaker notes, fragments, and more.
 - **Print**: any deck exports to PDF through reveal.js print mode.
 - **Frozen bundles**: `mise run freeze -- <alias>` turns a deck into a self-contained static bundle with no server, database or JavaScript, served from object storage under the same access rules as the live deck, so a link stays alive long after the deck stops being maintained.
@@ -29,7 +29,7 @@ mise run setup        # .env with a generated session secret, dependencies, data
 mise run dev:nuxt     # http://localhost:3000
 ```
 
-Sign in with `/auth/dev-login?role=owner`, which answers in development only and needs no OAuth credentials. The catalog starts empty. Load the example deck with `node scripts/content-import.ts --content=examples --apply`, or open `/recette` and press "Créer" to fill the catalog with nine decks covering every access situation, plus five personas you can browse the app as.
+Sign in with `/auth/dev-login?role=owner`, which answers in development only and needs no OAuth credentials. The catalog starts empty. Load the example deck with `node scripts/content-import.ts --content=examples --apply`, or open `/recette` and press Create to fill the catalog with nine decks covering every access situation, plus five personas you can browse the app as. Outside development that page needs `NUXT_RECETTE_ENABLED=1`, and an instance that sets it creates the data set at boot.
 
 `mise run dev` runs the same server behind a local proxy on a `.localhost` host name, which lets several branches run at once. `dev:nuxt` needs no proxy.
 
@@ -63,7 +63,7 @@ A quote.
 
 Two parsers split the file into slides. With `parser: heading`, `#` opens the title slide, `##` starts a horizontal slide and `###` nests a vertical one under it. With `parser: separator`, which is what the shipped themes use unless a deck says otherwise, `---` separates horizontal slides and `----` vertical ones.
 
-[examples/vignettes-demo.md](examples/vignettes-demo.md) is a deck that shows the dialect and loads into a running instance in one command. [docs/presentation-format.md](docs/presentation-format.md) says where a deck lives here and points at the reference of each package: the dialect and the generic components in [packages/nuxt](packages/nuxt/README.md), the explanation kit in [packages/schemas](packages/schemas/README.md), the story embeds in [packages/storybook](packages/storybook/README.md).
+[examples/vignettes-demo.md](examples/vignettes-demo.md) is a deck that shows the dialect and loads into a running instance in one command. [docs/presentation-format.md](docs/presentation-format.md) says where a deck is stored and points at the reference of each package: the dialect and the generic components in [packages/nuxt](packages/nuxt/README.md), the explanation kit in [packages/schemas](packages/schemas/README.md), the story embeds in [packages/storybook](packages/storybook/README.md).
 
 ![A slide of that deck under the DSFR theme](docs/assets/deck.png)
 
@@ -118,7 +118,7 @@ GitHub Actions builds the image on every push to `main` and `staging`, publishes
 | `NUXT_CONTENT_DIR` | Content space: deck stubs and tenant themes, `presentations/` by default |
 | `NUXT_CONTENT_TOKEN` | Bearer token that lets `content:republish:prod` publish without a session |
 | `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk |
-| `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development |
+| `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development, and creates its data set and its five accounts at boot |
 
 `mise.local.toml`, which git ignores, holds what belongs to an instance rather than to the repository: `VIGNETTES_REMOTE` for the deployed instance the production tasks talk to, `CONTENT_PUSH_SSH` and `CONTENT_PUSH_CONTAINER` for the host `content:push` reaches it through.
 
@@ -141,7 +141,7 @@ mise run worktree -- feat/my-branch      # ../vignettes.wt/feat-my-branch, ready
 cd ../vignettes.wt/feat-my-branch && mise run dev
 ```
 
-The repository layout: `packages/` holds the published units, from the deck core to the Nuxt render module and the themes; `layers/studio/` the application a tenant extends, with its own `src/`, `server/` and `shared/`; the root is one such tenant, with its themes in `themes/`, its content in `presentations/`, its tools in `scripts/` and its suites in `test/`. [docs/architecture.md](docs/architecture.md) describes the whole, [docs/api-routes.md](docs/api-routes.md) the HTTP API, and [docs/recette-staging.md](docs/recette-staging.md) the demonstration and acceptance kit.
+`packages/` holds the published units, from the deck core to the Nuxt render module and the themes. `layers/studio/` holds the application a tenant extends, with its own `src/`, `server/` and `shared/`. The root is one such tenant, with its themes in `themes/`, its content in `presentations/`, its tools in `scripts/` and its suites in `test/`. [docs/architecture.md](docs/architecture.md) describes the whole, [docs/api-routes.md](docs/api-routes.md) the HTTP API, and [docs/recette-staging.md](docs/recette-staging.md) the demonstration and acceptance kit.
 
 ## Contributing
 

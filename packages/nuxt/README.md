@@ -76,8 +76,8 @@ An annotation is a `:tag{...}` directive the parser reads and removes from the b
 | `media-right-xwide`, `media-left-xwide` | the content is a narrow column of captions beside the media pane |
 | `media-below`, `media-above` | stacked: a compact heading row and a full-width media row |
 | `media-cover` | the media fills the slide, the heading and the intro are drawn over it on a translucent card |
-| `grid-compact` | no media pane: the title row shrinks to one line and the body takes the remaining height, for a tall gallery |
-| `full` | no panes: the whole slide is the body, rendered as one block |
+| `grid-compact` | the title row shrinks to one line and the body takes the remaining height, for a tall gallery |
+| `full` | the whole slide is the body, rendered as one block |
 
 ## Components
 
