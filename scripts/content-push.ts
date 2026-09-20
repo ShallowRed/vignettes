@@ -9,9 +9,12 @@
  *   node scripts/content-push.ts <slug>[,<slug>]            # plan against prod
  *   node scripts/content-push.ts <slug> --apply             # write
  *   node scripts/content-push.ts <slug> --staging           # target the staging container
+ *   node scripts/content-push.ts <slug> --content=examples # read another content directory
+ *   node scripts/content-push.ts <slug> --unlisted         # create it outside the catalog
  *
  * Per slug: a deck the database does not know is created managed, its access
- * axes read from the frontmatter (status defaults to private, fail closed);
+ * axes read from the frontmatter (status defaults to private, fail closed) and
+ * its alias, lifecycle and frozen bundle from `registry.yml`;
  * a deck it owns gets a new published version and its title and theme follow
  * the file, access axes untouched (what the editor's publish does); a trashed
  * deck is refused; an identical text is a no-op. A folder the database lacks
@@ -32,6 +35,7 @@ import { load as parseYaml } from 'js-yaml'
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
 const STAGING = args.includes('--staging')
+const UNLISTED = args.includes('--unlisted')
 const slugs = (args.find(a => !a.startsWith('--')) ?? '').split(',').map(s => s.trim()).filter(Boolean)
 if (slugs.length === 0) {
   console.error('usage: content-push.ts <slug>[,<slug>] [--apply] [--staging]')
@@ -42,12 +46,26 @@ const SSH = process.env.CONTENT_PUSH_SSH || 'vps-perso'
 const CONTAINER = STAGING
   ? (process.env.CONTENT_PUSH_STAGING_CONTAINER || 'vignettes-staging')
   : (process.env.CONTENT_PUSH_CONTAINER || 'vignettes')
-const CONTENT_DIR = join(process.cwd(), 'presentations')
+const CONTENT_DIR = join(process.cwd(), args.find(a => a.startsWith('--content='))?.slice(10) ?? 'presentations')
+
+interface RegistryEntry { slug?: string, alias?: string, lifecycle?: string, frozenBundle?: string }
+const REGISTRY = existsSync(join(CONTENT_DIR, 'registry.yml'))
+  ? (parseYaml(readFileSync(join(CONTENT_DIR, 'registry.yml'), 'utf8')) ?? {}) as Record<string, RegistryEntry>
+  : {}
+
+/** The registry entry naming this deck, keyed by its alias. */
+function registryOf(slug: string): { alias: string, lifecycle: string, frozenBundle: string | null } | null {
+  const found = Object.entries(REGISTRY).find(([alias, entry]) => (entry?.slug ?? alias) === slug)
+  if (!found)
+    return null
+  const [alias, entry] = found
+  return { alias, lifecycle: entry?.lifecycle ?? 'live', frozenBundle: entry?.frozenBundle ?? null }
+}
 
 interface Stub {
   slug: string
   raw: string
-  meta: { title: string | null, status: string, project: string | null, theme: string | null, unlisted: number, accessPasswordHash: string | null }
+  meta: { title: string | null, status: string, project: string | null, theme: string | null, unlisted: number, accessPasswordHash: string | null, alias: string | null, lifecycle: string, frozenBundle: string | null }
 }
 
 function readStub(slug: string): Stub {
@@ -58,6 +76,7 @@ function readStub(slug: string): Stub {
   const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   const data = (m ? parseYaml(m[1]!) : {}) as Record<string, unknown>
   const status = ['public', 'private', 'semi-private'].includes(String(data.status)) ? String(data.status) : 'private'
+  const registry = registryOf(slug)
   return {
     slug,
     raw,
@@ -66,8 +85,11 @@ function readStub(slug: string): Stub {
       status,
       project: (data.project as string) ?? null,
       theme: (data.theme as string) ?? null,
-      unlisted: data.unlisted ? 1 : 0,
+      unlisted: data.unlisted || UNLISTED ? 1 : 0,
       accessPasswordHash: (data.accessPassword as string) ?? null,
+      alias: registry?.alias ?? null,
+      lifecycle: registry?.lifecycle ?? 'live',
+      frozenBundle: registry?.frozenBundle ?? null,
     },
   }
 }
@@ -96,11 +118,15 @@ for (const { slug, raw, meta } of stubs) {
       db.prepare(
         'insert into decks (slug, title, status, lifecycle, project, theme, access_password_hash, unlisted, managed, created_at, updated_at) '
         + 'values (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
-      ).run(slug, meta.title ?? slug, meta.status, 'live', meta.project, meta.theme, meta.accessPasswordHash, meta.unlisted, now, now)
+      ).run(slug, meta.title ?? slug, meta.status, meta.lifecycle, meta.project, meta.theme, meta.accessPasswordHash, meta.unlisted, now, now)
     }
     else {
       db.prepare('update decks set title = coalesce(?, title), theme = coalesce(?, theme), managed = 1, updated_at = ? where slug = ?')
         .run(meta.title, meta.theme, now, slug)
+    }
+    if (meta.alias) {
+      db.prepare('update decks set alias = ?, lifecycle = ?, frozen_bundle = ?, updated_at = ? where slug = ?')
+        .run(meta.alias, meta.lifecycle, meta.frozenBundle, now, slug)
     }
     const res = db.prepare('insert into deck_versions (deck_slug, raw, published_by, published_at) values (?, ?, ?, ?)')
       .run(slug, raw, 'content-push', now)

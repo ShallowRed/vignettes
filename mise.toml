@@ -170,8 +170,10 @@ usage = """
 arg "<slugs>"
 flag "--apply"
 flag "--staging"
+flag "--unlisted" help="Create the deck outside the catalog, reachable by its link"
+flag "--content <dir>" help="Read another content directory than presentations/"
 """
-run = "node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
+run = "node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging} ${usage_unlisted:+--unlisted} ${usage_content:+--content=\"$usage_content\"}"
 
 [tasks."theme:push"]
 description = "Publish tenant themes (content space) to the bucket the deployed app serves them from (dry run; --apply uploads): mise run theme:push -- <name>[,<name>]"
