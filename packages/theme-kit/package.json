@@ -28,8 +28,8 @@
     "./base": {
       "sass": "./_base.scss"
     },
-    "./presets/dsfr-layout": {
-      "sass": "./presets/dsfr-layout/_index.scss"
+    "./presets/layout": {
+      "sass": "./presets/layout/_index.scss"
     }
   },
   "files": [

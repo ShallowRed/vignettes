@@ -5,9 +5,8 @@
  * MUST provide and that all theme-agnostic code (MDC components, the foundation
  * layer) references. A new theme is created by overriding these tokens.
  *
- * Defaults below are deliberately conservative (mostly DSFR-leaning blues) so
- * that any consumer of these variables degrades to a sensible look even if the
- * active theme forgets to set them.
+ * The defaults below are neutral greys with a plain blue accent: a theme that
+ * forgets a token degrades to a readable look that belongs to no brand.
  *
  * Naming conventions:
  *   --accent / --accent-soft / --accent-bg
@@ -21,17 +20,17 @@
 
 :root {
   // Accent (primary brand color) and its variants
-  --accent: #000091;
-  --accent-soft: #e3e3fd;
-  --accent-bg: #f5f5fe;
+  --accent: #1c4fd8;
+  --accent-soft: #dbe4fb;
+  --accent-bg: #f4f6fd;
 
   // Surfaces
   --surface: #ffffff;
-  --surface-contrast: #161616;
+  --surface-contrast: #1a1a1a;
   --on-contrast: #ffffff;
 
   // Text intensities
-  --text-default: #161616;
-  --text-title: #161616;
-  --text-mention: #666666;
+  --text-default: #1a1a1a;
+  --text-title: #111111;
+  --text-mention: #6b6b6b;
 }

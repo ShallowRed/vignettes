@@ -74,7 +74,7 @@ Applies the nine tokens to the page background, the text, the headings, the link
 ## The layout preset
 
 ```scss
-@use 'pkg:@vignettes/theme-kit/presets/dsfr-layout';
+@use 'pkg:@vignettes/theme-kit/presets/layout';
 ```
 
 The type scale and the spacing of the French state design system, without its colors. Use it to keep those proportions under your own palette; [@vignettes/theme-dsfr](https://www.npmjs.com/package/@vignettes/theme-dsfr) is the full theme.

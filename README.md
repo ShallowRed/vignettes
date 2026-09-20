@@ -74,7 +74,7 @@ A theme is a directory with a `theme.json` manifest and an SCSS entry, compiled 
 | Package | What it is |
 |---------|------------|
 | [@vignettes/theme-kit](packages/theme-kit/README.md) | The engine layer: the semantic token contract, the Reveal patches, the slide skeleton, the media-layout grid, the scale presets |
-| [@vignettes/theme-dsfr](packages/theme-dsfr/README.md) | The DSFR base theme: palette, Marianne typography, `dsfr-layout` scale, made to be extended |
+| [@vignettes/theme-dsfr](packages/theme-dsfr/README.md) | The DSFR base theme: palette, Marianne typography, `layout` scale, made to be extended |
 
 Both are pure SCSS with no dependencies, and are usable on any Reveal.js deck. [docs/theme-system.md](docs/theme-system.md) is the reference and has the tutorial.
 

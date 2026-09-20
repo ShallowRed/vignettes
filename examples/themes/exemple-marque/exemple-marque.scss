@@ -1,7 +1,7 @@
 // A brand theme: the kit, its base skin and layout preset, and the nine tokens.
 @use 'pkg:@vignettes/theme-kit';
 @use 'pkg:@vignettes/theme-kit/base';
-@use 'pkg:@vignettes/theme-kit/presets/dsfr-layout';
+@use 'pkg:@vignettes/theme-kit/presets/layout';
 
 :root {
   --accent: #c2410c;

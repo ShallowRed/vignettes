@@ -4,8 +4,8 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 ## Layers
 
-1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `dsfr-layout` scale preset. Themes build on this layer and never replace it.
-2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `dsfr-layout` scale, light surfaces. Usable as is (`theme: dsfr`) and made to be extended. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
+1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Themes build on this layer and never replace it.
+2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. Usable as is (`theme: dsfr`) and made to be extended. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
 3. **Themes and brands**: `themes/<name>/` in the application (`dsfr`, `dsfr-standalone`, `minimal`) and `themes/<name>/` in the content space (`NUXT_CONTENT_DIR`, `presentations/` by default) for a tenant's brands. A brand extends the DSFR base or the engine alone.
 
 ## Manifest
@@ -114,7 +114,7 @@ A theme made of the nine tokens alone, with the base skin of the kit and the DSF
 ```scss
 @use 'pkg:@vignettes/theme-kit';
 @use 'pkg:@vignettes/theme-kit/base';
-@use 'pkg:@vignettes/theme-kit/presets/dsfr-layout';
+@use 'pkg:@vignettes/theme-kit/presets/layout';
 
 :root {
   --accent: #c2410c;
@@ -138,7 +138,7 @@ A theme on the engine alone, with its own scale:
 .reveal h1 { font-size: 3em; }
 ```
 
-Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `pkg:@vignettes/theme-kit/presets/dsfr-layout` gives a theme the DSFR sizes without its colors.
+Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `pkg:@vignettes/theme-kit/presets/layout` gives a theme the DSFR sizes without its colors.
 
 ## The fallback theme
 

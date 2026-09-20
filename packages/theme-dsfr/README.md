@@ -20,7 +20,7 @@ pnpm add -D @vignettes/theme-dsfr @vignettes/theme-kit sass
 @use 'pkg:@vignettes/theme-dsfr';
 ```
 
-That entry imports the engine layer and the `dsfr-layout` preset. Compile it with Sass's package importer, as [@vignettes/theme-kit](https://www.npmjs.com/package/@vignettes/theme-kit) describes.
+That entry imports the engine layer and the `layout` preset. Compile it with Sass's package importer, as [@vignettes/theme-kit](https://www.npmjs.com/package/@vignettes/theme-kit) describes.
 
 ## Extending it
 
