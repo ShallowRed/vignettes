@@ -10,6 +10,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { checkThemeConsistency } from '@vignettes/core/theme'
+import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { loadTenantThemes, publishedThemeNames } from '../utils/themes'
 
 export default defineNitroPlugin(async () => {
@@ -39,7 +40,7 @@ export default defineNitroPlugin(async () => {
 
   const themeRoots = [
     join(cwd, 'themes'),
-    join(cwd, process.env.NUXT_CONTENT_DIR || 'presentations', 'themes'),
+    join(contentDir(cwd), 'themes'),
   ].filter(dir => existsSync(dir))
   const sourceDirs = themeRoots.length
     ? themeRoots.flatMap(dir => safeReaddir(dir, { withFileTypes: true })
@@ -47,7 +48,7 @@ export default defineNitroPlugin(async () => {
         .map(e => e.name))
     : undefined
 
-  const report = checkThemeConsistency({ cssFiles, sourceDirs })
+  const report = checkThemeConsistency({ cssFiles, sourceDirs, buildCommand: 'pnpm build:themes' })
   if (!report.ok) {
     console.warn(
       `[theme-consistency] ${report.warnings.length} theme issue(s) found:\n  - ${report.warnings.join('\n  - ')}`,

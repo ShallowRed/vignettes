@@ -34,13 +34,19 @@ describe('checkThemeConsistency', () => {
     expect(report.warnings.some(w => w.includes('dsfr-alt') && w.includes('no tokens entry'))).toBe(true)
   })
 
-  it('flags a source dir with no compiled css (build:themes not run)', () => {
+  it('flags a source dir with no compiled css, naming the command the host gave', () => {
     const report = checkThemeConsistency({
       tokens: ['dsfr'],
       cssFiles: ['dsfr'],
       sourceDirs: ['dsfr', 'newtheme'],
+      buildCommand: 'pnpm build:themes',
     })
-    expect(report.warnings.some(w => w.includes('newtheme') && w.includes('build:themes'))).toBe(true)
+    expect(report.warnings.some(w => w.includes('newtheme') && w.includes('run pnpm build:themes'))).toBe(true)
+  })
+
+  it('names the theme build generically when the host gave no command', () => {
+    const report = checkThemeConsistency({ tokens: ['dsfr'], cssFiles: [], sourceDirs: ['dsfr'] })
+    expect(report.warnings.some(w => w.includes('run the theme build'))).toBe(true)
   })
 
   // public/themes is a build output: the drift check needs a prior `pnpm build:themes`.

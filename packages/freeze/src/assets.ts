@@ -55,8 +55,8 @@ export function buildReducedPublic(root: string, outDir: string, theme?: string)
 
 /**
  * Make the root-absolute `url()` of every stylesheet in the bundle relative to
- * its own location. A bundle is served from wherever it is dropped — the origin
- * root, `/frozen/<name>/`, a file share — so nothing inside may assume a base.
+ * its own location. A bundle is served from wherever it is dropped: the origin
+ * root, `/frozen/<name>/` or a file share, so nothing inside may assume a base.
  */
 export function rebaseCssUrls(bundleDir: string): number {
   let rewritten = 0

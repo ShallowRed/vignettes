@@ -23,11 +23,12 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
+import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import Database from 'better-sqlite3'
 import { dump as dumpYaml } from 'js-yaml'
 
 const ROOT = process.cwd()
-const CONTENT_DIR = join(ROOT, 'presentations')
+const CONTENT_DIR = contentDir(ROOT)
 
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')

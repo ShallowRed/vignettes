@@ -1,15 +1,15 @@
 name: Checks
 
-# Lint, tests unitaires et tests e2e sur le build de production. Tournent sur
-# chaque pull request, et sont appelés par `docker-publish.yml` avant de
-# construire l'image : une seule définition pour les deux.
+# Lint, unit tests and end-to-end tests on the production build. Run on every
+# pull request, and called by `docker-publish.yml` before it builds the image,
+# so both go through one definition.
 on:
   pull_request:
   workflow_call:
 
 concurrency:
-  # Un nouveau push sur une PR annule le run précédent ; les runs appelés par le
-  # workflow de publication gardent leur propre groupe et ne s'annulent pas.
+  # A new push on a pull request cancels the previous run. Runs called by the
+  # publishing workflow keep their own group and run to the end.
   group: checks-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 

@@ -44,10 +44,9 @@ export interface FreezeDescriptor {
 }
 
 /**
- * The deck page of a bundle keeps the historical `--standalone` directory name:
- * `/p/<alias>` sends visitors there (`server/api/p/[alias].get.ts`), and bundles
- * frozen years ago answer on that path. The suffix names the Reveal-only copy of
- * the deck, nothing else.
+ * The deck page of a bundle keeps the historical `--standalone` directory name,
+ * so a link to a bundle frozen years ago still answers. The suffix names the
+ * Reveal-only copy of the deck, nothing else.
  */
 export function bundleDeckDir(slug: string): string {
   return `${slug}--standalone`

@@ -1,9 +1,8 @@
 import process from 'node:process'
 
-// Single typed reader for the frozen-bundle env toggles. Pure and Nuxt-free:
-// imported by nuxt.config.ts (relative), the server plugin (#shared), and tests.
-// Every value is set by `scripts/freeze.ts` for the one deck being frozen; there
-// is no default deck, theme or Storybook location.
+// Single typed reader for the frozen-bundle env toggles. Pure and Nuxt-free, so
+// a host reads it from its Nuxt configuration, its server and its tests alike.
+// The freeze run sets every value for the one deck being frozen.
 export interface BundleConfig {
   enabled: boolean
   onlySlug?: string

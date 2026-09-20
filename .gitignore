@@ -48,6 +48,9 @@ docs/private/
 # mise personal overrides
 mise.local.toml
 
+# Agent session state and the worktrees it opens
+.claude/
+
 # Compiled themes and their copied assets (`pnpm build:themes`)
 public/themes/
 

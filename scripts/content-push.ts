@@ -30,6 +30,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
+import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
 
 const args = process.argv.slice(2)
@@ -44,13 +45,14 @@ if (slugs.length === 0) {
 
 const SSH = process.env.CONTENT_PUSH_SSH
 if (!SSH) {
-  console.error('CONTENT_PUSH_SSH manquant : l\'hôte SSH de l\'instance (voir mise.local.toml).')
+  console.error('CONTENT_PUSH_SSH is missing: the SSH host of the instance (see mise.local.toml).')
   process.exit(2)
 }
 const CONTAINER = STAGING
   ? (process.env.CONTENT_PUSH_STAGING_CONTAINER || 'vignettes-staging')
   : (process.env.CONTENT_PUSH_CONTAINER || 'vignettes')
-const CONTENT_DIR = join(process.cwd(), args.find(a => a.startsWith('--content='))?.slice(10) ?? 'presentations')
+const OVERRIDE = args.find(a => a.startsWith('--content='))?.slice(10)
+const CONTENT_DIR = OVERRIDE ? join(process.cwd(), OVERRIDE) : contentDir(process.cwd())
 
 interface RegistryEntry { slug?: string, alias?: string, lifecycle?: string, frozenBundle?: string }
 const REGISTRY = existsSync(join(CONTENT_DIR, 'registry.yml'))

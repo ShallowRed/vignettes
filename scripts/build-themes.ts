@@ -35,7 +35,7 @@ if (!only && !watchMode)
 const failed = themes.filter(theme => !compileTheme(root, theme))
 const blocking = failed.filter(theme => theme.source === 'app')
 if (failed.length > blocking.length)
-  console.warn(`⚠ ${failed.filter(t => t.source === 'content').map(t => t.name).join(', ')} : thème(s) de l'espace de contenu non compilé(s)`)
+  console.warn(`⚠ uncompiled in the content space: ${failed.filter(t => t.source === 'content').map(t => t.name).join(', ')}`)
 if (blocking.length > 0 && !watchMode)
   process.exit(1)
 

@@ -10,6 +10,8 @@ export interface ThemeConsistencyInput {
   /** Base names of the compiled `public/themes/*.css` files. */
   cssFiles: readonly string[]
   sourceDirs?: readonly string[]
+  /** What the host tells the operator to run to compile a theme. */
+  buildCommand?: string
 }
 
 export interface ThemeConsistencyReport {
@@ -40,14 +42,15 @@ export function checkThemeConsistency(input: ThemeConsistencyInput): ThemeConsis
     )
   }
 
-  // SCSS source dir with no compiled CSS means `build:themes` didn't emit it.
+  // An SCSS source dir with no compiled CSS means the theme build skipped it.
   if (input.sourceDirs) {
+    const command = input.buildCommand ?? 'the theme build'
     const orphanSources = input.sourceDirs
       .filter(name => !css.has(name))
       .sort()
     for (const name of orphanSources) {
       warnings.push(
-        `theme source themes/${name}/ has no compiled public/themes/${name}.css — run \`pnpm build:themes\``,
+        `theme source themes/${name}/ has no compiled public/themes/${name}.css: run ${command}`,
       )
     }
   }

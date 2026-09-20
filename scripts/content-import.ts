@@ -32,6 +32,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
+import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import Database from 'better-sqlite3'
 import { load as parseYaml } from 'js-yaml'
 import { applyRemoteRepublish, planRemoteRepublish } from './lib/remote-republish.ts'
@@ -39,7 +40,7 @@ import { applyRemoteRepublish, planRemoteRepublish } from './lib/remote-republis
 const ROOT = process.cwd()
 
 const args = process.argv.slice(2)
-const CONTENT_DIR = args.find(a => a.startsWith('--content='))?.slice(10) ?? join(ROOT, 'presentations')
+const CONTENT_DIR = args.find(a => a.startsWith('--content='))?.slice(10) ?? contentDir(ROOT)
 const APPLY = args.includes('--apply')
 const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5)
   ?? process.env.NUXT_DB_PATH

@@ -78,7 +78,7 @@ if (storybookDir && !existsSync(join(root, storybookDir)) && !existsSync(storybo
 
 printPlan(descriptor)
 if (dryRun) {
-  console.log('\n(dry run — nothing executed)')
+  console.log('\n(dry run: nothing executed)')
   process.exit(0)
 }
 
@@ -88,6 +88,8 @@ freezeDeck({
   raw: deck.raw,
   storybookDir,
   contentDir: process.env.NUXT_CONTENT_DIR,
+  build: { command: 'pnpm', args: ['generate'] },
+  deckPath: slug => join('slides', slug),
   env: { NUXT_DB_PATH: dbPath },
   provenance: { storybook: frontmatter.storybook ?? null, gitCommit: gitCommit() },
   upload: noUpload
@@ -100,7 +102,7 @@ if (noUpload)
 
 console.log(`\n▶ flip-lifecycle: set lifecycle "frozen" and frozenBundle "${descriptor.bundle}" on "${slug}" (PATCH /api/admin/decks/${slug}),`)
 console.log(`  so /p/${descriptor.alias} redirects to ${descriptor.servedUrl}`)
-console.log(`\n✓ ${descriptor.alias} frozen — served at ${descriptor.servedUrl}`)
+console.log(`\n✓ ${descriptor.alias} frozen, served at ${descriptor.servedUrl}`)
 
 function gitCommit(): string {
   try {

@@ -41,7 +41,7 @@ export function freezeDeck(run: FreezeRun): string {
   const { root, descriptor, raw, storybookDir, contentDir, env = {}, upload, provenance, log = console.log } = run
   const build = run.build ?? { command: 'pnpm', args: ['generate'] }
   const deckPath = run.deckPath ?? ((slug: string) => join('slides', slug))
-  const here = join(import.meta.dirname)
+  const here = import.meta.dirname
   const outDir = join(root, descriptor.hostDir)
   const publicDir = mkdtempSync(join(tmpdir(), 'bundle-public-'))
 
@@ -49,7 +49,7 @@ export function freezeDeck(run: FreezeRun): string {
     const s = descriptor.steps.find(x => x.id === id)!
     if (!s.enabled)
       return
-    log(`\n▶ ${s.id} — ${s.description}`)
+    log(`\n▶ ${s.id}: ${s.description}`)
     body()
   }
   const exec = (cmd: string, argv: string[], extra: Record<string, string> = {}) =>
