@@ -7,7 +7,7 @@
  * Pure filesystem reads, no Nuxt import: shared by the build scripts, the dev
  * watcher plugin, the token generator and the server's runtime loader.
  */
-import type { ThemePreview, ThemeRegistry, ThemeTokens } from '@vignettes/core/theme/tokens'
+import type { ThemePreview, ThemeRegistry, ThemeTokens } from '@vignettes/core/theme'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'

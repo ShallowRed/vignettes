@@ -12,7 +12,7 @@ import { existsSync } from 'node:fs'
 import { readdir, readFile, rm, stat } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import process from 'node:process'
-import { isStorybookRuntime } from '@vignettes/core/render/embed-storybook'
+import { isStorybookRuntime } from '@vignettes/core/render'
 
 const [storybookDir, ...flags] = process.argv.slice(2)
 const DRY = flags.includes('--dry')
