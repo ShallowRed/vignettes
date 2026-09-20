@@ -133,13 +133,16 @@ export const projectPermissions = sqliteTable('project_permissions', {
 }, table => [primaryKey({ columns: [table.projectSlug, table.userId] })])
 
 /**
- * Which decks reference an uploaded image: `/media/<name>` is served with their
- * visibility. Rows are removed only when the deck is purged.
+ * Which decks reference an uploaded image. `/media/<name>` is served with the
+ * visibility of the deck it was uploaded to; the other rows record the reuse
+ * without widening the access. Rows are removed only when the deck is purged.
  */
 export const deckMedia = sqliteTable('deck_media', {
   mediaName: text('media_name').notNull(),
   deckSlug: text('deck_slug').notNull().references(() => decks.slug),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  /** True on the deck the image was uploaded to, the one whose access rules it follows. */
+  origin: integer('origin', { mode: 'boolean' }).notNull().default(false),
 }, table => [primaryKey({ columns: [table.mediaName, table.deckSlug] })])
 
 /** One row per data migration run at boot, so a rewrite of the content applies once. */

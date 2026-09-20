@@ -5,7 +5,7 @@ import process from 'node:process'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { decideMediaAccess } from '../../layers/studio/server/utils/access'
 import { isRecetteSeeded, recetteImages } from '../../layers/studio/server/utils/recette'
-import { useDeckMeta, useGrants } from '../../layers/studio/server/utils/sources'
+import { useDeckMeta, useGrants, useMediaIndex } from '../../layers/studio/server/utils/sources'
 import { useUserStore } from '../../layers/studio/server/utils/users'
 import { RECETTE_INVITED_HANDLE, RECETTE_PERSONAS } from '../../layers/studio/shared/recette/personas'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
@@ -144,6 +144,18 @@ describe('seed', () => {
     expect(await decideMediaAccess(anon(), nameOf('recette-public'))).toMatchObject({ allowed: true })
     expect(await decideMediaAccess(anon(), nameOf('recette-privee'))).toMatchObject({ allowed: false })
     expect(await decideMediaAccess(asUser(1, 'boss'), nameOf('recette-privee'))).toMatchObject({ allowed: true })
+  })
+
+  it('keeps a private image private when a public deck cites it', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    await seed(asUser(1, 'boss'))
+    const name = recetteImages()['recette-privee']!.replace('/media/', '')
+    expect(await decideMediaAccess(anon(), name)).toMatchObject({ allowed: false })
+
+    // What an editor of the public deck can do: write the name into its draft.
+    await useMediaIndex().recordFromMarkdown('recette-public', `![](/media/${name})`)
+
+    expect(await decideMediaAccess(anon(), name)).toMatchObject({ allowed: false })
   })
 
   it('counts the data set as present only when every deck exists', async () => {

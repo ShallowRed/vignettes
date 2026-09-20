@@ -11,7 +11,7 @@ import { useDraftStore } from './collab'
 import { useDb } from './db'
 import { mediaNameOf, storeMedia } from './media-store'
 import { hashAccessPassword } from './password'
-import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore, useProjectStore } from './sources'
+import { useDbContent, useDeckMeta, useMediaIndex, usePermissionStore, useProjectPermissionStore, useProjectStore } from './sources'
 import { useUserStore } from './users'
 
 /**
@@ -209,16 +209,19 @@ export async function seedRecette(): Promise<SeedSummary> {
   const meta = useDeckMeta()
   for (const deck of SEED_DECKS) {
     const raw = markdownFor(deck)
-    if (deck.image) {
-      const image = imageOf(deck)
+    const image = deck.image ? imageOf(deck) : null
+    if (image)
       await storeMedia(image.name, image.data, IMAGE_MIME)
-    }
     if (deck.draftOnly) {
       await useDraftStore().save(deck.slug, markdownToYDocUpdate(raw))
       await meta.update(deck.slug, { title: deck.title, status: deck.status, project: deck.project ?? null, theme: deck.theme })
       continue
     }
     await useDbContent().writer.save({ slug: deck.slug, raw, actor: 'recette' })
+    // After the deck row exists: the index points at it by foreign key, and the
+    // upload is what ties the image to this deck's access rules.
+    if (image)
+      await useMediaIndex().record(deck.slug, [image.name])
     await meta.update(deck.slug, {
       unlisted: deck.unlisted ?? false,
       lifecycle: deck.lifecycle ?? 'live',
