@@ -20,19 +20,31 @@ async function deckWithImage(slug: string, status: 'public' | 'semi-private' | '
   await useDeckMeta().update(slug, { title: slug, status, ...(storedHash ? { accessPasswordHash: storedHash } : {}) })
 }
 
+/** A deck with the given status, showing one file of the content space. */
+async function deckWithAsset(slug: string, status: 'public' | 'private', key: string) {
+  await useDraftStore().save(slug, markdownToYDocUpdate(`# ${slug}\n\n![](/${key})`))
+  await useDeckMeta().update(slug, { title: slug, status })
+}
+
 describe('referencedMedia', () => {
-  it('collects the uploaded images of a document, deduplicated', () => {
+  it('collects the images of a document, uploads and content space alike, deduplicated', () => {
     const markdown = [
       '![](/media/abc123.png)',
       '::Image{src="/media/def456.webp"}',
       '![](/media/abc123.png)',
       '![](/images/atlas/carte.svg)',
-      '![](https://example.com/remote.png)',
+      '![](/images/atlas/carte.svg)',
+      '![](https://example.com/images/remote.png)',
     ].join('\n')
-    expect(referencedMedia(markdown)).toEqual(['abc123.png', 'def456.webp'])
+    expect(referencedMedia(markdown)).toEqual(['abc123.png', 'def456.webp', 'images/atlas/carte.svg'])
   })
 
-  it('finds nothing in a document without an uploaded image', () => {
+  it('leaves the decoration of a theme alone', () => {
+    const markdown = '::Slide{background="/backgrounds/as-title.png"}\n\n![](/pictograms/digital/application.svg)'
+    expect(referencedMedia(markdown)).toEqual([])
+  })
+
+  it('finds nothing in a document without an image', () => {
     expect(referencedMedia('# Title\n\nSome text.')).toEqual([])
   })
 })
@@ -80,6 +92,22 @@ describe('decideMediaAccess', () => {
 
   it('refuses an image no deck references', async () => {
     expect(await decideMediaAccess(anon(), 'unknown.png')).toEqual({ allowed: false, public: false })
+  })
+
+  it('refuses a file of the content space that only a private deck shows', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    await deckWithAsset('client-work', 'private', 'images/client/plan.svg')
+    expect(await decideMediaAccess(anon(), 'images/client/plan.svg')).toMatchObject({ allowed: false })
+    expect(await decideMediaAccess(asUser(1, 'boss'), 'images/client/plan.svg')).toMatchObject({ allowed: true })
+  })
+
+  it('serves a file of the content space a public deck shows', async () => {
+    await deckWithAsset('vitrine', 'public', 'images/panorama.svg')
+    expect(await decideMediaAccess(anon(), 'images/panorama.svg')).toEqual({ allowed: true, public: true })
+  })
+
+  it('refuses a file of the content space no deck shows', async () => {
+    expect(await decideMediaAccess(anon(), 'images/client/forgotten.png')).toMatchObject({ allowed: false })
   })
 
   it('refuses an image once its only deck is trashed', async () => {

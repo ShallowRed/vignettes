@@ -49,7 +49,7 @@ describe('runDataMigrations', () => {
     const draft = db.select().from(deckDrafts).where(eq(deckDrafts.deckSlug, 'old')).get()!
     expect(yDocUpdateToMarkdown(new Uint8Array(draft.ydoc))).toBe('---\nparser: heading\n---\n\n# Old draft')
     expect(db.select().from(dataMigrations).all().map(row => row.name))
-      .toEqual(['explicit-heading-parser', 'index-existing-deck-media'])
+      .toEqual(['explicit-heading-parser', 'index-existing-deck-media', 'index-existing-deck-images'])
 
     // A deck written after the migration relies on the new default and stays untouched.
     db.update(deckVersions).set({ raw: '# Separator deck' }).where(eq(deckVersions.deckSlug, 'explicit')).run()

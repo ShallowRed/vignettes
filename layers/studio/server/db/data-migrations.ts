@@ -69,7 +69,7 @@ function explicitHeadingParser(db: Db): void {
   }
 }
 
-/** Records in `deck_media` the images that the versions, snapshots and drafts written before that table reference. */
+/** Records in `deck_media` every image the versions, snapshots and drafts reference. */
 function indexExistingDeckMedia(db: Db): void {
   const texts: { slug: string, raw: string }[] = [
     ...db.select({ slug: deckVersions.deckSlug, raw: deckVersions.raw }).from(deckVersions).all(),
@@ -90,6 +90,10 @@ function indexExistingDeckMedia(db: Db): void {
 const DATA_MIGRATIONS: { name: string, run: (db: Db) => void }[] = [
   { name: 'explicit-heading-parser', run: explicitHeadingParser },
   { name: 'index-existing-deck-media', run: indexExistingDeckMedia },
+  // A second pass, now that the index also covers the files of the content
+  // space: `/images/**` is served with the visibility of the decks citing it,
+  // and a file no deck cites answers 404.
+  { name: 'index-existing-deck-images', run: indexExistingDeckMedia },
 ]
 
 export function runDataMigrations(db: Db): void {

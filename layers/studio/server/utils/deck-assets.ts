@@ -4,20 +4,31 @@ import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import process from 'node:process'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
+import { assetKey } from '#shared/storage/media-refs'
 import { CONTENT_TYPES } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { deckAssetKey, deckAssetLocalPath } from '@vignettes/core/deck-assets'
+import { decideMediaAccess } from './access'
 
 /**
  * Serve a deck asset of the content space (`presentations/assets/<prefix>/...`,
  * referenced by decks as `/<prefix>/...`): from the bucket on a deployment,
  * from the content directory on disk otherwise. Files the application ships
  * under `public/` with the same prefix are static and never reach this.
+ *
+ * `gated` serves the file with the visibility of the decks referencing it, the
+ * rule `/media/**` follows. Backgrounds and pictograms are the decoration of a
+ * theme, named in stylesheets the index never reads, so they stay open.
  */
-export async function serveDeckAsset(event: H3Event, prefix: string): Promise<Buffer> {
+export async function serveDeckAsset(event: H3Event, prefix: string, gated = false): Promise<Buffer> {
   const raw = getRouterParam(event, 'path') || ''
   const parts = decodeURIComponent(raw).split('/').filter(Boolean)
   if (parts.length === 0 || parts.includes('..'))
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
+
+  // 404 rather than 403, which would tell which files exist.
+  const access = gated ? await decideMediaAccess(event, assetKey(prefix, parts.join('/'))) : null
+  if (access && !access.allowed)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
   const cfg = frozenS3ConfigFromEnv(process.env)
@@ -50,6 +61,6 @@ export async function serveDeckAsset(event: H3Event, prefix: string): Promise<Bu
   const ext = extname(parts[parts.length - 1]).toLowerCase()
   setResponseHeader(event, 'Content-Type', contentType || CONTENT_TYPES[ext] || 'application/octet-stream')
   setResponseHeader(event, 'Content-Length', body.byteLength)
-  setResponseHeader(event, 'Cache-Control', 'public, max-age=300')
+  setResponseHeader(event, 'Cache-Control', !access || access.public ? 'public, max-age=300' : 'private, no-store')
   return body
 }
