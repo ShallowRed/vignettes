@@ -3,7 +3,6 @@ title: "Vignettes, en une présentation"
 status: public
 theme: dsfr
 parser: heading
-project: exemples
 ---
 
 # Vignettes

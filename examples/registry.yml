@@ -1,0 +1,6 @@
+# Alias, lifecycle and frozen bundle of the example decks, the same mapping the
+# content space of an instance uses.
+vignettes-demo:
+  slug: vignettes-demo
+  lifecycle: frozen
+  frozenBundle: vignettes-demo
