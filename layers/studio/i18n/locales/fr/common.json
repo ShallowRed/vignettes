@@ -51,6 +51,24 @@
     "empty": {
       "title": "Rien à afficher"
     },
-    "home": "Accueil"
+    "home": "Accueil",
+    "error": {
+      "404": {
+        "title": "Cette page n'existe pas",
+        "description": "Le lien est peut-être obsolète, ou la présentation a été renommée."
+      },
+      "403": {
+        "title": "Accès refusé",
+        "description": "Votre compte n'a pas accès à cette page."
+      },
+      "401": {
+        "title": "Connexion requise",
+        "description": "Connectez-vous pour ouvrir cette page."
+      },
+      "other": {
+        "title": "Une erreur est survenue",
+        "description": "La page n'a pas pu être affichée. Réessayez dans un instant."
+      }
+    }
   }
 }
