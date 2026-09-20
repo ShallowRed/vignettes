@@ -246,6 +246,11 @@ description = "ESLint on the whole repo"
 depends = [ "install" ]
 run = "pnpm eslint ."
 
+[tasks.typecheck]
+description = "vue-tsc on the whole repo"
+depends = [ "install" ]
+run = "pnpm exec nuxi typecheck"
+
 [tasks."lint:fix"]
 description = "ESLint with autofix"
 depends = [ "install" ]

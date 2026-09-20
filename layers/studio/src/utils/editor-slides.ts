@@ -5,7 +5,7 @@ import { codeFolding, foldEffect, foldGutter, foldKeymap, foldService, unfoldAll
 import { Prec, RangeSet, StateField } from '@codemirror/state'
 import { Decoration, EditorView, gutterLineClass, GutterMarker, keymap, lineNumbers, MatchDecorator, ViewPlugin } from '@codemirror/view'
 import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
-import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
+import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 
 /**
  * The deck structure in the markdown pane: line numbers, the lines of the slide

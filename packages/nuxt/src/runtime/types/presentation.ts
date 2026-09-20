@@ -1,8 +1,8 @@
 import type { RevealConfig, Slide, ThemeBackgrounds } from '@vignettes/core/deck'
+import type { PublicationStatus } from '@vignettes/core/status'
 
-export type { RevealConfig, Slide, ThemeBackgrounds }
+export type { PublicationStatus, RevealConfig, Slide, ThemeBackgrounds }
 
-export type { PublicationStatus } from '@vignettes/core/status'
 export interface PresentationMeta {
   title?: string
   lang?: string

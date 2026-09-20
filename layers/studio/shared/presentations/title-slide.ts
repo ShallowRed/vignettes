@@ -1,4 +1,4 @@
-import type { ThemeBackgrounds } from '@vignettes/core/theme'
+import type { ThemeBackgrounds } from '@vignettes/core/deck'
 import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
 import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 

@@ -1,4 +1,4 @@
-import { headingParser } from '@vignettes/nuxt/runtime/utils/slide-ast'
+import { headingParser } from '@vignettes/nuxt/runtime/utils/slide-ast.ts'
 import { describe, expect, it } from 'vitest'
 
 async function bodyOf(raw: string) {

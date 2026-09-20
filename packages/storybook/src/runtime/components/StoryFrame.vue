@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useDeckMessages } from '@vignettes/nuxt/runtime/composables/useDeckMessages'
-import { STORYBOOK_BASE } from '@vignettes/nuxt/runtime/config/injection-keys'
+import { useDeckMessages } from '@vignettes/nuxt/runtime/composables/useDeckMessages.ts'
+import { STORYBOOK_BASE } from '@vignettes/nuxt/runtime/config/injection-keys.ts'
 import { computed, inject } from 'vue'
 import { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '../storybook.ts'
 

@@ -1,4 +1,4 @@
-import { fragmentAtLine, slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map'
+import { fragmentAtLine, slideAtLine, slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 import { describe, expect, it } from 'vitest'
 
 // Maps a 1-based line to reveal indices for a given deck source.
