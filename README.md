@@ -120,6 +120,8 @@ GitHub Actions builds the image on every push to `main` and `staging`, publishes
 | `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk |
 | `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development |
 
+`mise.local.toml`, which git ignores, holds what belongs to an instance rather than to the repository: `VIGNETTES_REMOTE` for the deployed instance the production tasks talk to, `CONTENT_PUSH_SSH` and `CONTENT_PUSH_CONTAINER` for the host `content:push` reaches it through.
+
 `.env.example` lists them with comments. Locally, `.env` is read by Nuxt; in production the variables come from Infisical, or from the container's environment with `INFISICAL_DISABLE=1`.
 
 ## Development

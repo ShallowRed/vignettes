@@ -20,8 +20,8 @@
  * deck is refused; an identical text is a no-op. A folder the database lacks
  * is reported, not created.
  *
- * Host and containers come from the environment: CONTENT_PUSH_SSH (vps-perso),
- * CONTENT_PUSH_CONTAINER (vignettes), CONTENT_PUSH_STAGING_CONTAINER
+ * Host and containers come from the environment: CONTENT_PUSH_SSH,
+ * CONTENT_PUSH_CONTAINER (vignettes) and CONTENT_PUSH_STAGING_CONTAINER
  * (vignettes-staging).
  */
 
@@ -42,7 +42,11 @@ if (slugs.length === 0) {
   process.exit(2)
 }
 
-const SSH = process.env.CONTENT_PUSH_SSH || 'vps-perso'
+const SSH = process.env.CONTENT_PUSH_SSH
+if (!SSH) {
+  console.error('CONTENT_PUSH_SSH manquant : l\'hôte SSH de l\'instance (voir mise.local.toml).')
+  process.exit(2)
+}
 const CONTAINER = STAGING
   ? (process.env.CONTENT_PUSH_STAGING_CONTAINER || 'vignettes-staging')
   : (process.env.CONTENT_PUSH_CONTAINER || 'vignettes')
