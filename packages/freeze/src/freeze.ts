@@ -19,6 +19,10 @@ export interface FreezeRun {
   contentDir?: string
   /** Extra environment for the build, such as the database the deck comes from. */
   env?: Record<string, string>
+  /** The command that generates the static site; `pnpm generate` by default. */
+  build?: { command: string, args: string[] }
+  /** Where the generated site puts the deck page, `slides/<slug>` by default. */
+  deckPath?: (slug: string) => string
   /** Publishes the built bundle. Without it the bundle stays on disk. */
   upload?: (bundle: string, dir: string) => void
   /** Recorded in the bundle beside the markdown. */
@@ -35,6 +39,8 @@ export interface FreezeRun {
  */
 export function freezeDeck(run: FreezeRun): string {
   const { root, descriptor, raw, storybookDir, contentDir, env = {}, upload, provenance, log = console.log } = run
+  const build = run.build ?? { command: 'pnpm', args: ['generate'] }
+  const deckPath = run.deckPath ?? ((slug: string) => join('slides', slug))
   const here = join(import.meta.dirname)
   const outDir = join(root, descriptor.hostDir)
   const publicDir = mkdtempSync(join(tmpdir(), 'bundle-public-'))
@@ -53,7 +59,7 @@ export function freezeDeck(run: FreezeRun): string {
     step('build-bundle', () => {
       const kept = buildReducedPublic(root, publicDir, descriptor.theme)
       log(`   reduced public/: ${kept.join(', ')}`)
-      exec('pnpm', ['generate'], {
+      exec(build.command, build.args, {
         BUNDLE_ONLY_SLUG: descriptor.slug,
         BUNDLE_PUBLIC_DIR: publicDir,
         BUNDLE_THEME: descriptor.theme ?? '',
@@ -67,7 +73,7 @@ export function freezeDeck(run: FreezeRun): string {
       cpSync(join(root, '.output/public'), outDir, { recursive: true })
       // The deck page keeps the `--standalone` directory name the published
       // links have been pointing at since the first bundle.
-      renameSync(join(outDir, 'slides', descriptor.slug), join(outDir, 'slides', descriptor.deckDir))
+      renameSync(join(outDir, deckPath(descriptor.slug)), join(outDir, 'slides', descriptor.deckDir))
 
       // The deck renders through Reveal alone, so its Nuxt chunks and the
       // interface translations are dead weight; the CSS chunks stay, linked by
