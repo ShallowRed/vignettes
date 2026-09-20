@@ -29,8 +29,14 @@ if (only && themes.length === 0) {
 if (!only && !watchMode)
   rmSync(themesOutDir(root), { recursive: true, force: true })
 
-const ok = themes.map(theme => compileTheme(root, theme)).every(Boolean)
-if (!ok && !watchMode)
+// A theme of the application must compile: the image ships its CSS. A theme of
+// the content space is the tenant's, and one that fails leaves the rest of the
+// build standing, with the deck of that theme reported at boot.
+const failed = themes.filter(theme => !compileTheme(root, theme))
+const blocking = failed.filter(theme => theme.source === 'app')
+if (failed.length > blocking.length)
+  console.warn(`⚠ ${failed.filter(t => t.source === 'content').map(t => t.name).join(', ')} : thème(s) de l'espace de contenu non compilé(s)`)
+if (blocking.length > 0 && !watchMode)
   process.exit(1)
 
 if (watchMode) {
