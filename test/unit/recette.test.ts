@@ -2,10 +2,12 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
+import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
+import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { decideMediaAccess } from '../../layers/studio/server/utils/access'
 import { isRecetteSeeded, recetteImages } from '../../layers/studio/server/utils/recette'
-import { useDeckMeta, useGrants, useMediaIndex } from '../../layers/studio/server/utils/sources'
+import { useDbContent, useDeckMeta, useGrants, useMediaIndex } from '../../layers/studio/server/utils/sources'
 import { useUserStore } from '../../layers/studio/server/utils/users'
 import { RECETTE_INVITED_HANDLE, RECETTE_PERSONAS } from '../../layers/studio/shared/recette/personas'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
@@ -134,6 +136,17 @@ describe('seed', () => {
     const accounts = await useUserStore().list()
     expect(accounts.find(a => a.login === RECETTE_INVITED_HANDLE)).toMatchObject({ invited: true })
     expect(accounts.filter(a => a.login.startsWith('recette-'))).toHaveLength(RECETTE_PERSONAS.length)
+  })
+
+  it('seeds decks that split into several slides', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    await seed(asUser(1, 'boss'))
+    const raw = (await useDbContent().source.load('recette-public'))!.raw
+    const { data } = splitFrontmatter(raw)
+    // The bodies open their slides with headings, so they have to say so: a deck
+    // that declares nothing splits on `---`, and this one carries none.
+    expect(parserIdFor(data)).toBe('heading')
+    expect(slideRanges(raw, parserIdFor(data)).length).toBeGreaterThan(1)
   })
 
   it('seeds an image that follows the visibility of its deck', async () => {
