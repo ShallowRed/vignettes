@@ -1,7 +1,7 @@
 {
   "reference": {
     "help": {
-      "title": "Writer help",
+      "title": "Authoring help",
       "description": "Syntax, components and options of the slide engine.",
       "structureHeading": "Slide structure",
       "activeParser": "Active splitting: {active} (frontmatter {other} for the other mode).",

@@ -37,8 +37,8 @@ const devRedirect = computed(() =>
   redirect.value?.startsWith('/') ? `&redirect=${encodeURIComponent(redirect.value)}` : '')
 const devRoles = computed(() => [
   { role: 'owner', label: t('common.role.owner'), icon: 'i-lucide-shield' },
-  { role: 'editor', label: t('admin.role.editor'), icon: 'i-lucide-pencil' },
-  { role: 'viewer', label: t('admin.role.viewer'), icon: 'i-lucide-eye' },
+  { role: 'editor', label: t('common.role.editor'), icon: 'i-lucide-pencil' },
+  { role: 'viewer', label: t('common.role.viewer'), icon: 'i-lucide-eye' },
 ])
 </script>
 

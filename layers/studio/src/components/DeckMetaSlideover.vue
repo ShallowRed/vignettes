@@ -108,7 +108,7 @@ const projectItems = computed(() => [
 ])
 
 const themeItems = computed(() => [
-  { label: t('deck.meta.defaultTheme'), value: NONE },
+  { label: t('deck.meta.defaultTheme', { theme: useRuntimeConfig().public.defaultTheme }), value: NONE },
   ...knownThemes().map(name => ({ label: name, value: name })),
 ])
 

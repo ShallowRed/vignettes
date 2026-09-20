@@ -28,10 +28,10 @@
     },
     "or": "ou",
     "role": {
-      "owner": "Owner",
-      "editor": "Editor",
-      "viewer": "Viewer",
-      "anonymous": "Guest"
+      "owner": "Propriétaire",
+      "editor": "Éditeur",
+      "viewer": "Lecteur",
+      "anonymous": "Invité"
     },
     "status": {
       "public": "Public",

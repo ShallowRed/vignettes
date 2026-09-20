@@ -1,7 +1,7 @@
 {
   "reference": {
     "help": {
-      "title": "Aide du writer",
+      "title": "Aide à la rédaction",
       "description": "Syntaxe, composants et options du moteur de slides.",
       "structureHeading": "Structure des diapos",
       "activeParser": "Découpage actif : {active} (frontmatter {other} pour l'autre mode).",

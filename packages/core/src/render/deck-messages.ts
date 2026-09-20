@@ -39,7 +39,7 @@ const FR: DeckMessages = {
   linkCopied: 'Lien copié',
   print: 'Imprimer ou exporter en PDF',
   printPreparing: 'Préparation de l’export PDF…',
-  printHint: 'La fenêtre d’impression s’ouvre automatiquement — choisissez « Enregistrer en PDF ».',
+  printHint: 'La fenêtre d’impression s’ouvre automatiquement : choisissez « Enregistrer en PDF ».',
   printReopen: 'Rouvrir la fenêtre d’impression',
   printBack: 'Revenir à la présentation',
   enlarge: 'Cliquer pour agrandir',

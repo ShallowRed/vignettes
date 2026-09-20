@@ -15,7 +15,7 @@
       "frozen": "Frozen",
       "unlisted": "Unlisted",
       "unpublished": "Unpublished",
-      "sharedAccess": "{n} shared accesses | {n} shared access | {n} shared accesses",
+      "sharedAccess": "{n} shared grants | {n} shared grant | {n} shared grants",
       "editContent": "Edit the content",
       "metadata": "Metadata…",
       "share": "Share…",

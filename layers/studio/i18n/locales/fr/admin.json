@@ -3,10 +3,6 @@
     "access": {
       "restrictedTitle": "Accès réservé"
     },
-    "role": {
-      "viewer": "Lecteur",
-      "editor": "Éditeur"
-    },
     "users": {
       "pageTitle": "Comptes · Vignettes",
       "title": "Comptes",

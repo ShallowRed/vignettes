@@ -10,12 +10,12 @@
       "settings": "Sharing and settings",
       "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
       "settingsTooltipVisibilityOnly": "Visibility",
-      "loadFailed": "The deck failed to load",
+      "loadFailed": "The presentation failed to load",
       "notFoundTitle": "Deck not found",
       "backToCatalog": "Back to the catalog",
       "openedOnSlide": "Opened on slide {slide} of {total}",
       "metaLoadFailed": "Unable to load the metadata",
-      "sourcePane": "Deck source",
+      "sourcePane": "Presentation source",
       "editorLoading": "Loading the editor…"
     },
     "collab": {
@@ -49,7 +49,7 @@
     },
     "preview": {
       "pane": "Preview",
-      "controls": "Preview commands",
+      "controls": "Preview controls",
       "present": "Present",
       "draftPreview": "Preview of the draft, as it will be published",
       "placeholder": "The preview will appear here.",

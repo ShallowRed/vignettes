@@ -102,8 +102,8 @@
     "projectDelete": {
       "title": "Supprimer le dossier ?",
       "noticeTitle": "Le dossier et son contenu partent à la corbeille",
-      "noticeWithDecks": "Ce dossier et ses {n} présentation seront placés dans la corbeille. Tu pourras tout restaurer d'un coup. | Ce dossier et ses {n} présentation seront placés dans la corbeille. Tu pourras tout restaurer d'un coup. | Ce dossier et ses {n} présentations seront placés dans la corbeille. Tu pourras tout restaurer d'un coup.",
-      "noticeEmpty": "Ce dossier (vide) sera placé dans la corbeille. Tu pourras le restaurer.",
+      "noticeWithDecks": "Ce dossier et ses {n} présentation seront placés dans la corbeille. Vous pourrez tout restaurer d'un coup. | Ce dossier et ses {n} présentation seront placés dans la corbeille. Vous pourrez tout restaurer d'un coup. | Ce dossier et ses {n} présentations seront placés dans la corbeille. Vous pourrez tout restaurer d'un coup.",
+      "noticeEmpty": "Ce dossier (vide) sera placé dans la corbeille. Vous pourrez le restaurer.",
       "trashed": "Dossier placé dans la corbeille",
       "failed": "Échec de la suppression"
     },

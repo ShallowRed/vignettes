@@ -28,8 +28,8 @@ const breadcrumb = computed(() => [
 useHead({ title: () => t('admin.users.pageTitle') })
 
 const roleItems = computed(() => [
-  { label: t('admin.role.viewer'), value: 'viewer' },
-  { label: t('admin.role.editor'), value: 'editor' },
+  { label: t('common.role.viewer'), value: 'viewer' },
+  { label: t('common.role.editor'), value: 'editor' },
   { label: t('common.role.owner'), value: 'owner' },
 ])
 

@@ -9,7 +9,7 @@
       "folderHint": "Where the presentation is filed in the catalog.",
       "noFolder": "No project",
       "theme": "Theme",
-      "defaultTheme": "Default (dsfr)",
+      "defaultTheme": "Default ({theme})",
       "stableAddress": "Stable address",
       "stableAddressHint": "A link that stays the same if the identifier changes. Empty, the presentation has none.",
       "alias": "Alias",

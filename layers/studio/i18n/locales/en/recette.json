@@ -2,9 +2,9 @@
   "recette": {
     "page": {
       "pageTitle": "Acceptance · Vignettes",
-      "title": "Acceptance",
+      "title": "Acceptance kit",
       "intro": "Each line opens its page in a new tab, with the account of its block.",
-      "disabled": "The acceptance kit is disabled on this environment.",
+      "disabled": "The acceptance kit is disabled in this environment.",
       "ownerRequired": "The acceptance kit opens with an owner account.",
       "session": "Current session",
       "sessionNone": "none",
@@ -37,7 +37,7 @@
       },
       "collab": {
         "label": "Collaborator",
-        "summary": "Editor access to the shared folder, read access to Lecture seule."
+        "summary": "Editor access to the shared folder, read access to “Lecture seule”."
       },
       "expired": {
         "label": "Expired access",
@@ -61,7 +61,7 @@
       "deckPublic": "Publique",
       "deckPublicCode": "Publique, slide 4",
       "deckPassword": "Mot de passe",
-      "deckPasswordReload": "Mot de passe, reloaded",
+      "deckPasswordReload": "“Mot de passe”, after a reload",
       "deckPrivate": "Privée",
       "deckUnlisted": "Non listée",
       "deckTrashed": "Corbeille",
@@ -75,12 +75,12 @@
         "catalog": "Publique and English deck are the only presentations listed.",
         "password": "The page asks for the password {password}, then the presentation opens.",
         "passwordReload": "The presentation opens without asking for the password again.",
-        "private": "The page sends to the sign-in.",
+        "private": "The page redirects to the sign-in page.",
         "unlisted": "The presentation opens through its direct link.",
         "trashed": "The presentation is not found.",
         "imagePublic": "The image shows.",
         "imagePrivate": "The image is not found, with a 404 answer.",
-        "code": "The code block is readable on its light ground.",
+        "code": "The code block is readable on its light background.",
         "english": "The controls at the top right are in English, even when the interface is in French."
       },
       "viewer": {
@@ -89,12 +89,12 @@
         "sharedFolder": "The folder is empty."
       },
       "collab": {
-        "sharedFolder": "Publique, Mot de passe, Brouillon and English deck have a pencil. The New presentation button is present.",
+        "sharedFolder": "“Publique”, “Mot de passe”, “Brouillon” and the English deck have a pencil. The New presentation button is present.",
         "sync": "The header says Draft synced. A text typed in a second tab appears with the initial of the peer.",
         "pasteImage": "A pasted image is inserted into the text.",
         "unpublished": "After a change, the header and the card say Unpublished changes. Publishing removes that mention.",
         "password": "The presentation opens without a password.",
-        "readOnly": "Lecture seule opens and its card has no pencil.",
+        "readOnly": "“Lecture seule” opens and its card has no pencil.",
         "private": "Access is denied. No card offers the metadata or the sharing."
       },
       "expired": {

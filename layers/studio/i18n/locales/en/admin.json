@@ -3,10 +3,6 @@
     "access": {
       "restrictedTitle": "Restricted access"
     },
-    "role": {
-      "viewer": "Viewer",
-      "editor": "Editor"
-    },
     "users": {
       "pageTitle": "Accounts · Vignettes",
       "title": "Accounts",
@@ -23,8 +19,8 @@
       "removed": "Account removed",
       "removeFailed": "The removal failed",
       "removeConfirmTitle": "Remove this account?",
-      "removeConfirmNotice": "The account and all its shared accesses will be removed.",
-      "removeConfirmDescription": "Its presentations are not affected (content belongs to no one). A new sign-in with the same identity will start from scratch, with no access.",
+      "removeConfirmNotice": "The account and all the grants it holds will be removed.",
+      "removeConfirmDescription": "Their presentations are not affected (content belongs to no one). A new sign-in with the same identity will start from scratch, with no access.",
       "removeConfirmAction": "Remove the account"
     },
     "invite": {
