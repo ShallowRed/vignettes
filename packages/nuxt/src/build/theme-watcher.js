@@ -22,7 +22,7 @@ function importedPackages(theme) {
  * resolver's `node_modules` candidates: these packages export their stylesheets
  * under a `sass` condition, which `require.resolve` does not follow.
  */
-function packageDirs(root, themes) {
+export function packageDirs(root, themes) {
   const require = createRequire(`${root}/`)
   const dirs = new Set()
   for (const name of new Set(themes.flatMap(theme => [...importedPackages(theme)]))) {
