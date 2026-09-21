@@ -1,6 +1,6 @@
 name: Checks
 
-# Lint, unit tests and end-to-end tests on the production build. Run on every
+# Lint, types, unit tests and end-to-end tests on the production build. Run on every
 # pull request, and called by `docker-publish.yml` before it builds the image,
 # so both go through one definition.
 on:
@@ -34,6 +34,9 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      - name: Types
+        run: pnpm exec nuxi typecheck
 
   test:
     runs-on: ubuntu-latest

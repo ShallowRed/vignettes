@@ -127,7 +127,7 @@ GitHub Actions builds the image on every push to `main` and `staging`, publishes
 ## Development
 
 ```bash
-mise run check        # lint and tests, what the CI checks
+mise run check        # lint, types and tests, what the CI checks
 mise run test         # vitest: unit and golden tests
 mise run test:e2e     # playwright: the production build renders a fixture deck
 mise run lint         # eslint

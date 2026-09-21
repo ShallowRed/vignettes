@@ -262,8 +262,9 @@ depends = [ "install" ]
 run = "pnpm build"
 
 [tasks.check]
-description = "Everything the CI checks: lint + tests"
+description = "Everything the CI checks: lint + types + tests"
 depends = [
   "lint",
+  "typecheck",
   "test"
 ]

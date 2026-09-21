@@ -5,7 +5,7 @@
 ## Checks
 
 ```bash
-mise run check        # eslint and the unit tests
+mise run check        # eslint, vue-tsc and the unit tests
 mise run test:e2e     # playwright, on the production build
 ```
 
