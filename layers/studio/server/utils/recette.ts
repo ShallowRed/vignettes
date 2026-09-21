@@ -266,8 +266,9 @@ export async function hasRecetteData(): Promise<boolean> {
   const seeded = useDb().select({ slug: decks.slug }).from(decks).where(inArray(decks.slug, SEED_SLUGS)).all()
   if (seeded.length > 0)
     return true
-  const accounts = await useUserStore().list()
-  return accounts.some(account => RECETTE_PERSONAS.some(persona => persona.id === account.id))
+  const users = useUserStore()
+  const roles = await Promise.all(RECETTE_PERSONAS.map(persona => users.getRole(persona.id)))
+  return roles.some(role => role !== null)
 }
 
 /**
