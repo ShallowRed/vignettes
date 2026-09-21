@@ -89,6 +89,8 @@
     "eslint": "catalog:",
     "sass": "catalog:",
     "tailwindcss": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vue-tsc": "catalog:"
   }
 }
