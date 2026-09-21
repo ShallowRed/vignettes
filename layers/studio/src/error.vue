@@ -31,7 +31,7 @@ const description = computed(() => t(`common.error.${known.value}.description`))
           ]"
         />
         <p class="mt-6 text-center text-xs text-dimmed">
-          {{ error.statusCode }}<span v-if="error.statusMessage"> · {{ error.statusMessage }}</span>
+          {{ error.statusCode }}
         </p>
       </UContainer>
     </UMain>
