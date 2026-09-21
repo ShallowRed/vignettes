@@ -1,7 +1,7 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { Buffer } from 'node:buffer'
 import { DECK_TEXT_FIELD } from '#shared/collab/ydoc'
-import { referencedMedia } from '#shared/storage/media-refs'
+import { referencedImages } from '#shared/storage/media-refs'
 import { eq } from 'drizzle-orm'
 import * as Y from 'yjs'
 import { recordDeckMedia } from './media-index'
@@ -84,7 +84,7 @@ function indexExistingDeckMedia(db: Db): void {
   }
 
   for (const { slug, raw } of texts)
-    recordDeckMedia(db, slug, referencedMedia(raw))
+    recordDeckMedia(db, slug, referencedImages(raw))
 }
 
 const DATA_MIGRATIONS: { name: string, run: (db: Db) => void }[] = [

@@ -5,7 +5,7 @@ import { useDraftStore } from '../../layers/studio/server/utils/collab'
 import { hashAccessPassword, verifyAccessPassword } from '../../layers/studio/server/utils/password'
 import { useDeckMeta, useMediaIndex } from '../../layers/studio/server/utils/sources'
 import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
-import { referencedMedia } from '../../layers/studio/shared/storage/media-refs'
+import { referencedImages } from '../../layers/studio/shared/storage/media-refs'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 stubH3Globals()
@@ -26,7 +26,7 @@ async function deckWithAsset(slug: string, status: 'public' | 'private', key: st
   await useDeckMeta().update(slug, { title: slug, status })
 }
 
-describe('referencedMedia', () => {
+describe('referencedImages', () => {
   it('collects the images of a document, uploads and content space alike, deduplicated', () => {
     const markdown = [
       '![](/media/abc123.png)',
@@ -36,16 +36,21 @@ describe('referencedMedia', () => {
       '![](/images/atlas/carte.svg)',
       '![](https://example.com/images/remote.png)',
     ].join('\n')
-    expect(referencedMedia(markdown)).toEqual(['abc123.png', 'def456.webp', 'images/atlas/carte.svg'])
+    expect(referencedImages(markdown)).toEqual(['abc123.png', 'def456.webp', 'images/atlas/carte.svg'])
+  })
+
+  it('indexes a file under the path the route serves, without its query and decoded', () => {
+    const markdown = '![](/images/plan.png?v=2)\n![](/images/mon%20plan.svg#zone)'
+    expect(referencedImages(markdown)).toEqual(['images/plan.png', 'images/mon plan.svg'])
   })
 
   it('leaves the decoration of a theme alone', () => {
     const markdown = '::Slide{background="/backgrounds/as-title.png"}\n\n![](/pictograms/digital/application.svg)'
-    expect(referencedMedia(markdown)).toEqual([])
+    expect(referencedImages(markdown)).toEqual([])
   })
 
   it('finds nothing in a document without an image', () => {
-    expect(referencedMedia('# Title\n\nSome text.')).toEqual([])
+    expect(referencedImages('# Title\n\nSome text.')).toEqual([])
   })
 })
 
@@ -85,17 +90,6 @@ describe('decideMediaAccess', () => {
     const event = anon({ query: { password: 'open-sesame' } })
     expect(await decideMediaAccess(event, 'abc123.png')).toMatchObject({ allowed: false })
     expect(event.setCookies).toBeUndefined()
-  })
-
-  it('denies a stored password that is not a hash, rather than raising', async () => {
-    // `scripts/content-push.ts` used to copy the frontmatter field as it was, so
-    // a plaintext password reached the column; comparing it raised, and every
-    // request for the deck and for its images answered 500.
-    await expect(verifyAccessPassword('open-sesame', 'open-sesame')).resolves.toBe(false)
-    await expect(verifyAccessPassword('open-sesame', '')).resolves.toBe(false)
-    const stored = await hashAccessPassword('open-sesame')
-    await expect(verifyAccessPassword('open-sesame', stored)).resolves.toBe(true)
-    await expect(verifyAccessPassword('wrong', stored)).resolves.toBe(false)
   })
 
   it('serves it to an owner, privately', async () => {
@@ -145,5 +139,17 @@ describe('the /media/** route', () => {
 
   it('answers 404 on an image no deck references', async () => {
     await expect(serveMedia(anon({ params: { path: 'abc123.png' } }))).rejects.toMatchObject({ statusCode: 404 })
+  })
+})
+
+describe('verifyAccessPassword', () => {
+  it('denies a stored value that is not a salt and a scrypt output', async () => {
+    // `timingSafeEqual` raises on buffers of different lengths, which answered
+    // 500 for the deck and for its images.
+    await expect(verifyAccessPassword('open-sesame', 'open-sesame')).resolves.toBe(false)
+    await expect(verifyAccessPassword('open-sesame', '')).resolves.toBe(false)
+    const stored = await hashAccessPassword('open-sesame')
+    await expect(verifyAccessPassword('open-sesame', stored)).resolves.toBe(true)
+    await expect(verifyAccessPassword('wrong', stored)).resolves.toBe(false)
   })
 })
