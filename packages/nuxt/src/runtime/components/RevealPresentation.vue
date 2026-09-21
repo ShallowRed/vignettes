@@ -14,7 +14,11 @@ import 'reveal.js/css/print/pdf.scss'
 interface Props {
   theme?: string
   config?: Partial<RevealConfig>
-  /** Deck language (frontmatter `lang`); French orthotypography applies only to French decks. */
+  /**
+   * Deck language (frontmatter `lang`). It labels the container, so a screen
+   * reader and a browser translator read the slides in it, it picks the chrome
+   * texts, and French orthotypography applies only to French decks.
+   */
   lang?: string
   /** Code theme of the deck (frontmatter `code`): a theme name, or theme properties. */
   code?: unknown
@@ -170,6 +174,7 @@ onUnmounted(() => {
     :class="codeClass"
     :style="codeStyle"
     :data-reveal-config="resolvedRevealConfig"
+    :lang="lang || undefined"
   >
     <!-- The veil precedes the slides so the browser paints it before them. -->
     <div
