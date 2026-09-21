@@ -1,33 +1,40 @@
-import { existsSync, watch } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, realpathSync, watch } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import process from 'node:process'
 import { compileTheme } from './theme-build.ts'
 import { discoverThemes } from './theme-registry.ts'
 
-/**
- * The stylesheet packages a theme composes, resolved where they stand: the
- * workspace during development here, `node_modules` in an installed copy. The
- * `pkg:` imports of the themes name these two.
- */
-const STYLESHEET_PACKAGES = ['@vignettes/theme-kit', '@vignettes/theme-dsfr']
+/** The packages the stylesheets of a theme import through sass's `pkg:` scheme. */
+function importedPackages(theme) {
+  const names = new Set()
+  for (const file of readdirSync(theme.dir, { recursive: true })) {
+    if (!String(file).endsWith('.scss'))
+      continue
+    for (const match of readFileSync(join(theme.dir, String(file)), 'utf8').matchAll(/pkg:(@[\w-]+\/[\w-]+|[\w-]+)/g))
+      names.add(match[1])
+  }
+  return names
+}
 
-function packageDirs(root) {
+/**
+ * The directory of each package the discovered themes import, found among the
+ * resolver's `node_modules` candidates: these packages export their stylesheets
+ * under a `sass` condition, which `require.resolve` does not follow.
+ */
+function packageDirs(root, themes) {
   const require = createRequire(`${root}/`)
-  const dirs = []
-  for (const name of STYLESHEET_PACKAGES) {
-    // The candidate `node_modules` of the resolver, rather than `require.resolve`:
-    // these packages export their stylesheets under a `sass` condition and no
-    // path that a resolver reaches from here.
+  const dirs = new Set()
+  for (const name of new Set(themes.flatMap(theme => [...importedPackages(theme)]))) {
     for (const base of require.resolve.paths(name) ?? []) {
       const dir = join(base, ...name.split('/'))
       if (existsSync(join(dir, 'package.json'))) {
-        dirs.push(dir)
+        dirs.add(realpathSync(dir))
         break
       }
     }
   }
-  return dirs
+  return [...dirs]
 }
 
 // Dev theme watcher: watch only, the compile at server start comes from `pnpm dev`
@@ -40,7 +47,7 @@ export default function themeWatcherPlugin() {
     configureServer(server) {
       const root = process.cwd()
       const themes = discoverThemes(root)
-      const packages = packageDirs(root)
+      const packages = packageDirs(root, themes)
 
       const recompile = (targets, filename) => {
         console.log(`\n📝 ${filename} changed, recompiling ${targets.map(t => t.name).join(', ')}`)
