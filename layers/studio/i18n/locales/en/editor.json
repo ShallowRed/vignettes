@@ -10,13 +10,16 @@
       "settings": "Sharing and settings",
       "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
       "settingsTooltipVisibilityOnly": "Visibility",
-      "loadFailed": "The presentation failed to load",
-      "notFoundTitle": "Deck not found",
+      "notFoundTitle": "Presentation not found",
       "backToCatalog": "Back to the catalog",
       "openedOnSlide": "Opened on slide {slide} of {total}",
       "metaLoadFailed": "Unable to load the metadata",
       "sourcePane": "Presentation source",
-      "editorLoading": "Loading the editor…"
+      "editorLoading": "Loading the editor…",
+      "notFoundMessage": "The link may be out of date, or the presentation was renamed. If it was shared with another account, sign in with that one.",
+      "readOnlyTitle": "Editing not available",
+      "readOnlyMessage": "You can open this presentation, but not change it.",
+      "openDeck": "Open the presentation"
     },
     "collab": {
       "offline": "Offline",

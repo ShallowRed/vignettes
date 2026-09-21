@@ -47,8 +47,14 @@ describe('assertCanEditDeck', () => {
     await expect(assertCanEditDeck(anon(), 'deck')).rejects.toMatchObject({ statusCode: 401 })
   })
 
-  it('rejects a viewer with no grant (403)', async () => {
+  it('answers a viewer who may not even view the deck as if it were absent (404)', async () => {
     await seedAccount(2, 'viewer', 'viewer')
+    await expect(assertCanEditDeck(asUser(2, 'viewer'), 'deck')).rejects.toMatchObject({ statusCode: 404 })
+  })
+
+  it('rejects a viewer who may view the deck but not edit it (403)', async () => {
+    await seedAccount(2, 'viewer', 'viewer')
+    await useDeckMeta().update('deck', { title: 'deck', status: 'public' })
     await expect(assertCanEditDeck(asUser(2, 'viewer'), 'deck')).rejects.toMatchObject({ statusCode: 403 })
   })
 

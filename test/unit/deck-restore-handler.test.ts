@@ -67,6 +67,7 @@ describe('restoring a version (POST /api/presentations/:slug/versions/:id/restor
   it('refuses an unknown version and a read-only account', async () => {
     const v1 = await publish('# v1')
     await expect(restoreVersion(editor(params(999)))).rejects.toMatchObject({ statusCode: 404 })
-    await expect(restoreVersion(viewer(params(v1)))).rejects.toMatchObject({ statusCode: 403 })
+    // The reader holds no grant on this private deck, so it answers as absent.
+    await expect(restoreVersion(viewer(params(v1)))).rejects.toMatchObject({ statusCode: 404 })
   })
 })

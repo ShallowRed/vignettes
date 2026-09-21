@@ -28,7 +28,8 @@ beforeEach(async () => {
 describe('reading the history (GET /api/presentations/:slug/history)', () => {
   it('needs the edit right, like the draft', async () => {
     await publish('# v1')
-    await expect(listHistory(viewer(params()))).rejects.toMatchObject({ statusCode: 403 })
+    // With no grant the deck is private to this reader, so it answers as absent.
+    await expect(listHistory(viewer(params()))).rejects.toMatchObject({ statusCode: 404 })
     await usePermissionStore().set('deck', 10, 'viewer', 'ed')
     await expect(listHistory(viewer(params()))).rejects.toMatchObject({ statusCode: 403 })
     await usePermissionStore().set('deck', 10, 'editor', 'ed')

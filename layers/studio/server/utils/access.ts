@@ -119,17 +119,30 @@ export async function canActorEditDeck(actor: Actor, slug: string): Promise<bool
 }
 
 /**
- * 403/401 unless the actor may edit this deck (privileged role or editor grant).
- * `contentToken` lets the route accept the content token in place of a session:
- * only the markdown write path opts in (see `content-token.ts`).
+ * Refuses unless the actor may edit this deck (privileged role or editor grant).
+ * An actor who may not even view it is answered as if the deck were absent, the
+ * way the view gate does; one who may view it but not edit it reads 403, which
+ * tells them nothing they could not already see. `contentToken` lets the route
+ * accept the content token in place of a session: only the markdown write path
+ * opts in (see `content-token.ts`).
  */
 export async function assertCanEditDeck(event: H3Event, slug: string, opts: { contentToken?: boolean } = {}): Promise<Actor> {
   const actor = (opts.contentToken ? contentTokenActor(event) : null) ?? await getActor(event)
   if (!await canActorEditDeck(actor, slug)) {
-    throw createError({
-      statusCode: actor.role === 'anonymous' ? 401 : 403,
-      statusMessage: 'Editing requires an owner/editor role or an editor grant on this deck',
-    })
+    if (actor.role === 'anonymous')
+      throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+    const meta = await useDeckMeta().get(slug)
+    const viewable = meta
+      ? (await decideDeckAccess(event, {
+          slug,
+          status: meta.status,
+          lifecycle: meta.lifecycle,
+          storedHash: meta.accessPasswordHash ?? undefined,
+        }, false)).outcome === 'allow'
+      : false
+    throw viewable
+      ? createError({ statusCode: 403, statusMessage: 'Forbidden' })
+      : createError({ statusCode: 404, statusMessage: 'Not found' })
   }
   // A trashed deck is not editable: it stays absent (draft, publish, collab all
   // refused) until restored from the corbeille.

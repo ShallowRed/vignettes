@@ -57,7 +57,10 @@ const deckTitle = ref<string | undefined>(undefined)
 const deckStatus = ref<string>('private')
 const loadedFrom = ref<'draft' | 'published' | 'file' | null>(null)
 const preview = ref<PresentationData | null>(null)
-const loadError = ref<string | null>(null)
+const loadErrorStatus = ref<number | null>(null)
+const loadError = computed(() => loadErrorStatus.value !== null)
+/** A reader who may open the deck but not change it, told apart from an absent one. */
+const readOnly = computed(() => loadErrorStatus.value === 403)
 const saveState = ref<'idle' | 'saving' | 'error'>('idle')
 
 // Collaboration state. `peers` lists the other connected people by name.
@@ -150,7 +153,10 @@ function initials(name: string): string {
 }
 
 if (error.value) {
-  loadError.value = (error.value as any)?.statusMessage || t('editor.page.loadFailed')
+  // The status alone, never the message of the request: it names the route and
+  // repeats the slug, and a reader who may not open the deck should not learn
+  // from it whether the deck exists.
+  loadErrorStatus.value = (error.value as any)?.statusCode ?? 0
 }
 else if (data.value) {
   deckStatus.value = data.value.status ?? 'private'
@@ -637,7 +643,12 @@ async function onMetaSaved() {
     <!-- The way back reads as on the catalog pages: the brand mark, then the
          path from the home page through the folder to this deck. The deck's
          own state and its publication sit on the right. -->
-    <header class="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-default bg-default">
+    <!-- A deck the reader may not open shows nothing of itself: not its slug,
+         not its status, not the actions of an editor. -->
+    <header
+      v-if="!loadError"
+      class="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
+    >
       <UTooltip :text="t('editor.page.backHome')">
         <NuxtLink
           to="/"
@@ -798,10 +809,13 @@ async function onMetaSaved() {
       class="flex-1 grid place-items-center"
     >
       <UEmpty
-        icon="i-lucide-file-x"
-        :title="t('editor.page.notFoundTitle')"
-        :description="loadError"
-        :actions="[{ label: t('editor.page.backToCatalog'), icon: 'i-lucide-arrow-left', color: 'neutral', variant: 'subtle', to: '/' }]"
+        :icon="readOnly ? 'i-lucide-eye' : 'i-lucide-file-x'"
+        :title="readOnly ? t('editor.page.readOnlyTitle') : t('editor.page.notFoundTitle')"
+        :description="readOnly ? t('editor.page.readOnlyMessage') : t('editor.page.notFoundMessage')"
+        :actions="[
+          ...(readOnly ? [{ label: t('editor.page.openDeck'), icon: 'i-lucide-play', to: `/slides/${slug}` }] : []),
+          { label: t('editor.page.backToCatalog'), icon: 'i-lucide-arrow-left', color: 'neutral' as const, variant: 'subtle' as const, to: '/' },
+        ]"
       />
     </div>
 
