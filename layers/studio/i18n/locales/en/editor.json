@@ -19,7 +19,11 @@
       "notFoundMessage": "The link may be out of date, or the presentation was renamed. If it was shared with another account, sign in with that one.",
       "readOnlyTitle": "Editing not available",
       "readOnlyMessage": "You can open this presentation, but not change it.",
-      "openDeck": "Open the presentation"
+      "openDeck": "Open the presentation",
+      "signInTitle": "Sign-in required",
+      "signInMessage": "Sign in to edit this presentation.",
+      "failedTitle": "Loading failed",
+      "failedMessage": "The presentation could not be loaded. Try again in a moment."
     },
     "collab": {
       "offline": "Offline",

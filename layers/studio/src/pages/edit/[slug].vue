@@ -60,8 +60,26 @@ const loadedFrom = ref<'draft' | 'published' | 'file' | null>(null)
 const preview = ref<PresentationData | null>(null)
 const loadErrorStatus = ref<number | null>(null)
 const loadError = computed(() => loadErrorStatus.value !== null)
-/** A reader who may open the deck but not change it, told apart from an absent one. */
-const readOnly = computed(() => loadErrorStatus.value === 403)
+
+/**
+ * The screen for a deck that did not load, chosen by status: an expired session
+ * is sent to sign in and back, a reader who may open the deck is sent to it, a
+ * deck that is absent or closed to this account says so in one text, and any
+ * other failure says that the load failed.
+ */
+const refusal = computed(() => {
+  const back = { label: t('editor.page.backToCatalog'), icon: 'i-lucide-arrow-left', color: 'neutral' as const, variant: 'subtle' as const, to: '/' }
+  switch (loadErrorStatus.value) {
+    case 401:
+      return { icon: 'i-lucide-log-in', title: t('editor.page.signInTitle'), description: t('editor.page.signInMessage'), actions: [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=${encodeURIComponent(`/edit/${slug}`)}` }, back] }
+    case 403:
+      return { icon: 'i-lucide-eye', title: t('editor.page.readOnlyTitle'), description: t('editor.page.readOnlyMessage'), actions: [{ label: t('editor.page.openDeck'), icon: 'i-lucide-play', to: `/slides/${slug}` }, back] }
+    case 404:
+      return { icon: 'i-lucide-file-x', title: t('editor.page.notFoundTitle'), description: t('editor.page.notFoundMessage'), actions: [back] }
+    default:
+      return { icon: 'i-lucide-triangle-alert', title: t('editor.page.failedTitle'), description: t('editor.page.failedMessage'), actions: [back] }
+  }
+})
 const saveState = ref<'idle' | 'saving' | 'error'>('idle')
 
 // Collaboration state. `peers` lists the other connected people by name.
@@ -694,7 +712,6 @@ async function onMetaSaved() {
           variant="outline"
           size="sm"
           class="shrink-0"
-          :disabled="!!loadError"
           @click="historyOpen = true"
         />
       </UTooltip>
@@ -777,7 +794,7 @@ async function onMetaSaved() {
             color="neutral"
             variant="outline"
             :loading="saveState === 'saving'"
-            :disabled="!!loadError || !dirty"
+            :disabled="!dirty"
             @click="save"
           />
         </UChip>
@@ -798,7 +815,7 @@ async function onMetaSaved() {
             :variant="unpublished === false ? 'outline' : 'solid'"
             class="w-28 justify-center"
             :loading="publishState === 'publishing'"
-            :disabled="!!loadError || !writable || unpublished === false"
+            :disabled="!writable || unpublished === false"
             @click="publish"
           />
         </UChip>
@@ -810,13 +827,10 @@ async function onMetaSaved() {
       class="flex-1 grid place-items-center"
     >
       <UEmpty
-        :icon="readOnly ? 'i-lucide-eye' : 'i-lucide-file-x'"
-        :title="readOnly ? t('editor.page.readOnlyTitle') : t('editor.page.notFoundTitle')"
-        :description="readOnly ? t('editor.page.readOnlyMessage') : t('editor.page.notFoundMessage')"
-        :actions="[
-          ...(readOnly ? [{ label: t('editor.page.openDeck'), icon: 'i-lucide-play', to: `/slides/${slug}` }] : []),
-          { label: t('editor.page.backToCatalog'), icon: 'i-lucide-arrow-left', color: 'neutral' as const, variant: 'subtle' as const, to: '/' },
-        ]"
+        :icon="refusal.icon"
+        :title="refusal.title"
+        :description="refusal.description"
+        :actions="refusal.actions"
       />
     </div>
 

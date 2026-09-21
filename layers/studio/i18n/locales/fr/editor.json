@@ -19,7 +19,11 @@
       "notFoundMessage": "Le lien est peut-être obsolète, ou la présentation a été renommée. Si elle a été partagée avec un autre compte, connectez-vous avec celui-là.",
       "readOnlyTitle": "Modification impossible",
       "readOnlyMessage": "Vous pouvez ouvrir cette présentation, mais pas la modifier.",
-      "openDeck": "Ouvrir la présentation"
+      "openDeck": "Ouvrir la présentation",
+      "signInTitle": "Connexion requise",
+      "signInMessage": "Connectez-vous pour modifier cette présentation.",
+      "failedTitle": "Chargement impossible",
+      "failedMessage": "La présentation n'a pas pu être chargée. Réessayez dans un instant."
     },
     "collab": {
       "offline": "Hors ligne",
