@@ -338,7 +338,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
               color="neutral"
               variant="outline"
               size="sm"
-              @click="naming = true"
+              @click="() => { naming = true }"
             />
             <UButton
               v-if="!confirming && !naming"
@@ -348,7 +348,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
               variant="outline"
               size="sm"
               :disabled="!restorable"
-              @click="confirming = true"
+              @click="() => { confirming = true }"
             />
           </div>
 
@@ -378,7 +378,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
               color="neutral"
               variant="ghost"
               size="sm"
-              @click="naming = false"
+              @click="() => { naming = false }"
             />
           </form>
 
@@ -393,14 +393,14 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
               color="warning"
               size="sm"
               :loading="restoring"
-              @click="restore(restoreRef)"
+              @click="() => { if (restoreRef) restore(restoreRef) }"
             />
             <UButton
               :label="t('common.actions.cancel')"
               color="neutral"
               variant="ghost"
               size="sm"
-              @click="confirming = false"
+              @click="() => { confirming = false }"
             />
           </ActionNotice>
 

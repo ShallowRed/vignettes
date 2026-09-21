@@ -16,6 +16,7 @@ import type { Project } from '#shared/projects'
  */
 import type { Extension } from '@codemirror/state'
 import type { PresentationData } from '@vignettes/nuxt/types'
+import type { RevealApi } from 'reveal.js'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
@@ -196,7 +197,7 @@ const editorView = computed(() => cm.value?.view)
 // data ref above, and Vue would overwrite it with the component instance on
 // mount — nuking `preview.value.slides`/`.metadata` and crashing every downstream
 // computed. Hence the distinct "previewInstance" key.
-const previewRef = useTemplateRef<{ slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => any }>('previewInstance')
+const previewRef = useTemplateRef<{ slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => RevealApi | null }>('previewInstance')
 const followCursor = ref(true)
 const cursorLine = ref(1)
 const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser }))

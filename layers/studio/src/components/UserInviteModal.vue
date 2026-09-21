@@ -114,7 +114,7 @@ function add() {
           :label="t('common.actions.cancel')"
           color="neutral"
           variant="ghost"
-          @click="open = false"
+          @click="() => { open = false }"
         />
         <UButton
           :label="t('admin.invite.submit')"

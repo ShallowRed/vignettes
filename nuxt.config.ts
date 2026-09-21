@@ -76,6 +76,7 @@ export default defineNuxtConfig({
     // The SSR Vite server runs in middleware mode with `hmr: false`; Vite then
     // still opens an unused websocket server on 24678, which collides with any
     // other Vite dev server on the machine. It has no client: drop it.
+    // @ts-expect-error @nuxt/vite-builder types `$server` as Vite's EnvironmentOptions, which has no `server` key. Nuxt 4.5.2 still applies it: port 24678 opens when this line is removed.
     $server: { server: { ws: false } },
   },
 
@@ -148,7 +149,7 @@ export default defineNuxtConfig({
       'prerender:generate': function (route) {
         if (!bundle.enabled)
           return
-        if (['/index.html', '/200.html', '/404.html', '/'].includes(route.route)
+        if (['/index.html', '/200.html', '/404.html', '/'].includes(route.route ?? '')
           || route.route?.startsWith('/api/')) {
           route.skip = true
         }
@@ -188,7 +189,7 @@ export default defineNuxtConfig({
         console.log(`✅ Copied ${srcDir} to build output`)
       }
       catch (error) {
-        console.error(`❌ Failed to copy ${srcDir}:`, error.message)
+        console.error(`❌ Failed to copy ${srcDir}:`, (error as Error).message)
       }
     },
   },

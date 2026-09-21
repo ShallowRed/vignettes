@@ -66,13 +66,18 @@ function readCookie(header: string | null, name: string): string | undefined {
   return entry ? decodeURIComponent(entry.slice(name.length + 1)) : undefined
 }
 
+/** All this reader needs of a request: the cookie header. */
+export interface RequestWithCookies {
+  headers: { get: (name: string) => string | null }
+}
+
 /**
- * `getActorRole` for a web-standard `Request` (WebSocket upgrades have no
- * H3Event): unseal the nuxt-auth-utils session cookie directly. The password
- * falls back to the env var because runtimeConfig only merges it at first
- * `getUserSession` call.
+ * `getActorRole` for a request that carries no H3Event, which is every
+ * WebSocket upgrade: unseal the nuxt-auth-utils session cookie directly. The
+ * password falls back to the env var because runtimeConfig only merges it at
+ * the first `getUserSession` call.
  */
-export async function getActorFromRequest(request: Request): Promise<Actor> {
+export async function getActorFromRequest(request: RequestWithCookies): Promise<Actor> {
   const config = useRuntimeConfig().session as { name?: string, password?: string, maxAge?: number }
   const name = config?.name || 'nuxt-session'
   const password = config?.password || process.env.NUXT_SESSION_PASSWORD

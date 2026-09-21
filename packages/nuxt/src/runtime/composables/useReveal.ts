@@ -1,3 +1,4 @@
+import type { RevealApi } from 'reveal.js'
 import type { Ref } from 'vue'
 import type { RevealConfig } from '../types/presentation.ts'
 import { EMBED_SANDBOX, mergeRevealConfig } from '@vignettes/core/render'
@@ -6,7 +7,7 @@ export function useReveal(
   container: Ref<HTMLElement | null>,
   config: Partial<RevealConfig> = {},
 ) {
-  let revealInstance: any = null
+  let revealInstance: RevealApi | null = null
   let overlayObserver: MutationObserver | null = null
   let fragmentObserver: MutationObserver | null = null
 

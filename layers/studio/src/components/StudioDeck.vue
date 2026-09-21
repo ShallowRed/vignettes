@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PresentationData } from '@vignettes/nuxt/types'
+import type { RevealApi } from 'reveal.js'
 import { deckPath } from '#shared/presentations'
 
 // A deck as the studio shows it: the Reveal presentation with the other
@@ -26,9 +27,9 @@ const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], unpu
 const variants = computed(() => (viewer.value.variants?.length ?? 0) > 1 ? viewer.value.variants! : [])
 const variantHref = (variant: Variant) => `${deckPath({ slug: variant.slug, alias: variant.alias ?? undefined })}${props.draft ? '?draft' : ''}`
 
-const reveal = shallowRef<any>(null)
+const reveal = shallowRef<RevealApi | null>(null)
 const indices = ref({ h: 0, v: 0 })
-function onReady(instance: any) {
+function onReady(instance: RevealApi) {
   reveal.value = instance
   indices.value = instance.getIndices()
   instance.on('slidechanged', (event: { indexh: number, indexv: number }) => {

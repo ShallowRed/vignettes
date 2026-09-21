@@ -1,4 +1,3 @@
-import type { Peer } from 'crossws'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
@@ -9,8 +8,19 @@ type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleCon
 
 const connections = new Map<string, CollabConnection>()
 
-/** Adapt a crossws Peer to Hocuspocus' minimal WebSocketLike contract. */
-function toWebSocketLike(peer: Peer) {
+/**
+ * What this route uses of a crossws peer. Naming the members rather than
+ * importing `Peer` keeps the file out of the way of the two crossws versions
+ * that h3 and nitro each install.
+ */
+interface PeerLike {
+  send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => unknown
+  close: (code?: number, reason?: string) => unknown
+  websocket?: { readyState?: number }
+}
+
+/** Adapt a crossws peer to Hocuspocus' minimal WebSocketLike contract. */
+function toWebSocketLike(peer: PeerLike) {
   return {
     send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => peer.send(data),
     close: (code?: number, reason?: string) => peer.close(code, reason),
@@ -56,7 +66,10 @@ export default defineWebSocketHandler({
     // context that every Hocuspocus hook sees (`CollabContext`).
     const deck = new URL(peer.request.url).searchParams.get('deck') ?? ''
     const actor = await getActorFromRequest(peer.request)
-    connections.set(peer.id, useCollabServer().handleConnection(toWebSocketLike(peer), peer.request, { deck, user: actor.login ?? null }))
+    // Hocuspocus reads the url and the headers of the request it is handed, and
+    // the upgrade request carries both under a narrower type.
+    const request = peer.request as unknown as Request
+    connections.set(peer.id, useCollabServer().handleConnection(toWebSocketLike(peer), request, { deck, user: actor.login ?? null }))
   },
 
   message(peer, message) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RevealApi } from 'reveal.js'
 import type { RevealConfig } from '../types/presentation.ts'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
@@ -35,7 +36,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   /** Reveal is initialized; the host can bind keys or listen to slide changes. */
-  ready: [reveal: any]
+  ready: [reveal: RevealApi]
 }>()
 
 const themeName = computed(() => props.theme || getDefaultTheme())
@@ -137,8 +138,9 @@ onMounted(async () => {
   await document.fonts.ready
   clearTimeout(liftTimer)
   ready.value = true
-  if (getInstance())
-    emit('ready', getInstance())
+  const instance = getInstance()
+  if (instance)
+    emit('ready', instance)
   revealContainer.value?.addEventListener('click', handleAnchorClick)
 
   // Reveal computes its print pagination during initialize(), but the Vue/MDC

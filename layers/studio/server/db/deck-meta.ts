@@ -47,6 +47,15 @@ export interface DeckMetaRecord {
   published: boolean
 }
 
+/**
+ * What {@link createDeckMeta.update} accepts. The fields a deck may drop take
+ * `null` to clear the column, where the record reports them absent.
+ */
+export type DeckMetaPatch = Partial<
+  Pick<DeckMetaRecord, 'title' | 'status' | 'lifecycle' | 'unlisted'>
+  & Record<'project' | 'theme' | 'alias' | 'frozenBundle' | 'accessPasswordHash' | 'family' | 'variantLabel' | 'supersededBy', string | null>
+>
+
 /** An invalid stored status fails closed. */
 function readStatus(value: string): PublicationStatus {
   const parsed = PublicationStatusSchema.safeParse(value)
@@ -107,7 +116,7 @@ export function createDeckMeta(db: Db) {
      * Admin metadata edit — the second way a deck becomes `managed` (its row
      * turns into the metadata truth, shadowing file frontmatter).
      */
-    async update(slug: string, patch: Partial<Pick<DeckMetaRecord, 'title' | 'status' | 'lifecycle' | 'project' | 'theme' | 'alias' | 'frozenBundle' | 'unlisted' | 'accessPasswordHash' | 'family' | 'variantLabel' | 'supersededBy'>>): Promise<DeckMetaRecord> {
+    async update(slug: string, patch: DeckMetaPatch): Promise<DeckMetaRecord> {
       const now = new Date()
       const set = { ...patch, managed: true, updatedAt: now }
       const row = db.insert(decks)

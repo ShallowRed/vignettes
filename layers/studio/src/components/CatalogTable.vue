@@ -3,7 +3,7 @@ import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { TableColumn } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
-import { getPaginationRowModel, getSortedRowModel } from '@tanstack/vue-table'
+import { getPaginationRowModel } from '@tanstack/vue-table'
 import { h, resolveComponent } from 'vue'
 import { useAppSession } from '../composables/useAppSession'
 
@@ -33,7 +33,20 @@ const UCheckbox = resolveComponent('UCheckbox')
 
 const toast = useToast()
 
-const table = useTemplateRef('table')
+/**
+ * What this component reads of the table instance. Naming it breaks the circular
+ * inference between the rows and the columns that read the selection.
+ */
+interface CatalogTableInstance {
+  tableApi?: {
+    getFilteredSelectedRowModel: () => { rows: { original: PresentationListItem }[] }
+    getFilteredRowModel: () => { rows: unknown[] }
+    setPageIndex: (index: number) => void
+    setPagination: (pagination: { pageIndex: number, pageSize: number }) => void
+  }
+}
+
+const table = useTemplateRef<CatalogTableInstance>('table')
 
 const PAGE_SIZE_KEY = 'vignettes:catalog-page-size'
 const PAGE_SIZES = [10, 25, 50, 100]
@@ -250,7 +263,6 @@ function clearSelection() {
       v-model:pagination="pagination"
       :data="items"
       :columns="columns"
-      :sorting-options="{ getSortedRowModel: getSortedRowModel() }"
       :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
       :ui="{ root: 'rounded-lg bg-default shadow-sm' }"
     >

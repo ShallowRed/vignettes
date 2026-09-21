@@ -58,7 +58,7 @@ function run(action: (view: EditorView) => unknown) {
       :variant="wrap ? 'soft' : 'ghost'"
       size="xs"
       :aria-pressed="wrap"
-      @click="wrap = !wrap"
+      @click="() => { wrap = !wrap }"
     />
     <UButton
       icon="i-lucide-circle-help"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RevealApi } from 'reveal.js'
 import { nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import { useDeckMessages } from '../composables/useDeckMessages.ts'
 import DeckControlButton from './DeckControlButton.vue'
@@ -7,7 +8,7 @@ import DeckControlButton from './DeckControlButton.vue'
 // that opens on hover or focus. The host adds its own commands before and after
 // the ones every deck has.
 const props = defineProps<{
-  getInstance: () => any
+  getInstance: () => RevealApi | null
 }>()
 
 const emit = defineEmits<{ print: [] }>()
@@ -94,7 +95,7 @@ function toggleOverview() {
 }
 
 function openSpeakerView() {
-  props.getInstance()?.getPlugin('notes')?.open()
+  props.getInstance()?.getPlugin('notes')?.open?.()
 }
 
 function toggleFullscreen() {

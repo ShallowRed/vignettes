@@ -25,8 +25,8 @@ const ratioBasis = computed(() => {
   const match = props.ratio.trim().match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/)
   if (!match)
     return undefined
-  const numerator = Number.parseFloat(match[1])
-  const denominator = Number.parseFloat(match[2])
+  const numerator = Number.parseFloat(match[1]!)
+  const denominator = Number.parseFloat(match[2]!)
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || numerator <= 0 || denominator <= 0)
     return undefined
   return `${(numerator / denominator) * 100}%`

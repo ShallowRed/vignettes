@@ -80,9 +80,10 @@ export function resolveSlideBackground(
   if (!backgrounds)
     return undefined
   const level = slide.headingLevel as keyof ThemeBackgrounds | undefined
-  if (level && backgrounds[level])
-    return backgrounds[level]
-  return backgrounds.default
+  // The schema accepts keys it does not name, so a value read by level is not a
+  // string by construction.
+  const named = level ? backgrounds[level] : undefined
+  return typeof named === 'string' ? named : backgrounds.default
 }
 
 // Collect the external assets a deck's slides reference (storybook iframes,

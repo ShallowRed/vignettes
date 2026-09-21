@@ -94,7 +94,7 @@ function submit() {
               color="neutral"
               variant="subtle"
               :aria-label="t('catalog.projectCreate.fillFromName')"
-              @click="state.slug = slugifyProject(state.title)"
+              @click="() => { state.slug = slugifyProject(state.title) }"
             />
           </div>
         </UFormField>

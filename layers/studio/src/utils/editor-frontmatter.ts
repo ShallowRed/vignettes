@@ -156,7 +156,7 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
   }
   catch (error) {
     if (error instanceof YAMLException) {
-      const line = state.doc.line(Math.min(end - 1, Math.max(2, error.mark.line + 2)))
+      const line = state.doc.line(Math.min(end - 1, Math.max(2, (error.mark?.line ?? 0) + 2)))
       problems.push({ from: line.from, to: Math.max(line.to, line.from + 1), severity: 'error', message: t('editor.frontmatter.invalidYaml', { reason: error.reason }) })
       return problems
     }

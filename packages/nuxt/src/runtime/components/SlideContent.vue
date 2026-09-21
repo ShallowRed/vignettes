@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { MDCRoot } from '@nuxtjs/mdc'
 import type { PresentationMetadata, Slide } from '../types/presentation.ts'
 import MDCRenderer from '@nuxtjs/mdc/runtime/components/MDCRenderer.vue'
 import { EMBED_SANDBOX, resolveSlideMedia } from '@vignettes/core/render'
@@ -13,6 +14,13 @@ const props = defineProps<{
 }>()
 
 const layoutStrategy = computed(() => getLayoutStrategy(props.slide.layout))
+
+// The deck model carries the parsed trees as `unknown`, so it stays free of the
+// renderer's types. This component is the renderer side, and names them once.
+const body = computed(() => props.slide.body as MDCRoot)
+const header = computed(() => props.slide.header as MDCRoot | undefined)
+const pretitle = computed(() => props.slide.pretitle as MDCRoot | undefined)
+const subtitle = computed(() => props.slide.subtitle as MDCRoot | undefined)
 
 // null when the slide has no media.
 const mediaParts = computed(() =>
@@ -31,7 +39,7 @@ const parsedQuicklink = computed(() => {
 <template>
   <template v-if="layoutStrategy === 'full'">
     <MDCRenderer
-      :body="slide.body"
+      :body="body"
       :data="metadata"
       :components="mdcComponents"
     />
@@ -39,47 +47,47 @@ const parsedQuicklink = computed(() => {
 
   <template v-else>
     <div class="slide-content-pane">
-      <hgroup v-if="slide.header?.children?.length && (slide.pretitle || slide.subtitle)">
+      <hgroup v-if="header?.children?.length && (pretitle || subtitle)">
         <div
-          v-if="slide.pretitle"
+          v-if="pretitle"
           class="slide-pretitle"
         >
           <MDCRenderer
-            :body="slide.pretitle"
+            :body="pretitle"
             :data="metadata"
             :components="mdcComponents"
           />
         </div>
         <div class="slide-heading">
           <MDCRenderer
-            :body="slide.header"
+            :body="header"
             :data="metadata"
             :components="mdcComponents"
           />
         </div>
         <div
-          v-if="slide.subtitle"
+          v-if="subtitle"
           class="slide-subtitle"
         >
           <MDCRenderer
-            :body="slide.subtitle"
+            :body="subtitle"
             :data="metadata"
             :components="mdcComponents"
           />
         </div>
       </hgroup>
 
-      <header v-else-if="slide.header?.children?.length">
+      <header v-else-if="header?.children?.length">
         <MDCRenderer
-          :body="slide.header"
+          :body="header"
           :data="metadata"
           :components="mdcComponents"
         />
       </header>
 
-      <article v-if="slide.body?.children?.length">
+      <article v-if="body?.children?.length">
         <MDCRenderer
-          :body="slide.body"
+          :body="body"
           :data="metadata"
           :components="mdcComponents"
         />

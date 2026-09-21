@@ -30,7 +30,7 @@ export function contentTokenActor(event: H3Event): Actor | null {
     return null
   const header = getRequestHeader(event, 'authorization') ?? ''
   const match = /^Bearer\s+(\S+)$/i.exec(header)
-  if (!match || !sameSecret(match[1], expected))
+  if (!match || !sameSecret(match[1]!, expected))
     return null
   return { login: CONTENT_TOKEN_LOGIN, role: 'editor' }
 }

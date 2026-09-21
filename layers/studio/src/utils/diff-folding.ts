@@ -46,7 +46,7 @@ class FoldBand extends WidgetType {
     super()
   }
 
-  eq(other: FoldBand) {
+  override eq(other: FoldBand) {
     return other.passage.from === this.passage.from && other.open === this.open
   }
 
@@ -60,11 +60,11 @@ class FoldBand extends WidgetType {
     return band
   }
 
-  ignoreEvent() {
+  override ignoreEvent() {
     return false
   }
 
-  get estimatedHeight() {
+  override get estimatedHeight() {
     return 28
   }
 }

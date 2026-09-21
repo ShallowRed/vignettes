@@ -90,7 +90,7 @@ const field = computed(() => handleField(inviteProvider.value))
       variant="subtle"
       size="sm"
       block
-      @click="showInvite = true"
+      @click="() => { showInvite = true }"
     />
     <form
       v-else

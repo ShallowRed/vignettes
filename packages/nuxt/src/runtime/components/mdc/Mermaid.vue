@@ -24,7 +24,7 @@ function applySteps(svgRoot: SVGElement, steps: string) {
   }
   svgRoot.querySelectorAll('g.node').forEach((g) => {
     const m = g.id.match(/^(?:flowchart|graph)-(.+)-\d+$/)
-    const step = m ? stepOf.get(m[1]) : undefined
+    const step = m ? stepOf.get(m[1]!) : undefined
     if (step !== undefined)
       mark(g, step)
   })
@@ -32,8 +32,8 @@ function applySteps(svgRoot: SVGElement, steps: string) {
     const m = id.match(/^L[-_]([^-_]+)[-_]([^-_]+)[-_]\d+$/)
     if (!m)
       return undefined
-    const a = stepOf.get(m[1])
-    const b = stepOf.get(m[2])
+    const a = stepOf.get(m[1]!)
+    const b = stepOf.get(m[2]!)
     return a === undefined || b === undefined ? undefined : Math.max(a, b)
   }
   svgRoot.querySelectorAll('path.flowchart-link, g.edgeLabel').forEach((el) => {
@@ -166,7 +166,7 @@ function onTouchStart(e: TouchEvent) {
   if (e.touches.length !== 1)
     return
   isDragging.value = true
-  const touch = e.touches[0]
+  const touch = e.touches[0]!
   dragStart.x = touch.clientX - panX.value
   dragStart.y = touch.clientY - panY.value
 }
@@ -175,7 +175,7 @@ function onTouchMove(e: TouchEvent) {
   if (!isDragging.value || e.touches.length !== 1)
     return
   e.preventDefault()
-  const touch = e.touches[0]
+  const touch = e.touches[0]!
   panX.value = touch.clientX - dragStart.x
   panY.value = touch.clientY - dragStart.y
   updateTransform()

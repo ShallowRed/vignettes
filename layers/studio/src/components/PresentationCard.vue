@@ -169,7 +169,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
             :color="variant.slug === deck.slug ? 'primary' : 'neutral'"
             :variant="variant.slug === deck.slug ? 'soft' : 'outline'"
             :aria-pressed="variant.slug === deck.slug"
-            @click.stop.prevent="selectedSlug = variant.slug"
+            @click.stop.prevent="() => { selectedSlug = variant.slug }"
           />
         </div>
 

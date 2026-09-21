@@ -98,7 +98,7 @@ function close() {
               color="neutral"
               variant="subtle"
               :aria-label="t('catalog.projectEdit.regenerateFromName')"
-              @click="state.slug = slugifyProject(state.title)"
+              @click="() => { state.slug = slugifyProject(state.title) }"
             />
           </div>
         </UFormField>
