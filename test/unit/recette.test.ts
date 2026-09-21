@@ -180,6 +180,21 @@ describe('seed', () => {
     expect(await isRecetteSeeded()).toBe(false)
   })
 
+  it('spares a deck that only shares the prefix, and the kit folder holding it', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    await seed(asUser(1, 'boss'))
+    await useDbContent().writer.save({ slug: 'recette-de-cuisine', raw: '---\ntitle: Mine\nproject: recette-partage\n---\n\n# Mine', actor: 'boss' })
+    await useDeckMeta().update('recette-de-cuisine', { title: 'Mine', project: 'recette-partage' })
+
+    await resetRecette()
+
+    expect(await useDeckMeta().existsIncludingTrashed('recette-de-cuisine')).toBe(true)
+    expect(await useDeckMeta().existsIncludingTrashed('recette-public')).toBe(false)
+    // The folder stays with the deck it holds, and a new seed reuses it.
+    await expect(seed(asUser(1, 'boss'))).resolves.toBeDefined()
+    expect(await useDeckMeta().existsIncludingTrashed('recette-de-cuisine')).toBe(true)
+  })
+
   it('leaves nothing behind when the kit is removed', async () => {
     await seedAccount(1, 'boss', 'owner')
     expect(await hasRecetteData()).toBe(false)

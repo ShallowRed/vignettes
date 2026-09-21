@@ -18,7 +18,7 @@ revenir à son compte (`/auth/recette?as=me`) sans repasser par OAuth.
 
 ## Jeu de données
 
-Toutes les lignes portent le préfixe `recette-`. Le jeu de données est défini dans `server/utils/recette.ts` (`SEED_DECKS`). Une instance qui définit `NUXT_RECETTE_ENABLED=1` le crée à son démarrage quand il est absent ou incomplet (`server/plugins/recette-seed.ts`) : ajouter un deck à `SEED_DECKS` le fait apparaître au déploiement suivant. En développement, il se crée depuis la page. Le bouton s'appelle « Créer » tant que le jeu de données est incomplet, « Réinitialiser » ensuite ; il supprime ces lignes et les recrée, sans toucher au reste de la base.
+Toutes les lignes portent le préfixe `recette-`. Le jeu de données est défini dans `server/utils/recette.ts` (`SEED_DECKS`). Une instance qui définit `NUXT_RECETTE_ENABLED=1` le crée à son démarrage quand il est absent ou incomplet (`server/plugins/recette-dataset.ts`) : ajouter un deck à `SEED_DECKS` le fait apparaître au déploiement suivant. Une instance où le kit ne peut pas s'ouvrir supprime au démarrage ce que le kit a créé, désigné exactement : les decks de `SEED_DECKS` par slug, les comptes des personas par identifiant, et les deux dossiers quand ils ne contiennent plus rien. Un deck qui partage seulement le préfixe `recette-` reste en place. En développement, le jeu de données se crée depuis la page. Le bouton s'appelle « Créer » tant que le jeu de données est incomplet, « Réinitialiser » ensuite ; il supprime ces lignes et les recrée, sans toucher au reste de la base.
 
 Chaque deck porte un bloc de code. « Publique » et « Privée » portent aussi une image téléversée, servie avec la visibilité de son deck.
 
@@ -29,7 +29,7 @@ Chaque deck porte un bloc de code. « Publique » et « Privée » portent aussi
 | Publique | `recette-public` | visible par tous ; éditeur temps réel pour le collaborateur ; son image s'affiche hors connexion |
 | Mot de passe | `recette-mdp` | semi-privée, mot de passe `recette` ; le collaborateur le saute |
 | Brouillon | `recette-brouillon` | jamais publiée, listée à qui peut l'éditer |
-| Privée | `recette-privee` | 401 anonyme, 403 lecteur ; son image répond 404 hors connexion |
+| Privée | `recette-privee` | 401 anonyme, 404 lecteur connecté, comme un deck inexistant ; son image répond 404 hors connexion |
 | Non listée | `recette-non-listee` | publique hors catalogue, lien direct |
 | Archivée | `recette-archivee` | hors catalogue public |
 | Lecture seule | `recette-lecture` | dans Divers, accès lecture du collaborateur, sans crayon |

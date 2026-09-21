@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import process from 'node:process'
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PERSONAS, RECETTE_PREFIX } from '#shared/recette/personas'
-import { like } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { decks } from '../db/schema'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
@@ -129,7 +129,7 @@ const SEED_DECKS: SeedDeck[] = [
   { slug: `${RECETTE_PREFIX}public`, title: 'Recette · Publique', status: 'public', project: RECETTE_FOLDERS.shared, theme: 'minimal', image: true, note: 'Visible et ouvrable par tout le monde, y compris hors connexion.' },
   { slug: `${RECETTE_PREFIX}mdp`, title: 'Recette · Mot de passe', status: 'semi-private', project: RECETTE_FOLDERS.shared, theme: 'minimal', password: RECETTE_PASSWORD, note: `Absente du catalogue public ; le lien direct demande le mot de passe « ${RECETTE_PASSWORD} ».` },
   { slug: `${RECETTE_PREFIX}brouillon`, title: 'Recette · Brouillon', status: 'private', project: RECETTE_FOLDERS.shared, theme: 'minimal', draftOnly: true, note: 'Jamais publiée : listée seulement à qui peut l\'éditer.' },
-  { slug: `${RECETTE_PREFIX}privee`, title: 'Recette · Privée', status: 'private', project: RECETTE_FOLDERS.private, theme: 'dsfr', image: true, note: 'Réservée aux rôles privilégiés ; un lecteur connecté reçoit 403, un anonyme 401.' },
+  { slug: `${RECETTE_PREFIX}privee`, title: 'Recette · Privée', status: 'private', project: RECETTE_FOLDERS.private, theme: 'dsfr', image: true, note: 'Réservée aux rôles privilégiés ; un anonyme reçoit 401, un lecteur connecté 404 comme pour une présentation inexistante.' },
   { slug: `${RECETTE_PREFIX}non-listee`, title: 'Recette · Non listée', status: 'public', project: RECETTE_FOLDERS.private, theme: 'dsfr', unlisted: true, note: 'Publique mais absente du catalogue public ; le lien direct fonctionne.' },
   { slug: `${RECETTE_PREFIX}archivee`, title: 'Recette · Archivée', status: 'public', project: RECETTE_FOLDERS.private, theme: 'dsfr', lifecycle: 'archived', note: 'Archivée : hors catalogue public, lien direct fonctionnel.' },
   { slug: `${RECETTE_PREFIX}lecture`, title: 'Recette · Lecture seule', status: 'private', theme: 'minimal', note: 'Sans dossier (Divers). Le collaborateur la voit en lecture seule, sans crayon.' },
@@ -206,8 +206,11 @@ export async function seedRecette(): Promise<SeedSummary> {
   await resetRecette()
 
   const projects = useProjectStore()
-  await projects.create({ slug: RECETTE_FOLDERS.shared, title: 'Recette · Dossier partagé', color: '#2563eb', icon: 'briefcase' })
-  await projects.create({ slug: RECETTE_FOLDERS.private, title: 'Recette · Dossier privé', color: '#9333ea', icon: 'flask-conical' })
+  // A folder the reset left in place, because it holds a deck the kit did not create, is reused.
+  if (!await projects.slugExists(RECETTE_FOLDERS.shared))
+    await projects.create({ slug: RECETTE_FOLDERS.shared, title: 'Recette · Dossier partagé', color: '#2563eb', icon: 'briefcase' })
+  if (!await projects.slugExists(RECETTE_FOLDERS.private))
+    await projects.create({ slug: RECETTE_FOLDERS.private, title: 'Recette · Dossier privé', color: '#9333ea', icon: 'flask-conical' })
 
   const meta = useDeckMeta()
   for (const deck of SEED_DECKS) {
@@ -256,24 +259,33 @@ export async function isRecetteSeeded(): Promise<boolean> {
   return present.every(Boolean)
 }
 
+const SEED_SLUGS = SEED_DECKS.map(deck => deck.slug)
+
 /** Whether the kit left anything behind: a deck of the data set, or one of its accounts. */
 export async function hasRecetteData(): Promise<boolean> {
-  const anyDeck = useDb().select({ slug: decks.slug }).from(decks).where(like(decks.slug, `${RECETTE_PREFIX}%`)).all()
-  if (anyDeck.length > 0)
+  const seeded = useDb().select({ slug: decks.slug }).from(decks).where(inArray(decks.slug, SEED_SLUGS)).all()
+  if (seeded.length > 0)
     return true
   const accounts = await useUserStore().list()
   return accounts.some(account => RECETTE_PERSONAS.some(persona => persona.id === account.id))
 }
 
-/** Removes the data set and the accounts the kit created. */
+/**
+ * Removes what the kit created, named exactly: its decks by slug, its accounts
+ * by id, its two folders. A deck that merely starts with the same prefix is
+ * someone's work, and a kit folder that still holds such a deck stays with it.
+ */
 export async function resetRecette(): Promise<void> {
-  const projects = useProjectStore()
-  for (const slug of Object.values(RECETTE_FOLDERS))
-    await projects.purge(slug)
-  // Decks outside the folders (Divers) and any stray anchor row.
   const meta = useDeckMeta()
-  for (const { slug } of useDb().select({ slug: decks.slug }).from(decks).where(like(decks.slug, `${RECETTE_PREFIX}%`)).all())
+  for (const slug of SEED_SLUGS)
     await meta.purge(slug)
+
+  const projects = useProjectStore()
+  for (const folder of Object.values(RECETTE_FOLDERS)) {
+    const held = useDb().select({ slug: decks.slug }).from(decks).where(eq(decks.project, folder)).all()
+    if (held.length === 0)
+      await projects.purge(folder)
+  }
 
   const users = useUserStore()
   for (const persona of RECETTE_PERSONAS)
