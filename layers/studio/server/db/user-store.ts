@@ -36,7 +36,6 @@ function handleKey(provider: string, login: string): string {
   const [local, domain] = lowered.split('@')
   if (!domain || (domain !== 'gmail.com' && domain !== 'googlemail.com'))
     return lowered
-  // `split` on a non-empty string always yields a first part.
   return `${local!.split('+')[0]!.replaceAll('.', '')}@gmail.com`
 }
 

@@ -6,7 +6,7 @@ defineProps<{
   title?: string
   message?: string
   loginRedirect?: string
-  /** The signed-in login, for a 403: names the account and offers to switch. */
+  /** The signed-in login, on the not-found screen: names the account and offers to switch. */
   accountLogin?: string
 }>()
 

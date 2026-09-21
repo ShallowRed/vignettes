@@ -12,10 +12,11 @@ const draftPreview = 'draft' in route.query
 const { presentationData, error } = usePresentation(slug, undefined, { draft: draftPreview })
 const { user } = useAppSession()
 
-// The server distinguishes the three closed doors: 401 + requiresPassword flag
-// (semi-private, ask for the deck password), plain 401 (private, ask to sign
-// in), 403 (signed in but not granted). Only the flag decides the unlock
-// bounce — a plain 401 must NOT land on a password prompt it can never satisfy.
+// The server answers a closed deck three ways: 401 with the `requiresPassword`
+// flag (semi-private, ask for the deck password), a plain 401 (private, ask to
+// sign in), and 404 (signed in without access, the answer of a slug that does
+// not exist). Only the flag sends to the password prompt, which a plain 401
+// could never satisfy.
 // ofetch nests the server's createError payload under data.data; a direct h3
 // error keeps it at data. Read both so the flag survives either transport.
 const errorData = computed(() => {
@@ -56,8 +57,8 @@ watch(requiresPassword, (needsPassword) => {
     />
     <DeckError
       v-else-if="error && !requiresPassword"
-      :title="notFound ? t('auth.deckError.notFoundTitle') : t('auth.deckError.defaultTitle')"
-      :message="notFound ? t('auth.deckError.notFoundMessage') : t('auth.deckError.defaultMessage')"
+      :title="notFound ? t('auth.deckError.notFoundTitle') : undefined"
+      :message="notFound ? t('auth.deckError.notFoundMessage') : undefined"
       :account-login="notFound ? user?.login : undefined"
     />
   </div>

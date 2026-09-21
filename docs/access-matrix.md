@@ -10,8 +10,7 @@ découvrabilité) ; l'adaptateur HTTP dans `layers/studio/server/utils/access.ts
    écriture (`isTrashed` dans les gardes d'édition et l'upgrade collab).
 2. **Ligne `managed` ?** La base fait foi pour les axes d'accès. Sinon (deck
    jamais publié ni édité par un admin), le frontmatter décide.
-3. **`decideAccess(status, role, grant, hasPassword, passwordGranted)`** :
-   allow / deny (401 ou 403) / needs-password (401 + `data.requiresPassword`).
+3. **`decideAccess(status, role, grant, hasPassword, passwordGranted)`** : allow / deny / needs-password (401 + `data.requiresPassword`). Sur la lecture, un refus répond 401 à un anonyme et 404 à un compte connecté, la réponse d'un slug inexistant. Sur l'édition, il répond 403 à qui peut lire le deck et 404 sinon.
 4. **`canList(status, lifecycle, role, grant, unlisted)`** : présence au
    catalogue. Lister et ouvrir sont deux axes distincts.
 

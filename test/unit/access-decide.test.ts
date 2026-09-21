@@ -13,7 +13,7 @@ function input(over: Partial<AccessInput> & Pick<AccessInput, 'status' | 'role'>
 }
 
 describe('decideAccess — view matrix', () => {
-  it('denies private to anonymous as auth-required, to a signed-in viewer as forbidden (401 vs 403)', () => {
+  it('denies private to anonymous as auth-required, to a signed-in viewer as forbidden (sign in vs refused)', () => {
     expect(decideAccess(input({ status: 'private', role: 'anonymous' })))
       .toEqual({ outcome: 'deny', reason: 'auth-required' })
     expect(decideAccess(input({ status: 'private', role: 'viewer' })))

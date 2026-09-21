@@ -19,8 +19,8 @@ const { presentationData, error: loadError } = usePresentation(`p-${alias}`, `/a
 const { user } = useAppSession()
 
 const error = computed(() => resolveError.value || loadError.value)
-// Same three closed doors as /slides/<slug>: only the explicit server flag
-// bounces to the password prompt; a plain 401 asks to sign in instead.
+// The same three answers as `/slides/<slug>`: only the `requiresPassword` flag
+// sends to the password prompt, and a plain 401 asks to sign in.
 // ofetch nests the server's createError payload under data.data; a direct h3
 // error keeps it at data. Read both so the flag survives either transport.
 const errorData = computed(() => {
@@ -60,8 +60,8 @@ watch(requiresPassword, (needsPassword) => {
     />
     <DeckError
       v-else-if="error && !requiresPassword"
-      :title="notFound ? t('auth.deckError.notFoundTitle') : t('auth.deckError.defaultTitle')"
-      :message="notFound ? t('auth.deckError.notFoundMessage') : t('auth.deckError.defaultMessage')"
+      :title="notFound ? t('auth.deckError.notFoundTitle') : undefined"
+      :message="notFound ? t('auth.deckError.notFoundMessage') : undefined"
       :account-login="notFound ? user?.login : undefined"
     />
   </div>

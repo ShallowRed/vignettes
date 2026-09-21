@@ -64,7 +64,10 @@ export function decideAccess(input: AccessInput): AccessDecision {
   }
 }
 
-/** Anonymous → 401 (log in); authenticated-but-unprivileged → 403 (you can't). */
+/**
+ * Anonymous is asked to sign in; a signed-in actor is refused. The HTTP adapter
+ * maps the two to 401 and, on the view gate, to the 404 of an absent deck.
+ */
 function denyFor(role: Role): AccessDecision {
   return { outcome: 'deny', reason: role === 'anonymous' ? 'auth-required' : 'forbidden' }
 }
