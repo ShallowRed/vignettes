@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
 
   const gate = await resolveBundleGate(bundle)
   if (!gate)
-    throw createError({ statusCode: 404, statusMessage: `Unknown frozen bundle "${bundle}"` })
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
   const assetPath = normaliseAssetPath(rest)
   // Gate BEFORE serving any byte (public passes; private needs cookie). Only the

@@ -35,12 +35,14 @@ async function unlock() {
     await navigateTo(returnTo.value, { replace: true })
   }
   catch (e: any) {
-    if (e.statusCode === 403)
+    // The form only submits a password, so a refusal is that password. The raw
+    // message of the request stays out: it names the route and the slug.
+    if (e.statusCode === 401)
       errorMessage.value = t('auth.unlock.wrongPassword')
-    else if (e.statusCode === 401)
-      errorMessage.value = t('auth.unlock.passwordRequired')
+    else if (e.statusCode === 429)
+      errorMessage.value = t('auth.unlock.tooManyAttempts')
     else
-      errorMessage.value = e.message || t('auth.unlock.genericError')
+      errorMessage.value = t('auth.unlock.genericError')
   }
   finally {
     loading.value = false

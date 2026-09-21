@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     const published = await store.source.load(slug)
     const content = draft ?? published?.raw
     if (!content) {
-      throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
+      throw createError({ statusCode: 404, statusMessage: 'Not found' })
     }
     const meta = await useDeckMeta().get(slug)
     return {
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
 
   const published = await useDbContent().source.load(slug)
   if (!published) {
-    throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }
 
   const meta = await useDeckMeta().get(slug)

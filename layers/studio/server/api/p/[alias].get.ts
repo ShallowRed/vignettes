@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const entry = await deckDirectory.resolveAlias(alias)
   if (!entry) {
-    throw createError({ statusCode: 404, statusMessage: `Unknown presentation alias "${alias}"` })
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }
 
   // Every deck (live or frozen) serves its published database version; frozen
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   if (stub == null) {
     throw createError({
       statusCode: 404,
-      statusMessage: `No published version for "${entry.slug}" (alias "${alias}")`,
+      statusMessage: 'Not found',
     })
   }
 

@@ -90,6 +90,15 @@ describe('gateDeckAccess', () => {
     await expect(gateDeckAccess(asUser(1, 'boss'), { slug: 'd', status: 'private' })).resolves.toBeUndefined()
   })
 
+  it('answers a signed-in visitor on a private deck as if it did not exist (404)', async () => {
+    await seedAccount(2, 'reader', 'viewer')
+    // 403 would confirm the slug to whoever tried it, and the deck screen says
+    // the same thing for a deck that is closed and for one that never existed.
+    await expect(gateDeckAccess(asUser(2, 'reader'), { slug: 'd', status: 'private' }))
+      .rejects
+      .toMatchObject({ statusCode: 404 })
+  })
+
   it('asks for a password on a semi-private deck with no grant', async () => {
     const storedHash = await hashAccessPassword('open-sesame')
     await expect(gateDeckAccess(anon(), { slug: 'd', status: 'semi-private', storedHash }))

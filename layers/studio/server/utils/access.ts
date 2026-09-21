@@ -73,9 +73,13 @@ export async function gateDeckAccess(event: H3Event, opts: GateOptions, unlockab
         data: { requiresPassword: true },
       })
     case 'deny':
+      // A signed-in actor who may not view this deck is answered as if it did
+      // not exist: 403 here would confirm the slug to whoever tried it. An
+      // anonymous one still gets 401, which says to sign in without saying what
+      // is behind the link.
       throw createError({
-        statusCode: decision.reason === 'forbidden' ? 403 : 401,
-        statusMessage: decision.reason === 'forbidden' ? 'Forbidden' : 'Authentication required',
+        statusCode: decision.reason === 'forbidden' ? 404 : 401,
+        statusMessage: decision.reason === 'forbidden' ? 'Not found' : 'Authentication required',
       })
   }
 }

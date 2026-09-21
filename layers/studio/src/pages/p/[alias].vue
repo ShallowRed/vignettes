@@ -29,7 +29,9 @@ const errorData = computed(() => {
 })
 const requiresPassword = computed(() => errorData.value?.requiresPassword === true)
 const needsLogin = computed(() => !requiresPassword.value && (error.value as any)?.statusCode === 401)
-const forbidden = computed(() => (error.value as any)?.statusCode === 403)
+// A deck the actor may not view answers 404 like a deck that does not exist, so
+// one screen covers both: naming either case would confirm the alias.
+const notFound = computed(() => (error.value as any)?.statusCode === 404)
 
 watch(requiresPassword, (needsPassword) => {
   if (needsPassword) {
@@ -57,14 +59,10 @@ watch(requiresPassword, (needsPassword) => {
       :login-redirect="`/p/${alias}`"
     />
     <DeckError
-      v-else-if="forbidden"
-      :title="t('auth.deckError.forbiddenTitle')"
-      :message="t('auth.deckError.forbiddenMessage')"
-      :account-login="user?.login"
-    />
-    <DeckError
       v-else-if="error && !requiresPassword"
-      :message="error.message"
+      :title="notFound ? t('auth.deckError.notFoundTitle') : t('auth.deckError.defaultTitle')"
+      :message="notFound ? t('auth.deckError.notFoundMessage') : t('auth.deckError.defaultMessage')"
+      :account-login="notFound ? user?.login : undefined"
     />
   </div>
 </template>

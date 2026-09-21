@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   const meta = useDeckMeta()
   const source = await meta.get(slug)
   if (!source) {
-    throw createError({ statusCode: 404, statusMessage: `Presentation "${slug}" not found` })
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }
   await assertCanCreateInProject(event, source.project)
 
