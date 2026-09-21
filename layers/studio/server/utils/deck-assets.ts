@@ -20,7 +20,7 @@ import { decideMediaAccess } from './access'
  * rule `/media/**` follows. Backgrounds and pictograms are the decoration of a
  * theme, named in stylesheets the index never reads, so they stay open.
  */
-export async function serveDeckAsset(event: H3Event, prefix: string, gated = false): Promise<Buffer> {
+export async function serveDeckAsset(event: H3Event, prefix: string, { gated = false }: { gated?: boolean } = {}): Promise<Buffer> {
   const raw = getRouterParam(event, 'path') || ''
   const parts = decodeURIComponent(raw).split('/').filter(Boolean)
   if (parts.length === 0 || parts.includes('..'))

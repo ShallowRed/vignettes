@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { referencedMedia } from '#shared/storage/media-refs'
+import { referencedImages } from '#shared/storage/media-refs'
 import { eq } from 'drizzle-orm'
 import { deckMedia } from './schema'
 
@@ -15,7 +15,7 @@ type Writer = Pick<Db, 'insert'>
  * widening who may open it.
  */
 
-export function recordDeckMedia(db: Writer, deckSlug: string, names: string[], origin = false): void {
+export function recordDeckMedia(db: Writer, deckSlug: string, names: string[], { origin = false }: { origin?: boolean } = {}): void {
   if (names.length === 0)
     return
   const now = new Date()
@@ -40,11 +40,11 @@ export interface MediaIndex {
 export function createMediaIndex(db: Db): MediaIndex {
   return {
     async record(deckSlug, names) {
-      recordDeckMedia(db, deckSlug, names, true)
+      recordDeckMedia(db, deckSlug, names, { origin: true })
     },
 
     async recordFromMarkdown(deckSlug, raw) {
-      recordDeckMedia(db, deckSlug, referencedMedia(raw))
+      recordDeckMedia(db, deckSlug, referencedImages(raw))
     },
 
     async decksFor(mediaName) {
