@@ -6,7 +6,7 @@ import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
 import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { decideMediaAccess } from '../../layers/studio/server/utils/access'
-import { isRecetteSeeded, recetteImages } from '../../layers/studio/server/utils/recette'
+import { hasRecetteData, isRecetteSeeded, recetteImages, resetRecette } from '../../layers/studio/server/utils/recette'
 import { useDbContent, useDeckMeta, useGrants, useMediaIndex } from '../../layers/studio/server/utils/sources'
 import { useUserStore } from '../../layers/studio/server/utils/users'
 import { RECETTE_INVITED_HANDLE, RECETTE_PERSONAS } from '../../layers/studio/shared/recette/personas'
@@ -178,5 +178,19 @@ describe('seed', () => {
     expect(await isRecetteSeeded()).toBe(true)
     await useDeckMeta().purge('recette-english')
     expect(await isRecetteSeeded()).toBe(false)
+  })
+
+  it('leaves nothing behind when the kit is removed', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    expect(await hasRecetteData()).toBe(false)
+    await seed(asUser(1, 'boss'))
+    expect(await hasRecetteData()).toBe(true)
+
+    await resetRecette()
+
+    expect(await hasRecetteData()).toBe(false)
+    const accounts = await useUserStore().list()
+    expect(accounts.filter(a => a.login.startsWith('recette-'))).toEqual([])
+    expect(accounts.find(a => a.login === RECETTE_INVITED_HANDLE)).toBeUndefined()
   })
 })

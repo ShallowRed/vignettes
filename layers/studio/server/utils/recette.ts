@@ -256,7 +256,17 @@ export async function isRecetteSeeded(): Promise<boolean> {
   return present.every(Boolean)
 }
 
-async function resetRecette(): Promise<void> {
+/** Whether the kit left anything behind: a deck of the data set, or one of its accounts. */
+export async function hasRecetteData(): Promise<boolean> {
+  const anyDeck = useDb().select({ slug: decks.slug }).from(decks).where(like(decks.slug, `${RECETTE_PREFIX}%`)).all()
+  if (anyDeck.length > 0)
+    return true
+  const accounts = await useUserStore().list()
+  return accounts.some(account => RECETTE_PERSONAS.some(persona => persona.id === account.id))
+}
+
+/** Removes the data set and the accounts the kit created. */
+export async function resetRecette(): Promise<void> {
   const projects = useProjectStore()
   for (const slug of Object.values(RECETTE_FOLDERS))
     await projects.purge(slug)
