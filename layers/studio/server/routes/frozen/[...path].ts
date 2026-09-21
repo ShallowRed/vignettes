@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import process from 'node:process'
+import { contentTypeOf } from '#shared/storage/content-types'
 import {
   frozenObjectKey,
   frozenS3ConfigFromEnv,
@@ -17,8 +18,11 @@ import { deckDirectory, useDeckMeta } from '../../utils/sources'
  * Frozen-bundle static server. `/frozen/<bundle>/<...>` resolves the bundle to its
  * registry deck, ENFORCES `gateDeckAccess` (so private frozen decks aren't leaked),
  * then serves the asset from S3 (falling back to the local `.frozen/` dir when no
- * S3 creds are configured). Access is re-checked per asset; the bundle→gate
- * resolution is memoised briefly.
+ * S3 creds are configured). Access is re-checked per asset, on the deck row as
+ * it stands: only the bundle→slug mapping is memoised, since it costs a scan of
+ * the directory and a deck keeps its bundle name. The status and the password of
+ * the deck are read on every request, so closing a deck closes its bundle at
+ * once.
  */
 
 interface GateInfo {
@@ -28,36 +32,34 @@ interface GateInfo {
   storedHash?: string
 }
 
-const gateCache = new Map<string, { at: number, info: GateInfo | null }>()
-const GATE_TTL_MS = 10_000
+const slugOfBundle = new Map<string, string | null>()
 
 /** Map a bundle name (the /frozen/<bundle>/ segment) to its deck's gate inputs. */
 async function resolveBundleGate(bundle: string): Promise<GateInfo | null> {
-  const cached = gateCache.get(bundle)
-  if (cached && Date.now() - cached.at < GATE_TTL_MS)
-    return cached.info
-
-  // frozenBundle defaults to the alias; fall back to a reverse scan otherwise.
-  let entry = await deckDirectory.resolveAlias(bundle)
-  if (!entry) {
-    const all = await deckDirectory.list()
-    entry = all.find(e => (e.frozenBundle ?? e.slug) === bundle) ?? null
-  }
-
-  let info: GateInfo | null = null
-  if (entry) {
-    const meta = await useDeckMeta().get(entry.slug)
-    if (meta?.managed) {
-      info = {
-        slug: entry.slug,
-        status: meta.status,
-        lifecycle: entry.lifecycle,
-        storedHash: meta.accessPasswordHash ?? undefined,
-      }
+  if (!slugOfBundle.has(bundle)) {
+    // frozenBundle defaults to the alias; fall back to a reverse scan otherwise.
+    let entry = await deckDirectory.resolveAlias(bundle)
+    if (!entry) {
+      const all = await deckDirectory.list()
+      entry = all.find(e => (e.frozenBundle ?? e.slug) === bundle) ?? null
     }
+    slugOfBundle.set(bundle, entry?.slug ?? null)
   }
-  gateCache.set(bundle, { at: Date.now(), info })
-  return info
+
+  const slug = slugOfBundle.get(bundle)!
+  if (!slug)
+    return null
+
+  const meta = await useDeckMeta().get(slug)
+  if (!meta?.managed)
+    return null
+
+  return {
+    slug,
+    status: meta.status,
+    lifecycle: meta.lifecycle,
+    storedHash: meta.accessPasswordHash ?? undefined,
+  }
 }
 
 /** Normalise the asset path within a bundle: directory-ish → index.html. */
@@ -65,7 +67,7 @@ function normaliseAssetPath(rest: string[]): string {
   const parts = rest.filter(Boolean)
   if (parts.length === 0)
     return 'index.html'
-  const last = parts[parts.length - 1]
+  const last = parts[parts.length - 1]!
   if (!extname(last))
     return [...parts, 'index.html'].join('/')
   return parts.join('/')
@@ -77,7 +79,7 @@ export default defineEventHandler(async (event) => {
   if (segments.length === 0)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  const [bundle, ...rest] = segments
+  const [bundle, ...rest] = segments as [string, ...string[]]
   // Defence in depth against path traversal.
   if (rest.includes('..'))
     throw createError({ statusCode: 400, statusMessage: 'Bad request' })
