@@ -11,13 +11,13 @@
  */
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { extname, join, relative } from 'node:path'
+import { join, relative } from 'node:path'
 import process from 'node:process'
 import { ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { DECK_ASSET_PREFIXES, deckAssetKey } from '@vignettes/core/deck-assets'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
+import { contentTypeOf } from '../layers/studio/shared/storage/content-types.ts'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../layers/studio/shared/storage/frozen-s3.ts'
-import { CONTENT_TYPES } from '../layers/studio/shared/storage/themes-s3.ts'
 
 const root = join(import.meta.dirname, '..')
 const apply = process.argv.includes('--apply')
@@ -81,7 +81,7 @@ for (const prefix of DECK_ASSET_PREFIXES) {
         Bucket: cfg.bucket,
         Key: key,
         Body: body,
-        ContentType: CONTENT_TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream',
+        ContentType: contentTypeOf(file),
         CacheControl: 'public, max-age=300',
       }))
     }

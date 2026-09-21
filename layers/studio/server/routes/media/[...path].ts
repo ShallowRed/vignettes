@@ -1,7 +1,8 @@
 import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { join } from 'node:path'
 import process from 'node:process'
+import { contentTypeOf } from '#shared/storage/content-types'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
 import { mediaObjectKey } from '#shared/storage/media-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
@@ -14,16 +15,6 @@ import { decideMediaAccess } from '../../utils/access'
  * visibility of the decks that reference it (`decideMediaAccess`), and a shared
  * cache may keep it only when all of them are public.
  */
-
-const MIME: Record<string, string> = {
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.avif': 'image/avif',
-}
 
 export default defineEventHandler(async (event) => {
   const raw = getRouterParam(event, 'path') || ''
@@ -65,7 +56,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const resolvedType = contentType || MIME[extname(name).toLowerCase()] || 'application/octet-stream'
+  const resolvedType = contentType || contentTypeOf(name)
   setResponseHeader(event, 'Content-Type', resolvedType)
   setResponseHeader(event, 'Content-Length', body.byteLength)
   setResponseHeader(event, 'Cache-Control', access.public ? 'public, max-age=31536000, immutable' : 'private, max-age=31536000, immutable')

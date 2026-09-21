@@ -1,9 +1,10 @@
 import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { join } from 'node:path'
 import process from 'node:process'
+import { contentTypeOf } from '#shared/storage/content-types'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
-import { CONTENT_TYPES, themeLocalPath, themeObjectKey } from '#shared/storage/themes-s3'
+import { themeLocalPath, themeObjectKey } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 
 /**
@@ -47,8 +48,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const ext = extname(parts[parts.length - 1]).toLowerCase()
-  setResponseHeader(event, 'Content-Type', contentType || CONTENT_TYPES[ext] || 'application/octet-stream')
+  setResponseHeader(event, 'Content-Type', contentType || contentTypeOf(parts[parts.length - 1]!))
   setResponseHeader(event, 'Content-Length', body.byteLength)
   setResponseHeader(event, 'Cache-Control', 'public, max-age=300')
   return body

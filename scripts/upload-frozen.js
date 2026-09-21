@@ -7,38 +7,16 @@
  */
 import { createReadStream, statSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { extname, join, relative, sep } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import process from 'node:process'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { contentTypeOf } from '../layers/studio/shared/storage/content-types.ts'
 import {
   frozenObjectKey,
   frozenS3ConfigFromEnv,
   isFrozenS3Configured,
   makeFrozenS3Client,
 } from '../layers/studio/shared/storage/frozen-s3.ts'
-
-const CONTENT_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.map': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf',
-  '.txt': 'text/plain; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
-  '.yml': 'text/yaml; charset=utf-8',
-  '.yaml': 'text/yaml; charset=utf-8',
-}
 
 function parseArgs(argv) {
   const args = { alias: undefined, dir: undefined, dryRun: false }
@@ -118,7 +96,7 @@ async function main() {
         Key: key,
         Body: createReadStream(f),
         ContentLength: statSync(f).size,
-        ContentType: CONTENT_TYPES[extname(f).toLowerCase()] || 'application/octet-stream',
+        ContentType: contentTypeOf(f),
       }),
     )
     done++

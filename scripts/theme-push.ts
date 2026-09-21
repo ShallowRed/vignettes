@@ -17,14 +17,15 @@ import type { PublishedTheme } from '../layers/studio/shared/storage/themes-s3.t
 import { Buffer } from 'node:buffer'
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, extname, join, relative } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { compileTheme } from '@vignettes/nuxt/build/theme-build'
 import { checkExtends, discoverThemes, manifestTokens } from '@vignettes/nuxt/build/theme-registry'
+import { CONTENT_TYPES, contentTypeOf } from '../layers/studio/shared/storage/content-types.ts'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../layers/studio/shared/storage/frozen-s3.ts'
-import { CONTENT_TYPES, indexOf, themeLocalPath, themeObjectKey, THEMES_INDEX_KEY, tokensKeyOf } from '../layers/studio/shared/storage/themes-s3.ts'
+import { indexOf, themeLocalPath, themeObjectKey, THEMES_INDEX_KEY, tokensKeyOf } from '../layers/studio/shared/storage/themes-s3.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const args = process.argv.slice(2)
@@ -127,7 +128,7 @@ try {
     if (statSync(assetsDir, { throwIfNoEntry: false })?.isDirectory()) {
       for (const file of walk(assetsDir)) {
         const rel = relative(assetsDir, file).split('/')
-        await put(themeObjectKey(theme.name, ...rel), readFileSync(file), CONTENT_TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream')
+        await put(themeObjectKey(theme.name, ...rel), readFileSync(file), contentTypeOf(file))
       }
     }
     const entry: PublishedTheme = {

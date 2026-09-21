@@ -21,29 +21,6 @@ import { deckDirectory, useDeckMeta } from '../../utils/sources'
  * resolution is memoised briefly.
  */
 
-const MIME: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.map': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf',
-  '.txt': 'text/plain; charset=utf-8',
-  '.md': 'text/markdown; charset=utf-8',
-  '.yml': 'text/yaml; charset=utf-8',
-  '.yaml': 'text/yaml; charset=utf-8',
-}
-
 interface GateInfo {
   slug: string
   status: PublicationStatus
@@ -159,7 +136,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  setResponseHeader(event, 'Content-Type', contentType || MIME[extname(assetPath).toLowerCase()] || 'application/octet-stream')
+  setResponseHeader(event, 'Content-Type', contentType || contentTypeOf(assetPath))
   setResponseHeader(event, 'Content-Length', body.byteLength)
   setResponseHeader(event, 'Cache-Control', cacheControl)
   setResponseHeader(event, 'X-Frozen-Source', source)
