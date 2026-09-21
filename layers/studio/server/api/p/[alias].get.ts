@@ -1,6 +1,6 @@
-import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
-import { gateDeckAccess } from '../../utils/access'
-import { deckDirectory, publishedSource, useDeckMeta } from '../../utils/sources'
+import { resolveDeck } from '@vignettes/core/deck'
+import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
+import { deckDirectory, publishedSource } from '../../utils/sources'
 
 /**
  * GET /api/p/:alias — resolve an alias through the directory and serve content
@@ -28,20 +28,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const meta = await useDeckMeta().get(entry.slug)
-  const stubMeta = splitFrontmatter(stub).data
-  const status = meta?.managed ? meta.status : resolveDeckStatus(stub, entry.access)
+  const gate = await gateOptionsOf(entry.slug, { lifecycle: entry.lifecycle, folderStatus: entry.access })
+  if (!gate)
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  // Gate BEFORE the frozen short-circuit — a frozen private deck must not be
-  // served just because it has a bundle.
-  await gateDeckAccess(event, {
-    slug: entry.slug,
-    status,
-    lifecycle: entry.lifecycle,
-    storedHash: meta?.managed
-      ? meta.accessPasswordHash
-      : stubMeta.accessPassword as string | undefined,
-  })
+  // The gate comes before the frozen redirect, so a frozen private deck is not
+  // served for having a bundle. The unlock form verifies its password here.
+  await gateDeckAccess(event, { ...gate, unlock: true })
 
   // Frozen/archived: content is a static bundle; report the target to redirect to.
   if (entry.lifecycle === 'frozen' || entry.lifecycle === 'archived') {

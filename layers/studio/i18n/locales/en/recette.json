@@ -85,7 +85,7 @@
       },
       "viewer": {
         "catalog": "The catalog lists the same presentations as for the visitor.",
-        "private": "Access is denied.",
+        "private": "The screen says “Presentation not found”, as it does for a dead link.",
         "sharedFolder": "The folder is empty."
       },
       "collab": {
@@ -95,11 +95,11 @@
         "unpublished": "After a change, the header and the card say Unpublished changes. Publishing removes that mention.",
         "password": "The presentation opens without a password.",
         "readOnly": "“Lecture seule” opens and its card has no pencil.",
-        "private": "Access is denied. No card offers the metadata or the sharing."
+        "private": "The screen says “Presentation not found”, as it does for a dead link. No card offers the metadata or the sharing."
       },
       "expired": {
         "catalog": "Publique and English deck are the only presentations listed.",
-        "editorDenied": "Access is denied."
+        "editorDenied": "The screen says “Presentation not found”, as it does for a dead link."
       },
       "editor": {
         "catalog": "The whole data set is listed, Brouillon included, with pencil and metadata.",

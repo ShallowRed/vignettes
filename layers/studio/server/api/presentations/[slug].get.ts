@@ -1,7 +1,7 @@
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { readBundleConfig } from '@vignettes/freeze/bundle'
-import { assertCanEditDeck, gateDeckAccess } from '../../utils/access'
+import { assertCanEditDeck, gateDeckAccess, gateOptionsOf } from '../../utils/access'
 import { useDraftStore } from '../../utils/collab'
 import { useDbContent, useDeckMeta } from '../../utils/sources'
 
@@ -47,21 +47,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }
 
-  const meta = await useDeckMeta().get(slug)
   const stub = published.raw
-  const stubMeta = splitFrontmatter(stub).data
-  const status = meta?.managed ? meta.status : resolveDeckStatus(stub)
+  const gate = await gateOptionsOf(slug)
+  if (!gate)
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  await gateDeckAccess(event, {
-    slug,
-    status,
-    storedHash: meta?.managed
-      ? meta.accessPasswordHash
-      : stubMeta.accessPassword as string | undefined,
-  })
+  // The unlock form verifies its password against this route.
+  await gateDeckAccess(event, { ...gate, unlock: true })
 
   // A frozen bundle carries its own Storybook copy: point the deck's embeds at it.
   const bundle = readBundleConfig()
   const content = resolveDeck({ stub, storybookBase: bundle.enabled ? bundle.storybookUrl : undefined }).content
-  return { content, status, writable: useDraftStore().isWritable() }
+  return { content, status: gate.status, writable: useDraftStore().isWritable() }
 })

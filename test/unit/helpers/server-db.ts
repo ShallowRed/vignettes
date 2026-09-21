@@ -68,6 +68,9 @@ export function stubH3Globals() {
   vi.stubGlobal('setResponseStatus', (e: any, code: number) => {
     e.status = code
   })
+  vi.stubGlobal('setResponseHeader', (e: any, name: string, value: unknown) => {
+    e.responseHeaders = { ...e.responseHeaders, [name]: value }
+  })
   vi.stubGlobal('setUserSession', async (e: any, session: unknown) => {
     e.sessionSet = session
   })

@@ -85,7 +85,7 @@
       },
       "viewer": {
         "catalog": "Le catalogue liste les mêmes présentations que pour le visiteur.",
-        "private": "L'accès est refusé.",
+        "private": "L'écran dit « Présentation introuvable », comme pour un lien mort.",
         "sharedFolder": "Le dossier est vide."
       },
       "collab": {
@@ -95,11 +95,11 @@
         "unpublished": "Après une modification, l'en-tête et la carte indiquent Modifications non publiées. Publier retire cette mention.",
         "password": "La présentation s'ouvre sans mot de passe.",
         "readOnly": "Lecture seule s'ouvre et sa carte n'a pas de crayon.",
-        "private": "L'accès est refusé. Aucune carte ne propose les métadonnées ni le partage."
+        "private": "L'écran dit « Présentation introuvable », comme pour un lien mort. Aucune carte ne propose les métadonnées ni le partage."
       },
       "expired": {
         "catalog": "Publique et English deck sont les seules présentations listées.",
-        "editorDenied": "L'accès est refusé."
+        "editorDenied": "L'écran dit « Présentation introuvable », comme pour un lien mort."
       },
       "editor": {
         "catalog": "Tout le jeu de données est listé, Brouillon compris, avec crayon et métadonnées.",

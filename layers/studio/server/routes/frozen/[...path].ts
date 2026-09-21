@@ -1,4 +1,3 @@
-import type { PublicationStatus } from '#shared/access'
 import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
@@ -11,55 +10,26 @@ import {
   makeFrozenS3Client,
 } from '#shared/storage/frozen-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
-import { gateDeckAccess } from '../../utils/access'
-import { deckDirectory, useDeckMeta } from '../../utils/sources'
+import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
+import { deckDirectory } from '../../utils/sources'
 
 /**
- * Frozen-bundle static server. `/frozen/<bundle>/<...>` resolves the bundle to its
- * registry deck, ENFORCES `gateDeckAccess` (so private frozen decks aren't leaked),
- * then serves the asset from S3 (falling back to the local `.frozen/` dir when no
- * S3 creds are configured). Access is re-checked per asset, on the deck row as
- * it stands: only the bundle→slug mapping is memoised, since it costs a scan of
- * the directory and a deck keeps its bundle name. The status and the password of
- * the deck are read on every request, so closing a deck closes its bundle at
- * once.
+ * Frozen-bundle static server. `/frozen/<bundle>/<...>` resolves the bundle to
+ * its deck, gates the request on that deck, then serves the asset from S3, or
+ * from the local `.frozen/` directory when no S3 credentials are configured.
+ * The bundle is resolved and the deck is read on every request: both are
+ * lookups in the local database, and a memo here once left a closed deck open
+ * and an undeclared bundle unreachable.
  */
 
-interface GateInfo {
-  slug: string
-  status: PublicationStatus
-  lifecycle: string
-  storedHash?: string
-}
-
-const slugOfBundle = new Map<string, string | null>()
-
-/** Map a bundle name (the /frozen/<bundle>/ segment) to its deck's gate inputs. */
-async function resolveBundleGate(bundle: string): Promise<GateInfo | null> {
-  if (!slugOfBundle.has(bundle)) {
-    // frozenBundle defaults to the alias; fall back to a reverse scan otherwise.
-    let entry = await deckDirectory.resolveAlias(bundle)
-    if (!entry) {
-      const all = await deckDirectory.list()
-      entry = all.find(e => (e.frozenBundle ?? e.slug) === bundle) ?? null
-    }
-    slugOfBundle.set(bundle, entry?.slug ?? null)
-  }
-
-  const slug = slugOfBundle.get(bundle)!
-  if (!slug)
-    return null
-
-  const meta = await useDeckMeta().get(slug)
-  if (!meta?.managed)
-    return null
-
-  return {
-    slug,
-    status: meta.status,
-    lifecycle: meta.lifecycle,
-    storedHash: meta.accessPasswordHash ?? undefined,
-  }
+/** The slug of the deck a bundle name (the `/frozen/<bundle>/` segment) belongs to. */
+async function slugOfBundle(bundle: string): Promise<string | null> {
+  // `frozenBundle` defaults to the alias, and to the slug when the deck has neither.
+  const byAlias = await deckDirectory.resolveAlias(bundle)
+  if (byAlias)
+    return byAlias.slug
+  const all = await deckDirectory.list()
+  return all.find(entry => (entry.frozenBundle ?? entry.slug) === bundle)?.slug ?? null
 }
 
 /** Normalise the asset path within a bundle: directory-ish → index.html. */
@@ -84,20 +54,15 @@ export default defineEventHandler(async (event) => {
   if (rest.includes('..'))
     throw createError({ statusCode: 400, statusMessage: 'Bad request' })
 
-  const gate = await resolveBundleGate(bundle)
+  const slug = await slugOfBundle(bundle)
+  const gate = slug ? await gateOptionsOf(slug) : null
   if (!gate)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
   const assetPath = normaliseAssetPath(rest)
-  // Gate BEFORE serving any byte (public passes; private needs cookie). Only the
-  // page of the bundle answers `?password=`: on its stylesheets and its images
-  // that parameter would say which files exist and mint the cookie from them.
-  await gateDeckAccess(event, {
-    slug: gate.slug,
-    status: gate.status,
-    lifecycle: gate.lifecycle as never,
-    storedHash: gate.storedHash,
-  }, assetPath.endsWith('index.html'))
+  // The gate comes before any byte is read. A visitor unlocks a protected deck
+  // through `/p/<alias>`, and arrives here carrying the cookie.
+  await gateDeckAccess(event, gate)
 
   const isPublic = gate.status === 'public'
   const cacheControl = isPublic ? 'public, max-age=300' : 'private, no-store'
