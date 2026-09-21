@@ -40,22 +40,28 @@ async function resolveGrant(actor: Actor, slug: string): Promise<DeckGrant | und
   return await useGrants().get(slug, actor.id).catch(() => undefined) ?? undefined
 }
 
-/** The access decision for this request on this deck, before its mapping to HTTP. */
-export async function decideDeckAccess(event: H3Event, opts: GateOptions): Promise<AccessDecision> {
+/**
+ * The access decision for this request on this deck, before its mapping to HTTP.
+ * `unlockable` is false for a request that is not the deck page: the visitor
+ * then passes on the cookie a page already gave them, because answering
+ * `?password=` anywhere else would turn the route into an oracle telling which
+ * files exist, and would mint the cookie from a request for an image.
+ */
+export async function decideDeckAccess(event: H3Event, opts: GateOptions, unlockable = true): Promise<AccessDecision> {
   const { slug, status, lifecycle, storedHash } = opts
   const actor = await getActor(event)
   const grant = await resolveGrant(actor, slug)
   const hasPassword = Boolean(storedHash)
   const passwordGranted = hasPassword
-    ? await resolvePasswordGrant(event, slug, storedHash!)
+    ? await resolvePasswordGrant(event, slug, storedHash!, unlockable)
     : false
 
   return decideAccess({ status, lifecycle, role: actor.role, grant, hasPassword, passwordGranted })
 }
 
 /** Throws `createError` on deny/needs-password; returns normally on allow. */
-export async function gateDeckAccess(event: H3Event, opts: GateOptions): Promise<void> {
-  const decision = await decideDeckAccess(event, opts)
+export async function gateDeckAccess(event: H3Event, opts: GateOptions, unlockable = true): Promise<void> {
+  const decision = await decideDeckAccess(event, opts, unlockable)
 
   switch (decision.outcome) {
     case 'allow':
@@ -90,7 +96,7 @@ export async function decideMediaAccess(event: H3Event, mediaName: string): Prom
       status: deck.status,
       lifecycle: deck.lifecycle,
       storedHash: deck.accessPasswordHash,
-    })
+    }, false)
     if (decision.outcome === 'allow') {
       allowed = true
       break
@@ -172,11 +178,11 @@ export async function assertOwner(event: H3Event): Promise<Actor> {
 }
 
 /** Password satisfied by a prior `access_<slug>` cookie, or a valid `?password=` param (sets a 24h cookie). */
-async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: string): Promise<boolean> {
+async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: string, unlockable: boolean): Promise<boolean> {
   if (verifyAccessPass(getCookie(event, accessCookieName(slug)), slug, storedHash))
     return true
 
-  const password = getQuery(event).password as string | undefined
+  const password = unlockable ? getQuery(event).password as string | undefined : undefined
   if (!password)
     return false
 

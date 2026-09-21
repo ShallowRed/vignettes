@@ -2,7 +2,7 @@ import process from 'node:process'
 import { describe, expect, it } from 'vitest'
 import { decideMediaAccess } from '../../layers/studio/server/utils/access'
 import { useDraftStore } from '../../layers/studio/server/utils/collab'
-import { hashAccessPassword } from '../../layers/studio/server/utils/password'
+import { hashAccessPassword, verifyAccessPassword } from '../../layers/studio/server/utils/password'
 import { useDeckMeta, useMediaIndex } from '../../layers/studio/server/utils/sources'
 import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
 import { referencedMedia } from '../../layers/studio/shared/storage/media-refs'
@@ -76,6 +76,26 @@ describe('decideMediaAccess', () => {
   it('refuses an image of a semi-private deck until its password is given', async () => {
     await deckWithImage('locked', 'semi-private', 'abc123.png', await hashAccessPassword('open-sesame'))
     expect(await decideMediaAccess(anon(), 'abc123.png')).toMatchObject({ allowed: false })
+  })
+
+  it('ignores the password parameter on a request for an image', async () => {
+    await deckWithImage('locked', 'semi-private', 'abc123.png', await hashAccessPassword('open-sesame'))
+    // The deck page is what answers `?password=`. Answering it here would say
+    // which images exist and would mint the unlock cookie from one of them.
+    const event = anon({ query: { password: 'open-sesame' } })
+    expect(await decideMediaAccess(event, 'abc123.png')).toMatchObject({ allowed: false })
+    expect(event.setCookies).toBeUndefined()
+  })
+
+  it('denies a stored password that is not a hash, rather than raising', async () => {
+    // `scripts/content-push.ts` used to copy the frontmatter field as it was, so
+    // a plaintext password reached the column; comparing it raised, and every
+    // request for the deck and for its images answered 500.
+    await expect(verifyAccessPassword('open-sesame', 'open-sesame')).resolves.toBe(false)
+    await expect(verifyAccessPassword('open-sesame', '')).resolves.toBe(false)
+    const stored = await hashAccessPassword('open-sesame')
+    await expect(verifyAccessPassword('open-sesame', stored)).resolves.toBe(true)
+    await expect(verifyAccessPassword('wrong', stored)).resolves.toBe(false)
   })
 
   it('serves it to an owner, privately', async () => {

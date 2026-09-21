@@ -109,15 +109,17 @@ export default defineEventHandler(async (event) => {
   if (!gate)
     throw createError({ statusCode: 404, statusMessage: `Unknown frozen bundle "${bundle}"` })
 
-  // Gate BEFORE serving any byte (public passes; private needs cookie).
+  const assetPath = normaliseAssetPath(rest)
+  // Gate BEFORE serving any byte (public passes; private needs cookie). Only the
+  // page of the bundle answers `?password=`: on its stylesheets and its images
+  // that parameter would say which files exist and mint the cookie from them.
   await gateDeckAccess(event, {
     slug: gate.slug,
     status: gate.status,
     lifecycle: gate.lifecycle as never,
     storedHash: gate.storedHash,
-  })
+  }, assetPath.endsWith('index.html'))
 
-  const assetPath = normaliseAssetPath(rest)
   const isPublic = gate.status === 'public'
   const cacheControl = isPublic ? 'public, max-age=300' : 'private, no-store'
 

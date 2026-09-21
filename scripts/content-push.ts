@@ -32,6 +32,7 @@ import { join } from 'node:path'
 import process from 'node:process'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
+import { isAccessPasswordHash } from '../layers/studio/shared/access/password-shape.ts'
 
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
@@ -82,6 +83,11 @@ function readStub(slug: string): Stub {
   const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   const data = (m ? parseYaml(m[1]!) : {}) as Record<string, unknown>
   const status = ['public', 'private', 'semi-private'].includes(String(data.status)) ? String(data.status) : 'private'
+  const accessPassword = (data.accessPassword as string) ?? null
+  // The column holds the scrypt output of `hashAccessPassword`, so a plaintext
+  // password here would lock the deck for everyone.
+  if (accessPassword !== null && !isAccessPasswordHash(accessPassword))
+    throw new Error(`${slug}: accessPassword is not a \`salt:hash\` produced by the application`)
   const registry = registryOf(slug)
   return {
     slug,
@@ -92,7 +98,7 @@ function readStub(slug: string): Stub {
       project: (data.project as string) ?? null,
       theme: (data.theme as string) ?? null,
       unlisted: data.unlisted || UNLISTED ? 1 : 0,
-      accessPasswordHash: (data.accessPassword as string) ?? null,
+      accessPasswordHash: accessPassword,
       alias: registry?.alias ?? null,
       lifecycle: registry?.lifecycle ?? 'live',
       frozenBundle: registry?.frozenBundle ?? null,
