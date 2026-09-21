@@ -67,7 +67,7 @@ function readCookie(header: string | null, name: string): string | undefined {
 }
 
 /** All this reader needs of a request: the cookie header. */
-export interface RequestWithCookies {
+interface RequestWithCookies {
   headers: { get: (name: string) => string | null }
 }
 

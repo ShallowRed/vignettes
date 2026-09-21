@@ -8,19 +8,11 @@ type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleCon
 
 const connections = new Map<string, CollabConnection>()
 
-/**
- * What this route uses of a crossws peer. Naming the members rather than
- * importing `Peer` keeps the file out of the way of the two crossws versions
- * that h3 and nitro each install.
- */
-interface PeerLike {
-  send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => unknown
-  close: (code?: number, reason?: string) => unknown
-  websocket?: { readyState?: number }
-}
+/** The peer this server's websocket handler hands to `open`, whatever crossws version h3 resolves. */
+type Peer = Parameters<NonNullable<Parameters<typeof defineWebSocketHandler>[0]['open']>>[0]
 
 /** Adapt a crossws peer to Hocuspocus' minimal WebSocketLike contract. */
-function toWebSocketLike(peer: PeerLike) {
+function toWebSocketLike(peer: Peer) {
   return {
     send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => peer.send(data),
     close: (code?: number, reason?: string) => peer.close(code, reason),
@@ -48,11 +40,13 @@ export default defineWebSocketHandler({
       throw new Response('A ?deck=<slug> parameter is required', { status: 400 })
 
     const actor = await getActorFromRequest(request)
+    // One answer for every refusal, a deck that does not exist included, so the
+    // upgrade tells nothing about a slug. The editor page has already shown the
+    // reason, through the HTTP edit guard, before it opens this socket.
     if (!await canActorEditDeck(actor, deck))
-      throw new Response('Editing requires an owner/editor role or an editor grant on this deck', { status: 401 })
+      throw new Response('Unauthorized', { status: 401 })
 
-    // A trashed deck is not editable: refuse the collab session until it is
-    // restored, mirroring the HTTP edit guard.
+    // A trashed deck refuses the session until it is restored, as the HTTP edit guard does.
     if (await useDeckMeta().isTrashed(deck))
       throw new Response('Not found', { status: 404 })
 
