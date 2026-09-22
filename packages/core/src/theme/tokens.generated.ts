@@ -21,24 +21,6 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
       "fontsStylesheet": "/themes/dsfr/preview-fonts.css"
     }
   },
-  "dsfr-standalone": {
-    "name": "dsfr-standalone",
-    "lang": "fr",
-    "parser": "separator",
-    "code": "clair",
-    "reveal": {
-      "slideNumber": true,
-      "width": 1200,
-      "height": 800
-    },
-    "preview": {
-      "fontFamily": "Marianne, Arial, sans-serif",
-      "titleColor": "#000091",
-      "textColor": "#3a3a3a",
-      "surface": "#ffffff",
-      "fontsStylesheet": "/themes/dsfr-standalone/preview-fonts.css"
-    }
-  },
   "minimal": {
     "name": "minimal",
     "lang": "fr",

@@ -5,8 +5,8 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 ## Layers
 
 1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Themes build on this layer and never replace it.
-2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. Usable as is (`theme: dsfr`) and made to be extended. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
-3. **Themes and brands**: `themes/<name>/` in the application (`dsfr`, `dsfr-standalone`, `minimal`) and `themes/<name>/` in the content space (`NUXT_CONTENT_DIR`, `presentations/` by default) for a tenant's brands. A brand extends the DSFR base or the engine alone.
+2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. Made to be extended, by a brand and by the application's own `dsfr` theme. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
+3. **Themes and brands**: `themes/<name>/` in the application (`dsfr`, `minimal`) and `themes/<name>/` in the content space (`NUXT_CONTENT_DIR`, `presentations/` by default) for a tenant's brands. A brand extends the DSFR base or the engine alone.
 
 ## Manifest
 
@@ -149,10 +149,6 @@ A deck whose frontmatter declares no `theme:` renders in the fallback theme of t
 The engine tags each `<section>`: `slide-h1` (title slide), `slide-h2` (section divider), `slide-h3` (heading plus body). The flex skeleton comes from `packages/theme-kit/_slide-structure.scss`; themes set sizes and colors, and backgrounds come from the manifest.
 
 A section that holds vertical slides is wrapped in Reveal's stack. That wrapper carries `stack-h1` / `stack-h2` instead of a `slide-` class, and the section's own content is the first of its vertical slides, keeping its own `slide-` class. So a rule written as `.reveal section.slide-h2 h3` styles the divider alone and cannot reach the slides nested under it. Target `stack-h2` to style the wrapper itself.
-
-## Standalone DSFR
-
-`dsfr-standalone` (`packages/theme-dsfr/standalone.scss`) targets vanilla Reveal.js pages and frozen bundles, where the Vue components are absent; it does not import the engine layer.
 
 ## Troubleshooting
 

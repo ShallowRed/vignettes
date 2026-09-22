@@ -1,7 +1,7 @@
 // Self-hosted Marianne (the DSFR typeface). Themes reference `font-family:
 // 'Marianne'`, but without an @font-face the font only renders on devices that
 // happen to have it installed. These faces load it from the dsfr theme assets so every
-// device shows the intended type. Copied to /themes/dsfr/fonts by the dsfr theme build; imported by the dsfr, standalone and brand
+// device shows the intended type. Copied to /themes/dsfr/fonts by the dsfr theme build; imported by the dsfr and brand
 // themes. `swap` avoids invisible text while the file downloads; there is no
 // italic file, so the browser synthesises obliques.
 

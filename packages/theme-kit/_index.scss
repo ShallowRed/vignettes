@@ -5,11 +5,6 @@
  * (SlideContent, RevealSlides, MDC bridge) and on Reveal.js conventions.
  * Themes (skins) build on top of this layer, never replace it.
  *
- * IMPORTANT: this barrel must NOT be imported by `dsfr-standalone` because
- * standalone targets HackMD / vanilla Reveal where these structural classes
- * (.slide-content-pane, .slide-media-pane, .slide-quicklink-wrapper) do not
- * exist.
- *
  * Usage from a theme entry:
  *   @use 'pkg:@vignettes/theme-kit';
  */

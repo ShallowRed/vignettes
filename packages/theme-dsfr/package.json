@@ -31,9 +31,6 @@
     },
     "./variables": {
       "sass": "./_variables.scss"
-    },
-    "./standalone": {
-      "sass": "./standalone.scss"
     }
   },
   "files": [

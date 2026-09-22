@@ -41,7 +41,6 @@ That entry imports the engine layer and the `layout` preset. Compile it with Sas
 | `pkg:@vignettes/theme-dsfr` | The theme: variables, fonts, engine layer, layout preset, base, typography, components, utilities |
 | `pkg:@vignettes/theme-dsfr/variables` | The Sass variables alone, to read or override them |
 | `pkg:@vignettes/theme-dsfr/fonts` | The Marianne `@font-face` rules alone |
-| `pkg:@vignettes/theme-dsfr/standalone` | For vanilla Reveal.js pages and frozen bundles, where the Vignettes components are absent; it does not import the engine layer |
 
 ## The Marianne font files
 
