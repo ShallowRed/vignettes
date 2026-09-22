@@ -3,30 +3,17 @@
 // text, content slides on white.
 @use 'pkg:@vignettes/theme-dsfr';
 
-// Reveal scales the slide inside the viewport, so the viewport takes the
-// surface of the current slide and the color reaches the edges of the screen.
-// A stack keeps a `present` child while another slide is shown: the nested
-// selector requires the stack itself to be current.
-@mixin current-slide($level) {
-  &:has(.slides > section.present.slide-#{$level}:not(.stack), .slides > section.present.stack > section.present.slide-#{$level}) {
-    @content;
-  }
-}
-
-.reveal-viewport {
-  transition: background-color 0.4s ease;
-
-  @include current-slide('h1') {
-    background: var(--dsfr-blue-france-975);
+// Reveal draws each slide's surface on a background layer that fills the screen
+// and carries the slide's own classes. Painting that layer keeps the color
+// edge to edge, and Reveal reads it to mark the slide `has-dark-background`,
+// which switches its controls to light on its own.
+.reveal .backgrounds {
+  .slide-background.slide-h1 {
+    background-color: var(--dsfr-blue-france-975);
   }
 
-  @include current-slide('h2') {
-    background: var(--dsfr-blue-france-sun-113);
-
-    .slide-number,
-    .controls {
-      color: var(--dsfr-grey-1000);
-    }
+  .slide-background.slide-h2 {
+    background-color: var(--dsfr-blue-france-sun-113);
   }
 }
 
@@ -45,4 +32,8 @@
   p {
     color: var(--dsfr-blue-france-850) !important;
   }
+}
+
+.reveal.has-dark-background .slide-number {
+  color: var(--dsfr-grey-1000);
 }
