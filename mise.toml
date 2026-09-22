@@ -179,6 +179,16 @@ flag "--content <dir>" help="Read another content directory than presentations/"
 """
 run = "node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging} ${usage_unlisted:+--unlisted} ${usage_content:+--content=\"$usage_content\"}"
 
+[tasks."content:pull"]
+description = "Pull the published version of decks from the production database into the local one over SSH (dry run; --apply writes, --staging reads the staging container): mise run content:pull -- <slug>[,<slug>]"
+depends = [ "install" ]
+usage = """
+arg "<slugs>"
+flag "--apply"
+flag "--staging"
+"""
+run = "node scripts/content-pull.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
+
 [tasks."theme:push"]
 description = "Publish tenant themes (content space) to the bucket the deployed app serves them from (dry run; --apply uploads): mise run theme:push -- <name>[,<name>]"
 depends = [ "install" ]

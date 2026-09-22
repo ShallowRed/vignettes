@@ -88,6 +88,8 @@ The database is the only runtime source of content. Each deck has a draft (a Yjs
 | `mise run content:import` | Import the stubs the database does not own yet |
 | `mise run content:republish -- <slug>` | New published version from the stub, access rules untouched |
 | `mise run content:push -- <slug> --apply` | Same, on a deployed instance over SSH; `--content <dir>` reads another content directory, `--unlisted` keeps the deck out of the catalog |
+| `mise run content:pull -- <slug> --apply` | The reverse: bring the published version of a deck from a deployed instance into the local database, for a deck that only exists there, before rebuilding its frozen bundle |
+| `mise run theme:rename -- <from> <to> --apply` | Rename the theme the decks of a deployed instance declare, in every published version, draft and snapshot; `--deck <slug>` limits it to named decks |
 | `mise run theme:push -- <name> --apply` | Publish a theme of the content space to the object storage the deployed instances serve it from |
 | `mise run assets:push --apply` | Mirror `presentations/assets/` (images, backgrounds, pictograms referenced by decks) to the same object storage |
 | `mise run freeze -- <alias>` | Build a deck's frozen bundle and upload it; `--storybook <dir>` embeds a built Storybook, `--no-upload` stops after the build |
@@ -120,7 +122,7 @@ GitHub Actions builds the image on every push to `main` and `staging`, publishes
 | `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk |
 | `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development, and creates its data set and its five accounts at boot |
 
-`mise.local.toml`, which git ignores, holds what belongs to an instance rather than to the repository: `VIGNETTES_REMOTE` for the deployed instance the production tasks talk to, `CONTENT_PUSH_SSH` and `CONTENT_PUSH_CONTAINER` for the host `content:push` reaches it through.
+`mise.local.toml`, which git ignores, holds what belongs to an instance rather than to the repository: `VIGNETTES_REMOTE` for the deployed instance the production tasks talk to, `CONTENT_PUSH_SSH` and `CONTENT_PUSH_CONTAINER` for the host `content:push`, `content:pull` and `theme:rename` reach it through.
 
 `.env.example` lists them with comments. Locally, `.env` is read by Nuxt; in production the variables come from Infisical, or from the container's environment with `INFISICAL_DISABLE=1`.
 
