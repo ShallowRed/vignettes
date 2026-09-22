@@ -194,10 +194,11 @@ depends = [ "install" ]
 usage = """
 arg "<from>"
 arg "<to>"
+flag "--deck <slugs>" help="Rename only these decks, among those declaring the theme"
 flag "--apply"
 flag "--staging"
 """
-run = "node scripts/theme-rename.ts \"$usage_from\" \"$usage_to\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
+run = "node scripts/theme-rename.ts \"$usage_from\" \"$usage_to\" ${usage_deck:+--deck=\"$usage_deck\"} ${usage_apply:+--apply} ${usage_staging:+--staging}"
 
 [tasks."assets:push"]
 description = "Mirror the deck assets of the content space (presentations/assets) to the bucket the deployed app serves them from (dry run; --apply uploads)"

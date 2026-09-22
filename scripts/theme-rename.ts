@@ -10,6 +10,7 @@
  *   node scripts/theme-rename.ts <from> <to>            # plan against prod
  *   node scripts/theme-rename.ts <from> <to> --apply    # write
  *   node scripts/theme-rename.ts <from> <to> --staging  # target staging
+ *   node scripts/theme-rename.ts <from> <to> --deck=a,b  # only these decks
  *
  * The container answers the texts, this script computes the new ones, and a
  * second call writes them back: the rule of what a theme declaration looks like
@@ -32,9 +33,10 @@ import { renameTheme, themeValueRange } from './lib/theme-rename.ts'
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
 const STAGING = args.includes('--staging')
+const ONLY = args.find(a => a.startsWith('--deck='))?.slice(7).split(',').map(s => s.trim()).filter(Boolean)
 const [FROM, TO] = args.filter(a => !a.startsWith('--'))
 if (!FROM || !TO) {
-  console.error('usage: theme-rename.ts <from> <to> [--apply] [--staging]')
+  console.error('usage: theme-rename.ts <from> <to> [--deck=<slug>[,<slug>]] [--apply] [--staging]')
   process.exit(2)
 }
 
@@ -103,7 +105,17 @@ console.log(`cible   : ${SSH} / ${CONTAINER}`)
 console.log(`thème   : ${FROM} → ${TO}`)
 console.log(`mode    : ${APPLY ? 'APPLY' : 'DRY-RUN (aucune écriture)'}\n`)
 
-const stored = remote<{ columns: string[], versions: Row[], snapshots: Row[], drafts: Draft[] }>({ read: true, from: FROM })
+const answer = remote<{ columns: string[], versions: Row[], snapshots: Row[], drafts: Draft[] }>({ read: true, from: FROM })
+// `--deck` renames one deck among those declaring the theme, for a deck that
+// leaves a brand behind while the others keep it.
+const stored = ONLY
+  ? {
+      columns: answer.columns.filter(slug => ONLY.includes(slug)),
+      versions: answer.versions.filter(row => ONLY.includes(row.slug)),
+      snapshots: answer.snapshots.filter(row => ONLY.includes(row.slug)),
+      drafts: answer.drafts.filter(row => ONLY.includes(row.slug)),
+    }
+  : answer
 
 function rewrite(rows: Row[]) {
   return rows
