@@ -74,10 +74,12 @@ watch(open, (now) => {
 }, { immediate: true })
 
 // The server fail-closes a semi-private deck with no hash: block the save that
-// would brick it rather than warn after the fact.
+// would put a deck in that state. A deck already in it keeps its other settings
+// editable, and the warning stays until a password is typed.
 const passwordReady = computed(() => state.password.trim().length >= 8)
 const passwordMissing = computed(() =>
   state.status === 'semi-private' && !props.item.hasPassword && !passwordReady.value)
+const saveBlocked = computed(() => passwordMissing.value && props.item.status !== 'semi-private')
 
 const STATUS_DESCRIPTION_KEYS: Record<PublicationStatus, string> = {
   'public': 'deck.meta.statusDescription.public',
@@ -98,7 +100,7 @@ watch(open, (now) => {
 }, { immediate: true })
 const tabs = computed(() => [
   { label: t('deck.meta.tabGeneral'), icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
-  { label: t('deck.meta.tabAccess'), icon: STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const },
+  { label: t('deck.meta.tabAccess'), icon: passwordMissing.value ? 'i-lucide-triangle-alert' : STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const },
   { label: t('deck.meta.tabVariants'), icon: 'i-lucide-layers', value: 'variants', slot: 'variants' as const },
 ])
 
@@ -508,7 +510,13 @@ const audience = computed(() => {
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
+      <div class="flex items-center justify-end gap-2 w-full">
+        <p
+          v-if="saveBlocked"
+          class="settings__hint mr-auto"
+        >
+          {{ t('deck.meta.passwordMissingWarning') }}
+        </p>
         <UButton
           :label="t('common.actions.cancel')"
           color="neutral"
@@ -519,7 +527,7 @@ const audience = computed(() => {
           :label="t('common.actions.save')"
           icon="i-lucide-check"
           :loading="saving"
-          :disabled="passwordMissing"
+          :disabled="saveBlocked"
           @click="() => save()"
         />
       </div>
