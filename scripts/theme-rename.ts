@@ -145,11 +145,12 @@ for (const draft of stored.drafts) {
 
 const slugs = [...new Set([...stored.columns, ...versions, ...snapshots, ...drafts].map(r => typeof r === 'string' ? r : r.slug))].sort()
 for (const slug of slugs) {
+  const count = (rows: { slug: string }[]) => rows.filter(row => row.slug === slug).length
   const parts = [
     stored.columns.includes(slug) ? 'colonne' : null,
-    versions.filter(v => v.slug === slug).length ? `${versions.filter(v => v.slug === slug).length} version(s) publiée(s)` : null,
-    snapshots.filter(s => s.slug === slug).length ? `${snapshots.filter(s => s.slug === slug).length} instantané(s)` : null,
-    drafts.some(d => d.slug === slug) ? 'brouillon' : null,
+    count(versions) ? `${count(versions)} version(s) publiée(s)` : null,
+    count(snapshots) ? `${count(snapshots)} instantané(s)` : null,
+    count(drafts) ? 'brouillon' : null,
   ].filter(Boolean)
   console.log(`  · ${slug} : ${parts.join(', ')}`)
 }
