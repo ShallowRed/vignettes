@@ -46,10 +46,9 @@ describe('buildFreezeDescriptor', () => {
     expect(with_.steps.find(s => s.id === 'embed-storybook')?.enabled).toBe(true)
   })
 
-  it('carries the deck theme and an alternate host dir', () => {
-    const d = buildFreezeDescriptor({ alias: 'deck' }, { theme: 'dsfr', frozenHostDir: '.archive' })
+  it('carries the deck theme', () => {
+    const d = buildFreezeDescriptor({ alias: 'deck' }, { theme: 'dsfr' })
     expect(d.theme).toBe('dsfr')
-    expect(d.hostDir).toBe('.archive/deck')
     expect(d.steps[0].description).toContain('dsfr')
   })
 

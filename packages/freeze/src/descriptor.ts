@@ -17,7 +17,6 @@ export interface FreezeOptions {
   theme?: string
   /** Built Storybook to embed, when the deck holds story embeds. */
   storybookDir?: string
-  frozenHostDir?: string
 }
 
 export interface FreezeStep {
@@ -60,7 +59,6 @@ export function buildFreezeDescriptor(
 ): FreezeDescriptor {
   const slug = entry.slug || entry.alias
   const bundle = entry.frozenBundle || entry.alias
-  const hostRoot = options.frozenHostDir || DEFAULT_FROZEN_HOST_DIR
   const baseUrl = `/frozen/${bundle}/`
   const embedsStorybook = Boolean(options.storybookDir)
 
@@ -77,7 +75,7 @@ export function buildFreezeDescriptor(
     },
     {
       id: 'host-bundle',
-      description: `Write the bundle to ${hostRoot}/${bundle}/ with its provenance`,
+      description: `Write the bundle to ${DEFAULT_FROZEN_HOST_DIR}/${bundle}/ with its provenance`,
       enabled: true,
     },
     {
@@ -99,7 +97,7 @@ export function buildFreezeDescriptor(
     bundle,
     theme: options.theme,
     baseUrl,
-    hostDir: `${hostRoot}/${bundle}`,
+    hostDir: `${DEFAULT_FROZEN_HOST_DIR}/${bundle}`,
     deckDir,
     servedUrl: `${baseUrl}slides/${deckDir}/`,
     embedsStorybook,
