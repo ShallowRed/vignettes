@@ -188,6 +188,17 @@ flag "--apply"
 """
 run = "sh scripts/with-secrets.sh node scripts/theme-push.ts \"$usage_names\" ${usage_apply:+--apply}"
 
+[tasks."theme:rename"]
+description = "Rename the theme the decks of a deployed instance declare, in their versions, drafts and snapshots (dry run; --apply writes, --staging targets staging): mise run theme:rename -- <from> <to>"
+depends = [ "install" ]
+usage = """
+arg "<from>"
+arg "<to>"
+flag "--apply"
+flag "--staging"
+"""
+run = "node scripts/theme-rename.ts \"$usage_from\" \"$usage_to\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
+
 [tasks."assets:push"]
 description = "Mirror the deck assets of the content space (presentations/assets) to the bucket the deployed app serves them from (dry run; --apply uploads)"
 depends = [ "install" ]

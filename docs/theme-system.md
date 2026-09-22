@@ -60,6 +60,10 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 Themes of the content space are not part of the image. `mise run theme:push -- <name>[,<name>] --apply` compiles them locally and uploads `themes/<name>.css`, `themes/<name>/assets/`, and `themes/<name>/tokens.json` to the bucket, then rebuilds `themes/index.json` from every published theme. On a deployment, `server/utils/themes.ts` reads that index (cached for a minute; `POST /api/admin/themes/reload` forces it), merges it with the themes found on disk in the content space (development), and applies the result with `setThemeRegistry`. The `theme-registry` server middleware hands the registry to page requests and the universal plugin `src/plugins/theme-registry.ts` seeds the client with it, so both sides resolve names, aliases and backgrounds identically. `/themes/**` (`server/routes/themes/[...path].ts`) streams the files from the bucket for names that have no static file under `public/themes/`.
 
+## Renaming a theme in a deployed instance
+
+A deck's theme is written in the frontmatter of each of its published versions, of its draft and of its snapshots, and in the `theme` column the catalog reads. `mise run theme:rename -- <from> <to>` rewrites all of them in one instance, through the app container, listing the decks it would touch before `--apply` writes anything. The rule of what a theme declaration looks like lives in `scripts/lib/theme-rename.ts`.
+
 ## The semantic token contract
 
 Code that must not care which theme is active (the engine layer, MDC components such as `Highlight.vue`) references these custom properties only. Each theme sets them.
