@@ -11,11 +11,9 @@ export interface CreateDeckInput {
 
 /** Body for a deck metadata edit (admin PATCH). `null` clears a column. */
 export interface UpdateDeckMetaInput {
-  title: string
   status: PublicationStatus
   unlisted: boolean
   project: string | null
-  theme: string | null
   alias: string | null
   family: string | null
   variantLabel: string | null

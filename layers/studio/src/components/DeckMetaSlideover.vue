@@ -5,7 +5,6 @@ import type { Project } from '#shared/projects'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { useMutation, useQuery } from '@pinia/colada'
-import { knownThemes } from '@vignettes/core/theme'
 import { deckApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
 import { useCatalog, useCatalogCache } from '../composables/useCatalog'
@@ -13,10 +12,11 @@ import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
 
 /**
- * Deck settings panel, in three tabs: the deck itself (title, folder, theme,
- * address), who can open it (visibility, catalog, sharing grants for the owner)
- * and its variants. Metadata saves through the admin PATCH; grants apply as soon
- * as they are added. Reused by the catalog and the editor.
+ * Deck settings panel, in three tabs: the deck itself (folder, address), who can
+ * open it (visibility, catalog, sharing grants for the owner) and its variants.
+ * Metadata saves through the admin PATCH; grants apply as soon as they are
+ * added. Reused by the catalog and the editor. The title and the theme are read
+ * here: they belong to the deck's frontmatter, which each publication re-reads.
  */
 const props = defineProps<{
   item: PresentationListItem
@@ -41,11 +41,9 @@ const { invalidatePresentations } = useCatalogCache()
 const NONE = '__none__'
 
 const state = reactive({
-  title: '',
   status: 'private' as PublicationStatus,
   unlisted: false,
   project: NONE,
-  theme: NONE,
   alias: '',
   family: '',
   variantLabel: '',
@@ -59,11 +57,9 @@ const state = reactive({
 watch(open, (now) => {
   if (now) {
     Object.assign(state, {
-      title: props.item.title,
       status: props.item.status,
       unlisted: props.item.unlisted ?? false,
       project: props.item.project ?? NONE,
-      theme: props.item.theme ?? NONE,
       alias: props.item.alias ?? '',
       family: props.item.family ?? '',
       variantLabel: props.item.variantLabel ?? '',
@@ -109,11 +105,6 @@ const projectItems = computed(() => [
   ...(props.projects ?? []).map(p => ({ label: p.title ?? p.slug, value: p.slug })),
 ])
 
-const themeItems = computed(() => [
-  { label: t('deck.meta.defaultTheme', { theme: useRuntimeConfig().public.defaultTheme }), value: NONE },
-  ...knownThemes().map(name => ({ label: name, value: name })),
-])
-
 // Families and replacements are chosen among the decks of the same folder.
 const { presentations } = useCatalog()
 const folderDecks = computed(() => presentations.value.filter(d =>
@@ -137,11 +128,9 @@ function close() {
 
 const { mutate: save, isLoading: saving } = useMutation({
   mutation: () => deckApi.updateMeta($fetch, props.item.slug, {
-    title: state.title.trim() || props.item.title,
     status: state.status,
     unlisted: state.unlisted,
     project: state.project === NONE ? null : state.project,
-    theme: state.theme === NONE ? null : state.theme,
     alias: state.alias.trim() || null,
     family: state.family.trim() || null,
     variantLabel: state.variantLabel.trim() || null,
@@ -232,12 +221,13 @@ const audience = computed(() => {
                 <p class="settings__label">
                   {{ t('common.fields.title') }}
                 </p>
+                <p class="settings__hint">
+                  {{ t('deck.meta.fromFrontmatter') }}
+                </p>
               </div>
-              <UInput
-                v-model="state.title"
-                class="w-full"
-                :aria-label="t('common.fields.title')"
-              />
+              <p class="settings__value">
+                {{ item.title }}
+              </p>
             </div>
             <div class="settings__row">
               <div>
@@ -260,13 +250,13 @@ const audience = computed(() => {
                 <p class="settings__label">
                   {{ t('deck.meta.theme') }}
                 </p>
+                <p class="settings__hint">
+                  {{ t('deck.meta.fromFrontmatter') }}
+                </p>
               </div>
-              <USelect
-                v-model="state.theme"
-                :items="themeItems"
-                class="w-full"
-                :aria-label="t('deck.meta.theme')"
-              />
+              <p class="settings__value">
+                {{ item.theme }}
+              </p>
             </div>
             <div class="settings__row">
               <div>
@@ -570,5 +560,12 @@ const audience = computed(() => {
   margin-top: 0.125rem;
   font-size: 0.8125rem;
   color: var(--ui-text-muted);
+}
+
+/* A value the deck's frontmatter sets, aligned with the inputs of the other rows. */
+.settings__value {
+  align-self: center;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 </style>

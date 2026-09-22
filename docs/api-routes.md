@@ -28,7 +28,7 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 | `GET /api/presentations/:slug/snapshots/:id` | may edit | One draft snapshot with its markdown |
 | `POST /api/presentations/:slug/snapshots/:id/restore` | may edit | Copy a snapshot into the draft; the replaced draft stays as a snapshot |
 | `DELETE /api/presentations/:slug` | owner | Move the deck to the trash; refused while a collaboration session is open |
-| `PATCH /api/admin/decks/:slug` | privileged | Edit catalog and access metadata (title, status, project, password, theme, family, variant, replacement); a family stays inside one folder and a replacement never loops |
+| `PATCH /api/admin/decks/:slug` | privileged | Edit catalog and access metadata (status, project, password, alias, family, variant, replacement); the title and the theme come from the frontmatter at each publication; a family stays inside one folder and a replacement never loops |
 | `POST /api/media?deck=:slug` | may edit | Upload an image; the response gives its `/media/<hash>.<ext>` URL, and the deck is keyed to the image so the serving route knows who may see it |
 
 ## Projects

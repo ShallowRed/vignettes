@@ -6,12 +6,12 @@ import { getActorRole } from '../../../utils/actor'
 import { hashAccessPassword } from '../../../utils/password'
 import { useDeckMeta, useProjectStore } from '../../../utils/sources'
 
+// The title and the theme are absent on purpose: each publication reads them
+// from the frontmatter, so a column written here would not outlive the next one.
 const PatchSchema = z.object({
-  title: z.string().min(1).optional(),
   status: PublicationStatusSchema.optional(),
   lifecycle: LifecycleSchema.optional(),
   project: z.string().nullable().optional(),
-  theme: z.string().nullable().optional(),
   alias: z.string().min(1).nullable().optional(),
   frozenBundle: z.string().nullable().optional(),
   unlisted: z.boolean().optional(),
