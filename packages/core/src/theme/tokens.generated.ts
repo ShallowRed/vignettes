@@ -17,7 +17,7 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
       "fontFamily": "Marianne, Arial, sans-serif",
       "titleColor": "#000091",
       "textColor": "#3a3a3a",
-      "surface": "#ffffff",
+      "surface": "#f5f5fe",
       "fontsStylesheet": "/themes/dsfr/preview-fonts.css"
     }
   },

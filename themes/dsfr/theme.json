@@ -12,6 +12,6 @@
     "fonts": "pkg:@vignettes/theme-dsfr/fonts",
     "titleColor": "#000091",
     "textColor": "#3a3a3a",
-    "surface": "#ffffff"
+    "surface": "#f5f5fe"
   }
 }

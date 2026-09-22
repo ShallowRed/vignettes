@@ -6,6 +6,8 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Themes build on this layer and never replace it.
 2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. Made to be extended, by a brand and by the application's own `dsfr` theme. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
+
+   The package paints no slide surface, so a brand decides its own. `themes/dsfr/` adds flat surfaces from the DSFR palette: the title slide on `blue-france-975`, section dividers on `blue-france-sun-113` with light text, content slides on white. The viewport carries the color so it reaches the edges of the screen, and the vertical slides nested under a divider keep the content surface.
 3. **Themes and brands**: `themes/<name>/` in the application (`dsfr`, `minimal`) and `themes/<name>/` in the content space (`NUXT_CONTENT_DIR`, `presentations/` by default) for a tenant's brands. A brand extends the DSFR base or the engine alone.
 
 ## Manifest

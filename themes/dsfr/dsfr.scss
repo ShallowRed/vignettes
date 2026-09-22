@@ -1,2 +1,48 @@
-// The base DSFR theme as shipped by the package; brands extend the same package.
+// The DSFR base with flat slide surfaces from the DSFR palette: the title slide
+// on the blue France alt background, section dividers on blue France with light
+// text, content slides on white.
 @use 'pkg:@vignettes/theme-dsfr';
+
+// Reveal scales the slide inside the viewport, so the viewport takes the
+// surface of the current slide and the color reaches the edges of the screen.
+// A stack keeps a `present` child while another slide is shown: the nested
+// selector requires the stack itself to be current.
+@mixin current-slide($level) {
+  &:has(.slides > section.present.slide-#{$level}:not(.stack), .slides > section.present.stack > section.present.slide-#{$level}) {
+    @content;
+  }
+}
+
+.reveal-viewport {
+  transition: background-color 0.4s ease;
+
+  @include current-slide('h1') {
+    background: var(--dsfr-blue-france-975);
+  }
+
+  @include current-slide('h2') {
+    background: var(--dsfr-blue-france-sun-113);
+
+    .slide-number,
+    .controls {
+      color: var(--dsfr-grey-1000);
+    }
+  }
+}
+
+// `:not(.stack)` keeps the light colors off the vertical slides nested under a
+// divider: Reveal marks their wrapper `.stack`.
+.reveal section.slide-h2:not(.stack) {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--dsfr-grey-1000) !important;
+  }
+
+  p {
+    color: var(--dsfr-blue-france-850) !important;
+  }
+}
