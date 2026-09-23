@@ -13,7 +13,8 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div
+  <!-- A span: `:highlight[…]` sits inside a paragraph, which a div would split. -->
+  <span
     class="highlight"
     :class="[
       `highlight--${size}`,
@@ -22,7 +23,7 @@ withDefaults(defineProps<Props>(), {
     ]"
   >
     <slot />
-  </div>
+  </span>
 </template>
 
 <style scoped lang="scss">
@@ -76,7 +77,7 @@ withDefaults(defineProps<Props>(), {
   border-left: 4px solid var(--accent, #000091);
   background: var(--accent-bg, #f5f5fe);
   padding: 1em 1.4em;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--radius, 6px) var(--radius, 6px) 0;
   text-align: left;
 }
 
@@ -88,7 +89,7 @@ withDefaults(defineProps<Props>(), {
   background: var(--surface-contrast, #161616);
   color: var(--on-contrast, #ffffff);
   padding: 1.2em 1.6em;
-  border-radius: 8px;
+  border-radius: var(--radius, 6px);
 }
 
 .highlight :deep(strong) {
@@ -109,5 +110,18 @@ withDefaults(defineProps<Props>(), {
 
 .highlight--contrast :deep(em) {
   text-decoration-color: var(--accent-soft, #e3e3fd);
+}
+/* In a sentence the highlight is a phrase of the paragraph, in the accent color. */
+p > .highlight {
+  display: inline;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: 700;
+  color: var(--accent, #000091);
 }
 </style>

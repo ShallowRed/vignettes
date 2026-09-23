@@ -16,6 +16,8 @@ export interface DeckMessages {
   print: string
   printPreparing: string
   printHint: string
+  printUnsupported: string
+  printUnsupportedHint: string
   printReopen: string
   printBack: string
   enlarge: string
@@ -39,7 +41,9 @@ const FR: DeckMessages = {
   linkCopied: 'Lien copié',
   print: 'Imprimer ou exporter en PDF',
   printPreparing: 'Préparation de l’export PDF…',
-  printHint: 'La fenêtre d’impression s’ouvre automatiquement : choisissez « Enregistrer en PDF ».',
+  printHint: 'La fenêtre d’impression s’ouvre automatiquement : choisissez « Enregistrer au format PDF ».',
+  printUnsupported: 'L’export PDF fonctionne dans Chrome, Edge ou Brave',
+  printUnsupportedHint: 'Ouvrez cette page dans l’un de ces navigateurs, puis choisissez « Enregistrer au format PDF ».',
   printReopen: 'Rouvrir la fenêtre d’impression',
   printBack: 'Revenir à la présentation',
   enlarge: 'Cliquer pour agrandir',
@@ -64,6 +68,8 @@ const EN: DeckMessages = {
   print: 'Print or export to PDF',
   printPreparing: 'Preparing the PDF export…',
   printHint: 'The print dialog opens automatically: choose “Save as PDF”.',
+  printUnsupported: 'PDF export works in Chrome, Edge or Brave',
+  printUnsupportedHint: 'Open this page in one of these browsers, then choose “Save as PDF”.',
   printReopen: 'Reopen the print dialog',
   printBack: 'Back to the presentation',
   enlarge: 'Click to enlarge',

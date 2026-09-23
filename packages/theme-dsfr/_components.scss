@@ -118,9 +118,9 @@
   background: var(--code-background, #1b1b35); // bleu nuit DSFR, repris par shiki si thème inline absent
   color: var(--code-text, #f5f5fe);
   border: var(--code-border, none);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 1em 1.2em;
-  box-shadow: 0 6px 18px rgba(22, 22, 22, 0.22);
+  box-shadow: var(--shadow);
 }
 
 // shiki pose sa couleur de fond en style inline sur <pre> ; on l'aligne sur le bleu nuit.
@@ -171,8 +171,9 @@
   }
 }
 
-// Images
-.reveal section img:not(.has-lightbox img) {
+// Markdown images, which sit in a paragraph; the images of components keep
+// their own frame.
+.reveal section p > img:not(.has-lightbox img) {
   margin: 15px 0px;
   background: rgba(255, 255, 255, 0.12);
   border: none;

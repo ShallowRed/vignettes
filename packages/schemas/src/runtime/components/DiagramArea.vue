@@ -87,7 +87,7 @@ const style = computed(() => {
   justify-self: stretch;
   margin: -0.6em -0.9em;
   border: 1px dashed var(--tone-main);
-  border-radius: 10px;
+  border-radius: var(--radius, 6px);
   pointer-events: none;
 }
 

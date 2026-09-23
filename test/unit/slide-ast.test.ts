@@ -24,3 +24,17 @@ describe('image components', () => {
     expect(paragraph.children[0].tag).toBe('img')
   })
 })
+
+describe('full screen image', () => {
+  it('sets the slide background and its overlay', async () => {
+    const [slide] = await headingParser.parse('::FullScreenImage{src="/bg.png" overlay="0.4"}\n# Title\n::')
+    expect(slide!.backgroundImage).toBe('/bg.png')
+    expect(slide!.backgroundOverlay).toBe(0.4)
+  })
+
+  it('leaves a slide without one to its theme background', async () => {
+    const [slide] = await headingParser.parse('## Title\n\nText')
+    expect(slide!.backgroundImage).toBeUndefined()
+    expect(slide!.backgroundOverlay).toBeUndefined()
+  })
+})

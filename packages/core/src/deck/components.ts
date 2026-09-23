@@ -44,7 +44,6 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Iframe' },
   { name: 'Image', aliases: ['deck-image'] },
   { name: 'Mermaid' },
-  { name: 'PreviewLink' },
   { name: 'IconInline', aliases: ['i'] },
   { name: 'Columns', aliases: ['TwoColumns', 'ThreeColumns'] },
   { name: 'Column', aliases: ['column'] },

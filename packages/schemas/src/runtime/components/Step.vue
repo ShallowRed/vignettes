@@ -55,9 +55,10 @@ const orientation = inject(SCHEME_TILES, 'column')
 </template>
 
 <style scoped>
+/* The cards stretch to the tallest one, so their tops and pictograms align. */
 .scheme-step {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   flex: 1 1 0;
   min-width: 0;
 }
@@ -71,6 +72,7 @@ const orientation = inject(SCHEME_TILES, 'column')
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
   width: 2.2em;
   font-size: 1.6em;
   color: var(--accent, #000091);

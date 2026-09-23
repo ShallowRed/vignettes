@@ -239,14 +239,35 @@ onMounted(async () => {
   // Dynamic import to avoid SSR issues.
   const mermaid = (await import('mermaid')).default
 
+  // Mermaid sizes each box from the width of its label: it measures with the
+  // slide's own font, once loaded, or the labels overflow their boxes.
+  await document.fonts.ready
+  const style = getComputedStyle(container.value)
+  const token = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback
+  const font = { fontFamily: style.fontFamily, fontSize: style.fontSize }
+
   mermaid.initialize({
     startOnLoad: false,
-    theme: props.theme || 'default',
+    // Without a named theme, the diagram takes the colors of the deck's theme.
+    theme: props.theme || 'base',
+    themeVariables: props.theme
+      ? font
+      : {
+          ...font,
+          primaryColor: token('--accent-bg', '#f4f6fd'),
+          primaryBorderColor: token('--accent', '#1c4fd8'),
+          primaryTextColor: token('--text-title', '#111111'),
+          secondaryColor: token('--surface', '#ffffff'),
+          tertiaryColor: token('--surface', '#ffffff'),
+          lineColor: token('--text-mention', '#6b6b6b'),
+          textColor: token('--text-default', '#1a1a1a'),
+          edgeLabelBackground: token('--surface', '#ffffff'),
+        },
+    fontFamily: style.fontFamily,
     // Deck source is author-editable and rendered for every viewer, so keep
     // Mermaid's DOMPurify pass on: strict encodes HTML in labels and disables
     // click directives.
     securityLevel: 'strict',
-    fontFamily: 'inherit',
   })
 
   try {

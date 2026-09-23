@@ -1,6 +1,6 @@
 # @vignettes/schemas
 
-Deck components that explain a system on a slide: pictogram steps linked by arrows, diagrams whose cards sit on a grid or are ranked automatically, qualified tags, and a file read beside the description of what it holds.
+Deck components that explain a system on a slide: pictogram steps linked by arrows, diagrams whose cards sit on a grid or are ranked automatically, and a file read beside the description of what it holds.
 
 ```bash
 pnpm add @vignettes/schemas
@@ -59,16 +59,6 @@ One entry per source
 Nodes and edges are fragments in writing order, each edge appearing with the later of its nodes; `step="2"` on a node or an edge moves it in that order.
 
 `Area` draws a named region behind the cards, so an arrow leaving it reads as data going from one machine to another. It takes `at` and `span` like a node, a `picto`, and `label` as `legend` (the title on the top border) or `header` (a centred band above the cards). Regions are not fragments.
-
-## Tags: qualified tags and the values of an axis
-
-```markdown
-::Tags{axis="status" values="draft:grey,reviewed:blue,approved:purple,published:green"}
-What each state allows.
-::
-```
-
-One row per axis: the axis name, then a tag « axis : value » per entry of `values`, each written `value:tone` with a tone among `neutral`, `green`, `blue`, `purple`, `yellow` and `grey`. The default slot is a caption under the row. `active="published"` keeps that tag at full strength and fades the others. `label` replaces the axis name in the row's heading, and `:fragments="true"` reveals the heading, then each tag, one step at a time.
 
 ## JsonTour: a file read beside the description of what it holds
 

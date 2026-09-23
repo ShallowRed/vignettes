@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Image d'exemple">
-  <rect x="4" y="4" width="792" height="442" rx="20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="4" stroke-dasharray="14 12"/>
-  <circle cx="298" cy="168" r="40" fill="#cbd5e1"/>
-  <path d="M232 322 L360 194 L452 284 L540 206 L604 322 Z" fill="#cbd5e1"/>
-  <text x="400" y="388" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="36" font-weight="600" fill="#94a3b8">Image</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-label="Image d'exemple">
+  <rect width="1920" height="1080" fill="#f2f2fa"/>
+  <path d="M858 690 L1046 398 L1232 690 Z" fill="#bfbfe6"/>
+  <path d="M718 690 L832 512 L946 690 Z" fill="#e5e5f5"/>
+  <circle cx="885" cy="442" r="29" fill="#7f7fcd"/>
 </svg>

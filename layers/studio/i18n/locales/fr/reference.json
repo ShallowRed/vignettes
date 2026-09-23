@@ -30,7 +30,6 @@
       "image": "Image avec cadrage (fit, position, rounded, shadow)",
       "fullScreenImage": "Image plein écran (occupe toute la diapo)",
       "iframe": "Page web embarquée (lightbox, fullwidth)",
-      "previewLink": "Lien avec aperçu de la cible",
       "screens": "Galerie d'écrans Storybook (cols, gap, align)",
       "storyFrame": "Écran Storybook vivant (story, ratio, previewWidth, lightbox)",
       "icon": "Icône en ligne (Remix / Iconify)",

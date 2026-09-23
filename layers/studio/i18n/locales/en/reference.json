@@ -30,7 +30,6 @@
       "image": "Image with framing (fit, position, rounded, shadow)",
       "fullScreenImage": "Full-screen image (fills the whole slide)",
       "iframe": "Embedded web page (lightbox, fullwidth)",
-      "previewLink": "Link with a preview of the target",
       "screens": "Gallery of Storybook screens (cols, gap, align)",
       "storyFrame": "Live Storybook screen (story, ratio, previewWidth, lightbox)",
       "icon": "Inline icon (Remix / Iconify)",

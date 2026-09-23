@@ -76,7 +76,7 @@ const style = computed(() => paletteVars(props.color))
   align-items: center;
   gap: 0.5em;
   padding: 1.1em 0.8em 1em;
-  border-radius: 8px;
+  border-radius: var(--radius, 6px);
   text-align: center;
   transition: background 0.3s ease, box-shadow 0.3s ease;
 }
@@ -149,6 +149,12 @@ const style = computed(() => paletteVars(props.color))
 .picto-card--row .picto-card__icon {
   width: calc(var(--scheme-picto, 6em) * 0.6);
   height: calc(var(--scheme-picto, 6em) * 0.6);
+}
+
+/* The theme aligns every paragraph of a slide to the left. */
+.picto-card__title,
+.picto-card__text :deep(p) {
+  text-align: inherit;
 }
 
 .picto-card__title {

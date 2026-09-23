@@ -13,6 +13,5 @@ export default defineNuxtPlugin(() => {
     { name: 'Area', component: 'DiagramArea', aliases: ['area'] },
     { name: 'JsonTour', aliases: ['json-tour'] },
     { name: 'Zone', component: 'JsonZone', aliases: ['zone'] },
-    { name: 'Tags', aliases: ['tags'] },
   ])
 })

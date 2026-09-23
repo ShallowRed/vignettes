@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { inferMediaType } from '@vignettes/core/render'
 import { useDeckMessages } from '@vignettes/nuxt/runtime/composables/useDeckMessages.ts'
 import { STORYBOOK_BASE } from '@vignettes/nuxt/runtime/config/injection-keys.ts'
 import { computed, inject } from 'vue'
@@ -48,11 +49,8 @@ const resolvedSrc = computed(() => {
   return props.src
 })
 
-const isIframe = computed(() => {
-  if (props.type)
-    return props.type === 'iframe'
-  return Boolean(props.story) || /^https?:\/\//.test(props.src ?? '')
-})
+const isIframe = computed(() =>
+  inferMediaType(resolvedSrc.value ?? '', props.type, Boolean(props.story)) === 'iframe')
 
 const aspect = computed(() => resolveAspectRatio(props.ratio))
 const missing = computed(() => !resolvedSrc.value)
@@ -160,10 +158,9 @@ const scaledFrameStyle = computed(() =>
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 10px;
   background: var(--surface, #fff);
-  border: 1px solid var(--fr-border-color, rgba(0, 0, 0, 0.12));
-  box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 18, 0.12);
+  border: 1px solid var(--border, #e0e0e0);
+  box-shadow: var(--shadow, 0 2px 8px rgba(0, 0, 0, 0.12));
 }
 
 .story-frame.grow .story-frame__media {

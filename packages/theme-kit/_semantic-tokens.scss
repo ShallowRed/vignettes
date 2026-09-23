@@ -16,6 +16,9 @@
  *       background colors and the matching text color on dark backgrounds.
  *   --text-default / --text-title / --text-mention
  *       the three text intensities used by the typography system.
+ *   --border / --radius / --shadow
+ *       the outline, the corners and the elevation of a box drawn by a
+ *       component (card, quote, frame, code block).
  */
 
 :root {
@@ -33,4 +36,9 @@
   --text-default: #1a1a1a;
   --text-title: #111111;
   --text-mention: #6b6b6b;
+
+  // Boxes
+  --border: #e0e0e0;
+  --radius: 6px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }

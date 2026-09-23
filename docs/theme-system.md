@@ -79,6 +79,9 @@ Code that must not care which theme is active (the engine layer, MDC components 
 | `--text-default` | Body text |
 | `--text-title` | Headings, strong text |
 | `--text-mention` | Muted text (small, captions) |
+| `--border` | Outline of a box drawn by a component |
+| `--radius` | Corners of that box |
+| `--shadow` | Elevation of that box |
 
 `packages/theme-kit/_semantic-tokens.scss` provides defaults so a theme still renders if it forgets one.
 

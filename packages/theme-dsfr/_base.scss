@@ -20,7 +20,9 @@ body {
   color: var(--dsfr-text-default);
 }
 
-.reveal .slides {
+// `reveal.css` centers the slides with the same specificity and loads after the
+// theme: the section selector keeps the DSFR text on the left.
+.reveal .slides section {
   text-align: left;
 }
 

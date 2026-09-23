@@ -25,12 +25,19 @@ const mdcComponents: Record<string, any> = Object.fromEntries(
   ]),
 )
 
-function getBackground(slide: { headingLevel?: string, backgroundImage?: string }) {
-  return resolveSlideBackground(
-    slide,
-    props.presentationData.metadata.theme || getDefaultTheme(),
-    props.presentationData.metadata.backgrounds,
-  )
+// Reveal draws the background from these attributes. An overlay is black under
+// the image, made that much transparent.
+function backgroundAttrs(slide: { headingLevel?: string, backgroundImage?: string, backgroundOverlay?: number }) {
+  return {
+    'data-background-image': resolveSlideBackground(
+      slide,
+      props.presentationData.metadata.theme || getDefaultTheme(),
+      props.presentationData.metadata.backgrounds,
+    ),
+    ...(slide.backgroundOverlay
+      ? { 'data-background-color': '#000', 'data-background-opacity': String(1 - slide.backgroundOverlay) }
+      : {}),
+  }
 }
 </script>
 
@@ -47,7 +54,7 @@ function getBackground(slide: { headingLevel?: string, backgroundImage?: string 
     <section
       v-if="section.verticalSlides && section.verticalSlides.length > 0"
       :class="section.headingLevel ? `stack-${section.headingLevel}` : ''"
-      :data-background-image="getBackground(section)"
+      v-bind="backgroundAttrs(section)"
     >
       <section
         v-for="(verticalSlide, vIndex) in section.verticalSlides"
@@ -55,7 +62,7 @@ function getBackground(slide: { headingLevel?: string, backgroundImage?: string 
         :key="`${index}-${vIndex}`"
         :data-markdown="false"
         :class="getSlideClasses(verticalSlide)"
-        :data-background-image="getBackground(verticalSlide)"
+        v-bind="backgroundAttrs(verticalSlide)"
       >
         <SlideContent
           :slide="verticalSlide"
@@ -71,7 +78,7 @@ function getBackground(slide: { headingLevel?: string, backgroundImage?: string 
       :id="slideIdMap[index]?.sectionId"
       :data-markdown="false"
       :class="getSlideClasses(section)"
-      :data-background-image="getBackground(section)"
+      v-bind="backgroundAttrs(section)"
     >
       <SlideContent
         :slide="section"

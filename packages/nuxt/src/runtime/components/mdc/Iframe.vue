@@ -65,9 +65,9 @@ const messages = useDeckMessages()
 .iframe-container {
   position: relative;
   width: 100%;
-  border-radius: 8px;
+  border: 1px solid var(--border, #e0e0e0);
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow, 0 2px 8px rgba(0, 0, 0, 0.12));
 }
 
 .iframe-container.fullwidth {

@@ -30,3 +30,10 @@
     display: contents;
   }
 }
+
+// Reveal's print stylesheet declares only `-webkit-print-color-adjust`, which
+// Firefox ignores: without the standard property it drops the backgrounds and
+// darkens the text of the printed pages.
+html.reveal-print * {
+  print-color-adjust: exact;
+}

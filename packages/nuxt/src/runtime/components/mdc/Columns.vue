@@ -99,13 +99,6 @@ onMounted(() => {
   margin-top: 0;
 }
 
-@media (max-width: 768px) {
-  .columns {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-}
-
 .size-xs { font-size: 0.7em; }
 .size-sm { font-size: 0.85em; }
 .size-md { font-size: 1em; }

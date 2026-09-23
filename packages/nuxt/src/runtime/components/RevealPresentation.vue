@@ -3,7 +3,7 @@ import type { RevealApi } from 'reveal.js'
 import type { RevealConfig } from '../types/presentation.ts'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
-import { computed, nextTick, onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { DECK_MESSAGES_KEY } from '../config/injection-keys.ts'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
@@ -72,6 +72,10 @@ const effectiveConfig = isPrintMode
   }).reveal
   : (props.config || {})
 
+// Reveal's print view is made for Chromium browsers (revealjs.com/pdf-export); in
+// Firefox and Safari the print view names the browsers that export.
+const printSupported = isPrintMode && /Chrome\//.test(navigator.userAgent)
+
 function openPrintView() {
   window.location.href = buildPrintPdfUrl(window.location.href)
 }
@@ -131,8 +135,84 @@ function handleAnchorClick(event: MouseEvent) {
   window.location.hash = `/${slug}`
 }
 
+// Paging moves each slide into its page, which reloads the frames it holds. The
+// dialog waits for each frame to load and, for a deck of this site, for Reveal to
+// be ready in it, 10 seconds at most for a frame that does not load.
+// Reveal's paper stylesheet reflows a printed deck into plain text, except under
+// `html.print-pdf`: an embedded deck takes the class, so it prints as on screen.
+const FRAMES_MAX_MS = 10000
+
+function frameSettled(frame: HTMLIFrameElement): Promise<void> {
+  return new Promise((resolve) => {
+    frame.addEventListener('load', () => {
+      let doc: Document | null = null
+      try {
+        doc = frame.contentDocument
+      }
+      catch {}
+      if (!doc?.querySelector('.reveal'))
+        return resolve()
+      const poll = () => {
+        if (!doc!.querySelector('.reveal.ready'))
+          return setTimeout(poll, 100)
+        doc!.documentElement.classList.add('print-pdf')
+        resolve()
+      }
+      poll()
+    }, { once: true })
+  })
+}
+
+function framesSettled(frames: HTMLIFrameElement[]): Promise<unknown> {
+  return Promise.race([
+    Promise.all(frames.map(frameSettled)),
+    new Promise(resolve => setTimeout(resolve, FRAMES_MAX_MS)),
+  ])
+}
+
+// Chrome prints a sheet of exactly the page size when its sides are a multiple
+// of 8px, and rounds other sizes up, which leaves a white line along the page
+// background. The pages grow to the next multiple of 8px, filled by their
+// background.
+function fitPagesToSheets(root: HTMLElement) {
+  const pages = Array.from(root.querySelectorAll<HTMLElement>('.pdf-page'))
+  if (!pages.length)
+    return
+  const eighth = (px: number) => Math.ceil(px / 8) * 8
+  const width = eighth(document.body.offsetWidth)
+  const height = eighth(pages[0]!.offsetHeight)
+  const sheet = document.createElement('style')
+  sheet.textContent = `@page { size: ${width}px ${height}px; margin: 0; }`
+  document.head.appendChild(sheet)
+  document.body.style.width = `${width}px`
+  pages.forEach(page => page.style.height = `${height}px`)
+}
+
+// Reveal pages the deck once the document has loaded, which on a deck with story
+// iframes comes after Reveal's `ready`: the dialog opens on `pdf-ready`, when the
+// pages exist. A theme sizes a slide at 100% of its parent, and a print page is
+// the slide plus its margin, so each slide gets its own height back first; the
+// story panes rescale on the resize. The dialog waits for the fonts, or the PDF
+// takes the fallback font.
+async function printWhenPaged() {
+  const instance = getInstance()
+  if (!instance || !revealContainer.value)
+    return
+  const frames = framesSettled(Array.from(revealContainer.value.querySelectorAll('iframe')))
+  const { height } = instance.getComputedSlideSize()
+  revealContainer.value
+    .querySelectorAll<HTMLElement>('.pdf-page > section')
+    .forEach(slide => slide.style.height = `${height}px`)
+  fitPagesToSheets(revealContainer.value)
+  await Promise.all([document.fonts.ready, frames])
+  if (printSupported)
+    requestAnimationFrame(() => requestAnimationFrame(() => window.print()))
+}
+
 onMounted(async () => {
   mounted.value = true
+  if (isPrintMode)
+    revealContainer.value?.addEventListener('pdf-ready', printWhenPaged, { once: true })
   const liftTimer = setTimeout(() => ready.value = true, VEIL_MAX_MS)
   await Promise.all([initialize(), themeReady()])
   await document.fonts.ready
@@ -142,24 +222,6 @@ onMounted(async () => {
   if (instance)
     emit('ready', instance)
   revealContainer.value?.addEventListener('click', handleAnchorClick)
-
-  // Reveal computes its print pagination during initialize(), but the Vue/MDC
-  // slide bodies render *after* mount — so the first print layout sees a deck
-  // that isn't filled in yet. Once content has settled, sync + re-layout so each
-  // slide is paginated against its real height, then open the browser's print
-  // dialog: Reveal's print layout is meant for the paged-print medium (on screen
-  // the pages sit off-viewport), so we hand straight to Save-as-PDF rather than
-  // leave the user on a blank-looking page. Two frames: one for Vue to flush the
-  // slot, one for the browser to apply the resulting sizes.
-  if (isPrintMode) {
-    await nextTick()
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      sync()
-      getInstance()?.layout()
-      // A further frame so the re-layout paints before the (blocking) dialog.
-      requestAnimationFrame(() => window.print())
-    }))
-  }
 })
 
 onUnmounted(() => {
@@ -193,18 +255,18 @@ onUnmounted(() => {
     <div class="slides">
       <slot />
     </div>
-    <!-- On screen, Reveal's print layout sits off-viewport (it targets the paged
-         print medium), so without this the page looks blank. Screen-only; hidden
-         in the actual print render via @media print. -->
+    <!-- Screen-only, hidden by @media print: it offers to reopen the print dialog,
+         or names the browsers that export, and leads back to the deck. -->
     <div
-      v-if="isPrintMode"
+      v-if="mounted && isPrintMode"
       class="print-overlay"
     >
-      <p>{{ messages.printPreparing }}</p>
+      <p>{{ printSupported ? messages.printPreparing : messages.printUnsupported }}</p>
       <p class="print-overlay__hint">
-        {{ messages.printHint }}
+        {{ printSupported ? messages.printHint : messages.printUnsupportedHint }}
       </p>
       <button
+        v-if="printSupported"
         type="button"
         class="print-overlay__btn"
         @click="reopenPrintDialog"
@@ -212,7 +274,8 @@ onUnmounted(() => {
         {{ messages.printReopen }}
       </button>
       <a
-        class="print-overlay__btn print-overlay__btn--ghost"
+        class="print-overlay__btn"
+        :class="{ 'print-overlay__btn--ghost': printSupported }"
         :href="exitPrintUrl"
       >
         {{ messages.printBack }}
@@ -338,6 +401,7 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0.75rem;
   padding: 2rem;
+  font-size: 1rem;
   text-align: center;
   color: #1a1a1a;
   background: #fff;
@@ -345,6 +409,7 @@ onUnmounted(() => {
 
 .print-overlay p {
   margin: 0;
+  text-align: inherit;
   font-size: 1.25rem;
   font-weight: 600;
 }
@@ -379,5 +444,13 @@ onUnmounted(() => {
   .deck-veil {
     display: none !important;
   }
+}
+</style>
+
+<style>
+/* A deck embedded in a page being printed shows its current slide only: under
+   `print-pdf`, Reveal makes every background opaque, the hidden ones included. */
+html.print-pdf:not(.reveal-print) .reveal .backgrounds > .slide-background:not(.present) {
+  display: none !important;
 }
 </style>

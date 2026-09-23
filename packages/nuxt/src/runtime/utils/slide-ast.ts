@@ -70,6 +70,26 @@ function extractBackgroundOverride(children: any[]): string | undefined {
   return node?.props.image
 }
 
+// `FullScreenImage` sets the slide background, which Reveal spreads over the
+// whole screen and the whole printed page; the component keeps the text over it.
+const FULL_SCREEN_IMAGE_TAGS = ['FullScreenImage', 'full-screen-image']
+
+function findFullScreenImage(children: any[]): any | undefined {
+  for (const node of children) {
+    if (node.type === 'element' && FULL_SCREEN_IMAGE_TAGS.includes(node.tag) && node.props?.src)
+      return node
+    const nested = node.children && findFullScreenImage(node.children)
+    if (nested)
+      return nested
+  }
+  return undefined
+}
+
+function overlayOf(node: any): number | undefined {
+  const value = Number.parseFloat(node?.props?.overlay)
+  return value > 0 ? Math.min(value, 1) : undefined
+}
+
 function filterBackgroundNodes(children: any[]): any[] {
   return children.filter(n => !(n.type === 'element' && n.tag === BACKGROUND_ANNOTATION_TAG))
 }
@@ -124,7 +144,9 @@ function filterAnnotationNodes(children: any[]): any[] {
 export function createSlide(children: any[], headingLevel?: string): Slide {
   const level = headingLevel || getHeadingLevel(children)
 
-  const backgroundImage = extractBackgroundOverride(children)
+  const fullScreenImage = findFullScreenImage(children)
+  const backgroundImage = extractBackgroundOverride(children) ?? fullScreenImage?.props.src
+  const backgroundOverlay = overlayOf(fullScreenImage)
   const filtered = filterBackgroundNodes(children)
 
   const layoutInfo = extractLayout(filtered)
@@ -141,6 +163,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
         headingLevel: level,
         layout: fullLayout,
         backgroundImage,
+        backgroundOverlay,
         quicklink,
       }
     }
@@ -178,6 +201,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
       layout: layoutInfo?.name,
       layoutProps: layoutInfo?.props,
       backgroundImage,
+      backgroundOverlay,
       quicklink,
     }
   }
@@ -188,6 +212,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
     layout: layoutInfo?.name,
     layoutProps: layoutInfo?.props,
     backgroundImage,
+    backgroundOverlay,
     quicklink,
   }
 }

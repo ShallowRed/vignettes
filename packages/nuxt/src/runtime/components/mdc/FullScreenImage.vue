@@ -1,35 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
+// The slide parser takes `src` and `overlay` for the slide background, which
+// Reveal spreads over the whole screen; the component lays the text over it.
 interface Props {
   src: string
   alt?: string
   overlay?: string | number
-  position?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  alt: '',
-  overlay: '0',
-  position: 'center',
-})
-
-const overlayOpacity = computed(() => {
-  const value = typeof props.overlay === 'string' ? Number.parseFloat(props.overlay) : props.overlay
-  return Math.max(0, Math.min(1, value))
-})
+defineProps<Props>()
 </script>
 
 <template>
-  <div
-    class="full-screen-image"
-    :style="{ backgroundImage: `url(${props.src})`, backgroundPosition: props.position }"
-  >
-    <div
-      v-if="overlayOpacity > 0"
-      class="image-overlay"
-      :style="{ opacity: overlayOpacity }"
-    />
+  <div class="full-screen-image">
     <div
       v-if="$slots.default"
       class="image-content"
@@ -43,19 +25,9 @@ const overlayOpacity = computed(() => {
 .full-screen-image {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.image-overlay {
-  position: absolute;
-  inset: 0;
-  background: black;
-  pointer-events: none;
 }
 
 .image-content {

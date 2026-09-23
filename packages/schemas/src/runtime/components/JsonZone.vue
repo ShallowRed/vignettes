@@ -54,7 +54,7 @@ onMounted(() => {
 
 .json-tour-zone :deep(.picto-card) {
   background: var(--surface, #fff);
-  border: 1px solid #e5e5f4;
+  border: 1px solid var(--border, #e0e0e0);
 }
 
 /* An icon stays sharp at the tour's small sizes, where a pictogram's detail is
@@ -65,8 +65,10 @@ onMounted(() => {
   color: var(--accent, #000091);
 }
 
+/* The current zone turns its border to the accent and thickens it outward. */
 .json-tour-zone.current-fragment :deep(.picto-card) {
   background: var(--accent-bg, #f5f5fe);
-  box-shadow: inset 0 0 0 2px var(--accent, #000091);
+  border-color: var(--accent, #000091);
+  box-shadow: 0 0 0 1px var(--accent, #000091);
 }
 </style>

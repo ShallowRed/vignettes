@@ -492,8 +492,15 @@ onBeforeUnmount(() => observer?.disconnect())
   transition: opacity 0.3s ease;
 }
 
+/* The current card turns its own border to the accent and thickens it outward,
+   so it keeps a single outline; a planned card keeps its dashes alone. */
 .diagram :deep(.diagram-node.current-fragment .picto-card) {
   background: var(--accent-bg, #f5f5fe);
-  box-shadow: inset 0 0 0 2px var(--accent, #000091);
+  border-color: var(--accent, #000091);
+  box-shadow: 0 0 0 1px var(--accent, #000091);
+}
+
+.diagram :deep(.diagram-node.current-fragment .picto-card--planned) {
+  box-shadow: none;
 }
 </style>

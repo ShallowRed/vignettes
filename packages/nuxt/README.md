@@ -67,7 +67,7 @@ An annotation is a `:tag{...}` directive the parser reads and removes from the b
 | `:layout{name="…" …}` | slide layout and its props |
 | `:quicklink{text="…" href="…"}` | link pinned at the bottom of the slide |
 
-`:layout` names one of the layouts below and passes it `src`, `type` (`iframe` or `image`), `fit` (`cover` or `contain`) and `lightbox`. All but `full` and `grid-compact` split the slide into a content pane and a media pane; the media pane extends to the edge of the slide and the text keeps its margins.
+`:layout` names one of the layouts below and passes it `src`, `type` (`iframe` or `image`), `fit` (`cover` or `contain`) and `lightbox`. Without `type`, a `src` ending with an image extension is an image and any other a page. All but `full` and `grid-compact` split the slide into a content pane and a media pane; the media pane extends to the edge of the slide and the text keeps its margins.
 
 | layout | shape |
 |---|---|
@@ -83,7 +83,7 @@ An annotation is a `:tag{...}` directive the parser reads and removes from the b
 
 MDC uses colons, and the count says what the component wraps: `:::Name` a container of other components, `::Name` a leaf wrapping text, `:name{…}` an inline. A parent container always takes more colons than its children.
 
-The module ships the generic set: `Quote`, `Image`, `FullScreenImage`, `Iframe`, `Mermaid`, `PreviewLink`, `IconInline` (aliased `:i`), `Columns` (aliased `TwoColumns` and `ThreeColumns`), `Column`, `SplitSlide`, `Highlight`, `Notes` and `Fragments`.
+The module ships the generic set: `Quote`, `Image`, `FullScreenImage`, `Iframe`, `Mermaid`, `IconInline` (aliased `:i`), `Columns` (aliased `TwoColumns` and `ThreeColumns`), `Column`, `SplitSlide`, `Highlight`, `Notes` and `Fragments`.
 
 ```markdown
 ::Image{src="/diagram.png" alt="Architecture" width="80%" :preview="true"}

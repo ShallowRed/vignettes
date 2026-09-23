@@ -65,12 +65,6 @@ Une légende
 ::Iframe{src="/images/placeholder.svg" height="300px"}
 ::
 
-### Lien avec aperçu
-
-::PreviewLink{href="https://example.org/" title="Exemple"}
-Le lien s'ouvre dans un nouvel onglet.
-::
-
 ### Mermaid
 
 ::Mermaid
@@ -104,11 +98,6 @@ flowchart LR
 ::
 :::
 
-### Tags
-
-::Tags{axis="statut" values="brouillon:grey,publié:green" active="publié"}
-::
-
 ### Visite d'un fichier
 
 :::JsonTour{file="deck.json" size="xs"}
@@ -123,12 +112,6 @@ Un titre.
 ```
 
 :::
-
-### Fiche de registre
-
-::RuleCard{producer="Direction" domain="Recette" title="Une entrée" tags="statut:publié:green"}
-La description de l'entrée.
-::
 
 ## Mises en page
 
@@ -159,5 +142,5 @@ Le lien reste épinglé en bas.
 
 ### Pleine page
 
-::FullScreenImage{src="/images/placeholder.svg" alt="Fond de démonstration"}
+::FullScreenImage{src="/favicon.svg" alt="Fond de démonstration"}
 ::

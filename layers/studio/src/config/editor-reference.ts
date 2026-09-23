@@ -161,11 +161,6 @@ export const COMPONENT_SNIPPETS: readonly ReferenceSnippet[] = [
     snippet: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::',
   },
   {
-    label: '::PreviewLink',
-    descriptionKey: 'reference.components.previewLink',
-    snippet: '::PreviewLink{href="${https://exemple.fr}"}\n${Libellé du lien}\n::',
-  },
-  {
     label: ':::Screens',
     descriptionKey: 'reference.components.screens',
     snippet: ':::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n:::',

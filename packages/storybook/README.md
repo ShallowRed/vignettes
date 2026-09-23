@@ -52,7 +52,7 @@ The value is the Storybook story id, `<componentId>--<storyName>`. `lightbox="tr
 
 | prop | meaning |
 |---|---|
-| `type` | `iframe`, the default for stories and URLs, or `image` |
+| `type` | `iframe` or `image`; without it, a story or a URL is a page, and a URL ending with an image extension an image |
 | `ratio` | named (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or raw, `16/9` |
 | `fit` | `cover`, the default, or `contain` |
 | `previewWidth` | logical iframe width before scaling, `1440` by default; raise it to show more of the page |

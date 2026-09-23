@@ -3,6 +3,7 @@ import {
   buildDeckModel,
   collectAssets,
   getMediaFit,
+  inferMediaType,
   resolveSlideBackground,
   resolveSlideMedia,
   runTransforms,
@@ -59,6 +60,12 @@ describe('resolveSlideMedia (extracted from SlideContent.mediaParts)', () => {
     expect(frame.previewLink).toBe(frame.src)
     const img = resolveSlideMedia({ src: '/images/y.png', type: 'image', lightbox: 'true' })!
     expect(img.previewImage).toBe('/images/y.png')
+  })
+
+  it('shows a page as a frame and an image file as an image when no type is given', () => {
+    expect(resolveSlideMedia({ src: '/slides/demo' })!.type).toBe('iframe')
+    expect(resolveSlideMedia({ src: '/images/x.svg?v=2' })!.type).toBe('image')
+    expect(inferMediaType('/images/x.png', 'iframe')).toBe('iframe')
   })
 
   it('getMediaFit defaults to cover', () => {

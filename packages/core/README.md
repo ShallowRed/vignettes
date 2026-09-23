@@ -36,7 +36,7 @@ The core declares the contracts and leaves the implementations to whoever has th
 import { registerDeckComponents } from '@vignettes/core/deck'
 
 registerDeckComponents([
-  { name: 'RuleCard', aliases: ['rule-card'] },
+  { name: 'Scheme', aliases: ['scheme'] },
 ])
 ```
 

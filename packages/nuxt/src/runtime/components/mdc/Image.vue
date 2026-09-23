@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
   height: 'auto',
   fit: 'contain',
   position: 'center',
-  rounded: true,
+  rounded: false,
   shadow: true,
 })
 
@@ -55,26 +55,39 @@ const previewSrc = computed(() => {
 </template>
 
 <style scoped>
+/* The figure shrinks its image to leave room for the caption in the slide. */
 .image-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
   margin: 1.5rem 0;
   text-align: center;
 }
 
 .image-figure img {
-  max-width: 100%;
   display: block;
+  min-height: 0;
+  max-width: 100%;
   margin: 0 auto;
 }
 
 .image-figure img.rounded {
-  border-radius: 8px;
+  border-radius: var(--radius, 6px);
 }
 
 .image-figure img.shadow {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow, 0 2px 8px rgba(0, 0, 0, 0.12));
+}
+
+/* The theme aligns every paragraph of a slide to the left. */
+.image-figure figcaption :deep(p) {
+  margin: 0;
+  text-align: inherit;
 }
 
 .image-figure figcaption {
+  flex: none;
   margin-top: 0.75rem;
   font-size: 0.9em;
   color: #666;

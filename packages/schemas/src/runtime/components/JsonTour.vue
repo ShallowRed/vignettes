@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { JsonTourZoneRegistration } from '../injection-keys.ts'
-import { nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, provide, ref, useId } from 'vue'
 import { JSON_TOUR } from '../injection-keys.ts'
 
 // A file read alongside the description of what it holds. The `::Zone` children
@@ -9,7 +9,7 @@ import { JSON_TOUR } from '../injection-keys.ts'
 interface Props {
   /** File name shown above the code panel. */
   file?: string
-  /** Height of the code panel, in slide pixels (the deck is 1280x720). */
+  /** Maximum height of the code panel, in slide pixels (the deck is 1280x720). */
   height?: string
   /** Width of the code panel, any CSS length. */
   panel?: string
@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const root = ref<HTMLElement | null>(null)
+const tourId = useId()
 const zones: JsonTourZoneRegistration[] = []
 // `x,y,w,h` of the current zone on the image, in percent; null hides the spot.
 const spot = ref<{ x: number, y: number, w: number, h: number } | null>(null)
@@ -91,6 +92,30 @@ function markOverflow() {
   root.value.classList.toggle('json-tour--below', hidden > 1 && pre.scrollTop < hidden - 1)
 }
 
+// Highlights the lines of a range in a tour and brings them into its panel;
+// `travel` moves the panel, animated on screen and at once on a printed page.
+function showLines(tour: HTMLElement, range: [number, number] | null, travel: (panel: HTMLElement, target: number) => void) {
+  const panel = tour.querySelector<HTMLElement>('pre')
+  const rows = Array.from(tour.querySelectorAll<HTMLElement>('pre .line'))
+  tour.classList.toggle('json-tour--focus', !!range)
+  rows.forEach((line, i) => {
+    line.classList.toggle('json-tour__line--on', !!range && i + 1 >= range[0] && i + 1 <= range[1])
+  })
+  if (!range || !panel)
+    return
+  const first = rows[range[0] - 1]
+  const last = rows[Math.min(range[1], rows.length) - 1]
+  if (!first || !last)
+    return
+  // Rects come back scaled by Reveal's transform; divide by the panel's own
+  // on-screen scale to get the distances the scroll position is expressed in.
+  const box = panel.getBoundingClientRect()
+  const k = box.height / panel.offsetHeight || 1
+  const top = (first.getBoundingClientRect().top - box.top) / k
+  const span = (last.getBoundingClientRect().bottom - first.getBoundingClientRect().top) / k
+  travel(panel, Math.max(0, panel.scrollTop + top - (panel.clientHeight - span) / 2))
+}
+
 // Reveal marks the current fragment by class, so the panel follows the classes
 // rather than Reveal's events: the same code then serves the editor preview,
 // where fragments are off and every zone is shown at once.
@@ -103,24 +128,17 @@ function follow() {
   const current = zones.find(z => z.el.classList.contains('current-fragment'))
     ?? (props.fragments ? undefined : zones[0])
   spot.value = parseSpot(current?.spot)
-  const active = current ? parseRange(current.lines) : null
-  lines.forEach((line, i) => {
-    const on = !!active && i + 1 >= active[0] && i + 1 <= active[1]
-    line.classList.toggle('json-tour__line--on', on)
+  showLines(root.value, current ? parseRange(current.lines) : null, (_, target) => scrollPanelTo(target))
+}
+
+// The print view pages the deck from copies of the slide, one per fragment step:
+// each copy of the tour shows the lines of the zone current on its page.
+function followPrintedPages() {
+  document.querySelectorAll<HTMLElement>(`[data-json-tour="${tourId}"]`).forEach((tour) => {
+    const current = Array.from(tour.querySelectorAll('.json-tour-zone'))
+      .findIndex(zone => zone.classList.contains('current-fragment'))
+    showLines(tour, parseRange(zones[current]?.lines), (panel, target) => panel.scrollTop = target)
   })
-  if (!active || !pre)
-    return
-  const first = lines[active[0] - 1]
-  const last = lines[Math.min(active[1], lines.length) - 1]
-  if (!first || !last)
-    return
-  // Rects come back scaled by Reveal's transform; divide by the panel's own
-  // on-screen scale to get the distances the scroll position is expressed in.
-  const panel = pre.getBoundingClientRect()
-  const k = panel.height / pre.offsetHeight || 1
-  const top = (first.getBoundingClientRect().top - panel.top) / k
-  const span = (last.getBoundingClientRect().bottom - first.getBoundingClientRect().top) / k
-  scrollPanelTo(Math.max(0, pre.scrollTop + top - (pre.clientHeight - span) / 2))
 }
 
 const DECK_EVENTS = ['ready', 'slidechanged', 'fragmentshown', 'fragmenthidden'] as const
@@ -153,6 +171,7 @@ onMounted(async () => {
   deck = root.value?.closest('.reveal') ?? null
   for (const event of DECK_EVENTS)
     deck?.addEventListener(event, follow)
+  deck?.addEventListener('pdf-ready', followPrintedPages)
 })
 
 onBeforeUnmount(() => {
@@ -162,6 +181,7 @@ onBeforeUnmount(() => {
   resize?.disconnect()
   for (const event of DECK_EVENTS)
     deck?.removeEventListener(event, follow)
+  deck?.removeEventListener('pdf-ready', followPrintedPages)
 })
 </script>
 
@@ -169,6 +189,7 @@ onBeforeUnmount(() => {
   <div
     ref="root"
     class="json-tour"
+    :data-json-tour="tourId"
     :class="[`json-tour--${size}`, { 'json-tour--stack': stack, 'json-tour--shot': image }]"
     :style="{ '--json-tour-height': height, '--json-tour-panel': panel }"
   >
@@ -210,9 +231,15 @@ onBeforeUnmount(() => {
   padding-right: calc(var(--json-tour-panel) + 1.8em);
 }
 
-.json-tour--xs { --scheme-picto: 1.9em; font-size: 0.66em; }
-.json-tour--sm { --scheme-picto: 2.2em; font-size: 0.78em; }
-.json-tour--md { --scheme-picto: 2.8em; font-size: 0.9em; }
+/* The size scales the zones and the file name, and the code half as much, so a
+   dense tour keeps a readable file. */
+.json-tour--xs { --scheme-picto: 1.9em; --json-tour-scale: 0.66; }
+.json-tour--sm { --scheme-picto: 2.2em; --json-tour-scale: 0.78; }
+.json-tour--md { --scheme-picto: 2.8em; --json-tour-scale: 0.9; }
+
+.json-tour :deep(.json-tour-zone) {
+  font-size: calc(var(--json-tour-scale, 1) * 1em);
+}
 
 .json-tour__file {
   position: absolute;
@@ -221,7 +248,7 @@ onBeforeUnmount(() => {
   width: var(--json-tour-panel);
   margin: 0;
   font-family: var(--r-code-font, monospace);
-  font-size: 0.72em;
+  font-size: calc(var(--json-tour-scale, 1) * 0.72em);
   color: var(--text-mention, #666);
   font-weight: 600;
 }
@@ -231,10 +258,10 @@ onBeforeUnmount(() => {
   top: 2.2em;
   right: 0;
   width: var(--json-tour-panel);
-  height: var(--json-tour-height);
+  max-height: var(--json-tour-height);
   margin: 0;
   overflow: hidden;
-  font-size: max(var(--code-size, 0px), 0.6em);
+  font-size: max(var(--code-size, 0px), calc(0.6em * (1 + var(--json-tour-scale, 1)) / 2));
   line-height: 1.55;
   scrollbar-width: none;
 }
@@ -327,8 +354,12 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 0 0.5em;
   border-left: 2px solid transparent;
-  opacity: var(--code-dim, 0.4);
   transition: opacity 0.3s ease, background 0.3s ease;
+}
+
+/* The file reads whole until a zone is current, then the other lines dim. */
+.json-tour--focus :deep(pre .line) {
+  opacity: var(--code-dim, 0.4);
 }
 
 .json-tour :deep(pre .json-tour__line--on) {

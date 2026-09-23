@@ -18,6 +18,8 @@ export interface Slide {
   verticalSlides?: Slide[]
   headingLevel?: string
   backgroundImage?: string
+  /** Share of black laid over the background image, from 0 to 1. */
+  backgroundOverlay?: number
   layout?: string
   /** Extra props for the layout (e.g. media src/type). */
   layoutProps?: Record<string, string>

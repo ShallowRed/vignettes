@@ -8,7 +8,7 @@ import { buildStoryUrl } from './storybook.ts'
 
 export interface SlideMedia {
   src: string
-  type?: string
+  type: 'iframe' | 'image'
   title: string
   alt: string
   fit: 'cover' | 'contain'
@@ -19,6 +19,21 @@ export interface SlideMedia {
   hint?: string
   previewLink?: string
   previewImage?: string
+}
+
+const IMAGE_EXTENSION = /\.(?:png|jpe?g|gif|svg|webp|avif)(?:[?#]|$)/i
+
+/**
+ * Whether a media source is shown as a page or an image. An explicit `type` or a
+ * story decides; otherwise a URL ending with an image extension is an image, and
+ * any other URL a page.
+ */
+export function inferMediaType(src: string, type?: string, story?: boolean): 'iframe' | 'image' {
+  if (type === 'iframe' || type === 'image')
+    return type
+  if (story)
+    return 'iframe'
+  return IMAGE_EXTENSION.test(src) ? 'image' : 'iframe'
 }
 
 /** `contain` only when explicitly asked, else `cover`. */
@@ -40,7 +55,7 @@ export function resolveSlideMedia(
   if (!src)
     return null
 
-  const type = storySrc ? 'iframe' : lp.type
+  const type = inferMediaType(src, lp.type, Boolean(storySrc))
   const fit = getMediaFit(lp)
   // MDC kebab-cases camelCase attribute keys, so `previewWidth="1600"` arrives as
   // `preview-width` — check that first, with camel/lower forms as fallbacks.
