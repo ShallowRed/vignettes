@@ -5,7 +5,7 @@
  * `@vignettes/freeze`.
  */
 
-import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls } from '@vignettes/core/render'
+import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls, scrollViewLinks } from '@vignettes/core/render'
 import { readBundleConfig } from '@vignettes/freeze/bundle'
 
 // Iframe scaler, inlined after Reveal.initialize (a separate <script src> gets
@@ -66,7 +66,7 @@ export default defineNitroPlugin((nitroApp) => {
       html.head.push(`<link rel="stylesheet" href="${prefix}/themes/${theme}.css">`)
     html.bodyAppend.push(
       `<script src="${prefix}/reveal/reveal.js"></script>`,
-      `<script>${LIFT_VEIL}\nReveal.initialize(${revealInitExpr})`
+      `<script>${LIFT_VEIL}\nReveal.initialize(Object.assign(${revealInitExpr}, { plugins: [${scrollViewLinks}] }))`
       + `.then(function(){return document.fonts.ready;}).then(liftVeil);\n${INLINE_SCALER}</script>`,
     )
     // Rebase the deck's own root-absolute asset URLs under the bundle prefix.

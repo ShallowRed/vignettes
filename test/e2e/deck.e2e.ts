@@ -62,3 +62,17 @@ test('every authoring component renders its own markup', async ({ page, browserN
 
   await expect.soft(slides.locator('aside.notes'), 'Notes stay out of the slide').toBeHidden()
 })
+
+test.describe('below 435px, where Reveal lays the deck out as a scrolling page', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('a link to a slide opens that slide', async ({ page }) => {
+    await page.goto(`${DECK}#/pleine-page`)
+    await expect(page.locator('.reveal.reveal-scroll.ready')).toHaveCount(1)
+
+    const slide = page.locator('.slides section#fond')
+    await expect(slide).toHaveClass(/\bpresent\b/)
+    await expect(slide).toBeInViewport({ ratio: 0.9 })
+    await expect(page).toHaveURL(/#\/fond$/)
+  })
+})
