@@ -377,8 +377,22 @@ const previewRatio = computed(() => {
 })
 
 // Off by default: one source line per screen line keeps the line numbers, the
-// folds and the nesting of components readable.
+// folds and the nesting of components readable. The choice is kept per browser.
+const WRAP_LINES_KEY = 'vignettes:editor-wrap-lines'
 const wrapLines = ref(false)
+onMounted(() => {
+  try {
+    wrapLines.value = localStorage.getItem(WRAP_LINES_KEY) === '1'
+  }
+  catch {}
+})
+
+watch(wrapLines, (wrap) => {
+  try {
+    localStorage.setItem(WRAP_LINES_KEY, wrap ? '1' : '0')
+  }
+  catch {}
+})
 
 function toggleWrap() {
   wrapLines.value = !wrapLines.value
@@ -834,15 +848,24 @@ async function onMetaSaved() {
       />
     </div>
 
-    <div
+    <!-- The source pane takes a share of the width set by dragging its edge, kept
+         in a cookie so the page renders at that share. -->
+    <UDashboardGroup
       v-else
-      class="grid grid-cols-2 flex-1 min-h-0"
+      storage-key="editor"
+      class="relative flex-1 min-h-0"
     >
       <!-- The source pane carries its own bar: formatting and insertion act on
            the text below it, and the preview follows its caret. -->
-      <section
-        class="flex flex-col min-h-0 border-r border-default bg-default overflow-hidden"
+      <UDashboardPanel
+        id="source"
+        resizable
+        :default-size="50"
+        :min-size="35"
+        :max-size="75"
+        role="region"
         :aria-label="t('editor.page.sourcePane')"
+        :ui="{ root: 'min-h-0 w-(--width) border-e border-default bg-default overflow-hidden', handle: 'block after:absolute after:inset-y-0 after:-left-px after:w-0.5 after:transition-colors hover:after:bg-primary active:after:bg-primary' }"
       >
         <EditorToolbar
           :view="editorView"
@@ -907,12 +930,12 @@ async function onMetaSaved() {
           :slide-count="slideCount"
           @help="helpOpen = true"
         />
-      </section>
+      </UDashboardPanel>
 
       <!-- The preview pane shows the slide at scale, with the commands of the
            deck page in the same bar and the same corner. -->
       <section
-        class="editor-stage relative min-h-0 overflow-hidden"
+        class="editor-stage relative flex-1 min-w-0 min-h-0 overflow-hidden"
         :style="{ '--ratio': previewRatio }"
         :aria-label="t('editor.preview.pane')"
       >
@@ -973,7 +996,7 @@ async function onMetaSaved() {
           </ClientOnly>
         </div>
       </section>
-    </div>
+    </UDashboardGroup>
 
     <DeckMetaSlideover
       v-if="metaItem"
@@ -1054,6 +1077,11 @@ async function onMetaSaved() {
   border-radius: 6px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   transform: translate(-50%, -50%);
+}
+
+/* The preview's frames would take the pointer from a drag of the pane edge. */
+[data-dragging='true'] ~ .editor-stage {
+  pointer-events: none;
 }
 
 .editor-stage__frame :deep(.reveal) {

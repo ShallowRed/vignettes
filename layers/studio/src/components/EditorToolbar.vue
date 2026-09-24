@@ -77,7 +77,7 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-2 py-1.5 border-b border-default overflow-x-auto">
+  <div class="flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-default">
     <UDropdownMenu :items="headingItems">
       <UButton
         icon="i-lucide-heading"
@@ -181,9 +181,11 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
       </UTooltip>
     </div>
 
-    <template v-if="$slots.end">
-      <div class="flex-1" />
+    <div
+      v-if="$slots.end"
+      class="flex items-center gap-0.5 ms-auto"
+    >
       <slot name="end" />
-    </template>
+    </div>
   </div>
 </template>

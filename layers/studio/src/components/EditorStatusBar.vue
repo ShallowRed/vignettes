@@ -26,12 +26,15 @@ function run(action: (view: EditorView) => unknown) {
 </script>
 
 <template>
-  <div class="flex items-center gap-1 h-8 px-2 shrink-0 border-t border-default text-xs text-muted">
-    <span class="px-1 tabular-nums">{{ t('editor.statusBar.slidePosition', { slide, total: slideCount }) }}</span>
+  <!-- In a narrow pane the buttons keep their icon and their accessible name. -->
+  <div class="@container flex items-center gap-1 h-8 px-2 shrink-0 border-t border-default text-xs text-muted">
+    <span class="px-1 tabular-nums whitespace-nowrap">{{ t('editor.statusBar.slidePosition', { slide, total: slideCount }) }}</span>
     <div class="flex-1" />
     <UButton
       icon="i-lucide-fold-vertical"
       :label="t('editor.statusBar.foldOthers')"
+      :aria-label="t('editor.statusBar.foldOthers')"
+      :ui="{ label: 'hidden @xl:inline' }"
       color="neutral"
       variant="ghost"
       size="xs"
@@ -41,6 +44,8 @@ function run(action: (view: EditorView) => unknown) {
     <UButton
       icon="i-lucide-unfold-vertical"
       :label="t('editor.statusBar.unfoldAll')"
+      :aria-label="t('editor.statusBar.unfoldAll')"
+      :ui="{ label: 'hidden @xl:inline' }"
       color="neutral"
       variant="ghost"
       size="xs"
@@ -54,6 +59,8 @@ function run(action: (view: EditorView) => unknown) {
     <UButton
       icon="i-lucide-wrap-text"
       :label="t('editor.statusBar.wrapLines')"
+      :aria-label="t('editor.statusBar.wrapLines')"
+      :ui="{ label: 'hidden @xl:inline' }"
       color="neutral"
       :variant="wrap ? 'soft' : 'ghost'"
       size="xs"
@@ -63,6 +70,8 @@ function run(action: (view: EditorView) => unknown) {
     <UButton
       icon="i-lucide-circle-help"
       :label="t('editor.statusBar.help')"
+      :aria-label="t('editor.statusBar.help')"
+      :ui="{ label: 'hidden @xl:inline' }"
       color="neutral"
       variant="ghost"
       size="xs"
