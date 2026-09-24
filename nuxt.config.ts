@@ -48,8 +48,8 @@ export default defineNuxtConfig({
   icon: {
     mode: 'svg', // SVG mode for better SSR support
     serverBundle: {
-      // ri: slide/mdc components; lucide: Nuxt UI app chrome.
-      collections: ['ri', 'lucide'],
+      // ri and fluent: slide/mdc components; lucide: Nuxt UI app chrome.
+      collections: ['ri', 'fluent', 'lucide'],
     },
   },
 

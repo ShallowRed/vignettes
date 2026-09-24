@@ -82,6 +82,8 @@ The fenced code block of the default slot becomes a panel pinned to the right of
 
 `JsonTour` takes `file` (the name shown above the panel), `height` (the panel height in slide pixels, the deck being 1280x720), `panel` (its width), `size` (`xs` | `sm` | `md`, the scale of the zone cards) and `fragments`. `Zone` takes `lines`, `picto`, `title`, `n`, and `step` to override the writing order.
 
+`mark` and `underline` name words of the file, separated by `|`, to paint or to underline wherever they occur whole. A deck that spreads a tour over several slides, one zone per slide, sets `:fragments="false"` and `:current="true"` on the zone of each slide, which takes the accent frame of the current step.
+
 `:stack="true"` puts the panel under the zones at full width, for a narrow column beside a media pane. `image` with `alt` shows a screenshot to the right of the tour, and each `Zone` then names with `spot="x,y,w,h"`, in percent of the image, the area it frames while the rest dims.
 
 ## Colours

@@ -20,6 +20,10 @@ interface Props {
   /** Screenshot shown beside the tour; the current zone's `spot` is highlighted on it. */
   image?: string
   alt?: string
+  /** Words of the file to paint, separated by `|`; a word matches whole. */
+  mark?: string
+  /** Words of the file to underline, separated by `|`; a word matches whole. */
+  underline?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -147,9 +151,57 @@ let observer: MutationObserver | null = null
 let resize: ResizeObserver | null = null
 let deck: Element | null = null
 
+/**
+ * Wraps each occurrence of the given words in the code, inside the text nodes
+ * Shiki produced, so a word of a key or of a value can carry its own mark. A
+ * word matches whole: `rdgf:certification` stays out of `certificationLevel`.
+ */
+function decorate(words: string | undefined, className: string) {
+  const needles = (words ?? '').split('|').map(w => w.trim()).filter(Boolean)
+  if (!pre || needles.length === 0)
+    return
+  const walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT)
+  const texts: Text[] = []
+  for (let node = walker.nextNode(); node; node = walker.nextNode())
+    texts.push(node as Text)
+  const edge = /[\w-]/
+  for (const text of texts) {
+    let node: Text | null = text
+    while (node) {
+      const value = node.nodeValue ?? ''
+      let hit = -1
+      let needle = ''
+      for (const candidate of needles) {
+        for (let at = value.indexOf(candidate); at >= 0; at = value.indexOf(candidate, at + 1)) {
+          const after = value[at + candidate.length]
+          const before = value[at - 1]
+          if ((after && edge.test(after)) || (before && edge.test(before)))
+            continue
+          if (hit < 0 || at < hit) {
+            hit = at
+            needle = candidate
+          }
+          break
+        }
+      }
+      if (hit < 0)
+        break
+      const rest = node.splitText(hit)
+      const tail: Text | null = rest.length > needle.length ? rest.splitText(needle.length) : null
+      const span = document.createElement('span')
+      span.className = className
+      rest.replaceWith(span)
+      span.append(rest)
+      node = tail
+    }
+  }
+}
+
 onMounted(async () => {
   await nextTick()
   pre = root.value?.querySelector('pre') ?? null
+  decorate(props.mark, 'code-mark')
+  decorate(props.underline, 'code-underline')
   lines = Array.from(root.value?.querySelectorAll<HTMLElement>('pre .line') ?? [])
   pre?.addEventListener('scroll', markOverflow, { passive: true })
   for (const [i, zone] of zones.entries()) {

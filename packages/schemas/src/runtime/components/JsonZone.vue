@@ -16,6 +16,8 @@ interface Props {
   n?: string | number
   /** Fragment step; defaults to the writing order. */
   step?: string | number
+  /** The step this slide is on, for a tour whose steps a deck spreads over several slides. */
+  current?: boolean
 }
 
 const props = defineProps<Props>()
@@ -34,6 +36,7 @@ onMounted(() => {
   <div
     ref="el"
     class="json-tour-zone"
+    :class="{ 'current-fragment': current }"
   >
     <PictoCard
       :picto="picto"

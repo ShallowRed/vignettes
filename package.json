@@ -75,7 +75,9 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
+    "@fontsource-variable/quicksand": "catalog:",
     "@gouvfr/dsfr": "catalog:",
+    "@iconify-json/fluent": "catalog:",
     "@iconify-json/lucide": "catalog:",
     "@iconify-json/ri": "catalog:",
     "@nuxt/icon": "catalog:",
