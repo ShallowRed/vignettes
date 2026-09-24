@@ -11,11 +11,13 @@ export function quicklinkParts(text: string): { prefix: string, label: string } 
   return { prefix: text.slice(0, idx + 2), label: text.slice(idx + 3) }
 }
 
-export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'layout'>): string[] {
+export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'layout' | 'headingVisibility'>): string[] {
   const classes: string[] = []
   if (slide.headingLevel)
     classes.push(`slide-${slide.headingLevel}`)
   if (slide.layout)
     classes.push(`layout-${slide.layout}`)
+  if (slide.headingVisibility)
+    classes.push(`heading-${slide.headingVisibility}`)
   return classes
 }

@@ -28,7 +28,7 @@
       "highlight": "Highlight box (size sm/md, variant)",
       "mermaid": "Mermaid diagram (flowchart, sequence…)",
       "image": "Image with framing (fit, position, rounded, shadow)",
-      "fullScreenImage": "Full-screen image (fills the whole slide)",
+      "fullScreenImage": "Full-screen image (overlay, heading)",
       "iframe": "Embedded web page (lightbox, fullwidth)",
       "screens": "Gallery of Storybook screens (cols, gap, align)",
       "storyFrame": "Live Storybook screen (story, ratio, previewWidth, lightbox)",

@@ -90,6 +90,13 @@ function overlayOf(node: any): number | undefined {
   return value > 0 ? Math.min(value, 1) : undefined
 }
 
+const HEADING_VISIBILITIES = ['hidden', 'print'] as const
+
+function headingVisibilityOf(node: any): Slide['headingVisibility'] {
+  const value = node?.props?.heading
+  return HEADING_VISIBILITIES.includes(value) ? value : undefined
+}
+
 function filterBackgroundNodes(children: any[]): any[] {
   return children.filter(n => !(n.type === 'element' && n.tag === BACKGROUND_ANNOTATION_TAG))
 }
@@ -147,6 +154,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
   const fullScreenImage = findFullScreenImage(children)
   const backgroundImage = extractBackgroundOverride(children) ?? fullScreenImage?.props.src
   const backgroundOverlay = overlayOf(fullScreenImage)
+  const headingVisibility = headingVisibilityOf(fullScreenImage)
   const filtered = filterBackgroundNodes(children)
 
   const layoutInfo = extractLayout(filtered)
@@ -164,6 +172,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
         layout: fullLayout,
         backgroundImage,
         backgroundOverlay,
+        headingVisibility,
         quicklink,
       }
     }
@@ -202,6 +211,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
       layoutProps: layoutInfo?.props,
       backgroundImage,
       backgroundOverlay,
+      headingVisibility,
       quicklink,
     }
   }
@@ -213,6 +223,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
     layoutProps: layoutInfo?.props,
     backgroundImage,
     backgroundOverlay,
+    headingVisibility,
     quicklink,
   }
 }

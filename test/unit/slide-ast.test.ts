@@ -32,6 +32,16 @@ describe('full screen image', () => {
     expect(slide!.backgroundOverlay).toBe(0.4)
   })
 
+  it('hides the slide heading on request', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n::FullScreenImage{src="/bg.png" heading="print"}\n::')
+    expect(slide!.headingVisibility).toBe('print')
+  })
+
+  it('ignores an unknown heading value', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n::FullScreenImage{src="/bg.png" heading="none"}\n::')
+    expect(slide!.headingVisibility).toBeUndefined()
+  })
+
   it('leaves a slide without one to its theme background', async () => {
     const [slide] = await headingParser.parse('## Title\n\nText')
     expect(slide!.backgroundImage).toBeUndefined()

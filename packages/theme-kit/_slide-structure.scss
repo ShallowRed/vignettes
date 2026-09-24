@@ -90,6 +90,21 @@
   }
 }
 
+// `FullScreenImage{heading="hidden"}` hides the slide heading, and `heading="print"`
+// hides it on screen only. The heading stays readable by assistive technologies.
+.reveal section.heading-hidden,
+html:not(.reveal-print) .reveal section.heading-print {
+  &.layout-full > div > :is(h1, h2, h3, h4, h5, h6),
+  .slide-content-pane > :is(header, hgroup) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 // Reveal's print stylesheet sets every slide to `display: block !important`; the
 // skeleton keeps its flex on the printed page. Media slides keep their grid from
 // `_media-layouts.scss`.

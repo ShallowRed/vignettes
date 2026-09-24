@@ -1,10 +1,12 @@
 <script setup lang="ts">
 // The slide parser takes `src` and `overlay` for the slide background, which
-// Reveal spreads over the whole screen; the component lays the text over it.
+// Reveal spreads over the whole screen, and `heading` for the slide heading;
+// the component lays the text over it.
 interface Props {
   src: string
   alt?: string
   overlay?: string | number
+  heading?: 'hidden' | 'print'
 }
 
 defineProps<Props>()

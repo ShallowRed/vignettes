@@ -28,7 +28,7 @@
       "highlight": "Encadré de mise en avant (size sm/md, variant)",
       "mermaid": "Diagramme Mermaid (flowchart, sequence…)",
       "image": "Image avec cadrage (fit, position, rounded, shadow)",
-      "fullScreenImage": "Image plein écran (occupe toute la diapo)",
+      "fullScreenImage": "Image plein écran (overlay, heading)",
       "iframe": "Page web embarquée (lightbox, fullwidth)",
       "screens": "Galerie d'écrans Storybook (cols, gap, align)",
       "storyFrame": "Écran Storybook vivant (story, ratio, previewWidth, lightbox)",

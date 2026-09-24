@@ -20,6 +20,8 @@ export interface Slide {
   backgroundImage?: string
   /** Share of black laid over the background image, from 0 to 1. */
   backgroundOverlay?: number
+  /** Hides the slide heading everywhere, or on screen only (`print`). */
+  headingVisibility?: 'hidden' | 'print'
   layout?: string
   /** Extra props for the layout (e.g. media src/type). */
   layoutProps?: Record<string, string>
