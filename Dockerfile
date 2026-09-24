@@ -4,7 +4,11 @@
 # Build multi-stage :
 #   deps    -> `pnpm install` isolé (couche mise en cache tant que le lockfile ne bouge pas)
 #   build   -> `pnpm build` -> .output/ auto-suffisant (Nitro trace/bundle ses deps)
+#   output  -> le contenu de .output/, à la racine de l'étape
 #   runtime -> node:22-slim + .output/ uniquement. Pas de node_modules, pas de git.
+#
+# La CI passe le .output/ sur lequel ses tests e2e ont tourné comme contexte
+# nommé `output`, qui remplace l'étape du même nom : deps et build ne tournent pas.
 #
 # L'image ne contient aucun deck : le contenu est dans la base et le bucket.
 
@@ -33,6 +37,10 @@ ENV NUXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN pnpm build
 
+# ---- output : le serveur construit, remplacé en CI par le build testé ----
+FROM scratch AS output
+COPY --from=build /app/.output /
+
 # ---- runtime : minimal + CLI Infisical pour l'injection des secrets ----
 FROM node:22-slim AS runtime
 WORKDIR /app
@@ -60,7 +68,7 @@ RUN apt-get update \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/.output ./.output
+COPY --from=output / ./.output
 COPY litestream.yml /etc/litestream.yml
 COPY docker-entrypoint.sh run-app.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/run-app.sh \

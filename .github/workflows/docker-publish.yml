@@ -30,6 +30,12 @@ on:
       - 'docs/**'
   workflow_dispatch:
 
+# One run at a time per branch: a newer push waits for the running deploy, and
+# replaces the push that was waiting.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -50,6 +56,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download the tested build
+        uses: actions/download-artifact@v4
+        with:
+          name: nuxt-output
+
+      - name: Unpack the tested build
+        run: tar -xf output.tar
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -79,6 +93,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          # The `output` stage of the Dockerfile becomes the build the tests ran on.
+          build-contexts: output=.output
           platforms: linux/amd64 # le VPS est amd64 — évite tout build arm accidentel
           push: true
           tags: ${{ steps.meta.outputs.tags }}

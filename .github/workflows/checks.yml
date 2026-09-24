@@ -61,6 +61,7 @@ jobs:
 
       - name: Build
         env:
+          NITRO_PRESET: node_server
           NODE_OPTIONS: --max-old-space-size=4096
           NUXT_TELEMETRY_DISABLED: 1
         run: pnpm build
@@ -70,6 +71,21 @@ jobs:
 
       - name: End-to-end tests
         run: pnpm test:e2e
+
+      # The publishing workflow builds its image from this tested build. The tar
+      # keeps the links Nitro makes between its packages, which an artifact
+      # would turn into copies, loading a package twice.
+      - name: Pack the build
+        if: github.event_name != 'pull_request'
+        run: tar -cf output.tar .output
+
+      - name: Upload the build
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuxt-output
+          path: output.tar
+          retention-days: 1
 
       - name: Upload Playwright results
         if: failure()
