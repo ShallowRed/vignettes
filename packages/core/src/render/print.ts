@@ -87,6 +87,10 @@ export function buildPrintView(model: DeckModel, options: PrintOptions): PrintVi
     // Default to one page per slide so a tall slide doesn't spill into a giant
     // multi-screen page; callers can override via `maxPagesPerSlide`.
     pdfMaxPagesPerSlide: options.maxPagesPerSlide ?? 1,
+    // Reveal pages the deck once the document has loaded, and moving a slide
+    // into its page reloads its frames. A printed frame waits in `data-src`,
+    // and `RevealPresentation` loads it once the deck is paged.
+    preloadIframes: false,
   }
   if (options.separateFragments != null)
     printOverrides.pdfSeparateFragments = options.separateFragments

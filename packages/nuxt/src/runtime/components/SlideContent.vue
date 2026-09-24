@@ -4,6 +4,7 @@ import type { PresentationMetadata, Slide } from '../types/presentation.ts'
 import MDCRenderer from '@nuxtjs/mdc/runtime/components/MDCRenderer.vue'
 import { EMBED_SANDBOX, resolveSlideMedia } from '@vignettes/core/render'
 import { computed } from 'vue'
+import { useFrameSource } from '../composables/useFrameSource.ts'
 import { getLayoutStrategy } from '../config/layouts.ts'
 import { quicklinkParts } from '../utils/slide-rendering.ts'
 
@@ -12,6 +13,8 @@ const props = defineProps<{
   metadata: PresentationMetadata
   mdcComponents: Record<string, any>
 }>()
+
+const frameSource = useFrameSource()
 
 const layoutStrategy = computed(() => getLayoutStrategy(props.slide.layout))
 
@@ -114,7 +117,7 @@ const parsedQuicklink = computed(() => {
     >
       <iframe
         v-if="mediaParts.type === 'iframe'"
-        :src="mediaParts.src"
+        v-bind="frameSource(mediaParts.src)"
         :title="mediaParts.title"
         :sandbox="EMBED_SANDBOX"
         frameborder="0"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { inferMediaType } from '@vignettes/core/render'
 import { useDeckMessages } from '@vignettes/nuxt/runtime/composables/useDeckMessages.ts'
+import { useFrameSource } from '@vignettes/nuxt/runtime/composables/useFrameSource.ts'
 import { STORYBOOK_BASE } from '@vignettes/nuxt/runtime/config/injection-keys.ts'
 import { computed, inject } from 'vue'
 import { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '../storybook.ts'
@@ -40,6 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const messages = useDeckMessages()
+const frameSource = useFrameSource()
 
 const storybookBase = inject(STORYBOOK_BASE, undefined)
 
@@ -92,7 +94,7 @@ const scaledFrameStyle = computed(() =>
         class="story-frame__lightbox"
       >
         <iframe
-          :src="resolvedSrc"
+          v-bind="frameSource(resolvedSrc)"
           :title="props.title || props.label || 'Story'"
           :sandbox="EMBED_SANDBOX"
           frameborder="0"
@@ -103,7 +105,7 @@ const scaledFrameStyle = computed(() =>
 
       <iframe
         v-else-if="isIframe"
-        :src="resolvedSrc"
+        v-bind="frameSource(resolvedSrc)"
         :title="props.title || props.label || 'Story'"
         :sandbox="EMBED_SANDBOX"
         frameborder="0"

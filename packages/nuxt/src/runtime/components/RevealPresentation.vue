@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { RevealApi } from 'reveal.js'
 import type { RevealConfig } from '../types/presentation.ts'
+import { useRequestURL } from '#imports'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
-import { DECK_MESSAGES_KEY } from '../config/injection-keys.ts'
+import { DECK_MESSAGES_KEY, PRINT_VIEW_KEY } from '../config/injection-keys.ts'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
 import '../assets/code-theme.css'
@@ -63,18 +64,20 @@ const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().
 
 // A `?print-pdf` load is detected at setup, before Reveal initializes, so the
 // print config (full-page layout, one slide per page) applies from the start.
-const isPrintMode = import.meta.client
-  && new RegExp(PRINT_PDF_QUERY, 'i').test(window.location.search)
+// The server detects it too, and renders the frames of the print view unloaded.
+const requestUrl = useRequestURL()
+const isPrintMode = new RegExp(PRINT_PDF_QUERY, 'i').test(requestUrl.search)
+provide(PRINT_VIEW_KEY, isPrintMode)
 
 const effectiveConfig = isPrintMode
   ? buildPrintView({ meta: { reveal: props.config }, slides: [], assets: [] }, {
-    deckUrl: window.location.href,
+    deckUrl: requestUrl.href,
   }).reveal
   : (props.config || {})
 
 // Reveal's print view is made for Chromium browsers (revealjs.com/pdf-export); in
 // Firefox and Safari the print view names the browsers that export.
-const printSupported = isPrintMode && /Chrome\//.test(navigator.userAgent)
+const printSupported = import.meta.client && isPrintMode && /Chrome\//.test(navigator.userAgent)
 
 const preparingPrint = ref(printSupported)
 
@@ -137,7 +140,8 @@ function handleAnchorClick(event: MouseEvent) {
   window.location.hash = `/${slug}`
 }
 
-// Paging moves each slide into its page, which reloads the frames it holds. The
+// The print view renders its frames with Reveal's lazy `data-src`, and they load
+// once the slides are in their pages: moving a slide reloads its frames. The
 // dialog waits for each frame to load and, for a deck of this site, for Reveal to
 // be ready in it, 60 seconds at most for a frame that does not load: a server
 // renders the embedded decks one after the other, 2 to 5 seconds each.
@@ -166,6 +170,14 @@ function frameSettled(frame: HTMLIFrameElement): Promise<void> {
   })
 }
 
+// Reveal loads the frames of the current slide itself, from their `data-src`.
+function loadFrame(frame: HTMLIFrameElement) {
+  const src = frame.getAttribute('data-src')
+  if (src && frame.getAttribute('src') !== src)
+    frame.setAttribute('src', src)
+  frame.removeAttribute('data-src')
+}
+
 function framesSettled(frames: HTMLIFrameElement[]): Promise<unknown> {
   return Promise.race([
     Promise.all(frames.map(frameSettled)),
@@ -191,23 +203,25 @@ function fitPagesToSheets(root: HTMLElement) {
   pages.forEach(page => page.style.height = `${height}px`)
 }
 
-// Reveal pages the deck once the document has loaded, which on a deck with story
-// iframes comes after Reveal's `ready`: the dialog opens on `pdf-ready`, when the
+// Reveal pages the deck once the document has loaded, which can come after
+// Reveal's `ready`: the frames load and the dialog opens on `pdf-ready`, when the
 // pages exist. A theme sizes a slide at 100% of its parent, and a print page is
-// the slide plus its margin, so each slide gets its own height back first; the
-// story panes rescale on the resize. The dialog waits for the fonts, or the PDF
-// takes the fallback font.
+// the slide plus its margin, so each slide gets its own height back first, and
+// the frames load at their printed size. The dialog waits for the fonts, or the
+// PDF takes the fallback font.
 async function printWhenPaged() {
   const instance = getInstance()
   if (!instance || !revealContainer.value)
     return
-  const frames = framesSettled(Array.from(revealContainer.value.querySelectorAll('iframe')))
   const { height } = instance.getComputedSlideSize()
   revealContainer.value
     .querySelectorAll<HTMLElement>('.pdf-page > section')
     .forEach(slide => slide.style.height = `${height}px`)
   fitPagesToSheets(revealContainer.value)
-  await Promise.all([document.fonts.ready, frames])
+  const frames = Array.from(revealContainer.value.querySelectorAll('iframe'))
+  const settled = framesSettled(frames)
+  frames.forEach(loadFrame)
+  await Promise.all([document.fonts.ready, settled])
   if (!printSupported)
     return
   preparingPrint.value = false

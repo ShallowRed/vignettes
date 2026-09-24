@@ -45,6 +45,7 @@ describe('buildPrintView', () => {
     expect(view.reveal.width).toBe(DEFAULT_PRINT_WIDTH)
     expect(view.reveal.height).toBe(DEFAULT_PRINT_HEIGHT)
     expect(view.reveal.pdfMaxPagesPerSlide).toBe(1)
+    expect(view.reveal.preloadIframes).toBe(false)
     // Untouched defaults still flow through the shared merge.
     expect(view.reveal.hash).toBe(DEFAULT_REVEAL_CONFIG.hash)
   })

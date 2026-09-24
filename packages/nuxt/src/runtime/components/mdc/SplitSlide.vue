@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useDeckMessages } from '../../composables/useDeckMessages.ts'
+import { useFrameSource } from '../../composables/useFrameSource.ts'
 
 interface Props {
   src: string
@@ -23,6 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const messages = useDeckMessages()
+const frameSource = useFrameSource()
 </script>
 
 <template>
@@ -43,7 +45,7 @@ const messages = useDeckMessages()
       >
         <iframe
           v-if="props.type === 'iframe'"
-          :src="props.src"
+          v-bind="frameSource(props.src)"
           :title="props.title"
           frameborder="0"
         />
@@ -60,7 +62,7 @@ const messages = useDeckMessages()
       <template v-else>
         <iframe
           v-if="props.type === 'iframe'"
-          :src="props.src"
+          v-bind="frameSource(props.src)"
           :title="props.title"
           frameborder="0"
           allowfullscreen
