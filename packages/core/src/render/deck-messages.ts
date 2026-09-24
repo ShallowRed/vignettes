@@ -16,6 +16,7 @@ export interface DeckMessages {
   print: string
   printPreparing: string
   printHint: string
+  printReady: string
   printUnsupported: string
   printUnsupportedHint: string
   printReopen: string
@@ -42,6 +43,7 @@ const FR: DeckMessages = {
   print: 'Imprimer ou exporter en PDF',
   printPreparing: 'Préparation de l’export PDF…',
   printHint: 'La fenêtre d’impression s’ouvre automatiquement : choisissez « Enregistrer au format PDF ».',
+  printReady: 'Les pages sont prêtes pour l’export PDF',
   printUnsupported: 'L’export PDF fonctionne dans Chrome, Edge ou Brave',
   printUnsupportedHint: 'Ouvrez cette page dans l’un de ces navigateurs, puis choisissez « Enregistrer au format PDF ».',
   printReopen: 'Rouvrir la fenêtre d’impression',
@@ -68,6 +70,7 @@ const EN: DeckMessages = {
   print: 'Print or export to PDF',
   printPreparing: 'Preparing the PDF export…',
   printHint: 'The print dialog opens automatically: choose “Save as PDF”.',
+  printReady: 'The pages are ready for the PDF export',
   printUnsupported: 'PDF export works in Chrome, Edge or Brave',
   printUnsupportedHint: 'Open this page in one of these browsers, then choose “Save as PDF”.',
   printReopen: 'Reopen the print dialog',

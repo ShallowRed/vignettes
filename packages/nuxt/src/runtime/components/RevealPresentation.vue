@@ -76,6 +76,8 @@ const effectiveConfig = isPrintMode
 // Firefox and Safari the print view names the browsers that export.
 const printSupported = isPrintMode && /Chrome\//.test(navigator.userAgent)
 
+const preparingPrint = ref(printSupported)
+
 function openPrintView() {
   window.location.href = buildPrintPdfUrl(window.location.href)
 }
@@ -137,10 +139,11 @@ function handleAnchorClick(event: MouseEvent) {
 
 // Paging moves each slide into its page, which reloads the frames it holds. The
 // dialog waits for each frame to load and, for a deck of this site, for Reveal to
-// be ready in it, 10 seconds at most for a frame that does not load.
+// be ready in it, 60 seconds at most for a frame that does not load: a server
+// renders the embedded decks one after the other, 2 to 5 seconds each.
 // Reveal's paper stylesheet reflows a printed deck into plain text, except under
 // `html.print-pdf`: an embedded deck takes the class, so it prints as on screen.
-const FRAMES_MAX_MS = 10000
+const FRAMES_MAX_MS = 60000
 
 function frameSettled(frame: HTMLIFrameElement): Promise<void> {
   return new Promise((resolve) => {
@@ -205,8 +208,10 @@ async function printWhenPaged() {
     .forEach(slide => slide.style.height = `${height}px`)
   fitPagesToSheets(revealContainer.value)
   await Promise.all([document.fonts.ready, frames])
-  if (printSupported)
-    requestAnimationFrame(() => requestAnimationFrame(() => window.print()))
+  if (!printSupported)
+    return
+  preparingPrint.value = false
+  requestAnimationFrame(() => requestAnimationFrame(() => window.print()))
 }
 
 onMounted(async () => {
@@ -243,14 +248,25 @@ onUnmounted(() => {
     <!-- The veil precedes the slides so the browser paints it before them. -->
     <div
       class="deck-veil"
-      :class="{ 'deck-veil--lifted': ready }"
+      :class="{ 'deck-veil--lifted': ready && !preparingPrint, 'deck-veil--print': mounted && preparingPrint }"
       role="status"
     >
       <span
         class="deck-veil__mark"
         aria-hidden="true"
       ><i /><i /><i /></span>
-      <span class="deck-veil__label">{{ messages.loading }}</span>
+      <template v-if="mounted && preparingPrint">
+        <p class="deck-veil__title">
+          {{ messages.printPreparing }}
+        </p>
+        <p class="deck-veil__hint">
+          {{ messages.printHint }}
+        </p>
+      </template>
+      <span
+        v-else
+        class="deck-veil__label"
+      >{{ messages.loading }}</span>
     </div>
     <div class="slides">
       <slot />
@@ -258,12 +274,15 @@ onUnmounted(() => {
     <!-- Screen-only, hidden by @media print: it offers to reopen the print dialog,
          or names the browsers that export, and leads back to the deck. -->
     <div
-      v-if="mounted && isPrintMode"
+      v-if="mounted && isPrintMode && !preparingPrint"
       class="print-overlay"
     >
-      <p>{{ printSupported ? messages.printPreparing : messages.printUnsupported }}</p>
-      <p class="print-overlay__hint">
-        {{ printSupported ? messages.printHint : messages.printUnsupportedHint }}
+      <p>{{ printSupported ? messages.printReady : messages.printUnsupported }}</p>
+      <p
+        v-if="!printSupported"
+        class="print-overlay__hint"
+      >
+        {{ messages.printUnsupportedHint }}
       </p>
       <button
         v-if="printSupported"
@@ -312,10 +331,22 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 60;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  text-align: center;
   background: var(--surface, #fff);
   transition: opacity 150ms ease, visibility 0s linear 150ms;
+}
+
+/* Paging makes the print view as tall as its pages, and Reveal hides the page
+   while it pages. */
+.deck-veil--print {
+  position: fixed;
+  visibility: visible;
 }
 
 .deck-veil--lifted {
@@ -352,6 +383,25 @@ onUnmounted(() => {
 
 .deck-veil--lifted .deck-veil__mark i {
   animation-play-state: paused;
+}
+
+.deck-veil__title,
+.deck-veil__hint {
+  max-width: 32rem;
+  margin: 0;
+  text-align: inherit;
+  color: #1a1a1a;
+}
+
+.deck-veil__title {
+  margin-top: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.deck-veil__hint {
+  font-size: 0.95rem;
+  color: #555;
 }
 
 .deck-veil__label {
