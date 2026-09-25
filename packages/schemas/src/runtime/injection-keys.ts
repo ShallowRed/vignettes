@@ -44,6 +44,10 @@ export interface JsonTourZoneRegistration {
   /** Area highlighted on the tour's image, `x,y,w,h` in percent of the image. */
   spot?: string
   step?: number
+  /** Words of its lines marked while the zone is current, separated by `|`. */
+  mark?: string
+  /** Words of its lines underlined while the zone is current, separated by `|`. */
+  underline?: string
 }
 export interface JsonTourRegistry {
   fragments: boolean

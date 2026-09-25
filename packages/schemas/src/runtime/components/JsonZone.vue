@@ -18,6 +18,10 @@ interface Props {
   step?: string | number
   /** The step this slide is on, for a tour whose steps a deck spreads over several slides. */
   current?: boolean
+  /** Words of its lines to paint while the zone is current, separated by `|`. */
+  mark?: string
+  /** Words of its lines to underline while the zone is current, separated by `|`. */
+  underline?: string
 }
 
 const props = defineProps<Props>()
@@ -28,7 +32,7 @@ const step = computed(() => (props.step === undefined || props.step === '' ? und
 
 onMounted(() => {
   if (el.value && registry)
-    registry.registerZone({ el: el.value, lines: props.lines, spot: props.spot, step: step.value })
+    registry.registerZone({ el: el.value, lines: props.lines, spot: props.spot, step: step.value, mark: props.mark, underline: props.underline })
 })
 </script>
 

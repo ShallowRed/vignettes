@@ -103,7 +103,13 @@ function showLines(tour: HTMLElement, range: [number, number] | null, travel: (p
   const rows = Array.from(tour.querySelectorAll<HTMLElement>('pre .line'))
   tour.classList.toggle('json-tour--focus', !!range)
   rows.forEach((line, i) => {
-    line.classList.toggle('json-tour__line--on', !!range && i + 1 >= range[0] && i + 1 <= range[1])
+    const on = !!range && i + 1 >= range[0] && i + 1 <= range[1]
+    line.classList.toggle('json-tour__line--on', on)
+    // The words a zone points at carry their mark only while its lines are on.
+    line.querySelectorAll<HTMLElement>('[data-json-tour-word]').forEach((word) => {
+      if (word.dataset.jsonTourWord)
+        word.classList.toggle(word.dataset.jsonTourWord, on)
+    })
   })
   if (!range || !panel)
     return
@@ -155,12 +161,14 @@ let deck: Element | null = null
  * Wraps each occurrence of the given words in the code, inside the text nodes
  * Shiki produced, so a word of a key or of a value can carry its own mark. A
  * word matches whole: `rdgf:certification` stays out of `certificationLevel`.
+ * A zone's words are searched in its lines only and wait, unmarked, for the
+ * zone to be current.
  */
-function decorate(words: string | undefined, className: string) {
+function decorate(words: string | undefined, className: string, within: Node | null = pre, zoneWord = false) {
   const needles = (words ?? '').split('|').map(w => w.trim()).filter(Boolean)
-  if (!pre || needles.length === 0)
+  if (!within || needles.length === 0)
     return
-  const walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT)
+  const walker = document.createTreeWalker(within, NodeFilter.SHOW_TEXT)
   const texts: Text[] = []
   for (let node = walker.nextNode(); node; node = walker.nextNode())
     texts.push(node as Text)
@@ -189,7 +197,10 @@ function decorate(words: string | undefined, className: string) {
       const rest = node.splitText(hit)
       const tail: Text | null = rest.length > needle.length ? rest.splitText(needle.length) : null
       const span = document.createElement('span')
-      span.className = className
+      if (zoneWord)
+        span.dataset.jsonTourWord = className
+      else
+        span.className = className
       rest.replaceWith(span)
       span.append(rest)
       node = tail
@@ -203,6 +214,13 @@ onMounted(async () => {
   decorate(props.mark, 'code-mark')
   decorate(props.underline, 'code-underline')
   lines = Array.from(root.value?.querySelectorAll<HTMLElement>('pre .line') ?? [])
+  for (const zone of zones) {
+    const range = parseRange(zone.lines)
+    for (const line of range ? lines.slice(range[0] - 1, range[1]) : []) {
+      decorate(zone.mark, 'code-mark', line, true)
+      decorate(zone.underline, 'code-underline', line, true)
+    }
+  }
   pre?.addEventListener('scroll', markOverflow, { passive: true })
   for (const [i, zone] of zones.entries()) {
     if (props.fragments) {
