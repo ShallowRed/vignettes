@@ -43,6 +43,17 @@ describe('the family fields of PATCH /api/admin/decks/:slug', () => {
   })
 })
 
+describe('the folder of PATCH /api/admin/decks/:slug', () => {
+  it('refuses a move to a folder that does not exist', async () => {
+    await expect(patch('talk', { project: 'nowhere' })).rejects.toMatchObject({ statusCode: 400 })
+  })
+
+  it('saves a deck published under a folder that was never created', async () => {
+    await useDbContent().writer.save({ slug: 'orphan', raw: '---\ntitle: Orphan\nproject: nowhere\n---\n\n# Orphan\n', actor: 'boss' })
+    await expect(patch('orphan', { project: 'nowhere', status: 'private' })).resolves.toMatchObject({ project: 'nowhere', status: 'private' })
+  })
+})
+
 describe('copying a deck (POST /api/presentations/:slug/duplicate)', () => {
   const copy = (body: Record<string, unknown>, slug = 'talk') => duplicate(owner({ params: { slug }, body }))
 

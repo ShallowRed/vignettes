@@ -53,9 +53,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: `Invalid patch: ${parsed.error.issues.map(i => i.path.join('.') || i.message).join(', ')}` })
   }
 
-  // A deck filed under a slug with no folder would show as a folder nobody can manage.
-  if (parsed.data.project && !await useProjectStore().isLive(parsed.data.project))
+  // A deck filed under a slug with no folder would show as a folder nobody can
+  // manage. A deck already there, published before its folder was created,
+  // keeps it: the refusal is for a move.
+  if (parsed.data.project && !await useProjectStore().isLive(parsed.data.project)
+    && (await useDeckMeta().get(slug))?.project !== parsed.data.project) {
     throw createError({ statusCode: 400, statusMessage: `No folder "${parsed.data.project}"` })
+  }
 
   // A replacement names a live deck, and never a deck this one already
   // replaces; a family stays inside one folder, whether the patch names the
