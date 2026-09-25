@@ -6,6 +6,7 @@ import { slugify } from '@vignettes/core/slugify'
 import { deckApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
 import { useFormModal } from '../composables/useFormModal'
+import { requestErrorMessage } from '../utils/request-error'
 
 /**
  * Copy a deck as a new draft, opened in the editor. A variant stands beside the
@@ -65,7 +66,7 @@ const { mutate: runCopy, isLoading: pending } = useMutation({
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
       ? t('deck.duplicate.slugTaken', { slug: state.slug })
-      : e?.statusMessage || t('deck.duplicate.failed')
+      : requestErrorMessage(e, t('deck.duplicate.failed'))
   },
 })
 

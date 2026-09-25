@@ -36,6 +36,7 @@ import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
+import { requestErrorMessage } from '../../utils/request-error'
 
 const { t, locale } = useI18n()
 
@@ -580,7 +581,7 @@ async function save() {
     toast.add({
       title: e?.statusCode === 409 || e?.data?.data?.conflict || e?.data?.conflict
         ? t('editor.save.conflict')
-        : e?.statusMessage || e?.message || t('editor.save.failed'),
+        : requestErrorMessage(e, e?.message || t('editor.save.failed')),
       icon: 'i-lucide-triangle-alert',
       color: 'error',
     })
@@ -611,7 +612,7 @@ async function publish() {
   }
   catch (e: any) {
     publishState.value = 'error'
-    toast.add({ title: e?.statusMessage || e?.message || t('editor.publication.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(e, e?.message || t('editor.publication.failed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 }
 

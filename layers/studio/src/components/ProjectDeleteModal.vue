@@ -2,6 +2,7 @@
 import { useMutation } from '@pinia/colada'
 import { projectApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
+import { requestErrorMessage } from '../utils/request-error'
 
 // Delete a project: it and all its decks move to the trash together (reversible).
 // Optimistic — the folder and its decks vanish from the catalog immediately,
@@ -36,7 +37,7 @@ const { mutate: confirm, isLoading: pending } = useMutation({
     // Roll the optimistic removal back, then surface the failure.
     if (snapshot)
       restoreSnapshot(snapshot)
-    toast.add({ title: error?.statusMessage || t('catalog.projectDelete.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(error, t('catalog.projectDelete.failed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
   onSettled: invalidateAll,
 })

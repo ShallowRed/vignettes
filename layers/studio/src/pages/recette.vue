@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RecettePersona } from '#shared/recette/personas'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PREFIX } from '#shared/recette/personas'
+import { requestErrorMessage } from '../utils/request-error'
 
 /**
  * Staging acceptance kit (owner only, staging and dev): one block per account,
@@ -41,7 +42,7 @@ async function seed() {
     await refresh()
   }
   catch (e: any) {
-    toast.add({ title: e?.statusMessage || t('recette.dataset.resetFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(e, t('recette.dataset.resetFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
   finally {
     seeding.value = false

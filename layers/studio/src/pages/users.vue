@@ -5,6 +5,7 @@ import { usersApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
 import { usersQuery } from '../queries'
 import { usersKeys } from '../queries/keys'
+import { requestErrorMessage } from '../utils/request-error'
 
 /**
  * Accounts page (owner only): every identity the instance knows, its global
@@ -37,7 +38,7 @@ function invalidate() {
   return queryCache.invalidateQueries({ key: usersKeys.all })
 }
 function onError(error: any, fallback: string) {
-  toast.add({ title: error?.statusMessage || fallback, icon: 'i-lucide-triangle-alert', color: 'error' })
+  toast.add({ title: requestErrorMessage(error, fallback), icon: 'i-lucide-triangle-alert', color: 'error' })
 }
 
 const { mutate: changeRole, isLoading: changingRole } = useMutation({

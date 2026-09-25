@@ -10,6 +10,7 @@ import { useAppSession } from '../composables/useAppSession'
 import { useCatalog, useCatalogCache } from '../composables/useCatalog'
 import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
+import { requestErrorMessage } from '../utils/request-error'
 
 /**
  * Deck settings panel, in three tabs: the deck itself (folder, address), who can
@@ -144,7 +145,7 @@ const { mutate: save, isLoading: saving } = useMutation({
     emit('saved')
   },
   onError(e: any) {
-    toast.add({ title: e?.statusMessage || t('deck.meta.saveFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(e, t('deck.meta.saveFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
 })
 

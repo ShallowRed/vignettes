@@ -2,6 +2,7 @@ import type { TrashedDeckSummary, TrashedProjectSummary, TrashTarget } from '#sh
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { trashApi } from '../api'
 import { catalogKeys, trashKeys, trashQuery } from '../queries'
+import { requestErrorMessage } from '../utils/request-error'
 import { useAppSession } from './useAppSession'
 
 /**
@@ -37,7 +38,7 @@ export function useTrash() {
     ])
   }
   function toastError(error: any) {
-    toast.add({ title: error?.statusMessage || t('admin.trash.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(error, t('admin.trash.failed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 
   const restore = useMutation({

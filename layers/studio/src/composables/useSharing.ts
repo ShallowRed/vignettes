@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { permissionsApi, usersApi } from '../api'
 import { grantsQuery, sharingKey, usersQuery } from '../queries'
 import { usersKeys } from '../queries/keys'
+import { requestErrorMessage } from '../utils/request-error'
 
 /** Grant duration presets, as day counts (0 = permanent). */
 const GRANT_DURATIONS = [0, 7, 30, 90]
@@ -57,7 +58,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     return queryCache.invalidateQueries({ key: sharingKey(scope) })
   }
   function onError(error: any, action: string) {
-    toast.add({ title: error?.statusMessage || action, icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(error, action), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 
   const { mutate: submitGrant, isLoading: adding } = useMutation({

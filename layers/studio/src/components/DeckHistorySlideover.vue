@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { historyApi } from '../api'
 import { deckKeys, historyEntryQuery, historyQuery } from '../queries'
 import { diffStructure } from '../utils/diff-skeleton'
+import { requestErrorMessage } from '../utils/request-error'
 
 /**
  * The history of a deck: the draft, then the published versions and the
@@ -210,7 +211,7 @@ const { mutateAsync: restore, isLoading: restoring } = useMutation({
     open.value = false
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || t('deck.history.restoreFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(error, t('deck.history.restoreFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
 })
 
@@ -222,7 +223,7 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
     label.value = ''
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || t('deck.history.snapshotFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(error, t('deck.history.snapshotFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
   onSettled: () => queryCache.invalidateQueries({ key: deckKeys.history(props.slug) }),
 })

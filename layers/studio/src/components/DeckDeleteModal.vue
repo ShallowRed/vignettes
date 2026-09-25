@@ -3,6 +3,7 @@ import type { PresentationListItem } from '#shared/presentations'
 import { useMutation } from '@pinia/colada'
 import { deckApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
+import { requestErrorMessage } from '../utils/request-error'
 
 // Delete confirmation. Moves the deck to the trash (reversible); it can be
 // restored or permanently erased from there.
@@ -30,7 +31,7 @@ const { mutate: confirm, isLoading: pending } = useMutation({
     })
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || t('deck.delete.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(error, t('deck.delete.failed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
   // Refetch the deck listing so the trashed deck disappears from the catalog.
   onSettled: invalidatePresentations,

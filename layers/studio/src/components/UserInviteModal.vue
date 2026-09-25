@@ -4,6 +4,7 @@ import { handleField, IDENTITY_PROVIDER_ITEMS, isProviderHandle } from '#shared/
 import { useMutation, useQueryCache } from '@pinia/colada'
 import { usersApi } from '../api'
 import { usersKeys } from '../queries/keys'
+import { requestErrorMessage } from '../utils/request-error'
 
 /**
  * Add an account from the accounts page: name it by its provider handle (Google
@@ -52,7 +53,7 @@ const { mutate: submit, isLoading: busy } = useMutation({
     emit('invited', account)
   },
   onError(error: any) {
-    toast.add({ title: error?.statusMessage || t('admin.invite.addFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+    toast.add({ title: requestErrorMessage(error, t('admin.invite.addFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   },
 })
 

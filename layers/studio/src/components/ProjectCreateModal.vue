@@ -7,6 +7,7 @@ import { projectApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
 import { useFormModal } from '../composables/useFormModal'
 import { PROJECT_COLORS, projectSwatchStyle } from '../utils/project-colors'
+import { requestErrorMessage } from '../utils/request-error'
 
 const emit = defineEmits<{ created: [Project] }>()
 // Create-project modal: a first-class catalog folder. The slug follows the
@@ -40,7 +41,7 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
       ? t('catalog.form.identifierTaken', { slug: state.slug })
-      : e?.statusMessage || t('catalog.form.createFailed')
+      : requestErrorMessage(e, t('catalog.form.createFailed'))
   },
 })
 
