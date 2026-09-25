@@ -19,6 +19,9 @@
  *   --border / --radius / --shadow
  *       the outline, the corners and the elevation of a box drawn by a
  *       component (card, quote, frame, code block).
+ *   --on-surface-title / --on-surface-default / --on-surface-mention
+ *       the text intensities as the page root sets them, for the text of a
+ *       surface a component paints. Derived here: a theme does not set them.
  */
 
 :root {
@@ -41,4 +44,10 @@
   --border: #e0e0e0;
   --radius: 6px;
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  // Resolved at the root, so a slide that sets its own text colors, such as a
+  // dark section divider, leaves the light surfaces of the components dark text.
+  --on-surface-title: var(--text-title);
+  --on-surface-default: var(--text-default);
+  --on-surface-mention: var(--text-mention);
 }

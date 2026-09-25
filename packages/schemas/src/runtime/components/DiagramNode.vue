@@ -89,6 +89,9 @@ onMounted(() => {
   background: var(--accent-soft, #e3e3fd);
   border: none;
   text-align: center;
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
 }
 
 .diagram-node--flow :deep(.picto-card__title) {
@@ -118,6 +121,9 @@ onMounted(() => {
 
 .diagram-node.diagram-node--emphasis :deep(.picto-card) {
   background: var(--accent-soft, #e3e3fd);
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
   border-color: var(--accent, #000091);
 }
 

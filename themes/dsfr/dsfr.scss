@@ -18,20 +18,29 @@
   }
 }
 
-// `:not(.stack)` keeps the light colors off the vertical slides nested under a
-// divider: Reveal marks their wrapper `.stack`.
+// A divider sets the text tokens to light values, so its headings, text, lists,
+// tables and quotes follow them. `:not(.stack)` keeps the light colors off the
+// vertical slides nested under a divider: Reveal marks their wrapper `.stack`.
 .reveal section.slide-h2:not(.stack) {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    color: var(--dsfr-grey-1000) !important;
+  --text-title: var(--dsfr-grey-1000);
+  --text-default: var(--dsfr-blue-france-850);
+  --text-mention: var(--dsfr-blue-france-850);
+
+  color: var(--text-default);
+
+  a {
+    color: var(--dsfr-grey-1000);
   }
 
-  p {
-    color: var(--dsfr-blue-france-850) !important;
+  a:hover,
+  :is(h2, h3) em {
+    color: var(--dsfr-blue-france-850);
+  }
+
+  // The striped and hovered rows of a table keep the surface of the divider,
+  // which their light text needs.
+  tbody tr:is(:nth-child(even), :hover) {
+    background: none;
   }
 }
 

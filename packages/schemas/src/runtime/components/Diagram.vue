@@ -446,7 +446,7 @@ onBeforeUnmount(() => observer?.disconnect())
    that shrank with them stopped being readable on a projected slide. */
 .diagram__edge text {
   font-size: var(--diagram-label, 0.8em);
-  fill: var(--text-default, #161616);
+  fill: var(--on-surface-default, #161616);
   font-family: inherit;
 }
 
@@ -478,8 +478,12 @@ onBeforeUnmount(() => observer?.disconnect())
   width: 100%;
 }
 
+/* A card that paints its own surface sets its text from the surface tokens. */
 .diagram--cards-outlined :deep(.picto-card) {
   background: var(--surface, #fff);
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
   border: 1px solid #cacafb;
 }
 
@@ -496,6 +500,9 @@ onBeforeUnmount(() => observer?.disconnect())
    so it keeps a single outline; a planned card keeps its dashes alone. */
 .diagram :deep(.diagram-node.current-fragment .picto-card) {
   background: var(--accent-bg, #f5f5fe);
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
   border-color: var(--accent, #000091);
   box-shadow: 0 0 0 1px var(--accent, #000091);
 }

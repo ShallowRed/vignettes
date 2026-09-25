@@ -81,7 +81,7 @@ const style = computed(() => {
 .diagram-area {
   --tone-bg: rgb(255 255 255 / 45%);
   --tone-main: #c6c6d6;
-  --tone-text: var(--text-default, #3a3a3a);
+  --tone-text: var(--on-surface-default, #3a3a3a);
   position: relative;
   align-self: stretch;
   justify-self: stretch;

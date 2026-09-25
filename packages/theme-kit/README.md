@@ -59,6 +59,8 @@ Code that works under any theme reads these custom properties only. A theme sets
 | `--text-title` | Headings and strong text |
 | `--text-mention` | Muted text: captions, small print |
 
+The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
+
 ## What it contains
 
 `_semantic-tokens.scss` declares the contract above. `_reveal-patches.scss` adapts Reveal.js defaults and bridges MDC's wrapper elements with `display: contents`. `_slide-structure.scss` is the flex skeleton of the three slide kinds the engine tags on each section: `slide-h1` for a title slide, `slide-h2` for a section divider, `slide-h3` for a heading with body. `_media-layouts.scss` is the grid behind the media layouts. `_spacing.scss` and `_quicklinks.scss` cover the spacing scale and the in-deck navigation links.

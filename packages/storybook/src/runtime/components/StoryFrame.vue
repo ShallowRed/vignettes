@@ -161,6 +161,9 @@ const scaledFrameStyle = computed(() =>
   width: 100%;
   overflow: hidden;
   background: var(--surface, #fff);
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
   border: 1px solid var(--border, #e0e0e0);
   box-shadow: var(--shadow, 0 2px 8px rgba(0, 0, 0, 0.12));
 }

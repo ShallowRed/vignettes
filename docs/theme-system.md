@@ -85,6 +85,8 @@ Code that must not care which theme is active (the engine layer, MDC components 
 
 `packages/theme-kit/_semantic-tokens.scss` provides defaults so a theme still renders if it forgets one.
 
+The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
+
 ## The code theme of a deck
 
 A deck sets the colors of its code blocks in its frontmatter (`code: sombre`, or `code: { theme: sombre, string: '#FFD700' }`). `RevealPresentation` turns that value into `--code-*` custom properties on the deck root and adds the class `reveal--code-theme`. `packages/nuxt/src/runtime/assets/code-theme.css`, which ships with the renderer, colors each token from these properties under any theme. A role the code theme omits keeps the color of the highlight theme (`mdc.highlight.theme`).
