@@ -23,6 +23,15 @@ test('the deck lifts its loading veil once Reveal is ready', async ({ page }) =>
   expect(errors).toEqual([])
 })
 
+test('a deck without `reveal:` takes the slide size of its theme manifest', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'The slide size does not depend on the browser.')
+  await page.goto(DECK)
+  await expect(page.locator('.reveal')).toHaveClass(/\bready\b/)
+  // The size declared by themes/dsfr/theme.json.
+  await expect(page.locator('.reveal .slides')).toHaveCSS('width', '1200px')
+  await expect(page.locator('.reveal .slides')).toHaveCSS('height', '800px')
+})
+
 test('every authoring component renders its own markup', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'Component rendering does not depend on the browser.')
   await page.goto(DECK)
