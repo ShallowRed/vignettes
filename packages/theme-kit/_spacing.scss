@@ -23,13 +23,12 @@
 }
 
 /* Full-bleed layouts manage their own edges. */
-.reveal .slides section.layout-full,
 .reveal .slides section.layout-media-cover {
   padding: 0;
 }
 
 /* Reveal's print view moves each slide into a `.pdf-page` and sets its padding
    to 0 with `!important`: the printed slide keeps the same inset. */
-html.reveal-print .reveal .slides .pdf-page > section:not(.layout-full, .layout-media-cover) {
+html.reveal-print .reveal .slides .pdf-page > section:not(.layout-media-cover) {
   padding: var(--slide-padding-y) var(--slide-padding-x) !important;
 }

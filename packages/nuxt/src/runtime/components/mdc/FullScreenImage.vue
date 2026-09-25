@@ -25,8 +25,7 @@ defineProps<Props>()
 
 <style scoped>
 .full-screen-image {
-  position: absolute;
-  inset: 0;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
