@@ -3,6 +3,7 @@ import type { PresentationData } from '../types/presentation.ts'
 import { buildComponentMap } from '@vignettes/core/deck'
 import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
+import { useSlideIds } from '../composables/useSlideIds.ts'
 import { STORYBOOK_BASE } from '../config/injection-keys.ts'
 import { getSlideClasses, resolveSlideBackground } from '../utils/slide-rendering.ts'
 
@@ -18,12 +19,19 @@ provide(
   computed(() => props.presentationData?.metadata?.storybook),
 )
 
-const mdcComponents: Record<string, any> = Object.fromEntries(
-  Object.entries(buildComponentMap()).map(([key, componentName]) => [
-    key,
-    resolveComponent(componentName),
-  ]),
-)
+// Headings render as plain elements, so a host's prose components (the anchored
+// headings of a documentation site) leave the slide titles to the theme.
+const plainHeadings = Object.fromEntries(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].map(tag => [tag, tag]))
+
+const mdcComponents: Record<string, any> = {
+  ...plainHeadings,
+  ...Object.fromEntries(
+    Object.entries(buildComponentMap()).map(([key, componentName]) => [
+      key,
+      resolveComponent(componentName),
+    ]),
+  ),
+}
 
 // Reveal draws the background from these attributes. An overlay is black under
 // the image, made that much transparent.

@@ -1,4 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue'
+import { useHead } from '#imports'
 import { resolveThemeName } from '@vignettes/core/theme'
 import { computed, toValue } from 'vue'
 

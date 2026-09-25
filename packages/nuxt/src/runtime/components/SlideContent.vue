@@ -6,7 +6,7 @@ import { EMBED_SANDBOX, resolveSlideMedia } from '@vignettes/core/render'
 import { computed } from 'vue'
 import { useFrameSource } from '../composables/useFrameSource.ts'
 import { getLayoutStrategy } from '../config/layouts.ts'
-import { quicklinkParts } from '../utils/slide-rendering.ts'
+import { keepKnownComponents, quicklinkParts } from '../utils/slide-rendering.ts'
 
 const props = defineProps<{
   slide: Slide
@@ -20,10 +20,12 @@ const layoutStrategy = computed(() => getLayoutStrategy(props.slide.layout))
 
 // The deck model carries the parsed trees as `unknown`, so it stays free of the
 // renderer's types. This component is the renderer side, and names them once.
-const body = computed(() => props.slide.body as MDCRoot)
-const header = computed(() => props.slide.header as MDCRoot | undefined)
-const pretitle = computed(() => props.slide.pretitle as MDCRoot | undefined)
-const subtitle = computed(() => props.slide.subtitle as MDCRoot | undefined)
+const known = computed(() => Object.keys(props.mdcComponents))
+const rendered = (tree: unknown) => tree ? keepKnownComponents(tree as MDCRoot, known.value) : undefined
+const body = computed(() => rendered(props.slide.body) as MDCRoot)
+const header = computed(() => rendered(props.slide.header))
+const pretitle = computed(() => rendered(props.slide.pretitle))
+const subtitle = computed(() => rendered(props.slide.subtitle))
 
 // null when the slide has no media.
 const mediaParts = computed(() =>

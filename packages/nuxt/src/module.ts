@@ -6,9 +6,16 @@ import {
   createResolver,
   defineNuxtModule,
 } from '@nuxt/kit'
+import { compileTheme } from './build/theme-build.ts'
+import { discoverThemes } from './build/theme-registry.ts'
 import themeWatcher from './build/theme-watcher.js'
 
 export interface ModuleOptions {
+  /**
+   * Compile the themes of the application and of the content space to
+   * `public/themes/` when Nuxt starts, in development and for a build.
+   */
+  compileThemes?: boolean
   /**
    * Recompile the themes and reload the page when a theme directory or a theme
    * package changes. Development only.
@@ -32,6 +39,7 @@ export default defineNuxtModule<ModuleOptions>({
     compatibility: { nuxt: '>=4.0.0' },
   },
   defaults: {
+    compileThemes: true,
     watchThemes: true,
   },
   setup(options, nuxt) {
@@ -43,6 +51,12 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.nitro.externals ||= {}
     nuxt.options.nitro.externals.inline ||= []
     nuxt.options.nitro.externals.inline.push(runtime)
+
+    // `@vignettes/core` imports slugify, a CommonJS package, which Vite serves
+    // unconverted in development unless it pre-bundles it.
+    nuxt.options.vite.optimizeDeps ||= {}
+    nuxt.options.vite.optimizeDeps.include ||= []
+    nuxt.options.vite.optimizeDeps.include.push('@vignettes/nuxt > @vignettes/core > slugify')
 
     // The authoring components are named in markdown and resolved at runtime by
     // `resolveComponent('Quote')`, which requires them global. Nuxt skips a
@@ -66,6 +80,13 @@ export default defineNuxtModule<ModuleOptions>({
 
     addPlugin(resolver.resolve('./runtime/plugins/theme-registry'))
     addPlugin(resolver.resolve('./runtime/plugins/french-typography'))
+
+    // Nitro serves the public directory only when it exists at startup, so the
+    // themes compile here, before Nitro starts.
+    if (options.compileThemes && !nuxt.options._prepare) {
+      for (const theme of discoverThemes(nuxt.options.rootDir))
+        compileTheme(nuxt.options.rootDir, theme)
+    }
 
     if (options.watchThemes && nuxt.options.dev) {
       nuxt.options.vite.plugins ||= []

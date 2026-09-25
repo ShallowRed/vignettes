@@ -5,6 +5,8 @@ import { useRequestURL } from '#imports'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+import { useReveal } from '../composables/useReveal.ts'
+import { useTheme } from '../composables/useTheme.ts'
 import { DECK_MESSAGES_KEY, PRINT_VIEW_KEY } from '../config/injection-keys.ts'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
@@ -338,7 +340,7 @@ onUnmounted(() => {
 <style scoped>
 .reveal {
   width: 100%;
-  height: 100vh;
+  height: var(--vignettes-deck-height, 100vh);
 }
 
 .deck-veil {

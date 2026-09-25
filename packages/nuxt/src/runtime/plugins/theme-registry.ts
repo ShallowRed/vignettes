@@ -1,5 +1,5 @@
 import type { ThemeRegistry } from '@vignettes/core/theme'
-import { defineNuxtPlugin } from '#imports'
+import { defineNuxtPlugin, useRequestEvent, useState } from '#imports'
 import { setDefaultTheme, setThemeRegistry } from '@vignettes/core/theme'
 
 /**

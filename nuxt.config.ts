@@ -35,6 +35,11 @@ export default defineNuxtConfig({
   // SSR hydration, cache invalidation and optimistic updates).
   modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui', '@vignettes/nuxt', '@vignettes/schemas', '@vignettes/storybook'],
 
+  // `pnpm build:themes` compiles the themes and generates their tokens before Nuxt starts.
+  vignettes: {
+    compileThemes: false,
+  },
+
   // Workspace packages ship TypeScript sources: transpiled by Vite, inlined by Nitro.
   build: {
     transpile: ['@vignettes/core', '@vignettes/typographie'],

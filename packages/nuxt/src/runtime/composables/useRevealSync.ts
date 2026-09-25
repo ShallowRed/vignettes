@@ -1,3 +1,5 @@
+import { inject } from 'vue'
+
 // Lets MDC child components trigger a Reveal.js sync after dynamic DOM changes.
 export function useRevealSync() {
   const sync = inject<() => void>('revealSync', () => {

@@ -33,6 +33,8 @@ const { presentationData } = usePresentation(useRoute().params.slug as string)
 </template>
 ```
 
+`usePresentation(slug)` reads `{ content }`, the deck's markdown, from `/api/presentations/<slug>`, or from the URL given as its second argument. The deck fills the height of the window. A page that shows a deck among other content sets `--vignettes-deck-height` on the deck's container, for instance `100%` on a box with an aspect ratio.
+
 ## The deck
 
 A deck is a markdown document with frontmatter:
@@ -119,4 +121,4 @@ Two more modules extend the set: `@vignettes/schemas` for the explanation kit, `
 
 ## Themes
 
-A theme is a directory with a `theme.json` manifest and an SCSS entry that builds on `@vignettes/theme-kit`. The module compiles the themes it discovers in the application and in the content space, and watches them in development. `docs/theme-system.md` of the repository holds the reference.
+A theme is a directory with a `theme.json` manifest and an SCSS entry that builds on `@vignettes/theme-kit`. The module compiles the themes it discovers in the application and in the content space to `public/themes/` when Nuxt starts, in development and for a build, and watches them in development. An application that compiles its themes in its own build script sets `vignettes: { compileThemes: false }`. `docs/theme-system.md` of the repository holds the reference.

@@ -37,9 +37,10 @@ export function packageDirs(root, themes) {
   return [...dirs]
 }
 
-// Dev theme watcher: watch only, the compile at server start comes from `pnpm dev`
-// (`build:themes`). Editing a theme, a stylesheet package or a brand in the
-// content space recompiles the themes concerned and reloads the page.
+// Dev theme watcher: watch only, the compile at server start comes from the
+// module's `compileThemes` or from the application's build script. Editing a
+// theme, a stylesheet package or a brand in the content space recompiles the
+// themes concerned and reloads the page.
 export default function themeWatcherPlugin() {
   return {
     name: 'theme-watcher',
