@@ -1,12 +1,13 @@
 // The two implementations of the `DeckParser` port: headings and separators.
 
 import type { MDCParserResult } from '@nuxtjs/mdc'
-import type { DeckParser, Slide } from '@vignettes/core/deck'
+import type { DeckParser, Slide, SlideSource } from '@vignettes/core/deck'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import {
   BACKGROUND_ANNOTATION_TAG,
   fullSlideComponentNames,
   HTML_REWRITTEN_COMPONENT_TAGS,
+  splitSlides,
   STRIPPED_ANNOTATION_TAGS,
 } from '@vignettes/core/deck'
 
@@ -228,139 +229,80 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
   }
 }
 
-// Splits children into vertical slides at each H3 boundary; returns a plain
-// Slide when only one section results.
-export function processVerticalSlides(children: any[], sectionHeadingLevel?: string): Slide {
-  if (!children || children.length === 0)
-    return createSlide([], sectionHeadingLevel)
-
-  const verticalSlides: Slide[] = []
-  let current: any[] = []
-
-  for (const node of children) {
-    if (node.type === 'element' && node.tag === 'h3' && current.length > 0) {
-      verticalSlides.push(createSlide(current))
-      current = []
-    }
-    current.push(node)
-  }
-  if (current.length > 0)
-    verticalSlides.push(createSlide(current))
-
-  if (verticalSlides.length > 1) {
-    return {
-      body: { type: 'root', children },
-      verticalSlides,
-      headingLevel: sectionHeadingLevel || getHeadingLevel(children),
-    }
-  }
-
-  return createSlide(children, sectionHeadingLevel)
+// The leading newline keeps MDC from reading a slide that opens on a thematic
+// break as frontmatter; the frontmatter is split off before the slides.
+async function parseChunk(text: string, definitions = ''): Promise<any[]> {
+  const ast = await parseDeckMarkdown(`\n${text.trim()}${definitions}`)
+  return ast.body?.children ?? []
 }
 
-// Splits an MDC AST by H1 (title), H2/HR (horizontal), then H3 (vertical).
-export function parseSlides(ast: MDCParserResult): Slide[] {
-  if (!ast.body?.children)
-    return []
+const FENCE_RE = /^ {0,3}(?:`{3,}|~{3,})/
+const LINK_DEFINITION_RE = /^ {0,3}\[[^\]^][^\]]*\]:\s*\S/
 
-  const sections: any[][] = []
-  let current: any[] = []
-  let foundFirstH1 = false
-  let inH1Section = false
-
-  for (const node of ast.body.children) {
-    const isH1 = node.type === 'element' && node.tag === 'h1'
-    const isH2 = node.type === 'element' && node.tag === 'h2'
-    const isHR = node.type === 'element' && node.tag === 'hr'
-
-    if (isH1 && !foundFirstH1) {
-      foundFirstH1 = true
-      inH1Section = true
-      if (current.length > 0) {
-        sections.push(current)
-        current = []
-      }
-      current.push(node)
-      continue
-    }
-
-    if (isH2 && inH1Section) {
-      inH1Section = false
-      if (current.length > 0) {
-        sections.push(current)
-        current = []
-      }
-    }
-
-    if (!inH1Section && (isH2 || isHR)) {
-      if (current.length > 0) {
-        sections.push(current)
-        current = []
-      }
-    }
-
-    current.push(node)
+/**
+ * The link reference definitions of the whole deck, appended to each slide of a
+ * heading deck so a `[text][ref]` resolves wherever its definition sits.
+ */
+function linkDefinitions(raw: string): string {
+  const found: string[] = []
+  let inFence = false
+  for (const line of raw.split('\n')) {
+    if (FENCE_RE.test(line))
+      inFence = !inFence
+    else if (!inFence && LINK_DEFINITION_RE.test(line))
+      found.push(line.trim())
   }
-
-  if (current.length > 0)
-    sections.push(current)
-
-  return sections.map(children => processVerticalSlides(children))
+  return found.length ? `\n\n${found.join('\n')}` : ''
 }
 
-function stripFrontmatter(content: string): string {
-  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/)
-  return match ? content.slice(match[0].length) : content
+/** The slides of one horizontal position, as `splitSlides` cut them. */
+function groupByPosition(sources: SlideSource[]): SlideSource[][] {
+  const groups: SlideSource[][] = []
+  for (const source of sources)
+    (groups[source.h] ??= []).push(source)
+  return groups
 }
 
-// Splits raw markdown by --- (horizontal) / ---- (vertical), parsing each chunk with MDC.
-export async function parseSlidesFromSeparators(rawContent: string): Promise<Slide[]> {
-  const body = stripFrontmatter(rawContent)
-  const horizontalSections = body.split(/^---$/m).filter(s => s.trim().length > 0)
-  const slides: Slide[] = []
-
-  for (const section of horizontalSections) {
-    const verticalParts = section.split(/^----$/m).filter(s => s.trim().length > 0)
-
-    if (verticalParts.length > 1) {
-      const verticalSlides: Slide[] = []
-      for (const part of verticalParts) {
-        const ast = await parseDeckMarkdown(part.trim())
-        if (ast.body?.children)
-          verticalSlides.push(createSlide(ast.body.children))
-      }
-      if (verticalSlides.length > 0) {
-        slides.push({
-          body: { type: 'root', children: [] },
-          verticalSlides,
-          headingLevel: verticalSlides[0]?.headingLevel,
-        })
-      }
-    }
-    else {
-      const ast = await parseDeckMarkdown(section.trim())
-      if (ast.body?.children)
-        slides.push(createSlide(ast.body.children))
-    }
+// Heading decks: a stack keeps the whole section in its body.
+async function headingSlide(group: SlideSource[], definitions: string): Promise<Slide> {
+  const parts = await Promise.all(group.map(source => parseChunk(source.text, definitions)))
+  if (parts.length === 1)
+    return createSlide(parts[0]!)
+  const children = parts.flat()
+  return {
+    body: { type: 'root', children },
+    verticalSlides: parts.map(part => createSlide(part)),
+    headingLevel: getHeadingLevel(children),
   }
-
-  return slides
 }
 
-// Both parsers behind the shared `DeckParser` port: uniform raw-markdown input.
-// The heading parser runs MDC first (frontmatter goes to `ast.data`, not the body).
+// Separator decks: a stack carries its vertical slides only.
+async function separatorSlide(group: SlideSource[]): Promise<Slide> {
+  const parts = await Promise.all(group.map(source => parseChunk(source.text)))
+  if (parts.length === 1)
+    return createSlide(parts[0]!)
+  const verticalSlides = parts.map(part => createSlide(part))
+  return {
+    body: { type: 'root', children: [] },
+    verticalSlides,
+    headingLevel: verticalSlides[0]?.headingLevel,
+  }
+}
+
+// Both parsers behind the shared `DeckParser` port: `splitSlides` of
+// `@vignettes/core` cuts the markdown, MDC parses each slide.
 export const headingParser: DeckParser = {
   id: 'heading',
-  async parse(raw: string): Promise<Slide[]> {
-    const ast = await parseDeckMarkdown(raw)
-    return parseSlides(ast)
+  parse(raw: string): Promise<Slide[]> {
+    const definitions = linkDefinitions(raw)
+    return Promise.all(groupByPosition(splitSlides(raw, 'heading')).map(group => headingSlide(group, definitions)))
   },
 }
 
 export const separatorParser: DeckParser = {
   id: 'separator',
   parse(raw: string): Promise<Slide[]> {
-    return parseSlidesFromSeparators(raw)
+    return Promise.all(groupByPosition(splitSlides(raw, 'separator')).map(separatorSlide))
   },
 }
 

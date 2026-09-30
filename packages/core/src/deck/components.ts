@@ -53,6 +53,28 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Fragments', aliases: ['fragments'] },
 ] as const
 
+/** A slide layout, named by `:layout{name="…"}`. */
+export interface DeckLayout {
+  name: string
+  /** Renders the whole slide as one block, with no header and body split. */
+  fullSlide?: boolean
+}
+
+/** The layouts the render layer ships; their geometry lives in `@vignettes/theme-kit`. */
+export const DECK_LAYOUTS: readonly DeckLayout[] = [
+  { name: 'full', fullSlide: true },
+  { name: 'media-right' },
+  { name: 'media-left' },
+  { name: 'media-right-wide' },
+  { name: 'media-left-wide' },
+  { name: 'media-right-xwide' },
+  { name: 'media-left-xwide' },
+  { name: 'media-below' },
+  { name: 'media-above' },
+  { name: 'media-cover' },
+  { name: 'grid-compact' },
+] as const
+
 /**
  * Component names the HTML pass of the MDC parser rewrites, mapped to the tag the
  * slide parser renames them to before that pass. HTML parsing turns an `image`

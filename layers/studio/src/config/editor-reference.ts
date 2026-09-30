@@ -1,15 +1,15 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import { PUBLICATION_STATUSES } from '#shared/access'
+import { DECK_LAYOUTS } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
-import { SLIDE_LAYOUT_REGISTRY } from '@vignettes/nuxt/layouts'
 
 /**
  * Declarative authoring reference for the writer: one dataset feeding the
  * autocompletion, the toolbar "Insérer" menu and the help panel. Labels and
  * descriptions are message keys of the `reference` locale file. Descriptions
  * and snippets mirror the engine contracts (packages/core/src/deck/components.ts,
- * packages/core/src/deck/schema.ts, the layout registry of @vignettes/nuxt) — extend those first, then here.
+ * packages/core/src/deck/schema.ts): extend those first, then here.
  *
  * Snippet placeholders use the CodeMirror snippet syntax: `${label}`.
  */
@@ -264,7 +264,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   },
 ] as const
 
-export const LAYOUT_NAMES: readonly string[] = Object.keys(SLIDE_LAYOUT_REGISTRY)
+export const LAYOUT_NAMES: readonly string[] = DECK_LAYOUTS.map(layout => layout.name)
 
 export interface ShortcutEntry {
   keys: string[]

@@ -4,8 +4,7 @@ import type { Translate } from '../config/editor-reference'
 import { codeFolding, foldEffect, foldGutter, foldKeymap, foldService, unfoldAll } from '@codemirror/language'
 import { Prec, RangeSet, StateField } from '@codemirror/state'
 import { Decoration, EditorView, gutterLineClass, GutterMarker, keymap, lineNumbers, MatchDecorator, ViewPlugin } from '@codemirror/view'
-import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
-import { slideRanges } from '@vignettes/nuxt/slide-map'
+import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 
 /**
  * The deck structure in the markdown pane: line numbers, the lines of the slide

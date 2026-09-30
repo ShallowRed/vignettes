@@ -22,9 +22,9 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
+import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
-import { fragmentAtLine, slideAtLine, slideRanges } from '@vignettes/nuxt/slide-map'
+import { fragmentAtLine, slideAtLine } from '@vignettes/nuxt/slide-map'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '../../composables/useAppSession'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
@@ -209,9 +209,9 @@ const cm = useTemplateRef<{ view?: EditorView }>('cm')
 const editorView = computed(() => cm.value?.view)
 
 // ── Follow-the-cursor preview ────────────────────────────────────────────────
-// The preview navigates to the slide the caret sits in. The slide parser drops
-// source positions, so `slide-map` recomputes slide boundaries from the raw text
-// (heuristic, editor-only) and we drive Reveal's slide(h, v) — "à peu près".
+// The preview navigates to the slide the caret sits in: `slideRanges` of
+// `@vignettes/core` gives the boundaries the renderer uses, and Reveal's
+// slide(h, v) opens the slide under the caret.
 // Key must NOT be "preview": a `ref="preview"` would collide with the `preview`
 // data ref above, and Vue would overwrite it with the component instance on
 // mount — nuking `preview.value.slides`/`.metadata` and crashing every downstream
