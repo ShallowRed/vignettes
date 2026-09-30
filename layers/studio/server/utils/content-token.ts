@@ -2,7 +2,7 @@ import type { H3Event } from 'h3'
 import type { Actor } from './actor'
 import { Buffer } from 'node:buffer'
 import { timingSafeEqual } from 'node:crypto'
-import process from 'node:process'
+import { serverConfig } from './config'
 
 /**
  * The content token lets `content:republish --remote` publish a deck from its
@@ -13,10 +13,6 @@ import process from 'node:process'
  */
 export const CONTENT_TOKEN_LOGIN = 'content-token'
 
-export function readContentToken(env: NodeJS.ProcessEnv = process.env): string | undefined {
-  return env.NUXT_CONTENT_TOKEN?.trim() || undefined
-}
-
 function sameSecret(provided: string, expected: string): boolean {
   const a = Buffer.from(provided)
   const b = Buffer.from(expected)
@@ -25,7 +21,7 @@ function sameSecret(provided: string, expected: string): boolean {
 
 /** The token actor when the request carries the configured bearer, else null. */
 export function contentTokenActor(event: H3Event): Actor | null {
-  const expected = readContentToken()
+  const expected = serverConfig().contentToken
   if (!expected)
     return null
   const header = getRequestHeader(event, 'authorization') ?? ''

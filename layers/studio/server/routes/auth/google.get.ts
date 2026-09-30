@@ -7,15 +7,15 @@
  * id to seal, so a store failure falls through to onError (fail closed).
  */
 
-import process from 'node:process'
-import { readRoleMap, resolveRole } from '#shared/access'
+import { resolveRole } from '#shared/access'
+import { serverConfig } from '../../utils/config'
 import { useUserStore } from '../../utils/users'
 
 export default defineOAuthGoogleEventHandler({
   config: {},
   async onSuccess(event, { user }) {
     const login = (user.email as string).toLowerCase()
-    const roles = readRoleMap(process.env)
+    const roles = serverConfig().roleMap
     const verified = user.email_verified === true
     const { id, role } = await useUserStore().upsertOAuthLogin(
       { provider: 'google', providerId: String(user.sub), login, name: user.name, avatarUrl: user.picture },

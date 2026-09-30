@@ -3,9 +3,10 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
+import { isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { themeLocalPath, themeObjectKey } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { serverConfig } from '../../utils/config'
 import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
 
 /**
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
   if (parts.length === 0 || parts.includes('..'))
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  const cfg = frozenS3ConfigFromEnv(process.env)
+  const cfg = serverConfig().frozenS3
   let body: Buffer
   let contentType: string | undefined
   if (isFrozenS3Configured(cfg)) {

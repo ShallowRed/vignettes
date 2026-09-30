@@ -1,11 +1,11 @@
 import type { AccessDecision, DeckGrant, Lifecycle, PublicationStatus } from '#shared/access'
 import type { H3Event } from 'h3'
 import type { Actor } from './actor'
-import process from 'node:process'
 import { decideAccess, isPrivileged, mayEdit } from '#shared/access'
 import { resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { accessCookieName, mintAccessPass, verifyAccessPass } from './access-pass'
 import { getActor } from './actor'
+import { serverConfig } from './config'
 import { contentTokenActor } from './content-token'
 import { verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
@@ -226,7 +226,7 @@ async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: st
   const pass = mintAccessPass(slug, storedHash)
   setCookie(event, accessCookieName(slug), pass.value, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: serverConfig().secureCookies,
     sameSite: 'lax',
     path: '/',
     maxAge: pass.maxAge,

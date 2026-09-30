@@ -2,11 +2,12 @@ import type { ThemeRegistry } from '@vignettes/core/theme'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
+import { isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { themeLocalPath, THEMES_INDEX_KEY } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { isKnownTheme, setDefaultTheme, setThemeRegistry } from '@vignettes/core/theme'
 import { discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
+import { serverConfig } from './config'
 import { makeFrozenS3Client } from './frozen-s3-client'
 
 /**
@@ -69,7 +70,7 @@ function applyDefaultTheme() {
 }
 
 async function readPublishedIndex(): Promise<Partial<ThemeRegistry>> {
-  const cfg = frozenS3ConfigFromEnv(process.env)
+  const cfg = serverConfig().frozenS3
   if (!isFrozenS3Configured(cfg))
     return await readLocalIndex()
   try {

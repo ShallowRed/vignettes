@@ -5,11 +5,11 @@ import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
 import {
   frozenObjectKey,
-  frozenS3ConfigFromEnv,
   isFrozenS3Configured,
 } from '#shared/storage/frozen-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
+import { serverConfig } from '../../utils/config'
 import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
 import { deckDirectory } from '../../utils/sources'
 
@@ -67,10 +67,7 @@ export default defineEventHandler(async (event) => {
   const isPublic = gate.status === 'public'
   const cacheControl = isPublic ? 'public, max-age=300' : 'private, no-store'
 
-  // Read S3 config from process.env AT RUNTIME, not useRuntimeConfig: the
-  // NUXT_FROZEN_S3_* names don't match Nuxt's override convention and would be
-  // baked empty at build; `infisical run` injects them into process.env at runtime.
-  const cfg = frozenS3ConfigFromEnv(process.env)
+  const cfg = serverConfig().frozenS3
   let body: Buffer
   let contentType: string | undefined
   let source: 's3' | 'local'

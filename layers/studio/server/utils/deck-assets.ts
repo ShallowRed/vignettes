@@ -4,11 +4,12 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
+import { isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { assetKey } from '#shared/storage/media-refs'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { deckAssetKey, deckAssetLocalPath } from '@vignettes/core/deck-assets'
 import { decideMediaAccess } from './access'
+import { serverConfig } from './config'
 import { makeFrozenS3Client } from './frozen-s3-client'
 
 /**
@@ -32,7 +33,7 @@ export async function serveDeckAsset(event: H3Event, prefix: string, { gated = f
   if (access && !access.allowed)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  const cfg = frozenS3ConfigFromEnv(process.env)
+  const cfg = serverConfig().frozenS3
   let body: Buffer
   let contentType: string | undefined
   if (isFrozenS3Configured(cfg)) {
@@ -52,7 +53,7 @@ export async function serveDeckAsset(event: H3Event, prefix: string, { gated = f
   }
   else {
     try {
-      body = await readFile(join(process.cwd(), deckAssetLocalPath(process.env.NUXT_CONTENT_DIR, prefix, ...parts)))
+      body = await readFile(join(process.cwd(), deckAssetLocalPath(serverConfig().contentDir, prefix, ...parts)))
     }
     catch {
       throw createError({ statusCode: 404, statusMessage: 'Asset not found' })

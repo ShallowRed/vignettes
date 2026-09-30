@@ -1,4 +1,4 @@
-import process from 'node:process'
+import { serverConfig } from '../utils/config'
 import { hasRecetteData, isRecetteEnabled, isRecetteSeeded, resetRecette, seedRecette } from '../utils/recette'
 
 /**
@@ -19,7 +19,7 @@ export default defineNitroPlugin(async () => {
       }
       return
     }
-    if (process.env.NUXT_RECETTE_ENABLED !== '1')
+    if (!serverConfig().recetteEnabled)
       return
     if (!await isRecetteSeeded()) {
       const summary = await seedRecette()

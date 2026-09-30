@@ -1,8 +1,8 @@
 import type { AppSession, Role } from '#shared/access'
 import type { H3Event } from 'h3'
-import process from 'node:process'
-import { readRoleMap, resolveRole } from '#shared/access'
+import { resolveRole } from '#shared/access'
 import { unsealSession } from 'h3'
+import { serverConfig } from './config'
 import { useUserStore } from './users'
 
 interface SessionUser {
@@ -26,7 +26,7 @@ export interface Actor {
 async function resolveActorRole(user: SessionUser | undefined): Promise<Role> {
   if (!user?.id)
     return 'anonymous'
-  const fromMap = () => resolveRole(user.login, readRoleMap(process.env))
+  const fromMap = () => resolveRole(user.login, serverConfig().roleMap)
   try {
     return await useUserStore().getRole(user.id) ?? fromMap()
   }
@@ -80,7 +80,7 @@ interface RequestWithCookies {
 export async function getActorFromRequest(request: RequestWithCookies): Promise<Actor> {
   const config = useRuntimeConfig().session as { name?: string, password?: string, maxAge?: number }
   const name = config?.name || 'nuxt-session'
-  const password = config?.password || process.env.NUXT_SESSION_PASSWORD
+  const password = config?.password || serverConfig().sessionPassword
   const sealed = readCookie(request.headers.get('cookie'), name)
   if (!sealed || !password)
     return { role: 'anonymous' }

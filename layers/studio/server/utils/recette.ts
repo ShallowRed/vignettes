@@ -1,13 +1,13 @@
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import process from 'node:process'
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PERSONAS, RECETTE_PREFIX } from '#shared/recette/personas'
 import { eq, inArray } from 'drizzle-orm'
 import { decks } from '../db/schema'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
+import { serverConfig } from './config'
 import { useDb } from './db'
 import { mediaNameOf, storeMedia } from './media-store'
 import { hashAccessPassword } from './password'
@@ -22,7 +22,7 @@ import { useUserStore } from './users'
  * session minted in this browser.
  */
 export function isRecetteEnabled(): boolean {
-  return import.meta.dev || process.env.NUXT_RECETTE_ENABLED === '1'
+  return import.meta.dev || serverConfig().recetteEnabled
 }
 
 const PASS_COOKIE = 'recette_pass'
@@ -35,7 +35,7 @@ export interface RecettePass {
 }
 
 function passSecret(): string {
-  const secret = process.env.NUXT_SESSION_PASSWORD
+  const secret = serverConfig().sessionPassword
   if (!secret)
     throw createError({ statusCode: 500, statusMessage: 'NUXT_SESSION_PASSWORD is required to sign the acceptance pass' })
   return secret
@@ -51,7 +51,7 @@ export function mintRecettePass(event: H3Event, user: RecettePass['user']): Rece
   const payload = Buffer.from(JSON.stringify(pass)).toString('base64url')
   setCookie(event, PASS_COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: serverConfig().secureCookies,
     sameSite: 'lax',
     path: '/',
     maxAge: PASS_TTL_MS / 1000,

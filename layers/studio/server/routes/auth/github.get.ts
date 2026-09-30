@@ -6,8 +6,8 @@
  * so a store failure falls through to onError (fail closed).
  */
 
-import process from 'node:process'
-import { readRoleMap, resolveRole } from '#shared/access'
+import { resolveRole } from '#shared/access'
+import { serverConfig } from '../../utils/config'
 import { useUserStore } from '../../utils/users'
 
 export default defineOAuthGitHubEventHandler({
@@ -15,7 +15,7 @@ export default defineOAuthGitHubEventHandler({
   async onSuccess(event, { user }) {
     // Identity is (provider, providerId); the returned internal id, equal to
     // the GitHub id for rows that predate 0010, is what the session carries.
-    const roles = readRoleMap(process.env)
+    const roles = serverConfig().roleMap
     const { id, role } = await useUserStore().upsertOAuthLogin(
       { provider: 'github', providerId: String(user.id), login: user.login, name: user.name, avatarUrl: user.avatar_url },
       resolveRole(user.login, roles),

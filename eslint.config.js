@@ -18,6 +18,12 @@ const DOMAIN_IO = [
 
 const YJS = { group: ['yjs', 'yjs/*'], message: 'In shared/, yjs belongs to shared/collab/.' }
 
+const SERVER_ENV = {
+  object: 'process',
+  property: 'env',
+  message: 'The server reads its configuration in server/utils/config.ts: add the value to serverConfig().',
+}
+
 const PROCESS_ENV = {
   object: 'process',
   property: 'env',
@@ -63,6 +69,12 @@ export default antfu({
   ignores: ['packages/nuxt/**', 'nuxt.config.ts', 'layers/studio/src/mdc.config.ts', 'test/**'],
   rules: {
     'no-restricted-imports': ['error', { patterns: [MDC_READER] }],
+  },
+}, {
+  files: ['layers/studio/server/**'],
+  ignores: ['layers/studio/server/utils/config.ts'],
+  rules: {
+    'no-restricted-properties': ['error', SERVER_ENV],
   },
 }, {
   files: ['packages/core/src/**'],
