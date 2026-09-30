@@ -76,6 +76,10 @@ withDefaults(defineProps<Props>(), {
 .highlight--accent {
   border-left: 4px solid var(--accent, #000091);
   background: var(--accent-bg, #f5f5fe);
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
+  color: var(--text-default);
   padding: 1em 1.4em;
   border-radius: 0 var(--radius, 6px) var(--radius, 6px) 0;
   text-align: left;

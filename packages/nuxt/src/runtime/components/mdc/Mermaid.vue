@@ -243,7 +243,11 @@ onMounted(async () => {
   // slide's own font, once loaded, or the labels overflow their boxes.
   await document.fonts.ready
   const style = getComputedStyle(container.value)
+  // Lines and free text sit on the slide, whose text colors the parent carries;
+  // the container gives the labels, which sit on fills, the surface text colors.
+  const slide = getComputedStyle(container.value.parentElement ?? container.value)
   const token = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback
+  const slideToken = (name: string, fallback: string) => slide.getPropertyValue(name).trim() || fallback
   const font = { fontFamily: style.fontFamily, fontSize: style.fontSize }
 
   mermaid.initialize({
@@ -259,8 +263,8 @@ onMounted(async () => {
           primaryTextColor: token('--text-title', '#111111'),
           secondaryColor: token('--surface', '#ffffff'),
           tertiaryColor: token('--surface', '#ffffff'),
-          lineColor: token('--text-mention', '#6b6b6b'),
-          textColor: token('--text-default', '#1a1a1a'),
+          lineColor: slideToken('--text-mention', '#6b6b6b'),
+          textColor: slideToken('--text-default', '#1a1a1a'),
           edgeLabelBackground: token('--surface', '#ffffff'),
         },
     fontFamily: style.fontFamily,
@@ -478,6 +482,10 @@ onBeforeUnmount(() => {
 }
 
 .mermaid-container {
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
+
   display: flex;
   justify-content: center;
   align-items: center;

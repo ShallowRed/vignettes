@@ -61,6 +61,9 @@ onMounted(() => {
 
 .json-tour-zone :deep(.picto-card) {
   background: var(--surface, #fff);
+  --text-title: var(--on-surface-title);
+  --text-default: var(--on-surface-default);
+  --text-mention: var(--on-surface-mention);
   border: 1px solid var(--border, #e0e0e0);
 }
 
