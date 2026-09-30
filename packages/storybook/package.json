@@ -6,6 +6,7 @@
   "license": "MIT",
   "exports": {
     ".": "./src/module.ts",
+    "./components": "./src/components.ts",
     "./runtime/*": "./src/runtime/*"
   },
   "main": "./src/module.ts",

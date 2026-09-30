@@ -1,0 +1,28 @@
+# Vignettes
+
+Instructions for coding agents working in this repository. [CONTRIBUTING.md](CONTRIBUTING.md) holds the checks and the conventions, [docs/architecture.md](docs/architecture.md) the layout and the data flow. To write a deck, use the `vignettes-decks` plugin published from `plugins/vignettes-decks`.
+
+## Toolchain
+
+Node 22, pinned in `mise.toml`: `better-sqlite3` is built for that line. pnpm comes from `packageManager` through corepack. `mise run check` runs what the CI runs: `pnpm lint`, `pnpm exec nuxi typecheck`, `pnpm test`.
+
+## Boundaries
+
+The code keeps three boundaries, and `eslint.config.js` checks them with messages that name the place a change belongs. When a rule fires, move the code there; keep the rule.
+
+- `packages/core` is the deck core: it imports zod, js-yaml, slugify and its own files.
+- `layers/studio/shared` is the studio's domain, run on the client and the server: no framework, no I/O, no `process.env`, no render module. `yjs` stays in `shared/collab`.
+- `@nuxtjs/mdc` is read by the render module (`packages/nuxt`), the configuration files and the tests.
+
+Two more rules hold the entry points:
+
+- `layers/studio/server` reads its configuration through `serverConfig()` of `server/utils/config.ts`, the one server module that reads `process.env`.
+- `@vignettes/nuxt` exposes the entry points its `package.json` lists under `exports`; an import of anything else fails the type check. Its slide helpers stay out of the auto-imports.
+
+## The deck format
+
+The format is defined once, in `packages/core/src/deck`: `split.ts` cuts the slides and gives their source lines, `components.ts` lists the annotations, layouts and components, `schema.ts` validates the frontmatter. The parsers, the editor and the catalog read these; add a rule there, never in one of its readers.
+
+An extension package declares its components as data (`packages/schemas/src/components.ts`, `packages/storybook/src/components.ts`) and registers them in its Nuxt plugin.
+
+After a change to the format or to the README of `packages/nuxt`, `packages/schemas` or `packages/storybook`, run `node scripts/deck-plugin.ts`: it writes the references of the deck authoring plugin, and `test/unit/deck-plugin.test.ts` fails while they differ from their sources.

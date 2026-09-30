@@ -1,0 +1,8 @@
+{
+  "name": "vignettes-decks",
+  "description": "Write a Vignettes deck: format, components, layouts and live Storybook embeds",
+  "version": "0.1.0",
+  "author": {
+    "name": "Lucas Poulain"
+  }
+}

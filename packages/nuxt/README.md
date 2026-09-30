@@ -12,7 +12,7 @@ export default defineNuxtConfig({
 })
 ```
 
-The module registers the authoring components globally, since a deck body names them in markdown and they are resolved at render time. `RevealPresentation` and `RevealSlides` are ordinary components, so their stylesheets are linked in the server-rendered page. `RevealPresentation` links the theme stylesheet in the document head and covers the deck with a loading veil until Reveal, the theme and the fonts are ready. It exposes `usePresentation`, `useReveal`, `useTheme` and the slide helpers as auto-imports, and installs the plugins that seed the theme registry and the typography directive.
+The module registers the authoring components globally, since a deck body names them in markdown and they are resolved at render time. `RevealPresentation` and `RevealSlides` are ordinary components, so their stylesheets are linked in the server-rendered page. `RevealPresentation` links the theme stylesheet in the document head and covers the deck with a loading veil until Reveal, the theme and the fonts are ready. It exposes the deck composables (`usePresentation`, `useReveal`, `useTheme` and the others of `runtime/composables`) as auto-imports; the slide helpers stay internal. It installs the plugins that seed the theme registry and the typography directive.
 
 The host owns the routes and the content: it decides which page renders a deck, and where the markdown comes from. A page is as short as:
 
@@ -53,7 +53,7 @@ storybook: https://sb.example # root for live story embeds
 
 ## Slides
 
-By default, `---` separates horizontal slides and `----` vertical ones. With `parser: heading`, `#` opens the title slide, `##` starts a horizontal slide, and `###` nests a vertical slide under it.
+By default, `---` separates horizontal slides and `----` vertical ones. With `parser: heading`, `#` opens the title slide, `##` starts a horizontal slide, a thematic break (`---`, `***`) outside the title slide starts one too, and `###` nests a vertical slide under it. A line inside fenced code or inside a block component (`::Name` … `::`) never separates slides. `splitSlides` of `@vignettes/core/deck` holds these rules.
 
 Each slide is tagged with its heading level, `slide-h1`, `slide-h2` or `slide-h3`, which themes style. A section holding vertical slides is wrapped in Reveal's stack, which carries `stack-h1` or `stack-h2` instead: the wrapper is not a slide, so a rule written for a heading level cannot reach the slides nested under it.
 
