@@ -3,9 +3,10 @@ import { createHash } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { imageExtFor, mediaObjectKey } from '#shared/storage/media-s3'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { makeFrozenS3Client } from './frozen-s3-client'
 
 /** The name `/media/<name>` serves this image under: the hash of its content and the extension of its type. */
 export function mediaNameOf(data: Buffer, mime: string): string | undefined {

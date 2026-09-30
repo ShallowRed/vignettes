@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { getDefaultTheme, setDefaultTheme, setThemeRegistry } from '@vignettes/core/theme'
-import { defaultMetadata } from '@vignettes/nuxt/runtime/config/presentation.ts'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { defaultMetadata } from '../../packages/nuxt/src/runtime/config/presentation.ts'
 
 let configured: string | undefined
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { defaultTheme: configured } }))

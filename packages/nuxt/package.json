@@ -9,7 +9,11 @@
     "./types": "./src/runtime/types/presentation.ts",
     "./layouts": "./src/runtime/config/layouts.ts",
     "./build/*": "./src/build/*.ts",
-    "./runtime/*": "./src/runtime/*"
+    "./slide-map": "./src/runtime/utils/slide-map.ts",
+    "./presentation-data": "./src/runtime/composables/usePresentation.ts",
+    "./deck-messages": "./src/runtime/composables/useDeckMessages.ts",
+    "./frame-source": "./src/runtime/composables/useFrameSource.ts",
+    "./injection-keys": "./src/runtime/config/injection-keys.ts"
   },
   "main": "./src/module.ts",
   "types": "./src/module.ts",

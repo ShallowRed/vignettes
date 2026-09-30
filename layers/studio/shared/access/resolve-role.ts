@@ -1,5 +1,4 @@
 import type { Role } from './roles'
-import process from 'node:process'
 
 /** Roles assigned at GitHub login from an env map; logins lowercased. */
 export interface RoleMap {
@@ -13,8 +12,8 @@ function parseLogins(value: string | undefined): string[] {
     : []
 }
 
-/** Read the role map from `NUXT_OWNER_LOGINS` / `NUXT_EDITOR_LOGINS`. */
-export function readRoleMap(env: NodeJS.ProcessEnv = process.env): RoleMap {
+/** Read the role map from `NUXT_OWNER_LOGINS` / `NUXT_EDITOR_LOGINS`; the caller passes the environment. */
+export function readRoleMap(env: Record<string, string | undefined>): RoleMap {
   return {
     owner: parseLogins(env.NUXT_OWNER_LOGINS),
     editor: parseLogins(env.NUXT_EDITOR_LOGINS),

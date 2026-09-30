@@ -1,6 +1,7 @@
 import type { ThemeBackgrounds } from '@vignettes/core/deck'
 import { parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
-import { slideRanges } from '@vignettes/nuxt/runtime/utils/slide-map.ts'
+// eslint-disable-next-line no-restricted-imports -- slideRanges moves to @vignettes/core with the single slide splitter
+import { slideRanges } from '@vignettes/nuxt/slide-map'
 
 /** The first slide of a deck, read from its markdown for a catalog card. */
 export interface TitleSlide {

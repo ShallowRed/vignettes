@@ -26,7 +26,7 @@ export interface Actor {
 async function resolveActorRole(user: SessionUser | undefined): Promise<Role> {
   if (!user?.id)
     return 'anonymous'
-  const fromMap = () => resolveRole(user.login, readRoleMap())
+  const fromMap = () => resolveRole(user.login, readRoleMap(process.env))
   try {
     return await useUserStore().getRole(user.id) ?? fromMap()
   }

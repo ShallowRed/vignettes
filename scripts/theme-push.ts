@@ -23,8 +23,9 @@ import { fileURLToPath } from 'node:url'
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { compileTheme } from '@vignettes/nuxt/build/theme-build'
 import { checkExtends, discoverThemes, manifestTokens } from '@vignettes/nuxt/build/theme-registry'
+import { makeFrozenS3Client } from '../layers/studio/server/utils/frozen-s3-client.ts'
 import { CONTENT_TYPES, contentTypeOf } from '../layers/studio/shared/storage/content-types.ts'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../layers/studio/shared/storage/frozen-s3.ts'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '../layers/studio/shared/storage/frozen-s3.ts'
 import { indexOf, themeLocalPath, themeObjectKey, THEMES_INDEX_KEY, tokensKeyOf } from '../layers/studio/shared/storage/themes-s3.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')

@@ -3,9 +3,10 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { themeLocalPath, themeObjectKey } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
 
 /**
  * Tenant theme files: `/themes/<name>.css` and `/themes/<name>/assets/...`

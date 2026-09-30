@@ -74,9 +74,9 @@ export default defineNuxtModule<ModuleOptions>({
       pathPrefix: false,
     })
 
-    // Deck composables and the pure slide helpers, available to the host's pages.
+    // The deck composables are the host's API. The slide helpers stay internal:
+    // an auto-imported helper escapes the import rules of eslint.config.js.
     addImportsDir(resolver.resolve('./runtime/composables'))
-    addImportsDir(resolver.resolve('./runtime/utils'))
 
     addPlugin(resolver.resolve('./runtime/plugins/theme-registry'))
     addPlugin(resolver.resolve('./runtime/plugins/french-typography'))

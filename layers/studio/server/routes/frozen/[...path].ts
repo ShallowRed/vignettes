@@ -7,10 +7,10 @@ import {
   frozenObjectKey,
   frozenS3ConfigFromEnv,
   isFrozenS3Configured,
-  makeFrozenS3Client,
 } from '#shared/storage/frozen-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
+import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
 import { deckDirectory } from '../../utils/sources'
 
 /**

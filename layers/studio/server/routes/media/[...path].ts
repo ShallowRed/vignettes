@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { mediaObjectKey } from '#shared/storage/media-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { decideMediaAccess } from '../../utils/access'
+import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
 
 /**
  * Media server: `/media/<hash>.<ext>` streams an uploaded image from the frozen

@@ -10,12 +10,12 @@ import { readdir } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import process from 'node:process'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { makeFrozenS3Client } from '../layers/studio/server/utils/frozen-s3-client.ts'
 import { contentTypeOf } from '../layers/studio/shared/storage/content-types.ts'
 import {
   frozenObjectKey,
   frozenS3ConfigFromEnv,
   isFrozenS3Configured,
-  makeFrozenS3Client,
 } from '../layers/studio/shared/storage/frozen-s3.ts'
 
 function parseArgs(argv) {

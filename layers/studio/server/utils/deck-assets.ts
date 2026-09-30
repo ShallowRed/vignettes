@@ -4,11 +4,12 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '#shared/storage/frozen-s3'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { assetKey } from '#shared/storage/media-refs'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { deckAssetKey, deckAssetLocalPath } from '@vignettes/core/deck-assets'
 import { decideMediaAccess } from './access'
+import { makeFrozenS3Client } from './frozen-s3-client'
 
 /**
  * Serve a deck asset of the content space (`presentations/assets/<prefix>/...`,

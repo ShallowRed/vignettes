@@ -1,5 +1,5 @@
-import { headingParser } from '@vignettes/nuxt/runtime/utils/slide-ast.ts'
 import { describe, expect, it } from 'vitest'
+import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
 async function bodyOf(raw: string) {
   const [slide] = await headingParser.parse(raw)

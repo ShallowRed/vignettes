@@ -48,6 +48,8 @@ session, crypto, filesystem or YAML sit in `layers/studio/server/utils/`. A `sha
 module usually has a matching `server/utils/<x>` adapter, as `shared/access` has
 `server/utils/access.ts`.
 
+`eslint.config.js` checks three boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
+
 The deck core is the workspace package `@vignettes/core`, which depends on nothing in the
 application and ships its TypeScript sources (`build.transpile` for Vite,
 `nitro.externals.inline` for the server bundle).

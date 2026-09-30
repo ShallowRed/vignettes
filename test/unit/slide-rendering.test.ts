@@ -1,6 +1,6 @@
 import type { MDCElement, MDCNode, MDCRoot } from '@nuxtjs/mdc'
-import { keepKnownComponents } from '@vignettes/nuxt/runtime/utils/slide-rendering.ts'
 import { describe, expect, it } from 'vitest'
+import { keepKnownComponents } from '../../packages/nuxt/src/runtime/utils/slide-rendering.ts'
 
 function el(tag: string, children: MDCNode[] = [], props: Record<string, unknown> = {}): MDCElement {
   return { type: 'element', tag, props, children }

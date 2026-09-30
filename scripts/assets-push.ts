@@ -16,8 +16,9 @@ import process from 'node:process'
 import { ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { DECK_ASSET_PREFIXES, deckAssetKey } from '@vignettes/core/deck-assets'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
+import { makeFrozenS3Client } from '../layers/studio/server/utils/frozen-s3-client.ts'
 import { contentTypeOf } from '../layers/studio/shared/storage/content-types.ts'
-import { frozenS3ConfigFromEnv, isFrozenS3Configured, makeFrozenS3Client } from '../layers/studio/shared/storage/frozen-s3.ts'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '../layers/studio/shared/storage/frozen-s3.ts'
 
 const root = join(import.meta.dirname, '..')
 const apply = process.argv.includes('--apply')
