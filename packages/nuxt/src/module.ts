@@ -52,11 +52,12 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.nitro.externals.inline ||= []
     nuxt.options.nitro.externals.inline.push(runtime)
 
-    // `@vignettes/core` imports slugify, a CommonJS package, which Vite serves
-    // unconverted in development unless it pre-bundles it.
+    // slugify, which `@vignettes/core` imports, is a CommonJS package, and
+    // mermaid depends on some: Vite serves them unconverted in development unless
+    // it pre-bundles them.
     nuxt.options.vite.optimizeDeps ||= {}
     nuxt.options.vite.optimizeDeps.include ||= []
-    nuxt.options.vite.optimizeDeps.include.push('@vignettes/nuxt > @vignettes/core > slugify')
+    nuxt.options.vite.optimizeDeps.include.push('@vignettes/nuxt > @vignettes/core > slugify', '@vignettes/nuxt > mermaid')
 
     // The authoring components are named in markdown and resolved at runtime by
     // `resolveComponent('Quote')`, which requires them global. Nuxt skips a
