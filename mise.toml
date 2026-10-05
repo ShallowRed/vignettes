@@ -4,17 +4,13 @@
 [tools]
 # better-sqlite3 is built for this Node line; the tests fail under Node 24.
 node = "22"
-"npm:portless" = "0.11.1"
+"npm:portless" = "0.15.6"
 
 [settings]
 # corepack shims let pnpm resolve its version from packageManager (single source of truth)
 node.corepack = true
 
 [env]
-# The local portless proxy speaks plain HTTP on 8443 behind the valet bridge,
-# which terminates TLS on 443 (see ~/.config/valet-portless-bridge/README.md).
-PORTLESS_PORT = "8443"
-PORTLESS_HTTPS = "0"
 # The deployed instance the production tasks talk to, and the SSH host and
 # containers `content:push` reaches it through, belong to an instance rather than
 # to the repository: set VIGNETTES_REMOTE, CONTENT_PUSH_SSH and
@@ -67,17 +63,10 @@ depends = [ "install" ]
 run = "pnpm dev"
 
 [tasks.open]
-description = "Wait until the URL answers, then open it. The main checkout's host goes through valet in HTTPS; a worktree host stays on the proxy in HTTP"
+description = "Wait until the URL answers, then open it"
 run = """
 bash -c '
 u="$1"
-case "$u" in
-  http://*.localhost:8443)
-    h="${u#http://}"; h="${h%%:*}"
-    # one label before .localhost = the main checkout, covered by the bridge cert
-    [[ "$h" != *.*.* ]] && u="https://$h/"
-    ;;
-esac
 browse() {
   if command -v open >/dev/null 2>&1; then open "$1"
   elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$1"
@@ -118,7 +107,7 @@ pnpm install
 mise run db:migrate
 mise run content:import || true
 echo
-echo "Prêt : cd $dir && mise run dev   (http://$name.vignettes-studio.localhost:8443)"
+echo "Prêt : cd $dir && mise run dev   (https://$name.vignettes-studio.localhost)"
 """
 
 [tasks."worktree:remove"]
