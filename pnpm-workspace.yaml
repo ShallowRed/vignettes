@@ -39,7 +39,7 @@ catalog:
   '@nuxt/icon': ^2.1.0
   '@nuxt/ui': ^4.9.0
   '@nuxtjs/i18n': ^10.6.0
-  '@nuxtjs/mdc': ^0.19.1
+  '@nuxtjs/mdc': ^0.23.2
   '@pinia/colada': ^1.4.2
   '@pinia/colada-nuxt': ^1.0.2
   '@pinia/nuxt': ^1.0.1
@@ -66,7 +66,7 @@ catalog:
   typescript: ^5.9.3
   unist-util-visit: ^5.0.0
   vitest: ^4.1.9
-  vue: ^3.5.25
+  vue: ^3.5.43
   vue-codemirror6: ^1.5.2
   vue-router: ^4.6.3
   vue-tsc: ^3.3.11

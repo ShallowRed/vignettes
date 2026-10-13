@@ -25,7 +25,7 @@ export function keepKnownComponents(tree: MDCRoot, known: Iterable<string>): MDC
     if (node.type !== 'element')
       return [node]
     // MDC renders `binding` itself; SVG children are absent from its HTML list.
-    if (node.tag === 'svg' || node.tag === 'binding' || htmlTags.includes(node.tag) || keys.has(componentKey(node.tag)))
+    if (node.tag === 'svg' || node.tag === 'binding' || htmlTags.has(node.tag) || keys.has(componentKey(node.tag)))
       return [{ ...node, children: node.tag === 'svg' ? node.children : visitAll(node.children, node.tag) }]
     const tag = INLINE_PARENTS.has(parentTag ?? '') ? 'span' : 'div'
     // The named slots of the component become plain content.
