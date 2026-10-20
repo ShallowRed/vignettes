@@ -21,25 +21,29 @@
           "alone": "Everyone.",
           "direct": "Everyone, plus {n} direct grant. | Everyone, plus {n} direct grants.",
           "folder": "Everyone, plus {folder} through the folder.",
-          "both": "Everyone, plus {n} direct grant and {folder} through the folder. | Everyone, plus {n} direct grants and {folder} through the folder."
+          "both": "Everyone, plus {n} direct grant and {folder} through the folder. | Everyone, plus {n} direct grants and {folder} through the folder.",
+          "uncounted": "Everyone, plus the individual grants."
         },
         "password": {
           "alone": "Anyone who has the password.",
           "direct": "Anyone who has the password, plus {n} direct grant. | Anyone who has the password, plus {n} direct grants.",
           "folder": "Anyone who has the password, plus {folder} through the folder.",
-          "both": "Anyone who has the password, plus {n} direct grant and {folder} through the folder. | Anyone who has the password, plus {n} direct grants and {folder} through the folder."
+          "both": "Anyone who has the password, plus {n} direct grant and {folder} through the folder. | Anyone who has the password, plus {n} direct grants and {folder} through the folder.",
+          "uncounted": "Anyone who has the password, plus the individual grants."
         },
         "noPassword": {
           "alone": "Nobody (no password set).",
           "direct": "Nobody (no password set), plus {n} direct grant. | Nobody (no password set), plus {n} direct grants.",
           "folder": "Nobody (no password set), plus {folder} through the folder.",
-          "both": "Nobody (no password set), plus {n} direct grant and {folder} through the folder. | Nobody (no password set), plus {n} direct grants and {folder} through the folder."
+          "both": "Nobody (no password set), plus {n} direct grant and {folder} through the folder. | Nobody (no password set), plus {n} direct grants and {folder} through the folder.",
+          "uncounted": "Nobody (no password set), plus the individual grants."
         },
         "private": {
           "alone": "Editor/Owner accounts.",
           "direct": "Editor/Owner accounts, plus {n} direct grant. | Editor/Owner accounts, plus {n} direct grants.",
           "folder": "Editor/Owner accounts, plus {folder} through the folder.",
-          "both": "Editor/Owner accounts, plus {n} direct grant and {folder} through the folder. | Editor/Owner accounts, plus {n} direct grants and {folder} through the folder."
+          "both": "Editor/Owner accounts, plus {n} direct grant and {folder} through the folder. | Editor/Owner accounts, plus {n} direct grants and {folder} through the folder.",
+          "uncounted": "Editor/Owner accounts, plus the individual grants."
         }
       },
       "visibility": "Visibility",
@@ -173,8 +177,10 @@
       "removeGrant": "Remove the grant",
       "grantFailed": "Sharing failed",
       "loadFailed": "The grants of the presentation could not be loaded.",
+      "folderLoadFailed": "The grants of the folder could not be loaded.",
       "removeFailed": "Removal failed",
       "roleChangeFailed": "Change failed",
+      "editorPastLimit": "This access lasts past {date}, when your own access ends: you cannot raise it to “Edit”.",
       "accountAuthorized": "Account authorized",
       "accountAuthorizedDescription": "{login} can now receive a grant.",
       "authorizeFailed": "Authorization failed"
@@ -184,6 +190,7 @@
       "chooseAccount": "Choose an account",
       "accessLevel": "Access level",
       "accessDuration": "Grant duration",
+      "durationPending": "Loading…",
       "submitGrant": "Add the grant",
       "share": "Share",
       "allAccountsGranted": "Every known account already has access. Authorize a new one:",

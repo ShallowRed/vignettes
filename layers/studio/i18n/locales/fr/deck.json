@@ -21,25 +21,29 @@
           "alone": "Tout le monde.",
           "direct": "Tout le monde, plus {n} accès direct. | Tout le monde, plus {n} accès directs.",
           "folder": "Tout le monde, plus {folder} via le dossier.",
-          "both": "Tout le monde, plus {n} accès direct et {folder} via le dossier. | Tout le monde, plus {n} accès directs et {folder} via le dossier."
+          "both": "Tout le monde, plus {n} accès direct et {folder} via le dossier. | Tout le monde, plus {n} accès directs et {folder} via le dossier.",
+          "uncounted": "Tout le monde, plus les accès individuels."
         },
         "password": {
           "alone": "Toute personne ayant le mot de passe.",
           "direct": "Toute personne ayant le mot de passe, plus {n} accès direct. | Toute personne ayant le mot de passe, plus {n} accès directs.",
           "folder": "Toute personne ayant le mot de passe, plus {folder} via le dossier.",
-          "both": "Toute personne ayant le mot de passe, plus {n} accès direct et {folder} via le dossier. | Toute personne ayant le mot de passe, plus {n} accès directs et {folder} via le dossier."
+          "both": "Toute personne ayant le mot de passe, plus {n} accès direct et {folder} via le dossier. | Toute personne ayant le mot de passe, plus {n} accès directs et {folder} via le dossier.",
+          "uncounted": "Toute personne ayant le mot de passe, plus les accès individuels."
         },
         "noPassword": {
           "alone": "Personne (aucun mot de passe défini).",
           "direct": "Personne (aucun mot de passe défini), plus {n} accès direct. | Personne (aucun mot de passe défini), plus {n} accès directs.",
           "folder": "Personne (aucun mot de passe défini), plus {folder} via le dossier.",
-          "both": "Personne (aucun mot de passe défini), plus {n} accès direct et {folder} via le dossier. | Personne (aucun mot de passe défini), plus {n} accès directs et {folder} via le dossier."
+          "both": "Personne (aucun mot de passe défini), plus {n} accès direct et {folder} via le dossier. | Personne (aucun mot de passe défini), plus {n} accès directs et {folder} via le dossier.",
+          "uncounted": "Personne (aucun mot de passe défini), plus les accès individuels."
         },
         "private": {
           "alone": "Les comptes Éditeur/Propriétaire.",
           "direct": "Les comptes Éditeur/Propriétaire, plus {n} accès direct. | Les comptes Éditeur/Propriétaire, plus {n} accès directs.",
           "folder": "Les comptes Éditeur/Propriétaire, plus {folder} via le dossier.",
-          "both": "Les comptes Éditeur/Propriétaire, plus {n} accès direct et {folder} via le dossier. | Les comptes Éditeur/Propriétaire, plus {n} accès directs et {folder} via le dossier."
+          "both": "Les comptes Éditeur/Propriétaire, plus {n} accès direct et {folder} via le dossier. | Les comptes Éditeur/Propriétaire, plus {n} accès directs et {folder} via le dossier.",
+          "uncounted": "Les comptes Éditeur/Propriétaire, plus les accès individuels."
         }
       },
       "visibility": "Visibilité",
@@ -173,8 +177,10 @@
       "removeGrant": "Retirer l'accès",
       "grantFailed": "Échec du partage",
       "loadFailed": "Les accès de la présentation n'ont pas pu être chargés.",
+      "folderLoadFailed": "Les accès du dossier n'ont pas pu être chargés.",
       "removeFailed": "Échec du retrait",
       "roleChangeFailed": "Échec de la modification",
+      "editorPastLimit": "Cet accès dure au-delà du {date}, date de fin de votre propre accès : vous ne pouvez pas le passer en « Édition ».",
       "accountAuthorized": "Compte autorisé",
       "accountAuthorizedDescription": "{login} peut maintenant recevoir un accès.",
       "authorizeFailed": "Échec de l'autorisation"
@@ -184,6 +190,7 @@
       "chooseAccount": "Choisir un compte",
       "accessLevel": "Niveau d'accès",
       "accessDuration": "Durée de l'accès",
+      "durationPending": "Chargement…",
       "submitGrant": "Ajouter l'accès",
       "share": "Partager",
       "allAccountsGranted": "Tous les comptes connus ont déjà accès. Autorisez-en un nouveau :",

@@ -6,6 +6,7 @@ import { useAppSession } from '../composables/useAppSession'
 import { usersQuery } from '../queries'
 import { usersKeys } from '../queries/keys'
 import { requestErrorMessage } from '../utils/request-error'
+import { shortDate } from '../utils/short-date'
 
 /**
  * Accounts page (owner only): every identity the instance knows, its global
@@ -71,10 +72,6 @@ const { mutate: runRemove, isLoading: removing } = useMutation({
 const busy = computed(() => changingRole.value || removing.value)
 
 const inviteOpen = ref(false)
-
-function dateLabel(d: Date | string) {
-  return new Date(d).toLocaleDateString(locale.value, { day: 'numeric', month: 'short', year: 'numeric' })
-}
 </script>
 
 <template>
@@ -132,7 +129,7 @@ function dateLabel(d: Date | string) {
               {{ t('admin.users.invitationPending') }}
             </template>
             <template v-else>
-              {{ t('admin.users.lastLogin', { date: dateLabel(account.lastLoginAt) }) }}
+              {{ t('admin.users.lastLogin', { date: shortDate(account.lastLoginAt, locale) }) }}
             </template>
           </p>
         </div>

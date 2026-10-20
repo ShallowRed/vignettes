@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { permissionsApi, usersApi } from '../api'
 import { grantsQuery, sharingKey, usersQuery } from '../queries'
 import { usersKeys } from '../queries/keys'
+import { mayChangeRole } from '../utils/grant-role'
 import { requestErrorMessage } from '../utils/request-error'
 import { shortDate } from '../utils/short-date'
 
@@ -11,6 +12,14 @@ import { shortDate } from '../utils/short-date'
 const GRANT_DURATIONS = [0, 7, 30, 90]
 /** The duration that ends with the sharer's own access. */
 const UNTIL_LIMIT = -1
+
+/** A role offered for a grant; a disabled role gives its reason. */
+export interface GrantRoleItem {
+  label: string
+  value: DeckGrant
+  disabled?: boolean
+  reason?: string
+}
 
 /**
  * Sharing (per-deck or per-project grants), unified for both slideovers. The
@@ -36,10 +45,20 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
   const toast = useToast()
   const { t, locale } = useI18n()
 
-  const grantRoleItems = computed(() => [
-    { label: t('deck.sharing.roleViewer'), value: 'viewer' as DeckGrant },
-    { label: t('deck.sharing.roleEditor'), value: 'editor' as DeckGrant },
+  const grantRoleItems = computed<GrantRoleItem[]>(() => [
+    { label: t('deck.sharing.roleViewer'), value: 'viewer' },
+    { label: t('deck.sharing.roleEditor'), value: 'editor' },
   ])
+  // The roles of an existing grant: a collaborator raises it to `editor` only
+  // when it ends by their own limit.
+  function grantRoleItemsOf(grant: GrantSummary): GrantRoleItem[] {
+    const end = limit()
+    return grantRoleItems.value.map((item) => {
+      if (mayChangeRole(end, grant, item.value))
+        return item
+      return { ...item, disabled: true, reason: end ? t('deck.sharing.editorPastLimit', { date: shortDate(end, locale.value) }) : undefined }
+    })
+  }
   const endOf = (days: number) => days === UNTIL_LIMIT ? limit() ?? null : days > 0 ? new Date(Date.now() + days * 86_400_000) : null
   const termsReady = computed(() => limit() !== undefined)
   const grantRole = ref<DeckGrant>('viewer')
@@ -73,9 +92,15 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
   })
 
   const grantUserId = ref<number | undefined>(undefined)
-  const defaultDays = () => limit() ? UNTIL_LIMIT : 0
-  const grantDays = ref(defaultDays())
-  watch(() => limit()?.getTime(), () => {
+  const defaultDays = () => {
+    const end = limit()
+    return end === undefined ? undefined : end ? UNTIL_LIMIT : 0
+  }
+  const grantDays = ref<number | undefined>(defaultDays())
+  watch(() => {
+    const end = limit()
+    return end ? end.getTime() : end
+  }, () => {
     grantDays.value = defaultDays()
   })
 
@@ -86,7 +111,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
     toast.add({ title: requestErrorMessage(error, action), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 
-  const grantExpiry = () => endOf(grantDays.value)?.toISOString() ?? null
+  const grantExpiry = () => endOf(grantDays.value!)?.toISOString() ?? null
 
   const { mutate: submitGrant, isLoading: adding } = useMutation({
     mutation: () => permissionsApi.set(requestFetch, scope(), grantUserId.value!, grantRole.value, grantExpiry()),
@@ -103,7 +128,8 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
     onSettled: invalidateGrants,
   })
 
-  // Inline role change on an existing grant: same upsert, keeping its expiry.
+  // Inline role change on an existing grant: same upsert, keeping its expiry,
+  // for the roles `grantRoleItemsOf` offers, and none while the limit is unknown.
   // An expired grant is not editable this way (re-adding it is a conscious act).
   const { mutate: submitRoleChange, isLoading: changingRole } = useMutation({
     mutation: ({ userId, role, expiresAt }: { userId: number, role: DeckGrant, expiresAt: string | null }) =>
@@ -111,18 +137,13 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
     onError: e => onError(e, t('deck.sharing.roleChangeFailed')),
     onSettled: invalidateGrants,
   })
-  // A grant a collaborator raises to `editor` ends by their own limit at the latest.
   function changeGrantRole(grant: GrantSummary, role: DeckGrant) {
-    if (role === grant.role)
-      return
-    const end = limit() ?? null
-    const kept = grant.expiresAt ?? null
-    const expiresAt = end && !mayGrantUntil(end, { role, expiresAt: kept }, grant) ? end.toISOString() : kept
-    submitRoleChange({ userId: grant.userId, role, expiresAt })
+    if (role !== grant.role && mayChangeRole(limit(), grant, role))
+      submitRoleChange({ userId: grant.userId, role, expiresAt: grant.expiresAt ?? null })
   }
 
   function addGrant() {
-    if (grantUserId.value != null)
+    if (termsReady.value && grantUserId.value != null)
       submitGrant()
   }
 
@@ -171,7 +192,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
     onSettled: invalidateGrants,
   })
   function shareByHandle() {
-    if (inviteValid.value && !sharingByHandle.value)
+    if (termsReady.value && inviteValid.value && !sharingByHandle.value)
       submitHandleGrant()
   }
 
@@ -187,6 +208,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
     grantRole,
     grantDays,
     grantRoleItems,
+    grantRoleItemsOf,
     grantDurationItems,
     addGrant,
     changeGrantRole,

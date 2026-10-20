@@ -10,6 +10,7 @@ import { useAppSession } from '../composables/useAppSession'
 import { useCatalog, useCatalogCache } from '../composables/useCatalog'
 import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
+import { countAudience } from '../utils/audience'
 import { requestErrorMessage } from '../utils/request-error'
 import { shortDate } from '../utils/short-date'
 
@@ -178,7 +179,7 @@ watch(() => open.value && props.focus === 'sharing', (focus) => {
 // loaded (undefined until then).
 const ownLimit = shallowRef<Date | null | undefined>(undefined)
 const sharing = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && canShare.value, () => isOwner.value, () => ownLimit.value)
-const { grants, grantsStatus, refetchGrants, grantRoleItems, changeGrantRole, removeGrant, busy: sharingBusy } = sharing
+const { grants, grantsStatus, refetchGrants, grantRoleItemsOf, changeGrantRole, removeGrant, busy: sharingBusy } = sharing
 
 // The folder's master keys open this deck too: surface them here (read-only,
 // same cache key as the folder panel, read through this deck) so this panel
@@ -201,12 +202,10 @@ watchEffect(() => {
     ? null
     : loaded ? sharingLimit(role.value, [grants.value.find(isOwn), projectGrants.value.find(isOwn)]) : undefined
 })
-const grantsFailed = computed(() => grantsStatus.value === 'error' || folderGrantsStatus.value === 'error')
-function retryGrants() {
-  refetchGrants()
-  if (props.item.project)
-    projectGrantsQ.refetch()
-}
+const loadFailures = computed(() => [
+  ...(grantsStatus.value === 'error' ? [{ title: t('deck.sharing.loadFailed'), retry: () => { refetchGrants() } }] : []),
+  ...(folderGrantsStatus.value === 'error' ? [{ title: t('deck.sharing.folderLoadFailed'), retry: () => { projectGrantsQ.refetch() } }] : []),
+])
 
 // One sentence answering "who can open this deck?", folding status, password
 // and both grant scopes — the recomposition the three separate panels lack.
@@ -216,16 +215,18 @@ const audience = computed(() => {
     : state.status === 'semi-private'
       ? (props.item.hasPassword || passwordReady.value ? 'password' : 'noPassword')
       : 'private'
-  // An expired grant stays listed and opens nothing: it is not counted.
-  const direct = grants.value.filter(grant => !isExpired(grant)).length
-  const folder = projectGrants.value.filter(grant => !isExpired(grant)).length
-  if (direct && folder)
-    return t(`deck.meta.audience.${base}.both`, { folder }, direct)
-  if (direct)
-    return t(`deck.meta.audience.${base}.direct`, direct)
-  if (folder)
-    return t(`deck.meta.audience.${base}.folder`, { folder })
-  return t(`deck.meta.audience.${base}.alone`)
+  const count = countAudience(
+    grantsStatus.value === 'error' ? undefined : grants.value,
+    folderGrantsStatus.value === 'error' ? undefined : projectGrants.value,
+  )
+  const key = `deck.meta.audience.${base}.${count.variant}`
+  if (count.variant === 'both')
+    return t(key, { folder: count.folder }, count.direct)
+  if (count.variant === 'direct')
+    return t(key, count.direct)
+  if (count.variant === 'folder')
+    return t(key, { folder: count.folder })
+  return t(key)
 })
 </script>
 
@@ -398,17 +399,18 @@ const audience = computed(() => {
               </div>
               <div class="flex flex-col gap-3">
                 <UAlert
-                  v-if="grantsFailed"
+                  v-for="failure in loadFailures"
+                  :key="failure.title"
                   color="error"
                   variant="subtle"
                   icon="i-lucide-triangle-alert"
-                  :title="t('deck.sharing.loadFailed')"
-                  :actions="[{ label: t('common.actions.retry'), color: 'neutral', variant: 'subtle', onClick: retryGrants }]"
+                  :title="failure.title"
+                  :actions="[{ label: t('common.actions.retry'), color: 'neutral', variant: 'subtle', onClick: failure.retry }]"
                 />
                 <GrantList
                   v-if="grants.length > 0"
                   :grants="grants"
-                  :role-items="grantRoleItems"
+                  :role-items="grantRoleItemsOf"
                   :busy="sharingBusy"
                   :locked="isOwnGrant"
                   @change-role="changeGrantRole"

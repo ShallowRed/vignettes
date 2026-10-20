@@ -17,7 +17,7 @@ const { t } = useI18n()
 // Grants + users load only while the slideover is open (enabled gate). The
 // whole bag also feeds ShareGrantForm (add + invite-by-email).
 const sharing = useSharing(() => ({ kind: 'project', slug: props.project.slug }), () => open.value, () => true)
-const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
+const { grants, grantRoleItemsOf, changeGrantRole, removeGrant, busy } = sharing
 </script>
 
 <template>
@@ -39,7 +39,7 @@ const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
         <GrantList
           v-if="grants.length > 0"
           :grants="grants"
-          :role-items="grantRoleItems"
+          :role-items="grantRoleItemsOf"
           :busy="busy"
           @change-role="changeGrantRole"
           @remove="removeGrant"

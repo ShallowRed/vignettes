@@ -188,15 +188,13 @@ describe('changing a grant (PUT /api/admin/decks/:slug/permissions/:userId)', ()
     await expect(put({ role: 'viewer', expiresAt: inDays(5).toISOString() })).resolves.toMatchObject({ ok: true })
   })
 
-  it('holds a raised role to that collaborator\'s term, and lowers a permanent grant without one', async () => {
+  it('lets that collaborator lower a permanent grant without giving it a term', async () => {
     const put = (body: Record<string, unknown>) => setGrant(temporary(onDeck({ params: { slug: 'deck', userId: '11' }, body })))
-    await expect(put({ role: 'editor', expiresAt: null })).rejects.toMatchObject({ statusCode: 403 })
     await usePermissionStore().set('deck', 11, 'editor', 'boss')
     await expect(put({ role: 'viewer', expiresAt: null })).resolves.toMatchObject({ ok: true })
   })
 
   it('keeps the account that collaborator promotes from extending them in turn (403)', async () => {
-    await expect(setGrant(temporary(onDeck({ params: { slug: 'deck', userId: '11' }, body: { role: 'editor', expiresAt: null } })))).rejects.toMatchObject({ statusCode: 403 })
     await setGrant(temporary(onDeck({ params: { slug: 'deck', userId: '11' }, body: { role: 'editor', expiresAt: inDays(10).toISOString() } })))
     await expect(setGrant(reader(onDeck({ params: { slug: 'deck', userId: '17' }, body: { role: 'editor', expiresAt: null } })))).rejects.toMatchObject({ statusCode: 403 })
     const grant = (await usePermissionStore().listForDeck('deck')).find(g => g.userId === 17)

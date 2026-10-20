@@ -57,7 +57,7 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 |-------|--------|--------|
 | `GET /api/admin/decks/:slug/permissions` | sharer | Grants on a deck |
 | `POST /api/admin/decks/:slug/permissions` | sharer | Grant `editor` or `viewer` on a deck to an account named by its provider handle, invited when it never logged in; 30 per sharer every 10 minutes |
-| `PUT /api/admin/decks/:slug/permissions/:userId` | sharer | Grant `editor` or `viewer` on a deck, with an optional expiry; a sharer other than the owner changes a listed grant, never their own, and within the end of their own access |
+| `PUT /api/admin/decks/:slug/permissions/:userId` | sharer | Grant `editor` or `viewer` on a deck, with an optional expiry; a sharer other than the owner changes a listed grant, never their own, within the bounds of [access-matrix.md](access-matrix.md#grants-targeted-escalation) |
 | `DELETE /api/admin/decks/:slug/permissions/:userId` | sharer | Revoke a deck grant, their own included |
 | `GET /api/admin/projects/:slug/permissions` | owner, or a sharer of `?deck=<slug>` in that project | Grants on a project |
 | `PUT /api/admin/projects/:slug/permissions/:userId` | owner | Grant `editor` or `viewer` on every deck of a project |

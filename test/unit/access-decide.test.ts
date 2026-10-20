@@ -170,7 +170,7 @@ describe('mayGrantUntil', () => {
     expect(mayGrantUntil(day(20), viewer(null))).toBe(false)
   })
 
-  it('lets an existing grant keep or shorten its term at the same role, never extend it past the limit', () => {
+  it('lets an existing grant keep or shorten its term without raising its role, never extend it past the limit', () => {
     expect(mayGrantUntil(day(20), viewer(null), viewer(null))).toBe(true)
     expect(mayGrantUntil(day(20), editor(day(25)), editor(day(28)))).toBe(true)
     expect(mayGrantUntil(day(20), viewer(day(25)), editor(day(28)))).toBe(true)
