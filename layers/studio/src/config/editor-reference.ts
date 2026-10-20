@@ -1,15 +1,17 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
+import type { DeckComponent, LocalizedText } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { DECK_LAYOUTS } from '@vignettes/core/deck'
+import { DECK_ANNOTATIONS, DECK_LAYOUTS, deckComponents } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
 /**
  * Declarative authoring reference for the writer: one dataset feeding the
- * autocompletion, the toolbar "Insérer" menu and the help panel. Labels and
- * descriptions are message keys of the `reference` locale file. Descriptions
- * and snippets mirror the engine contracts (packages/core/src/deck/components.ts,
- * packages/core/src/deck/schema.ts): extend those first, then here.
+ * autocompletion, the toolbar "Insérer" menu and the help panel. The components
+ * and the annotations come from `@vignettes/core/deck`, with the snippet and the
+ * description each declaration carries. The other labels and descriptions are
+ * message keys of the `reference` locale file, and follow the engine contracts
+ * (packages/core/src/deck/schema.ts): extend those first, then here.
  *
  * Snippet placeholders use the CodeMirror snippet syntax: `${label}`.
  */
@@ -20,25 +22,17 @@ export interface Translate {
   (key: string, named: Record<string, unknown>): string
 }
 
-export interface ReferenceSnippet {
-  /** Deck syntax of the entry (`::Quote`, `:layout`), shown as its label. */
+/** An insertable entry with its texts in the interface language. */
+export interface ReferenceEntry {
   label: string
-  /** Message key of the label, for an entry whose label carries words. */
-  labelKey?: string
-  descriptionKey: string
-  /** CodeMirror snippet template (tabbable `${…}` placeholders). */
+  description: string
   snippet: string
 }
 
 export interface SlideTemplate {
   labelKey: string
   descriptionKey: string
-  snippet: string
-}
-
-/** The label an entry displays: its translated label, or its deck syntax. */
-export function referenceLabel(entry: ReferenceSnippet, t: Translate): string {
-  return entry.labelKey ? t(entry.labelKey) : entry.label
+  snippet: LocalizedText
 }
 
 export interface FrontmatterKey {
@@ -50,7 +44,8 @@ export interface FrontmatterKey {
   default?: string
   /** Message key of the default, when words describe it instead of a value. */
   defaultKey?: string
-  snippet: string
+  /** A text per interface language when the snippet has words to translate. */
+  snippet: string | LocalizedText
   /** Keys nested under this one. */
   children?: readonly FrontmatterKey[]
 }
@@ -106,161 +101,145 @@ const CODE_KEYS: readonly FrontmatterKey[] = [
 ]
 
 export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
-  { key: 'title', descriptionKey: 'reference.frontmatter.root.title', defaultKey: 'reference.frontmatter.root.titleDefault', snippet: 'title: "${Titre}"' },
+  { key: 'title', descriptionKey: 'reference.frontmatter.root.title', defaultKey: 'reference.frontmatter.root.titleDefault', snippet: { fr: 'title: "${Titre}"', en: 'title: "${Title}"' } },
   { key: 'theme', descriptionKey: 'reference.frontmatter.root.theme', values: knownThemes(), snippet: 'theme: ${dsfr}' },
   { key: 'parser', descriptionKey: 'reference.frontmatter.root.parser', values: ['separator', 'heading'], default: 'separator', snippet: 'parser: ${separator}' },
   { key: 'lang', descriptionKey: 'reference.frontmatter.root.lang', values: ['fr', 'en'], default: 'fr', snippet: 'lang: ${fr}' },
-  { key: 'project', descriptionKey: 'reference.frontmatter.root.project', snippet: 'project: ${slug-du-dossier}' },
+  { key: 'project', descriptionKey: 'reference.frontmatter.root.project', snippet: { fr: 'project: ${slug-du-dossier}', en: 'project: ${folder-slug}' } },
   { key: 'status', descriptionKey: 'reference.frontmatter.root.status', values: PUBLICATION_STATUSES, default: 'private', snippet: 'status: ${private}' },
   { key: 'unlisted', descriptionKey: 'reference.frontmatter.root.unlisted', values: BOOLEAN, default: 'false', snippet: 'unlisted: ${true}' },
   { key: 'storybook', descriptionKey: 'reference.frontmatter.root.storybook', snippet: 'storybook: ${https://storybook.example.com}' },
   { key: 'backgrounds', descriptionKey: 'reference.frontmatter.root.backgrounds', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
   { key: 'code', descriptionKey: 'reference.frontmatter.root.code', values: Object.keys(CODE_THEMES), snippet: 'code: ${sombre}', children: CODE_KEYS },
   { key: 'reveal', descriptionKey: 'reference.frontmatter.root.reveal', snippet: 'reveal:\n  width: ${1280}\n  height: ${720}', children: REVEAL_KEYS },
-  { key: 'accessPassword', descriptionKey: 'reference.frontmatter.root.accessPassword', snippet: 'accessPassword: ${motdepasse}' },
+  { key: 'accessPassword', descriptionKey: 'reference.frontmatter.root.accessPassword', snippet: { fr: 'accessPassword: ${motdepasse}', en: 'accessPassword: ${password}' } },
 ]
 
 /** Keys a deck may still carry from older formats; known, never suggested. */
 export const LEGACY_FRONTMATTER_KEYS: readonly string[] = ['access', 'transition', 'center']
 
-/** Components authored as `::Name … ::`, with real-world props as placeholders. */
-export const COMPONENT_SNIPPETS: readonly ReferenceSnippet[] = [
-  {
-    label: '::Quote',
-    descriptionKey: 'reference.components.quote',
-    snippet: '::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation.}\n::',
-  },
-  {
-    label: ':::Columns',
-    descriptionKey: 'reference.components.columns',
-    snippet: ':::Columns\n::column\n${Colonne 1}\n::\n::column\n${Colonne 2}\n::\n:::',
-  },
-  {
-    label: '::Highlight',
-    descriptionKey: 'reference.components.highlight',
-    snippet: '::Highlight{size="${sm}"}\n${Message clé.}\n::',
-  },
-  {
-    label: '::Mermaid',
-    descriptionKey: 'reference.components.mermaid',
-    snippet: '::Mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n::',
-  },
-  {
-    label: '::Image',
-    descriptionKey: 'reference.components.image',
-    snippet: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
-  },
-  {
-    label: '::FullScreenImage',
-    descriptionKey: 'reference.components.fullScreenImage',
-    snippet: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
-  },
-  {
-    label: '::Iframe',
-    descriptionKey: 'reference.components.iframe',
-    snippet: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::',
-  },
-  {
-    label: ':::Screens',
-    descriptionKey: 'reference.components.screens',
-    snippet: ':::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n:::',
-  },
-  {
-    label: '::StoryFrame',
-    descriptionKey: 'reference.components.storyFrame',
-    snippet: '::StoryFrame{story="${id-de-la-story}" ratio="${16/9}" previewWidth="${760}" label="${Libellé}" lightbox}\n::',
-  },
-  {
-    label: ':i',
-    labelKey: 'reference.components.iconLabel',
-    descriptionKey: 'reference.components.icon',
-    snippet: ':i{name="${ri:home-line}"}',
-  },
-] as const
+/**
+ * The text in the interface language, French when it has none in that
+ * language. A plain string, the same in every language, comes back as it is.
+ */
+export function inLanguage(text: string | LocalizedText | undefined, lang: string): string {
+  if (typeof text === 'string')
+    return text
+  return text?.[lang] ?? text?.fr ?? ''
+}
 
-/** `:tag{…}` annotations the parser lifts out of the slide body. */
-export const ANNOTATION_SNIPPETS: readonly ReferenceSnippet[] = [
-  {
-    label: ':layout',
-    descriptionKey: 'reference.annotations.layout',
-    snippet: ':layout{name="${media-right}"}',
-  },
-  {
-    label: ':pretitle',
-    descriptionKey: 'reference.annotations.pretitle',
-    snippet: ':pretitle{text="${Contexte}"}',
-  },
-  {
-    label: ':subtitle',
-    descriptionKey: 'reference.annotations.subtitle',
-    snippet: ':subtitle{text="${Sous-titre}"}',
-  },
-  {
-    label: ':slide-background',
-    descriptionKey: 'reference.annotations.slideBackground',
-    snippet: ':slide-background{image="${/backgrounds/exemple.svg}"}',
-  },
-  {
-    label: ':quicklink',
-    descriptionKey: 'reference.annotations.quicklink',
-    snippet: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}',
-  },
-] as const
+/** The deck syntax that opens a snippet: `::Quote`, `:::Columns`, `:i`. */
+function directiveOf(snippet: string): string {
+  return /^:+[\w-]+/.exec(snippet)?.[0] ?? snippet
+}
 
 /**
- * Whole-slide starters with lorem placeholders, inserted from the toolbar
+ * The components a deck can use, read from the registry the renderer reads, so
+ * a component an extension package or the application registers is offered
+ * with its own snippet and description.
+ */
+export function componentEntries(lang: string): ReferenceEntry[] {
+  return deckComponents()
+    .filter((component): component is DeckComponent & { snippet: LocalizedText } => Boolean(component.snippet))
+    .map((component) => {
+      const snippet = inLanguage(component.snippet, lang)
+      return { label: directiveOf(snippet), description: inLanguage(component.description, lang), snippet }
+    })
+}
+
+/** The `:tag{…}` annotations the parser lifts out of the slide body. */
+export function annotationEntries(lang: string): ReferenceEntry[] {
+  return DECK_ANNOTATIONS.map(annotation => ({
+    label: `:${annotation.tag}`,
+    description: inLanguage(annotation.description, lang),
+    snippet: inLanguage(annotation.snippet, lang),
+  }))
+}
+
+/**
+ * Whole-slide starters with example texts, inserted from the toolbar
  * "Modèles" menu. Each leads with `---`, which opens a slide in both parsers.
  */
 export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.twoColumns.label',
     descriptionKey: 'reference.templates.twoColumns.description',
-    snippet: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Sous-titre 1}\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n::\n::column\n### ${Sous-titre 2}\n${Sed do eiusmod tempor incididunt ut labore.}\n::\n:::',
+    snippet: {
+      fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Ce qui change}\n${Les démarches se font en ligne, sans pièce justificative.}\n::\n::column\n### ${Ce qui reste}\n${Le guichet reçoit toujours sur rendez-vous.}\n::\n:::',
+      en: '---\n\n## ${Slide title}\n\n:::Columns\n::column\n### ${What changes}\n${The procedures move online, with no supporting document.}\n::\n::column\n### ${What stays}\n${The front desk still sees people by appointment.}\n::\n:::',
+    },
   },
   {
     labelKey: 'reference.templates.threeColumns.label',
     descriptionKey: 'reference.templates.threeColumns.description',
-    snippet: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Colonne 1}\n${Lorem ipsum dolor sit amet.}\n::\n::column\n### ${Colonne 2}\n${Consectetur adipiscing elit.}\n::\n::column\n### ${Colonne 3}\n${Sed do eiusmod tempor.}\n::\n:::',
+    snippet: {
+      fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Découvrir}\n${Un premier rendez-vous pour comprendre le besoin.}\n::\n::column\n### ${Concevoir}\n${Des maquettes testées avec les usagers.}\n::\n::column\n### ${Livrer}\n${Une mise en ligne par étapes.}\n::\n:::',
+      en: '---\n\n## ${Slide title}\n\n:::Columns\n::column\n### ${Discover}\n${A first meeting to understand the need.}\n::\n::column\n### ${Design}\n${Mockups tested with users.}\n::\n::column\n### ${Deliver}\n${A release in stages.}\n::\n:::',
+    },
   },
   {
     labelKey: 'reference.templates.cover.label',
     descriptionKey: 'reference.templates.cover.description',
-    snippet: '---\n\n## ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
+    snippet: {
+      fr: '---\n\n## ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
+      en: '---\n\n## ${Presentation title}\n\n:subtitle{text="${Subtitle or tagline}"}',
+    },
   },
   {
     labelKey: 'reference.templates.section.label',
     descriptionKey: 'reference.templates.section.description',
-    snippet: '---\n\n## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
+    snippet: {
+      fr: '---\n\n## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
+      en: '---\n\n## ${Section title}\n\n:pretitle{text="${Part 1}"}',
+    },
   },
   {
     labelKey: 'reference.templates.keyPoints.label',
     descriptionKey: 'reference.templates.keyPoints.description',
-    snippet: '---\n\n## ${Titre de la diapo}\n\n- ${Premier point clé}\n- ${Deuxième point clé}\n- ${Troisième point clé}',
+    snippet: {
+      fr: '---\n\n## ${Titre de la diapo}\n\n- ${Premier point clé}\n- ${Deuxième point clé}\n- ${Troisième point clé}',
+      en: '---\n\n## ${Slide title}\n\n- ${First key point}\n- ${Second key point}\n- ${Third key point}',
+    },
   },
   {
     labelKey: 'reference.templates.comparison.label',
     descriptionKey: 'reference.templates.comparison.description',
-    snippet: '---\n\n## ${Titre de la comparaison}\n\n:::Columns\n::column\n### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::column\n### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
+    snippet: {
+      fr: '---\n\n## ${Titre de la comparaison}\n\n:::Columns\n::column\n### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::column\n### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
+      en: '---\n\n## ${Comparison title}\n\n:::Columns\n::column\n### ${Before}\n- ${Point one}\n- ${Point two}\n::\n::column\n### ${After}\n- ${Point one}\n- ${Point two}\n::\n:::',
+    },
   },
   {
     labelKey: 'reference.templates.mediaText.label',
     descriptionKey: 'reference.templates.mediaText.description',
-    snippet: '---\n\n## ${Titre de la diapo}\n\n:layout{name="media-right" src="${/images/placeholder.svg}" alt="${Description de l\'image}"}\n\n${Le parcours d\'inscription passe de six à trois écrans.}',
+    snippet: {
+      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{name="media-right" src="${/images/placeholder.svg}" alt="${Description de l\'image}"}\n\n${Le parcours d\'inscription passe de six à trois écrans.}',
+      en: '---\n\n## ${Slide title}\n\n:layout{name="media-right" src="${/images/placeholder.svg}" alt="${Image description}"}\n\n${The sign-up journey goes from six screens to three.}',
+    },
   },
   {
     labelKey: 'reference.templates.quote.label',
     descriptionKey: 'reference.templates.quote.description',
-    snippet: '---\n\n::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation qui marque les esprits.}\n::',
+    snippet: {
+      fr: '---\n\n::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation qui marque les esprits.}\n::',
+      en: '---\n\n::Quote{author="${Author}" role="${Role}"}\n${The quote people remember.}\n::',
+    },
   },
   {
     labelKey: 'reference.templates.fullScreenImage.label',
     descriptionKey: 'reference.templates.fullScreenImage.description',
-    snippet: '---\n\n::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
+    snippet: {
+      fr: '---\n\n::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
+      en: '---\n\n::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
+    },
   },
   {
     labelKey: 'reference.templates.storybookGallery.label',
     descriptionKey: 'reference.templates.storybookGallery.description',
-    snippet: '---\n\n## ${Titre de la démo}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n:::',
+    snippet: {
+      fr: '---\n\n## ${Titre de la démo}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n:::',
+      en: '---\n\n## ${Demo title}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${story-id}" label="${Screen 1}" lightbox}\n::StoryFrame{story="${story-id}" label="${Screen 2}" lightbox}\n:::',
+    },
   },
 ] as const
 

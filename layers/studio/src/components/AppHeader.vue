@@ -2,8 +2,10 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { ROLE_CONFIG } from '#shared/access'
 import { useAppSession } from '../composables/useAppSession'
+import { useInstanceLinks } from '../composables/useInstanceLinks'
 
-// App chrome: brand left, identity (color mode, sign-in/out, role) right.
+// App chrome: brand left; the links of the instance, language, color mode and
+// identity (sign-in/out, role) right.
 const { loggedIn, role, user, privileged } = useAppSession()
 const { t, locale, locales, setLocale } = useI18n()
 const localeItems = computed<DropdownMenuItem[]>(() => locales.value.map(item => ({
@@ -13,6 +15,10 @@ const localeItems = computed<DropdownMenuItem[]>(() => locales.value.map(item =>
   onSelect: () => setLocale(item.code),
 })))
 const roleDisplay = computed(() => ROLE_CONFIG[role.value])
+
+const links = useInstanceLinks()
+const linkItems = computed<DropdownMenuItem[]>(() =>
+  links.value.map(link => ({ label: link.label, icon: link.icon, to: link.url, target: '_blank' })))
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
   [{ type: 'label', label: user.value?.login || user.value?.name || t('common.header.account'), avatar: user.value?.avatar ? { src: user.value.avatar } : undefined }],
@@ -40,6 +46,35 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     </template>
 
     <template #right>
+      <!-- A phone has room for one button: a single link shows its icon, two
+           links share a menu. -->
+      <UButton
+        v-for="link in links"
+        :key="link.url"
+        :to="link.url"
+        target="_blank"
+        :icon="link.icon"
+        :label="link.label"
+        :aria-label="link.label"
+        :ui="{ label: 'hidden md:inline' }"
+        color="neutral"
+        variant="ghost"
+        :class="links.length > 1 ? 'hidden md:inline-flex' : ''"
+      />
+      <UDropdownMenu
+        v-if="links.length > 1"
+        :items="linkItems"
+        :content="{ align: 'end' }"
+      >
+        <UButton
+          icon="i-lucide-circle-help"
+          color="neutral"
+          variant="ghost"
+          class="md:hidden"
+          :aria-label="t('common.header.support')"
+        />
+      </UDropdownMenu>
+
       <UDropdownMenu
         :items="localeItems"
         :content="{ align: 'end' }"

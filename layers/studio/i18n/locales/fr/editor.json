@@ -120,6 +120,13 @@
       "unknownKey": "Clé inconnue : « {key} » n'a aucun effet.",
       "expectedValue": "Valeur attendue : {values}.",
       "completionHint": "Ctrl + Espace : réglages disponibles"
+    },
+    "diagnostics": {
+      "list": "Problèmes trouvés par l'aperçu",
+      "unknownComponent": "« {name} » n'est pas un composant connu : l'aperçu et la présentation affichent son contenu sans mise en forme. L'aide liste les composants.",
+      "unknownComponentShort": "Ligne {line} : composant « {name} » inconnu",
+      "parseFailed": "Le texte n'a pas pu être analysé",
+      "more": "{n} autre | {n} autre | {n} autres"
     }
   }
 }

@@ -39,7 +39,8 @@ function frontmatterKeys(): string[] {
 function componentLines(components: readonly DeckComponent[]): string[] {
   return components.map((c) => {
     const aliases = c.aliases?.length ? `, also written ${c.aliases.map(a => `\`${a}\``).join(', ')}` : ''
-    return `- \`${c.name}\`${aliases}${c.fullSlide ? '; takes the whole slide' : ''}`
+    const description = c.description?.en ? `: ${c.description.en}` : ''
+    return `- \`${c.name}\`${description}${aliases}${c.fullSlide ? '; takes the whole slide' : ''}`
   })
 }
 
@@ -61,7 +62,7 @@ function formatReference(): string {
     '',
     'Written `:tag{…}` on a line of the slide. The parser reads them and removes them from the body.',
     '',
-    ...DECK_ANNOTATIONS.map(a => `- \`:${a.tag}\`: ${a.description}`),
+    ...DECK_ANNOTATIONS.map(a => `- \`:${a.tag}\`: ${a.description.en}`),
     '',
     '## Layouts',
     '',

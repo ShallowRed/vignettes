@@ -1,6 +1,7 @@
 import type { MDCElement, MDCNode, MDCRoot } from '@nuxtjs/mdc'
 import type { Slide } from '../types/presentation.ts'
 import htmlTags from '@nuxtjs/mdc/runtime/parser/utils/html-tags-list'
+import { buildComponentMap, componentKey } from '@vignettes/core/deck'
 import { getMediaFit, resolveSlideBackground } from '@vignettes/core/render'
 
 export { getMediaFit, resolveSlideBackground }
@@ -8,15 +9,27 @@ export { getMediaFit, resolveSlideBackground }
 // Elements in which an unknown component keeps its content inline.
 const INLINE_PARENTS = new Set(['p', 'span', 'a', 'strong', 'em', 'b', 'i', 'small', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 
-const componentKey = (name: string) => name.replaceAll('-', '').toLowerCase()
+/**
+ * The names the slides render as components: the registered ones, aliases
+ * included, and the headings, which render as plain elements so a host's prose
+ * components (the anchored headings of a documentation site) leave the slide
+ * titles to the theme.
+ */
+export function knownComponentNames(): string[] {
+  return ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ...Object.keys(buildComponentMap())]
+}
+
+// MDC renders `binding` itself; SVG children are absent from its HTML list.
+function rendersAsIs(node: MDCElement, keys: Set<string>): boolean {
+  return node.tag === 'svg' || node.tag === 'binding' || htmlTags.has(node.tag) || keys.has(componentKey(node.tag))
+}
 
 /**
  * The tree with each component outside `known` replaced by its content. MDC
  * resolves an unknown name among the global components of the host application
  * (the tabs of a documentation site, the prose of the studio), which would draw
- * the same deck differently from one host to another. The parser writes
- * `two-columns` where the registry says `TwoColumns`: names compare without
- * case and hyphens.
+ * the same deck differently from one host to another. Names compare as
+ * `componentKey` compares them.
  */
 export function keepKnownComponents(tree: MDCRoot, known: Iterable<string>): MDCRoot {
   const keys = new Set([...known].map(componentKey))
@@ -24,8 +37,7 @@ export function keepKnownComponents(tree: MDCRoot, known: Iterable<string>): MDC
   function visit(node: MDCNode, parentTag?: string): MDCNode[] {
     if (node.type !== 'element')
       return [node]
-    // MDC renders `binding` itself; SVG children are absent from its HTML list.
-    if (node.tag === 'svg' || node.tag === 'binding' || htmlTags.has(node.tag) || keys.has(componentKey(node.tag)))
+    if (rendersAsIs(node, keys))
       return [{ ...node, children: node.tag === 'svg' ? node.children : visitAll(node.children, node.tag) }]
     const tag = INLINE_PARENTS.has(parentTag ?? '') ? 'span' : 'div'
     // The named slots of the component become plain content.
@@ -40,6 +52,22 @@ export function keepKnownComponents(tree: MDCRoot, known: Iterable<string>): MDC
   }
 
   return { ...tree, children: visitAll(tree.children) }
+}
+
+/** The tags of the tree that `keepKnownComponents` replaces by their content, once each. */
+export function unknownComponents(tree: MDCRoot, known: Iterable<string>): string[] {
+  const keys = new Set([...known].map(componentKey))
+  const found = new Set<string>()
+  function visit(node: MDCNode) {
+    if (node.type !== 'element')
+      return
+    if (!rendersAsIs(node, keys))
+      found.add(node.tag)
+    if (node.tag !== 'svg')
+      node.children.forEach(visit)
+  }
+  tree.children.forEach(visit)
+  return [...found]
 }
 
 // "Pressé·e ? Ce qui a changé" -> { prefix: "Pressé·e ?", label: "Ce qui a changé" }; null if no " ? ".

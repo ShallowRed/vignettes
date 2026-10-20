@@ -2,10 +2,12 @@ import type { Completion, CompletionContext, CompletionResult } from '@codemirro
 import type { EditorState, Extension, Range } from '@codemirror/state'
 import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
 import type { FrontmatterKey, Translate } from '../config/editor-reference'
+import type { Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { Decoration, hoverTooltip, ViewPlugin, WidgetType } from '@codemirror/view'
 import { load, YAMLException } from 'js-yaml'
-import { FRONTMATTER_KEYS, LEGACY_FRONTMATTER_KEYS } from '../config/editor-reference'
+import { FRONTMATTER_KEYS, inLanguage, LEGACY_FRONTMATTER_KEYS } from '../config/editor-reference'
+import { problemMarks, problemMessage } from './editor-problems'
 
 /**
  * The guide to a deck's frontmatter in the source pane: completion of keys,
@@ -17,6 +19,8 @@ import { FRONTMATTER_KEYS, LEGACY_FRONTMATTER_KEYS } from '../config/editor-refe
 export interface FrontmatterOptions {
   /** Folder slugs completable on `project:`. */
   projects?: readonly string[]
+  /** Interface language of the snippets. */
+  lang: string
   t: Translate
 }
 
@@ -121,7 +125,7 @@ function completionSource(options: FrontmatterOptions) {
     const written = siblingKeys(state, line.number, indent)
     const completions: Completion[] = scope.fields
       .filter(field => !written.has(field.key))
-      .map(field => snippetCompletion(field.snippet.replaceAll('\n', `\n${' '.repeat(indent)}`), {
+      .map(field => snippetCompletion(inLanguage(field.snippet, options.lang).replaceAll('\n', `\n${' '.repeat(indent)}`), {
         label: field.key,
         detail: field.values ? field.values.join(' | ') : field.children ? blockLabel : undefined,
         info: describe(field, t),
@@ -132,13 +136,6 @@ function completionSource(options: FrontmatterOptions) {
 }
 
 // ── Checks ──────────────────────────────────────────────────────────────────
-
-interface Problem {
-  from: number
-  to: number
-  severity: 'error' | 'warning' | 'info'
-  message: string
-}
 
 /** Values checked against their set; the others take free text. */
 const OPEN_VALUES = new Set(['theme', 'lang', 'slideNumber', 'project'])
@@ -191,12 +188,6 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
     }
   }
   return problems
-}
-
-const problemMarks = {
-  error: Decoration.mark({ class: 'cm-fm-problem cm-fm-problem--error' }),
-  warning: Decoration.mark({ class: 'cm-fm-problem cm-fm-problem--warning' }),
-  info: Decoration.mark({ class: 'cm-fm-problem cm-fm-problem--info' }),
 }
 
 // ── Hint ────────────────────────────────────────────────────────────────────
@@ -264,27 +255,23 @@ function tooltip(t: Translate): Extension {
       above: true,
       create: () => {
         const dom = document.createElement('div')
-        dom.className = 'cm-fm-tooltip'
+        dom.className = 'cm-source-tooltip'
         if (field) {
           const title = document.createElement('code')
-          title.className = 'cm-fm-tooltip__key'
+          title.className = 'cm-source-tooltip__key'
           title.textContent = field.key
           const text = document.createElement('p')
           text.textContent = describe(field, t)
           dom.append(title, text)
           if (field.values) {
             const values = document.createElement('p')
-            values.className = 'cm-fm-tooltip__values'
+            values.className = 'cm-source-tooltip__values'
             values.textContent = field.values.join(' · ')
             dom.append(values)
           }
         }
-        if (problem) {
-          const text = document.createElement('p')
-          text.className = `cm-fm-tooltip__problem cm-fm-tooltip__problem--${problem.severity}`
-          text.textContent = problem.message
-          dom.append(text)
-        }
+        if (problem)
+          dom.append(problemMessage(problem))
         return { dom }
       },
     }

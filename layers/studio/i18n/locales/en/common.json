@@ -42,7 +42,10 @@
       "account": "Account",
       "accounts": "Accounts",
       "trash": "Trash",
-      "language": "Language"
+      "language": "Language",
+      "feedback": "Send feedback",
+      "support": "Documentation and feedback",
+      "documentation": "Documentation"
     },
     "loadError": {
       "title": "Loading failed",

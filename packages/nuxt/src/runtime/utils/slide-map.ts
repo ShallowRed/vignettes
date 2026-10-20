@@ -1,10 +1,25 @@
+import type { MDCRoot } from '@nuxtjs/mdc'
 import type { SlideRange } from '@vignettes/core/deck'
+import type { PresentationData } from '../types/presentation.ts'
+import { knownComponentNames, unknownComponents } from './slide-rendering.ts'
 
 /**
- * Editor-only mapping from a source line to what the preview shows. The slide
+ * Editor-only mapping between the source and what the preview shows. The slide
  * boundaries come from `slideRanges` of `@vignettes/core`, the definition the
- * renderers share; this module finds the slide and the fragment under a line.
+ * renderers share; this module finds the slide and the fragment under a line,
+ * and the component names the slides draw as plain content.
  */
+
+/**
+ * The component names of a deck that no registered component answers to: the
+ * slides draw their content without the component.
+ */
+export function unknownDeckComponents(data: PresentationData): string[] {
+  const known = knownComponentNames()
+  const slides = data.slides.flatMap(slide => [slide, ...(slide.verticalSlides ?? [])])
+  const trees = slides.flatMap(slide => [slide.header, slide.pretitle, slide.subtitle, slide.body])
+  return [...new Set(trees.flatMap(tree => (tree ? unknownComponents(tree as MDCRoot, known) : [])))]
+}
 
 /** Reveal indices for the slide containing `line` (1-based), clamped to range. */
 export function slideAtLine(ranges: SlideRange[], line: number): { h: number, v: number } {

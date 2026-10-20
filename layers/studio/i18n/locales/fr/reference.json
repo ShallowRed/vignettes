@@ -22,26 +22,6 @@
       "separatorHorizontal": "--- : nouvelle diapo horizontale",
       "separatorVertical": "---- : diapo verticale (empilée sous la précédente)"
     },
-    "components": {
-      "quote": "Citation avec auteur, rôle et avatar optionnels",
-      "columns": "Colonnes côte à côte (::column, span pour les largeurs)",
-      "highlight": "Encadré de mise en avant (size sm/md, variant)",
-      "mermaid": "Diagramme Mermaid (flowchart, sequence…)",
-      "image": "Image avec cadrage (fit, position, rounded, shadow)",
-      "fullScreenImage": "Image plein écran (overlay, heading)",
-      "iframe": "Page web embarquée (lightbox, fullwidth)",
-      "screens": "Galerie d'écrans Storybook (cols, gap, align)",
-      "storyFrame": "Écran Storybook vivant (story, ratio, previewWidth, lightbox)",
-      "icon": "Icône en ligne (Remix / Iconify)",
-      "iconLabel": ":i (icône)"
-    },
-    "annotations": {
-      "layout": "Mise en page de la diapo (media-right, grid-compact, full…)",
-      "pretitle": "Texte au-dessus du titre (fil rouge, contexte)",
-      "subtitle": "Texte sous le titre (sous-titre de section)",
-      "slideBackground": "Image de fond propre à cette diapo",
-      "quicklink": "Lien de navigation épinglé en bas de diapo"
-    },
     "templates": {
       "twoColumns": {
         "label": "Deux colonnes",
@@ -93,7 +73,7 @@
         "project": "Dossier du catalogue (se règle aussi dans Partage et réglages)",
         "status": "Visibilité (Partage et réglages prend le dessus une fois la présentation publiée)",
         "unlisted": "Accessible par lien mais absente du catalogue",
-        "storybook": "Adresse du Storybook déployé, pour les ::StoryFrame",
+        "storybook": "Adresse du Storybook publié, sans iframe.html, qui sert aux ::StoryFrame et à l'option story de :layout",
         "backgrounds": "Images de fond par niveau de titre",
         "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
         "reveal": "Options de Reveal.js : format, numérotation, transitions…",

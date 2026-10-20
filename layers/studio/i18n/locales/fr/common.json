@@ -42,7 +42,10 @@
       "account": "Compte",
       "accounts": "Comptes",
       "trash": "Corbeille",
-      "language": "Langue"
+      "language": "Langue",
+      "feedback": "Envoyer un retour",
+      "support": "Documentation et retours",
+      "documentation": "Documentation"
     },
     "loadError": {
       "title": "Le chargement a échoué",

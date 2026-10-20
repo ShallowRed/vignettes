@@ -84,7 +84,7 @@ const scaledFrameStyle = computed(() =>
         v-if="missing"
         class="story-frame__missing"
       >
-        Aucune source : renseigner <code>story</code> (+ <code>storybook</code> en frontmatter) ou <code>src</code>.
+        {{ messages.storyMissing }}
       </p>
 
       <a

@@ -1,6 +1,6 @@
 import type { MDCElement, MDCNode, MDCRoot } from '@nuxtjs/mdc'
 import { describe, expect, it } from 'vitest'
-import { keepKnownComponents } from '../../packages/nuxt/src/runtime/utils/slide-rendering.ts'
+import { keepKnownComponents, unknownComponents } from '../../packages/nuxt/src/runtime/utils/slide-rendering.ts'
 
 function el(tag: string, children: MDCNode[] = [], props: Record<string, unknown> = {}): MDCElement {
   return { type: 'element', tag, props, children }
@@ -34,5 +34,12 @@ describe('keepKnownComponents', () => {
   it('keeps html elements and the inside of an svg', () => {
     const tree = root(el('svg', [el('path', [], { d: 'M0 0' })]), el('table', [el('tr', [el('td', [text('1')])])]))
     expect(keepKnownComponents(tree, [])).toEqual(tree)
+  })
+})
+
+describe('unknownComponents', () => {
+  it('names once each component that keepKnownComponents replaces', () => {
+    const tree = root(el('quote', [el('callout', [text('a')])]), el('p', [el('badge', [text('b')]), el('callout', [])]), el('svg', [el('path', [])]))
+    expect(unknownComponents(tree, ['Quote'])).toEqual(['callout', 'badge'])
   })
 })

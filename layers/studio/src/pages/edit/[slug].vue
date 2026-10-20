@@ -15,6 +15,7 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
+import type { ComponentMention } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import { STATUS_CONFIG } from '#shared/presentations'
@@ -22,9 +23,9 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { componentMentions, parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
-import { fragmentAtLine, slideAtLine } from '@vignettes/nuxt/slide-map'
+import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '../../composables/useAppSession'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
@@ -34,6 +35,7 @@ import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
 import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
+import { placeProblems, previewProblemMarks, setPreviewProblems } from '../../utils/editor-problems'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 import { requestErrorMessage } from '../../utils/request-error'
@@ -406,7 +408,8 @@ const extensions = computed<Extension[]>(() => [
   highlightActiveLine(),
   ...deckStructure(t),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
-  deckCompletions({ projects: projects.value.map(p => p.slug) }, t),
+  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value }, t),
+  previewProblemMarks(),
   cursorListener,
   shortcutKeymap,
   imageUploadHandlers,
@@ -428,9 +431,22 @@ const cmModel = computed({
 // Reparse the preview, debounced, whenever the markdown changes. The same parse
 // path as the live routes guarantees fidelity.
 let timer: ReturnType<typeof setTimeout> | null = null
+
+// What the last parse found: the components no registered component answers
+// to, which the deck draws as plain content, or a failure after which the
+// preview keeps the last good render.
+const unknownMentions = ref<ComponentMention[]>([])
+const parseFailed = ref(false)
+let parsedText = ''
+
 async function reparse() {
+  const text = raw.value
   try {
-    preview.value = await buildPresentationData(raw.value)
+    const data = await buildPresentationData(text)
+    preview.value = data
+    unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
+    parseFailed.value = false
+    parsedText = text
     // Let Reveal register added/removed slides, then re-align to the caret so a
     // freshly-typed slide is reachable by the follow-cursor sync.
     await nextTick()
@@ -438,9 +454,33 @@ async function reparse() {
     syncPreviewToCursor()
   }
   catch {
-    // A transient half-typed state can fail to parse — keep the last good preview.
+    parseFailed.value = true
   }
 }
+
+// The marks go to the text that was parsed; a text typed since then gets its
+// own parse.
+watch([unknownMentions, editorView, locale], ([mentions, view]) => {
+  if (!view || view.state.doc.toString() !== parsedText)
+    return
+  const problems = mentions.map(mention => ({
+    ...mention,
+    severity: 'warning' as const,
+    message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
+  }))
+  view.dispatch({ effects: setPreviewProblems.of(placeProblems(view.state, problems)) })
+})
+
+function goToLine(line: number) {
+  const view = editorView.value
+  if (!view || line > view.state.doc.lines)
+    return
+  const at = view.state.doc.line(line).from
+  view.dispatch({ selection: { anchor: at }, effects: EditorView.scrollIntoView(at, { y: 'center' }) })
+  view.focus()
+}
+
+const MENTIONS_SHOWN = 3
 watch(raw, () => {
   if (timer)
     clearTimeout(timer)
@@ -962,65 +1002,113 @@ async function onMetaSaved() {
       <!-- The preview pane shows the slide at scale, with the commands of the
            deck page in the same bar and the same corner. -->
       <section
-        class="editor-stage relative flex-1 min-w-0 min-h-0 overflow-hidden"
+        class="editor-stage relative flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden"
         :style="{ '--ratio': previewRatio }"
         :aria-label="t('editor.preview.pane')"
       >
-        <div
-          class="editor-stage__controls"
-          role="toolbar"
-          :aria-label="t('editor.preview.controls')"
-        >
-          <DeckControlButton
-            :label="t('editor.preview.present')"
-            primary
-            :to="`/slides/${slug}${cursorSlideHash}`"
-            target="_blank"
-            rel="noopener"
+        <!-- The band above the slide: what the last parse found on the left,
+             the commands of the deck page on the right. -->
+        <div class="editor-stage__top">
+          <ul
+            v-if="parseFailed || unknownMentions.length"
+            class="editor-stage__issues"
+            :aria-label="t('editor.diagnostics.list')"
           >
-            <UIcon name="i-lucide-play" />
-          </DeckControlButton>
-          <DeckControlButton
-            v-if="writable"
-            :label="t('editor.preview.draftPreview')"
-            :to="`/slides/${slug}?draft${cursorSlideHash}`"
-            target="_blank"
+            <li v-if="parseFailed">
+              <!-- The padding, text and icon of the `sm` buttons beside it. -->
+              <UBadge
+                :label="t('editor.diagnostics.parseFailed')"
+                icon="i-lucide-circle-alert"
+                color="neutral"
+                variant="outline"
+                class="max-w-full bg-default"
+                :ui="{ base: 'px-2.5 py-1.5 text-xs gap-1.5', label: 'truncate', leadingIcon: 'size-4 text-error' }"
+              />
+            </li>
+            <li
+              v-for="mention in unknownMentions.slice(0, MENTIONS_SHOWN)"
+              :key="`${mention.line}-${mention.column}`"
+              class="max-w-full"
+            >
+              <UTooltip :text="t('editor.diagnostics.unknownComponent', { name: mention.name })">
+                <UButton
+                  :label="t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name })"
+                  icon="i-lucide-triangle-alert"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  class="max-w-full"
+                  :ui="{ label: 'truncate', leadingIcon: 'text-warning' }"
+                  @click="goToLine(mention.line)"
+                />
+              </UTooltip>
+            </li>
+            <li
+              v-if="unknownMentions.length > MENTIONS_SHOWN"
+              class="px-1 text-xs text-muted"
+            >
+              {{ t('editor.diagnostics.more', unknownMentions.length - MENTIONS_SHOWN) }}
+            </li>
+          </ul>
+
+          <div
+            class="editor-stage__controls"
+            role="toolbar"
+            :aria-label="t('editor.preview.controls')"
           >
-            <UIcon name="i-lucide-eye" />
-          </DeckControlButton>
+            <DeckControlButton
+              :label="t('editor.preview.present')"
+              primary
+              :to="`/slides/${slug}${cursorSlideHash}`"
+              target="_blank"
+              rel="noopener"
+            >
+              <UIcon name="i-lucide-play" />
+            </DeckControlButton>
+            <DeckControlButton
+              v-if="writable"
+              :label="t('editor.preview.draftPreview')"
+              :to="`/slides/${slug}?draft${cursorSlideHash}`"
+              target="_blank"
+            >
+              <UIcon name="i-lucide-eye" />
+            </DeckControlButton>
+          </div>
         </div>
 
-        <div class="editor-stage__frame">
-          <!-- Client-only: the preview is driven by CodeMirror input + an async
+        <div class="editor-stage__area">
+          <div class="editor-stage__frame">
+            <!-- Client-only: the preview is driven by CodeMirror input + an async
                client-side reparse, so `preview` is always null on the server.
                SSR-ing it renders the placeholder, then hydration swaps to Reveal —
                a mismatch that crashes the minified prod build. -->
-          <ClientOnly>
-            <RevealPresentation
-              v-if="preview?.slides?.length"
-              ref="previewInstance"
-              :key="preview.metadata.theme"
-              :theme="preview.metadata.theme"
-              :config="{ ...preview.metadata.reveal, fragments: previewFragments }"
-              :lang="preview.metadata.lang"
-              :code="preview.metadata.code"
-              :controls="false"
-              @ready="syncPreviewToCursor"
-            >
-              <RevealSlides :presentation-data="preview" />
-            </RevealPresentation>
-            <div
-              v-else
-              class="h-full grid place-items-center text-muted text-sm p-8 text-center"
-            >
-              {{ t('editor.preview.placeholder') }}
-            </div>
-            <template #fallback>
-              <div class="h-full grid place-items-center text-muted text-sm p-8 text-center">
+            <ClientOnly>
+              <RevealPresentation
+                v-if="preview?.slides?.length"
+                ref="previewInstance"
+                :key="preview.metadata.theme"
+                :theme="preview.metadata.theme"
+                :config="{ ...preview.metadata.reveal, fragments: previewFragments }"
+                :lang="preview.metadata.lang"
+                :code="preview.metadata.code"
+                :controls="false"
+                @ready="syncPreviewToCursor"
+              >
+                <RevealSlides :presentation-data="preview" />
+              </RevealPresentation>
+              <div
+                v-else
+                class="h-full grid place-items-center text-muted text-sm p-8 text-center"
+              >
                 {{ t('editor.preview.placeholder') }}
               </div>
-            </template>
-          </ClientOnly>
+              <template #fallback>
+                <div class="h-full grid place-items-center text-muted text-sm p-8 text-center">
+                  {{ t('editor.preview.placeholder') }}
+                </div>
+              </template>
+            </ClientOnly>
+          </div>
         </div>
       </section>
     </UDashboardGroup>
@@ -1070,12 +1158,29 @@ async function onMetaSaved() {
   background: #0e0e11;
 }
 
+/* The band above the slide grows with its rows; the slide takes the rest. */
+.editor-stage__top {
+  position: relative;
+  z-index: 10;
+  padding: 12px 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-stage__issues {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
 /* The same bar as the deck page's commands, always open. */
 .editor-stage__controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
+  flex: none;
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1092,12 +1197,31 @@ async function onMetaSaved() {
   transform: none;
 }
 
-/* The slide at the largest size that fits below the bar, in its proportions. */
+/* A narrow stage keeps the bar to itself and puts the list below it. */
+@container (max-width: 480px) {
+  .editor-stage__top {
+    flex-wrap: wrap;
+  }
+
+  .editor-stage__issues {
+    flex-basis: 100%;
+    order: 1;
+  }
+}
+
+.editor-stage__area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+}
+
+/* The slide at the largest size that fits below the band, in its proportions. */
 .editor-stage__frame {
   position: absolute;
-  top: calc(50% + 28px);
+  top: 50%;
   left: 50%;
-  width: min(calc(100cqw - 48px), calc((100cqh - 136px) * var(--ratio)));
+  width: min(calc(100cqw - 48px), calc((100cqh - 48px) * var(--ratio)));
   aspect-ratio: var(--ratio);
   overflow: hidden;
   background: #fff;

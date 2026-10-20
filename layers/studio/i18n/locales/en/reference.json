@@ -22,26 +22,6 @@
       "separatorHorizontal": "---: new horizontal slide",
       "separatorVertical": "----: vertical slide (stacked under the previous one)"
     },
-    "components": {
-      "quote": "Quote with optional author, role and avatar",
-      "columns": "Side-by-side columns (::column, span for the widths)",
-      "highlight": "Highlight box (size sm/md, variant)",
-      "mermaid": "Mermaid diagram (flowchart, sequence…)",
-      "image": "Image with framing (fit, position, rounded, shadow)",
-      "fullScreenImage": "Full-screen image (overlay, heading)",
-      "iframe": "Embedded web page (lightbox, fullwidth)",
-      "screens": "Gallery of Storybook screens (cols, gap, align)",
-      "storyFrame": "Live Storybook screen (story, ratio, previewWidth, lightbox)",
-      "icon": "Inline icon (Remix / Iconify)",
-      "iconLabel": ":i (icon)"
-    },
-    "annotations": {
-      "layout": "Layout of the slide (media-right, grid-compact, full…)",
-      "pretitle": "Text above the title (common thread, context)",
-      "subtitle": "Text below the title (section subtitle)",
-      "slideBackground": "Background image specific to this slide",
-      "quicklink": "Navigation link pinned to the bottom of the slide"
-    },
     "templates": {
       "twoColumns": {
         "label": "Two columns",
@@ -93,7 +73,7 @@
         "project": "Catalog folder (also set in Sharing and settings)",
         "status": "Visibility (Sharing and settings takes over once the presentation is published)",
         "unlisted": "Reachable by link but absent from the catalog",
-        "storybook": "Address of the deployed Storybook, for the ::StoryFrame",
+        "storybook": "Address of the published Storybook, without iframe.html, used by ::StoryFrame and by the story option of :layout",
         "backgrounds": "Background images per heading level",
         "code": "Colors and font size of the code blocks: a theme (nuit, sombre, clair) or its settings",
         "reveal": "Reveal.js options: format, numbering, transitions…",

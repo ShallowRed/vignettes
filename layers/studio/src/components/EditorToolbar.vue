@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { ANNOTATION_SNIPPETS, COMPONENT_SNIPPETS, referenceLabel, SLIDE_TEMPLATES } from '../config/editor-reference'
+import { annotationEntries, componentEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 import { formatJson, jsonFormatNotice } from '../utils/editor-json'
 
@@ -18,7 +18,7 @@ function run(action: (view: EditorView) => void) {
 }
 
 const toast = useToast()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 function beautifyJson(view: EditorView) {
   const notice = jsonFormatNotice(formatJson(view), t)
@@ -34,21 +34,21 @@ const btnHover = 'hover:bg-accented'
 // Discoverability menu: every engine component/annotation, inserted as a
 // tabbable snippet from the same reference the autocompletion uses.
 const insertItems = computed<DropdownMenuItem[][]>(() => [
-  COMPONENT_SNIPPETS.map(entry => ({
-    label: referenceLabel(entry, t),
+  componentEntries(locale.value).map(entry => ({
+    label: entry.label,
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
   })),
-  ANNOTATION_SNIPPETS.map(entry => ({
-    label: referenceLabel(entry, t),
+  annotationEntries(locale.value).map(entry => ({
+    label: entry.label,
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
   })),
 ])
 
-// Whole-slide starters (with lorem) — described in the tooltip for discoverability.
+// Whole-slide starters, described in the help panel.
 const templateItems = computed<DropdownMenuItem[]>(() =>
   SLIDE_TEMPLATES.map(entry => ({
     label: t(entry.labelKey),
-    onSelect: () => run(view => insertSlideTemplate(view, entry.snippet)),
+    onSelect: () => run(view => insertSlideTemplate(view, inLanguage(entry.snippet, locale.value))),
   })))
 
 const headingItems = computed<DropdownMenuItem[]>(() => [1, 2, 3].map(level => ({

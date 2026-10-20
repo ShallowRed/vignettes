@@ -1,4 +1,5 @@
 import type { ParserId } from './parser.ts'
+import { componentKey } from './components.ts'
 
 /**
  * The slide boundaries of a deck, read from its markdown text: the one
@@ -240,6 +241,54 @@ export function splitSlides(raw: string, parser: ParserId): SlideSource[] {
   return parser === 'separator'
     ? separatorSlides(lines, scanned, from)
     : headingSlides(lines, scanned)
+}
+
+/** A component name as written in the source: `::Name`, `:::Name`, `:name{…}`. */
+export interface ComponentMention {
+  name: string
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of the first colon. */
+  column: number
+  /** Length of the colons and the name. */
+  length: number
+}
+
+const DIRECTIVE_RE = /(^|[\s([])(:+)([a-z][\w-]*)/gi
+const INLINE_CODE_RE = /(`+)[^`]+\1/g
+
+/**
+ * The places where the components named in `names` are written, outside the
+ * frontmatter, fenced code and inline code. Names compare as `componentKey`
+ * compares them.
+ */
+export function componentMentions(raw: string, names: Iterable<string>): ComponentMention[] {
+  const wanted = new Set([...names].map(componentKey))
+  if (!wanted.size)
+    return []
+  const lines = raw.split('\n')
+  const mentions: ComponentMention[] = []
+  let fence: string | undefined
+  for (let index = frontmatterLineCount(raw); index < lines.length; index++) {
+    const text = lines[index]!.replace(/\r$/, '')
+    if (fence) {
+      if (isFenceClose(text, fence))
+        fence = undefined
+      continue
+    }
+    const fenceOpen = FENCE_RE.exec(text)
+    if (fenceOpen) {
+      fence = fenceOpen[1]
+      continue
+    }
+    const prose = text.replace(INLINE_CODE_RE, code => ' '.repeat(code.length))
+    for (const match of prose.matchAll(DIRECTIVE_RE)) {
+      const [, before, colons, name] = match
+      if (wanted.has(componentKey(name!)))
+        mentions.push({ name: name!, line: index + 1, column: match.index + before!.length, length: colons!.length + name!.length })
+    }
+  }
+  return mentions
 }
 
 /** A slide's position and first source line, for the editor and the catalog. */

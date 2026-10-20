@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import {
-  ANNOTATION_SNIPPETS,
-  COMPONENT_SNIPPETS,
+  annotationEntries,
+  componentEntries,
   EDITOR_SHORTCUTS,
   FRONTMATTER_KEYS,
   LAYOUT_NAMES,
-  referenceLabel,
   STRUCTURE_HELP,
 } from '../config/editor-reference'
 
@@ -23,7 +22,10 @@ const emit = defineEmits<{ insert: [snippet: string] }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+const components = computed(() => componentEntries(locale.value))
+const annotations = computed(() => annotationEntries(locale.value))
 
 const structure = computed(() => STRUCTURE_HELP[props.parser])
 const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : 'heading'))
@@ -81,14 +83,14 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
           </h3>
           <ul class="flex flex-col gap-2">
             <li
-              v-for="entry in COMPONENT_SNIPPETS"
+              v-for="entry in components"
               :key="entry.label"
               class="flex items-start gap-2 rounded-lg bg-elevated px-3 py-2"
             >
               <div class="flex-1 min-w-0">
-                <code class="text-sm font-mono text-highlighted">{{ referenceLabel(entry, t) }}</code>
+                <code class="text-sm font-mono text-highlighted">{{ entry.label }}</code>
                 <p class="text-xs text-muted mt-0.5">
-                  {{ t(entry.descriptionKey) }}
+                  {{ entry.description }}
                 </p>
               </div>
               <UTooltip :text="t('reference.help.insertTooltip')">
@@ -117,14 +119,14 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
           </h3>
           <ul class="flex flex-col gap-2">
             <li
-              v-for="entry in ANNOTATION_SNIPPETS"
+              v-for="entry in annotations"
               :key="entry.label"
               class="flex items-start gap-2 rounded-lg bg-elevated px-3 py-2"
             >
               <div class="flex-1 min-w-0">
-                <code class="text-sm font-mono text-highlighted">{{ referenceLabel(entry, t) }}</code>
+                <code class="text-sm font-mono text-highlighted">{{ entry.label }}</code>
                 <p class="text-xs text-muted mt-0.5">
-                  {{ t(entry.descriptionKey) }}
+                  {{ entry.description }}
                 </p>
               </div>
               <UTooltip :text="t('reference.help.insertTooltip')">

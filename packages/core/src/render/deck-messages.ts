@@ -1,7 +1,8 @@
 /**
  * The texts of the deck chrome (controls, loading veil, print overlay, enlarge
- * hints). They follow the language of the deck, not the language of the host
- * interface, and ship with the renderer so a frozen bundle has them.
+ * hints, an embed without a source). They follow the language of the deck,
+ * not the language of the host interface, and ship with the renderer so a
+ * frozen bundle has them.
  */
 export interface DeckMessages {
   loading: string
@@ -28,6 +29,7 @@ export interface DeckMessages {
   zoomIn: string
   zoomReset: string
   close: string
+  storyMissing: string
 }
 
 const FR: DeckMessages = {
@@ -55,6 +57,7 @@ const FR: DeckMessages = {
   zoomIn: 'Zoom avant',
   zoomReset: 'Réinitialiser',
   close: 'Fermer',
+  storyMissing: 'Aucune source : indiquez une story, avec la clé storybook du frontmatter, ou un src.',
 }
 
 const EN: DeckMessages = {
@@ -82,6 +85,7 @@ const EN: DeckMessages = {
   zoomIn: 'Zoom in',
   zoomReset: 'Reset',
   close: 'Close',
+  storyMissing: 'No source: set a story, with the storybook key of the frontmatter, or a src.',
 }
 
 export const DECK_MESSAGES: Record<string, DeckMessages> = { fr: FR, en: EN }

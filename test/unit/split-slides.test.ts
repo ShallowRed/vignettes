@@ -1,4 +1,4 @@
-import { splitSlides } from '@vignettes/core/deck'
+import { componentMentions, splitSlides } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
@@ -66,5 +66,20 @@ describe('parsed slides', () => {
     const slides = await PARSERS.separator.parse('a\n---\n```\nb\n---\nc\n```', {} as any)
     expect(slides).toHaveLength(2)
     expect((slides[1]!.body as any).children[0].props.code).toBe('b\n---\nc\n')
+  })
+})
+
+describe('componentMentions', () => {
+  it('places each mention by line and column, names compared without case and hyphens', () => {
+    const raw = '# Title\n\n::callout\ntext\n::\n\nSee :Call-out{a="b"} here'
+    expect(componentMentions(raw, ['Callout'])).toEqual([
+      { name: 'callout', line: 3, column: 0, length: 9 },
+      { name: 'Call-out', line: 7, column: 4, length: 9 },
+    ])
+  })
+
+  it('leaves out the frontmatter, fenced code and inline code', () => {
+    const raw = '---\ntitle: ":Callout"\n---\n\n```md\n::Callout\n```\n\nWrite `::Callout` to\n\n::Callout\n::'
+    expect(componentMentions(raw, ['Callout']).map(mention => mention.line)).toEqual([11])
   })
 })

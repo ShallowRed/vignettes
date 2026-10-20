@@ -1,6 +1,8 @@
-import { slideRanges } from '@vignettes/core/deck'
-import { describe, expect, it } from 'vitest'
-import { fragmentAtLine, slideAtLine } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
+import type { PresentationData } from '../../packages/nuxt/src/runtime/types/presentation.ts'
+import { registerDeckComponents, resetDeckComponents, slideRanges } from '@vignettes/core/deck'
+import { afterEach, describe, expect, it } from 'vitest'
+import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
+import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
 
 // Maps a 1-based line to reveal indices for a given deck source.
 function at(raw: string, parser: 'heading' | 'separator', line: number) {
@@ -150,5 +152,24 @@ describe('fragmentAtLine', () => {
     expect(at(30)).toBe(0)
     expect(at(31)).toBe(1)
     expect(at(34)).toBe(1)
+  })
+})
+
+describe('unknownDeckComponents', () => {
+  afterEach(() => resetDeckComponents())
+
+  async function unknownIn(raw: string): Promise<string[]> {
+    const data: PresentationData = { slides: await headingParser.parse(raw, {}), metadata: {} }
+    return unknownDeckComponents(data)
+  }
+
+  it('names the components the slides draw as plain content', async () => {
+    const raw = '# Title\n\n::Quote\nKept\n::\n\n## Two\n\n::Callout\nDropped\n::\n\nAn :badge{text="x"} inline'
+    expect(await unknownIn(raw)).toEqual(['callout', 'badge'])
+  })
+
+  it('knows a component once it is registered, and the annotations the parser lifts', async () => {
+    registerDeckComponents([{ name: 'Callout' }])
+    expect(await unknownIn('# Title\n\n:subtitle{text="Sub"}\n\n::Callout\nKept\n::')).toEqual([])
   })
 })

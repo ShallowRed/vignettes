@@ -121,6 +121,7 @@ GitHub Actions builds the image on every push to `main` and `staging`, publishes
 | `NUXT_CONTENT_TOKEN` | Bearer token that lets `content:republish:prod` publish without a session |
 | `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk |
 | `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development, and creates its data set and its five accounts at boot |
+| `NUXT_PUBLIC_HELP_URL`, `NUXT_PUBLIC_FEEDBACK_URL` | Addresses of the « Documentation » and « Envoyer un retour » links, shown in the header and in the status bar of the editor, each hidden while empty |
 
 `mise.local.toml`, which git ignores, holds what belongs to an instance rather than to the repository: `VIGNETTES_REMOTE` for the deployed instance the production tasks talk to, `CONTENT_PUSH_SSH` and `CONTENT_PUSH_CONTAINER` for the host `content:push`, `content:pull` and `theme:rename` reach it through.
 

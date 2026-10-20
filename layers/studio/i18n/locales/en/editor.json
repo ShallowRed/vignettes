@@ -120,6 +120,13 @@
       "unknownKey": "Unknown key: “{key}” has no effect.",
       "expectedValue": "Expected value: {values}.",
       "completionHint": "Ctrl + Space: available settings"
+    },
+    "diagnostics": {
+      "list": "Problems found by the preview",
+      "unknownComponent": "“{name}” is not a known component: the preview and the presentation show its content without formatting. The help lists the components.",
+      "unknownComponentShort": "Line {line}: unknown component “{name}”",
+      "parseFailed": "The text could not be parsed",
+      "more": "{n} more"
     }
   }
 }

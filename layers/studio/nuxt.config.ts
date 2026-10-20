@@ -26,6 +26,15 @@ export default defineNuxtConfig({
     ],
     detectBrowserLanguage: { useCookie: true, cookieKey: 'vignettes_locale', fallbackLocale: 'fr' },
   },
+  runtimeConfig: {
+    public: {
+      // Links of an instance, in the header and the status bar of the editor,
+      // hidden while empty; `NUXT_PUBLIC_HELP_URL` and `NUXT_PUBLIC_FEEDBACK_URL`
+      // set them.
+      helpUrl: '',
+      feedbackUrl: '',
+    },
+  },
   css: [fileURLToPath(new URL('./src/assets/css/tailwind.css', import.meta.url))],
   alias: {
     '#shared': fileURLToPath(new URL('./shared', import.meta.url)),
