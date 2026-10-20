@@ -8,11 +8,12 @@ Node 22, pinned in `mise.toml`: `better-sqlite3` is built for that line. pnpm co
 
 ## Boundaries
 
-The code keeps three boundaries, and `eslint.config.js` checks them with messages that name the place a change belongs. When a rule fires, move the code there; keep the rule.
+The code keeps these boundaries, and `eslint.config.js` checks them with messages that name the place a change belongs. When a rule fires, move the code there; keep the rule.
 
 - `packages/core` is the deck core: it imports zod, js-yaml, slugify and its own files.
 - `layers/studio/shared` is the studio's domain, run on the client and the server: no framework, no I/O, no `process.env`, no render module. `yjs` stays in `shared/collab`.
 - `@nuxtjs/mdc` is read by the render module (`packages/nuxt`), the configuration files and the tests.
+- drizzle-orm and better-sqlite3 are read by the SQLite adapter (`layers/studio/server/db/sqlite`), the test helpers and `test/unit/migrations.test.ts`. Code elsewhere reaches the rows through a port of `server/db/ports.ts`.
 
 Two more rules hold the entry points:
 

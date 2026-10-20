@@ -24,52 +24,26 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
-import Database from 'better-sqlite3'
 import { dump as dumpYaml } from 'js-yaml'
+import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 
 const ROOT = process.cwd()
 const CONTENT_DIR = contentDir(ROOT)
 
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
-const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5)
-  ?? process.env.NUXT_DB_PATH
-  ?? join(ROOT, '.data', 'slides.db')
+const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5) ?? readDatabaseConfig(process.env).dbPath
 
-const db = new Database(DB_PATH, { readonly: true, fileMustExist: true })
+const { archive } = openDatabaseFile({ dbPath: DB_PATH }, { readonly: true }).stores
 
-interface Row {
-  slug: string
-  alias: string | null
-  title: string
-  status: string
-  lifecycle: string
-  project: string | null
-  theme: string | null
-  frozen_bundle: string | null
-  unlisted: number
-  family: string | null
-  variant_label: string | null
-  superseded_by: string | null
-  raw: string | null
-}
+const rows = (await archive.decks())
+  // The staging acceptance data set is test data, never part of the archive.
+  .filter(row => row.managed && !row.trashed && !row.slug.toLowerCase().startsWith('recette-'))
+type Row = (typeof rows)[number]
 
-const rows = db.prepare(`
-  select d.slug, d.alias, d.title, d.status, d.lifecycle, d.project, d.theme,
-         d.frozen_bundle, d.unlisted, d.family, d.variant_label, d.superseded_by, v.raw
-  from decks d
-  left join deck_versions v on v.id = d.published_version_id
-  where d.managed = 1
-    and d.deleted_at is null
-    -- the staging acceptance data set is test data, never part of the archive
-    and d.slug not like 'recette-%'
-  order by d.slug
-`).all() as Row[]
-
-const historical = db.prepare('select alias, deck_slug from deck_aliases order by alias')
-  .all() as { alias: string, deck_slug: string }[]
-const projects = db.prepare('select slug, title, "order", color from projects order by "order", slug')
-  .all() as { slug: string, title: string, order: number, color: string | null }[]
+const historical = await archive.aliases()
+const projects = await archive.projects()
 
 /** Frozen/archived bodies live in `archived/`, mirroring the repo layout. */
 function pathFor(row: Row): string {
@@ -114,13 +88,13 @@ const catalog = {
     ...(r.alias ? { alias: r.alias } : {}),
     ...(r.project ? { project: r.project } : {}),
     ...(r.theme ? { theme: r.theme } : {}),
-    ...(r.frozen_bundle ? { frozenBundle: r.frozen_bundle } : {}),
+    ...(r.frozenBundle ? { frozenBundle: r.frozenBundle } : {}),
     ...(r.unlisted ? { unlisted: true } : {}),
     ...(r.family ? { family: r.family } : {}),
-    ...(r.variant_label ? { variantLabel: r.variant_label } : {}),
-    ...(r.superseded_by ? { supersededBy: r.superseded_by } : {}),
-    ...(historical.some(h => h.deck_slug === r.slug)
-      ? { aliases: historical.filter(h => h.deck_slug === r.slug).map(h => h.alias) }
+    ...(r.variantLabel ? { variantLabel: r.variantLabel } : {}),
+    ...(r.supersededBy ? { supersededBy: r.supersededBy } : {}),
+    ...(historical.some(h => h.slug === r.slug)
+      ? { aliases: historical.filter(h => h.slug === r.slug).map(h => h.alias) }
       : {}),
   }])),
   projects: Object.fromEntries(projects.map(p => [p.slug, {

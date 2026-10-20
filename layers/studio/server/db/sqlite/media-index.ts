@@ -1,20 +1,18 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { referencedImages } from '#shared/storage/media-refs'
+import type { MediaIndex } from '../ports.ts'
 import { eq } from 'drizzle-orm'
-import { deckMedia } from './schema'
+import { referencedImages } from '../../../shared/storage/media-refs.ts'
+import { deckMedia } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 /** The database or the transaction of a caller. */
 type Writer = Pick<Db, 'insert'>
 
 /**
- * Which decks reference an uploaded image. Rows are only added: a deck that once
- * referenced an image keeps its row. `origin` marks the deck the image was
- * uploaded to, and {@link MediaIndex.decksFor} answers with that deck alone when
- * there is one, so citing an image in a second deck records the reuse without
- * widening who may open it.
+ * Records that this deck references these images. `origin` marks the deck the
+ * image was uploaded to, and {@link MediaIndex.decksFor} answers with that deck
+ * alone when there is one.
  */
-
 export function recordDeckMedia(db: Writer, deckSlug: string, names: string[], { origin = false }: { origin?: boolean } = {}): void {
   if (names.length === 0)
     return
@@ -27,14 +25,6 @@ export function recordDeckMedia(db: Writer, deckSlug: string, names: string[], {
     ? insert.onConflictDoUpdate({ target: [deckMedia.mediaName, deckMedia.deckSlug], set: { origin: true } })
     : insert.onConflictDoNothing()
   statement.run()
-}
-
-export interface MediaIndex {
-  /** Records the upload of these images to this deck, which then governs them. */
-  record: (deckSlug: string, names: string[]) => Promise<void>
-  recordFromMarkdown: (deckSlug: string, raw: string) => Promise<void>
-  /** The decks whose access rules govern this image. */
-  decksFor: (mediaName: string) => Promise<string[]>
 }
 
 export function createMediaIndex(db: Db): MediaIndex {

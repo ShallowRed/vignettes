@@ -3,12 +3,9 @@ import { Buffer } from 'node:buffer'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PERSONAS, RECETTE_PREFIX } from '#shared/recette/personas'
-import { eq, inArray } from 'drizzle-orm'
-import { decks } from '../db/schema'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
 import { serverConfig } from './config'
-import { useDb } from './db'
 import { mediaNameOf, storeMedia } from './media-store'
 import { hashAccessPassword } from './password'
 import { useDbContent, useDeckMeta, useMediaIndex, usePermissionStore, useProjectPermissionStore, useProjectStore } from './sources'
@@ -263,8 +260,9 @@ const SEED_SLUGS = SEED_DECKS.map(deck => deck.slug)
 
 /** Whether the kit left anything behind: a deck of the data set, or one of its accounts. */
 export async function hasRecetteData(): Promise<boolean> {
-  const seeded = useDb().select({ slug: decks.slug }).from(decks).where(inArray(decks.slug, SEED_SLUGS)).all()
-  if (seeded.length > 0)
+  const meta = useDeckMeta()
+  const seeded = await Promise.all(SEED_SLUGS.map(slug => meta.existsIncludingTrashed(slug)))
+  if (seeded.some(Boolean))
     return true
   const users = useUserStore()
   const roles = await Promise.all(RECETTE_PERSONAS.map(persona => users.getRole(persona.id)))
@@ -283,7 +281,7 @@ export async function resetRecette(): Promise<void> {
 
   const projects = useProjectStore()
   for (const folder of Object.values(RECETTE_FOLDERS)) {
-    const held = useDb().select({ slug: decks.slug }).from(decks).where(eq(decks.project, folder)).all()
+    const held = await projects.deckSlugs(folder)
     if (held.length === 0)
       await projects.purge(folder)
   }

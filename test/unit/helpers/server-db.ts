@@ -1,36 +1,50 @@
 import type { Role } from '#shared/access'
+import type { SqliteDb } from '../../../layers/studio/server/db/sqlite/index'
+import type { Rows } from './adapters'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
-import { deckAliases, deckDrafts, deckDraftSnapshots, deckMedia, deckPermissions, decks, deckVersions, projectPermissions, projects, users } from '../../../layers/studio/server/db/schema'
-import { useDb } from '../../../layers/studio/server/utils/db'
+import { migrateSqlite, openSqlite } from '../../../layers/studio/server/db/sqlite/index'
 import { useUserStore } from '../../../layers/studio/server/utils/users'
-import { MIGRATIONS_DIR } from './db'
+import { emptySqlite, sqliteRows } from './adapters'
+
+let connection: SqliteDb | undefined
 
 /**
- * Point the lazy `useDb()` singleton at a throwaway migrated file so server utils
- * that reach for `useDb()` (stores, guards, handlers) run against a real schema.
- * Must run before the first `useDb()` call. Returns a cleanup that removes the
- * temp directory.
+ * Point the lazy `useStores()` singleton at a throwaway migrated file so server
+ * utils that reach for it (stores, guards, handlers) run against a real schema.
+ * Must run before the first `useStores()` call. Returns a cleanup that removes
+ * the temp directory.
  */
 export function useMigratedTestDb(): () => void {
   const dir = mkdtempSync(join(tmpdir(), 'slides-test-'))
   const path = join(dir, 'test.db')
-  migrate(drizzle(new Database(path)), { migrationsFolder: MIGRATIONS_DIR })
+  connection = openSqlite(path)
+  migrateSqlite(connection)
   process.env.NUXT_DB_PATH = path
-  return () => rmSync(dir, { recursive: true, force: true })
+  return () => {
+    connection?.$client.close()
+    connection = undefined
+    rmSync(dir, { recursive: true, force: true })
+  }
 }
 
-/** Empties every table, children first, so each test starts from a blank schema. */
+function testDb() {
+  if (!connection)
+    throw new Error('the test database needs setupServerDb() or useMigratedTestDb() first')
+  return connection
+}
+
+/** The rows of the file the server utils use, through a second connection, for what no store exposes. */
+export function testRows(): Rows {
+  return sqliteRows(testDb())
+}
+
+/** Empties every table, so each test starts from a blank schema. */
 export function resetTables() {
-  const db = useDb()
-  for (const table of [deckPermissions, projectPermissions, deckAliases, deckDrafts, deckDraftSnapshots, deckMedia, deckVersions, decks, projects, users])
-    db.delete(table).run()
+  emptySqlite(testDb())
 }
 
 /** One migrated temp database for the file, wiped before every test. */

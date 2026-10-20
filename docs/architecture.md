@@ -7,7 +7,7 @@ A Nuxt 4 application that turns MDC markdown into reveal.js slides. Ports and ad
 - Nuxt 4 (SSR, file-based routing) with Nitro's `node_server` preset
 - @nuxtjs/mdc (markdown parsing, Vue component support)
 - reveal.js (presentation framework, client-only)
-- SQLite through better-sqlite3 and drizzle-orm; migrations in `layers/studio/server/db/migrations`
+- SQLite through better-sqlite3 and drizzle-orm, behind the storage ports; migrations in `layers/studio/server/db/sqlite/migrations`
 - Yjs + Hocuspocus (collaborative draft), CodeMirror 6 (editor)
 - nuxt-auth-utils (session, GitHub and Google OAuth)
 - @nuxt/ui + Tailwind CSS (app shell), Pinia Colada (client queries); slides themed via SCSS
@@ -32,7 +32,7 @@ packages/
 
 layers/studio/
   src/           pages, catalog and editor components, queries, session
-  server/        API routes, database stores and their migrations, auth, collab, asset routes
+  server/        API routes, storage ports and their SQLite adapter, auth, collab, asset routes
   shared/        the domain reached through #shared: access, projects, catalog contract, trash, storage
 
 themes/          this instance's themes, compiled to public/themes/
@@ -48,7 +48,7 @@ session, crypto, filesystem or YAML sit in `layers/studio/server/utils/`. A `sha
 module usually has a matching `server/utils/<x>` adapter, as `shared/access` has
 `server/utils/access.ts`.
 
-`eslint.config.js` checks three boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
+`eslint.config.js` checks these boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone; drizzle-orm and better-sqlite3 are imported by the SQLite adapter (`server/db/sqlite/`), the test helpers and `test/unit/migrations.test.ts`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
 
 The deck core is the workspace package `@vignettes/core`, which depends on nothing in the
 application and ships its TypeScript sources (`build.transpile` for Vite,
@@ -111,8 +111,15 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 7. **Full-slide components** (list in `FULL_SLIDE_COMPONENTS`): skip header/body split, render all children in `body`. CSS class `layout-full` applied.
 8. **`:layout{name="..." ...}`**: Slide-level layout annotation. Unlike full-slide components, preserves header/body split. Supports `media-right`, `media-left`, `media-right-wide`, and `media-left-wide` for two-column layouts with media, plus extra props such as `fit="contain|cover"`. The layouts are declared in `DECK_LAYOUTS` of `@vignettes/core/deck`, their geometry in `@vignettes/theme-kit`.
 
+### Storage
+`layers/studio/server/db/ports.ts` declares one interface per store and `Stores`, the set an adapter provides; it reuses the ports of `@vignettes/core/deck` and `#shared` and imports no driver. Every method returns a promise, and an operation that must be atomic is one method, which the adapter runs in one transaction. The SQLite adapter in `server/db/sqlite/` holds the schema, the drizzle migrations and the stores, assembled by `createSqliteStores(db)`. The rules every adapter applies are in `server/db/`: snapshot retention, the heading-parser rewrite, the free project slug, the identity of an invited account and the spellings of a handle, and how a stored value reads back (an invalid status, grant or role fails closed).
+
+`server/db/open.ts` opens the database and its stores: `openDatabase()` for the server, `openDatabaseFile()` for a script, both from `readDatabaseConfig()` of `server/db/config.ts`. Nitro calls its plugins without awaiting them, so the boot plugin migrates through `migrateNow()`, synchronous on SQLite: a migration that fails stops the start. The server reaches the stores through `useStores()` of `server/utils/db.ts`, and the accessors of `server/utils/sources.ts`, `collab.ts` and `users.ts` read one store each. The content scripts open the local database through `openDatabaseFile()` and write through the `archive` port; `content-push`, `theme-rename` and the remote half of `content-pull` send SQL to the app container, whose bundle carries better-sqlite3. These modules and the adapter import each other by relative path with the `.ts` extension, so Node runs them without Nuxt.
+
+The store tests are contracts: each suite runs over `ADAPTERS` of `test/unit/helpers/adapters.ts`, opened once per file and emptied before every test, and checks rows through the table helper of that file. The schema and migration tests run on SQLite alone.
+
 ### Deck history
-A deck keeps every publication as an immutable `deck_versions` row, and its draft as `deck_draft_snapshots` rows taken while people edit (at most one every five minutes, plus one when the last editor leaves), on each solo save, before a restore, and on demand with a label. `snapshotsToDrop` in `server/db/snapshot-store.ts` prunes them: the last day whole, then one per hour for a month, then one per day, labelled ones kept, with a cap on each group. Restoring copies a version or a snapshot into the draft through the open collab room when there is one, and keeps the replaced draft as a snapshot, so the history only grows. The logins of the editors between two snapshots are gathered in process memory by the collab hooks: a restart forgets the interval, and the deployment runs one instance. Times are stored to the second; `compareHistoryEntries` orders equal seconds.
+A deck keeps every publication as an immutable `deck_versions` row, and its draft as `deck_draft_snapshots` rows taken while people edit (at most one every five minutes, plus one when the last editor leaves), on each solo save, before a restore, and on demand with a label. `snapshotsToDrop` in `server/db/snapshot-retention.ts` prunes them: the last day whole, then one per hour for a month, then one per day, labelled ones kept, with a cap on each group. Restoring copies a version or a snapshot into the draft through the open collab room when there is one, and keeps the replaced draft as a snapshot, so the history only grows. The logins of the editors between two snapshots are gathered in process memory by the collab hooks: a restart forgets the interval, and the deployment runs one instance. Times are stored to the second; `compareHistoryEntries` orders equal seconds.
 
 ### Families
 Decks that are variants of one presentation share a free-text `family` on their rows, with no row of its own, and a `variantLabel`; a deck replaced by a newer edition points at it through `supersededBy`. The folder page draws a family as one card, the viewer offers the variants the visitor may open, and `POST /api/presentations/:slug/duplicate` creates a variant or a replacing edition from a deck.

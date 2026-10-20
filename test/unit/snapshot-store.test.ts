@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createSnapshotStore, MAX_LABELLED_SNAPSHOTS, MAX_RECENT_SNAPSHOTS, snapshotsToDrop } from '../../layers/studio/server/db/snapshot-store'
-import { freshDb, seedDeck } from './helpers/db'
+import { MAX_LABELLED_SNAPSHOTS, MAX_RECENT_SNAPSHOTS, snapshotsToDrop } from '../../layers/studio/server/db/snapshot-retention'
+import { ADAPTERS, seedDeck, useAdapter } from './helpers/adapters'
 
 const HOUR = 3_600_000
 const DAY = 24 * HOUR
@@ -43,37 +43,33 @@ describe('snapshotsToDrop', () => {
   })
 })
 
-describe('createSnapshotStore', () => {
-  let db: ReturnType<typeof freshDb>
-  let store: ReturnType<typeof createSnapshotStore>
+describe.each(ADAPTERS)('snapshot store ($name)', (adapter) => {
+  const db = useAdapter(adapter)
+  const store = () => db.stores.snapshots
 
-  beforeEach(() => {
-    db = freshDb()
-    seedDeck(db, 'deck')
-    store = createSnapshotStore(db)
-  })
+  beforeEach(() => seedDeck(db.rows, 'deck'))
 
   it('adds and lists snapshots, newest first, with their authors', async () => {
-    await store.add('deck', { raw: '# one', authors: ['ana'] })
-    await store.add('deck', { raw: '# two', authors: ['ana', 'bob'], label: 'Relu' })
-    const list = await store.list('deck')
+    await store().add('deck', { raw: '# one', authors: ['ana'] })
+    await store().add('deck', { raw: '# two', authors: ['ana', 'bob'], label: 'Relu' })
+    const list = await store().list('deck')
     expect(list.map(s => [s.authors, s.label, s.bytes])).toEqual([[['ana', 'bob'], 'Relu', 5], [['ana'], null, 5]])
-    expect(await store.latest('deck')).toMatchObject({ raw: '# two' })
-    expect(await store.latest('other')).toBeNull()
+    expect(await store().latest('deck')).toMatchObject({ raw: '# two' })
+    expect(await store().latest('other')).toBeNull()
   })
 
   it('loads a snapshot only under its own deck', async () => {
-    seedDeck(db, 'other')
-    const id = await store.add('deck', { raw: '# one', authors: [] })
-    expect(await store.load('deck', id)).toMatchObject({ raw: '# one' })
-    expect(await store.load('other', id)).toBeNull()
+    await seedDeck(db.rows, 'other')
+    const id = await store().add('deck', { raw: '# one', authors: [] })
+    expect(await store().load('deck', id)).toMatchObject({ raw: '# one' })
+    expect(await store().load('other', id)).toBeNull()
   })
 
   it('prunes the older snapshots of the deck on add', async () => {
     const at = (age: number) => new Date(now - age)
-    await store.add('deck', { raw: 'aa', authors: [], at: at(3 * DAY + 20 * 60_000) })
-    await store.add('deck', { raw: 'b', authors: [], at: at(3 * DAY + 10 * 60_000) })
-    await store.add('deck', { raw: 'ccc', authors: [], at: at(0) })
-    expect((await store.list('deck')).map(s => s.bytes)).toEqual([3, 1])
+    await store().add('deck', { raw: 'aa', authors: [], at: at(3 * DAY + 20 * 60_000) })
+    await store().add('deck', { raw: 'b', authors: [], at: at(3 * DAY + 10 * 60_000) })
+    await store().add('deck', { raw: 'ccc', authors: [], at: at(0) })
+    expect((await store().list('deck')).map(s => s.bytes)).toEqual([3, 1])
   })
 })

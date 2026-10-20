@@ -1,11 +1,12 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { Buffer } from 'node:buffer'
-import { DECK_TEXT_FIELD } from '#shared/collab/ydoc'
-import { referencedImages } from '#shared/storage/media-refs'
 import { eq } from 'drizzle-orm'
 import * as Y from 'yjs'
-import { recordDeckMedia } from './media-index'
-import { dataMigrations, deckDrafts, deckDraftSnapshots, deckVersions } from './schema'
+import { DECK_TEXT_FIELD } from '../../../shared/collab/ydoc.ts'
+import { referencedImages } from '../../../shared/storage/media-refs.ts'
+import { headingParserInsertion, insertHeadingParser } from '../heading-parser.ts'
+import { recordDeckMedia } from './media-index.ts'
+import { dataMigrations, deckDrafts, deckDraftSnapshots, deckVersions } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
@@ -13,31 +14,6 @@ type Db = BetterSQLite3Database<Record<string, unknown>>
  * Rewrites of the stored content that SQL cannot express, run once each at boot
  * after the schema migrations. `data_migrations` records the ones applied.
  */
-
-/** Where to insert `parser: heading` in a deck that has no `parser` key, or null. */
-export function headingParserInsertion(raw: string): { index: number, text: string } | null {
-  if (!raw.trim())
-    return null
-  const lines = raw.split('\n')
-  if (lines[0]?.trim() !== '---')
-    return { index: 0, text: '---\nparser: heading\n---\n\n' }
-  let offset = lines[0]!.length + 1
-  for (let n = 1; n < lines.length; n++) {
-    const line = lines[n]!
-    if (line.trim() === '---')
-      return { index: offset, text: 'parser: heading\n' }
-    if (/^parser\s*:/.test(line))
-      return null
-    offset += line.length + 1
-  }
-  // An unclosed frontmatter block: leave the deck as it is.
-  return null
-}
-
-function insertHeadingParser(raw: string): string | null {
-  const insertion = headingParserInsertion(raw)
-  return insertion ? raw.slice(0, insertion.index) + insertion.text + raw.slice(insertion.index) : null
-}
 
 /**
  * Slides used to split by headings unless a deck said `parser: separator`; they

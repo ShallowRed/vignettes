@@ -1,12 +1,9 @@
-import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { decks } from '../../layers/studio/server/db/schema'
 import { listVisiblePresentations, listVisibleProjects } from '../../layers/studio/server/utils/catalog'
 import { useDraftStore } from '../../layers/studio/server/utils/collab'
-import { useDb } from '../../layers/studio/server/utils/db'
 import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
 import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
-import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
+import { anon, asUser, seedAccount, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
 
 // The catalog reports capability, not role: an `editor` grant is what the server
 // accepts for editing, so the payload must say so (the card's pencil follows it).
@@ -19,7 +16,7 @@ beforeEach(async () => {
   // A published private deck plus an unpublished one, both in the same folder.
   await useDeckMeta().update('published-deck', { title: 'Publié', status: 'private', project: 'client' })
   await useDeckMeta().update('draft-deck', { title: 'Brouillon', status: 'private', project: 'client' })
-  useDb().update(decks).set({ publishedVersionId: 1 }).where(eq(decks.slug, 'published-deck')).run()
+  await testRows().update('decks', { publishedVersionId: 1 }, { slug: 'published-deck' })
   await seedAccount(10, 'collab', 'viewer')
 })
 

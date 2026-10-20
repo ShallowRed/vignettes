@@ -26,9 +26,9 @@
 
 import { Buffer } from 'node:buffer'
 import { spawnSync } from 'node:child_process'
-import { join } from 'node:path'
 import process from 'node:process'
-import Database from 'better-sqlite3'
+import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
@@ -47,7 +47,7 @@ if (!SSH) {
 const CONTAINER = STAGING
   ? (process.env.CONTENT_PUSH_STAGING_CONTAINER || 'vignettes-staging')
   : (process.env.CONTENT_PUSH_CONTAINER || 'vignettes')
-const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5) ?? process.env.NUXT_DB_PATH ?? join(process.cwd(), '.data', 'slides.db')
+const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5) ?? readDatabaseConfig(process.env).dbPath
 
 interface Pulled {
   slug: string
@@ -91,8 +91,10 @@ if (result.status !== 0) {
 }
 const pulled = JSON.parse(result.stdout.trim().split('\n').pop() ?? '[]') as (Pulled | null)[]
 
-const db = new Database(DB_PATH, { fileMustExist: true })
-const now = Math.floor(Date.now() / 1000)
+const { archive } = openDatabaseFile({ dbPath: DB_PATH }, { readonly: !APPLY }).stores
+const locals = new Map((await archive.decks()).map(row => [row.slug, row]))
+const localProjects = new Set((await archive.projects()).map(row => row.slug))
+const at = new Date()
 const LABEL: Record<string, string> = {
   create: 'à créer',
   republish: 'nouvelle version publiée, axes du catalogue alignés',
@@ -107,43 +109,30 @@ for (const [i, deck] of pulled.entries()) {
     console.log(`  · ${slug} : ${LABEL.missing}`)
     continue
   }
-  const local = db.prepare('select deleted_at as deletedAt, published_version_id as versionId from decks where slug = ?').get(slug) as { deletedAt: number | null, versionId: number | null } | undefined
-  const current = local?.versionId
-    ? (db.prepare('select raw from deck_versions where id = ?').get(local.versionId) as { raw: string } | undefined)?.raw
-    : null
-  const folderMissing = deck.project && !db.prepare('select 1 from projects where slug = ?').get(deck.project)
-  const action = local ? (local.deletedAt ? 'trashed' : current === deck.raw ? 'identical' : 'republish') : 'create'
+  const local = locals.get(slug)
+  const folderMissing = deck.project && !localProjects.has(deck.project)
+  const action = local ? (local.trashed ? 'trashed' : local.raw === deck.raw ? 'identical' : 'republish') : 'create'
   console.log(`  · ${slug} : ${LABEL[action]}${folderMissing ? ` ; dossier « ${deck.project} » absent en local, le deck arrive sans dossier` : ''}`)
   if (!APPLY || action === 'trashed' || action === 'identical')
     continue
 
-  const axes = {
-    title: deck.title,
-    status: deck.status,
-    lifecycle: deck.lifecycle,
-    project: folderMissing ? null : deck.project,
-    theme: deck.theme,
-    alias: deck.alias,
-    frozen_bundle: deck.frozenBundle,
-    unlisted: deck.unlisted,
-  }
-  db.transaction(() => {
-    if (action === 'create') {
-      db.prepare(
-        'insert into decks (slug, title, status, lifecycle, project, theme, alias, frozen_bundle, unlisted, managed, created_at, updated_at) '
-        + 'values (@slug, @title, @status, @lifecycle, @project, @theme, @alias, @frozen_bundle, @unlisted, 1, @now, @now)',
-      ).run({ slug, now, ...axes })
-    }
-    else {
-      db.prepare(
-        'update decks set title = @title, status = @status, lifecycle = @lifecycle, project = @project, theme = @theme, alias = @alias, '
-        + 'frozen_bundle = @frozen_bundle, unlisted = @unlisted, managed = 1, updated_at = @now where slug = @slug',
-      ).run({ slug, now, ...axes })
-    }
-    const version = db.prepare('insert into deck_versions (deck_slug, raw, published_by, published_at) values (?, ?, ?, ?)')
-      .run(slug, deck.raw, 'content-pull', now)
-    db.prepare('update decks set published_version_id = ?, updated_at = ? where slug = ?').run(version.lastInsertRowid, now, slug)
-  })()
+  await archive.apply([
+    {
+      kind: 'deck',
+      slug,
+      axes: {
+        title: deck.title,
+        status: deck.status,
+        lifecycle: deck.lifecycle,
+        project: folderMissing ? null : deck.project,
+        theme: deck.theme,
+        alias: deck.alias,
+        frozenBundle: deck.frozenBundle,
+        unlisted: Boolean(deck.unlisted),
+      },
+    },
+    { kind: 'version', slug, raw: deck.raw },
+  ], { by: 'content-pull', at })
 }
 
 console.log(APPLY ? '\n✅ Rapatrié.' : '\nDry-run terminé. Relancer avec --apply pour écrire.')

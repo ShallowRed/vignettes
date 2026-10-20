@@ -1,7 +1,6 @@
-import { createUserStore } from '../db/user-store'
-import { useDb } from './db'
+import { useStores } from './db'
 
 /** The database-backed `UserStore` port. */
 export function useUserStore() {
-  return createUserStore(useDb())
+  return useStores().users
 }

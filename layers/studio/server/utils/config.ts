@@ -1,8 +1,10 @@
 import type { RoleMap } from '#shared/access'
 import type { FrozenS3Config } from '#shared/storage/frozen-s3'
+import type { DatabaseConfig } from '../db/config'
 import process from 'node:process'
 import { readRoleMap } from '#shared/access'
 import { frozenS3ConfigFromEnv } from '#shared/storage/frozen-s3'
+import { readDatabaseConfig } from '../db/config'
 
 /**
  * The server's configuration: the one module of `server/` that reads
@@ -11,9 +13,8 @@ import { frozenS3ConfigFromEnv } from '#shared/storage/frozen-s3'
  * `NUXT_FROZEN_S3_*` names do not fit Nuxt's runtime override (see
  * `runtimeConfig` in nuxt.config.ts).
  */
-export interface ServerConfig {
+export interface ServerConfig extends DatabaseConfig {
   sessionPassword?: string
-  dbPath: string
   contentDir?: string
   contentToken?: string
   recetteEnabled: boolean
@@ -27,7 +28,7 @@ export function serverConfig(): ServerConfig {
   const env = process.env
   return {
     sessionPassword: env.NUXT_SESSION_PASSWORD,
-    dbPath: env.NUXT_DB_PATH || '.data/slides.db',
+    ...readDatabaseConfig(env),
     contentDir: env.NUXT_CONTENT_DIR,
     contentToken: env.NUXT_CONTENT_TOKEN?.trim() || undefined,
     recetteEnabled: env.NUXT_RECETTE_ENABLED === '1',

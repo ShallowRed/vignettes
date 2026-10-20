@@ -7,23 +7,11 @@ import { readTitleSlide, UNGROUPED_PROJECT } from '#shared/presentations'
 import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 import { resolveSlideBackground } from '@vignettes/core/render'
 import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
-import { count, eq, gte, inArray } from 'drizzle-orm'
-import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from '../db/schema'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
-import { useDb } from './db'
+import { useStores } from './db'
 import { projectDirectory, useDbContent, useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
 import { loadTenantThemes } from './themes'
-
-/** slug → number of grants, for the privileged "shared" badges (one query). */
-function grantCounts(table: typeof deckPermissions | typeof projectPermissions, column: 'deckSlug' | 'projectSlug'): Map<string, number> {
-  const col = column === 'deckSlug'
-    ? (table as typeof deckPermissions).deckSlug
-    : (table as typeof projectPermissions).projectSlug
-  return new Map(
-    useDb().select({ slug: col, n: count() }).from(table).groupBy(col).all().map(r => [r.slug, r.n]),
-  )
-}
 
 /**
  * Decks whose draft holds changes the published version does not. Drafts saved
@@ -33,9 +21,8 @@ function grantCounts(table: typeof deckPermissions | typeof projectPermissions, 
 export async function unpublishedChanges(candidates: Set<string>): Promise<Set<string>> {
   if (candidates.size === 0)
     return new Set()
-  const rows = useDb().select({ slug: deckDrafts.deckSlug }).from(deckDrafts).innerJoin(decks, eq(decks.slug, deckDrafts.deckSlug)).innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId)).where(gte(deckDrafts.updatedAt, deckVersions.publishedAt)).all()
   const changed = new Set<string>()
-  for (const { slug } of rows) {
+  for (const slug of await useStores().catalog.draftsSincePublish()) {
     if (!candidates.has(slug))
       continue
     const [draft, published] = await Promise.all([useDraftStore().load(slug), useDbContent().source.load(slug)])
@@ -73,27 +60,14 @@ function readVersionStats(raw: string): VersionStats {
 }
 
 /** Slide count and dates of every published deck; the markdown is read once per version. */
-function deckStats(): Map<string, DeckStats> {
-  const db = useDb()
-  const rows = db
-    .select({ slug: decks.slug, versionId: deckVersions.id, updatedAt: decks.updatedAt, publishedAt: deckVersions.publishedAt, draftSavedAt: deckDrafts.updatedAt })
-    .from(decks)
-    .innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId))
-    .leftJoin(deckDrafts, eq(deckDrafts.deckSlug, decks.slug))
-    .all()
+async function deckStats(): Promise<Map<string, DeckStats>> {
+  const { catalog } = useStores()
+  const rows = await catalog.publishedDecks()
 
   const published = new Set(rows.map(row => row.versionId))
-  // SQLite refuses a statement with more than 999 bound variables.
   const missing = [...published].filter(id => !versionStats.has(id))
-  for (let from = 0; from < missing.length; from += 500) {
-    const batch = db
-      .select({ id: deckVersions.id, raw: deckVersions.raw })
-      .from(deckVersions)
-      .where(inArray(deckVersions.id, missing.slice(from, from + 500)))
-      .all()
-    for (const { id, raw } of batch)
-      versionStats.set(id, readVersionStats(raw))
-  }
+  for (const { id, raw } of await catalog.versionTexts(missing))
+    versionStats.set(id, readVersionStats(raw))
 
   for (const id of versionStats.keys()) {
     if (!published.has(id))
@@ -154,12 +128,12 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
 
   const privileged = isPrivileged(actor.role)
   const decks = await useDeckMeta().listManaged()
-  const shared = privileged ? grantCounts(deckPermissions, 'deckSlug') : undefined
+  const shared = privileged ? await useStores().catalog.deckGrantCounts() : undefined
   // The same rule as assertCanEditDeck, so the card's pencil matches what the
   // server accepts.
   const canEdit = (slug: string) => mayEdit(actor.role, grants.get(slug))
   const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d.slug)).map(d => d.slug)))
-  const stats = deckStats()
+  const stats = await deckStats()
 
   return decks
     // A deck with no published version has nothing to serve: only those who can
@@ -214,7 +188,7 @@ export async function listVisibleProjects(event: H3Event): Promise<Project[]> {
     listVisiblePresentations(event),
   ])
   if (isPrivileged(actor.role)) {
-    const shared = grantCounts(projectPermissions, 'projectSlug')
+    const shared = await useStores().catalog.projectGrantCounts()
     return projects.map(p => ({ ...p, sharedCount: shared.get(p.slug) ?? 0 }))
   }
 

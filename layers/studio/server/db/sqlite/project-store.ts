@@ -1,18 +1,13 @@
 import type { Project } from '#shared/projects'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { slugifyProject } from '#shared/projects'
+import type { ProjectStore } from '../ports.ts'
 import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
-import { purgeDeckRows } from './deck-meta'
-import { decks, projectPermissions, projects } from './schema'
+import { freeProjectSlug } from '../slugs.ts'
+import { purgeDeckRows } from './deck-meta.ts'
+import { decks, projectPermissions, projects } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 type ProjectRow = typeof projects.$inferSelect
-
-/** A trashed project plus how many of its decks were trashed with it. */
-export interface TrashedProject extends Project {
-  deletedAt: Date
-  deckCount: number
-}
 
 function toProject(row: ProjectRow): Project {
   return { slug: row.slug, title: row.title, order: row.order, color: row.color ?? undefined, icon: row.icon ?? undefined }
@@ -28,50 +23,37 @@ function toProject(row: ProjectRow): Project {
  * to `decks` in the same transaction, so a folder and its decks are never split
  * across states. A new deck-owned child table has to be added to all three.
  */
-export function createProjectStore(db: Db) {
-  /** First free slug from the title, disambiguated against every row (slug is the PK). */
-  function freeSlug(title: string): string {
-    const base = slugifyProject(title) || 'projet'
-    let slug = base
-    let n = 2
-    while (db.select({ slug: projects.slug }).from(projects).where(eq(projects.slug, slug)).get())
-      slug = `${base}-${n++}`
-    return slug
-  }
-
+export function createProjectStore(db: Db): ProjectStore {
   return {
-    async create({ title, color, icon, slug: wanted }: { title: string, color?: string | null, icon?: string | null, slug?: string }): Promise<Project> {
+    async create({ title, color, icon, slug: wanted }) {
       const now = new Date()
-      // An explicit slug is caller-validated (shape + uniqueness → 409 upstream).
-      const slug = wanted ?? freeSlug(title)
-      const max = db.select({ m: sql<number>`coalesce(max(${projects.order}), -1)` }).from(projects).get()?.m ?? -1
-      const row = db.insert(projects)
-        .values({ slug, title: title.trim(), order: max + 1, color: color ?? null, icon: icon ?? null, createdAt: now, updatedAt: now })
-        .returning()
-        .get()!
+      // The free slug and the order are read in the transaction of the insert.
+      const row = db.transaction((tx) => {
+        // An explicit slug is caller-validated (shape + uniqueness → 409 upstream).
+        // Every row counts, trashed ones included: the slug is the primary key.
+        const slug = wanted ?? freeProjectSlug(title, candidate => !!tx.select({ slug: projects.slug }).from(projects).where(eq(projects.slug, candidate)).get())
+        const max = tx.select({ m: sql<number>`coalesce(max(${projects.order}), -1)` }).from(projects).get()?.m ?? -1
+        return tx.insert(projects)
+          .values({ slug, title: title.trim(), order: max + 1, color: color ?? null, icon: icon ?? null, createdAt: now, updatedAt: now })
+          .returning()
+          .get()!
+      })
       return toProject(row)
     },
 
-    /** True if any project row (trashed included) already owns this slug. */
-    async slugExists(slug: string): Promise<boolean> {
+    async slugExists(slug) {
       return !!db.select({ slug: projects.slug }).from(projects).where(eq(projects.slug, slug)).get()
     },
 
-    /** True if a live (not trashed) project owns this slug: a deck may be filed there. */
-    async isLive(slug: string): Promise<boolean> {
+    async isLive(slug) {
       return !!db.select({ slug: projects.slug }).from(projects).where(and(eq(projects.slug, slug), isNull(projects.deletedAt))).get()
     },
 
-    /**
-     * Change a project's slug, cascading to its decks (`decks.project`) and grants
-     * (`project_permissions`). Assumes `newSlug` is validated and free. FK-safe
-     * order: insert the new row, repoint children, drop the old row. Old
-     * `/projects/<oldSlug>` links stop resolving (no redirect in this version).
-     */
-    async rename(oldSlug: string, newSlug: string): Promise<Project | null> {
+    async rename(oldSlug, newSlug) {
       const current = db.select().from(projects).where(eq(projects.slug, oldSlug)).get()
       if (!current)
         return null
+      // FK-safe order: insert the new row, repoint children, drop the old row.
       db.transaction((tx) => {
         tx.insert(projects).values({ ...current, slug: newSlug, updatedAt: new Date() }).run()
         tx.update(projectPermissions).set({ projectSlug: newSlug }).where(eq(projectPermissions.projectSlug, oldSlug)).run()
@@ -82,7 +64,7 @@ export function createProjectStore(db: Db) {
       return row ? toProject(row) : null
     },
 
-    async update(slug: string, patch: { title?: string, color?: string | null, icon?: string | null, order?: number }): Promise<Project | null> {
+    async update(slug, patch) {
       const set: Partial<ProjectRow> = { updatedAt: new Date() }
       if (patch.title !== undefined)
         set.title = patch.title.trim()
@@ -96,13 +78,15 @@ export function createProjectStore(db: Db) {
       return row ? toProject(row) : null
     },
 
-    /** Live deck slugs in this project — for guards (e.g. open collab sessions). */
-    async liveDeckSlugs(slug: string): Promise<string[]> {
+    async liveDeckSlugs(slug) {
       return db.select({ slug: decks.slug }).from(decks).where(and(eq(decks.project, slug), isNull(decks.deletedAt))).all().map(r => r.slug)
     },
 
-    /** Trash the project and every live deck it holds, in one transaction. */
-    async softDelete(slug: string): Promise<boolean> {
+    async deckSlugs(slug) {
+      return db.select({ slug: decks.slug }).from(decks).where(eq(decks.project, slug)).all().map(r => r.slug)
+    },
+
+    async softDelete(slug) {
       const now = new Date()
       return db.transaction((tx) => {
         const res = tx.update(projects).set({ deletedAt: now }).where(and(eq(projects.slug, slug), isNull(projects.deletedAt))).run()
@@ -113,8 +97,7 @@ export function createProjectStore(db: Db) {
       })
     },
 
-    /** Restore the project and every deck currently trashed under it. */
-    async restore(slug: string): Promise<boolean> {
+    async restore(slug) {
       return db.transaction((tx) => {
         const res = tx.update(projects).set({ deletedAt: null }).where(and(eq(projects.slug, slug), isNotNull(projects.deletedAt))).run()
         if (res.changes === 0)
@@ -124,15 +107,14 @@ export function createProjectStore(db: Db) {
       })
     },
 
-    async listTrashed(): Promise<TrashedProject[]> {
+    async listTrashed() {
       return db.select().from(projects).where(isNotNull(projects.deletedAt)).orderBy(asc(projects.order), asc(projects.title)).all().map((row) => {
         const deckCount = db.select({ c: sql<number>`count(*)` }).from(decks).where(and(eq(decks.project, row.slug), isNotNull(decks.deletedAt))).get()?.c ?? 0
         return { ...toProject(row), deletedAt: row.deletedAt!, deckCount }
       })
     },
 
-    /** Permanent: hard-delete the project, its grants, and all its decks. */
-    async purge(slug: string): Promise<boolean> {
+    async purge(slug) {
       const row = db.select({ slug: projects.slug }).from(projects).where(eq(projects.slug, slug)).get()
       if (!row)
         return false

@@ -1,23 +1,17 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { createDbDirectory } from '../../layers/studio/server/db/directory'
-import { deckAliases, projects } from '../../layers/studio/server/db/schema'
-import { freshDb, NOW, seedDeck } from './helpers/db'
+import { describe, expect, it } from 'vitest'
+import { ADAPTERS, NOW, seedDeck, useAdapter } from './helpers/adapters'
 
-describe('db directory', () => {
-  let db: ReturnType<typeof freshDb>
-  let directory: ReturnType<typeof createDbDirectory>
-
-  beforeEach(() => {
-    db = freshDb()
-    directory = createDbDirectory(db)
-  })
+describe.each(ADAPTERS)('db directory ($name)', (adapter) => {
+  const db = useAdapter(adapter)
+  const decks = () => db.stores.deckDirectory
+  const projects = () => db.stores.projectDirectory
 
   it('resolves a deck by canonical alias, slug and historical alias', async () => {
-    seedDeck(db, 'pipeline-recrutement', { alias: 'ecran-pipeline', lifecycle: 'frozen', frozenBundle: 'ecran-pipeline' })
-    db.insert(deckAliases).values({ alias: 'codimd/abc123', deckSlug: 'pipeline-recrutement' }).run()
+    await seedDeck(db.rows, 'pipeline-recrutement', { alias: 'ecran-pipeline', lifecycle: 'frozen', frozenBundle: 'ecran-pipeline' })
+    await db.rows.insert('deckAliases', { alias: 'codimd/abc123', deckSlug: 'pipeline-recrutement' })
 
     for (const key of ['ecran-pipeline', 'pipeline-recrutement', 'codimd/abc123']) {
-      expect(await directory.decks.resolveAlias(key)).toMatchObject({
+      expect(await decks().resolveAlias(key)).toMatchObject({
         alias: 'ecran-pipeline',
         slug: 'pipeline-recrutement',
         lifecycle: 'frozen',
@@ -28,18 +22,18 @@ describe('db directory', () => {
   })
 
   it('keeps alias-less decks out of the directory', async () => {
-    seedDeck(db, 'draft-only')
-    expect(await directory.decks.resolveAlias('draft-only')).toBeNull()
-    expect(await directory.decks.list()).toEqual([])
+    await seedDeck(db.rows, 'draft-only')
+    expect(await decks().resolveAlias('draft-only')).toBeNull()
+    expect(await decks().list()).toEqual([])
   })
 
   it('lists projects ordered, resolving one by slug', async () => {
-    db.insert(projects).values([
+    await db.rows.insert('projects', [
       { slug: 'zeta', title: 'Zeta', order: 2, createdAt: NOW, updatedAt: NOW },
       { slug: 'alpha', title: 'Alpha', order: 1, color: '#2563eb', createdAt: NOW, updatedAt: NOW },
-    ]).run()
-    expect((await directory.projects.list()).map(p => p.slug)).toEqual(['alpha', 'zeta'])
-    expect(await directory.projects.resolve('alpha')).toMatchObject({ title: 'Alpha', color: '#2563eb' })
-    expect(await directory.projects.resolve('ghost')).toBeNull()
+    ])
+    expect((await projects().list()).map(p => p.slug)).toEqual(['alpha', 'zeta'])
+    expect(await projects().resolve('alpha')).toMatchObject({ title: 'Alpha', color: '#2563eb' })
+    expect(await projects().resolve('ghost')).toBeNull()
   })
 })

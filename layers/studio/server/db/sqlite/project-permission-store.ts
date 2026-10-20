@@ -1,45 +1,29 @@
 import type { DeckGrant } from '#shared/access'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { DeckGrantSchema } from '#shared/access'
+import type { GrantRecord, ProjectGrantStore } from '../ports.ts'
 import { and, eq, gt, isNull, or } from 'drizzle-orm'
-import { projectPermissions, projects, users } from './schema'
+import { isInvitedPlaceholder } from '../identities.ts'
+import { readGrant } from '../stored-values.ts'
+import { projectPermissions, projects, users } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
-export interface ProjectGrantRecord {
-  userId: number
-  login: string
-  role: DeckGrant
-  grantedBy: string
-  createdAt: Date
-  /** The account was pre-provisioned by invitation and never logged in. */
-  invited: boolean
-  /** Null = permanent. In the past = expired (listed for the owner, never resolved). */
-  expiresAt: Date | null
-}
-
 /** An expired grant must not resolve; it stays listed so the owner can extend or drop it. */
 const notExpired = (col: typeof projectPermissions.expiresAt) => or(isNull(col), gt(col, new Date()))
-
-/** An invalid stored grant degrades to view-only. */
-function readGrant(value: string): DeckGrant {
-  const parsed = DeckGrantSchema.safeParse(value)
-  return parsed.success ? parsed.data : 'viewer'
-}
 
 /**
  * SQLite adapter for project-scoped grants — the same shape as the per-deck store,
  * one row per (project, user). Resolution folds these with per-deck grants; see
  * `server/utils/grants.ts`.
  */
-export function createProjectPermissionStore(db: Db) {
+export function createProjectPermissionStore(db: Db): ProjectGrantStore {
   return {
     async get(projectSlug: string, userId: number): Promise<DeckGrant | null> {
       const row = db.select().from(projectPermissions).where(and(eq(projectPermissions.projectSlug, projectSlug), eq(projectPermissions.userId, userId), notExpired(projectPermissions.expiresAt))).get()
       return row ? readGrant(row.role) : null
     },
 
-    async listForProject(projectSlug: string): Promise<ProjectGrantRecord[]> {
+    async listForProject(projectSlug: string): Promise<GrantRecord[]> {
       return db.select({
         userId: projectPermissions.userId,
         login: users.login,
@@ -53,7 +37,7 @@ export function createProjectPermissionStore(db: Db) {
         .innerJoin(users, eq(users.id, projectPermissions.userId))
         .where(eq(projectPermissions.projectSlug, projectSlug))
         .all()
-        .map(({ providerId, ...r }) => ({ ...r, role: readGrant(r.role), invited: providerId.startsWith('invited:') }))
+        .map(({ providerId, ...r }) => ({ ...r, role: readGrant(r.role), invited: isInvitedPlaceholder(providerId) }))
     },
 
     /** projectSlug → grant, for one-lookup catalog visibility. */
@@ -64,18 +48,20 @@ export function createProjectPermissionStore(db: Db) {
 
     async set(projectSlug: string, userId: number, role: DeckGrant, grantedBy: string, expiresAt: Date | null = null): Promise<void> {
       const now = new Date()
-      // FK anchor: a grant may name a project row that only existed in the registry.
-      db.insert(projects)
-        .values({ slug: projectSlug, title: projectSlug, createdAt: now, updatedAt: now })
-        .onConflictDoNothing()
-        .run()
-      db.insert(projectPermissions)
-        .values({ projectSlug, userId, role, grantedBy, createdAt: now, expiresAt })
-        .onConflictDoUpdate({
-          target: [projectPermissions.projectSlug, projectPermissions.userId],
-          set: { role, grantedBy, createdAt: now, expiresAt },
-        })
-        .run()
+      db.transaction((tx) => {
+        // FK anchor: a grant may name a project row that only existed in the registry.
+        tx.insert(projects)
+          .values({ slug: projectSlug, title: projectSlug, createdAt: now, updatedAt: now })
+          .onConflictDoNothing()
+          .run()
+        tx.insert(projectPermissions)
+          .values({ projectSlug, userId, role, grantedBy, createdAt: now, expiresAt })
+          .onConflictDoUpdate({
+            target: [projectPermissions.projectSlug, projectPermissions.userId],
+            set: { role, grantedBy, createdAt: now, expiresAt },
+          })
+          .run()
+      })
     },
 
     async remove(projectSlug: string, userId: number): Promise<void> {

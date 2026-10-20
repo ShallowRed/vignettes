@@ -1,10 +1,8 @@
 import { Buffer } from 'node:buffer'
-import { eq } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
-import { headingParserInsertion, runDataMigrations } from '../../layers/studio/server/db/data-migrations'
-import { dataMigrations, deckDrafts, deckDraftSnapshots, deckMedia, deckVersions } from '../../layers/studio/server/db/schema'
+import { headingParserInsertion } from '../../layers/studio/server/db/heading-parser'
 import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
-import { freshDb, NOW, seedDeck } from './helpers/db'
+import { ADAPTERS, NOW, seedDeck, useAdapter } from './helpers/adapters'
 
 function insert(raw: string): string {
   const insertion = headingParserInsertion(raw)
@@ -28,46 +26,46 @@ describe('headingParserInsertion', () => {
   })
 })
 
-describe('runDataMigrations', () => {
-  it('writes the heading parser into published versions and drafts, once', () => {
-    const db = freshDb()
-    seedDeck(db, 'old')
-    seedDeck(db, 'explicit')
-    db.insert(deckVersions).values([
+describe.each(ADAPTERS)('data migrations ($name)', (adapter) => {
+  const db = useAdapter(adapter)
+
+  it('writes the heading parser into published versions and drafts, once', async () => {
+    await seedDeck(db.rows, 'old')
+    await seedDeck(db.rows, 'explicit')
+    await db.rows.insert('deckVersions', [
       { deckSlug: 'old', raw: '---\ntitle: Old\n---\n\n# Old', publishedBy: 'alice', publishedAt: NOW },
       { deckSlug: 'explicit', raw: '---\nparser: separator\n---\n\n# New', publishedBy: 'alice', publishedAt: NOW },
-    ]).run()
-    db.insert(deckDrafts).values({ deckSlug: 'old', ydoc: Buffer.from(markdownToYDocUpdate('# Old draft')), updatedAt: NOW }).run()
+    ])
+    await db.rows.insert('deckDrafts', { deckSlug: 'old', ydoc: Buffer.from(markdownToYDocUpdate('# Old draft')), updatedAt: NOW })
 
-    runDataMigrations(db)
+    await db.migrateData()
 
-    const raws = db.select({ slug: deckVersions.deckSlug, raw: deckVersions.raw }).from(deckVersions).all()
+    const raws = (await db.rows.select('deckVersions')).map(row => ({ slug: row.deckSlug, raw: row.raw }))
     expect(raws).toEqual([
       { slug: 'old', raw: '---\ntitle: Old\nparser: heading\n---\n\n# Old' },
       { slug: 'explicit', raw: '---\nparser: separator\n---\n\n# New' },
     ])
-    const draft = db.select().from(deckDrafts).where(eq(deckDrafts.deckSlug, 'old')).get()!
-    expect(yDocUpdateToMarkdown(new Uint8Array(draft.ydoc))).toBe('---\nparser: heading\n---\n\n# Old draft')
-    expect(db.select().from(dataMigrations).all().map(row => row.name))
+    const [draft] = await db.rows.select('deckDrafts', { deckSlug: 'old' })
+    expect(yDocUpdateToMarkdown(new Uint8Array(draft!.ydoc))).toBe('---\nparser: heading\n---\n\n# Old draft')
+    expect((await db.rows.select('dataMigrations')).map(row => row.name))
       .toEqual(['explicit-heading-parser', 'index-existing-deck-media', 'index-existing-deck-images'])
 
     // A deck written after the migration relies on the new default and stays untouched.
-    db.update(deckVersions).set({ raw: '# Separator deck' }).where(eq(deckVersions.deckSlug, 'explicit')).run()
-    runDataMigrations(db)
-    expect(db.select({ raw: deckVersions.raw }).from(deckVersions).where(eq(deckVersions.deckSlug, 'explicit')).get()!.raw).toBe('# Separator deck')
+    await db.rows.update('deckVersions', { raw: '# Separator deck' }, { deckSlug: 'explicit' })
+    await db.migrateData()
+    expect((await db.rows.select('deckVersions', { deckSlug: 'explicit' }))[0]!.raw).toBe('# Separator deck')
   })
 
-  it('keys the images of published versions, snapshots and drafts to their decks', () => {
-    const db = freshDb()
-    seedDeck(db, 'published')
-    seedDeck(db, 'drafted')
-    db.insert(deckVersions).values({ deckSlug: 'published', raw: '# P\n\n![](/media/aaa.png)', publishedBy: 'alice', publishedAt: NOW }).run()
-    db.insert(deckDraftSnapshots).values({ deckSlug: 'published', raw: '# P\n\n![](/media/bbb.webp)', authors: ['alice'], createdAt: NOW }).run()
-    db.insert(deckDrafts).values({ deckSlug: 'drafted', ydoc: Buffer.from(markdownToYDocUpdate('# D\n\n![](/media/ccc.jpg)')), updatedAt: NOW }).run()
+  it('keys the images of published versions, snapshots and drafts to their decks', async () => {
+    await seedDeck(db.rows, 'published')
+    await seedDeck(db.rows, 'drafted')
+    await db.rows.insert('deckVersions', { deckSlug: 'published', raw: '# P\n\n![](/media/aaa.png)', publishedBy: 'alice', publishedAt: NOW })
+    await db.rows.insert('deckDraftSnapshots', { deckSlug: 'published', raw: '# P\n\n![](/media/bbb.webp)', authors: ['alice'], createdAt: NOW })
+    await db.rows.insert('deckDrafts', { deckSlug: 'drafted', ydoc: Buffer.from(markdownToYDocUpdate('# D\n\n![](/media/ccc.jpg)')), updatedAt: NOW })
 
-    runDataMigrations(db)
+    await db.migrateData()
 
-    expect(db.select({ name: deckMedia.mediaName, slug: deckMedia.deckSlug }).from(deckMedia).all()).toEqual([
+    expect((await db.rows.select('deckMedia')).map(row => ({ name: row.mediaName, slug: row.deckSlug }))).toEqual([
       { name: 'aaa.png', slug: 'published' },
       { name: 'bbb.webp', slug: 'published' },
       { name: 'ccc.jpg', slug: 'drafted' },

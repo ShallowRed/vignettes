@@ -1,43 +1,38 @@
-import type { DeckGrant } from '../../layers/studio/shared/access'
+import type { GrantRecord, GrantStore, Stores } from '../../layers/studio/server/db/ports'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createPermissionStore } from '../../layers/studio/server/db/permission-store'
-import { createProjectPermissionStore } from '../../layers/studio/server/db/project-permission-store'
-import { freshDb, seedUser } from './helpers/db'
+import { ADAPTERS, seedUser, useAdapter } from './helpers/adapters'
 
 // Deck grants and folder master keys are two tables with one contract: the same
 // resolution, listing, expiry and upsert rules. One suite runs against both.
-interface GrantStore {
-  get: (scope: string, userId: number) => Promise<DeckGrant | null>
-  set: (scope: string, userId: number, role: DeckGrant, grantedBy: string, expiresAt?: Date | null) => Promise<void>
-  remove: (scope: string, userId: number) => Promise<void>
-  listForUser: (userId: number) => Promise<Map<string, DeckGrant>>
-  listForScope: (scope: string) => Promise<{ userId: number, login: string, role: DeckGrant, grantedBy: string, expiresAt: Date | null }[]>
+interface ScopedGrants extends GrantStore {
+  listForScope: (scope: string) => Promise<GrantRecord[]>
 }
 
-const STORES: { name: string, make: (db: ReturnType<typeof freshDb>) => GrantStore }[] = [
-  { name: 'deck grants', make: (db) => {
-    const s = createPermissionStore(db)
-    return { ...s, listForScope: s.listForDeck }
-  } },
-  { name: 'folder master keys', make: (db) => {
-    const s = createProjectPermissionStore(db)
-    return { ...s, listForScope: s.listForProject }
-  } },
+const STORES: { name: string, make: (stores: Stores) => ScopedGrants }[] = [
+  { name: 'deck grants', make: ({ deckGrants: s }) => ({ ...s, listForScope: s.listForDeck }) },
+  { name: 'folder master keys', make: ({ projectGrants: s }) => ({ ...s, listForScope: s.listForProject }) },
 ]
 
-describe.each(STORES)('$name', ({ make }) => {
-  let store: GrantStore
+describe.each(ADAPTERS.flatMap(adapter => STORES.map(store => ({ ...store, adapter, label: adapter.name }))))('$name ($label)', ({ adapter, make }) => {
+  const db = useAdapter(adapter)
+  let store: ScopedGrants
 
-  beforeEach(() => {
-    const db = freshDb()
-    store = make(db)
-    seedUser(db, 1, 'alice')
-    seedUser(db, 2, 'bob')
+  beforeEach(async () => {
+    store = make(db.stores)
+    await seedUser(db.rows, 1, 'alice')
+    await seedUser(db.rows, 2, 'bob')
   })
 
   it('grants on a scope with no row yet by anchoring it first', async () => {
     await store.set('not-in-db-yet', 1, 'editor', 'lucas')
     await expect(store.get('not-in-db-yet', 1)).resolves.toBe('editor')
+  })
+
+  it('anchors nothing when the grant itself fails', async () => {
+    // User 404 does not exist: the grant breaks its foreign key.
+    await expect(store.set('never-anchored', 404, 'viewer', 'lucas')).rejects.toThrow()
+    expect(await db.rows.select('decks', { slug: 'never-anchored' })).toEqual([])
+    expect(await db.rows.select('projects', { slug: 'never-anchored' })).toEqual([])
   })
 
   it('an expired grant no longer resolves but stays listed for the owner', async () => {

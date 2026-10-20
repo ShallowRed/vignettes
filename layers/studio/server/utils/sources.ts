@@ -2,17 +2,7 @@ import type { DeckGrant } from '#shared/access'
 import type { ProjectDirectory } from '#shared/projects'
 import type { ContentSource, DeckDirectory } from '@vignettes/core/deck'
 import { strongerGrant } from '#shared/access'
-import { eq } from 'drizzle-orm'
-import { createDbContent } from '../db/content-store'
-import { createDeckMeta } from '../db/deck-meta'
-import { createDbDirectory } from '../db/directory'
-import { createMediaIndex } from '../db/media-index'
-import { createPermissionStore } from '../db/permission-store'
-import { createProjectPermissionStore } from '../db/project-permission-store'
-import { createProjectStore } from '../db/project-store'
-import { decks } from '../db/schema'
-import { createVersionHistory } from '../db/version-history'
-import { useDb } from './db'
+import { useStores } from './db'
 
 /**
  * The database is the runtime source of truth for all deck content and metadata;
@@ -21,7 +11,7 @@ import { useDb } from './db'
 
 /** The database-backed content ports (published versions). */
 export function useDbContent() {
-  return createDbContent(useDb())
+  return useStores().content
 }
 
 /** Published deck markdown: the database version. */
@@ -34,32 +24,32 @@ export const publishedSource: ContentSource = {
 
 /** The published versions of a deck, for the history panel. */
 export function useVersionHistory() {
-  return createVersionHistory(useDb())
+  return useStores().versionHistory
 }
 
 /** Deck catalog/access metadata rows (truth for managed decks). */
 export function useDeckMeta() {
-  return createDeckMeta(useDb())
+  return useStores().deckMeta
 }
 
 /** Which decks reference each uploaded image (the visibility of `/media/**`). */
 export function useMediaIndex() {
-  return createMediaIndex(useDb())
+  return useStores().mediaIndex
 }
 
 /** Per-deck permission grants. */
 export function usePermissionStore() {
-  return createPermissionStore(useDb())
+  return useStores().deckGrants
 }
 
 /** Project-scoped permission grants (master key over a project's decks). */
 export function useProjectPermissionStore() {
-  return createProjectPermissionStore(useDb())
+  return useStores().projectGrants
 }
 
 /** Project lifecycle writes (create / rename / trash / restore / purge). */
 export function useProjectStore() {
-  return createProjectStore(useDb())
+  return useStores().projects
 }
 
 /**
@@ -68,28 +58,26 @@ export function useProjectStore() {
  * catalog consume, so a project grant transparently opens every deck in the project.
  */
 export function useGrants() {
-  const db = useDb()
-  const deckStore = createPermissionStore(db)
-  const projectStore = createProjectPermissionStore(db)
+  const stores = useStores()
 
   return {
     async get(deckSlug: string, userId: number): Promise<DeckGrant | undefined> {
-      const deck = db.select({ project: decks.project }).from(decks).where(eq(decks.slug, deckSlug)).get()
+      const project = await stores.deckMeta.projectOf(deckSlug)
       const [deckGrant, projectGrant] = await Promise.all([
-        deckStore.get(deckSlug, userId),
-        deck?.project ? projectStore.get(deck.project, userId) : Promise.resolve(null),
+        stores.deckGrants.get(deckSlug, userId),
+        project ? stores.projectGrants.get(project, userId) : Promise.resolve(null),
       ])
       return strongerGrant(deckGrant ?? undefined, projectGrant ?? undefined)
     },
 
     async listForUser(userId: number): Promise<Map<string, DeckGrant>> {
       const [deckGrants, projectGrants] = await Promise.all([
-        deckStore.listForUser(userId),
-        projectStore.listForUser(userId),
+        stores.deckGrants.listForUser(userId),
+        stores.projectGrants.listForUser(userId),
       ])
       const effective = new Map(deckGrants)
       if (projectGrants.size > 0) {
-        for (const { slug, project } of db.select({ slug: decks.slug, project: decks.project }).from(decks).all()) {
+        for (const [slug, project] of await stores.deckMeta.projectsBySlug()) {
           const pg = project ? projectGrants.get(project) : undefined
           if (pg)
             effective.set(slug, strongerGrant(effective.get(slug), pg)!)
@@ -100,17 +88,17 @@ export function useGrants() {
   }
 }
 
-// Directories resolve the db handle lazily (per call), so the connection is only
+// Directories resolve the stores lazily (per call), so the connection is only
 // opened after the migration plugin has run — never at module import.
 
 /** Alias directory: database rows (aliases, lifecycle, frozen-bundle mapping). */
 export const deckDirectory: DeckDirectory = {
-  resolveAlias: alias => createDbDirectory(useDb()).decks.resolveAlias(alias),
-  list: () => createDbDirectory(useDb()).decks.list(),
+  resolveAlias: alias => useStores().deckDirectory.resolveAlias(alias),
+  list: () => useStores().deckDirectory.list(),
 }
 
 /** Project directory: database rows. */
 export const projectDirectory: ProjectDirectory = {
-  list: () => createDbDirectory(useDb()).projects.list(),
-  resolve: slug => createDbDirectory(useDb()).projects.resolve(slug),
+  list: () => useStores().projectDirectory.list(),
+  resolve: slug => useStores().projectDirectory.resolve(slug),
 }

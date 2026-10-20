@@ -1,27 +1,31 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import process from 'node:process'
 import Database from 'better-sqlite3'
 import { sql } from 'drizzle-orm'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { describe, expect, it } from 'vitest'
-import { freshDb, MIGRATIONS_DIR } from './helpers/db'
+import { describe, expect, it, vi } from 'vitest'
+import { migrateSqlite, MIGRATIONS_DIR as REPOSITORY_MIGRATIONS } from '../../layers/studio/server/db/sqlite/index'
+import { freshSqlite } from './helpers/adapters'
 
-// freshDb() applies the chain with drizzle's journal-based migrate(), the same
+const MIGRATIONS_DIR = join(process.cwd(), REPOSITORY_MIGRATIONS)
+
+// freshSqlite() applies the chain with drizzle's journal-based migrate(), the same
 // mechanism as the boot plugin, so a non-idempotent migration (the classic
 // deploy breaker) is caught here rather than on the next production boot.
 
 describe('database migrations', () => {
   it('apply cleanly from an empty database', () => {
-    const db = freshDb()
+    const db = freshSqlite()
     const columns = db.all<{ name: string }>(sql`PRAGMA table_info(decks)`).map(c => c.name)
     // 0009 is the latest migration; its column proves the chain ran to the end.
     expect(columns).toContain('deleted_at')
   })
 
   it('are idempotent: re-running migrate() is a no-op', () => {
-    const db = freshDb()
+    const db = freshSqlite()
     // Second pass over the same database must not re-run or throw.
-    expect(() => migrate(db, { migrationsFolder: MIGRATIONS_DIR })).not.toThrow()
+    expect(() => migrateSqlite(db)).not.toThrow()
   })
 
   it('0010 backfills provider identity on a populated database', () => {
@@ -47,5 +51,27 @@ describe('database migrations', () => {
       { id: 101, provider: 'github', provider_id: '101' },
       { id: 202, provider: 'github', provider_id: '202' },
     ])
+  })
+})
+
+describe('boot migration plugin', () => {
+  it('throws while Nitro starts when a migration fails, which stops the server', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'slides-boot-'))
+    const path = join(dir, 'broken.db')
+    // The first migration creates `decks`: a table already there makes it fail.
+    const sqlite = new Database(path)
+    sqlite.exec('CREATE TABLE decks (slug text)')
+    sqlite.close()
+    vi.stubEnv('NUXT_DB_PATH', path)
+    vi.stubGlobal('defineNitroPlugin', (plugin: unknown) => plugin)
+    try {
+      const { default: plugin } = await import('../../layers/studio/server/plugins/migrations')
+      expect(() => plugin({} as any)).toThrow(/Failed to run the query/)
+    }
+    finally {
+      vi.unstubAllEnvs()
+      vi.unstubAllGlobals()
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

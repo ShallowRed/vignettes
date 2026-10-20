@@ -10,13 +10,23 @@ const MDC_READER = {
 
 const DOMAIN_IO = [
   MDC_READER,
-  { group: ['h3', 'drizzle-orm', 'drizzle-orm/*'], message: 'shared/ is the framework-free domain: move request and database access to server/utils/.' },
+  { group: ['h3', 'drizzle-orm', 'drizzle-orm/*', 'better-sqlite3', 'pg', '@electric-sql/pglite', '@electric-sql/pglite/*'], message: 'shared/ is the framework-free domain: move request and database access to server/utils/.' },
   { group: ['@aws-sdk/*'], message: 'shared/ has no I/O: place the S3 access in server/utils/.' },
   { group: ['node:*'], message: 'shared/ runs on the client and the server: take the value as an argument from an entry point.' },
   { group: ['@vignettes/nuxt', '@vignettes/nuxt/*'], message: 'shared/ must not depend on the render module: use @vignettes/core.' },
 ]
 
 const YJS = { group: ['yjs', 'yjs/*'], message: 'In shared/, yjs belongs to shared/collab/.' }
+
+const DATABASE_DRIVER = {
+  group: ['drizzle-orm', 'drizzle-orm/*', 'better-sqlite3'],
+  message: 'The SQLite adapter (server/db/sqlite/) reads and writes the tables: add a method to a port of server/db/ports.ts, reached through useStores() or, in a script, openDatabaseFile().',
+}
+
+const MDC_HOME = ['packages/nuxt/**', 'nuxt.config.ts', 'layers/studio/src/mdc.config.ts', 'test/**']
+const DRIVER_HOME = ['layers/studio/server/db/sqlite/**']
+// The test helpers open each adapter; migrations.test.ts applies the SQLite migrations by hand.
+const DRIVER_TESTS = ['test/unit/helpers/**', 'test/unit/migrations.test.ts']
 
 const SERVER_ENV = {
   object: 'process',
@@ -35,7 +45,7 @@ export default antfu({
   // Drizzle rewrites these on every `drizzle-kit generate` (no trailing newline),
   // so linting them only invites `--fix` to churn generated files.
   // `.claude/` holds the worktrees of the agent sessions.
-  ignores: ['layers/studio/server/db/migrations/**', 'packages/core/src/theme/tokens.generated.ts', '.claude/**'],
+  ignores: ['layers/studio/server/db/sqlite/migrations/**', 'packages/core/src/theme/tokens.generated.ts', '.claude/**'],
   rules: {
     'no-console': 'off',
     'no-debugger': 'off',
@@ -66,9 +76,20 @@ export default antfu({
   },
 }, {
   files: ['**/*.{js,ts,vue}'],
-  ignores: ['packages/nuxt/**', 'nuxt.config.ts', 'layers/studio/src/mdc.config.ts', 'test/**'],
+  ignores: [...MDC_HOME, ...DRIVER_HOME],
+  rules: {
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER] }],
+  },
+}, {
+  files: DRIVER_HOME,
   rules: {
     'no-restricted-imports': ['error', { patterns: [MDC_READER] }],
+  },
+}, {
+  files: MDC_HOME,
+  ignores: DRIVER_TESTS,
+  rules: {
+    'no-restricted-imports': ['error', { patterns: [DATABASE_DRIVER] }],
   },
 }, {
   files: ['layers/studio/server/**'],

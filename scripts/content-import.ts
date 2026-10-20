@@ -29,12 +29,14 @@
  * project stay as the database has them, like a publish from the editor.
  */
 
+import type { ArchiveWrite } from '../layers/studio/server/db/ports.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
-import Database from 'better-sqlite3'
 import { load as parseYaml } from 'js-yaml'
+import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 import { applyRemoteRepublish, planRemoteRepublish } from './lib/remote-republish.ts'
 
 const ROOT = process.cwd()
@@ -42,14 +44,10 @@ const ROOT = process.cwd()
 const args = process.argv.slice(2)
 const CONTENT_DIR = args.find(a => a.startsWith('--content='))?.slice(10) ?? contentDir(ROOT)
 const APPLY = args.includes('--apply')
-const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5)
-  ?? process.env.NUXT_DB_PATH
-  ?? join(ROOT, '.data', 'slides.db')
+const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5) ?? readDatabaseConfig(process.env).dbPath
 const REPUBLISH = new Set((args.find(a => a.startsWith('--republish='))?.slice(12) ?? '').split(',').filter(Boolean))
 const REMOTE = args.find(a => a.startsWith('--remote='))?.slice(9)
 const FORCE = args.includes('--force')
-
-const now = () => Math.floor(Date.now() / 1000)
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
 
@@ -168,32 +166,12 @@ if (REMOTE) {
 
 // ── Database ────────────────────────────────────────────────────────────────
 
-const db = new Database(DB_PATH, { readonly: !APPLY, fileMustExist: true })
+const { archive } = openDatabaseFile({ dbPath: DB_PATH }, { readonly: !APPLY }).stores
 
-interface DeckRow {
-  slug: string
-  title: string
-  status: string
-  lifecycle: string
-  project: string | null
-  theme: string | null
-  alias: string | null
-  managed: number
-  published_version_id: number | null
-}
-
-const existing = new Map<string, DeckRow>(
-  db.prepare('select slug,title,status,lifecycle,project,theme,alias,managed,published_version_id from decks')
-    .all()
-    .map((r: any) => [r.slug, r as DeckRow]),
-)
-const publishedRaw = new Map<string, string>(
-  db.prepare('select d.slug, v.raw from decks d join deck_versions v on v.id = d.published_version_id')
-    .all()
-    .map((r: any) => [r.slug, r.raw]),
-)
-const existingProjects = new Set<string>(db.prepare('select slug from projects').all().map((r: any) => r.slug))
-const existingAliases = new Set<string>(db.prepare('select alias from deck_aliases').all().map((r: any) => r.alias))
+const existing = new Map((await archive.decks()).map(row => [row.slug, row]))
+const publishedRaw = new Map([...existing.values()].flatMap(row => row.raw === null ? [] : [[row.slug, row.raw] as const]))
+const existingProjects = new Set((await archive.projects()).map(row => row.slug))
+const existingAliases = new Set((await archive.aliases()).map(row => row.alias))
 
 // ── Plan ────────────────────────────────────────────────────────────────────
 
@@ -226,7 +204,7 @@ interface DeckPlan {
   alias: string | null
   frozenBundle: string | null
   accessPasswordHash: string | null
-  unlisted: number
+  unlisted: boolean
   raw: string
   needsVersion: boolean
 }
@@ -276,7 +254,7 @@ for (const stub of stubs) {
     alias: reg?.alias ?? null,
     frozenBundle: reg?.frozenBundle ?? null,
     accessPasswordHash: (data.accessPassword as string) ?? null,
-    unlisted: data.unlisted ? 1 : 0,
+    unlisted: Boolean(data.unlisted),
     raw,
     // Only publish a new version when the markdown actually changed.
     needsVersion: publishedRaw.get(stub.slug) !== raw,
@@ -356,51 +334,26 @@ if (!APPLY) {
 
 // ── Apply ───────────────────────────────────────────────────────────────────
 
-const ts = now()
+const writes: ArchiveWrite[] = []
 
-const upsertProject = db.prepare(`
-  insert into projects (slug,title,"order",color,created_at,updated_at)
-  values (@slug,@title,@order,@color,@ts,@ts)
-  on conflict(slug) do update set title=@title,"order"=@order,color=@color,updated_at=@ts
-`)
-const upsertDeck = db.prepare(`
-  insert into decks (slug,alias,title,status,lifecycle,project,theme,access_password_hash,
-                     frozen_bundle,unlisted,managed,created_at,updated_at)
-  values (@slug,@alias,@title,@status,@lifecycle,@project,@theme,@accessPasswordHash,
-          @frozenBundle,@unlisted,1,@ts,@ts)
-  on conflict(slug) do update set
-    alias=@alias,title=@title,status=@status,lifecycle=@lifecycle,project=@project,theme=@theme,
-    access_password_hash=@accessPasswordHash,frozen_bundle=@frozenBundle,
-    unlisted=@unlisted,managed=1,updated_at=@ts
-`)
-const insertVersion = db.prepare(
-  'insert into deck_versions (deck_slug,raw,published_by,published_at) values (?,?,?,?)',
-)
-const pointVersion = db.prepare('update decks set published_version_id=?, updated_at=? where slug=?')
-const insertAlias = db.prepare('insert or ignore into deck_aliases (alias,deck_slug) values (?,?)')
-const retitle = db.prepare('update decks set title=coalesce(?, title), theme=coalesce(?, theme), updated_at=? where slug=?')
+for (const [slug, p] of Object.entries(projectsYml))
+  writes.push({ kind: 'project', project: { slug, title: p.title ?? slug, order: p.order ?? 0, color: p.color ?? null } })
 
-db.transaction(() => {
-  for (const [slug, p] of Object.entries(projectsYml)) {
-    upsertProject.run({ slug, title: p.title ?? slug, order: p.order ?? 0, color: p.color ?? null, ts })
-  }
+for (const { slug, raw, needsVersion, ...axes } of deckPlans) {
+  writes.push({ kind: 'deck', slug, axes })
+  if (needsVersion)
+    writes.push({ kind: 'version', slug, raw })
+}
 
-  for (const p of deckPlans) {
-    upsertDeck.run({ ...p, ts })
-    if (p.needsVersion) {
-      const res = insertVersion.run(p.slug, p.raw, 'content-import', ts)
-      pointVersion.run(res.lastInsertRowid, ts, p.slug)
-    }
-  }
+for (const h of historical)
+  writes.push({ kind: 'alias', alias: h.alias, slug: h.slug })
 
-  for (const h of historical)
-    insertAlias.run(h.alias, h.slug)
+for (const r of republishPlans) {
+  writes.push({ kind: 'version', slug: r.slug, raw: r.raw })
+  // A file without a title or a theme keeps the row's.
+  writes.push({ kind: 'deck', slug: r.slug, axes: { ...(r.title !== null && { title: r.title }), ...(r.theme !== null && { theme: r.theme }) } })
+}
 
-  for (const r of republishPlans) {
-    const res = insertVersion.run(r.slug, r.raw, 'content-import', ts)
-    pointVersion.run(res.lastInsertRowid, ts, r.slug)
-    retitle.run(r.title, r.theme, ts, r.slug)
-  }
-})()
+await archive.apply(writes, { by: 'content-import', at: new Date() })
 
 console.log('\n✅ Import appliqué.')

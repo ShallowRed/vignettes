@@ -1,8 +1,9 @@
-import type { Lifecycle, PublicationStatus } from '#shared/access'
+import type { Lifecycle } from '#shared/access'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { PublicationStatusSchema } from '#shared/access'
+import type { DeckMetaPatch, DeckMetaRecord, DeckMetaStore } from '../ports.ts'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
-import { deckAliases, deckDrafts, deckDraftSnapshots, deckMedia, deckPermissions, decks, deckVersions } from './schema'
+import { readStatus } from '../stored-values.ts'
+import { deckAliases, deckDrafts, deckDraftSnapshots, deckMedia, deckPermissions, decks, deckVersions } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 /** The transaction handle drizzle hands the `db.transaction` callback. */
@@ -24,45 +25,7 @@ export function purgeDeckRows(tx: Tx, slug: string): void {
   tx.delete(decks).where(eq(decks.slug, slug)).run()
 }
 
-/**
- * Deck catalog/access metadata read from the database — the truth for `managed`
- * rows (published or admin-edited). Draft-only anchor rows are reported
- * unmanaged so file frontmatter keeps authority over them.
- */
-export interface DeckMetaRecord {
-  slug: string
-  title: string
-  status: PublicationStatus
-  lifecycle: Lifecycle
-  theme?: string
-  project?: string
-  alias?: string
-  frozenBundle?: string
-  accessPasswordHash?: string
-  unlisted: boolean
-  family?: string
-  variantLabel?: string
-  supersededBy?: string
-  managed: boolean
-  published: boolean
-}
-
-/**
- * What {@link createDeckMeta.update} accepts. The fields a deck may drop take
- * `null` to clear the column, where the record reports them absent.
- */
-export type DeckMetaPatch = Partial<
-  Pick<DeckMetaRecord, 'title' | 'status' | 'lifecycle' | 'unlisted'>
-  & Record<'project' | 'theme' | 'alias' | 'frozenBundle' | 'accessPasswordHash' | 'family' | 'variantLabel' | 'supersededBy', string | null>
->
-
-/** An invalid stored status fails closed. */
-function readStatus(value: string): PublicationStatus {
-  const parsed = PublicationStatusSchema.safeParse(value)
-  return parsed.success ? parsed.data : 'private'
-}
-
-export function createDeckMeta(db: Db) {
+export function createDeckMeta(db: Db): DeckMetaStore {
   function toMeta(row: typeof decks.$inferSelect): DeckMetaRecord {
     return {
       slug: row.slug,
@@ -84,39 +47,28 @@ export function createDeckMeta(db: Db) {
   }
 
   return {
-    async get(slug: string): Promise<DeckMetaRecord | null> {
+    async get(slug) {
       const row = db.select().from(decks).where(and(eq(decks.slug, slug), isNull(decks.deletedAt))).get()
       return row ? toMeta(row) : null
     },
 
-    /** True if the slug is taken by any row, trashed included — the create guard. */
-    async existsIncludingTrashed(slug: string): Promise<boolean> {
+    async existsIncludingTrashed(slug) {
       return !!db.select({ slug: decks.slug }).from(decks).where(eq(decks.slug, slug)).get()
     },
 
-    /**
-     * True when a row exists for this slug and it is in the trash. The write
-     * guard: `get()` returns null both for a brand-new deck (editable) and a
-     * trashed one (not), so edit paths need this to tell them apart.
-     */
-    async isTrashed(slug: string): Promise<boolean> {
+    async isTrashed(slug) {
       return !!db.select({ slug: decks.slug }).from(decks).where(and(eq(decks.slug, slug), isNotNull(decks.deletedAt))).get()
     },
 
-    async listManaged(): Promise<DeckMetaRecord[]> {
+    async listManaged() {
       return db.select().from(decks).where(and(eq(decks.managed, true), isNull(decks.deletedAt))).all().map(toMeta)
     },
 
-    /** Trashed decks (soft-deleted), newest first — the corbeille listing. */
-    async listTrashed(): Promise<DeckMetaRecord[]> {
+    async listTrashed() {
       return db.select().from(decks).where(isNotNull(decks.deletedAt)).all().map(toMeta)
     },
 
-    /**
-     * Admin metadata edit — the second way a deck becomes `managed` (its row
-     * turns into the metadata truth, shadowing file frontmatter).
-     */
-    async update(slug: string, patch: DeckMetaPatch): Promise<DeckMetaRecord> {
+    async update(slug: string, patch: DeckMetaPatch) {
       const now = new Date()
       const set = { ...patch, managed: true, updatedAt: now }
       const row = db.insert(decks)
@@ -127,8 +79,7 @@ export function createDeckMeta(db: Db) {
       return toMeta(row)
     },
 
-    /** Move a deck to the trash (reversible). Returns false when nothing existed. */
-    async softDelete(slug: string): Promise<boolean> {
+    async softDelete(slug) {
       const res = db.update(decks)
         .set({ deletedAt: new Date() })
         .where(and(eq(decks.slug, slug), isNull(decks.deletedAt)))
@@ -136,8 +87,7 @@ export function createDeckMeta(db: Db) {
       return res.changes > 0
     },
 
-    /** Bring a trashed deck back. Returns false when nothing was trashed. */
-    async restore(slug: string): Promise<boolean> {
+    async restore(slug) {
       const res = db.update(decks)
         .set({ deletedAt: null })
         .where(and(eq(decks.slug, slug), isNotNull(decks.deletedAt)))
@@ -145,18 +95,20 @@ export function createDeckMeta(db: Db) {
       return res.changes > 0
     },
 
-    /**
-     * Erase every database trace of a deck: grants, redirect aliases, draft,
-     * versions, then the row itself. A file-backed deck reverts to its committed
-     * markdown; an app-created deck is gone. Returns false when nothing existed.
-     * This is permanent — the "empty the trash" primitive.
-     */
-    async purge(slug: string): Promise<boolean> {
+    async purge(slug) {
       const row = db.select({ slug: decks.slug }).from(decks).where(eq(decks.slug, slug)).get()
       if (!row)
         return false
       db.transaction(tx => purgeDeckRows(tx, slug))
       return true
+    },
+
+    async projectOf(slug) {
+      return db.select({ project: decks.project }).from(decks).where(eq(decks.slug, slug)).get()?.project ?? null
+    },
+
+    async projectsBySlug() {
+      return new Map(db.select({ slug: decks.slug, project: decks.project }).from(decks).all().map(row => [row.slug, row.project]))
     },
   }
 }

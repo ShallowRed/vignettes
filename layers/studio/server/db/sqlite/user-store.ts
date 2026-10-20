@@ -1,43 +1,11 @@
-import type { Role, UserStore } from '#shared/access'
+import type { UserStore } from '#shared/access'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { RoleSchema } from '#shared/access'
 import { and, asc, eq } from 'drizzle-orm'
-import { deckPermissions, projectPermissions, users } from './schema'
+import { handleKey, invitedPlaceholder, isInvitedPlaceholder } from '../identities.ts'
+import { readRole } from '../stored-values.ts'
+import { deckPermissions, projectPermissions, users } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
-
-/** A stored role that fails validation degrades to the least-privileged one. */
-function readRole(value: string): Role {
-  const parsed = RoleSchema.safeParse(value)
-  return parsed.success ? parsed.data : 'viewer'
-}
-
-/**
- * Placeholder providerId for an invited account that never logged in. Prefixed
- * so it can never collide with a real Google sub (subs are all digits), and
- * derived from the login so the first-login claim is a direct key lookup.
- */
-const INVITED_PREFIX = 'invited:'
-const invitedPlaceholder = (login: string) => `${INVITED_PREFIX}${login}`
-
-/**
- * The comparison key under which two handles name the same account, so an
- * invitation matches whatever spelling the provider reports at login.
- * GitHub usernames are case-insensitive. Gmail ignores dots and `+suffix` in
- * the local part, and googlemail.com aliases gmail.com, but Google reports only
- * ONE canonical spelling at OAuth login — without this, inviting the wrong
- * spelling silently creates a grant nobody can ever claim. Non-gmail domains
- * keep their exact local part (dots are significant there).
- */
-function handleKey(provider: string, login: string): string {
-  const lowered = login.trim().toLowerCase()
-  if (provider !== 'google')
-    return lowered
-  const [local, domain] = lowered.split('@')
-  if (!domain || (domain !== 'gmail.com' && domain !== 'googlemail.com'))
-    return lowered
-  return `${local!.split('+')[0]!.replaceAll('.', '')}@gmail.com`
-}
 
 /** SQLite adapter for the `UserStore` port (factory over a drizzle handle). */
 export function createUserStore(db: Db): UserStore {
@@ -71,7 +39,7 @@ export function createUserStore(db: Db): UserStore {
         const candidate = db.select().from(users).where(and(eq(users.provider, identity.provider), eq(users.providerId, invitedPlaceholder(identity.login)))).get()
           ?? findAccountByHandle(identity.provider, identity.login)
         // Only an unclaimed placeholder may be taken over — never a real account.
-        const stub = candidate?.providerId.startsWith(INVITED_PREFIX) ? candidate : undefined
+        const stub = candidate && isInvitedPlaceholder(candidate.providerId) ? candidate : undefined
         if (stub) {
           db.update(users)
             .set({
@@ -163,7 +131,7 @@ export function createUserStore(db: Db): UserStore {
         avatarUrl: row.avatarUrl,
         role: readRole(row.role),
         lastLoginAt: row.lastLoginAt,
-        invited: row.providerId.startsWith(INVITED_PREFIX),
+        invited: isInvitedPlaceholder(row.providerId),
       }
     },
 
@@ -180,7 +148,7 @@ export function createUserStore(db: Db): UserStore {
         avatarUrl: row.avatarUrl,
         role: readRole(row.role),
         lastLoginAt: row.lastLoginAt,
-        invited: row.providerId.startsWith(INVITED_PREFIX),
+        invited: isInvitedPlaceholder(row.providerId),
       }))
     },
 

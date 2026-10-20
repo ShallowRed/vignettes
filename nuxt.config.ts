@@ -187,7 +187,7 @@ export default defineNuxtConfig({
       // migrations: read at boot by the migration plugin (drizzle needs a real
       // folder next to the bundle). Content is served from the database, so
       // presentations/ is no longer shipped.
-      const srcDir = join(process.cwd(), 'layers/studio/server/db/migrations')
+      const srcDir = join(process.cwd(), 'layers/studio/server/db/sqlite/migrations')
       const destDir = join(nitro.options.output.serverDir, 'migrations')
       try {
         await cp(srcDir, destDir, { recursive: true })

@@ -3,9 +3,7 @@ import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { Hocuspocus } from '@hocuspocus/server'
 import { isDeckSlug } from '@vignettes/core/deck'
 import * as Y from 'yjs'
-import { createDraftStore } from '../db/draft-store'
-import { createSnapshotStore } from '../db/snapshot-store'
-import { useDb } from './db'
+import { useStores } from './db'
 import { publishedSource, useMediaIndex } from './sources'
 
 /** The Y.Doc text field shared with y-codemirror.next. */
@@ -46,7 +44,7 @@ const seeding = new Map<string, Promise<void>>()
  * records the images the text references in the media index.
  */
 export function useDraftStore(): DraftStore {
-  const store = createDraftStore(useDb())
+  const store = useStores().drafts
   return {
     ...store,
     async save(slug, ydoc) {
@@ -58,7 +56,7 @@ export function useDraftStore(): DraftStore {
 
 /** The snapshots of the drafts (the fine history between two publications). */
 export function useSnapshotStore() {
-  return createSnapshotStore(useDb())
+  return useStores().snapshots
 }
 
 /** Minimum time between two automatic snapshots of a deck while it is edited. */

@@ -1,10 +1,10 @@
-import type { ContentSource, ContentWriter } from '@vignettes/core/deck'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { referencedImages } from '#shared/storage/media-refs'
+import type { DeckContent } from '../ports.ts'
 import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { and, eq, isNull } from 'drizzle-orm'
-import { recordDeckMedia } from './media-index'
-import { decks, deckVersions } from './schema'
+import { referencedImages } from '../../../shared/storage/media-refs.ts'
+import { recordDeckMedia } from './media-index.ts'
+import { decks, deckVersions } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
@@ -14,9 +14,8 @@ type Db = BetterSQLite3Database<Record<string, unknown>>
  * deck row repointed and its catalog/access axes re-derived from the frontmatter
  * (single derivation chain — no second truth to drift).
  */
-export function createDbContent(db: Db): { source: ContentSource, writer: ContentWriter, publishedAt: (slug: string) => Promise<Date | null> } {
+export function createDbContent(db: Db): DeckContent {
   return {
-    /** When the served version was published; null when the deck has none. */
     async publishedAt(slug) {
       const row = db.select({ at: deckVersions.publishedAt })
         .from(decks)

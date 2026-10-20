@@ -19,7 +19,8 @@ import { splitFrontmatter } from '@vignettes/core/deck'
 import { resolveThemeName, setThemeRegistry } from '@vignettes/core/theme'
 import { buildFreezeDescriptor, freezeDeck } from '@vignettes/freeze'
 import { discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
-import Database from 'better-sqlite3'
+import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 
 const root = import.meta.dirname ? join(import.meta.dirname, '..') : process.cwd()
 const args = process.argv.slice(2)
@@ -28,7 +29,8 @@ const dryRun = args.includes('--dry-run')
 const noUpload = args.includes('--no-upload')
 const storybookDir = argValue('--storybook')
 const themeOverride = argValue('--theme')
-const dbPath = argValue('--db') ?? process.env.NUXT_DB_PATH ?? join(root, '.data', 'slides.db')
+// A NUXT_DB_PATH names its file from the current directory; the default one is in the repository.
+const dbPath = argValue('--db') ?? (process.env.NUXT_DB_PATH ? readDatabaseConfig(process.env).dbPath : join(root, readDatabaseConfig({}).dbPath))
 
 function argValue(flag: string): string | undefined {
   const i = args.indexOf(flag)
@@ -40,24 +42,19 @@ if (!alias) {
   process.exit(2)
 }
 
-const db = new Database(dbPath, { readonly: true, fileMustExist: true })
+const { archive } = openDatabaseFile({ dbPath }, { readonly: true }).stores
+const decks = await archive.decks()
 // The alias is the canonical one of a deck, a historical one, or the slug itself.
-const target = db.prepare(`
-  select slug, frozen_bundle as frozenBundle from decks where alias = @alias or slug = @alias
-  union all
-  select d.slug, d.frozen_bundle from deck_aliases a join decks d on d.slug = a.deck_slug where a.alias = @alias
-  limit 1
-`).get({ alias }) as { slug: string, frozenBundle: string | null } | undefined
+const historical = (await archive.aliases()).find(row => row.alias === alias)
+const target = decks.find(row => row.alias === alias || row.slug === alias)
+  ?? decks.find(row => row.slug === historical?.slug)
 if (!target)
   fail(`no deck answers to "${alias}" in ${dbPath}`)
 const entry = { slug: target.slug, frozenBundle: target.frozenBundle ?? undefined }
 
 const slug = entry.slug
-const deck = db.prepare(`
-  select d.slug, d.theme, v.raw
-  from decks d join deck_versions v on v.id = d.published_version_id
-  where d.slug = ? and d.deleted_at is null
-`).get(slug) as { slug: string, theme: string | null, raw: string } | undefined
+const served = decks.find(row => row.slug === slug && !row.trashed)
+const deck = served?.raw != null ? { theme: served.theme, raw: served.raw } : undefined
 if (!deck)
   fail(`deck "${slug}" has no published version in ${dbPath}`)
 

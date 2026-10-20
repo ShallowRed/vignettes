@@ -1,10 +1,7 @@
-import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { deckVersions } from '../../layers/studio/server/db/schema'
 import { assertOwner, assertPrivileged } from '../../layers/studio/server/utils/access'
-import { useDb } from '../../layers/studio/server/utils/db'
 import { useDeckMeta } from '../../layers/studio/server/utils/sources'
-import { anon, setupServerDb, stubH3Globals } from './helpers/server-db'
+import { anon, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
 
 // The content token stands in for a session on the markdown write path only.
 stubH3Globals()
@@ -39,7 +36,7 @@ describe('content token on the markdown write path', () => {
   it('saves a draft and publishes it, signed as the token', async () => {
     await expect(saveDraft(bearer('secret-token', { ...deck, body: { raw } }))).resolves.toMatchObject({ ok: true })
     await expect(publish(bearer('secret-token', deck))).resolves.toMatchObject({ ok: true })
-    const version = useDb().select().from(deckVersions).where(eq(deckVersions.deckSlug, 'deck')).get()
+    const [version] = await testRows().select('deckVersions', { deckSlug: 'deck' })
     expect(version).toMatchObject({ raw, publishedBy: 'content-token' })
   })
 

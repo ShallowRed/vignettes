@@ -2,7 +2,7 @@ import type { ProjectDirectory } from '#shared/projects'
 import type { DeckDirectory, DeckDirectoryEntry } from '@vignettes/core/deck'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm'
-import { deckAliases, decks, projects } from './schema'
+import { deckAliases, decks, projects } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 type DeckRow = typeof decks.$inferSelect

@@ -2,7 +2,7 @@ import type { DraftStore } from '@vignettes/core/deck'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { Buffer } from 'node:buffer'
 import { eq } from 'drizzle-orm'
-import { deckDrafts, decks } from './schema'
+import { deckDrafts, decks } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
@@ -28,14 +28,16 @@ export function createDraftStore(db: Db): DraftStore {
 
     async save(slug, ydoc) {
       const now = new Date()
-      db.insert(decks)
-        .values({ slug, title: slug, createdAt: now, updatedAt: now })
-        .onConflictDoNothing()
-        .run()
-      db.insert(deckDrafts)
-        .values({ deckSlug: slug, ydoc: Buffer.from(ydoc), updatedAt: now })
-        .onConflictDoUpdate({ target: deckDrafts.deckSlug, set: { ydoc: Buffer.from(ydoc), updatedAt: now } })
-        .run()
+      db.transaction((tx) => {
+        tx.insert(decks)
+          .values({ slug, title: slug, createdAt: now, updatedAt: now })
+          .onConflictDoNothing()
+          .run()
+        tx.insert(deckDrafts)
+          .values({ deckSlug: slug, ydoc: Buffer.from(ydoc), updatedAt: now })
+          .onConflictDoUpdate({ target: deckDrafts.deckSlug, set: { ydoc: Buffer.from(ydoc), updatedAt: now } })
+          .run()
+      })
     },
   }
 }
