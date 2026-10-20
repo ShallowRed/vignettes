@@ -21,9 +21,10 @@ const { t } = useI18n()
 const links = useInstanceLinks()
 
 // The buttons show their label from the `@xl` container width; below it they
-// keep their icon and a tooltip names them. The tooltip follows the label the
-// class shows or hides, so the width is written in the class alone.
-const LABEL_CLASS = 'hidden @xl:inline'
+// keep their icon, with the padding of an icon button, and a tooltip names them.
+// The tooltip follows the label the class shows or hides, so the width is
+// written in the classes alone.
+const BUTTON_UI = { base: '@max-xl:px-1', label: 'hidden @xl:inline' }
 const bar = useTemplateRef<HTMLElement>('bar')
 const compact = ref(true)
 let observer: ResizeObserver | undefined
@@ -61,7 +62,7 @@ function run(action: (view: EditorView) => unknown) {
         icon="i-lucide-fold-vertical"
         :label="t('editor.statusBar.foldOthers')"
         :aria-label="t('editor.statusBar.foldOthers')"
-        :ui="{ label: LABEL_CLASS }"
+        :ui="BUTTON_UI"
         color="neutral"
         variant="ghost"
         size="xs"
@@ -77,7 +78,7 @@ function run(action: (view: EditorView) => unknown) {
         icon="i-lucide-unfold-vertical"
         :label="t('editor.statusBar.unfoldAll')"
         :aria-label="t('editor.statusBar.unfoldAll')"
-        :ui="{ label: LABEL_CLASS }"
+        :ui="BUTTON_UI"
         color="neutral"
         variant="ghost"
         size="xs"
@@ -97,7 +98,7 @@ function run(action: (view: EditorView) => unknown) {
         icon="i-lucide-wrap-text"
         :label="t('editor.statusBar.wrapLines')"
         :aria-label="t('editor.statusBar.wrapLines')"
-        :ui="{ label: LABEL_CLASS }"
+        :ui="BUTTON_UI"
         color="neutral"
         :variant="wrap ? 'soft' : 'ghost'"
         size="xs"
@@ -113,7 +114,7 @@ function run(action: (view: EditorView) => unknown) {
         icon="i-lucide-circle-help"
         :label="t('editor.statusBar.help')"
         :aria-label="t('editor.statusBar.help')"
-        :ui="{ label: LABEL_CLASS }"
+        :ui="BUTTON_UI"
         color="neutral"
         variant="ghost"
         size="xs"

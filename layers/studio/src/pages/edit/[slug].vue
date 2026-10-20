@@ -126,6 +126,8 @@ const publishedAtLabel = computed(() =>
   publishedAt.value ? new Date(publishedAt.value).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' }) : null)
 const publicationLabel = computed(() =>
   publishedRaw.value === null ? t('editor.publication.neverPublished') : unpublished.value ? t('editor.publication.unpublishedChanges') : t('editor.publication.upToDate'))
+const publishLabel = computed(() =>
+  unpublished.value === false ? t('editor.publication.published') : t('editor.publication.publish'))
 const publicationHint = computed(() => {
   if (publishedRaw.value === null)
     return t('editor.publication.hintNeverPublished')
@@ -364,6 +366,12 @@ const collabExtensions = shallowRef<Extension[]>([])
 // query cache (same key) so navigating from the catalog needs no extra fetch.
 const { data: projectsData } = useQuery(projectsQuery(requestFetch))
 const projects = computed<Project[]>(() => projectsData.value ?? [])
+
+// The header buttons show their label from the `sm` width; below it they keep
+// their icon, with the padding of an icon button, and their tooltip and
+// accessible name carry the label.
+const HEADER_LABEL = 'hidden sm:inline'
+const HEADER_BUTTON_UI = { base: 'max-sm:px-1.5', label: HEADER_LABEL }
 
 const breadcrumb = computed(() => {
   const project = projects.value.find(p => p.slug === viewer.value.project)
@@ -731,7 +739,7 @@ async function onMetaSaved() {
          not its status, not the actions of an editor. -->
     <header
       v-if="!loadError"
-      class="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
+      class="flex items-center gap-2 sm:gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
     >
       <UTooltip :text="t('editor.page.backHome')">
         <NuxtLink
@@ -743,10 +751,12 @@ async function onMetaSaved() {
         </NuxtLink>
       </UTooltip>
 
+      <!-- The title of the deck takes the width the other items leave. Below the
+           `lg` width the breadcrumb shows its last item only. -->
       <UBreadcrumb
         :items="breadcrumb"
         class="min-w-0"
-        :ui="{ list: 'min-w-0', item: 'min-w-0', link: 'min-w-0', linkLabel: 'truncate' }"
+        :ui="{ list: 'min-w-0', item: 'min-w-0 not-last:shrink-0 max-lg:not-last:hidden', separator: 'max-lg:hidden', link: 'min-w-0', linkLabel: 'truncate' }"
       />
 
       <div class="flex-1" />
@@ -772,6 +782,8 @@ async function onMetaSaved() {
       <UTooltip :text="t('editor.page.historyTooltip')">
         <UButton
           :label="t('editor.page.history')"
+          :aria-label="t('editor.page.history')"
+          :ui="HEADER_BUTTON_UI"
           icon="i-lucide-history"
           color="neutral"
           variant="outline"
@@ -807,7 +819,8 @@ async function onMetaSaved() {
           color="neutral"
           variant="outline"
           size="sm"
-          class="shrink-0 gap-2"
+          class="shrink-0 gap-2 max-sm:px-1.5"
+          :aria-label="`${t('editor.page.settings')}, ${t(statusDisplay.labelKey)}`"
           :disabled="!privileged"
           @click="openMeta"
         >
@@ -815,14 +828,14 @@ async function onMetaSaved() {
             name="i-lucide-settings-2"
             class="size-4"
           />
-          {{ t('editor.page.settings') }}
+          <span :class="HEADER_LABEL">{{ t('editor.page.settings') }}</span>
           <span class="h-4 w-px bg-accented" />
           <span class="flex items-center gap-1 text-muted">
             <UIcon
               :name="statusDisplay.icon"
               class="size-3.5"
             />
-            {{ t(statusDisplay.labelKey) }}
+            <span :class="HEADER_LABEL">{{ t(statusDisplay.labelKey) }}</span>
           </span>
         </UButton>
       </UTooltip>
@@ -856,6 +869,8 @@ async function onMetaSaved() {
         <UTooltip :text="t('editor.collab.soloTooltip')">
           <UButton
             :label="t('editor.collab.solo')"
+            :aria-label="t('editor.collab.solo')"
+            :ui="HEADER_BUTTON_UI"
             icon="i-lucide-user"
             color="neutral"
             variant="link"
@@ -871,6 +886,8 @@ async function onMetaSaved() {
         >
           <UButton
             :label="t('common.actions.save')"
+            :aria-label="t('common.actions.save')"
+            :ui="HEADER_BUTTON_UI"
             icon="i-lucide-save"
             color="neutral"
             variant="outline"
@@ -890,11 +907,13 @@ async function onMetaSaved() {
           size="lg"
         >
           <UButton
-            :label="unpublished === false ? t('editor.publication.published') : t('editor.publication.publish')"
+            :label="publishLabel"
+            :aria-label="publishLabel"
+            :ui="HEADER_BUTTON_UI"
             :icon="unpublished === false ? 'i-lucide-check' : 'i-lucide-send'"
             :color="unpublished === false ? 'neutral' : 'primary'"
             :variant="unpublished === false ? 'outline' : 'solid'"
-            class="w-28 justify-center"
+            class="sm:w-28 justify-center"
             :loading="publishState === 'publishing'"
             :disabled="!writable || unpublished === false"
             @click="publish"
@@ -916,11 +935,12 @@ async function onMetaSaved() {
     </div>
 
     <!-- The source pane takes a share of the width set by dragging its edge, kept
-         in a cookie so the page renders at that share. -->
+         in a cookie so the page renders at that share. Below the `md` width the
+         slide sits above the source, across the whole width. -->
     <UDashboardGroup
       v-else
       storage-key="editor"
-      class="relative flex-1 min-h-0"
+      class="relative flex-1 min-h-0 max-md:flex-col"
     >
       <!-- The source pane carries its own bar: formatting and insertion act on
            the text below it, and the preview follows its caret. -->
@@ -932,7 +952,7 @@ async function onMetaSaved() {
         :max-size="75"
         role="region"
         :aria-label="t('editor.page.sourcePane')"
-        :ui="{ root: 'min-h-0 w-(--width) border-e border-default bg-default overflow-hidden', handle: 'block after:absolute after:inset-y-0 after:-left-px after:w-0.5 after:transition-colors hover:after:bg-primary active:after:bg-primary' }"
+        :ui="{ root: 'min-h-0 max-md:flex-1 md:w-(--width) border-t md:border-t-0 md:border-e border-default bg-default overflow-hidden', handle: 'hidden md:block after:absolute after:inset-y-0 after:-left-px after:w-0.5 after:transition-colors hover:after:bg-primary active:after:bg-primary' }"
       >
         <EditorToolbar
           :view="editorView"
@@ -1081,14 +1101,17 @@ async function onMetaSaved() {
             <!-- Client-only: the preview is driven by CodeMirror input + an async
                client-side reparse, so `preview` is always null on the server.
                SSR-ing it renders the placeholder, then hydration swaps to Reveal —
-               a mismatch that crashes the minified prod build. -->
+               a mismatch that crashes the minified prod build.
+               The frame keeps the slide view at every width: Reveal lays a deck
+               narrower than `scrollActivationWidth` (435px) out as its scroll
+               view, a column of pages the frame cannot show. -->
             <ClientOnly>
               <RevealPresentation
                 v-if="preview?.slides?.length"
                 ref="previewInstance"
                 :key="preview.metadata.theme"
                 :theme="preview.metadata.theme"
-                :config="{ ...preview.metadata.reveal, fragments: previewFragments }"
+                :config="{ ...preview.metadata.reveal, fragments: previewFragments, scrollActivationWidth: null }"
                 :lang="preview.metadata.lang"
                 :code="preview.metadata.code"
                 :controls="false"
@@ -1150,7 +1173,7 @@ async function onMetaSaved() {
 
 <style scoped>
 .editor-stage {
-  container-type: size;
+  container-type: inline-size;
   background: #e4e4e7;
 }
 
@@ -1237,5 +1260,19 @@ async function onMetaSaved() {
 
 .editor-stage__frame :deep(.reveal) {
   height: 100%;
+}
+
+/* Below the md width the panes stack: the stage comes first and is as tall as
+   the slide at the full width, with the same margin. */
+@media (width < 48rem) {
+  .editor-stage {
+    flex: none;
+    order: -1;
+  }
+
+  .editor-stage__area {
+    flex: none;
+    height: calc((100cqw - 48px) / var(--ratio) + 48px);
+  }
 }
 </style>

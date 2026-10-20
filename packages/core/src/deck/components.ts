@@ -101,7 +101,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'Mermaid',
-    snippet: { fr: '::Mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n::', en: '::Mermaid\nflowchart LR\n    A[${Start}] --> B[${End}]\n::' },
+    snippet: { fr: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n```\n::', en: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Start}] --> B[${End}]\n```\n::' },
     description: { fr: 'Diagramme Mermaid (flowchart, sequence…)', en: 'Mermaid diagram (flowchart, sequence…)' },
   },
   {

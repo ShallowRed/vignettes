@@ -35,17 +35,17 @@
           "both": "Personne (aucun mot de passe défini), plus {n} accès direct et {folder} via le dossier. | Personne (aucun mot de passe défini), plus {n} accès directs et {folder} via le dossier."
         },
         "private": {
-          "alone": "Les comptes Éditeur/Owner.",
-          "direct": "Les comptes Éditeur/Owner, plus {n} accès direct. | Les comptes Éditeur/Owner, plus {n} accès directs.",
-          "folder": "Les comptes Éditeur/Owner, plus {folder} via le dossier.",
-          "both": "Les comptes Éditeur/Owner, plus {n} accès direct et {folder} via le dossier. | Les comptes Éditeur/Owner, plus {n} accès directs et {folder} via le dossier."
+          "alone": "Les comptes Éditeur/Propriétaire.",
+          "direct": "Les comptes Éditeur/Propriétaire, plus {n} accès direct. | Les comptes Éditeur/Propriétaire, plus {n} accès directs.",
+          "folder": "Les comptes Éditeur/Propriétaire, plus {folder} via le dossier.",
+          "both": "Les comptes Éditeur/Propriétaire, plus {n} accès direct et {folder} via le dossier. | Les comptes Éditeur/Propriétaire, plus {n} accès directs et {folder} via le dossier."
         }
       },
       "visibility": "Visibilité",
       "statusDescription": {
         "public": "Tout le monde peut l'ouvrir.",
         "semiPrivate": "Toute personne ayant le mot de passe.",
-        "private": "Les comptes Éditeur et Owner, et les accès individuels."
+        "private": "Les comptes Éditeur et Propriétaire, et les accès individuels."
       },
       "password": "Mot de passe",
       "passwordPlaceholder": "Mot de passe (8 caractères minimum)",

@@ -101,51 +101,54 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
   <div class="flex flex-col gap-6">
     <UBreadcrumb :items="breadcrumb" />
 
-    <div class="flex items-center gap-3">
-      <UIcon
-        :name="`i-lucide-${currentProject?.icon || 'folder'}`"
-        class="size-5 shrink-0 text-dimmed"
-        :style="projectColorStyle(currentProject?.color)"
-      />
-      <h1 class="text-xl font-semibold text-highlighted">
-        {{ projectTitle }}
-      </h1>
-      <span class="text-sm text-muted">{{ t('catalog.deck.count', decks.length) }}</span>
-      <div class="flex-1" />
-      <UButton
-        v-if="canCreateHere"
-        icon="i-lucide-file-plus-2"
-        :label="t('common.actions.newDeck')"
-        size="sm"
-        @click="createOpen = true"
-      />
-      <UButton
-        v-if="canManageProject"
-        icon="i-lucide-pencil"
-        :label="t('catalog.folder.edit')"
-        color="neutral"
-        variant="subtle"
-        size="sm"
-        @click="editProjectOpen = true"
-      />
-      <UButton
-        v-if="canManageAccess"
-        icon="i-lucide-users"
-        :label="t('catalog.folder.manageAccess')"
-        color="neutral"
-        variant="subtle"
-        size="sm"
-        @click="accessOpen = true"
-      />
-      <UButton
-        v-if="canManageProject"
-        icon="i-lucide-trash-2"
-        :label="t('catalog.folder.delete')"
-        color="error"
-        variant="ghost"
-        size="sm"
-        @click="deleteProjectOpen = true"
-      />
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <UIcon
+          :name="`i-lucide-${currentProject?.icon || 'folder'}`"
+          class="size-5 shrink-0 text-dimmed"
+          :style="projectColorStyle(currentProject?.color)"
+        />
+        <h1 class="text-xl font-semibold text-highlighted">
+          {{ projectTitle }}
+        </h1>
+        <span class="text-sm text-muted whitespace-nowrap">{{ t('catalog.deck.count', decks.length) }}</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 sm:ms-auto">
+        <UButton
+          v-if="canCreateHere"
+          icon="i-lucide-file-plus-2"
+          :label="t('common.actions.newDeck')"
+          size="sm"
+          @click="createOpen = true"
+        />
+        <UButton
+          v-if="canManageProject"
+          icon="i-lucide-pencil"
+          :label="t('catalog.folder.edit')"
+          color="neutral"
+          variant="subtle"
+          size="sm"
+          @click="editProjectOpen = true"
+        />
+        <UButton
+          v-if="canManageAccess"
+          icon="i-lucide-users"
+          :label="t('catalog.folder.manageAccess')"
+          color="neutral"
+          variant="subtle"
+          size="sm"
+          @click="accessOpen = true"
+        />
+        <UButton
+          v-if="canManageProject"
+          icon="i-lucide-trash-2"
+          :label="t('catalog.folder.delete')"
+          color="error"
+          variant="ghost"
+          size="sm"
+          @click="deleteProjectOpen = true"
+        />
+      </div>
     </div>
 
     <p

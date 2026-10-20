@@ -8,7 +8,7 @@
       "title": "Comptes",
       "count": "{n} compte | {n} compte | {n} comptes",
       "add": "Ajouter un compte",
-      "restrictedDescription": "La gestion des comptes est réservée au rôle Owner.",
+      "restrictedDescription": "La gestion des comptes est réservée au rôle Propriétaire.",
       "you": "(vous)",
       "invitationPending": "Invitation en attente : jamais connecté",
       "lastLogin": "Dernière connexion {date}",

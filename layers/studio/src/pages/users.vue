@@ -81,11 +81,11 @@ function dateLabel(d: Date | string) {
   <div class="flex flex-col gap-6">
     <UBreadcrumb :items="breadcrumb" />
 
-    <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <h1 class="text-xl font-semibold text-highlighted">
         {{ t('admin.users.title') }}
       </h1>
-      <span class="text-sm text-muted">{{ t('admin.users.count', accounts.length) }}</span>
+      <span class="text-sm text-muted whitespace-nowrap">{{ t('admin.users.count', accounts.length) }}</span>
       <div class="flex-1" />
       <UButton
         v-if="isOwner"

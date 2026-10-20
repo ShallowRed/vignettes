@@ -5,7 +5,7 @@
       "title": "Recette",
       "intro": "Chaque ligne ouvre sa page dans un nouvel onglet, avec le compte de son bloc.",
       "disabled": "Le kit de recette est désactivé sur cet environnement.",
-      "ownerRequired": "Le kit de recette s'ouvre avec un compte propriÃ©taire.",
+      "ownerRequired": "Le kit de recette s'ouvre avec un compte propriétaire.",
       "session": "Session en cours",
       "sessionNone": "aucune",
       "pass": "Laissez-passer ouvert par {owner}, valable 12 heures.",
@@ -48,7 +48,7 @@
         "summary": "Édite, publie et modifie les métadonnées de toutes les présentations."
       },
       "owner": {
-        "label": "Owner",
+        "label": "Propriétaire",
         "summary": "Gère aussi les accès, les comptes et la corbeille."
       }
     },
