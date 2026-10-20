@@ -9,7 +9,7 @@ import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls, scrollViewLinks } from '@vignet
 import { readBundleConfig } from '@vignettes/freeze/bundle'
 
 // Iframe scaler, inlined after Reveal.initialize (a separate <script src> gets
-// detached by Reveal). Mirrors public/scaled-frame.js; reads client size rather
+// detached by Reveal). Mirrors scaled-frame.js of @vignettes/storybook; reads client size rather
 // than CSS `cqh` (broken in Firefox).
 const INLINE_SCALER = `(function(){
 var SEL='.slide-media-pane.is-scaled,.story-frame__media.is-scaled';

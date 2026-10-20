@@ -43,7 +43,7 @@ describe('bundle asset copying', () => {
     writeFileSync(join(root, 'public/themes/brand/assets/bg.png'), 'x')
     writeFileSync(join(root, 'public/themes/other/assets/bg.png'), 'x')
     writeFileSync(join(root, 'public/pictograms/digital/coding.svg'), 'svg')
-    writeFileSync(join(root, 'public/scaled-frame.js'), 'js')
+    writeFileSync(join(root, 'public/favicon.svg'), 'svg')
     mkdirSync(join(root, 'presentations/assets/images/atlas'), { recursive: true })
     writeFileSync(join(root, 'presentations/assets/images/atlas/carte.svg'), 'svg')
   })
@@ -52,7 +52,7 @@ describe('bundle asset copying', () => {
 
   it('keeps only the frozen deck theme in the reduced public dir', () => {
     const kept = buildReducedPublic(root, out, 'brand')
-    expect(kept).toContain('scaled-frame.js')
+    expect(kept).toContain('favicon.svg')
     expect(kept).toContain('pictograms')
     expect(readdirSync(join(out, 'themes')).sort()).toEqual(['brand', 'brand.css'])
     expect(existsSync(join(out, 'themes/brand/assets/bg.png'))).toBe(true)

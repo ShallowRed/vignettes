@@ -27,6 +27,9 @@ export default defineNuxtModule({
       global: true,
     })
     addPlugin(resolver.resolve('./runtime/plugins/register'))
+    // Serves the iframe scaler at /scaled-frame.js, which the client plugin loads.
+    nuxt.options.nitro.publicAssets ||= []
+    nuxt.options.nitro.publicAssets.push({ dir: resolver.resolve('./runtime/public'), maxAge: 0 })
     addPlugin(resolver.resolve('./runtime/plugins/scaled-frame.client'))
   },
 })

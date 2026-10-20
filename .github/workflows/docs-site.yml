@@ -1,0 +1,82 @@
+name: Documentation site
+
+# Publishes the documentation site (site/, Docus) to the VPS, which serves it at
+# the address of the repository variable DOCS_SITE_URL.
+#
+# `checks.yml` runs the checks and generates the site; this workflow sends that
+# tested output. The upload goes over SSH with a dedicated key, which the VPS
+# accepts for one command only, the `vignettes/docs-deploy.sh` script of the
+# vps-infra repository: the key can replace the site, never redeploy the
+# application. The job reads that key, VPS_DOCS_SSH_KEY, from the `/docs` path of
+# Infisical over OIDC, with the repository variables INFISICAL_* and VPS_*, as
+# `docker-publish.yml` does.
+
+on:
+  push:
+    branches: [main]
+    # What the site reads: its own files, the packages and their READMEs, the
+    # themes, the example deck and the pictograms of the studio.
+    paths:
+      - 'site/**'
+      - 'packages/**'
+      - 'themes/**'
+      - 'examples/**'
+      - 'public/pictograms/**'
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+  workflow_dispatch:
+
+# One upload at a time: a newer push waits for the running one.
+concurrency:
+  group: docs-site
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  publish:
+    needs: checks
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC to Infisical, which returns VPS_DOCS_SSH_KEY
+    steps:
+      - name: Download the tested site
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-site
+          path: public
+
+      - name: Pack the site
+        run: tar -czf site.tar.gz -C public .
+
+      - name: Fetch the deploy key from Infisical (OIDC)
+        uses: Infisical/secrets-action@v1.0.16
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
+          domain: ${{ vars.INFISICAL_API_URL }}
+          oidc-audience: infisical-vignettes
+          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          env-slug: prod
+          secret-path: /docs
+
+      - name: Send the site to the VPS over SSH
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_USER: ${{ vars.VPS_USER }}
+          # The Infisical step above puts VPS_DOCS_SSH_KEY in the job environment.
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s\n' "${VPS_DOCS_SSH_KEY}" > deploy_key
+          # Trusts the host key the VPS presents now, as the deploy job of
+          # docker-publish.yml does.
+          ssh-keyscan -H "${VPS_HOST}" > known_hosts 2>/dev/null
+          # The script on the VPS reads `docs <sha>` as the command and the archive
+          # on its standard input.
+          ssh -i deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts \
+            "${VPS_USER}@${VPS_HOST}" "docs ${GITHUB_SHA:0:7}" < site.tar.gz
+          rm -f deploy_key

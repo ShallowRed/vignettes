@@ -62,6 +62,17 @@ description = "The bare Nuxt dev server on HOST:PORT (default localhost:3000), f
 depends = [ "install" ]
 run = "pnpm dev"
 
+[tasks."site:dev"]
+description = "The documentation site behind portless. Host: vignettes-site.localhost, or <branch>.vignettes-site.localhost in a worktree"
+depends = [ "install" ]
+dir = "site"
+run = "portless run pnpm dev"
+
+[tasks."site:generate"]
+description = "Generate the documentation site as static files in site/.output/public, for the public address NUXT_SITE_URL"
+depends = [ "install" ]
+run = "NUXT_SITE_URL=\"${NUXT_SITE_URL:?set NUXT_SITE_URL to the public address of the site: the sitemap and llms.txt list absolute links}\" pnpm --filter vignettes-site generate"
+
 [tasks.open]
 description = "Wait until the URL answers, then open it"
 run = """

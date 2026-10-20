@@ -53,6 +53,7 @@ mise.local.toml
 
 # Compiled themes and their copied assets (`pnpm build:themes`)
 public/themes/
+site/public/themes/
 
 # Playwright results
 test-results/

@@ -1,14 +1,14 @@
 name: Checks
 
-# Lint, types, unit tests and end-to-end tests on the production build. Run on every
-# pull request, and called by `docker-publish.yml` before it builds the image,
-# so both go through one definition.
+# Lint, types, unit tests, end-to-end tests on the production build and the
+# documentation site. Run on every pull request, and called by `docker-publish.yml`
+# and `docs-site.yml` before they publish, so all go through one definition.
 on:
   pull_request:
   workflow_call:
 
 concurrency:
-  # A new push on a pull request cancels the previous run. Runs called by the
+  # A new push on a pull request cancels the previous run. Runs called by a
   # publishing workflow keep their own group and run to the end.
   group: checks-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -37,6 +37,44 @@ jobs:
 
       - name: Types
         run: pnpm exec nuxi typecheck
+
+  # The documentation site installs the render module and publishes the package
+  # READMEs: generating it checks both. Same command as `mise run site:generate`.
+  site:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The repository variable DOCS_SITE_URL gives the public address of the
+      # site; a pull request may fall back on a placeholder, a published run may not.
+      - name: Generate the site
+        env:
+          NUXT_SITE_URL: ${{ vars.DOCS_SITE_URL || (github.event_name == 'pull_request' && 'https://docs.example.com' || '') }}
+          NODE_OPTIONS: --max-old-space-size=4096
+          NUXT_TELEMETRY_DISABLED: 1
+        run: pnpm --filter vignettes-site generate
+
+      # `docs-site.yml` publishes this tested site.
+      - name: Upload the site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-site
+          path: site/.output/public
+          retention-days: 1
 
   test:
     runs-on: ubuntu-latest

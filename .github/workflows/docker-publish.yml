@@ -28,6 +28,7 @@ on:
       - '**.md'
       - '**.txt'
       - 'docs/**'
+      - 'site/**'
   workflow_dispatch:
 
 # One run at a time per branch: a newer push waits for the running deploy, and

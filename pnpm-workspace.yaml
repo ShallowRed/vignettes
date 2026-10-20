@@ -12,6 +12,7 @@ trustPolicyExclude:
   - semver@6.3.1
 packages:
   - packages/*
+  - site
 catalog:
   '@antfu/eslint-config': ^6.4.2
   '@aws-sdk/client-s3': ^3.1085.0
@@ -37,6 +38,10 @@ catalog:
   '@iconify/vue': ^5.0.0
   '@lezer/highlight': ^1.2.3
   '@nuxt/icon': ^2.1.0
+  # The schema of the installed nuxt, which the site declares: the modules Docus
+  # brings accept any Nuxt 4 and would otherwise install @nuxt/schema 4.6, which
+  # the hoisting places at the root, where the studio reads the types of Nitro.
+  '@nuxt/schema': 4.5.2
   '@nuxt/ui': ^4.9.0
   '@nuxtjs/i18n': ^10.6.0
   '@nuxtjs/mdc': ^0.23.2
@@ -51,6 +56,7 @@ catalog:
   better-sqlite3: ^12.11.1
   codemirror: ^6.0.2
   concurrently: ^9.2.1
+  docus: ~5.14.0
   drizzle-kit: ^0.31.10
   drizzle-orm: ^0.45.2
   eslint: ^9.39.1

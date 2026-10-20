@@ -12,6 +12,14 @@ test('the server-rendered page links the Reveal styles and the theme', async ({ 
   expect(css.some(sheet => sheet.includes('.reveal .slides'))).toBe(true)
 })
 
+test('the build serves the iframe scaler of @vignettes/storybook', async ({ request, browserName }) => {
+  test.skip(browserName !== 'chromium', 'The response does not depend on the browser.')
+  const response = await request.get('/scaled-frame.js')
+
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toMatch(/javascript/)
+})
+
 test('the deck lifts its loading veil once Reveal is ready', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))

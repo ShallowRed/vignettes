@@ -1,0 +1,29 @@
+{
+  "name": "vignettes-site",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "@vignettes/core": "workspace:*",
+    "@vignettes/nuxt": "workspace:*",
+    "@vignettes/schemas": "workspace:*",
+    "@vignettes/storybook": "workspace:*",
+    "better-sqlite3": "catalog:",
+    "docus": "catalog:",
+    "mermaid": "catalog:",
+    "nuxt": "catalog:",
+    "reveal.js": "catalog:"
+  },
+  "devDependencies": {
+    "@gouvfr/dsfr": "catalog:",
+    "@nuxt/schema": "catalog:",
+    "@vignettes/theme-dsfr": "workspace:*",
+    "@vignettes/theme-kit": "workspace:*",
+    "sass": "catalog:",
+    "typescript": "catalog:"
+  }
+}
