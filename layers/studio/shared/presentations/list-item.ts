@@ -39,7 +39,9 @@ export interface PresentationListItem {
   canEdit?: boolean
   /** For whoever may edit: the draft differs from the published version. */
   unpublishedChanges?: boolean
-  /** Privileged only: a semi-private deck without one is unreachable (fail-closed). */
+  /** This actor may manage the per-deck grants of this deck (`canShare`). */
+  canShare?: boolean
+  /** For whoever may share it: a semi-private deck without one is unreachable (fail-closed). */
   hasPassword?: boolean
   /** Privileged only: number of per-deck grants (folder master keys not included). */
   sharedCount?: number

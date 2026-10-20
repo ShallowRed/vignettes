@@ -1,7 +1,7 @@
-import type { AccessDecision, DeckGrant, Lifecycle, PublicationStatus } from '#shared/access'
+import type { AccessDecision, DeckGrant, GrantTerm, Lifecycle, PublicationStatus } from '#shared/access'
 import type { H3Event } from 'h3'
 import type { Actor } from './actor'
-import { decideAccess, isPrivileged, mayEdit } from '#shared/access'
+import { canShare, decideAccess, isPrivileged, mayEdit, sharingLimit } from '#shared/access'
 import { resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { accessCookieName, mintAccessPass, verifyAccessPass } from './access-pass'
 import { getActor } from './actor'
@@ -9,7 +9,7 @@ import { serverConfig } from './config'
 import { contentTokenActor } from './content-token'
 import { verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
-import { publishedSource, useDeckMeta, useGrants, useMediaIndex, useProjectPermissionStore } from './sources'
+import { publishedSource, useDeckMeta, useGrants, useMediaIndex, usePermissionStore, useProjectPermissionStore } from './sources'
 
 // Semi-private decks are guarded by a shared password, so throttle guesses per
 // client and deck to keep the scrypt check from becoming a brute-force oracle.
@@ -139,28 +139,70 @@ export async function canActorEditDeck(actor: Actor, slug: string): Promise<bool
 
 /**
  * Refuses unless the actor may edit this deck (privileged role or editor grant).
- * An actor who may not even view it is answered as if the deck were absent, the
- * way the view gate does; one who may view it but not edit it reads 403, which
- * tells them nothing they could not already see. `contentToken` lets the route
- * accept the content token in place of a session: only the markdown write path
- * opts in (see `content-token.ts`).
+ * `contentToken` lets the route accept the content token in place of a session:
+ * only the markdown write path opts in (see `content-token.ts`).
  */
 export async function assertCanEditDeck(event: H3Event, slug: string, opts: { contentToken?: boolean } = {}): Promise<Actor> {
   const actor = (opts.contentToken ? contentTokenActor(event) : null) ?? await getActor(event)
-  if (!await canActorEditDeck(actor, slug)) {
-    if (actor.role === 'anonymous')
-      throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
-    const gate = await gateOptionsOf(slug)
-    const viewable = gate !== null && (await decideDeckAccess(event, gate)).outcome === 'allow'
-    throw viewable
-      ? createError({ statusCode: 403, statusMessage: 'Forbidden' })
-      : createError({ statusCode: 404, statusMessage: 'Not found' })
-  }
-  // A trashed deck is not editable: it stays absent (draft, publish, collab all
-  // refused) until restored from the corbeille.
-  if (await useDeckMeta().isTrashed(slug))
+  if (!await canActorEditDeck(actor, slug))
+    throw await refusalOnDeck(event, actor, slug)
+  await assertNotTrashed(slug)
+  return actor
+}
+
+/**
+ * Refuses unless the actor may manage the grants of this deck (`canShare`), with
+ * the answers of `assertCanEditDeck`. A slug with no deck answers 404, except to
+ * the owner, who may grant a deck before it exists.
+ */
+export async function assertCanShareDeck(event: H3Event, slug: string): Promise<Actor> {
+  const actor = await getActor(event)
+  if (!canShare(actor.role, await resolveGrant(actor, slug)))
+    throw await refusalOnDeck(event, actor, slug)
+  await assertNotTrashed(slug)
+  if (actor.role !== 'owner' && await gateOptionsOf(slug) === null)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
   return actor
+}
+
+/**
+ * The date until which this actor may give access to this deck (`sharingLimit`),
+ * from the editor grants they hold on the deck and on its folder.
+ */
+export async function sharingLimitOn(actor: Actor, slug: string): Promise<Date | null> {
+  if (isPrivileged(actor.role) || !actor.id)
+    return sharingLimit(actor.role, [])
+  const project = await useDeckMeta().projectOf(slug)
+  const [onDeck, onFolder] = await Promise.all([
+    usePermissionStore().listForDeck(slug),
+    project ? useProjectPermissionStore().listForProject(project) : Promise.resolve([]),
+  ])
+  const own = <T extends GrantTerm & { userId: number }>(grants: T[]) => grants.find(grant => grant.userId === actor.id)
+  return sharingLimit(actor.role, [own(onDeck), own(onFolder)])
+}
+
+/**
+ * The refusal of a write on a deck. An actor who may not even view it is
+ * answered as if the deck were absent, the way the view gate does; one who may
+ * view it reads 403, which tells them nothing they could not already see.
+ */
+async function refusalOnDeck(event: H3Event, actor: Actor, slug: string): Promise<Error> {
+  if (actor.role === 'anonymous')
+    return createError({ statusCode: 401, statusMessage: 'Authentication required' })
+  const gate = await gateOptionsOf(slug)
+  const viewable = gate !== null && (await decideDeckAccess(event, gate)).outcome === 'allow'
+  return viewable
+    ? createError({ statusCode: 403, statusMessage: 'Forbidden' })
+    : createError({ statusCode: 404, statusMessage: 'Not found' })
+}
+
+/**
+ * A trashed deck accepts no write: it stays absent (draft, publish, collab,
+ * sharing all refused) until restored from the corbeille.
+ */
+async function assertNotTrashed(slug: string): Promise<void> {
+  if (await useDeckMeta().isTrashed(slug))
+    throw createError({ statusCode: 404, statusMessage: 'Not found' })
 }
 
 /**

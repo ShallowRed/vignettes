@@ -1,15 +1,8 @@
-import { DeckGrantSchema } from '#shared/access'
+import { GrantBodySchema } from '#shared/access'
 import { isDeckSlug } from '@vignettes/core/deck'
-import { z } from 'zod'
 import { assertOwner } from '../../../../../utils/access'
 import { useProjectPermissionStore } from '../../../../../utils/sources'
 import { useUserStore } from '../../../../../utils/users'
-
-const BodySchema = z.object({
-  role: DeckGrantSchema,
-  // ISO date in the future, or null/absent for a permanent grant.
-  expiresAt: z.string().datetime().nullable().optional().refine(v => v == null || new Date(v) > new Date(), 'expiresAt must be in the future'),
-}).strict()
 
 /**
  * PUT /api/admin/projects/:slug/permissions/:userId — grant editor/viewer on a
@@ -25,7 +18,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid project slug or user id' })
   }
 
-  const parsed = BodySchema.safeParse(await readBody(event))
+  const parsed = GrantBodySchema.safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { role: editor | viewer }' })
   }

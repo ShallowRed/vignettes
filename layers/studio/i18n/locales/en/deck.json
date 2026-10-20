@@ -2,6 +2,7 @@
   "deck": {
     "meta": {
       "description": "Settings of {slug}",
+      "sharingDescription": "Sharing of {slug}",
       "tabGeneral": "General",
       "tabAccess": "Access and sharing",
       "tabVariants": "Variants",
@@ -59,6 +60,7 @@
       "noGrants": "No individual grant.",
       "folderGrants": "Through the folder (master key)",
       "folderGrantsHint": "Managed from \"Manage access\" on the folder.",
+      "folderGrantsOwnerHint": "An Owner of the studio manages them from the folder.",
       "variantsIntro": "The variants of one presentation, by language or by format, share a card in the folder and link to each other from the viewer. A replaced edition moves to the replaced editions of the folder.",
       "family": "Family",
       "familyHint": "The name the variants share.",
@@ -162,6 +164,7 @@
       "roleEditor": "Edit",
       "durationUnlimited": "Unlimited",
       "durationDays": "{n} day | {n} days",
+      "durationUntilMine": "Until {date}",
       "invitedAccount": "{login} (invited)",
       "roleOf": "Role of {login}",
       "neverSignedIn": "never signed in",
@@ -169,6 +172,7 @@
       "expiresOn": "expires on {date}",
       "removeGrant": "Remove the grant",
       "grantFailed": "Sharing failed",
+      "loadFailed": "The grants of the presentation could not be loaded.",
       "removeFailed": "Removal failed",
       "roleChangeFailed": "Change failed",
       "accountAuthorized": "Account authorized",
@@ -181,10 +185,12 @@
       "accessLevel": "Access level",
       "accessDuration": "Grant duration",
       "submitGrant": "Add the grant",
+      "share": "Share",
       "allAccountsGranted": "Every known account already has access. Authorize a new one:",
       "authorizeNewAccount": "Authorize an account that has never signed in…",
       "provider": "Sign-in provider",
       "authorize": "Authorize",
+      "ownHandle": "You cannot change your own grant.",
       "noEmailNotice": "No email is sent: share the link yourself. The grant applies from their first {provider} sign-in."
     },
     "handles": {

@@ -1,4 +1,7 @@
 import type { DeckGrant } from './roles'
+import { z } from 'zod'
+import { ProviderHandleSchema } from './handles'
+import { DeckGrantSchema } from './roles'
 
 /**
  * Sharing wire contracts (client ⇄ admin permission endpoints). A grant escalates
@@ -22,3 +25,13 @@ export interface GrantSummary {
   /** ISO date after which the grant no longer resolves; null/absent = permanent. */
   expiresAt?: string | null
 }
+
+/** The body of a grant write: its role, and an expiry in the future or none (permanent). */
+export const GrantBodySchema = z.object({
+  role: DeckGrantSchema,
+  expiresAt: z.string().datetime().nullable().optional().refine(v => v == null || new Date(v) > new Date(), 'expiresAt must be in the future'),
+}).strict()
+
+/** A grant to an account named by its provider handle, invited when it has never logged in. */
+export const HandleGrantBodySchema = GrantBodySchema.extend({ account: ProviderHandleSchema }).strict()
+export type HandleGrantBody = z.infer<typeof HandleGrantBodySchema>

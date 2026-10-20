@@ -27,6 +27,17 @@ describe('listVisiblePresentations', () => {
     expect(listed.find(d => d.slug === 'published-deck')?.canEdit).toBe(true)
   })
 
+  it('reports canShare and the password state to the editor of the deck, and to nobody else', async () => {
+    await usePermissionStore().set('published-deck', 10, 'editor', 'boss')
+    await seedAccount(11, 'reader', 'viewer')
+    await usePermissionStore().set('published-deck', 11, 'viewer', 'boss')
+    const mine = (await listVisiblePresentations(collab())).find(d => d.slug === 'published-deck')
+    expect(mine).toMatchObject({ canShare: true, hasPassword: false })
+    const theirs = (await listVisiblePresentations(asUser(11, 'reader'))).find(d => d.slug === 'published-deck')
+    expect(theirs?.canShare).toBeUndefined()
+    expect(theirs?.hasPassword).toBeUndefined()
+  })
+
   it('a folder editor grant opens every deck in it, unpublished ones included', async () => {
     await useProjectPermissionStore().set('client', 10, 'editor', 'boss')
     const listed = await listVisiblePresentations(collab())

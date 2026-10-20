@@ -2,8 +2,8 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
-import { useAppSession } from '../composables/useAppSession'
 import { useDeckDownload } from '../composables/useDeckDownload'
+import { shortDate } from '../utils/short-date'
 
 // Catalog card. `admin` adds management details and the management entries of
 // the actions menu (privileged roles only). Editing is separate: it follows the deck's own `canEdit`, so a
@@ -33,15 +33,16 @@ const selectedSlug = ref(props.presentation.slug)
 const menuOpen = ref(false)
 const deck = computed(() => props.variants?.find(v => v.slug === selectedSlug.value) ?? props.presentation)
 
-// Sharing is owner-only server-side, so the entry only shows for an owner.
-const { role } = useAppSession()
-const isOwner = computed(() => role.value === 'owner')
-
 const frozen = computed(() => isFrozen(deck.value))
 
 // A frozen deck is read-only whatever the role.
 const canEdit = computed(() => !frozen.value && (props.admin === true || deck.value.canEdit === true))
 const adminMenu = computed(() => props.admin === true && !frozen.value)
+// Whoever may share the deck gets the entry, a collaborator holding an `editor`
+// grant included (`canShare` in the catalog payload).
+const shareItems = computed<DropdownMenuItem[]>(() => deck.value.canShare && !frozen.value
+  ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }]
+  : [])
 
 const to = computed(() => {
   // Nothing to show yet: send whoever may edit it straight to the editor.
@@ -58,9 +59,7 @@ const updatedLabel = computed(() => {
   const at = deck.value.updatedAt
   if (!at)
     return undefined
-  const date = new Date(at)
-  const sameYear = date.getFullYear() === new Date().getFullYear()
-  return t('catalog.card.updatedOn', { date: date.toLocaleDateString(locale.value, { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) }) })
+  return t('catalog.card.updatedOn', { date: shortDate(new Date(at), locale.value) })
 })
 
 const { downloadItems } = useDeckDownload()
@@ -69,9 +68,9 @@ const actions = computed<DropdownMenuItem[][]>(() => [
     ? [[
         { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
         { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
-        ...(isOwner.value ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }] : []),
+        ...shareItems.value,
       ]]
-    : []),
+    : [shareItems.value]),
   downloadItems(deck.value, canEdit.value),
   ...(adminMenu.value
     ? [

@@ -9,7 +9,7 @@ import { useModalTarget } from '../composables/useModalTarget'
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
 const { t } = useI18n()
-const { privileged, loggedIn, role } = useAppSession()
+const { privileged, loggedIn, role, user } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 
 // Shared, access-filtered catalog state (decks + folders) on Pinia Colada.
@@ -87,7 +87,7 @@ const projectDeckCount = computed(() =>
           :description="privileged
             ? t('catalog.home.emptyPrivileged')
             : loggedIn
-              ? t('catalog.home.emptyLoggedIn')
+              ? t('catalog.home.emptyLoggedIn', { login: user?.login ?? '' })
               : t('catalog.home.emptyAnonymous')"
           variant="naked"
           size="lg"

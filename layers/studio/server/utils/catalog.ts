@@ -1,7 +1,7 @@
 import type { DeckPreview, PresentationListItem, TitleSlide } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
-import { canList, isPrivileged, mayEdit } from '#shared/access'
+import { canList, canShare, isPrivileged, mayEdit } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { readTitleSlide, UNGROUPED_PROJECT } from '#shared/presentations'
 import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
@@ -132,6 +132,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   // The same rule as assertCanEditDeck, so the card's pencil matches what the
   // server accepts.
   const canEdit = (slug: string) => mayEdit(actor.role, grants.get(slug))
+  const mayShare = (slug: string) => canShare(actor.role, grants.get(slug))
   const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d.slug)).map(d => d.slug)))
   const stats = await deckStats()
 
@@ -156,10 +157,10 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       ...deckPreview(stats.get(deck.slug), deck.theme || fallbackTheme),
       ...(canEdit(deck.slug) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),
+      ...(mayShare(deck.slug) ? { canShare: true, hasPassword: Boolean(deck.accessPasswordHash) } : {}),
       ...(privileged
         ? {
             published: deck.published,
-            hasPassword: Boolean(deck.accessPasswordHash),
             sharedCount: shared?.get(deck.slug) ?? 0,
           }
         : {}),

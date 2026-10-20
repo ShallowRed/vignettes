@@ -95,6 +95,7 @@
         "unpublished": "Après une modification, l'en-tête et la carte indiquent Modifications non publiées. Publier retire cette mention.",
         "password": "La présentation s'ouvre sans mot de passe.",
         "readOnly": "Lecture seule s'ouvre et sa carte n'a pas de crayon.",
+        "share": "Le menu de la carte Publique propose « Partager… ». Le panneau liste les accès de la présentation, et le collaborateur y ajoute un compte par son nom d'utilisateur GitHub ou son adresse Google.",
         "private": "L'écran dit « Présentation introuvable », comme pour un lien mort. Aucune carte ne propose les métadonnées ni le partage."
       },
       "expired": {
@@ -104,7 +105,7 @@
       "editor": {
         "catalog": "Tout le jeu de données est listé, Brouillon compris, avec crayon et métadonnées.",
         "trash": "La corbeille contient la présentation Corbeille, qui peut être restaurée.",
-        "accountsDenied": "La page est refusée. Les panneaux de partage sont en lecture seule."
+        "accountsDenied": "La page est refusée. Le menu d'une présentation propose « Partager… »."
       },
       "owner": {
         "accounts": "La liste contient les cinq personas et l'invité {handle}.",

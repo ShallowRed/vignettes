@@ -12,11 +12,11 @@ const props = defineProps<{
 
 const open = defineModel<boolean>('open', { required: true })
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 // Grants + users load only while the slideover is open (enabled gate). The
 // whole bag also feeds ShareGrantForm (add + invite-by-email).
-const sharing = useSharing(() => ({ kind: 'project', slug: props.project.slug }), () => open.value)
+const sharing = useSharing(() => ({ kind: 'project', slug: props.project.slug }), () => open.value, () => true)
 const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
 </script>
 
@@ -36,46 +36,14 @@ const { grants, grantRoleItems, changeGrantRole, removeGrant, busy } = sharing
           {{ t('deck.projectAccess.masterKeyHint') }}
         </p>
 
-        <ul
+        <GrantList
           v-if="grants.length > 0"
-          class="flex flex-col gap-2"
-        >
-          <li
-            v-for="grant in grants"
-            :key="grant.userId"
-            class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2"
-          >
-            <span class="text-sm font-medium">{{ grant.login }}</span>
-            <USelect
-              :model-value="grant.role"
-              :items="grantRoleItems"
-              size="xs"
-              class="w-24"
-              :disabled="busy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
-              :aria-label="t('deck.sharing.roleOf', { login: grant.login })"
-              @update:model-value="(r: any) => changeGrantRole(grant, r)"
-            />
-            <span
-              v-if="grant.invited"
-              class="text-xs text-dimmed"
-            >· {{ t('deck.sharing.neverSignedIn') }}</span>
-            <span
-              v-if="grant.expiresAt"
-              class="text-xs"
-              :class="new Date(grant.expiresAt) < new Date() ? 'text-error' : 'text-dimmed'"
-            >· {{ new Date(grant.expiresAt) < new Date() ? t('deck.sharing.expired') : t('deck.sharing.expiresOn', { date: new Date(grant.expiresAt).toLocaleDateString(locale) }) }}</span>
-            <div class="flex-1" />
-            <UButton
-              icon="i-lucide-x"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :disabled="busy"
-              :aria-label="t('deck.sharing.removeGrant')"
-              @click="removeGrant(grant.userId)"
-            />
-          </li>
-        </ul>
+          :grants="grants"
+          :role-items="grantRoleItems"
+          :busy="busy"
+          @change-role="changeGrantRole"
+          @remove="removeGrant"
+        />
         <p
           v-else
           class="text-sm text-dimmed"

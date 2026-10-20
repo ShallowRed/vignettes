@@ -137,7 +137,7 @@
     "home": {
       "emptyTitle": "Aucune présentation",
       "emptyPrivileged": "Créez un premier dossier ou une présentation pour démarrer.",
-      "emptyLoggedIn": "Rien ne vous a été partagé pour le moment.",
+      "emptyLoggedIn": "Votre compte {login} est un compte Lecteur. Pour ouvrir une présentation privée, demandez à un Propriétaire du studio ou à une personne qui édite la présentation de la partager avec ce compte.",
       "emptyAnonymous": "Si des présentations vous ont été partagées, connectez-vous pour les voir.",
       "modeFolders": "Dossiers",
       "modeManage": "Gestion",

@@ -2,7 +2,7 @@
 import type { GrantSummary, PublicationStatus } from '#shared/access'
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import { PUBLICATION_STATUSES } from '#shared/access'
+import { isExpired, PUBLICATION_STATUSES, sharingLimit } from '#shared/access'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { useMutation, useQuery } from '@pinia/colada'
 import { deckApi } from '../api'
@@ -11,13 +11,17 @@ import { useCatalog, useCatalogCache } from '../composables/useCatalog'
 import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
 import { requestErrorMessage } from '../utils/request-error'
+import { shortDate } from '../utils/short-date'
 
 /**
  * Deck settings panel, in three tabs: the deck itself (folder, address), who can
- * open it (visibility, catalog, sharing grants for the owner) and its variants.
- * Metadata saves through the admin PATCH; grants apply as soon as they are
- * added. Reused by the catalog and the editor. The title and the theme are read
- * here: they belong to the deck's frontmatter, which each publication re-reads.
+ * open it (visibility, catalog, sharing grants) and its variants. Metadata saves
+ * through the admin PATCH, for the global roles; grants apply as soon as they
+ * are added, for whoever may share the deck (`item.canShare`). A collaborator
+ * holding an `editor` grant reads the access tab alone: who can open the deck,
+ * and its grants. Reused by the catalog and the editor. The title and the theme
+ * are read here: they belong to the deck's frontmatter, which each publication
+ * re-reads.
  */
 const props = defineProps<{
   item: PresentationListItem
@@ -32,8 +36,9 @@ const { t, locale } = useI18n()
 
 const open = defineModel<boolean>('open', { required: true })
 
-const { role } = useAppSession()
+const { role, privileged, user } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
+const canShare = computed(() => props.item.canShare === true)
 const toast = useToast()
 const { invalidatePresentations } = useCatalogCache()
 
@@ -93,13 +98,16 @@ type Tab = 'general' | 'access' | 'variants'
 const tab = ref<Tab>('general')
 watch(open, (now) => {
   if (now)
-    tab.value = props.focus === 'sharing' ? 'access' : 'general'
+    tab.value = props.focus === 'sharing' || !privileged.value ? 'access' : 'general'
 }, { immediate: true })
-const tabs = computed(() => [
-  { label: t('deck.meta.tabGeneral'), icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
-  { label: t('deck.meta.tabAccess'), icon: passwordMissing.value ? 'i-lucide-triangle-alert' : STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const },
-  { label: t('deck.meta.tabVariants'), icon: 'i-lucide-layers', value: 'variants', slot: 'variants' as const },
-])
+const accessTab = computed(() => ({ label: t('deck.meta.tabAccess'), icon: passwordMissing.value ? 'i-lucide-triangle-alert' : STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const }))
+const tabs = computed(() => privileged.value
+  ? [
+      { label: t('deck.meta.tabGeneral'), icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
+      accessTab.value,
+      { label: t('deck.meta.tabVariants'), icon: 'i-lucide-layers', value: 'variants', slot: 'variants' as const },
+    ]
+  : [accessTab.value])
 
 const projectItems = computed(() => [
   { label: t('deck.meta.noFolder'), value: NONE },
@@ -149,9 +157,10 @@ const { mutate: save, isLoading: saving } = useMutation({
   },
 })
 
-// ── Sharing (per-deck grants, owner only) ───────────────────────────────────
-// Delegated to the shared `useSharing`; grants + users load only while the panel
-// is open for an owner (enabled gate). The whole bag also feeds ShareGrantForm.
+// ── Sharing (per-deck grants, whoever may share the deck) ───────────────────
+// Delegated to the shared `useSharing`; grants load only while the panel is open
+// for a sharer, and the account list for the owner alone. The whole bag also
+// feeds ShareGrantForm.
 // Opened from a "Partager…" entry: bring that section into view instead of
 // leaving the reader at the top of a long panel.
 const sharingSection = useTemplateRef<HTMLElement>('sharingSection')
@@ -165,19 +174,39 @@ watch(() => open.value && props.focus === 'sharing', (focus) => {
   setTimeout(() => sharingSection.value?.focus(), 300)
 }, { immediate: true, flush: 'post' })
 
-const sharing = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && isOwner.value)
-const { grants, grantRoleItems, changeGrantRole, removeGrant, busy: sharingBusy } = sharing
+// The end of the sharer's own access, read from the two lists below once both
+// loaded (undefined until then).
+const ownLimit = shallowRef<Date | null | undefined>(undefined)
+const sharing = useSharing(() => ({ kind: 'deck', slug: props.item.slug }), () => open.value && canShare.value, () => isOwner.value, () => ownLimit.value)
+const { grants, grantsStatus, refetchGrants, grantRoleItems, changeGrantRole, removeGrant, busy: sharingBusy } = sharing
 
 // The folder's master keys open this deck too: surface them here (read-only,
-// same cache key as the folder panel) so this panel cannot claim "no access"
-// while the whole folder is shared.
+// same cache key as the folder panel, read through this deck) so this panel
+// cannot claim "no access" while the whole folder is shared.
 const requestFetch = useRequestFetch()
 const projectGrantsQ = useQuery({
-  ...grantsQuery(requestFetch, () => ({ kind: 'project', slug: props.item.project! })),
-  enabled: () => open.value && isOwner.value && !!props.item.project,
+  ...grantsQuery(requestFetch, () => ({ kind: 'project', slug: props.item.project! }), () => props.item.slug),
+  enabled: () => open.value && canShare.value && !!props.item.project,
 })
 const projectGrants = computed<GrantSummary[]>(() =>
   props.item.project ? (projectGrantsQ.data.value ?? []) : [])
+
+// The server refuses a sharer other than the owner their own grant.
+const isOwn = (grant: GrantSummary) => grant.login.toLowerCase() === user.value?.login?.toLowerCase()
+const isOwnGrant = (grant: GrantSummary) => !isOwner.value && isOwn(grant)
+const folderGrantsStatus = computed(() => props.item.project ? projectGrantsQ.status.value : 'success')
+watchEffect(() => {
+  const loaded = grantsStatus.value === 'success' && folderGrantsStatus.value === 'success'
+  ownLimit.value = privileged.value
+    ? null
+    : loaded ? sharingLimit(role.value, [grants.value.find(isOwn), projectGrants.value.find(isOwn)]) : undefined
+})
+const grantsFailed = computed(() => grantsStatus.value === 'error' || folderGrantsStatus.value === 'error')
+function retryGrants() {
+  refetchGrants()
+  if (props.item.project)
+    projectGrantsQ.refetch()
+}
 
 // One sentence answering "who can open this deck?", folding status, password
 // and both grant scopes — the recomposition the three separate panels lack.
@@ -187,8 +216,9 @@ const audience = computed(() => {
     : state.status === 'semi-private'
       ? (props.item.hasPassword || passwordReady.value ? 'password' : 'noPassword')
       : 'private'
-  const direct = grants.value.length
-  const folder = projectGrants.value.length
+  // An expired grant stays listed and opens nothing: it is not counted.
+  const direct = grants.value.filter(grant => !isExpired(grant)).length
+  const folder = projectGrants.value.filter(grant => !isExpired(grant)).length
   if (direct && folder)
     return t(`deck.meta.audience.${base}.both`, { folder }, direct)
   if (direct)
@@ -203,7 +233,7 @@ const audience = computed(() => {
   <USlideover
     v-model:open="open"
     :title="item.title"
-    :description="t('deck.meta.description', { slug: item.slug })"
+    :description="privileged ? t('deck.meta.description', { slug: item.slug }) : t('deck.meta.sharingDescription', { slug: item.slug })"
     :ui="{ content: 'max-w-2xl', body: 'p-0 sm:p-0' }"
   >
     <template #body>
@@ -211,7 +241,7 @@ const audience = computed(() => {
         v-model="tab"
         :items="tabs"
         variant="link"
-        :ui="{ root: 'gap-0', list: 'sticky top-0 z-10 bg-default px-4 sm:px-6', content: 'px-4 sm:px-6' }"
+        :ui="{ root: 'gap-0', list: privileged ? 'sticky top-0 z-10 bg-default px-4 sm:px-6' : 'hidden', content: 'px-4 sm:px-6' }"
       >
         <!-- Each setting reads as a row: what it is on the left, its control on
              the right. -->
@@ -293,7 +323,10 @@ const audience = computed(() => {
               :title="t('deck.meta.audienceTitle')"
               :description="audience"
             />
-            <div class="settings__row">
+            <div
+              v-if="privileged"
+              class="settings__row"
+            >
               <div>
                 <p class="settings__label">
                   {{ t('deck.meta.visibility') }}
@@ -331,7 +364,10 @@ const audience = computed(() => {
                 </template>
               </div>
             </div>
-            <div class="settings__row">
+            <div
+              v-if="privileged"
+              class="settings__row"
+            >
               <div>
                 <p class="settings__label">
                   {{ t('deck.meta.unlisted') }}
@@ -347,7 +383,7 @@ const audience = computed(() => {
             </div>
 
             <div
-              v-if="isOwner"
+              v-if="canShare"
               ref="sharingSection"
               tabindex="-1"
               class="settings__row outline-none"
@@ -361,48 +397,25 @@ const audience = computed(() => {
                 </p>
               </div>
               <div class="flex flex-col gap-3">
-                <ul
+                <UAlert
+                  v-if="grantsFailed"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-triangle-alert"
+                  :title="t('deck.sharing.loadFailed')"
+                  :actions="[{ label: t('common.actions.retry'), color: 'neutral', variant: 'subtle', onClick: retryGrants }]"
+                />
+                <GrantList
                   v-if="grants.length > 0"
-                  class="flex flex-col gap-2"
-                >
-                  <li
-                    v-for="grant in grants"
-                    :key="grant.userId"
-                    class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2"
-                  >
-                    <span class="text-sm font-medium">{{ grant.login }}</span>
-                    <USelect
-                      :model-value="grant.role"
-                      :items="grantRoleItems"
-                      size="xs"
-                      class="w-24"
-                      :disabled="sharingBusy || (grant.expiresAt != null && new Date(grant.expiresAt) < new Date())"
-                      :aria-label="t('deck.sharing.roleOf', { login: grant.login })"
-                      @update:model-value="(r: any) => changeGrantRole(grant, r)"
-                    />
-                    <span
-                      v-if="grant.invited"
-                      class="text-xs text-dimmed"
-                    >· {{ t('deck.sharing.neverSignedIn') }}</span>
-                    <span
-                      v-if="grant.expiresAt"
-                      class="text-xs"
-                      :class="new Date(grant.expiresAt) < new Date() ? 'text-error' : 'text-dimmed'"
-                    >· {{ new Date(grant.expiresAt) < new Date() ? t('deck.sharing.expired') : t('deck.sharing.expiresOn', { date: new Date(grant.expiresAt).toLocaleDateString(locale) }) }}</span>
-                    <div class="flex-1" />
-                    <UButton
-                      icon="i-lucide-x"
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      :disabled="sharingBusy"
-                      :aria-label="t('deck.sharing.removeGrant')"
-                      @click="removeGrant(grant.userId)"
-                    />
-                  </li>
-                </ul>
+                  :grants="grants"
+                  :role-items="grantRoleItems"
+                  :busy="sharingBusy"
+                  :locked="isOwnGrant"
+                  @change-role="changeGrantRole"
+                  @remove="removeGrant"
+                />
                 <p
-                  v-else
+                  v-else-if="grantsStatus === 'success'"
                   class="text-sm text-dimmed"
                 >
                   {{ t('deck.meta.noGrants') }}
@@ -419,18 +432,23 @@ const audience = computed(() => {
                     <li
                       v-for="grant in projectGrants"
                       :key="grant.userId"
-                      class="flex items-center gap-2 text-sm"
+                      class="flex flex-wrap items-baseline gap-x-2 text-sm"
                     >
-                      <span>{{ grant.login }}</span>
+                      <span class="break-all">{{ grant.login }}</span>
                       <span class="text-xs text-muted">{{ grant.role === 'editor' ? t('deck.sharing.roleEditor') : t('deck.sharing.roleViewer') }}</span>
                       <span
                         v-if="grant.invited"
                         class="text-xs text-dimmed"
-                      >· {{ t('deck.sharing.neverSignedIn') }}</span>
+                      >{{ t('deck.sharing.neverSignedIn') }}</span>
+                      <span
+                        v-if="grant.expiresAt"
+                        class="text-xs"
+                        :class="isExpired(grant) ? 'text-error' : 'text-dimmed'"
+                      >{{ isExpired(grant) ? t('deck.sharing.expired') : t('deck.sharing.expiresOn', { date: shortDate(grant.expiresAt, locale) }) }}</span>
                     </li>
                   </ul>
                   <p class="text-xs text-dimmed">
-                    {{ t('deck.meta.folderGrantsHint') }}
+                    {{ isOwner ? t('deck.meta.folderGrantsHint') : t('deck.meta.folderGrantsOwnerHint') }}
                   </p>
                 </div>
 
@@ -500,7 +518,10 @@ const audience = computed(() => {
       </UTabs>
     </template>
 
-    <template #footer>
+    <template
+      v-if="privileged"
+      #footer
+    >
       <div class="flex items-center justify-end gap-2 w-full">
         <p
           v-if="saveBlocked"
@@ -542,6 +563,12 @@ const audience = computed(() => {
 
 .settings__row:last-child {
   border-bottom: 0;
+}
+
+/* A grid item keeps its content width by default: let the long logins and the
+   rows of controls shrink to the panel on a phone. */
+.settings__row > * {
+  min-width: 0;
 }
 
 @media (min-width: 640px) {

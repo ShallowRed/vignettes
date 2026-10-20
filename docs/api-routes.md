@@ -2,7 +2,7 @@
 
 The Nitro server lives in `server/` at the repository root (`srcDir` is `src/`). `server/api/**` answers under `/api/**`, `server/routes/**` under `/`, `server/middleware/**` runs on every request, and `server/utils/**` holds the adapters (session, access gate, stores, collaboration).
 
-Every route resolves the actor from the session cookie. Roles are `anonymous | viewer | editor | owner`; `owner` and `editor` are privileged. Deck statuses are `public | private | semi-private | draft`. One gate, `gateDeckAccess` in `server/utils/access.ts`, decides reads on a deck; `assertCanEditDeck`, `assertPrivileged`, `assertOwner`, and `assertCanCreateInProject` decide writes. The pure decision functions are in `shared/access`, documented in [access-matrix.md](access-matrix.md).
+Every route resolves the actor from the session cookie. Roles are `anonymous | viewer | editor | owner`; `owner` and `editor` are privileged. Deck statuses are `public | private | semi-private | draft`. One gate, `gateDeckAccess` in `server/utils/access.ts`, decides reads on a deck; `assertCanEditDeck`, `assertCanShareDeck`, `assertPrivileged`, `assertOwner`, and `assertCanCreateInProject` decide writes. The pure decision functions are in `shared/access`, documented in [access-matrix.md](access-matrix.md). A `sharer` of a deck is whoever may edit it (`canShare`).
 
 ## Catalog
 
@@ -55,10 +55,11 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 
 | Route | Access | Effect |
 |-------|--------|--------|
-| `GET /api/admin/decks/:slug/permissions` | owner | Grants on a deck |
-| `PUT /api/admin/decks/:slug/permissions/:userId` | owner | Grant `editor` or `viewer` on a deck, with an optional expiry |
-| `DELETE /api/admin/decks/:slug/permissions/:userId` | owner | Revoke a deck grant |
-| `GET /api/admin/projects/:slug/permissions` | owner | Grants on a project |
+| `GET /api/admin/decks/:slug/permissions` | sharer | Grants on a deck |
+| `POST /api/admin/decks/:slug/permissions` | sharer | Grant `editor` or `viewer` on a deck to an account named by its provider handle, invited when it never logged in; 30 per sharer every 10 minutes |
+| `PUT /api/admin/decks/:slug/permissions/:userId` | sharer | Grant `editor` or `viewer` on a deck, with an optional expiry; a sharer other than the owner changes a listed grant, never their own, and within the end of their own access |
+| `DELETE /api/admin/decks/:slug/permissions/:userId` | sharer | Revoke a deck grant, their own included |
+| `GET /api/admin/projects/:slug/permissions` | owner, or a sharer of `?deck=<slug>` in that project | Grants on a project |
 | `PUT /api/admin/projects/:slug/permissions/:userId` | owner | Grant `editor` or `viewer` on every deck of a project |
 | `DELETE /api/admin/projects/:slug/permissions/:userId` | owner | Revoke a project grant |
 

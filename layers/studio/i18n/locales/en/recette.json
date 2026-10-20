@@ -95,6 +95,7 @@
         "unpublished": "After a change, the header and the card say Unpublished changes. Publishing removes that mention.",
         "password": "The presentation opens without a password.",
         "readOnly": "“Lecture seule” opens and its card has no pencil.",
+        "share": "The menu of the Publique card offers \"Share…\". The panel lists the grants of the presentation, and the collaborator adds an account there by its GitHub username or its Google address.",
         "private": "The screen says “Presentation not found”, as it does for a dead link. No card offers the metadata or the sharing."
       },
       "expired": {
@@ -104,7 +105,7 @@
       "editor": {
         "catalog": "The whole data set is listed, Brouillon included, with pencil and metadata.",
         "trash": "The trash contains the presentation Corbeille, which can be restored.",
-        "accountsDenied": "The page is denied. The sharing panels are read-only."
+        "accountsDenied": "The page is denied. The menu of a presentation offers \"Share…\"."
       },
       "owner": {
         "accounts": "The list contains the five personas and the guest {handle}.",

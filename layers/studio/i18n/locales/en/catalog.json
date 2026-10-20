@@ -137,7 +137,7 @@
     "home": {
       "emptyTitle": "No presentation",
       "emptyPrivileged": "Create a first folder or a presentation to get started.",
-      "emptyLoggedIn": "Nothing has been shared with you yet.",
+      "emptyLoggedIn": "Your account {login} is a Viewer account. To open a private presentation, ask an Owner of the studio or someone who edits the presentation to share it with this account.",
       "emptyAnonymous": "If presentations have been shared with you, sign in to see them.",
       "modeFolders": "Folders",
       "modeManage": "Management",

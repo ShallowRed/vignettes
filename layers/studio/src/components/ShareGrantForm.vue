@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { useSharing } from '../composables/useSharing'
-import { handleField, IDENTITY_PROVIDER_ITEMS } from '#shared/access'
+import { useAppSession } from '../composables/useAppSession'
 
 /**
- * The add-grant form shared by the deck and project sharing panels: pick a known
- * account, or authorize one on the fly by its provider handle (Google email or
- * GitHub username) — the account is pre-selected in the picker, ready to be
- * granted. Receives the whole `useSharing` bag so both panels stay wired
- * identically.
+ * The add-grant form shared by the deck and project sharing panels. The owner
+ * picks a known account, or authorizes one on the fly by its provider handle
+ * (Google email or GitHub username), which the picker then pre-selects. Another
+ * sharer of a deck types the handle of the account and grants it in one step:
+ * the list of accounts stays with the owner. Receives the whole `useSharing` bag
+ * so both panels stay wired identically.
  */
 const props = defineProps<{ sharing: ReturnType<typeof useSharing> }>()
 
 const { t } = useI18n()
+const { user } = useAppSession()
 
 const {
   usersReady,
@@ -26,6 +28,9 @@ const {
   inviteHandle,
   inviteValid,
   invite,
+  shareByHandle,
+  directory,
+  termsReady,
   busy,
 } = props.sharing
 
@@ -39,12 +44,46 @@ watch(noGrantable, (none) => {
     showInvite.value = true
 }, { immediate: true })
 
-const isGoogle = computed(() => inviteProvider.value === 'google')
-const field = computed(() => handleField(inviteProvider.value))
+// The server refuses a sharer their own grant: say so before the request.
+const ownHandle = computed(() => !!user.value?.login && inviteHandle.value.trim().toLowerCase() === user.value.login.toLowerCase())
+const handleError = computed(() => ownHandle.value ? t('deck.grantForm.ownHandle') : undefined)
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <form
+    v-if="!directory()"
+    class="flex flex-col gap-2"
+    @submit.prevent="shareByHandle"
+  >
+    <HandleField
+      v-model:provider="inviteProvider"
+      v-model:handle="inviteHandle"
+      :error="handleError"
+    />
+    <GrantTermsRow
+      v-model:role="grantRole"
+      v-model:days="grantDays"
+      :role-items="grantRoleItems"
+      :duration-items="grantDurationItems"
+      :disabled="!termsReady"
+    >
+      <UButton
+        type="submit"
+        :label="t('deck.grantForm.share')"
+        :aria-label="t('deck.grantForm.share')"
+        icon="i-lucide-user-plus"
+        class="shrink-0"
+        :ui="{ label: 'max-sm:hidden' }"
+        :disabled="!termsReady || !inviteValid || ownHandle || busy"
+        :loading="busy"
+      />
+    </GrantTermsRow>
+  </form>
+
+  <div
+    v-else
+    class="flex flex-col gap-2"
+  >
     <template v-if="!noGrantable">
       <UFormField :label="t('deck.grantForm.addGrant')">
         <USelect
@@ -54,26 +93,20 @@ const field = computed(() => handleField(inviteProvider.value))
           class="w-full"
         />
       </UFormField>
-      <div class="flex items-center gap-2">
-        <USelect
-          v-model="grantRole"
-          :items="grantRoleItems"
-          class="flex-1"
-          :aria-label="t('deck.grantForm.accessLevel')"
-        />
-        <USelect
-          v-model="grantDays"
-          :items="grantDurationItems"
-          class="flex-1"
-          :aria-label="t('deck.grantForm.accessDuration')"
-        />
+      <GrantTermsRow
+        v-model:role="grantRole"
+        v-model:days="grantDays"
+        :role-items="grantRoleItems"
+        :duration-items="grantDurationItems"
+      >
         <UButton
           icon="i-lucide-user-plus"
+          class="shrink-0"
           :disabled="grantUserId == null || busy"
           :aria-label="t('deck.grantForm.submitGrant')"
           @click="addGrant"
         />
-      </div>
+      </GrantTermsRow>
     </template>
     <p
       v-else
@@ -94,36 +127,22 @@ const field = computed(() => handleField(inviteProvider.value))
     />
     <form
       v-else
-      class="flex flex-col gap-1.5"
       @submit.prevent="invite"
     >
-      <span class="text-sm font-medium text-default">{{ t(field.labelKey) }}</span>
-      <div class="flex items-center gap-2">
-        <USelect
-          v-model="inviteProvider"
-          :items="IDENTITY_PROVIDER_ITEMS"
-          class="w-28"
-          :aria-label="t('deck.grantForm.provider')"
-        />
-        <UInput
-          v-model="inviteHandle"
-          :type="isGoogle ? 'email' : 'text'"
-          :placeholder="t(field.placeholderKey)"
-          :aria-label="t(field.labelKey)"
-          autofocus
-          class="flex-1"
-        />
+      <HandleField
+        v-model:provider="inviteProvider"
+        v-model:handle="inviteHandle"
+        autofocus
+      >
         <UButton
+          type="submit"
           :label="t('deck.grantForm.authorize')"
           icon="i-lucide-user-plus"
+          class="shrink-0"
           :disabled="!inviteValid || busy"
           :loading="busy"
-          @click="invite"
         />
-      </div>
-      <p class="text-xs text-muted">
-        {{ t('deck.grantForm.noEmailNotice', { provider: isGoogle ? 'Google' : 'GitHub' }) }}
-      </p>
+      </HandleField>
     </form>
   </div>
 </template>

@@ -1,43 +1,65 @@
-import type { DeckGrant, GrantSummary, IdentityProvider, PermissionScope, UserAccount } from '#shared/access'
-import { isProviderHandle } from '#shared/access'
+import type { DeckGrant, GrantSummary, IdentityProvider, PermissionScope, ProviderHandle, UserAccount } from '#shared/access'
+import { isProviderHandle, mayGrantUntil } from '#shared/access'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { permissionsApi, usersApi } from '../api'
 import { grantsQuery, sharingKey, usersQuery } from '../queries'
 import { usersKeys } from '../queries/keys'
 import { requestErrorMessage } from '../utils/request-error'
+import { shortDate } from '../utils/short-date'
 
 /** Grant duration presets, as day counts (0 = permanent). */
 const GRANT_DURATIONS = [0, 7, 30, 90]
+/** The duration that ends with the sharer's own access. */
+const UNTIL_LIMIT = -1
 
 /**
- * Sharing (per-deck or per-project grants), unified for both slideovers. Owner
- * only. The grants + users lists are Pinia Colada queries (deduped app-wide by
- * key), and add/remove are mutations that invalidate the grants query — no manual
- * reload. Fetches are gated by `enabled` so a closed slideover stays idle.
+ * Sharing (per-deck or per-project grants), unified for both slideovers. The
+ * grants + users lists are Pinia Colada queries (deduped app-wide by key), and
+ * add/remove are mutations that invalidate the grants query, so the lists reload by themselves.
+ * Fetches are gated by `enabled` so a closed slideover stays idle.
+ *
+ * `directory` tells whether the actor reads the list of accounts (the owner):
+ * the owner picks an account in it, another sharer of a deck types the handle
+ * of the account (`shareByHandle`), which the server finds or invites.
+ *
+ * `limit` is the end of the sharer's own access (`sharingLimit`), undefined while
+ * it is not known yet: the durations past it are disabled, one more ends with
+ * it, and the terms wait for it (`termsReady`).
  *
  * `useRequestFetch` is captured in setup (admin endpoints need the session
  * cookie); the queries never run during SSR because the slideover opens on click.
  * All HTTP goes through the `permissionsApi` / `usersApi` service layer.
  */
-export function useSharing(scope: () => PermissionScope, enabled: () => boolean) {
+export function useSharing(scope: () => PermissionScope, enabled: () => boolean, directory: () => boolean, limit: () => Date | null | undefined = () => null) {
   const requestFetch = useRequestFetch()
   const queryCache = useQueryCache()
   const toast = useToast()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
 
   const grantRoleItems = computed(() => [
     { label: t('deck.sharing.roleViewer'), value: 'viewer' as DeckGrant },
     { label: t('deck.sharing.roleEditor'), value: 'editor' as DeckGrant },
   ])
-  const grantDurationItems = computed(() => GRANT_DURATIONS.map(days => ({
-    label: days === 0 ? t('deck.sharing.durationUnlimited') : t('deck.sharing.durationDays', days),
-    value: days,
-  })))
+  const endOf = (days: number) => days === UNTIL_LIMIT ? limit() ?? null : days > 0 ? new Date(Date.now() + days * 86_400_000) : null
+  const termsReady = computed(() => limit() !== undefined)
+  const grantRole = ref<DeckGrant>('viewer')
+  const grantDurationItems = computed(() => {
+    const end = limit() ?? null
+    return [
+      ...GRANT_DURATIONS.map(days => ({
+        label: days === 0 ? t('deck.sharing.durationUnlimited') : t('deck.sharing.durationDays', days),
+        value: days,
+        disabled: !mayGrantUntil(end, { role: grantRole.value, expiresAt: endOf(days) }),
+      })),
+      ...(end ? [{ label: t('deck.sharing.durationUntilMine', { date: shortDate(end, locale.value) }), value: UNTIL_LIMIT, disabled: false }] : []),
+    ]
+  })
 
   const grantsQ = useQuery({ ...grantsQuery(requestFetch, scope), enabled })
-  const usersQ = useQuery({ ...usersQuery(requestFetch), enabled })
+  const usersQ = useQuery({ ...usersQuery(requestFetch), enabled: () => enabled() && directory() })
 
   const grants = computed<GrantSummary[]>(() => grantsQ.data.value ?? [])
+  const grantsStatus = grantsQ.status
   const knownUsers = computed<UserAccount[]>(() => usersQ.data.value ?? [])
   /** True once the accounts list actually loaded (empty ≠ still loading). */
   const usersReady = computed(() => usersQ.status.value === 'success')
@@ -51,8 +73,11 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
   })
 
   const grantUserId = ref<number | undefined>(undefined)
-  const grantRole = ref<DeckGrant>('viewer')
-  const grantDays = ref(0)
+  const defaultDays = () => limit() ? UNTIL_LIMIT : 0
+  const grantDays = ref(defaultDays())
+  watch(() => limit()?.getTime(), () => {
+    grantDays.value = defaultDays()
+  })
 
   function invalidateGrants() {
     return queryCache.invalidateQueries({ key: sharingKey(scope) })
@@ -61,17 +86,13 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     toast.add({ title: requestErrorMessage(error, action), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
 
+  const grantExpiry = () => endOf(grantDays.value)?.toISOString() ?? null
+
   const { mutate: submitGrant, isLoading: adding } = useMutation({
-    mutation: () => permissionsApi.set(
-      requestFetch,
-      scope(),
-      grantUserId.value!,
-      grantRole.value,
-      grantDays.value > 0 ? new Date(Date.now() + grantDays.value * 86_400_000).toISOString() : null,
-    ),
+    mutation: () => permissionsApi.set(requestFetch, scope(), grantUserId.value!, grantRole.value, grantExpiry()),
     onSuccess() {
       grantUserId.value = undefined
-      grantDays.value = 0
+      grantDays.value = defaultDays()
     },
     onError: e => onError(e, t('deck.sharing.grantFailed')),
     onSettled: invalidateGrants,
@@ -90,9 +111,14 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     onError: e => onError(e, t('deck.sharing.roleChangeFailed')),
     onSettled: invalidateGrants,
   })
+  // A grant a collaborator raises to `editor` ends by their own limit at the latest.
   function changeGrantRole(grant: GrantSummary, role: DeckGrant) {
-    if (role !== grant.role)
-      submitRoleChange({ userId: grant.userId, role, expiresAt: grant.expiresAt ?? null })
+    if (role === grant.role)
+      return
+    const end = limit() ?? null
+    const kept = grant.expiresAt ?? null
+    const expiresAt = end && !mayGrantUntil(end, { role, expiresAt: kept }, grant) ? end.toISOString() : kept
+    submitRoleChange({ userId: grant.userId, role, expiresAt })
   }
 
   function addGrant() {
@@ -122,10 +148,40 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
       submitInvite()
   }
 
-  const busy = computed(() => adding.value || removing.value || inviting.value || changingRole.value)
+  // A deck shared by its handle: the server finds the account or invites it,
+  // then grants it, in one request. Folder grants stay with the owner's picker.
+  const { mutate: submitHandleGrant, isLoading: sharingByHandle } = useMutation({
+    mutation: () => {
+      const target = scope()
+      if (target.kind !== 'deck')
+        throw new Error('A folder is shared from the list of accounts')
+      return permissionsApi.shareByHandle(
+        requestFetch,
+        target.slug,
+        { provider: inviteProvider.value, handle: inviteHandle.value.trim() } as ProviderHandle,
+        grantRole.value,
+        grantExpiry(),
+      )
+    },
+    onSuccess() {
+      inviteHandle.value = ''
+      grantDays.value = defaultDays()
+    },
+    onError: e => onError(e, t('deck.sharing.grantFailed')),
+    onSettled: invalidateGrants,
+  })
+  function shareByHandle() {
+    if (inviteValid.value && !sharingByHandle.value)
+      submitHandleGrant()
+  }
+
+  const busy = computed(() => adding.value || removing.value || inviting.value || changingRole.value || sharingByHandle.value)
 
   return {
     grants,
+    grantsStatus,
+    refetchGrants: () => grantsQ.refetch(),
+    termsReady,
     grantableUsers,
     grantUserId,
     grantRole,
@@ -140,6 +196,8 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean)
     inviteHandle,
     inviteValid,
     invite,
+    shareByHandle,
+    directory,
     busy,
   }
 }

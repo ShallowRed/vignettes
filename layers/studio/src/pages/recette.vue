@@ -97,6 +97,7 @@ const blocks = computed<Block[]>(() => {
       step('collab', 'unpublished', 'editorPublic', '/edit/recette-public'),
       step('collab', 'password', 'deckPassword', '/slides/recette-mdp'),
       step('collab', 'readOnly', 'catalog', '/'),
+      step('collab', 'share', 'sharedFolder', '/projects/recette-partage'),
       step('collab', 'private', 'deckPrivate', '/slides/recette-privee'),
     ],
     expired: [

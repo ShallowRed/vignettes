@@ -810,10 +810,12 @@ async function onMetaSaved() {
       </UDropdownMenu>
 
       <!-- One entry to the deck's settings drawer, which names what it holds and
-           shows the current visibility, beside the other states of the deck. -->
+           shows the current visibility, beside the other states of the deck.
+           Whoever may edit the deck may share it (canShare), so a collaborator
+           opens the drawer on its sharing. -->
       <UTooltip
         v-if="statusDisplay"
-        :text="privileged ? t('editor.page.settingsTooltip') : t('editor.page.settingsTooltipVisibilityOnly')"
+        :text="privileged ? t('editor.page.settingsTooltip') : t('editor.page.settingsTooltipSharing')"
       >
         <UButton
           color="neutral"
@@ -821,7 +823,7 @@ async function onMetaSaved() {
           size="sm"
           class="shrink-0 gap-2 max-sm:px-1.5"
           :aria-label="`${t('editor.page.settings')}, ${t(statusDisplay.labelKey)}`"
-          :disabled="!privileged"
+          :disabled="!privileged && !viewer.canEdit"
           @click="openMeta"
         >
           <UIcon

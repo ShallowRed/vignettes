@@ -9,11 +9,14 @@ export function sharingKey(scope: () => PermissionScope) {
   return s.kind === 'deck' ? deckKeys.sharing(s.slug) : projectKeys.sharing(s.slug)
 }
 
-/** Declarative query options for a scope's sharing grants. */
-export function grantsQuery(fetch: Fetcher, scope: () => PermissionScope) {
+/**
+ * Declarative query options for a scope's sharing grants. `throughDeck` reads a
+ * folder's grants through one of its decks (see `permissionsApi.list`).
+ */
+export function grantsQuery(fetch: Fetcher, scope: () => PermissionScope, throughDeck?: () => string) {
   return {
     key: () => sharingKey(scope),
-    query: () => permissionsApi.list(fetch, scope()),
+    query: () => permissionsApi.list(fetch, scope(), { deck: throughDeck?.() }),
   }
 }
 

@@ -2,6 +2,7 @@
   "deck": {
     "meta": {
       "description": "Réglages de {slug}",
+      "sharingDescription": "Partage de {slug}",
       "tabGeneral": "Général",
       "tabAccess": "Accès et partage",
       "tabVariants": "Variantes",
@@ -59,6 +60,7 @@
       "noGrants": "Aucun accès individuel.",
       "folderGrants": "Via le dossier (clé maîtresse)",
       "folderGrantsHint": "Se gère depuis « Gérer l'accès » du dossier.",
+      "folderGrantsOwnerHint": "Un Propriétaire du studio les gère depuis le dossier.",
       "variantsIntro": "Les variantes d'une même présentation, par langue ou par format, partagent une carte dans le dossier et se rejoignent depuis le lecteur. Une édition remplacée passe dans les éditions remplacées du dossier.",
       "family": "Famille",
       "familyHint": "Le nom commun des variantes.",
@@ -162,6 +164,7 @@
       "roleEditor": "Édition",
       "durationUnlimited": "Illimité",
       "durationDays": "{n} jour | {n} jours",
+      "durationUntilMine": "Jusqu'au {date}",
       "invitedAccount": "{login} (invité)",
       "roleOf": "Rôle de {login}",
       "neverSignedIn": "jamais connecté",
@@ -169,6 +172,7 @@
       "expiresOn": "expire le {date}",
       "removeGrant": "Retirer l'accès",
       "grantFailed": "Échec du partage",
+      "loadFailed": "Les accès de la présentation n'ont pas pu être chargés.",
       "removeFailed": "Échec du retrait",
       "roleChangeFailed": "Échec de la modification",
       "accountAuthorized": "Compte autorisé",
@@ -181,10 +185,12 @@
       "accessLevel": "Niveau d'accès",
       "accessDuration": "Durée de l'accès",
       "submitGrant": "Ajouter l'accès",
+      "share": "Partager",
       "allAccountsGranted": "Tous les comptes connus ont déjà accès. Autorisez-en un nouveau :",
       "authorizeNewAccount": "Autoriser un compte qui ne s'est jamais connecté…",
       "provider": "Fournisseur de connexion",
       "authorize": "Autoriser",
+      "ownHandle": "Vous ne pouvez pas modifier votre propre accès.",
       "noEmailNotice": "Aucun email n'est envoyé : partagez le lien vous-même. L'accès s'appliquera dès sa première connexion {provider}."
     },
     "handles": {

@@ -5,7 +5,6 @@ import type { TableColumn } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { h, resolveComponent } from 'vue'
-import { useAppSession } from '../composables/useAppSession'
 import { useDeckDownload } from '../composables/useDeckDownload'
 import { saveTextFile } from '../utils/save-file'
 
@@ -25,10 +24,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-// Sharing is owner-only server-side, so the entry only shows for an owner.
-const { role } = useAppSession()
-const isOwner = computed(() => role.value === 'owner')
 
 const UButton = resolveComponent('UButton')
 const UCheckbox = resolveComponent('UCheckbox')
@@ -190,7 +185,7 @@ function rowActions(item: PresentationListItem) {
           [
             { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
             { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
-            ...(isOwner.value ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
+            ...(item.canShare ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
           ],
           [
             { label: t('catalog.deck.createVariant'), icon: 'i-lucide-languages', onSelect: () => emit('duplicate', item, 'variant') },

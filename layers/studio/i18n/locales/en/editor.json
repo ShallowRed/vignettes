@@ -9,7 +9,7 @@
       "historyTooltip": "Published versions: compare, restore",
       "settings": "Sharing and settings",
       "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
-      "settingsTooltipVisibilityOnly": "Visibility",
+      "settingsTooltipSharing": "Who can open the presentation, and its individual grants",
       "notFoundTitle": "Presentation not found",
       "backToCatalog": "Back to the catalog",
       "openedOnSlide": "Opened on slide {slide} of {total}",

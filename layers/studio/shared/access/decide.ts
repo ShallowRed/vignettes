@@ -105,3 +105,68 @@ export function canList(input: ListInput): boolean {
 export function mayEdit(role: Role, grant?: DeckGrant): boolean {
   return decideAccess({ status: 'private', role, action: 'edit', grant, hasPassword: false, passwordGranted: false }).outcome === 'allow'
 }
+
+/**
+ * Whether the actor may manage the per-deck grants of a deck: list them, add a
+ * `viewer` or `editor` grant, change its role or expiry, remove it, and invite a
+ * provider handle onto the deck. Whoever may edit the deck may share it, so a
+ * team shares its decks without going through the owner. A grant never exceeds
+ * `editor`; folder grants, global roles and the list of accounts stay with the
+ * owner.
+ */
+export function canShare(role: Role, grant?: DeckGrant): boolean {
+  return mayEdit(role, grant)
+}
+
+/**
+ * Whether a sharer may write the grant of the account `userId`. The owner writes
+ * any grant; another sharer never writes their own. Removing it stays open to
+ * everyone.
+ */
+export function mayWriteGrantOf(sharer: { role: Role, id?: number }, userId: number): boolean {
+  return sharer.role === 'owner' || sharer.id !== userId
+}
+
+/** A grant as the sharing rules read it: its role, and its expiry (null or absent: never). */
+export interface GrantTerm {
+  role: DeckGrant
+  expiresAt?: string | Date | null
+}
+
+/** Whether a grant's expiry has passed: it stays listed and opens nothing. */
+export function isExpired(grant: GrantTerm, now = new Date()): boolean {
+  return grant.expiresAt != null && new Date(grant.expiresAt) <= now
+}
+
+/**
+ * The date until which a sharer may give access to a deck. A global role has no
+ * limit; a collaborator is limited by the editor grants they hold on the deck and
+ * on its folder: no limit when one of them is permanent, the latest expiry
+ * otherwise. Without a live editor grant the limit is `now`.
+ */
+export function sharingLimit(role: Role, own: (GrantTerm | null | undefined)[], now = new Date()): Date | null {
+  if (isPrivileged(role))
+    return null
+  const ends = own
+    .filter((grant): grant is GrantTerm => grant?.role === 'editor' && !isExpired(grant, now))
+    .map(grant => grant.expiresAt == null ? null : new Date(grant.expiresAt))
+  if (ends.includes(null))
+    return null
+  return ends.length ? new Date(Math.max(...ends.map(end => end!.getTime()))) : now
+}
+
+/**
+ * Whether a sharer whose access runs until `limit` (null: no limit) may write the
+ * grant `requested` (its expiry null: never). `current` is the grant before the
+ * write, absent for a new grant. A collaborator neither gives nor extends access
+ * past their own: the grant ends by `limit`, or, without raising its role, no
+ * later than it already did.
+ */
+export function mayGrantUntil(limit: Date | null, requested: GrantTerm, current?: GrantTerm): boolean {
+  const end = (term: GrantTerm) => term.expiresAt == null ? null : new Date(term.expiresAt)
+  const notAfter = (a: Date | null, b: Date | null) => b === null || (a !== null && a <= b)
+  if (notAfter(end(requested), limit))
+    return true
+  const raises = current?.role === 'viewer' && requested.role === 'editor'
+  return current !== undefined && !raises && notAfter(end(requested), end(current))
+}
