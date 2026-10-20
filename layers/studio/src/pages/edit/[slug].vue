@@ -37,6 +37,7 @@ import { editorKeymap } from '../../utils/editor-keymap'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 import { requestErrorMessage } from '../../utils/request-error'
+import { saveTextFile } from '../../utils/save-file'
 
 const { t, locale } = useI18n()
 
@@ -643,6 +644,15 @@ async function onRestored(stamp: number | null) {
   draftStamp.value = stamp
 }
 
+// ── Markdown download ───────────────────────────────────────────────────────
+
+// The draft is the text in the editor, saved or not; the published version is
+// the one the page loaded.
+const downloadItems = computed(() => [
+  { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(`${slug}.md`, raw.value, 'text/markdown') },
+  { label: t('editor.page.downloadPublished'), icon: 'i-lucide-file-down', disabled: publishedRaw.value === null, onSelect: () => saveTextFile(`${slug}.md`, publishedRaw.value ?? '', 'text/markdown') },
+])
+
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
 
 const metaOpen = ref(false)
@@ -730,6 +740,22 @@ async function onMetaSaved() {
           @click="historyOpen = true"
         />
       </UTooltip>
+
+      <UDropdownMenu
+        :items="downloadItems"
+        :content="{ align: 'end' }"
+      >
+        <UTooltip :text="t('editor.page.download')">
+          <UButton
+            icon="i-lucide-download"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            class="shrink-0"
+            :aria-label="t('editor.page.download')"
+          />
+        </UTooltip>
+      </UDropdownMenu>
 
       <!-- One entry to the deck's settings drawer, which names what it holds and
            shows the current visibility, beside the other states of the deck. -->

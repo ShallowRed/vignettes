@@ -77,6 +77,7 @@ accepte, et que l'UI lui montre :
 | Ouvrir l'éditeur, enregistrer, publier | oui, sur le deck du grant | `assertCanEditDeck` |
 | Rejoindre la session temps réel | oui, sur le deck du grant | `canActorEditDeck` (upgrade) |
 | Téléverser une image | oui, via `?deck=<slug>` vérifié contre le grant | `api/media.post.ts` |
+| Télécharger le Markdown | la version publiée comme pour la lecture, le brouillon sur le deck du grant | `gateDeckAccess`, `assertCanEditDeck` (`[slug]/markdown.get.ts`) |
 | Créer une présentation | oui, dans un dossier où il a un grant `editor` | `assertCanCreateInProject` |
 | Voir le crayon au catalogue | oui (`canEdit` par deck, `myGrant` par dossier) | `mayEdit` dans `utils/catalog.ts` |
 | Modifier les métadonnées d'accès (statut, mot de passe, dossier) | non : rôle global éditeur/owner | `PATCH /:slug` |

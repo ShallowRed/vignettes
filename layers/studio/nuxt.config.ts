@@ -30,4 +30,8 @@ export default defineNuxtConfig({
   alias: {
     '#shared': fileURLToPath(new URL('./shared', import.meta.url)),
   },
+  nitro: {
+    // The starting points of a new deck, read by `server/utils/templates.ts`.
+    serverAssets: [{ baseName: 'templates', dir: fileURLToPath(new URL('./templates', import.meta.url)) }],
+  },
 })

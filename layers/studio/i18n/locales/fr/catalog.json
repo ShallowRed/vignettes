@@ -21,7 +21,10 @@
       "share": "Partager…",
       "createVariant": "Créer une variante…",
       "newEdition": "Nouvelle édition…",
-      "delete": "Supprimer…"
+      "delete": "Supprimer…",
+      "downloadPublished": "Télécharger la version publiée (.md)",
+      "downloadDraft": "Télécharger le brouillon (.md)",
+      "downloadFailed": "Le téléchargement a échoué"
     },
     "folders": {
       "edit": "Modifier…",
@@ -70,12 +73,36 @@
       "updatedOn": "Modifiée le {date}"
     },
     "deckCreate": {
-      "description": "Un brouillon vierge, créé en base et ouvert dans l'éditeur.",
+      "description": "Crée une présentation privée et l'ouvre dans l'éditeur.",
       "titlePlaceholder": "Titre de la présentation",
       "slugHelp": "Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre.",
       "submit": "Créer et éditer",
       "created": "Présentation créée",
-      "slugTaken": "Le slug « {slug} » est déjà pris."
+      "slugTaken": "Le slug « {slug} » est déjà pris.",
+      "start": {
+        "label": "Point de départ",
+        "blank": {
+          "label": "Présentation vide",
+          "description": "Une diapositive de titre et une section."
+        },
+        "example": {
+          "label": "Exemple",
+          "description": "Titres, colonnes, citation, image et notes, expliqués sur les diapositives."
+        },
+        "file": {
+          "label": "Fichier Markdown",
+          "description": "Un fichier .md écrit ailleurs ou exporté."
+        }
+      },
+      "import": {
+        "dropLabel": "Déposez un fichier .md",
+        "dropDescription": "ou cliquez pour le choisir. Son frontmatter donne le titre et le thème.",
+        "fromFile": "Lu dans le frontmatter du fichier.",
+        "defaultTheme": "{theme}, le thème par défaut",
+        "titleMissing": "Le frontmatter du fichier ne donne pas de titre : ajoutez la clé title.",
+        "keysInvalid": "Le frontmatter du fichier a une valeur refusée pour la clé {keys}. | Le frontmatter du fichier a une valeur refusée pour la clé {keys}. | Le frontmatter du fichier a des valeurs refusées pour les clés {keys}.",
+        "yamlInvalid": "Le frontmatter du fichier n'est pas du YAML valide : {message}"
+      }
     },
     "form": {
       "slugInvalid": "Lettres, chiffres, tirets et underscores uniquement",

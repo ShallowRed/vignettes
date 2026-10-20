@@ -1,13 +1,14 @@
 import type { PublicationStatus } from '#shared/access'
 import type { Fetcher } from './http'
 
-/** Body for creating a deck (draft, opened in the editor). */
-export interface CreateDeckInput {
-  slug: string
-  title: string
-  project?: string
-  theme?: string
-}
+/**
+ * Body for creating a deck (draft, opened in the editor): from a template, with
+ * the title and theme typed in the dialog, or from a file whose frontmatter
+ * gives them.
+ */
+export type CreateDeckInput
+  = | { slug: string, title: string, project?: string, theme?: string, template?: string }
+    | { slug: string, raw: string, project?: string }
 
 /** Body for a deck metadata edit (admin PATCH). `null` clears a column. */
 export interface UpdateDeckMetaInput {

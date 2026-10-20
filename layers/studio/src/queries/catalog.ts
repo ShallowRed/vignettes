@@ -31,3 +31,12 @@ export function projectsQuery(fetch: Fetcher) {
     ...CATALOG_FRESHNESS,
   }
 }
+
+/** The templates change with a deployment only: read once per page load. */
+export function templatesQuery(fetch: Fetcher) {
+  return {
+    key: catalogKeys.templates,
+    query: () => catalogApi.listTemplates(fetch),
+    staleTime: Infinity,
+  }
+}

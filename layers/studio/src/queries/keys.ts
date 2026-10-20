@@ -9,10 +9,11 @@
  * keys belong here.
  */
 
-/** The catalog: the access-filtered deck listing and the project folders. */
+/** The catalog: the access-filtered deck listing, the project folders and the templates of a new deck. */
 export const catalogKeys = {
   presentations: ['presentations'] as const,
   projects: ['projects'] as const,
+  templates: ['templates'] as const,
 }
 
 /** The trash (corbeille): soft-deleted projects and standalone decks. */

@@ -23,7 +23,10 @@
       "signInTitle": "Sign-in required",
       "signInMessage": "Sign in to edit this presentation.",
       "failedTitle": "Loading failed",
-      "failedMessage": "The presentation could not be loaded. Try again in a moment."
+      "failedMessage": "The presentation could not be loaded. Try again in a moment.",
+      "download": "Download the Markdown",
+      "downloadDraft": "Draft (.md)",
+      "downloadPublished": "Published version (.md)"
     },
     "collab": {
       "offline": "Offline",

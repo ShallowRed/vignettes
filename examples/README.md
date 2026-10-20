@@ -8,7 +8,7 @@ Load it into a running instance:
 node scripts/content-import.ts --content=examples --apply
 ```
 
-Or create a deck from the catalog and paste the file's contents into the editor.
+The new presentation dialog of the studio offers it as the Example template.
 
 `registry.yml` gives the demo deck the lifecycle `frozen` and the bundle name `vignettes-demo`, which is how a frozen deck is declared. To publish the demo on an instance: `mise run freeze -- vignettes-demo` builds and uploads the bundle, then `mise run content:push -- vignettes-demo --content examples --unlisted --apply` creates the deck, which answers at `/p/vignettes-demo`.
 

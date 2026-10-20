@@ -25,7 +25,7 @@ Use only the names these files list. An unknown component renders nothing, and a
 
 - In the studio editor of a Vignettes instance: several people edit the same draft live, and publishing makes a version. The database of the instance holds the published version.
 - In a content space (the `presentations/` directory of an instance, or another repository): the file is an archive or a stub. `mise run content:import` imports the stubs the database does not own yet, `mise run content:republish -- <slug>` republishes a deck from its file, and `mise run content:push -- <slug>` sends a stub to a deployed instance.
-- In any other project, for a deck that will be imported later: write the file, then import it on the instance.
+- In any other project, for a deck that will be imported later: write the file, then import it on the instance. The new presentation dialog of the studio takes the `.md` file and reads its title and theme from the frontmatter, which must give a `title`; it names the key of a refused value. The menu of a deck's card in the catalog downloads its published Markdown for whoever may read the deck, and its draft for whoever may edit it; the editor downloads both.
 
 A file changed after its import changes nothing on the instance until it is republished.
 

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PublicationStatusSchema } from '../status.ts'
+import { splitFrontmatter } from './frontmatter.ts'
 
 /**
  * Single source of truth for a deck's validated config: centralizes validation,
@@ -110,4 +111,35 @@ export function parseDeckMeta(
     `[deck-schema] frontmatter validation issues${options.label ? ` (${options.label})` : ''}: ${issues.join('; ')}`,
   )
   return { meta: (input ?? {}) as DeckMeta, valid: false, issues }
+}
+
+/** What a deck file brought from elsewhere declares: the deck metadata, with a title. */
+const DeckFileSchema = DeckMetaSchema.extend({ title: z.string().trim().min(1) })
+
+/** A refusal of a deck file; `key` is the frontmatter key at fault, empty when the YAML block itself does not parse. */
+export interface DeckFileIssue {
+  key: string
+  message: string
+}
+
+export type DeckFileReading
+  = | { valid: true, meta: DeckMeta & { title: string } }
+    | { valid: false, issues: DeckFileIssue[] }
+
+/**
+ * Read the frontmatter of a deck file before it becomes a deck: the YAML must
+ * parse, the values must follow `DeckMetaSchema`, and the file must give its
+ * title. The studio's import and its creation dialog both call it.
+ */
+export function readDeckFile(raw: string): DeckFileReading {
+  const { data, yamlError } = splitFrontmatter(raw)
+  if (yamlError)
+    return { valid: false, issues: [{ key: '', message: yamlError }] }
+  const result = DeckFileSchema.safeParse(data)
+  if (result.success)
+    return { valid: true, meta: result.data }
+  return {
+    valid: false,
+    issues: result.error.issues.map(issue => ({ key: issue.path.join('.'), message: issue.message })),
+  }
 }

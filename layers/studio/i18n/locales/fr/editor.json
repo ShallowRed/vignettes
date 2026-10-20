@@ -23,7 +23,10 @@
       "signInTitle": "Connexion requise",
       "signInMessage": "Connectez-vous pour modifier cette présentation.",
       "failedTitle": "Chargement impossible",
-      "failedMessage": "La présentation n'a pas pu être chargée. Réessayez dans un instant."
+      "failedMessage": "La présentation n'a pas pu être chargée. Réessayez dans un instant.",
+      "download": "Télécharger le Markdown",
+      "downloadDraft": "Brouillon (.md)",
+      "downloadPublished": "Version publiée (.md)"
     },
     "collab": {
       "offline": "Hors ligne",

@@ -6,6 +6,8 @@ import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { h, resolveComponent } from 'vue'
 import { useAppSession } from '../composables/useAppSession'
+import { useDeckDownload } from '../composables/useDeckDownload'
+import { saveTextFile } from '../utils/save-file'
 
 // Table view of the catalog: column sorting, client pagination, row selection
 // with bulk actions. Receives the already-filtered list (toolbar owns filtering).
@@ -32,6 +34,7 @@ const UButton = resolveComponent('UButton')
 const UCheckbox = resolveComponent('UCheckbox')
 
 const toast = useToast()
+const { downloadItems } = useDeckDownload()
 
 /**
  * What this component reads of the table instance. Naming it breaks the circular
@@ -180,6 +183,7 @@ function rowActions(item: PresentationListItem) {
     ],
     [
       { label: t('catalog.table.copyLink'), icon: 'i-lucide-link', onSelect: () => copyLinks([item]) },
+      ...downloadItems(item, !isFrozen(item)),
     ],
     ...(props.admin && !isFrozen(item)
       ? [
@@ -239,13 +243,7 @@ function exportCsv(items: PresentationListItem[]) {
     i.theme,
     new URL(deckPath(i), window.location.origin).href,
   ].map(csvEscape).join(','))
-  const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'presentations.csv'
-  a.click()
-  URL.revokeObjectURL(url)
+  saveTextFile('presentations.csv', [header.join(','), ...lines].join('\n'), 'text/csv;charset=utf-8')
   toast.add({ title: t('catalog.table.exported', { n: items.length }), icon: 'i-lucide-file-down', color: 'success' })
 }
 

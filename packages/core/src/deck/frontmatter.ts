@@ -12,6 +12,8 @@ export interface SplitDocument {
   data: Record<string, unknown>
   body: string
   hasFrontmatter: boolean
+  /** The YAML parser's message when the block does not parse; `data` is then empty. */
+  yamlError?: string
 }
 
 export function splitFrontmatter(markdown: string): SplitDocument {
@@ -21,15 +23,17 @@ export function splitFrontmatter(markdown: string): SplitDocument {
 
   const yaml = match[1] ?? ''
   let data: Record<string, unknown> = {}
+  let yamlError: string | undefined
   try {
     const parsed = load(yaml)
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
       data = parsed as Record<string, unknown>
   }
   catch (error: any) {
-    console.warn('[frontmatter] failed to parse YAML block:', error?.message || error)
+    yamlError = String(error?.message || error)
+    console.warn('[frontmatter] failed to parse YAML block:', yamlError)
   }
-  return { data, body: markdown.slice(match[0].length), hasFrontmatter: true }
+  return { data, body: markdown.slice(match[0].length), hasFrontmatter: true, ...(yamlError ? { yamlError } : {}) }
 }
 
 /** Return the body with any leading frontmatter block removed. */

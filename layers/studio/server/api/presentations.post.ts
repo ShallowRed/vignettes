@@ -1,29 +1,50 @@
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
-import { isDeckSlug } from '@vignettes/core/deck'
+import { isDeckSlug, readDeckFile } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { assertCanCreateInProject } from '../utils/access'
 import { useDraftStore } from '../utils/collab'
 import { useDeckMeta, useProjectStore } from '../utils/sources'
+import { creationDraft, deckFromTemplate, DEFAULT_TEMPLATE, loadTemplate } from '../utils/templates'
 
-const CreateSchema = z.object({
-  slug: z.string().min(1),
-  title: z.string().trim().min(1),
-  project: z.string().min(1).optional(),
-  theme: z.string().min(1).optional(),
-}).strict()
+/**
+ * A deck starts from a template, with the title and the theme typed in the
+ * dialog, or from an imported file, whose frontmatter gives them.
+ */
+const CreateSchema = z.union([
+  z.object({
+    slug: z.string().min(1),
+    title: z.string().trim().min(1),
+    project: z.string().min(1).optional(),
+    theme: z.string().min(1).optional(),
+    template: z.string().min(1).optional(),
+  }).strict(),
+  z.object({
+    slug: z.string().min(1),
+    project: z.string().min(1).optional(),
+    raw: z.string().min(1),
+  }).strict(),
+])
 
-/** Starter markdown for a new deck; the frontmatter mirrors the row for rendering. */
-function starterMarkdown(input: { title: string, theme?: string, project?: string }): string {
-  const frontmatter = [
-    `title: ${JSON.stringify(input.title)}`,
-    ...(input.theme ? [`theme: ${input.theme}`] : []),
-    ...(input.project ? [`project: ${input.project}`] : []),
-  ]
-  return `---\n${frontmatter.join('\n')}\n---\n\n# ${input.title}\n\n---\n\n## Première section\n\nContenu de la diapositive.\n`
+type CreateInput = z.infer<typeof CreateSchema>
+
+/** The deck's first draft and the title and theme its row takes. */
+async function startingDeck(input: CreateInput): Promise<{ raw: string, title: string, theme?: string }> {
+  if ('raw' in input) {
+    const reading = readDeckFile(input.raw)
+    if (!reading.valid) {
+      const keys = reading.issues.map(issue => issue.key || 'frontmatter').join(', ')
+      throw createError({ statusCode: 400, statusMessage: `Invalid frontmatter: ${keys}`, data: { issues: reading.issues } })
+    }
+    return { raw: creationDraft(input.raw, { project: input.project }), title: reading.meta.title, theme: reading.meta.theme }
+  }
+  const template = await loadTemplate(input.template ?? DEFAULT_TEMPLATE)
+  if (template === null)
+    throw createError({ statusCode: 400, statusMessage: `No template "${input.template}"` })
+  return { raw: deckFromTemplate(template, input), title: input.title, theme: input.theme }
 }
 
 /**
- * POST /api/presentations: create a deck entirely in the database, a starter
+ * POST /api/presentations: create a deck entirely in the database, a first
  * draft plus a managed private row. Privileged roles create anywhere; a
  * collaborator holding an `editor` grant on a folder may create inside that
  * folder (`assertCanCreateInProject`).
@@ -31,9 +52,9 @@ function starterMarkdown(input: { title: string, theme?: string, project?: strin
 export default defineEventHandler(async (event) => {
   const parsed = CreateSchema.safeParse(await readBody(event))
   if (!parsed.success) {
-    throw createError({ statusCode: 400, statusMessage: 'Body must be { slug, title, project?, theme? }' })
+    throw createError({ statusCode: 400, statusMessage: 'Body must be { slug, title, project?, theme?, template? } or { slug, raw, project? }' })
   }
-  const { slug, title, project, theme } = parsed.data
+  const { slug, project } = parsed.data
 
   await assertCanCreateInProject(event, project)
   if (project && !await useProjectStore().isLive(project))
@@ -47,16 +68,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Draft storage is unavailable on this deployment' })
   }
 
+  const deck = await startingDeck(parsed.data)
+
   if (await useDeckMeta().existsIncludingTrashed(slug)) {
     throw createError({ statusCode: 409, statusMessage: `A deck "${slug}" already exists (it may be in the trash)` })
   }
 
-  await drafts.save(slug, markdownToYDocUpdate(starterMarkdown({ title, theme, project })))
+  await drafts.save(slug, markdownToYDocUpdate(deck.raw))
   const meta = await useDeckMeta().update(slug, {
-    title,
+    title: deck.title,
     status: 'private',
     ...(project ? { project } : {}),
-    ...(theme ? { theme } : {}),
+    ...(deck.theme ? { theme: deck.theme } : {}),
   })
 
   setResponseStatus(event, 201)

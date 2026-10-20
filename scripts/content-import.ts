@@ -33,6 +33,7 @@ import type { ArchiveWrite } from '../layers/studio/server/db/ports.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
+import { splitFrontmatter } from '@vignettes/core/deck'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
 import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
@@ -50,19 +51,6 @@ const REMOTE = args.find(a => a.startsWith('--remote='))?.slice(9)
 const FORCE = args.includes('--force')
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
-
-interface Frontmatter { [k: string]: unknown }
-
-/** Split `---\n<yaml>\n---\n<body>`; a stub without frontmatter yields `{}`. */
-function splitFrontmatter(raw: string): { data: Frontmatter, body: string } {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw)
-  if (!match)
-    return { data: {}, body: raw }
-  return {
-    data: (parseYaml(match[1]) || {}) as Frontmatter,
-    body: raw.slice(match[0].length),
-  }
-}
 
 function readYaml<T>(file: string): T {
   try {
@@ -213,7 +201,11 @@ const deckPlans: DeckPlan[] = []
 
 for (const stub of stubs) {
   const raw = readFileSync(stub.path, 'utf8')
-  const { data } = splitFrontmatter(raw)
+  const { data, yamlError } = splitFrontmatter(raw)
+  if (yamlError) {
+    plan.warnings.push(`${stub.slug} : frontmatter illisible, stub ignoré (${yamlError.split('\n')[0]})`)
+    continue
+  }
   const reg = registryBySlug.get(stub.slug)
   const row = existing.get(stub.slug)
 

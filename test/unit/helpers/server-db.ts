@@ -1,7 +1,7 @@
 import type { Role } from '#shared/access'
 import type { SqliteDb } from '../../../layers/studio/server/db/sqlite/index'
 import type { Rows } from './adapters'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
@@ -57,10 +57,18 @@ export function setupServerDb() {
   afterAll(() => cleanup())
 }
 
+/** The directory Nitro mounts as the server assets `base`, read from the studio layer's Nuxt config. */
+async function serverAssetDir(base: string): Promise<string> {
+  vi.stubGlobal('defineNuxtConfig', (config: unknown) => config)
+  const { default: studioConfig } = await import('../../../layers/studio/nuxt.config')
+  return studioConfig.nitro?.serverAssets?.find(asset => `assets:${asset.baseName}` === base)?.dir ?? ''
+}
+
 /**
  * The guards and handlers read identity, cookies, query, params and body through
  * h3/Nitro auto-imports. These stubs read them from the event object a test
  * builds, so a test drives the real code path by describing the request.
+ * `useStorage` reads the server assets from their directories.
  * Call before importing a module that runs `defineEventHandler` at load.
  */
 export function stubH3Globals() {
@@ -91,6 +99,13 @@ export function stubH3Globals() {
   vi.stubGlobal('clearUserSession', async (e: any) => {
     e.sessionCleared = true
   })
+  vi.stubGlobal('useStorage', (base: string) => ({
+    getKeys: async () => readdirSync(await serverAssetDir(base)),
+    getItem: async (key: string) => {
+      const path = join(await serverAssetDir(base), key)
+      return existsSync(path) ? readFileSync(path, 'utf8') : null
+    },
+  }))
   vi.stubGlobal('sendRedirect', (e: any, url: string) => {
     e.redirectedTo = url
   })

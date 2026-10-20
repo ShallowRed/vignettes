@@ -21,7 +21,10 @@
       "share": "Share…",
       "createVariant": "Create a variant…",
       "newEdition": "New edition…",
-      "delete": "Delete…"
+      "delete": "Delete…",
+      "downloadPublished": "Download the published version (.md)",
+      "downloadDraft": "Download the draft (.md)",
+      "downloadFailed": "The download failed"
     },
     "folders": {
       "edit": "Edit…",
@@ -70,12 +73,36 @@
       "updatedOn": "Updated on {date}"
     },
     "deckCreate": {
-      "description": "A blank draft, created in the database and opened in the editor.",
+      "description": "Creates a private presentation and opens it in the editor.",
       "titlePlaceholder": "Title of the presentation",
       "slugHelp": "Identifier in the URL (/slides/…). The wand fills it from the title.",
       "submit": "Create and edit",
       "created": "Presentation created",
-      "slugTaken": "The slug “{slug}” is already taken."
+      "slugTaken": "The slug “{slug}” is already taken.",
+      "start": {
+        "label": "Start from",
+        "blank": {
+          "label": "Blank presentation",
+          "description": "A title slide and one section."
+        },
+        "example": {
+          "label": "Example",
+          "description": "Headings, columns, a quote, an image and notes, explained on the slides."
+        },
+        "file": {
+          "label": "Markdown file",
+          "description": "A .md file written elsewhere or exported."
+        }
+      },
+      "import": {
+        "dropLabel": "Drop a .md file",
+        "dropDescription": "or click to choose it. Its front matter gives the title and the theme.",
+        "fromFile": "Read from the file's front matter.",
+        "defaultTheme": "{theme}, the default theme",
+        "titleMissing": "The file's front matter gives no title: add the title key.",
+        "keysInvalid": "The file's front matter has a refused value for the key {keys}. | The file's front matter has a refused value for the key {keys}. | The file's front matter has refused values for the keys {keys}.",
+        "yamlInvalid": "The file's front matter is not valid YAML: {message}"
+      }
     },
     "form": {
       "slugInvalid": "Letters, digits, hyphens and underscores only",

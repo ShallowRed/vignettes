@@ -7,21 +7,21 @@ parser: heading
 
 # Vignettes
 
-:subtitle{text="Des présentations en Markdown, un catalogue autour."}
+:subtitle{text="Des présentations écrites en Markdown et rangées dans un catalogue"}
 
-Cette présentation est écrite dans un seul fichier Markdown. Elle sert d'exemple : ouvrez-la dans l'éditeur pour voir le texte à gauche et le rendu à droite.
+Cette présentation est écrite dans un seul fichier Markdown. Dans l'éditeur, le texte est à gauche et le rendu à droite.
 
 ## Le dialecte
 
-Un deck est du Markdown, plus des composants et des annotations.
+Une présentation est écrite en Markdown, avec des composants et des annotations.
 
 ### Titres et diapositives
 
-Avec `parser: heading`, `#` ouvre la diapositive de titre, `##` commence une diapositive horizontale et `###` en imbrique une verticale dessous. Avec `parser: separator`, qui est le réglage par défaut des thèmes fournis, `---` sépare les diapositives horizontales et `----` les verticales.
+Avec `parser: heading`, un titre `#` produit la diapositive de titre, un titre `##` commence une diapositive horizontale et un titre `###` ajoute une diapositive verticale sous elle. Avec `parser: separator`, le réglage par défaut des thèmes fournis, une ligne `---` sépare les diapositives horizontales et une ligne `----` sépare les verticales.
 
 ### Les composants
 
-Un composant s'écrit avec des deux-points. Le nombre de deux-points dit ce qu'il enveloppe : `::Nom` entoure du texte, `:::Nom` contient d'autres composants, `:nom{…}` s'insère dans une phrase.
+On écrit un composant avec des deux-points. Leur nombre indique ce que contient le composant : `::Nom` entoure du texte, `:::Nom` contient d'autres composants, `:nom{…}` est inséré dans une phrase.
 
 ::Quote{author="Antoine de Saint-Exupéry"}
 La perfection est atteinte, non pas lorsqu'il n'y a plus rien à ajouter, mais lorsqu'il n'y a plus rien à retirer.
@@ -29,38 +29,43 @@ La perfection est atteinte, non pas lorsqu'il n'y a plus rien à ajouter, mais l
 
 ### Les annotations
 
-Une annotation est lue puis retirée du corps de la diapositive. `:subtitle{text="…"}` pose un sous-titre, `:pretitle{text="…"}` un sur-titre, `:slide-background{image="…"}` une image de fond, `:quicklink{text="…" href="…"}` un lien épinglé en bas.
+Le moteur lit une annotation puis la retire du corps de la diapositive. `:subtitle{text="…"}` ajoute un sous-titre, `:pretitle{text="…"}` un sur-titre, `:slide-background{image="…"}` une image de fond, `:quicklink{text="…" href="…"}` un lien en bas de la diapositive.
 
 ## Deux colonnes
 
 :::Columns
 ::Column
-Le composant `Columns` répartit ses enfants. `TwoColumns` et `ThreeColumns` en sont des alias.
+Le composant `Columns` place les blocs `Column` côte à côte. `TwoColumns` et `ThreeColumns` sont deux autres noms du même composant.
 ::
 
 ::Column
-Une annotation `:layout{name="media-right" src="…"}` fait autre chose : elle réserve un panneau média à droite du texte, sur toute la hauteur.
+Un bloc `Column` contient du texte, une liste, une image ou un autre composant.
 ::
 :::
+
+## Un texte et une image
+
+:layout{name="media-right" src="/images/placeholder.svg"}
+
+Avec `:layout{name="media-right" src="…"}`, le texte occupe la partie gauche de la diapositive et l'image la partie droite. Quand vous déposez une image dans l'éditeur, l'éditeur la téléverse et insère à l'endroit du dépôt un bloc `::Image` qui contient son adresse. Pour placer l'image à droite, copiez cette adresse dans `src`.
 
 ## Révéler point par point
 
 ::Fragments
-- Chaque élément de la liste apparaît à la frappe suivante.
-- L'ordre est celui de la liste.
-- Les notes de l'orateur, elles, restent invisibles au public.
+- Chaque appui sur la flèche droite affiche l'élément suivant de la liste.
+- Les éléments apparaissent dans l'ordre de la liste.
 ::
 
 ::Notes
-Ces notes s'affichent dans la vue orateur, ouverte avec la touche S.
+La touche S ouvre la vue orateur, qui affiche ces notes.
 ::
 
 ## Le thème
 
-Cette présentation utilise `dsfr`, la base du Système de Design de l'État. Le thème se choisit dans le frontmatter et se change sans toucher au texte. Un thème est un dossier avec un manifeste `theme.json` et une entrée SCSS bâtie sur `@vignettes/theme-kit`.
+On choisit le thème avec la clé `theme` du frontmatter. Un thème est un dossier qui contient un manifeste `theme.json` et une entrée SCSS construite sur `@vignettes/theme-kit`.
 
 ## Et ensuite
 
 :quicklink{text="Le format complet" href="https://github.com/ShallowRed/vignettes/blob/main/docs/presentation-format.md"}
 
-Le catalogue range les présentations par dossier, garde un historique de versions publiées et applique des règles d'accès par présentation. L'éditeur se partage à plusieurs en temps réel. Une présentation publiée peut être gelée en un paquet statique qui fonctionne sans serveur.
+Le catalogue classe les présentations par dossier, garde un historique des versions publiées et applique des règles d'accès à chaque présentation. Plusieurs personnes peuvent modifier la même présentation en même temps dans l'éditeur. On peut geler une présentation publiée en un paquet statique, qui fonctionne sans serveur.

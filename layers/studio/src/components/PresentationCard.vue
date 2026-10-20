@@ -3,9 +3,10 @@ import type { PresentationListItem } from '#shared/presentations'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 import { useAppSession } from '../composables/useAppSession'
+import { useDeckDownload } from '../composables/useDeckDownload'
 
-// Catalog card. `admin` adds management details and the actions menu (privileged
-// roles only). Editing is separate: it follows the deck's own `canEdit`, so a
+// Catalog card. `admin` adds management details and the management entries of
+// the actions menu (privileged roles only). Editing is separate: it follows the deck's own `canEdit`, so a
 // collaborator holding an `editor` grant gets the pencil without the rest.
 const props = defineProps<{
   presentation: PresentationListItem
@@ -40,8 +41,7 @@ const frozen = computed(() => isFrozen(deck.value))
 
 // A frozen deck is read-only whatever the role.
 const canEdit = computed(() => !frozen.value && (props.admin === true || deck.value.canEdit === true))
-const hasMenu = computed(() => props.admin === true && !frozen.value)
-const hasActions = computed(() => canEdit.value || hasMenu.value)
+const adminMenu = computed(() => props.admin === true && !frozen.value)
 
 const to = computed(() => {
   // Nothing to show yet: send whoever may edit it straight to the editor.
@@ -63,25 +63,35 @@ const updatedLabel = computed(() => {
   return t('catalog.card.updatedOn', { date: date.toLocaleDateString(locale.value, { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) }) })
 })
 
-const adminActions = computed<DropdownMenuItem[][]>(() => [
-  [
-    { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
-    { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
-    ...(isOwner.value ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }] : []),
-  ],
-  [
-    { label: t('catalog.deck.createVariant'), icon: 'i-lucide-languages', onSelect: () => emit('duplicate', deck.value, 'variant') },
-    { label: t('catalog.deck.newEdition'), icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', deck.value, 'edition') },
-  ],
-  [
-    {
-      label: t('catalog.deck.delete'),
-      icon: 'i-lucide-trash-2',
-      color: 'error',
-      onSelect: () => emit('remove', deck.value),
-    },
-  ],
-])
+const { downloadItems } = useDeckDownload()
+const actions = computed<DropdownMenuItem[][]>(() => [
+  ...(adminMenu.value
+    ? [[
+        { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
+        { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
+        ...(isOwner.value ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }] : []),
+      ]]
+    : []),
+  downloadItems(deck.value, canEdit.value),
+  ...(adminMenu.value
+    ? [
+        [
+          { label: t('catalog.deck.createVariant'), icon: 'i-lucide-languages', onSelect: () => emit('duplicate', deck.value, 'variant') },
+          { label: t('catalog.deck.newEdition'), icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', deck.value, 'edition') },
+        ],
+        [
+          {
+            label: t('catalog.deck.delete'),
+            icon: 'i-lucide-trash-2',
+            color: 'error' as const,
+            onSelect: () => emit('remove', deck.value),
+          },
+        ],
+      ]
+    : []),
+].filter(group => group.length > 0))
+const hasMenu = computed(() => actions.value.length > 0)
+const hasActions = computed(() => canEdit.value || hasMenu.value)
 </script>
 
 <template>
@@ -121,7 +131,7 @@ const adminActions = computed<DropdownMenuItem[][]>(() => [
           <UDropdownMenu
             v-if="hasMenu"
             v-model:open="menuOpen"
-            :items="adminActions"
+            :items="actions"
             :content="{ align: 'end' }"
           >
             <UButton

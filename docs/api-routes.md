@@ -11,13 +11,15 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 | `GET /api/presentations` | any | Decks the actor may list, with status, project, theme, grants summary, and the unpublished-changes flag |
 | `GET /api/projects` | any | Project folders the actor may see; privileged actors see every folder |
 | `GET /api/presentations/:slug` | gate | The published version of a deck; `?draft` returns the draft to actors who may edit it |
+| `GET /api/presentations/:slug/markdown` | gate | The Markdown of the published version as a `<slug>.md` attachment; `?draft` returns the draft, the live text of an open collab room included, to actors who may edit the deck |
+| `GET /api/templates` | any | The ids of the templates a new deck starts from, the default one first |
 | `GET /api/p/:alias` | gate | Resolve a directory alias: live decks return their published markdown, frozen ones the bundle URL |
 
 ## Deck lifecycle
 
 | Route | Access | Effect |
 |-------|--------|--------|
-| `POST /api/presentations` | privileged, creation right on the project | Create a deck with starter markdown |
+| `POST /api/presentations` | privileged, creation right on the project | Create a deck from a template (`template`, `title`, `theme`) or from a Markdown file (`raw`), whose frontmatter gives the title and the theme; a refused frontmatter answers 400 with the key in `data.issues`. The route writes the chosen folder in the draft's frontmatter and removes `status`, which the row holds |
 | `POST /api/presentations/:slug/duplicate` | may edit, creation right on the folder | Copy the deck as a new draft: a variant of its family, or the edition replacing it |
 | `PUT /api/presentations/:slug` | may edit | Save the markdown as the draft, and keep it as a snapshot |
 | `POST /api/presentations/:slug/publish` | may edit | Persist the draft as a new immutable version and point readers to it |

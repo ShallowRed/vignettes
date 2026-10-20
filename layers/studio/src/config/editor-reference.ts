@@ -245,7 +245,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.mediaText.label',
     descriptionKey: 'reference.templates.mediaText.description',
-    snippet: '---\n\n## ${Titre de la diapo}\n\n:layout{name="media-right"}\n\n${Lorem ipsum dolor sit amet, consectetur adipiscing elit.}\n\n::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
+    snippet: '---\n\n## ${Titre de la diapo}\n\n:layout{name="media-right" src="${/images/placeholder.svg}" alt="${Description de l\'image}"}\n\n${Le parcours d\'inscription passe de six à trois écrans.}',
   },
   {
     labelKey: 'reference.templates.quote.label',
