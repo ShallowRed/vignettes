@@ -34,9 +34,10 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    // The pictograms of `Scheme` steps, served as the studio serves them.
+    // The pictograms of `Scheme` steps and the images of the example deck, served as the studio serves them.
     publicAssets: [
       { dir: fileURLToPath(new URL('../public/pictograms', import.meta.url)), baseURL: '/pictograms', maxAge: 0 },
+      { dir: fileURLToPath(new URL('../public/images', import.meta.url)), baseURL: '/images', maxAge: 0 },
     ],
   },
 

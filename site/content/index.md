@@ -28,6 +28,12 @@ Démarrer
 
 :::
 
+:::u-button{size="xl" to="/ecrire/ecrire-avec-un-agent" color="neutral" variant="outline"}
+
+Écrire avec un agent
+
+:::
+
 ::
 
 ::u-container{class="max-w-5xl pb-24"}
