@@ -5,12 +5,14 @@
   "private": true,
   "packageManager": "pnpm@10.24.0",
   "engines": {
-    "node": ">=22.0.0"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "pnpm build:themes && nuxt dev",
     "dev:theme": "node scripts/build-themes.ts --watch",
     "build": "pnpm build:themes && nuxt build",
+    "build:server": "NITRO_PRESET=node_server NODE_OPTIONS=--max-old-space-size=4096 pnpm build",
+    "scalingo-postbuild": "pnpm build:server",
     "build:themes": "node scripts/build-theme-tokens.ts && node scripts/build-themes.ts",
     "build:theme": "node scripts/build-themes.ts",
     "generate": "pnpm build:themes && nuxt generate",

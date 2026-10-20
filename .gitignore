@@ -47,6 +47,7 @@ docs/private/
 
 # mise personal overrides
 mise.local.toml
+mise.*.local.toml
 
 # Agent session state and the worktrees it opens
 .claude/

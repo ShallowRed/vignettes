@@ -110,6 +110,8 @@ The app builds into a Docker image (`Dockerfile`) that runs the Nitro server on 
 
 GitHub Actions builds the image on every push to `main` and `staging`, publishes it to GHCR, and deploys it over SSH to the matching environment. Docs-only commits do not trigger a build.
 
+On Scalingo, the Node.js buildpack builds the app from the repository and the `Procfile` starts it, on the PostgreSQL addon and an S3 bucket: [docs/deploy-scalingo.md](docs/deploy-scalingo.md) lists the steps.
+
 ### Configuration
 
 | Variable | Role |
@@ -124,7 +126,7 @@ GitHub Actions builds the image on every push to `main` and `staging`, publishes
 | `NUXT_DB_PATH` | SQLite file, `.data/slides.db` by default |
 | `NUXT_CONTENT_DIR` | Content space: deck stubs and tenant themes, `presentations/` by default |
 | `NUXT_CONTENT_TOKEN` | Bearer token that lets `content:republish:prod`, `content:push`, `content:pull` and `theme:rename` reach the instance without a session |
-| `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk |
+| `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk, and a production server on PostgreSQL stops at boot |
 | `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development, and creates its data set and its five accounts at boot |
 | `NUXT_PUBLIC_HELP_URL`, `NUXT_PUBLIC_FEEDBACK_URL` | Addresses of the « Documentation » and « Envoyer un retour » links, shown in the header and in the status bar of the editor, each hidden while empty |
 

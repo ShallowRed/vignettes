@@ -3,7 +3,7 @@ import type { FrozenS3Config } from '#shared/storage/frozen-s3'
 import type { DatabaseConfig } from '../db/config'
 import process from 'node:process'
 import { readRoleMap } from '#shared/access'
-import { frozenS3ConfigFromEnv } from '#shared/storage/frozen-s3'
+import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { readDatabaseConfig } from '../db/config'
 
 /**
@@ -38,4 +38,16 @@ export function serverConfig(): ServerConfig {
     roleMap: readRoleMap(env),
     frozenS3: frozenS3ConfigFromEnv(env),
   }
+}
+
+/**
+ * Why a production server refuses to start on this configuration, or nothing.
+ * A PostgreSQL server keeps the rows outside the container. Without the bucket,
+ * the server writes the uploaded media to the container's disk and reads the
+ * published themes from it, and a platform such as Scalingo empties that disk at
+ * each restart.
+ */
+export function productionConfigProblem(config: Pick<ServerConfig, 'database' | 'frozenS3'>): string | undefined {
+  if (config.database.driver === 'postgres' && !isFrozenS3Configured(config.frozenS3))
+    return 'NUXT_DATABASE_URL names a PostgreSQL server, and the bucket is not configured: set NUXT_FROZEN_S3_BUCKET, NUXT_FROZEN_S3_ACCESS_KEY_ID and NUXT_FROZEN_S3_SECRET_ACCESS_KEY.'
 }

@@ -3,7 +3,7 @@
 # Image de l'app Nuxt (SSR / Nitro node-server), déployée en conteneur sur le VPS.
 # Build multi-stage :
 #   deps    -> `pnpm install` isolé (couche mise en cache tant que le lockfile ne bouge pas)
-#   build   -> `pnpm build` -> .output/ auto-suffisant (Nitro trace/bundle ses deps)
+#   build   -> `pnpm build:server` -> .output/ auto-suffisant (Nitro trace/bundle ses deps)
 #   output  -> le contenu de .output/, à la racine de l'étape
 #   runtime -> node:22-slim + .output/ uniquement. Pas de node_modules, pas de git.
 #
@@ -30,12 +30,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# NITRO_PRESET explicite (sinon Nitro autodétecte selon l'environnement).
-ENV NITRO_PRESET=node_server
 ENV NUXT_TELEMETRY_DISABLED=1
-# The prerenderer loads the full server bundle; the default ~2GB heap OOMs.
-ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN pnpm build
+# build:server raises the Node heap: the Nitro build needs more than the default.
+RUN pnpm build:server
 
 # ---- output : le serveur construit, remplacé en CI par le build testé ----
 FROM scratch AS output
