@@ -13,7 +13,8 @@ import { readDatabaseConfig } from '../db/config'
  * `NUXT_FROZEN_S3_*` names do not fit Nuxt's runtime override (see
  * `runtimeConfig` in nuxt.config.ts).
  */
-export interface ServerConfig extends DatabaseConfig {
+export interface ServerConfig {
+  database: DatabaseConfig
   sessionPassword?: string
   contentDir?: string
   contentToken?: string
@@ -28,7 +29,7 @@ export function serverConfig(): ServerConfig {
   const env = process.env
   return {
     sessionPassword: env.NUXT_SESSION_PASSWORD,
-    ...readDatabaseConfig(env),
+    database: readDatabaseConfig(env),
     contentDir: env.NUXT_CONTENT_DIR,
     contentToken: env.NUXT_CONTENT_TOKEN?.trim() || undefined,
     recetteEnabled: env.NUXT_RECETTE_ENABLED === '1',

@@ -5,11 +5,12 @@ import { timingSafeEqual } from 'node:crypto'
 import { serverConfig } from './config'
 
 /**
- * The content token lets `content:republish --remote` publish a deck from its
- * stub without a browser session. It is scoped: only the routes that write a
- * deck from markdown accept it (draft save, publish, draft read), so a leaked
- * token republishes decks and nothing else. It carries the editor role, never
- * owner: users and grants stay out of reach.
+ * The content token lets the content scripts reach an instance without a
+ * browser session: `content:republish --remote` through the routes that write a
+ * deck from markdown (draft save, publish, draft read), and `content:push`,
+ * `content:pull` and `theme:rename` through `/api/content/*`. Every other route
+ * ignores it. It carries the editor role, never owner: users and grants stay
+ * out of reach.
  */
 export const CONTENT_TOKEN_LOGIN = 'content-token'
 

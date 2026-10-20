@@ -105,10 +105,18 @@ A grant never lowers what the global role already allows; `strongerGrant` in `sh
 
 The kit answers 404 unless `NUXT_RECETTE_ENABLED=1` or the app runs in development. See [recette-staging.md](recette-staging.md).
 
+## Content scripts
+
+| Route | Access | Effect |
+|-------|--------|--------|
+| `POST /api/content/push` | content token, or privileged | `content:push`: publish stubs of the content space, or say what it would do; a new deck takes its access axes from the frontmatter, a known one keeps them |
+| `GET /api/content/decks?slugs=<slug>[,<slug>]` | content token, or privileged | `content:pull`: the catalog axes and the published markdown of live decks; the access password column stays on the instance, and a hash written in the frontmatter travels with the markdown |
+| `POST /api/content/theme-rename` | content token, or privileged | `theme:rename`: rename a theme in the `theme` column, the published versions, the snapshots and the drafts of the decks declaring it, in one transaction, or say which decks it would rewrite |
+
 ## Password-protected decks
 
 When a semi-private deck is requested without its cookie, the gate answers 401 with `{ requiresPassword: true }`; the deck page redirects to `/unlock/:slug`, which verifies `?password=` against the stored hash and sets the `access_<slug>` cookie for 24 hours.
 
 ## Content token
 
-`NUXT_CONTENT_TOKEN` lets a script publish a deck without a browser session. `Authorization: Bearer <token>` is accepted as an `editor` actor by the markdown write path only: `PUT /api/presentations/:slug`, `POST /api/presentations/:slug/publish`, and `GET /api/presentations/:slug?draft`. Every other guard ignores it. `scripts/content-import.ts --remote` uses it.
+`NUXT_CONTENT_TOKEN` lets a script reach an instance without a browser session. `Authorization: Bearer <token>` is accepted as an `editor` actor by the markdown write path, `PUT /api/presentations/:slug`, `POST /api/presentations/:slug/publish` and `GET /api/presentations/:slug?draft`, which `scripts/content-import.ts --remote` uses, and by the content script routes above. Every other guard ignores it.

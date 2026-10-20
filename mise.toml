@@ -1,5 +1,5 @@
 # Toolchain and everyday tasks (mise). One dev server per worktree: each has its
-# own .nuxt, its own .data/slides.db and its own portless host.
+# own .nuxt, its own database in .data/ and its own portless host.
 
 [tools]
 # better-sqlite3 is built for this Node line; the tests fail under Node 24.
@@ -11,10 +11,9 @@ node = "22"
 node.corepack = true
 
 [env]
-# The deployed instance the production tasks talk to, and the SSH host and
-# containers `content:push` reaches it through, belong to an instance rather than
-# to the repository: set VIGNETTES_REMOTE, CONTENT_PUSH_SSH and
-# CONTENT_PUSH_CONTAINER in `mise.local.toml`, which git ignores.
+# The deployed instances the content tasks talk to belong to an instance rather
+# than to the repository: set VIGNETTES_REMOTE and VIGNETTES_STAGING_REMOTE in
+# `mise.local.toml`, which git ignores.
 
 [tasks.install]
 description = "Install the dependencies"
@@ -132,9 +131,17 @@ git worktree remove --force "$(dirname "$PWD")/vignettes.wt/$name"
 """
 
 [tasks."db:migrate"]
-description = "Apply the migrations to .data/slides.db (or NUXT_DB_PATH)"
+description = "Apply the migrations to the database of the environment, PGlite in .data/pglite by default"
 depends = [ "install" ]
 run = "node scripts/db-migrate.ts"
+
+[tasks."db:copy-sqlite"]
+description = "Copy a local SQLite database (.data/slides.db, or --from) into the empty PGlite or PostgreSQL database of the environment"
+depends = [ "install" ]
+usage = """
+flag "--from <file>" help="The SQLite file to copy"
+"""
+run = "node scripts/db-copy-sqlite.ts ${usage_from:+--from=\"$usage_from\"}"
 
 [tasks."content:plan"]
 description = "What content:import would do (dry run)"
@@ -168,7 +175,7 @@ flag "-f --force" help="Overwrite a draft edited online and not yet published"
 run = "sh scripts/with-secrets.sh node scripts/content-import.ts --apply --remote=\"${VIGNETTES_REMOTE:?set VIGNETTES_REMOTE to the instance URL, e.g. in mise.local.toml}\" --republish=\"$usage_slugs\" ${usage_force:+--force}"
 
 [tasks."content:push"]
-description = "Push stubs into the production database over SSH (dry run; --apply writes, --staging targets the staging container): mise run content:push -- <slug>[,<slug>]"
+description = "Push stubs into the production instance with NUXT_CONTENT_TOKEN (dry run; --apply writes, --staging targets the staging instance): mise run content:push -- <slug>[,<slug>]"
 depends = [ "install" ]
 usage = """
 arg "<slugs>"
@@ -177,17 +184,17 @@ flag "--staging"
 flag "--unlisted" help="Create the deck outside the catalog, reachable by its link"
 flag "--content <dir>" help="Read another content directory than presentations/"
 """
-run = "node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging} ${usage_unlisted:+--unlisted} ${usage_content:+--content=\"$usage_content\"}"
+run = "INFISICAL_ENV=${usage_staging:+staging} INFISICAL_SECRETS=NUXT_CONTENT_TOKEN sh scripts/with-secrets.sh node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging} ${usage_unlisted:+--unlisted} ${usage_content:+--content=\"$usage_content\"}"
 
 [tasks."content:pull"]
-description = "Pull the published version of decks from the production database into the local one over SSH (dry run; --apply writes, --staging reads the staging container): mise run content:pull -- <slug>[,<slug>]"
+description = "Pull the published version of decks from the production instance into the local database with NUXT_CONTENT_TOKEN (dry run; --apply writes, --staging reads the staging instance): mise run content:pull -- <slug>[,<slug>]"
 depends = [ "install" ]
 usage = """
 arg "<slugs>"
 flag "--apply"
 flag "--staging"
 """
-run = "node scripts/content-pull.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
+run = "INFISICAL_ENV=${usage_staging:+staging} INFISICAL_SECRETS=NUXT_CONTENT_TOKEN sh scripts/with-secrets.sh node scripts/content-pull.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
 
 [tasks."theme:push"]
 description = "Publish tenant themes (content space) to the bucket the deployed app serves them from (dry run; --apply uploads): mise run theme:push -- <name>[,<name>]"
@@ -208,7 +215,7 @@ flag "--deck <slugs>" help="Rename only these decks, among those declaring the t
 flag "--apply"
 flag "--staging"
 """
-run = "node scripts/theme-rename.ts \"$usage_from\" \"$usage_to\" ${usage_deck:+--deck=\"$usage_deck\"} ${usage_apply:+--apply} ${usage_staging:+--staging}"
+run = "INFISICAL_ENV=${usage_staging:+staging} INFISICAL_SECRETS=NUXT_CONTENT_TOKEN sh scripts/with-secrets.sh node scripts/theme-rename.ts \"$usage_from\" \"$usage_to\" ${usage_deck:+--deck=\"$usage_deck\"} ${usage_apply:+--apply} ${usage_staging:+--staging}"
 
 [tasks."assets:push"]
 description = "Mirror the deck assets of the content space (presentations/assets) to the bucket the deployed app serves them from (dry run; --apply uploads)"

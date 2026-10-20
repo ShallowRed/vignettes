@@ -1,9 +1,17 @@
 #!/bin/sh
 # App runner (receives the Infisical-injected environment from the entrypoint).
-# With bucket credentials: restore the SQLite database if the volume is empty,
-# then run the app under Litestream replication. Without them: plain start.
+# With NUXT_DATABASE_URL, the app runs on that PostgreSQL server. Otherwise it
+# runs on SQLite: with bucket credentials, it restores the database if the
+# volume is empty, then runs under Litestream replication; without them, plain
+# start.
 set -e
 
+if [ -n "${NUXT_DATABASE_URL:-}" ]; then
+  echo "[run-app] Base PostgreSQL (NUXT_DATABASE_URL)."
+  exec node .output/server/index.mjs
+fi
+
+export NUXT_DATABASE_DRIVER=sqlite
 DB_PATH="${NUXT_DB_PATH:-/app/.data/slides.db}"
 export NUXT_DB_PATH="$DB_PATH"
 

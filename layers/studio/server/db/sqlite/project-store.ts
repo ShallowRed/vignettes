@@ -27,11 +27,11 @@ export function createProjectStore(db: Db): ProjectStore {
   return {
     async create({ title, color, icon, slug: wanted }) {
       const now = new Date()
-      // The free slug and the order are read in the transaction of the insert.
+      // One transaction, so two creations with one title get two slugs.
       const row = db.transaction((tx) => {
         // An explicit slug is caller-validated (shape + uniqueness → 409 upstream).
         // Every row counts, trashed ones included: the slug is the primary key.
-        const slug = wanted ?? freeProjectSlug(title, candidate => !!tx.select({ slug: projects.slug }).from(projects).where(eq(projects.slug, candidate)).get())
+        const slug = wanted ?? freeProjectSlug(title, new Set(tx.select({ slug: projects.slug }).from(projects).all().map(row => row.slug)))
         const max = tx.select({ m: sql<number>`coalesce(max(${projects.order}), -1)` }).from(projects).get()?.m ?? -1
         return tx.insert(projects)
           .values({ slug, title: title.trim(), order: max + 1, color: color ?? null, icon: icon ?? null, createdAt: now, updatedAt: now })

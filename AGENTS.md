@@ -13,7 +13,7 @@ The code keeps these boundaries, and `eslint.config.js` checks them with message
 - `packages/core` is the deck core: it imports zod, js-yaml, slugify and its own files.
 - `layers/studio/shared` is the studio's domain, run on the client and the server: no framework, no I/O, no `process.env`, no render module. `yjs` stays in `shared/collab`.
 - `@nuxtjs/mdc` is read by the render module (`packages/nuxt`), the configuration files and the tests.
-- drizzle-orm and better-sqlite3 are read by the SQLite adapter (`layers/studio/server/db/sqlite`), the test helpers and `test/unit/migrations.test.ts`. Code elsewhere reaches the rows through a port of `server/db/ports.ts`.
+- drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are read by the adapters (`layers/studio/server/db/sqlite`, `layers/studio/server/db/postgres`), the test helpers and `test/unit/migrations.test.ts`. Code elsewhere reaches the rows through a port of `server/db/ports.ts`.
 
 Two more rules hold the entry points:
 

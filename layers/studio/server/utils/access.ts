@@ -194,6 +194,11 @@ export async function assertPrivileged(event: H3Event): Promise<Actor> {
   return actor
 }
 
+/** The actor of a content script (`/api/content/*`): the content token, or a privileged session. */
+export async function assertContentScript(event: H3Event): Promise<Actor> {
+  return contentTokenActor(event) ?? await assertPrivileged(event)
+}
+
 /** 403/401 unless the actor's global role is `owner` (user and grant management). */
 export async function assertOwner(event: H3Event): Promise<Actor> {
   const actor = await getActor(event)

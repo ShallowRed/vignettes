@@ -25,7 +25,7 @@ You need Node 22 and pnpm. [mise](https://mise.jdx.dev) installs both and runs t
 git clone https://github.com/ShallowRed/vignettes.git
 cd vignettes
 mise install          # Node 22, pnpm, portless
-mise run setup        # .env with a generated session secret, dependencies, database
+mise run setup        # .env with a generated session secret, dependencies, database (PGlite in .data/pglite)
 mise run dev:nuxt     # http://localhost:3000
 ```
 
@@ -34,6 +34,8 @@ Sign in with `/auth/dev-login?role=owner`, which answers in development only and
 `mise run dev` runs the same server behind a local proxy on a `.localhost` host name, which lets several branches run at once. `dev:nuxt` needs no proxy.
 
 Without mise, `pnpm install && pnpm dev` works once `.env` exists with a `NUXT_SESSION_PASSWORD` of at least 32 characters. Copy `.env.example` and fill that one line.
+
+The database is PostgreSQL. Locally it runs inside the app through PGlite, in `.data/pglite`, and a single process opens that directory at a time: stop the development server before any task that opens it, such as `content:import`. A checkout whose decks are in `.data/slides.db` copies them with `mise run db:copy-sqlite`, or keeps SQLite with `NUXT_DATABASE_DRIVER=sqlite` in `.env`.
 
 ## Writing a deck
 
@@ -87,7 +89,7 @@ The database is the only runtime source of content. Each deck has a draft (a Yjs
 | `mise run content:plan` | What an import would do, without writing |
 | `mise run content:import` | Import the stubs the database does not own yet |
 | `mise run content:republish -- <slug>` | New published version from the stub, access rules untouched |
-| `mise run content:push -- <slug> --apply` | Same, on a deployed instance over SSH; `--content <dir>` reads another content directory, `--unlisted` keeps the deck out of the catalog |
+| `mise run content:push -- <slug> --apply` | Same, on a deployed instance with its content token; `--content <dir>` reads another content directory, `--unlisted` keeps the deck out of the catalog |
 | `mise run content:pull -- <slug> --apply` | The reverse: bring the published version of a deck from a deployed instance into the local database, for a deck that only exists there, before rebuilding its frozen bundle |
 | `mise run theme:rename -- <from> <to> --apply` | Rename the theme the decks of a deployed instance declare, in every published version, draft and snapshot; `--deck <slug>` limits it to named decks |
 | `mise run theme:push -- <name> --apply` | Publish a theme of the content space to the object storage the deployed instances serve it from |
@@ -104,7 +106,7 @@ Sign-in uses GitHub or Google OAuth. Accounts are identified by provider and pro
 
 One instance serves one tenant.
 
-The app builds into a Docker image (`Dockerfile`) that runs the Nitro server on port 3000 with a SQLite database on a volume. At start, `docker-entrypoint.sh` fetches the runtime secrets from Infisical with a machine identity and injects them into the process; `run-app.sh` then restores the database from object storage when the volume is empty and runs the app under Litestream replication. Set `INFISICAL_DISABLE=1` to give the container its environment directly instead. Without bucket credentials the app starts on the local database alone.
+The app builds into a Docker image (`Dockerfile`) that runs the Nitro server on port 3000. At start, `docker-entrypoint.sh` fetches the runtime secrets from Infisical with a machine identity and injects them into the process. With `NUXT_DATABASE_URL`, `run-app.sh` starts the app on that PostgreSQL server. Without it, the image runs SQLite on a volume: `run-app.sh` restores the database from object storage when the volume is empty and runs the app under Litestream replication. Set `INFISICAL_DISABLE=1` to give the container its environment directly instead. Without bucket credentials the app starts on the local database alone.
 
 GitHub Actions builds the image on every push to `main` and `staging`, publishes it to GHCR, and deploys it over SSH to the matching environment. Docs-only commits do not trigger a build.
 
@@ -116,14 +118,17 @@ GitHub Actions builds the image on every push to `main` and `staging`, publishes
 | `NUXT_OAUTH_GITHUB_CLIENT_ID`, `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub sign-in |
 | `NUXT_OAUTH_GOOGLE_CLIENT_ID`, `NUXT_OAUTH_GOOGLE_CLIENT_SECRET` | Google sign-in; the login page hides providers without credentials |
 | `NUXT_OWNER_LOGINS`, `NUXT_EDITOR_LOGINS` | Handles that receive the owner and editor roles at login |
+| `NUXT_DATABASE_URL` | PostgreSQL server, as a `postgres://` URL whose `sslmode` sets TLS. On Scalingo, `$SCALINGO_POSTGRESQL_URL` |
+| `NUXT_PGLITE_DIR` | Without `NUXT_DATABASE_URL`: the PGlite directory, `.data/pglite` by default |
+| `NUXT_DATABASE_DRIVER` | `sqlite`: the app runs on the SQLite file of `NUXT_DB_PATH` |
 | `NUXT_DB_PATH` | SQLite file, `.data/slides.db` by default |
 | `NUXT_CONTENT_DIR` | Content space: deck stubs and tenant themes, `presentations/` by default |
-| `NUXT_CONTENT_TOKEN` | Bearer token that lets `content:republish:prod` publish without a session |
+| `NUXT_CONTENT_TOKEN` | Bearer token that lets `content:republish:prod`, `content:push`, `content:pull` and `theme:rename` reach the instance without a session |
 | `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk |
 | `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development, and creates its data set and its five accounts at boot |
 | `NUXT_PUBLIC_HELP_URL`, `NUXT_PUBLIC_FEEDBACK_URL` | Addresses of the « Documentation » and « Envoyer un retour » links, shown in the header and in the status bar of the editor, each hidden while empty |
 
-`mise.local.toml`, which git ignores, holds what belongs to an instance rather than to the repository: `VIGNETTES_REMOTE` for the deployed instance the production tasks talk to, `CONTENT_PUSH_SSH` and `CONTENT_PUSH_CONTAINER` for the host `content:push`, `content:pull` and `theme:rename` reach it through.
+`mise.local.toml`, which git ignores, holds the settings of one instance: `VIGNETTES_REMOTE`, the address of the deployed instance that `content:republish:prod`, `content:push`, `content:pull` and `theme:rename` talk to, and with `--staging`, `VIGNETTES_STAGING_REMOTE`, the address of the staging instance. These tasks take `NUXT_CONTENT_TOKEN` from Infisical, in the `prod` or `staging` environment.
 
 `.env.example` lists them with comments. Locally, `.env` is read by Nuxt; in production the variables come from Infisical, or from the container's environment with `INFISICAL_DISABLE=1`.
 

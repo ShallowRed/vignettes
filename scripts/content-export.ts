@@ -17,7 +17,7 @@
  * DRY-RUN BY DEFAULT.
  *   node scripts/content-export.ts                  # plan
  *   node scripts/content-export.ts --apply          # write
- *   node scripts/content-export.ts --db=/path/to.db
+ *   node scripts/content-export.ts --db=/path/to.db # read a SQLite file
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -25,17 +25,19 @@ import { join } from 'node:path'
 import process from 'node:process'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { dump as dumpYaml } from 'js-yaml'
-import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { describeDatabase } from '../layers/studio/server/db/config.ts'
 import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
+import { scriptDatabaseConfig } from './lib/database.ts'
 
 const ROOT = process.cwd()
 const CONTENT_DIR = contentDir(ROOT)
 
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
-const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5) ?? readDatabaseConfig(process.env).dbPath
+const DATABASE = scriptDatabaseConfig(args)
 
-const { archive } = openDatabaseFile({ dbPath: DB_PATH }, { readonly: true }).stores
+const database = await openDatabaseFile(DATABASE, { readonly: true })
+const { archive } = database.stores
 
 const rows = (await archive.decks())
   // The staging acceptance data set is test data, never part of the archive.
@@ -44,6 +46,7 @@ type Row = (typeof rows)[number]
 
 const historical = await archive.aliases()
 const projects = await archive.projects()
+await database.close()
 
 /** Frozen/archived bodies live in `archived/`, mirroring the repo layout. */
 function pathFor(row: Row): string {
@@ -113,7 +116,7 @@ const catalogChanged = currentContent(CATALOG_FILE) !== catalogYaml
 
 // ── Report ──────────────────────────────────────────────────────────────────
 
-console.log(`base    : ${DB_PATH}`)
+console.log(`base    : ${describeDatabase(DATABASE)}`)
 console.log(`contenu : ${CONTENT_DIR}`)
 console.log(`mode    : ${APPLY ? 'APPLY (écriture)' : 'DRY-RUN (aucune écriture)'}`)
 console.log(`\ndecks managed : ${rows.length} · projets : ${projects.length} · alias historiques : ${historical.length}`)

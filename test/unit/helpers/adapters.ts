@@ -1,8 +1,16 @@
 import type { Stores } from '../../../layers/studio/server/db/ports'
+import type { PostgresDb } from '../../../layers/studio/server/db/postgres/index'
 import type { SqliteDb } from '../../../layers/studio/server/db/sqlite/index'
-import { and, eq, isNull, sql } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach } from 'vitest'
-import { createSqliteStores, migrateSqlite, openSqlite, runDataMigrations } from '../../../layers/studio/server/db/sqlite/index'
+import { readFileSync } from 'node:fs'
+import { PGlite } from '@electric-sql/pglite'
+import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import { getTableConfig } from 'drizzle-orm/pg-core'
+import { drizzle } from 'drizzle-orm/pglite'
+import { afterAll, beforeAll, beforeEach, inject } from 'vitest'
+import { runDataMigrations } from '../../../layers/studio/server/db/data-migrations'
+import { createPostgresStores } from '../../../layers/studio/server/db/postgres/index'
+import * as pgSchema from '../../../layers/studio/server/db/postgres/schema'
+import { createSqliteStores, migrateSqlite, openSqlite } from '../../../layers/studio/server/db/sqlite/index'
 import * as schema from '../../../layers/studio/server/db/sqlite/schema'
 
 /**
@@ -42,6 +50,8 @@ export interface StoreAdapter {
   name: string
   /** A migrated, empty database of this adapter. */
   setup: () => Promise<AdapterFixture>
+  /** How long the setup may take, in milliseconds. */
+  setupTimeout: number
 }
 
 /** Every table, children first, so the foreign keys hold while the tables empty. */
@@ -83,12 +93,11 @@ export function emptySqlite(db: SqliteDb): void {
 
 async function setupSqlite(): Promise<AdapterFixture> {
   const db = freshSqlite()
+  const stores = createSqliteStores(db)
   return {
-    stores: createSqliteStores(db),
+    stores,
     rows: sqliteRows(db),
-    async migrateData() {
-      runDataMigrations(db)
-    },
+    migrateData: () => runDataMigrations(stores.rewrites),
     async reset() {
       emptySqlite(db)
     },
@@ -98,8 +107,63 @@ async function setupSqlite(): Promise<AdapterFixture> {
   }
 }
 
+const pgTable = (name: TableName) => pgSchema[name] as any
+
+/**
+ * {@link Rows} over a PostgreSQL connection. A select lists the rows by primary
+ * key, the order SQLite gives its rowid tables.
+ */
+export function postgresRows(db: PostgresDb): Rows {
+  const matching = (name: TableName, where: Record<string, unknown> = {}) =>
+    and(...Object.entries(where).map(([column, value]) => value === null ? isNull(pgTable(name)[column]) : eq(pgTable(name)[column], value)))
+  const primaryKey = (name: TableName) => {
+    const config = getTableConfig(pgTable(name))
+    const columns = config.primaryKeys[0]?.columns ?? config.columns.filter(column => column.primary)
+    return columns.map(column => asc(column))
+  }
+
+  return {
+    async insert(name, values) {
+      return db.insert(pgTable(name)).values(values as any).returning() as any
+    },
+    async select(name, where) {
+      return db.select().from(pgTable(name)).where(matching(name, where)).orderBy(...primaryKey(name)) as any
+    },
+    async update(name, set, where) {
+      await db.update(pgTable(name)).set(set as any).where(matching(name, where))
+    },
+  }
+}
+
+/** Every table, by its SQL name, for the reset between tests. */
+const PG_TABLES = TABLES.map(name => getTableConfig(pgTable(name)).name).join(', ')
+
+/** PGlite starts a PostgreSQL in WebAssembly: several seconds on a CI runner. */
+export const PGLITE_TIMEOUT = 60_000
+
+/** An in-memory PGlite database, loaded from the migrated template of the run (`pglite-template.ts`). */
+export async function freshPglite(): Promise<{ db: PostgresDb, close: () => Promise<void> }> {
+  const client = await PGlite.create({ loadDataDir: new Blob([readFileSync(inject('pgliteTemplate'))]) })
+  return { db: drizzle({ client, schema: pgSchema }), close: () => client.close() }
+}
+
+async function setupPglite(): Promise<AdapterFixture> {
+  const { db, close } = await freshPglite()
+  const stores = createPostgresStores(db)
+  return {
+    stores,
+    rows: postgresRows(db),
+    migrateData: () => runDataMigrations(stores.rewrites),
+    async reset() {
+      await db.execute(sql.raw(`truncate ${PG_TABLES} restart identity cascade`))
+    },
+    close,
+  }
+}
+
 export const ADAPTERS: StoreAdapter[] = [
-  { name: 'sqlite', setup: setupSqlite },
+  { name: 'sqlite', setup: setupSqlite, setupTimeout: 10_000 },
+  { name: 'pglite', setup: setupPglite, setupTimeout: PGLITE_TIMEOUT },
 ]
 
 /**
@@ -115,9 +179,9 @@ export function useAdapter(adapter: StoreAdapter): AdapterFixture {
   }
   beforeAll(async () => {
     fixture = await adapter.setup()
-  })
+  }, adapter.setupTimeout)
   beforeEach(() => open().reset())
-  afterAll(() => fixture?.close())
+  afterAll(() => fixture?.close(), adapter.setupTimeout)
   return {
     get stores() {
       return open().stores

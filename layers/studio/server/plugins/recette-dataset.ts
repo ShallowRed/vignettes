@@ -1,4 +1,5 @@
 import { serverConfig } from '../utils/config'
+import { databaseReady } from '../utils/db'
 import { hasRecetteData, isRecetteEnabled, isRecetteSeeded, resetRecette, seedRecette } from '../utils/recette'
 
 /**
@@ -6,12 +7,13 @@ import { hasRecetteData, isRecetteEnabled, isRecetteSeeded, resetRecette, seedRe
  * boot when it is absent or incomplete. An instance where the kit cannot be
  * opened at all loses the data set and the five accounts it created, one of
  * which holds the owner role: the database is replicated, so leaving them behind
- * would carry that account onto whatever the replica is restored to. Runs after
- * the `migrations` plugin, which precedes it by name. Development keeps what the
- * `/recette` page created there, since the page answers in development.
+ * would carry that account onto whatever the replica is restored to. Runs once
+ * the migrations end. Development keeps what the `/recette` page created there,
+ * since the page answers in development.
  */
 export default defineNitroPlugin(async () => {
   try {
+    await databaseReady()
     if (!isRecetteEnabled()) {
       if (await hasRecetteData()) {
         await resetRecette()

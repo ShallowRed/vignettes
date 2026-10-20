@@ -52,6 +52,16 @@ export function useProjectStore() {
   return useStores().projects
 }
 
+/** The rows the content scripts exchange with an instance. */
+export function useContentArchive() {
+  return useStores().archive
+}
+
+/** Rewrites of the stored content, such as a theme rename. */
+export function useContentRewrites() {
+  return useStores().rewrites
+}
+
 /**
  * Effective grants: per-deck grants folded with the grants a user holds on each
  * deck's project (the stronger scope wins). This is what access decisions and the

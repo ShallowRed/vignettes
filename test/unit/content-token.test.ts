@@ -3,7 +3,7 @@ import { assertOwner, assertPrivileged } from '../../layers/studio/server/utils/
 import { useDeckMeta } from '../../layers/studio/server/utils/sources'
 import { anon, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
 
-// The content token stands in for a session on the markdown write path only.
+// The content token stands in for a session on the markdown write path and the content script routes.
 stubH3Globals()
 setupServerDb()
 

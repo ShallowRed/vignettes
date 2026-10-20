@@ -317,6 +317,49 @@ export interface ContentArchive {
   apply: (writes: ArchiveWrite[], stamp: { by: string, at: Date }) => Promise<void>
 }
 
+/** A text stored with a deck: a published version or a draft snapshot. */
+export interface StoredText {
+  id: number
+  slug: string
+  raw: string
+}
+
+/** The texts and drafts of every deck, trashed ones included. */
+export interface StoredContent {
+  /** The theme each deck row names. */
+  decks: { slug: string, theme: string | null }[]
+  versions: StoredText[]
+  snapshots: StoredText[]
+  /** The Yjs state of each draft. */
+  drafts: { slug: string, ydoc: Uint8Array }[]
+}
+
+/** What a rewrite writes back; a text or a draft left out keeps its value. */
+export interface ContentChanges {
+  themes?: { slug: string, theme: string }[]
+  versions?: { id: number, raw: string }[]
+  snapshots?: { id: number, raw: string }[]
+  drafts?: { slug: string, ydoc: Uint8Array }[]
+  /** Images these decks reference, recorded in the media index. */
+  media?: { slug: string, names: string[] }[]
+}
+
+/**
+ * Rewrites of the stored content: the data migrations, run once each at boot,
+ * and the theme renames of `theme-rename`.
+ */
+export interface ContentRewrites {
+  /** The names of the data migrations applied. */
+  appliedMigrations: () => Promise<Set<string>>
+  read: () => Promise<StoredContent>
+  /**
+   * Reads the stored content, then writes back what `change` returns, in one
+   * transaction. With `migration`, records that data migration as applied in
+   * it; with `at`, the deck rows and drafts it changes take that update date.
+   */
+  rewrite: <C extends ContentChanges>(change: (content: StoredContent) => C, options?: { migration?: string, at?: Date }) => Promise<C>
+}
+
 /** What an adapter provides: every store, over one database. */
 export interface Stores {
   content: DeckContent
@@ -333,4 +376,5 @@ export interface Stores {
   mediaIndex: MediaIndex
   catalog: CatalogStore
   archive: ContentArchive
+  rewrites: ContentRewrites
 }

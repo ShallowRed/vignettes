@@ -1,15 +1,16 @@
 /**
- * Pull the published version of one or more decks from a deployed database into
- * the local one, over SSH, through the app container. The reverse of
- * `content-push`: a deck that only exists in production, such as a frozen one,
- * has to be here before `freeze` can rebuild its bundle.
+ * Pull the published version of one or more decks from a deployed instance into
+ * the local database, through the instance's `/api/content/decks` route and the
+ * content token. The reverse of `content-push`: a deck that only exists in
+ * production, such as a frozen one, has to be here before `freeze` can rebuild
+ * its bundle.
  *
  * DRY-RUN BY DEFAULT: prints what each slug would become. `--apply` writes.
  *
  *   node scripts/content-pull.ts <slug>[,<slug>]            # plan from prod
  *   node scripts/content-pull.ts <slug> --apply             # write
- *   node scripts/content-pull.ts <slug> --staging           # read the staging container
- *   node scripts/content-pull.ts <slug> --db=/path/to.db    # target another local database
+ *   node scripts/content-pull.ts <slug> --staging           # read the staging instance
+ *   node scripts/content-pull.ts <slug> --db=/path/to.db    # target a local SQLite file
  *
  * Per slug: the row's catalog axes (title, status, project, theme, alias,
  * lifecycle, frozen bundle, unlisted) and the published markdown come over; a
@@ -18,17 +19,13 @@
  * a no-op. The access password never travels: a semi-private deck lands
  * without its hash, closed to everyone but a privileged account. A folder the
  * local database lacks is reported and the deck lands without one.
- *
- * Host and containers come from the environment: CONTENT_PUSH_SSH,
- * CONTENT_PUSH_CONTAINER (vignettes) and CONTENT_PUSH_STAGING_CONTAINER
- * (vignettes-staging).
  */
 
-import { Buffer } from 'node:buffer'
-import { spawnSync } from 'node:child_process'
 import process from 'node:process'
-import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { describeDatabase } from '../layers/studio/server/db/config.ts'
 import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
+import { scriptDatabaseConfig } from './lib/database.ts'
+import { callInstance, instanceFromEnv } from './lib/instance.ts'
 
 const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
@@ -39,15 +36,8 @@ if (slugs.length === 0) {
   process.exit(2)
 }
 
-const SSH = process.env.CONTENT_PUSH_SSH
-if (!SSH) {
-  console.error('CONTENT_PUSH_SSH is missing: the SSH host of the instance (see mise.local.toml).')
-  process.exit(2)
-}
-const CONTAINER = STAGING
-  ? (process.env.CONTENT_PUSH_STAGING_CONTAINER || 'vignettes-staging')
-  : (process.env.CONTENT_PUSH_CONTAINER || 'vignettes')
-const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5) ?? readDatabaseConfig(process.env).dbPath
+const instance = instanceFromEnv(STAGING)
+const DATABASE = scriptDatabaseConfig(args)
 
 interface Pulled {
   slug: string
@@ -58,40 +48,22 @@ interface Pulled {
   theme: string | null
   alias: string | null
   frozenBundle: string | null
-  unlisted: number
+  unlisted: boolean
   raw: string | null
 }
 
-// Runs inside the container: reads only, the answer travels back as JSON.
-const REMOTE = String.raw`
-import Database from 'better-sqlite3'
-import { Buffer } from 'node:buffer'
-import process from 'node:process'
-const slugs = JSON.parse(Buffer.from(SLUGS_B64, 'base64').toString())
-const db = new Database(process.env.NUXT_DB_PATH || '/app/.data/slides.db', { readonly: true })
-const row = db.prepare(
-  'select d.slug, d.title, d.status, d.lifecycle, d.project, d.theme, d.alias, d.frozen_bundle as frozenBundle, d.unlisted, v.raw '
-  + 'from decks d left join deck_versions v on v.id = d.published_version_id where d.slug = ? and d.deleted_at is null',
-)
-console.log(JSON.stringify(slugs.map(slug => row.get(slug) ?? null)))
-`
-
-const payload = Buffer.from(JSON.stringify(slugs)).toString('base64')
-console.log(`source  : ${SSH} / ${CONTAINER}`)
-console.log(`cible   : ${DB_PATH}`)
+console.log(`source  : ${instance.url}`)
+console.log(`cible   : ${describeDatabase(DATABASE)}`)
 console.log(`mode    : ${APPLY ? 'APPLY' : 'DRY-RUN (aucune écriture)'}\n`)
 
-const result = spawnSync('ssh', [
-  SSH,
-  `sudo docker exec -i -w /app/.output/server ${CONTAINER} node --input-type=module -`,
-], { input: `const SLUGS_B64 = ${JSON.stringify(payload)}\n${REMOTE}`, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
-if (result.status !== 0) {
-  console.error(result.stderr || result.stdout)
-  process.exit(result.status ?? 1)
-}
-const pulled = JSON.parse(result.stdout.trim().split('\n').pop() ?? '[]') as (Pulled | null)[]
+const pulled = await callInstance<(Pulled | null)[]>(instance, `/api/content/decks?slugs=${slugs.map(encodeURIComponent).join(',')}`)
+  .catch((error: Error) => {
+    console.error(`✖ ${error.message}`)
+    process.exit(1)
+  })
 
-const { archive } = openDatabaseFile({ dbPath: DB_PATH }, { readonly: !APPLY }).stores
+const database = await openDatabaseFile(DATABASE, { readonly: !APPLY })
+const { archive } = database.stores
 const locals = new Map((await archive.decks()).map(row => [row.slug, row]))
 const localProjects = new Set((await archive.projects()).map(row => row.slug))
 const at = new Date()
@@ -128,11 +100,12 @@ for (const [i, deck] of pulled.entries()) {
         theme: deck.theme,
         alias: deck.alias,
         frozenBundle: deck.frozenBundle,
-        unlisted: Boolean(deck.unlisted),
+        unlisted: deck.unlisted,
       },
     },
     { kind: 'version', slug, raw: deck.raw },
   ], { by: 'content-pull', at })
 }
 
+await database.close()
 console.log(APPLY ? '\n✅ Rapatrié.' : '\nDry-run terminé. Relancer avec --apply pour écrire.')

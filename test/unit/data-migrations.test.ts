@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { describe, expect, it } from 'vitest'
 import { headingParserInsertion } from '../../layers/studio/server/db/heading-parser'
+import { themeRenameChanges } from '../../layers/studio/server/utils/theme-rename'
 import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { ADAPTERS, NOW, seedDeck, useAdapter } from './helpers/adapters'
 
@@ -47,8 +48,8 @@ describe.each(ADAPTERS)('data migrations ($name)', (adapter) => {
     ])
     const [draft] = await db.rows.select('deckDrafts', { deckSlug: 'old' })
     expect(yDocUpdateToMarkdown(new Uint8Array(draft!.ydoc))).toBe('---\nparser: heading\n---\n\n# Old draft')
-    expect((await db.rows.select('dataMigrations')).map(row => row.name))
-      .toEqual(['explicit-heading-parser', 'index-existing-deck-media', 'index-existing-deck-images'])
+    expect((await db.rows.select('dataMigrations')).map(row => row.name).sort())
+      .toEqual(['explicit-heading-parser', 'index-existing-deck-images', 'index-existing-deck-media'])
 
     // A deck written after the migration relies on the new default and stays untouched.
     await db.rows.update('deckVersions', { raw: '# Separator deck' }, { deckSlug: 'explicit' })
@@ -70,5 +71,29 @@ describe.each(ADAPTERS)('data migrations ($name)', (adapter) => {
       { name: 'bbb.webp', slug: 'published' },
       { name: 'ccc.jpg', slug: 'drafted' },
     ])
+  })
+})
+
+describe.each(ADAPTERS)('content rewrites ($name)', (adapter) => {
+  const db = useAdapter(adapter)
+
+  it('renames a theme in the decks kept, dating the rows it changes', async () => {
+    for (const slug of ['kept', 'left']) {
+      await seedDeck(db.rows, slug, { theme: 'dsfr' })
+      await db.rows.insert('deckVersions', { deckSlug: slug, raw: '---\ntheme: dsfr\n---\n\n# V', publishedBy: 'alice', publishedAt: NOW })
+      await db.rows.insert('deckDrafts', { deckSlug: slug, ydoc: Buffer.from(markdownToYDocUpdate('---\ntheme: dsfr\n---\n\n# D')), updatedAt: NOW })
+    }
+    const at = new Date(NOW.getTime() + 60_000)
+
+    await db.stores.rewrites.rewrite(content => themeRenameChanges(content, 'dsfr', 'harbor', ['kept']), { at })
+
+    expect((await db.rows.select('decks')).map(row => [row.slug, row.theme, row.updatedAt.getTime()]))
+      .toEqual([['kept', 'harbor', at.getTime()], ['left', 'dsfr', NOW.getTime()]])
+    expect((await db.rows.select('deckVersions')).map(row => row.raw))
+      .toEqual(['---\ntheme: harbor\n---\n\n# V', '---\ntheme: dsfr\n---\n\n# V'])
+    const drafts = await db.rows.select('deckDrafts')
+    expect(drafts.map(row => [row.deckSlug, yDocUpdateToMarkdown(new Uint8Array(row.ydoc)), row.updatedAt.getTime()]))
+      .toEqual([['kept', '---\ntheme: harbor\n---\n\n# D', at.getTime()], ['left', '---\ntheme: dsfr\n---\n\n# D', NOW.getTime()]])
+    expect(await db.rows.select('dataMigrations')).toEqual([])
   })
 })

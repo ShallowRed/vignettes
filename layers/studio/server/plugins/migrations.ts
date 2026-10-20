@@ -1,10 +1,17 @@
-import { useDatabase } from '../utils/db'
+import process from 'node:process'
+import { closeDatabase, databaseReady } from '../utils/db'
 
 /**
- * Apply pending migrations at boot. The data migrations follow, once the schema
- * is current. Nitro calls a plugin without awaiting it, so the migration runs
- * synchronously: a failure throws here and stops the start.
+ * Applies the pending migrations at boot, the schema then the data. Nitro calls
+ * a plugin without awaiting it, but awaits its `request` hook: every request
+ * waits there until the migrations end. A migration that fails stops the
+ * process.
  */
-export default defineNitroPlugin(() => {
-  useDatabase().migrateNow()
+export default defineNitroPlugin((nitroApp) => {
+  const ready = databaseReady().catch((error) => {
+    console.error('[database] a migration failed, the server stops:', error)
+    process.exit(1)
+  })
+  nitroApp.hooks.hook('request', () => ready)
+  nitroApp.hooks.hook('close', closeDatabase)
 })

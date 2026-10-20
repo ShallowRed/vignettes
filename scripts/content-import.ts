@@ -15,7 +15,7 @@
  *
  *   node scripts/content-import.ts                  # plan
  *   node scripts/content-import.ts --apply          # write
- *   node scripts/content-import.ts --db=/path/to.db # target another database
+ *   node scripts/content-import.ts --db=/path/to.db # target a SQLite file
  *   node scripts/content-import.ts --content=<dir>  # read another content directory
  *
  * `--remote=<url>` sends `--republish` decks to a running instance instead of a
@@ -36,8 +36,9 @@ import process from 'node:process'
 import { splitFrontmatter } from '@vignettes/core/deck'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
-import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { describeDatabase } from '../layers/studio/server/db/config.ts'
 import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
+import { scriptDatabaseConfig } from './lib/database.ts'
 import { applyRemoteRepublish, planRemoteRepublish } from './lib/remote-republish.ts'
 
 const ROOT = process.cwd()
@@ -45,7 +46,7 @@ const ROOT = process.cwd()
 const args = process.argv.slice(2)
 const CONTENT_DIR = args.find(a => a.startsWith('--content='))?.slice(10) ?? contentDir(ROOT)
 const APPLY = args.includes('--apply')
-const DB_PATH = args.find(a => a.startsWith('--db='))?.slice(5) ?? readDatabaseConfig(process.env).dbPath
+const DATABASE = scriptDatabaseConfig(args)
 const REPUBLISH = new Set((args.find(a => a.startsWith('--republish='))?.slice(12) ?? '').split(',').filter(Boolean))
 const REMOTE = args.find(a => a.startsWith('--remote='))?.slice(9)
 const FORCE = args.includes('--force')
@@ -154,7 +155,8 @@ if (REMOTE) {
 
 // ── Database ────────────────────────────────────────────────────────────────
 
-const { archive } = openDatabaseFile({ dbPath: DB_PATH }, { readonly: !APPLY }).stores
+const database = await openDatabaseFile(DATABASE, { readonly: !APPLY })
+const { archive } = database.stores
 
 const existing = new Map((await archive.decks()).map(row => [row.slug, row]))
 const publishedRaw = new Map([...existing.values()].flatMap(row => row.raw === null ? [] : [[row.slug, row.raw] as const]))
@@ -297,7 +299,7 @@ function section(label: string, items: string[]) {
   for (const i of items) console.log(`  · ${i}`)
 }
 
-console.log(`base    : ${DB_PATH}`)
+console.log(`base    : ${describeDatabase(DATABASE)}`)
 console.log(`contenu : ${CONTENT_DIR}`)
 console.log(`mode    : ${APPLY ? 'APPLY (écriture)' : 'DRY-RUN (aucune écriture)'}`)
 console.log(`\nstubs lus : ${stubs.length} · entrées de registre : ${Object.keys(registry).length} · projets yaml : ${Object.keys(projectsYml).length}`)
@@ -320,6 +322,7 @@ section('republiés depuis le fichier (accès inchangés)', plan.republish)
 section('⚠ avertissements', plan.warnings)
 
 if (!APPLY) {
+  await database.close()
   console.log('\nDry-run terminé — rien n\'a été écrit. Relancer avec --apply pour appliquer.')
   process.exit(0)
 }
@@ -347,5 +350,6 @@ for (const r of republishPlans) {
 }
 
 await archive.apply(writes, { by: 'content-import', at: new Date() })
+await database.close()
 
 console.log('\n✅ Import appliqué.')

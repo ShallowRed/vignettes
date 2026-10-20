@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test'
 // Runs against the production build (`pnpm build` first), on a fresh database
 // holding only the fixture decks.
 const port = 3210
-const database = '.data/e2e.db'
+const database = '.data/e2e-pglite'
 
 export default defineConfig({
   testDir: 'test/e2e',
@@ -22,7 +22,7 @@ export default defineConfig({
   ],
   webServer: {
     command: [
-      `rm -f ${database}`,
+      `rm -rf ${database} ${database}.lock`,
       'node scripts/db-migrate.ts',
       'node scripts/content-import.ts --content=test/e2e/fixtures/decks --apply',
       'node .output/server/index.mjs',
@@ -31,7 +31,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       PORT: String(port),
-      NUXT_DB_PATH: database,
+      NUXT_PGLITE_DIR: database,
       NUXT_SESSION_PASSWORD: 'e2e-session-password-not-a-secret-0000',
     },
   },

@@ -13,13 +13,13 @@
 import type { FreezeDescriptor } from '@vignettes/freeze'
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { splitFrontmatter } from '@vignettes/core/deck'
 import { resolveThemeName, setThemeRegistry } from '@vignettes/core/theme'
 import { buildFreezeDescriptor, freezeDeck } from '@vignettes/freeze'
 import { discoverThemes, registryOf } from '@vignettes/nuxt/build/theme-registry'
-import { readDatabaseConfig } from '../layers/studio/server/db/config.ts'
+import { databaseEnv, describeDatabase, readDatabaseConfig } from '../layers/studio/server/db/config.ts'
 import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 
 const root = import.meta.dirname ? join(import.meta.dirname, '..') : process.cwd()
@@ -29,8 +29,23 @@ const dryRun = args.includes('--dry-run')
 const noUpload = args.includes('--no-upload')
 const storybookDir = argValue('--storybook')
 const themeOverride = argValue('--theme')
-// A NUXT_DB_PATH names its file from the current directory; the default one is in the repository.
-const dbPath = argValue('--db') ?? (process.env.NUXT_DB_PATH ? readDatabaseConfig(process.env).dbPath : join(root, readDatabaseConfig({}).dbPath))
+const dbFile = argValue('--db')
+const database = databaseConfig()
+
+/**
+ * The database the deck comes from, which the build reads too: the SQLite file
+ * of `--db`, or the one the environment names. A path given names its file from
+ * the current directory; a default one is in the repository.
+ */
+function databaseConfig() {
+  const env = dbFile ? { ...process.env, NUXT_DATABASE_DRIVER: 'sqlite', NUXT_DB_PATH: dbFile } : process.env
+  const config = readDatabaseConfig(env)
+  if (config.driver === 'sqlite')
+    return { ...config, path: resolve(env.NUXT_DB_PATH ? process.cwd() : root, config.path) }
+  if (config.driver === 'pglite')
+    return { ...config, dir: resolve(env.NUXT_PGLITE_DIR ? process.cwd() : root, config.dir) }
+  return config
+}
 
 function argValue(flag: string): string | undefined {
   const i = args.indexOf(flag)
@@ -42,21 +57,23 @@ if (!alias) {
   process.exit(2)
 }
 
-const { archive } = openDatabaseFile({ dbPath }, { readonly: true }).stores
-const decks = await archive.decks()
+const opened = await openDatabaseFile(database, { readonly: true })
+const decks = await opened.stores.archive.decks()
 // The alias is the canonical one of a deck, a historical one, or the slug itself.
-const historical = (await archive.aliases()).find(row => row.alias === alias)
+const historical = (await opened.stores.archive.aliases()).find(row => row.alias === alias)
+// The build opens the database next, and PGlite takes one process at a time.
+await opened.close()
 const target = decks.find(row => row.alias === alias || row.slug === alias)
   ?? decks.find(row => row.slug === historical?.slug)
 if (!target)
-  fail(`no deck answers to "${alias}" in ${dbPath}`)
+  fail(`no deck answers to "${alias}" in ${describeDatabase(database)}`)
 const entry = { slug: target.slug, frozenBundle: target.frozenBundle ?? undefined }
 
 const slug = entry.slug
 const served = decks.find(row => row.slug === slug && !row.trashed)
 const deck = served?.raw != null ? { theme: served.theme, raw: served.raw } : undefined
 if (!deck)
-  fail(`deck "${slug}" has no published version in ${dbPath}`)
+  fail(`deck "${slug}" has no published version in ${describeDatabase(database)}`)
 
 const frontmatter = splitFrontmatter(deck.raw).data as { theme?: string, storybook?: string }
 // The bundle links one stylesheet and has no runtime to resolve aliases, so the
@@ -87,7 +104,7 @@ freezeDeck({
   contentDir: process.env.NUXT_CONTENT_DIR,
   build: { command: 'pnpm', args: ['generate'] },
   deckPath: slug => join('slides', slug),
-  env: { NUXT_DB_PATH: dbPath },
+  env: databaseEnv(database),
   provenance: { storybook: frontmatter.storybook ?? null, gitCommit: gitCommit() },
   upload: noUpload
     ? undefined

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { renameTheme, themeValueRange } from '../../scripts/lib/theme-rename.ts'
+import { renameTheme, themeValueRange } from '../../layers/studio/server/utils/theme-rename'
 
 const deck = (body: string) => `---\ntitle: Un deck\n${body}status: public\n---\n\n# Titre\n`
 

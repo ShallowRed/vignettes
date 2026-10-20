@@ -2,11 +2,17 @@ import { isDeckSlug } from '@vignettes/core/deck'
 import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'
+import { databaseReady } from '../utils/db'
 import { useDeckMeta } from '../utils/sources'
 
 type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleConnection']>
 
-const connections = new Map<string, CollabConnection>()
+/**
+ * The connection of each peer, as a promise: `open` resolves the actor before it
+ * hands the socket to Hocuspocus, and the first messages of the client arrive
+ * meanwhile, so they wait for the connection, in their order.
+ */
+const connections = new Map<string, Promise<CollabConnection | null>>()
 
 /** The peer this server's websocket handler hands to `open`, whatever crossws version h3 resolves. */
 type Peer = Parameters<NonNullable<Parameters<typeof defineWebSocketHandler>[0]['open']>>[0]
@@ -35,6 +41,8 @@ function toWebSocketLike(peer: Peer) {
  */
 export default defineWebSocketHandler({
   async upgrade(request) {
+    // An upgrade skips the request hook that holds requests during the migrations.
+    await databaseReady()
     const deck = new URL(request.url).searchParams.get('deck') ?? ''
     if (!isDeckSlug(deck))
       throw new Response('A ?deck=<slug> parameter is required', { status: 400 })
@@ -55,23 +63,29 @@ export default defineWebSocketHandler({
       throw new Response('Draft storage is unavailable on this deployment', { status: 503 })
   },
 
-  async open(peer) {
+  open(peer) {
     // The deck the upgrade authorized, and who edits, become the connection
     // context that every Hocuspocus hook sees (`CollabContext`).
     const deck = new URL(peer.request.url).searchParams.get('deck') ?? ''
-    const actor = await getActorFromRequest(peer.request)
-    // Hocuspocus reads the url and the headers of the request it is handed, and
-    // the upgrade request carries both under a narrower type.
-    const request = peer.request as unknown as Request
-    connections.set(peer.id, useCollabServer().handleConnection(toWebSocketLike(peer), request, { deck, user: actor.login ?? null }))
+    connections.set(peer.id, getActorFromRequest(peer.request).then((actor) => {
+      // Hocuspocus reads the url and the headers of the request it is handed, and
+      // the upgrade request carries both under a narrower type.
+      const request = peer.request as unknown as Request
+      return useCollabServer().handleConnection(toWebSocketLike(peer), request, { deck, user: actor.login ?? null })
+    }).catch((error) => {
+      console.warn(`[collab] could not open "${deck}": ${(error as Error).message}`)
+      peer.close(1011, 'Unavailable')
+      return null
+    }))
   },
 
   message(peer, message) {
-    connections.get(peer.id)?.handleMessage(message.uint8Array())
+    const data = message.uint8Array()
+    void connections.get(peer.id)?.then(connection => connection?.handleMessage(data))
   },
 
   close(peer) {
-    connections.get(peer.id)?.handleClose()
+    void connections.get(peer.id)?.then(connection => connection?.handleClose())
     connections.delete(peer.id)
   },
 })

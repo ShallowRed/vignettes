@@ -8,9 +8,15 @@ const MDC_READER = {
   message: 'MDC is read by the render module (packages/nuxt): parse or render a deck through @vignettes/nuxt.',
 }
 
+const DATABASE_DRIVER = {
+  group: ['drizzle-orm', 'drizzle-orm/*', 'better-sqlite3', 'pg', '@electric-sql/pglite', '@electric-sql/pglite/*'],
+  message: 'The adapters (server/db/sqlite/, server/db/postgres/) read and write the tables: add a method to a port of server/db/ports.ts, reached through useStores() or, in a script, openDatabaseFile().',
+}
+
 const DOMAIN_IO = [
   MDC_READER,
-  { group: ['h3', 'drizzle-orm', 'drizzle-orm/*', 'better-sqlite3', 'pg', '@electric-sql/pglite', '@electric-sql/pglite/*'], message: 'shared/ is the framework-free domain: move request and database access to server/utils/.' },
+  DATABASE_DRIVER,
+  { group: ['h3'], message: 'shared/ is the framework-free domain: move request handling to server/utils/.' },
   { group: ['@aws-sdk/*'], message: 'shared/ has no I/O: place the S3 access in server/utils/.' },
   { group: ['node:*'], message: 'shared/ runs on the client and the server: take the value as an argument from an entry point.' },
   { group: ['@vignettes/nuxt', '@vignettes/nuxt/*'], message: 'shared/ must not depend on the render module: use @vignettes/core.' },
@@ -18,13 +24,8 @@ const DOMAIN_IO = [
 
 const YJS = { group: ['yjs', 'yjs/*'], message: 'In shared/, yjs belongs to shared/collab/.' }
 
-const DATABASE_DRIVER = {
-  group: ['drizzle-orm', 'drizzle-orm/*', 'better-sqlite3'],
-  message: 'The SQLite adapter (server/db/sqlite/) reads and writes the tables: add a method to a port of server/db/ports.ts, reached through useStores() or, in a script, openDatabaseFile().',
-}
-
 const MDC_HOME = ['packages/nuxt/**', 'nuxt.config.ts', 'layers/studio/src/mdc.config.ts', 'test/**']
-const DRIVER_HOME = ['layers/studio/server/db/sqlite/**']
+const DRIVER_HOME = ['layers/studio/server/db/sqlite/**', 'layers/studio/server/db/postgres/**']
 // The test helpers open each adapter; migrations.test.ts applies the SQLite migrations by hand.
 const DRIVER_TESTS = ['test/unit/helpers/**', 'test/unit/migrations.test.ts']
 
@@ -45,7 +46,7 @@ export default antfu({
   // Drizzle rewrites these on every `drizzle-kit generate` (no trailing newline),
   // so linting them only invites `--fix` to churn generated files.
   // `.claude/` holds the worktrees of the agent sessions.
-  ignores: ['layers/studio/server/db/sqlite/migrations/**', 'packages/core/src/theme/tokens.generated.ts', '.claude/**'],
+  ignores: ['layers/studio/server/db/sqlite/migrations/**', 'layers/studio/server/db/postgres/migrations/**', 'packages/core/src/theme/tokens.generated.ts', '.claude/**'],
   rules: {
     'no-console': 'off',
     'no-debugger': 'off',

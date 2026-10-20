@@ -184,17 +184,18 @@ export default defineNuxtConfig({
     },
     'nitro:build:public-assets': async function (nitro) {
       const { cp } = await import('node:fs/promises')
-      // migrations: read at boot by the migration plugin (drizzle needs a real
-      // folder next to the bundle). Content is served from the database, so
-      // presentations/ is no longer shipped.
-      const srcDir = join(process.cwd(), 'layers/studio/server/db/sqlite/migrations')
-      const destDir = join(nitro.options.output.serverDir, 'migrations')
-      try {
-        await cp(srcDir, destDir, { recursive: true })
-        console.log(`✅ Copied ${srcDir} to build output`)
-      }
-      catch (error) {
-        console.error(`❌ Failed to copy ${srcDir}:`, (error as Error).message)
+      // The migrations of each adapter, read at boot by the migration plugin
+      // (drizzle needs a real folder next to the bundle).
+      for (const driver of ['sqlite', 'postgres']) {
+        const srcDir = join(process.cwd(), 'layers/studio/server/db', driver, 'migrations')
+        const destDir = join(nitro.options.output.serverDir, 'migrations', driver)
+        try {
+          await cp(srcDir, destDir, { recursive: true })
+          console.log(`✅ Copied ${srcDir} to build output`)
+        }
+        catch (error) {
+          console.error(`❌ Failed to copy ${srcDir}:`, (error as Error).message)
+        }
       }
     },
   },

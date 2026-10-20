@@ -6,25 +6,27 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
-import { migrateSqlite, openSqlite } from '../../../layers/studio/server/db/sqlite/index'
+import { openSqlite } from '../../../layers/studio/server/db/sqlite/index'
+import { closeDatabase, databaseReady } from '../../../layers/studio/server/utils/db'
 import { useUserStore } from '../../../layers/studio/server/utils/users'
 import { emptySqlite, sqliteRows } from './adapters'
 
 let connection: SqliteDb | undefined
 
 /**
- * Point the lazy `useStores()` singleton at a throwaway migrated file so server
- * utils that reach for it (stores, guards, handlers) run against a real schema.
- * Must run before the first `useStores()` call. Returns a cleanup that removes
- * the temp directory.
+ * Point the server's database at a throwaway migrated file so server utils that
+ * reach the stores (guards, handlers) run against a real schema. Returns a
+ * cleanup that closes it and removes the temp directory.
  */
-export function useMigratedTestDb(): () => void {
+export async function useMigratedTestDb(): Promise<() => Promise<void>> {
   const dir = mkdtempSync(join(tmpdir(), 'slides-test-'))
   const path = join(dir, 'test.db')
-  connection = openSqlite(path)
-  migrateSqlite(connection)
+  process.env.NUXT_DATABASE_DRIVER = 'sqlite'
   process.env.NUXT_DB_PATH = path
-  return () => {
+  await databaseReady()
+  connection = openSqlite(path)
+  return async () => {
+    await closeDatabase()
     connection?.$client.close()
     connection = undefined
     rmSync(dir, { recursive: true, force: true })
@@ -49,9 +51,9 @@ export function resetTables() {
 
 /** One migrated temp database for the file, wiped before every test. */
 export function setupServerDb() {
-  let cleanup: () => void
-  beforeAll(() => {
-    cleanup = useMigratedTestDb()
+  let cleanup: () => Promise<void>
+  beforeAll(async () => {
+    cleanup = await useMigratedTestDb()
   })
   beforeEach(resetTables)
   afterAll(() => cleanup())

@@ -7,7 +7,7 @@ A Nuxt 4 application that turns MDC markdown into reveal.js slides. Ports and ad
 - Nuxt 4 (SSR, file-based routing) with Nitro's `node_server` preset
 - @nuxtjs/mdc (markdown parsing, Vue component support)
 - reveal.js (presentation framework, client-only)
-- SQLite through better-sqlite3 and drizzle-orm, behind the storage ports; migrations in `layers/studio/server/db/sqlite/migrations`
+- PostgreSQL through drizzle-orm, behind the storage ports: node-postgres for a server, PGlite in the process for development and the tests; the SQLite adapter (better-sqlite3) runs an instance that sets `NUXT_DATABASE_DRIVER=sqlite`. Each adapter has its migrations in `layers/studio/server/db/<adapter>/migrations`
 - Yjs + Hocuspocus (collaborative draft), CodeMirror 6 (editor)
 - nuxt-auth-utils (session, GitHub and Google OAuth)
 - @nuxt/ui + Tailwind CSS (app shell), Pinia Colada (client queries); slides themed via SCSS
@@ -32,7 +32,7 @@ packages/
 
 layers/studio/
   src/           pages, catalog and editor components, queries, session
-  server/        API routes, storage ports and their SQLite adapter, auth, collab, asset routes
+  server/        API routes, storage ports and their PostgreSQL and SQLite adapters, auth, collab, asset routes
   shared/        the domain reached through #shared: access, projects, catalog contract, trash, storage
 
 themes/          this instance's themes, compiled to public/themes/
@@ -48,7 +48,7 @@ session, crypto, filesystem or YAML sit in `layers/studio/server/utils/`. A `sha
 module usually has a matching `server/utils/<x>` adapter, as `shared/access` has
 `server/utils/access.ts`.
 
-`eslint.config.js` checks these boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone; drizzle-orm and better-sqlite3 are imported by the SQLite adapter (`server/db/sqlite/`), the test helpers and `test/unit/migrations.test.ts`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
+`eslint.config.js` checks these boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone; drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are imported by the adapters (`server/db/sqlite/`, `server/db/postgres/`), the test helpers and `test/unit/migrations.test.ts`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
 
 The deck core is the workspace package `@vignettes/core`, which depends on nothing in the
 application and ships its TypeScript sources (`build.transpile` for Vite,
@@ -78,7 +78,7 @@ application and ships its TypeScript sources (`build.transpile` for Vite,
 
 ## Data Flow
 ```
-[published version in SQLite] → [studio server adapters] → [resolveDeck (@vignettes/core/deck)] → [API route JSON]
+[published version in the database] → [studio server adapters] → [resolveDeck (@vignettes/core/deck)] → [API route JSON]
                                                                                          ↓
 [API route] → [usePresentation] → [PARSERS[parserIdFor(metadata)].parse()] → [Slide[]]
                     ↓                         (parser port of @vignettes/core/deck, implemented in @vignettes/nuxt)
@@ -112,11 +112,13 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 8. **`:layout{name="..." ...}`**: Slide-level layout annotation. Unlike full-slide components, preserves header/body split. Supports `media-right`, `media-left`, `media-right-wide`, and `media-left-wide` for two-column layouts with media, plus extra props such as `fit="contain|cover"`. The layouts are declared in `DECK_LAYOUTS` of `@vignettes/core/deck`, their geometry in `@vignettes/theme-kit`.
 
 ### Storage
-`layers/studio/server/db/ports.ts` declares one interface per store and `Stores`, the set an adapter provides; it reuses the ports of `@vignettes/core/deck` and `#shared` and imports no driver. Every method returns a promise, and an operation that must be atomic is one method, which the adapter runs in one transaction. The SQLite adapter in `server/db/sqlite/` holds the schema, the drizzle migrations and the stores, assembled by `createSqliteStores(db)`. The rules every adapter applies are in `server/db/`: snapshot retention, the heading-parser rewrite, the free project slug, the identity of an invited account and the spellings of a handle, and how a stored value reads back (an invalid status, grant or role fails closed).
+`layers/studio/server/db/ports.ts` declares one interface per store and `Stores`, the set an adapter provides; it reuses the ports of `@vignettes/core/deck` and `#shared` and imports no driver. Every method returns a promise, and an operation that must be atomic is one method, which the adapter runs in one transaction. Two adapters implement the ports. `server/db/postgres/` holds a `pgTable` schema, its drizzle migrations and the stores, written once against drizzle's `PgDatabase` and assembled by `createPostgresStores(db)`; node-postgres and PGlite both run them. `server/db/sqlite/` holds the SQLite schema, its migrations and `createSqliteStores(db)`. The two schemas give their tables and columns the same names, so `copySqliteToPostgres()` copies a SQLite database row by row. The rules every adapter applies are in `server/db/`: snapshot retention, the data migrations and the heading-parser rewrite, the free project slug, the identity of an invited account and the spellings of a handle, and how a stored value reads back (an invalid status, grant or role fails closed).
 
-`server/db/open.ts` opens the database and its stores: `openDatabase()` for the server, `openDatabaseFile()` for a script, both from `readDatabaseConfig()` of `server/db/config.ts`. Nitro calls its plugins without awaiting them, so the boot plugin migrates through `migrateNow()`, synchronous on SQLite: a migration that fails stops the start. The server reaches the stores through `useStores()` of `server/utils/db.ts`, and the accessors of `server/utils/sources.ts`, `collab.ts` and `users.ts` read one store each. The content scripts open the local database through `openDatabaseFile()` and write through the `archive` port; `content-push`, `theme-rename` and the remote half of `content-pull` send SQL to the app container, whose bundle carries better-sqlite3. These modules and the adapter import each other by relative path with the `.ts` extension, so Node runs them without Nuxt.
+`readDatabaseConfig()` of `server/db/config.ts` chooses the database from the environment: the PostgreSQL server of `NUXT_DATABASE_URL`, through a pool of five connections whose TLS follows the URL's `sslmode`; otherwise PGlite in `.data/pglite` (`NUXT_PGLITE_DIR`); the SQLite file of `NUXT_DB_PATH` when `NUXT_DATABASE_DRIVER=sqlite`. `server/db/open.ts` opens it with its stores: `openDatabase()` for the server, `openDatabaseFile()` for a script. PGlite accepts one process per directory, so a lock file next to the directory names its holder: a script refuses to start while the development server holds it, and a new worker of the development server waits for the one it replaces.
 
-The store tests are contracts: each suite runs over `ADAPTERS` of `test/unit/helpers/adapters.ts`, opened once per file and emptied before every test, and checks rows through the table helper of that file. The schema and migration tests run on SQLite alone.
+At boot, a Nitro plugin starts `databaseReady()` of `server/utils/db.ts`, which applies the schema migrations, then the data migrations. Nitro calls a plugin without awaiting it but awaits its `request` hook, so every request waits there until the migrations end, and a migration that fails stops the process. A websocket upgrade and the other boot plugins skip that hook and await `databaseReady()` themselves; `useStores()` throws before it resolves. The accessors of `server/utils/sources.ts`, `collab.ts` and `users.ts` read one store each. The local content scripts open the database through `openDatabaseFile()` and write through the `archive` port. `content-push`, `content-pull` and `theme-rename` reach a deployed instance through the `/api/content/*` routes with its content token, so the instance runs them on whatever database it uses. These modules and the adapters import each other by relative path with the `.ts` extension, so Node runs them without Nuxt.
+
+The store tests are contracts: each suite runs over `ADAPTERS` of `test/unit/helpers/adapters.ts`, SQLite and PGlite in memory, opened once per file and emptied before every test, and checks rows through the table helper of that file. A PGlite instance takes close to 1 GB, so Vitest runs four workers at most. The schema and migration tests run on SQLite alone.
 
 ### Deck history
 A deck keeps every publication as an immutable `deck_versions` row, and its draft as `deck_draft_snapshots` rows taken while people edit (at most one every five minutes, plus one when the last editor leaves), on each solo save, before a restore, and on demand with a label. `snapshotsToDrop` in `server/db/snapshot-retention.ts` prunes them: the last day whole, then one per hour for a month, then one per day, labelled ones kept, with a cap on each group. Restoring copies a version or a snapshot into the draft through the open collab room when there is one, and keeps the replaced draft as a snapshot, so the history only grows. The logins of the editors between two snapshots are gathered in process memory by the collab hooks: a restart forgets the interval, and the deployment runs one instance. Times are stored to the second; `compareHistoryEntries` orders equal seconds.
@@ -143,7 +145,7 @@ Three layers:
 ## Build
 
 1. `pnpm build` runs `build:themes` first (`build-theme-tokens.ts` then `build-themes.ts`), then `nuxt build`.
-2. A Nitro plugin applies pending migrations at boot: the repo folder in development, the copy shipped with the output in production.
+2. A Nitro plugin applies pending migrations at boot: the repo folders in development, the copies shipped with the output (`.output/server/migrations/<adapter>`) in production.
 3. Output lands in `.output/` (server + public); the Docker runtime stage ships that folder only.
 
 In bundle mode (`BUNDLE_ONLY_SLUG`), `nuxt generate` prerenders the one deck and skips the SPA fallbacks (`prerender:generate` hook).
@@ -166,13 +168,13 @@ A **parser** implements the `DeckParser` port of `@vignettes/core/deck` and join
 Production is SSR, not static hosting:
 - Nitro `node-server` preset (`NITRO_PRESET=node_server`), built into a multi-stage
   `Dockerfile` (deps → build → `node:22-slim` runtime with `.output/` only). In CI the image takes the `.output/` the end-to-end tests ran on, passed as the named build context `output`.
-- Content lives in the SQLite database on a volume; the image holds code only, so a content change never rebuilds it. `run-app.sh` restores the database from object storage on an empty volume and runs the app under Litestream replication.
+- Content lives in the database; the image holds code only, so a content change never rebuilds it. With `NUXT_DATABASE_URL`, `run-app.sh` starts the app on that PostgreSQL server. Without it, `run-app.sh` sets `NUXT_DATABASE_DRIVER=sqlite`, restores the SQLite file from object storage on an empty volume and runs the app under Litestream replication.
 - `.github/workflows/docker-publish.yml` builds + pushes the image to GHCR and deploys it over SSH: push to `staging` deploys the staging instance, push to `main` the production one (infra lives in a separate `vps-infra` repo).
 - Runtime secrets are pulled from a self-hosted Infisical instance by `docker-entrypoint.sh` (`infisical run`); secrets never touch disk.
 - Single-deck frozen bundles (`mise run freeze -- <alias>`) are the static mode, served by `/frozen/**` behind the deck's access gate.
 
 ### One instance at a time
 
-The application runs as a single process. Three pieces of state are kept in the memory of that process: the rate limiter of the password attempts (`server/utils/rate-limit.ts`), the editors of a deck since its last snapshot (`noteContributor` in `server/utils/collab.ts`) and the open collaborative documents of the Hocuspocus server (`useCollabServer`, same file). The SQLite file on a volume, replicated by Litestream, also accepts one writer.
+The application runs as a single process. Three pieces of state are kept in the memory of that process: the rate limiter of the password attempts (`server/utils/rate-limit.ts`), the editors of a deck since its last snapshot (`noteContributor` in `server/utils/collab.ts`) and the open collaborative documents of the Hocuspocus server (`useCollabServer`, same file). On an instance running SQLite, the file on a volume, replicated by Litestream, also accepts one writer.
 
 With a second replica, each replica would count the password attempts separately, a snapshot would credit only the editors who reached the replica that writes it, and two editors on different replicas would edit the same deck in two documents that never merge. Running several replicas requires moving these three to a shared store first.

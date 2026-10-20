@@ -48,7 +48,8 @@ function deckUrl(remote: string, slug: string): string {
   return `${remote.replace(/\/$/, '')}/api/presentations/${encodeURIComponent(slug)}`
 }
 
-async function failure(res: Response, what: string): Promise<RemoteError> {
+/** The error an answer of the instance carries. */
+export async function failure(res: Response, what: string): Promise<RemoteError> {
   const body = await res.text().catch(() => '')
   let message = body
   try {

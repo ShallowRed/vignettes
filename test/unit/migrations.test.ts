@@ -4,9 +4,10 @@ import { join } from 'node:path'
 import process from 'node:process'
 import Database from 'better-sqlite3'
 import { sql } from 'drizzle-orm'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { openPglite } from '../../layers/studio/server/db/postgres/index'
 import { migrateSqlite, MIGRATIONS_DIR as REPOSITORY_MIGRATIONS } from '../../layers/studio/server/db/sqlite/index'
-import { freshSqlite } from './helpers/adapters'
+import { freshSqlite, PGLITE_TIMEOUT } from './helpers/adapters'
 
 const MIGRATIONS_DIR = join(process.cwd(), REPOSITORY_MIGRATIONS)
 
@@ -54,24 +55,104 @@ describe('database migrations', () => {
   })
 })
 
-describe('boot migration plugin', () => {
-  it('throws while Nitro starts when a migration fails, which stops the server', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'slides-boot-'))
-    const path = join(dir, 'broken.db')
-    // The first migration creates `decks`: a table already there makes it fail.
-    const sqlite = new Database(path)
-    sqlite.exec('CREATE TABLE decks (slug text)')
-    sqlite.close()
-    vi.stubEnv('NUXT_DB_PATH', path)
+/** The Nitro app a plugin receives, reduced to the hooks it registers. */
+function fakeNitroApp() {
+  const hooks = new Map<string, () => unknown>()
+  return {
+    app: { hooks: { hook: (name: string, fn: () => unknown) => hooks.set(name, fn) } } as any,
+    call: (name: string) => hooks.get(name)!(),
+  }
+}
+
+/**
+ * Each driver of the boot tests: the environment that selects it in `dir`, and
+ * a database there whose first migration fails, since `decks` exists already.
+ */
+const BOOT_DRIVERS = [
+  {
+    name: 'sqlite',
+    timeout: 10_000,
+    env: (dir: string) => ({ NUXT_DATABASE_DRIVER: 'sqlite', NUXT_DB_PATH: join(dir, 'slides.db') }),
+    async break(dir: string) {
+      const sqlite = new Database(join(dir, 'slides.db'))
+      sqlite.exec('CREATE TABLE decks (slug text)')
+      sqlite.close()
+    },
+  },
+  {
+    name: 'pglite',
+    timeout: PGLITE_TIMEOUT,
+    env: (dir: string) => ({ NUXT_DATABASE_DRIVER: '', NUXT_DATABASE_URL: '', NUXT_PGLITE_DIR: join(dir, 'pglite') }),
+    async break(dir: string) {
+      const connection = await openPglite(join(dir, 'pglite'))
+      await connection.db.execute(sql`CREATE TABLE decks (slug text)`)
+      await connection.close()
+    },
+  },
+]
+
+describe.each(BOOT_DRIVERS)('boot migration plugin ($name)', (driver) => {
+  let dir: string
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'slides-boot-'))
+    for (const [name, value] of Object.entries(driver.env(dir)))
+      vi.stubEnv(name, value)
     vi.stubGlobal('defineNitroPlugin', (plugin: unknown) => plugin)
-    try {
-      const { default: plugin } = await import('../../layers/studio/server/plugins/migrations')
-      expect(() => plugin({} as any)).toThrow(/Failed to run the query/)
-    }
-    finally {
-      vi.unstubAllEnvs()
-      vi.unstubAllGlobals()
-      rmSync(dir, { recursive: true, force: true })
-    }
+  })
+
+  afterEach(async () => {
+    const { closeDatabase } = await import('../../layers/studio/server/utils/db')
+    await closeDatabase()
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+    rmSync(dir, { recursive: true, force: true })
+  }, driver.timeout)
+
+  it('holds the requests until the migrations end', async () => {
+    const { default: plugin } = await import('../../layers/studio/server/plugins/migrations')
+    const { useStores } = await import('../../layers/studio/server/utils/db')
+    const nitro = fakeNitroApp()
+
+    plugin(nitro.app)
+    expect(() => useStores()).toThrow(/not ready/)
+    await nitro.call('request')
+    await expect(useStores().deckMeta.listManaged()).resolves.toEqual([])
+  }, driver.timeout)
+
+  it('stops the process when a migration fails', async () => {
+    await driver.break(dir)
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { default: plugin } = await import('../../layers/studio/server/plugins/migrations')
+    const nitro = fakeNitroApp()
+
+    plugin(nitro.app)
+    await nitro.call('request')
+    expect(exit).toHaveBeenCalledWith(1)
+  }, driver.timeout)
+})
+
+describe('the migration lock of PostgreSQL', () => {
+  let connection: Awaited<ReturnType<typeof openPglite>>
+  const advisoryLocks = async () => {
+    const result = await connection.db.execute(sql`select count(*)::int as n from pg_locks where locktype = 'advisory'`)
+    return (result as unknown as { rows: { n: number }[] }).rows[0]!.n
+  }
+
+  beforeAll(async () => {
+    connection = await openPglite()
+  }, PGLITE_TIMEOUT)
+
+  afterAll(() => connection.close(), PGLITE_TIMEOUT)
+
+  it('holds an advisory lock while the work runs, and releases it after a failure', async () => {
+    await expect(connection.exclusive(advisoryLocks)).resolves.toBe(1)
+    expect(await advisoryLocks()).toBe(0)
+    await expect(connection.exclusive(async () => {
+      throw new Error('migration failed')
+    })).rejects.toThrow('migration failed')
+    expect(await advisoryLocks()).toBe(0)
   })
 })

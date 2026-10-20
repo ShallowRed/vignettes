@@ -7,8 +7,8 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { createContentArchive } from './archive.ts'
 import { createCatalogStore } from './catalog.ts'
+import { createContentRewrites } from './content-rewrites.ts'
 import { createDbContent } from './content-store.ts'
-import { runDataMigrations } from './data-migrations.ts'
 import { createDeckMeta } from './deck-meta.ts'
 import { createDbDirectory } from './directory.ts'
 import { createDraftStore } from './draft-store.ts'
@@ -44,7 +44,7 @@ export function openSqliteFile(path: string, { readonly }: { readonly: boolean }
 export const MIGRATIONS_DIR = 'layers/studio/server/db/sqlite/migrations'
 
 /** The migrations: the repository folder in development, the copy shipped with the output in production. */
-const MIGRATION_FOLDERS = [MIGRATIONS_DIR, '.output/server/migrations']
+const MIGRATION_FOLDERS = [MIGRATIONS_DIR, '.output/server/migrations/sqlite']
 
 /** Applies the pending schema migrations. */
 export function migrateSqlite(db: SqliteDb): void {
@@ -53,8 +53,6 @@ export function migrateSqlite(db: SqliteDb): void {
     throw new Error(`No migrations folder found (looked in ${MIGRATION_FOLDERS.join(' and ')})`)
   migrate(db, { migrationsFolder })
 }
-
-export { runDataMigrations }
 
 /** The SQLite adapter of the storage ports. */
 export function createSqliteStores(db: SqliteDb): Stores {
@@ -74,5 +72,6 @@ export function createSqliteStores(db: SqliteDb): Stores {
     mediaIndex: createMediaIndex(db),
     catalog: createCatalogStore(db),
     archive: createContentArchive(db),
+    rewrites: createContentRewrites(db),
   }
 }

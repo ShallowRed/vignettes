@@ -28,6 +28,7 @@ catalog:
   '@codemirror/state': ^6.7.0
   '@codemirror/view': ^6.43.2
   '@dagrejs/dagre': ^3.1.1
+  '@electric-sql/pglite': ^0.5.10
   '@fontsource-variable/quicksand': ^5.3.0
   '@gouvfr/dsfr': ^1.15.3
   '@hocuspocus/provider': ^4.3.0
@@ -53,6 +54,7 @@ catalog:
   '@types/better-sqlite3': ^7.6.13
   '@types/js-yaml': ^4.0.9
   '@types/node': ^24.10.1
+  '@types/pg': ^8.23.1
   better-sqlite3: ^12.11.1
   codemirror: ^6.0.2
   concurrently: ^9.2.1
@@ -64,6 +66,7 @@ catalog:
   mermaid: ^11.12.2
   nuxt: ^4.5.2
   nuxt-auth-utils: ^0.5.29
+  pg: ^8.23.1
   pinia: ^4.0.2
   reveal.js: ^5.2.1
   sass: ^1.94.2

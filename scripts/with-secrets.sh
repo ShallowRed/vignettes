@@ -10,4 +10,14 @@ if [ "${INFISICAL_DISABLE:-0}" = "1" ] || ! command -v infisical >/dev/null 2>&1
   exec "$@"
 fi
 
+# With INFISICAL_SECRETS (names separated by spaces), only these secrets reach
+# the command, which keeps its local settings: database, content directory.
+if [ -n "${INFISICAL_SECRETS:-}" ]; then
+  for name in $INFISICAL_SECRETS; do
+    value="$(infisical secrets get "$name" --env="$env" --plain --silent)"
+    export "$name=$value"
+  done
+  exec "$@"
+fi
+
 exec infisical run --env="$env" -- "$@"
