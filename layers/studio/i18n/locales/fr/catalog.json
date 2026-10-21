@@ -2,40 +2,40 @@
   "catalog": {
     "fields": {
       "status": "Statut",
-      "project": "Projet",
+      "project": "Dossier",
       "theme": "Thème"
     },
     "project": {
       "ungroupedTitle": "Divers",
-      "none": "Sans projet"
+      "none": "Sans dossier"
     },
     "deck": {
       "count": "{n} présentation | {n} présentation | {n} présentations",
       "archived": "Archivée",
       "frozen": "Gelée",
       "unlisted": "Non répertoriée",
-      "unpublished": "Non publié",
+      "unpublished": "Non publiée",
       "sharedAccess": "{n} accès partagé | {n} accès partagé | {n} accès partagés",
-      "editContent": "Éditer le contenu",
-      "metadata": "Métadonnées…",
+      "metadata": "Réglages et partage…",
       "share": "Partager…",
       "createVariant": "Créer une variante…",
       "newEdition": "Nouvelle édition…",
-      "delete": "Supprimer…",
+      "delete": "Mettre à la corbeille…",
       "downloadPublished": "Télécharger la version publiée (.md)",
       "downloadDraft": "Télécharger le brouillon (.md)",
-      "downloadFailed": "Le téléchargement a échoué"
+      "downloadFailed": "Le téléchargement a échoué",
+      "actionsLabel": "Actions de « {title} »"
     },
     "folders": {
       "edit": "Modifier…",
       "manageAccess": "Gérer l'accès…",
-      "delete": "Supprimer…",
-      "actionsLabel": "Actions du dossier",
+      "delete": "Mettre à la corbeille…",
+      "actionsLabel": "Actions du dossier « {name} »",
       "sharedAccess": "{n} accès partagé(s) au dossier"
     },
     "table": {
       "selectAll": "Tout sélectionner",
-      "selectRow": "Sélectionner la ligne",
+      "selectRow": "Sélectionner « {title} »",
       "variantColumn": "Variante",
       "fileColumn": "Fichier",
       "replacedBy": "Remplacée par {slug}",
@@ -43,7 +43,6 @@
       "openInNewTab": "Ouvrir dans un nouvel onglet",
       "copyLink": "Copier le lien",
       "view": "Consulter",
-      "moreActions": "Autres actions",
       "range": "{from}–{to} sur {total}",
       "pageSizeOption": "{size} / page",
       "pageSizeLabel": "Éléments par page",
@@ -52,19 +51,20 @@
       "exportCsv": "Exporter CSV",
       "clearSelection": "Effacer la sélection",
       "linksCopied": "{n} liens copiés | Lien copié | {n} liens copiés",
-      "exported": "{n} présentation(s) exportée(s)"
+      "exported": "{n} présentation(s) exportée(s)",
+      "viewItem": "Consulter « {title} »",
+      "editItem": "Modifier « {title} »"
     },
     "toolbar": {
       "searchPlaceholder": "Rechercher…",
       "statusFilterActive": "Statut · {count}",
-      "projectFilterActive": "Projet · {count}",
+      "projectFilterActive": "Dossier · {count}",
       "clearFilters": "Effacer",
       "sortBy": "Trier par",
       "ascending": "Croissant",
       "descending": "Décroissant"
     },
     "card": {
-      "actionsLabel": "Actions",
       "present": "Présenter",
       "slides": "diapositive | diapositive | diapositives",
       "variantsLabel": "Variantes",
@@ -76,7 +76,7 @@
       "description": "Crée une présentation privée et l'ouvre dans l'éditeur.",
       "titlePlaceholder": "Titre de la présentation",
       "slugHelp": "Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre.",
-      "submit": "Créer et éditer",
+      "submit": "Créer et modifier",
       "created": "Présentation créée",
       "slugTaken": "Le slug « {slug} » est déjà pris.",
       "start": {
@@ -96,12 +96,12 @@
       },
       "import": {
         "dropLabel": "Déposez un fichier .md",
-        "dropDescription": "ou cliquez pour le choisir. Son frontmatter donne le titre et le thème.",
-        "fromFile": "Lu dans le frontmatter du fichier.",
+        "dropDescription": "ou cliquez pour le choisir. Son en-tête donne le titre et le thème.",
+        "fromFile": "Lu dans l'en-tête du fichier.",
         "defaultTheme": "{theme}, le thème par défaut",
-        "titleMissing": "Le frontmatter du fichier ne donne pas de titre : ajoutez la clé title.",
-        "keysInvalid": "Le frontmatter du fichier a une valeur refusée pour la clé {keys}. | Le frontmatter du fichier a une valeur refusée pour la clé {keys}. | Le frontmatter du fichier a des valeurs refusées pour les clés {keys}.",
-        "yamlInvalid": "Le frontmatter du fichier n'est pas du YAML valide : {message}"
+        "titleMissing": "L'en-tête du fichier ne donne pas de titre : ajoutez la clé title.",
+        "keysInvalid": "L'en-tête du fichier a une valeur refusée pour la clé {keys}. | L'en-tête du fichier a une valeur refusée pour la clé {keys}. | L'en-tête du fichier a des valeurs refusées pour les clés {keys}.",
+        "yamlInvalid": "L'en-tête du fichier n'est pas du YAML valide : {message}"
       }
     },
     "form": {
@@ -110,7 +110,7 @@
       "identifierTaken": "L'identifiant « {slug} » est déjà pris."
     },
     "projectCreate": {
-      "description": "Un projet pour regrouper des présentations.",
+      "description": "Un dossier pour regrouper des présentations.",
       "namePlaceholder": "Nom du dossier",
       "identifierHelp": "Optionnel : laissé vide, il sera dérivé du nom. La baguette le remplit depuis le nom.",
       "fillFromName": "Remplir depuis le nom",
@@ -127,11 +127,11 @@
       "saveFailed": "Échec de la mise à jour"
     },
     "projectDelete": {
-      "title": "Supprimer le dossier ?",
+      "title": "Mettre le dossier à la corbeille ?",
       "noticeTitle": "Le dossier et son contenu partent à la corbeille",
-      "noticeWithDecks": "Ce dossier et ses {n} présentation seront placés dans la corbeille. Vous pourrez tout restaurer d'un coup. | Ce dossier et ses {n} présentation seront placés dans la corbeille. Vous pourrez tout restaurer d'un coup. | Ce dossier et ses {n} présentations seront placés dans la corbeille. Vous pourrez tout restaurer d'un coup.",
-      "noticeEmpty": "Ce dossier (vide) sera placé dans la corbeille. Vous pourrez le restaurer.",
-      "trashed": "Dossier placé dans la corbeille",
+      "noticeWithDecks": "Ce dossier et ses {n} présentation seront mis à la corbeille. Vous pourrez tout restaurer d'un coup. | Ce dossier et sa présentation seront mis à la corbeille. Vous pourrez tout restaurer d'un coup. | Ce dossier et ses {n} présentations seront mis à la corbeille. Vous pourrez tout restaurer d'un coup.",
+      "noticeEmpty": "Ce dossier vide sera mis à la corbeille. Vous pourrez le restaurer.",
+      "trashed": "Dossier mis à la corbeille",
       "failed": "Échec de la suppression"
     },
     "home": {
@@ -144,14 +144,16 @@
       "visibleCount": "{visible} sur {total} présentations",
       "noResultTitle": "Aucun résultat",
       "noResultDescription": "Aucune présentation ne correspond à vos critères.",
-      "resetFilters": "Réinitialiser les filtres"
+      "resetFilters": "Réinitialiser les filtres",
+      "title": "Présentations",
+      "intro": "Ce studio publie les présentations ci-dessous, rangées par dossier. Ouvrez-en une pour la présenter, ou pour la lire en faisant défiler ses diapositives.",
+      "pageTitle": "Présentations · Vignettes"
     },
     "folder": {
       "sorted": "Triées par dernière modification",
-      "sortedWithTheme": "Thème {theme} · Triées par dernière modification",
       "emptyTitle": "Dossier vide",
       "emptyTitleAnonymous": "Dossier privé ou vide",
-      "emptyDescription": "Aucune présentation dans ce projet.",
+      "emptyDescription": "Aucune présentation dans ce dossier.",
       "emptyDescriptionAnonymous": "Si ce dossier vous a été partagé, connectez-vous pour voir son contenu.",
       "supersededEditions": "Éditions remplacées ({count})"
     }

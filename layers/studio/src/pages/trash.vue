@@ -128,7 +128,7 @@ async function confirmPurge() {
                 variant="ghost"
                 size="xs"
                 :disabled="busy"
-                :aria-label="t('common.actions.deleteForever')"
+                :aria-label="t('admin.trash.deleteForeverItem', { title: project.title })"
                 @click="purgeTarget = { kind: 'project', slug: project.slug, title: project.title }"
               />
             </li>
@@ -173,7 +173,7 @@ async function confirmPurge() {
                 variant="ghost"
                 size="xs"
                 :disabled="busy"
-                :aria-label="t('common.actions.deleteForever')"
+                :aria-label="t('admin.trash.deleteForeverItem', { title: deck.title })"
                 @click="purgeTarget = { kind: 'deck', slug: deck.slug, title: deck.title }"
               />
             </li>

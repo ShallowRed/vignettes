@@ -45,14 +45,14 @@ export default defineEventHandler(async (event) => {
     }
     const renamed = await store.rename(slug, nextSlug)
     if (!renamed) {
-      throw createError({ statusCode: 404, statusMessage: `No project "${slug}"` })
+      throw createError({ statusCode: 404, statusMessage: `No folder "${slug}"` })
     }
     targetSlug = nextSlug
   }
 
   const project = await store.update(targetSlug, meta)
   if (!project) {
-    throw createError({ statusCode: 404, statusMessage: `No project "${targetSlug}"` })
+    throw createError({ statusCode: 404, statusMessage: `No folder "${targetSlug}"` })
   }
   return project
 })

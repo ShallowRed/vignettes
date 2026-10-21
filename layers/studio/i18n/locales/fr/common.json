@@ -4,7 +4,7 @@
       "cancel": "Annuler",
       "save": "Enregistrer",
       "restore": "Restaurer",
-      "edit": "Éditer",
+      "edit": "Modifier",
       "retry": "Réessayer",
       "signIn": "Se connecter",
       "signOut": "Se déconnecter",
@@ -34,7 +34,7 @@
       "anonymous": "Invité"
     },
     "status": {
-      "public": "Public",
+      "public": "Publique",
       "semiPrivate": "Mot de passe",
       "private": "Privée"
     },

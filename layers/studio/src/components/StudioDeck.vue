@@ -15,6 +15,8 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
+useHead({ title: () => `${props.presentationData.metadata.title || props.slug || ''} · Vignettes` })
+
 // The deck renders without this answer, so it loads after the page.
 interface Variant { slug: string, alias: string | null, title: string, variantLabel: string }
 const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
@@ -29,8 +31,12 @@ const variantHref = (variant: Variant) => `${deckPath({ slug: variant.slug, alia
 
 const reveal = shallowRef<RevealApi | null>(null)
 const indices = ref({ h: 0, v: 0 })
+// Reveal names its arrows in English.
+const ARROW_LABELS = { left: 'previous', right: 'next', up: 'up', down: 'down' } as const
 function onReady(instance: RevealApi) {
   reveal.value = instance
+  for (const [direction, label] of Object.entries(ARROW_LABELS))
+    instance.getRevealElement().querySelector(`.controls .navigate-${direction}`)?.setAttribute('aria-label', t(`auth.viewer.controls.${label}`))
   indices.value = instance.getIndices()
   instance.on('slidechanged', (event: { indexh: number, indexv: number }) => {
     indices.value = { h: event.indexh, v: event.indexv }

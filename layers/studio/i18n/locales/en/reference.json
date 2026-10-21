@@ -2,25 +2,26 @@
   "reference": {
     "help": {
       "title": "Authoring help",
-      "description": "Syntax, components and options of the slide engine.",
-      "structureHeading": "Slide structure",
-      "activeParser": "Active splitting: {active} (frontmatter {other} for the other mode).",
+      "description": "Syntax, components and settings of a presentation.",
+      "structureHeading": "Splitting into slides",
       "componentsHeading": "Components",
-      "insertTooltip": "Insert into the document",
-      "insert": "Insert",
+      "insertTooltip": "Insert into the text",
+      "insert": "Insert {name}",
       "annotationsHeading": "Slide annotations",
       "layoutsIntro": "Layouts available for {annotation}:",
-      "frontmatterHeading": "Frontmatter",
+      "frontmatterHeading": "Front matter",
       "shortcutsHeading": "Shortcuts",
-      "completionTriggers": "The autocompletion triggers on {components}, {annotations} and in the frontmatter."
+      "completionTriggers": "The autocompletion triggers on {components}, {annotations} and in the front matter.",
+      "splitHeading": "Each ## heading starts a slide. To split at the --- lines, write {other} in the front matter.",
+      "splitSeparator": "Each --- line starts a slide. To split at the ## headings, write {other} in the front matter."
     },
     "structure": {
-      "headingTitle": "# Title: first slide (deck title)",
-      "headingHorizontal": "## Title: new horizontal slide",
-      "headingVertical": "### Title: vertical slide (stacked under the previous one)",
-      "headingBreak": "---: new horizontal slide without a title",
-      "separatorHorizontal": "---: new horizontal slide",
-      "separatorVertical": "----: vertical slide (stacked under the previous one)"
+      "headingTitle": "# Title: first slide, title of the presentation",
+      "headingHorizontal": "## Title: new slide",
+      "headingVertical": "### Title: slide placed under the previous one",
+      "headingBreak": "---: new slide without a title",
+      "separatorHorizontal": "---: new slide",
+      "separatorVertical": "----: slide placed under the previous one"
     },
     "templates": {
       "twoColumns": {
@@ -68,16 +69,16 @@
       "root": {
         "title": "Title of the presentation",
         "theme": "Visual theme",
-        "parser": "Slide splitting: separator (---) or heading (headings)",
+        "parser": "Splitting into slides: separator (--- lines) or heading (headings)",
         "lang": "Language of the document; French typography applies in fr",
-        "project": "Catalog folder; for a presentation created in the studio, choose it in Sharing and settings",
-        "status": "Visibility; for a presentation created in the studio, set it in Sharing and settings",
-        "unlisted": "Reachable by link but absent from the catalog; for a presentation created in the studio, set it in Sharing and settings",
+        "project": "Catalog folder; for a presentation created in the studio, choose it in Settings and sharing",
+        "status": "Visibility; for a presentation created in the studio, set it in Settings and sharing",
+        "unlisted": "Reachable by link but absent from the catalog; for a presentation created in the studio, set it in Settings and sharing",
         "storybook": "Address of the published Storybook, without iframe.html, used by ::StoryFrame and by the story option of :layout",
         "backgrounds": "Background images per heading level",
         "code": "Colors and font size of the code blocks: a theme (nuit, sombre, clair) or its settings",
-        "reveal": "Reveal.js options: format, numbering, transitions…",
-        "accessPassword": "Password of the semi-private status; for a presentation created in the studio, enter it in Sharing and settings",
+        "reveal": "Display settings of Reveal.js, the engine of the presentations: format, numbering, transitions…",
+        "accessPassword": "Password of the semi-private status; for a presentation created in the studio, enter it in Settings and sharing",
         "titleDefault": "the identifier"
       },
       "backgrounds": {

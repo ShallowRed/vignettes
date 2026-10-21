@@ -58,7 +58,8 @@
       "folderRestored": "Folder restored",
       "deckRestored": "Presentation restored",
       "purged": "Deleted permanently",
-      "failed": "Failed"
+      "failed": "Failed",
+      "deleteForeverItem": "Delete “{title}” permanently"
     }
   }
 }

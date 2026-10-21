@@ -47,7 +47,7 @@
       "title": "Corbeille",
       "restrictedDescription": "La corbeille est réservée aux comptes autorisés.",
       "emptyTitle": "Corbeille vide",
-      "emptyDescription": "Les dossiers et présentations supprimés apparaîtront ici.",
+      "emptyDescription": "Les dossiers et les présentations mis à la corbeille apparaîtront ici.",
       "folders": "Dossiers",
       "decks": "Présentations",
       "deckCount": "{n} présentation | {n} présentation | {n} présentations",
@@ -58,7 +58,8 @@
       "folderRestored": "Dossier restauré",
       "deckRestored": "Présentation restaurée",
       "purged": "Supprimé définitivement",
-      "failed": "Échec"
+      "failed": "Échec",
+      "deleteForeverItem": "Supprimer définitivement « {title} »"
     }
   }
 }

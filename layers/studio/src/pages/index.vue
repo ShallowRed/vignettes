@@ -10,6 +10,8 @@ import { useModalTarget } from '../composables/useModalTarget'
 // privileged users can flip to the flat management console for cross-project work.
 const { t } = useI18n()
 const { privileged, loggedIn, role, user } = useAppSession()
+const { welcome } = useRuntimeConfig().public
+useHead({ title: () => t('catalog.home.pageTitle') })
 const isOwner = computed(() => role.value === 'owner')
 
 // Shared, access-filtered catalog state (decks + folders) on Pinia Colada.
@@ -74,6 +76,17 @@ const projectDeckCount = computed(() =>
     <!-- Same top rhythm as the folder/trash/users pages: no layout shift when
          navigating between catalog spaces. -->
     <UBreadcrumb :items="[{ label: t('common.home') }]" />
+    <div
+      v-if="!loggedIn"
+      class="flex flex-col gap-1"
+    >
+      <h1 class="text-xl font-semibold text-highlighted">
+        {{ t('catalog.home.title') }}
+      </h1>
+      <p class="text-sm text-muted">
+        {{ welcome || t('catalog.home.intro') }}
+      </p>
+    </div>
     <AsyncSection
       :status="status"
       :error="error"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { DropdownMenuItem } from '@nuxt/ui'
+import type { Fact } from './FactList.vue'
 import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 import { useDeckDownload } from '../composables/useDeckDownload'
 import { shortDate } from '../utils/short-date'
@@ -62,11 +63,28 @@ const updatedLabel = computed(() => {
   return t('catalog.card.updatedOn', { date: shortDate(new Date(at), locale.value) })
 })
 
+// What the card says under the title, in reading order.
+const facts = computed<Fact[]>(() => {
+  const full = !props.minimal
+  const { lifecycle, status, unlisted, published, unpublishedChanges, sharedCount } = deck.value
+  const list: (Fact | false | undefined)[] = [
+    frozen.value && { key: 'lifecycle', text: t(lifecycle === 'archived' ? 'catalog.deck.archived' : 'catalog.deck.frozen') },
+    !frozen.value && full && statusDisplay.value && status !== 'public' && { key: 'status', text: t(statusDisplay.value.labelKey) },
+    full && unlisted && { key: 'unlisted', text: t('catalog.deck.unlisted') },
+    full && props.admin && published === false && { key: 'unpublished', text: t('catalog.deck.unpublished') },
+    full && canEdit.value && unpublishedChanges && { key: 'changes', text: t('catalog.card.unpublishedChanges'), warning: true },
+    full && props.admin && sharedCount ? { key: 'shared', text: String(sharedCount), icon: 'i-lucide-users', title: t('catalog.deck.sharedAccess', sharedCount) } : false,
+    Boolean(props.replacedBy) && { key: 'replacedBy', text: t('catalog.card.replacedBy', { title: props.replacedBy }) },
+    full && updatedLabel.value !== undefined && { key: 'updated', text: updatedLabel.value },
+  ]
+  return list.filter((fact): fact is Fact => Boolean(fact))
+})
+
 const { downloadItems } = useDeckDownload()
 const actions = computed<DropdownMenuItem[][]>(() => [
   ...(adminMenu.value
     ? [[
-        { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
+        { label: t('common.actions.edit'), icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
         { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
         ...shareItems.value,
       ]]
@@ -139,7 +157,7 @@ const hasActions = computed(() => canEdit.value || hasMenu.value)
               variant="outline"
               size="xs"
               class="bg-default/90 backdrop-blur-sm hover:bg-accented active:bg-accented active:ring-inverted/40 active:scale-95 transition data-[state=open]:bg-accented"
-              :aria-label="t('catalog.card.actionsLabel')"
+              :aria-label="t('catalog.deck.actionsLabel', { title: deck.title })"
             />
           </UDropdownMenu>
         </div>
@@ -183,32 +201,10 @@ const hasActions = computed(() => canEdit.value || hasMenu.value)
         </div>
 
         <!-- Taxonomies stripped to plain text (clean base): no colour, no icon. -->
-        <div
+        <FactList
           v-if="frozen || !minimal"
-          class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted"
-        >
-          <span v-if="frozen">{{ deck.lifecycle === 'archived' ? t('catalog.deck.archived') : t('catalog.deck.frozen') }}</span>
-          <span v-else-if="!minimal && statusDisplay && deck.status !== 'public'">{{ t(statusDisplay.labelKey) }}</span>
-          <span v-if="!minimal && deck.unlisted">{{ t('catalog.deck.unlisted') }}</span>
-          <span v-if="!minimal && admin && deck.published === false">{{ t('catalog.deck.unpublished') }}</span>
-          <span
-            v-if="!minimal && canEdit && deck.unpublishedChanges"
-            class="text-warning"
-          >{{ t('catalog.card.unpublishedChanges') }}</span>
-          <span
-            v-if="!minimal && admin && deck.sharedCount"
-            class="inline-flex items-center gap-0.5"
-            :title="t('catalog.deck.sharedAccess', deck.sharedCount)"
-          >
-            <UIcon
-              name="i-lucide-users"
-              class="size-3"
-            />
-            {{ deck.sharedCount }}
-          </span>
-          <span v-if="replacedBy">{{ t('catalog.card.replacedBy', { title: replacedBy }) }}</span>
-          <span v-if="!minimal && updatedLabel">{{ updatedLabel }}</span>
-        </div>
+          :facts="facts"
+        />
       </div>
     </template>
   </UPageCard>

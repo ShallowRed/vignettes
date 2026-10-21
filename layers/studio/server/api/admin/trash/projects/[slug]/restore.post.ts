@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
   const restored = await useProjectStore().restore(slug)
   if (!restored) {
-    throw createError({ statusCode: 404, statusMessage: `No trashed project "${slug}"` })
+    throw createError({ statusCode: 404, statusMessage: `No trashed folder "${slug}"` })
   }
   return { ok: true }
 })

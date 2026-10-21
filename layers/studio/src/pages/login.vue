@@ -6,6 +6,7 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+useHead({ title: () => t('auth.login.pageTitle') })
 const route = useRoute()
 const error = computed(() => route.query.error as string | undefined)
 

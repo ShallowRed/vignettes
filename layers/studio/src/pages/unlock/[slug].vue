@@ -19,6 +19,8 @@ const verifyApi = computed(() => {
 })
 const returnTo = computed(() => safeRedirectPath(route.query.return, `/slides/${slug.value}`))
 
+useHead({ title: () => t('auth.unlock.pageTitle') })
+
 const password = ref('')
 const errorMessage = ref('')
 const loading = ref(false)
@@ -66,7 +68,7 @@ async function unlock() {
           {{ t('auth.unlock.title') }}
         </h1>
         <p class="text-muted mb-4">
-          {{ t('auth.unlock.description') }}
+          {{ t('auth.unlock.description', { slug }) }}
         </p>
 
         <form

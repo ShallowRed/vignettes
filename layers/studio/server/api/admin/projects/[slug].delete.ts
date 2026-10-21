@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   const trashed = await store.softDelete(slug)
   if (!trashed) {
-    throw createError({ statusCode: 404, statusMessage: `No project "${slug}"` })
+    throw createError({ statusCode: 404, statusMessage: `No folder "${slug}"` })
   }
   return { ok: true }
 })

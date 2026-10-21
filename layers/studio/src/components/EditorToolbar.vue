@@ -52,18 +52,20 @@ const insertItems = computed<DropdownMenuItem[][]>(() => [
   [{ label: t('editor.toolbar.uploadImage'), icon: 'i-lucide-image-up', onSelect: () => imageInput.value?.click() }],
   componentEntries(locale.value).map(entry => ({
     label: entry.label,
+    description: entry.description,
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
   })),
   annotationEntries(locale.value).map(entry => ({
     label: entry.label,
+    description: entry.description,
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
   })),
 ])
 
-// Whole-slide starters, described in the help panel.
 const templateItems = computed<DropdownMenuItem[]>(() =>
   SLIDE_TEMPLATES.map(entry => ({
     label: t(entry.labelKey),
+    description: t(entry.descriptionKey),
     onSelect: () => run(view => insertSlideTemplate(view, inLanguage(entry.snippet, locale.value))),
   })))
 
@@ -149,7 +151,7 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
       <UDropdownMenu
         :items="templateItems"
         :content="{ align: 'start' }"
-        :ui="{ content: 'max-h-96 overflow-y-auto' }"
+        :ui="{ content: 'w-80 max-h-96 overflow-y-auto', itemDescription: 'whitespace-normal' }"
       >
         <UButton
           icon="i-lucide-layout-template"
@@ -174,7 +176,7 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
       <UDropdownMenu
         :items="insertItems"
         :content="{ align: 'start' }"
-        :ui="{ content: 'max-h-96 overflow-y-auto' }"
+        :ui="{ content: 'w-80 max-h-96 overflow-y-auto', itemDescription: 'whitespace-normal' }"
       >
         <UButton
           icon="i-lucide-shapes"

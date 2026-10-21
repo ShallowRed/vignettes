@@ -61,6 +61,7 @@ const toast = useToast()
 const raw = ref('')
 const lastSaved = ref('')
 const deckTitle = ref<string | undefined>(undefined)
+useHead({ title: () => t('editor.page.pageTitle', { title: deckTitle.value || slug }) })
 const deckStatus = ref<string>('private')
 const loadedFrom = ref<'draft' | 'published' | 'file' | null>(null)
 const preview = ref<PresentationData | null>(null)
@@ -1183,6 +1184,7 @@ async function onMetaSaved() {
     <EditorHelpSlideover
       v-model:open="helpOpen"
       :parser="activeParser"
+      :autosave="collabEnabled"
       @insert="insertFromHelp"
     />
   </div>

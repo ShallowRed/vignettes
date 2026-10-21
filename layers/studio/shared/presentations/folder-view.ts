@@ -21,14 +21,8 @@ export interface CatalogFolder {
   color: string | null
   /** Bare lucide name; null = the default folder icon. */
   icon: string | null
-  /** Distinct themes across the folder's decks (for the subtitle). */
-  themes: string[]
   /** True for the reserved no-project bucket. */
   ungrouped: boolean
-}
-
-function themesOf(items: PresentationListItem[]): string[] {
-  return [...new Set(items.map(i => i.theme).filter(Boolean))] as string[]
 }
 
 /**
@@ -68,7 +62,6 @@ export function buildCatalogFolders(
       count: bucket.length,
       color: meta.get(slug)?.color ?? null,
       icon: meta.get(slug)?.icon ?? null,
-      themes: themesOf(bucket),
       ungrouped: false,
     }
   })
@@ -81,7 +74,6 @@ export function buildCatalogFolders(
       count: ungrouped.length,
       color: null,
       icon: null,
-      themes: themesOf(ungrouped),
       ungrouped: true,
     })
   }

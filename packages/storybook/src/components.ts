@@ -10,8 +10,8 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
       en: '::StoryFrame{story="${story-id}" ratio="${16/9}" previewWidth="${760}" label="${Label}" lightbox}\n::',
     },
     description: {
-      fr: 'Écran Storybook vivant. story prend l\'identifiant de la story, composant--story, visible dans l\'adresse du Storybook après ?path=/story/ (ratio, previewWidth, lightbox)',
-      en: 'Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (ratio, previewWidth, lightbox)',
+      fr: 'Écran Storybook vivant. story prend l\'identifiant de la story, composant--story, visible dans l\'adresse du Storybook après ?path=/story/ (attributs ratio, previewWidth, lightbox)',
+      en: 'Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (attributes ratio, previewWidth, lightbox)',
     },
   },
   {
@@ -21,8 +21,8 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
       en: ':::Screens{cols="${2}"}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n:::',
     },
     description: {
-      fr: 'Galerie d\'écrans Storybook (cols, gap, align)',
-      en: 'Gallery of Storybook screens (cols, gap, align)',
+      fr: 'Galerie d\'écrans Storybook (attributs cols, gap, align)',
+      en: 'Gallery of Storybook screens (attributes cols, gap, align)',
     },
   },
 ]

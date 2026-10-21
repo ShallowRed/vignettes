@@ -171,13 +171,22 @@ const summary = computed(() => {
   }[against], chunks.value)
 })
 // The legend keeps its line whatever the state, so the diff never moves.
+const baseEntry = computed(() => {
+  const base = baseRef.value
+  return base ? entries.value.find(e => same(e, base)) ?? null : null
+})
+function textName(entry: HistoryEntry | null): string {
+  if (!entry)
+    return t('deck.history.textDraft')
+  return t(entry.kind === 'version' ? 'deck.history.textVersion' : 'deck.history.textSnapshot', { when: when(entry.at) })
+}
 const legend = computed(() => {
   if (chunks.value === null)
     return ''
   if (firstEntry.value)
     return t('deck.history.legendFirstEntry')
   if (chunks.value === 0)
-    return t('deck.history.legendIdentical')
+    return t('deck.history.legendIdentical', { to: textName(selectedEntry.value), from: textName(baseEntry.value) })
   return selected.value === 'draft'
     ? t('deck.history.legendDraft')
     : t('deck.history.legendEntry')

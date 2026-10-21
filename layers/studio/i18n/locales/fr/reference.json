@@ -2,25 +2,26 @@
   "reference": {
     "help": {
       "title": "Aide à la rédaction",
-      "description": "Syntaxe, composants et options du moteur de slides.",
-      "structureHeading": "Structure des diapos",
-      "activeParser": "Découpage actif : {active} (frontmatter {other} pour l'autre mode).",
+      "description": "Syntaxe, composants et réglages d'une présentation.",
+      "structureHeading": "Découpage en diapositives",
       "componentsHeading": "Composants",
-      "insertTooltip": "Insérer dans le document",
-      "insert": "Insérer",
-      "annotationsHeading": "Annotations de diapo",
-      "layoutsIntro": "Layouts disponibles pour {annotation} :",
-      "frontmatterHeading": "Frontmatter",
+      "insertTooltip": "Insérer dans le texte",
+      "insert": "Insérer {name}",
+      "annotationsHeading": "Annotations de diapositive",
+      "layoutsIntro": "Mises en page disponibles pour {annotation} :",
+      "frontmatterHeading": "En-tête de la présentation",
       "shortcutsHeading": "Raccourcis",
-      "completionTriggers": "L'autocomplétion se déclenche sur {components}, {annotations} et dans le frontmatter."
+      "completionTriggers": "L'autocomplétion se déclenche sur {components}, {annotations} et dans l'en-tête.",
+      "splitHeading": "Chaque titre ## commence une diapositive. Pour découper aux lignes ---, écrivez {other} dans l'en-tête.",
+      "splitSeparator": "Chaque ligne --- commence une diapositive. Pour découper aux titres ##, écrivez {other} dans l'en-tête."
     },
     "structure": {
-      "headingTitle": "# Titre : première diapo (titre du deck)",
-      "headingHorizontal": "## Titre : nouvelle diapo horizontale",
-      "headingVertical": "### Titre : diapo verticale (empilée sous la précédente)",
-      "headingBreak": "--- : nouvelle diapo horizontale sans titre",
-      "separatorHorizontal": "--- : nouvelle diapo horizontale",
-      "separatorVertical": "---- : diapo verticale (empilée sous la précédente)"
+      "headingTitle": "# Titre : première diapositive, titre de la présentation",
+      "headingHorizontal": "## Titre : nouvelle diapositive",
+      "headingVertical": "### Titre : diapositive placée sous la précédente",
+      "headingBreak": "--- : nouvelle diapositive sans titre",
+      "separatorHorizontal": "--- : nouvelle diapositive",
+      "separatorVertical": "---- : diapositive placée sous la précédente"
     },
     "templates": {
       "twoColumns": {
@@ -33,7 +34,7 @@
       },
       "cover": {
         "label": "Couverture",
-        "description": "Diapo de garde : titre + sous-titre"
+        "description": "Diapositive de garde : titre + sous-titre"
       },
       "section": {
         "label": "Section",
@@ -49,15 +50,15 @@
       },
       "mediaText": {
         "label": "Média + texte",
-        "description": "Texte à gauche, image à droite (layout media-right)"
+        "description": "Texte à gauche, image à droite (mise en page media-right)"
       },
       "quote": {
         "label": "Citation",
-        "description": "Citation pleine diapo (auteur, rôle)"
+        "description": "Citation pleine diapositive (auteur, rôle)"
       },
       "fullScreenImage": {
         "label": "Image plein écran",
-        "description": "Image qui occupe toute la diapo"
+        "description": "Image qui occupe toute la diapositive"
       },
       "storybookGallery": {
         "label": "Galerie Storybook",
@@ -68,23 +69,23 @@
       "root": {
         "title": "Titre de la présentation",
         "theme": "Thème visuel",
-        "parser": "Découpage des diapos : separator (---) ou heading (titres)",
+        "parser": "Découpage en diapositives : separator (lignes ---) ou heading (titres)",
         "lang": "Langue du document ; la typographie française s'applique en fr",
-        "project": "Dossier du catalogue ; pour une présentation créée dans le studio, choisissez-le dans Partage et réglages",
-        "status": "Visibilité ; pour une présentation créée dans le studio, réglez-la dans Partage et réglages",
-        "unlisted": "Accessible par lien mais absente du catalogue ; pour une présentation créée dans le studio, réglez ce choix dans Partage et réglages",
+        "project": "Dossier du catalogue ; pour une présentation créée dans le studio, choisissez-le dans Réglages et partage",
+        "status": "Visibilité ; pour une présentation créée dans le studio, réglez-la dans Réglages et partage",
+        "unlisted": "Accessible par lien mais absente du catalogue ; pour une présentation créée dans le studio, réglez ce choix dans Réglages et partage",
         "storybook": "Adresse du Storybook publié, sans iframe.html, qui sert aux ::StoryFrame et à l'option story de :layout",
         "backgrounds": "Images de fond par niveau de titre",
         "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
-        "reveal": "Options de Reveal.js : format, numérotation, transitions…",
-        "accessPassword": "Mot de passe du statut semi-private ; pour une présentation créée dans le studio, saisissez-le dans Partage et réglages",
+        "reveal": "Réglages d'affichage de Reveal.js, le moteur des présentations : format, numérotation, transitions…",
+        "accessPassword": "Mot de passe du statut semi-private ; pour une présentation créée dans le studio, saisissez-le dans Réglages et partage",
         "titleDefault": "l'identifiant"
       },
       "backgrounds": {
-        "h1": "Fond des diapos ouvertes par un titre #",
-        "h2": "Fond des diapos ouvertes par un titre ##",
-        "h3": "Fond des diapos ouvertes par un titre ###",
-        "default": "Fond des autres diapos"
+        "h1": "Fond des diapositives ouvertes par un titre #",
+        "h2": "Fond des diapositives ouvertes par un titre ##",
+        "h3": "Fond des diapositives ouvertes par un titre ###",
+        "default": "Fond des autres diapositives"
       },
       "code": {
         "theme": "Thème de code de départ, que les autres réglages modifient",
@@ -99,27 +100,27 @@
         "comment": "Commentaires",
         "punctuation": "Accolades, crochets, virgules, deux-points",
         "keyWeight": "Graisse des clés",
-        "size": "Corps minimal du code, en pixels de diapo (960 × 700)",
+        "size": "Corps minimal du code, en pixels de diapositive (960 × 700)",
         "dim": "Opacité des lignes hors de la zone active d'un JsonTour",
         "activeBackground": "Fond de la zone active d'un JsonTour",
         "activeBar": "Barre de la zone active d'un JsonTour"
       },
       "reveal": {
-        "width": "Largeur de référence d'une diapo, en pixels",
-        "height": "Hauteur de référence d'une diapo, en pixels",
-        "margin": "Marge autour de la diapo, en fraction de sa taille",
-        "slideNumber": "Numéro de diapo : c/t (courante/total), h.v, c, ou false",
-        "transition": "Transition entre diapos",
-        "center": "Centre verticalement le contenu des diapos",
+        "width": "Largeur de référence d'une diapositive, en pixels",
+        "height": "Hauteur de référence d'une diapositive, en pixels",
+        "margin": "Marge autour de la diapositive, en fraction de sa taille",
+        "slideNumber": "Numéro de diapositive : c/t (courante/total), h.v, c, ou false",
+        "transition": "Transition entre diapositives",
+        "center": "Centre verticalement le contenu des diapositives",
         "controls": "Flèches de navigation à l'écran",
         "progress": "Barre de progression en bas",
         "fragments": "Affiche les fragments un par un",
         "fragmentInURL": "Inscrit le fragment courant dans l'adresse",
-        "loop": "Revient à la première diapo après la dernière",
+        "loop": "Revient à la première diapositive après la dernière",
         "navigationMode": "Navigation au clavier : default, linear ou grid",
         "autoSlide": "Avance automatique, en millisecondes (0 : désactivée)",
         "showNotes": "Affiche les notes de l'orateur à tous",
-        "pdfMaxPagesPerSlide": "Pages maximum par diapo à l'export PDF",
+        "pdfMaxPagesPerSlide": "Pages maximum par diapositive à l'export PDF",
         "pdfSeparateFragments": "Une page par fragment à l'export PDF"
       }
     },

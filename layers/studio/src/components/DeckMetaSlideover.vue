@@ -261,9 +261,16 @@ const audience = computed(() => {
                 <p class="settings__label">
                   {{ t('common.fields.title') }}
                 </p>
-                <p class="settings__hint">
-                  {{ t('deck.meta.fromFrontmatter') }}
-                </p>
+                <i18n-t
+                  keypath="deck.meta.fromFrontmatter"
+                  tag="p"
+                  scope="global"
+                  class="settings__hint"
+                >
+                  <template #key>
+                    <code class="font-mono">title:</code>
+                  </template>
+                </i18n-t>
               </div>
               <p class="settings__value">
                 {{ item.title }}
@@ -290,9 +297,16 @@ const audience = computed(() => {
                 <p class="settings__label">
                   {{ t('deck.meta.theme') }}
                 </p>
-                <p class="settings__hint">
-                  {{ t('deck.meta.fromFrontmatter') }}
-                </p>
+                <i18n-t
+                  keypath="deck.meta.fromFrontmatter"
+                  tag="p"
+                  scope="global"
+                  class="settings__hint"
+                >
+                  <template #key>
+                    <code class="font-mono">theme:</code>
+                  </template>
+                </i18n-t>
               </div>
               <p class="settings__value">
                 {{ item.theme }}

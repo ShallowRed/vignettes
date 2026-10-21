@@ -7,12 +7,12 @@
       "anonymousPeer": "anonyme",
       "history": "Historique",
       "historyTooltip": "Versions publiées : comparer, restaurer",
-      "settings": "Partage et réglages",
+      "settings": "Réglages et partage",
       "settingsTooltip": "Titre, accès, partage, dossier, thème, variantes et alias",
       "settingsTooltipSharing": "Qui peut ouvrir la présentation, et ses accès individuels",
       "notFoundTitle": "Présentation introuvable",
       "openedOnSlide": "Ouvert sur la diapositive {slide} sur {total}",
-      "metaLoadFailed": "Impossible de charger les métadonnées",
+      "metaLoadFailed": "Impossible de charger les réglages",
       "sourcePane": "Source de la présentation",
       "editorLoading": "Chargement de l'éditeur…",
       "notFoundMessage": "Le lien est peut-être obsolète, ou la présentation a été renommée. Si elle a été partagée avec un autre compte, connectez-vous avec celui-là.",
@@ -25,7 +25,8 @@
       "failedMessage": "La présentation n'a pas pu être chargée. Réessayez dans un instant.",
       "download": "Télécharger le Markdown",
       "downloadDraft": "Brouillon (.md)",
-      "downloadPublished": "Version publiée (.md)"
+      "downloadPublished": "Version publiée (.md)",
+      "pageTitle": "Modifier « {title} » · Vignettes"
     },
     "collab": {
       "offline": "Hors ligne",
@@ -112,7 +113,7 @@
       "tourZonesMoved": "Les lignes nommées par les ::Zone ont pu se déplacer."
     },
     "folds": {
-      "frontmatter": "Métadonnées",
+      "frontmatter": "En-tête",
       "unfold": "Déplier",
       "lineCount": "{n} ligne | {n} ligne | {n} lignes"
     },

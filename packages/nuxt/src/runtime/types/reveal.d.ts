@@ -18,6 +18,7 @@ declare module 'reveal.js' {
     getIndices: () => { h: number, v: number, f?: number }
     getConfig: () => Record<string, unknown>
     getComputedSlideSize: () => { width: number, height: number }
+    getRevealElement: () => HTMLElement
     getSlidesElement: () => HTMLElement
     on: (type: string, listener: (event: any) => void) => void
     off: (type: string, listener: (event: any) => void) => void

@@ -7,12 +7,12 @@
       "anonymousPeer": "anonymous",
       "history": "History",
       "historyTooltip": "Published versions: compare, restore",
-      "settings": "Sharing and settings",
+      "settings": "Settings and sharing",
       "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
       "settingsTooltipSharing": "Who can open the presentation, and its individual grants",
       "notFoundTitle": "Presentation not found",
       "openedOnSlide": "Opened on slide {slide} of {total}",
-      "metaLoadFailed": "Unable to load the metadata",
+      "metaLoadFailed": "Unable to load the settings",
       "sourcePane": "Presentation source",
       "editorLoading": "Loading the editor…",
       "notFoundMessage": "The link may be out of date, or the presentation was renamed. If it was shared with another account, sign in with that one.",
@@ -25,7 +25,8 @@
       "failedMessage": "The presentation could not be loaded. Try again in a moment.",
       "download": "Download the Markdown",
       "downloadDraft": "Draft (.md)",
-      "downloadPublished": "Published version (.md)"
+      "downloadPublished": "Published version (.md)",
+      "pageTitle": "Edit “{title}” · Vignettes"
     },
     "collab": {
       "offline": "Offline",
@@ -112,7 +113,7 @@
       "tourZonesMoved": "The lines named by the ::Zone may have moved."
     },
     "folds": {
-      "frontmatter": "Metadata",
+      "frontmatter": "Front matter",
       "unfold": "Unfold",
       "lineCount": "{n} lines | {n} line | {n} lines"
     },

@@ -34,6 +34,9 @@ export default defineNuxtConfig({
       // set them.
       helpUrl: '',
       feedbackUrl: '',
+      // The sentence of the home page for a visitor without an account;
+      // `NUXT_PUBLIC_WELCOME` sets it, and the studio messages give one while empty.
+      welcome: '',
     },
   },
   css: [fileURLToPath(new URL('./src/assets/css/tailwind.css', import.meta.url))],

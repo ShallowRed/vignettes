@@ -128,7 +128,7 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
     cell: ({ row }) => h('div', { onClick: stopRowClick, class: 'flex' }, [
       h(UCheckbox, {
         'modelValue': row.getIsSelected(),
-        'aria-label': t('catalog.table.selectRow'),
+        'aria-label': t('catalog.table.selectRow', { title: row.original.title }),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => row.toggleSelected(!!v),
       }),
     ]),
@@ -184,7 +184,7 @@ function rowActions(item: PresentationListItem) {
     ...(props.admin && !isFrozen(item)
       ? [
           [
-            { label: t('catalog.deck.editContent'), icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
+            { label: t('common.actions.edit'), icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
             { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
             ...(item.canShare ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
           ],
@@ -327,13 +327,13 @@ function clearSelection() {
               color="neutral"
               variant="ghost"
               size="sm"
-              :aria-label="t('catalog.table.view')"
+              :aria-label="t('catalog.table.viewItem', { title: row.original.title })"
             />
           </UTooltip>
           <!-- A frozen deck keeps the pencil's place, so the icons of every row line up. -->
           <UTooltip
             v-if="admin"
-            :text="t('catalog.deck.editContent')"
+            :text="t('common.actions.edit')"
             :disabled="isFrozen(row.original)"
           >
             <UButton
@@ -343,7 +343,7 @@ function clearSelection() {
               variant="ghost"
               size="sm"
               :class="{ invisible: isFrozen(row.original) }"
-              :aria-label="t('common.actions.edit')"
+              :aria-label="t('catalog.table.editItem', { title: row.original.title })"
             />
           </UTooltip>
           <UDropdownMenu
@@ -355,7 +355,7 @@ function clearSelection() {
               color="neutral"
               variant="ghost"
               size="sm"
-              :aria-label="t('catalog.table.moreActions')"
+              :aria-label="t('catalog.deck.actionsLabel', { title: row.original.title })"
             />
           </UDropdownMenu>
         </div>

@@ -25,27 +25,27 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     tag: 'slide-background',
     images: ['image'],
     snippet: { fr: ':slide-background{image="${/backgrounds/exemple.svg}"}', en: ':slide-background{image="${/backgrounds/example.svg}"}' },
-    description: { fr: 'Image de fond propre à cette diapo (image)', en: 'Background image of this slide (image)' },
+    description: { fr: 'Image de fond propre à cette diapositive (attribut image)', en: 'Background image of this slide (attribute image)' },
   },
   {
     tag: 'pretitle',
     snippet: { fr: ':pretitle{text="${Contexte}"}', en: ':pretitle{text="${Context}"}' },
-    description: { fr: 'Texte au-dessus du titre (text)', en: 'Text above the title (text)' },
+    description: { fr: 'Texte au-dessus du titre (attribut text)', en: 'Text above the title (attribute text)' },
   },
   {
     tag: 'subtitle',
     snippet: { fr: ':subtitle{text="${Sous-titre}"}', en: ':subtitle{text="${Subtitle}"}' },
-    description: { fr: 'Texte sous le titre (text)', en: 'Text below the title (text)' },
+    description: { fr: 'Texte sous le titre (attribut text)', en: 'Text below the title (attribute text)' },
   },
   {
     tag: 'layout',
     snippet: { fr: ':layout{name="${media-right}"}', en: ':layout{name="${media-right}"}' },
-    description: { fr: 'Mise en page de la diapo et ses réglages (name, src, type, fit, lightbox)', en: 'Layout of the slide and its props (name, src, type, fit, lightbox)' },
+    description: { fr: 'Mise en page de la diapositive (attributs name, src, type, fit, lightbox)', en: 'Layout of the slide (attributes name, src, type, fit, lightbox)' },
   },
   {
     tag: 'quicklink',
     snippet: { fr: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}', en: ':quicklink{text="${See the demo}" href="${https://example.com}"}' },
-    description: { fr: 'Lien épinglé en bas de la diapo (text, href)', en: 'Link pinned to the bottom of the slide (text, href)' },
+    description: { fr: 'Lien épinglé en bas de la diapositive (attributs text, href)', en: 'Link pinned to the bottom of the slide (attributes text, href)' },
   },
 ] as const
 
@@ -93,19 +93,19 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     fullSlide: true,
     images: ['src'],
     snippet: { fr: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
-    description: { fr: 'Image plein écran (overlay, heading)', en: 'Full-screen image (overlay, heading)' },
+    description: { fr: 'Image plein écran (attributs overlay, heading)', en: 'Full-screen image (attributes overlay, heading)' },
   },
   {
     name: 'Iframe',
     snippet: { fr: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::', en: '::Iframe{src="${https://example.com}" title="${Title}"}\n::' },
-    description: { fr: 'Page web embarquée (lightbox, fullwidth)', en: 'Embedded web page (lightbox, fullwidth)' },
+    description: { fr: 'Page web intégrée (attributs lightbox, fullwidth)', en: 'Embedded web page (attributes lightbox, fullwidth)' },
   },
   {
     name: 'Image',
     aliases: ['deck-image'],
     images: ['src'],
     snippet: { fr: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
-    description: { fr: 'Image avec cadrage (fit, position, rounded, shadow)', en: 'Image with framing (fit, position, rounded, shadow)' },
+    description: { fr: 'Image avec cadrage (attributs fit, position, rounded, shadow)', en: 'Image with framing (attributes fit, position, rounded, shadow)' },
   },
   {
     name: 'Mermaid',
@@ -116,25 +116,25 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     name: 'IconInline',
     aliases: ['i'],
     snippet: { fr: ':i{name="${ri:home-line}"}', en: ':i{name="${ri:home-line}"}' },
-    description: { fr: 'Icône en ligne (Remix / Iconify)', en: 'Inline icon (Remix / Iconify)' },
+    description: { fr: 'Icône dans le texte (Remix / Iconify)', en: 'Inline icon (Remix / Iconify)' },
   },
   {
     name: 'Columns',
     aliases: ['TwoColumns', 'ThreeColumns'],
     snippet: { fr: ':::Columns\n::column\n${Colonne 1}\n::\n::column\n${Colonne 2}\n::\n:::', en: ':::Columns\n::column\n${Column 1}\n::\n::column\n${Column 2}\n::\n:::' },
-    description: { fr: 'Colonnes côte à côte (::column, span pour les largeurs)', en: 'Side-by-side columns (::column, span for the widths)' },
+    description: { fr: 'Colonnes côte à côte (::column, attribut span pour les largeurs)', en: 'Side-by-side columns (::column, attribute span for the widths)' },
   },
   { name: 'Column', aliases: ['column'] },
   {
     name: 'SplitSlide',
     aliases: ['split-slide'],
     snippet: { fr: '::SplitSlide{src="${/images/placeholder.svg}" type="${image}" ratio="${1:2}"}\n${Le texte à côté du média.}\n::', en: '::SplitSlide{src="${/images/placeholder.svg}" type="${image}" ratio="${1:2}"}\n${The text beside the media.}\n::' },
-    description: { fr: 'Texte et média côte à côte dans un bloc de la diapo (src, type, ratio, reverse, fit)', en: 'Text beside a media pane in one block of the slide (src, type, ratio, reverse, fit)' },
+    description: { fr: 'Texte et média côte à côte dans un bloc de la diapositive (attributs src, type, ratio, reverse, fit)', en: 'Text beside a media pane in one block of the slide (attributes src, type, ratio, reverse, fit)' },
   },
   {
     name: 'Highlight',
     snippet: { fr: '::Highlight{size="${sm}"}\n${Message clé.}\n::', en: '::Highlight{size="${sm}"}\n${Key message.}\n::' },
-    description: { fr: 'Encadré de mise en avant (size sm/md, variant)', en: 'Highlight box (size sm/md, variant)' },
+    description: { fr: 'Encadré de mise en avant (attributs size sm ou md, variant)', en: 'Highlight box (attributes size sm or md, variant)' },
   },
   {
     name: 'Notes',
@@ -146,7 +146,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     name: 'Fragments',
     aliases: ['fragments'],
     snippet: { fr: '::Fragments\n- ${Premier point}\n- ${Deuxième point}\n::', en: '::Fragments\n- ${First point}\n- ${Second point}\n::' },
-    description: { fr: 'Liste dont les éléments apparaissent un par un (effect, dim)', en: 'List whose items appear one at a time (effect, dim)' },
+    description: { fr: 'Liste dont les éléments apparaissent un par un (attributs effect, dim)', en: 'List whose items appear one at a time (attributes effect, dim)' },
   },
 ] as const
 /* eslint-enable no-template-curly-in-string */

@@ -22,7 +22,7 @@ describe('buildCatalogFolders', () => {
     expect(folders.map(f => f.routeSlug)).toEqual(['portail-rse', 'vitrine', UNGROUPED_FOLDER_SLUG])
   })
 
-  it('enriches folders with project title and color, counts and distinct themes', () => {
+  it('enriches folders with project title and color, and counts', () => {
     const [rse] = buildCatalogFolders(decks, projects)
     expect(rse).toMatchObject({
       routeSlug: 'portail-rse',
@@ -31,7 +31,6 @@ describe('buildCatalogFolders', () => {
       count: 2,
       ungrouped: false,
     })
-    expect(rse.themes.sort()).toEqual(['dsfr', 'dsfr-alt'])
   })
 
   it('appends the ungrouped "Divers" bucket last, only when it holds decks', () => {
@@ -46,7 +45,7 @@ describe('buildCatalogFolders', () => {
   it('keeps empty named folders (privileged sees a freshly created project)', () => {
     const folders = buildCatalogFolders([], [project('brand-new', { title: 'Brand new' })])
     expect(folders).toHaveLength(1)
-    expect(folders[0]).toMatchObject({ routeSlug: 'brand-new', count: 0, themes: [] })
+    expect(folders[0]).toMatchObject({ routeSlug: 'brand-new', count: 0 })
   })
 
   it('adds orphan folders for decks whose project has no row, sorted by slug', () => {

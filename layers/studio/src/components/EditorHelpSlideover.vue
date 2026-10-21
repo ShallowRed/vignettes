@@ -14,6 +14,8 @@ import {
  */
 const props = withDefaults(defineProps<{
   parser?: 'heading' | 'separator'
+  /** The shared draft saves itself, so the save shortcut does nothing. */
+  autosave?: boolean
 }>(), {
   parser: 'separator',
 })
@@ -29,6 +31,7 @@ const annotations = computed(() => annotationEntries(locale.value))
 
 const structure = computed(() => STRUCTURE_HELP[props.parser])
 const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : 'heading'))
+const shortcuts = computed(() => props.autosave ? EDITOR_SHORTCUTS.filter(entry => !entry.soloOnly) : EDITOR_SHORTCUTS)
 </script>
 
 <template>
@@ -48,14 +51,11 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
             {{ t('reference.help.structureHeading') }}
           </h3>
           <i18n-t
-            keypath="reference.help.activeParser"
+            :keypath="parser === 'heading' ? 'reference.help.splitHeading' : 'reference.help.splitSeparator'"
             tag="p"
             scope="global"
             class="text-xs text-muted mb-2"
           >
-            <template #active>
-              <code class="font-mono">parser: {{ parser }}</code>
-            </template>
             <template #other>
               <code class="font-mono">parser: {{ otherParser }}</code>
             </template>
@@ -99,7 +99,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
                   color="neutral"
                   variant="ghost"
                   size="xs"
-                  :aria-label="t('reference.help.insert')"
+                  :aria-label="t('reference.help.insert', { name: entry.label })"
                   @click="emit('insert', entry.snippet)"
                 />
               </UTooltip>
@@ -135,7 +135,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
                   color="neutral"
                   variant="ghost"
                   size="xs"
-                  :aria-label="t('reference.help.insert')"
+                  :aria-label="t('reference.help.insert', { name: entry.label })"
                   @click="emit('insert', entry.snippet)"
                 />
               </UTooltip>
@@ -204,7 +204,7 @@ const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : '
           </h3>
           <ul class="flex flex-col gap-1.5">
             <li
-              v-for="entry in EDITOR_SHORTCUTS"
+              v-for="entry in shortcuts"
               :key="entry.descriptionKey"
               class="flex items-center gap-2 text-sm"
             >

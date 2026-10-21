@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   const purged = await store.purge(slug)
   if (!purged) {
-    throw createError({ statusCode: 404, statusMessage: `No project "${slug}"` })
+    throw createError({ statusCode: 404, statusMessage: `No folder "${slug}"` })
   }
   return { ok: true }
 })

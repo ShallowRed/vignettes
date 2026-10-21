@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
+import type { Fact } from './FactList.vue'
 import { buildCatalogFolders } from '#shared/presentations'
 import { useProjectActions } from '../composables/useProjectActions'
 import { projectColorStyle } from '../utils/project-colors'
@@ -30,6 +31,14 @@ const folders = computed(() => buildCatalogFolders(props.items, props.projects ?
 // Folder master keys (privileged payloads only), for the "shared" hint.
 const sharedBySlug = computed(() =>
   new Map((props.projects ?? []).map(p => [p.slug, p.sharedCount ?? 0])))
+
+function folderFacts(slug: string, count: number): Fact[] {
+  const shared = sharedBySlug.value.get(slug)
+  return [
+    { key: 'count', text: t('catalog.deck.count', count) },
+    ...(shared ? [{ key: 'shared', text: String(shared), icon: 'i-lucide-users', title: t('catalog.folders.sharedAccess', { n: shared }) }] : []),
+  ]
+}
 
 // Only real project rows are manageable (Divers and orphan buckets have none).
 const projectBySlug = computed(() =>
@@ -73,7 +82,7 @@ function folderActions(project: Project) {
               color="neutral"
               variant="ghost"
               size="xs"
-              :aria-label="t('catalog.folders.actionsLabel')"
+              :aria-label="t('catalog.folders.actionsLabel', { name: folder.title })"
             />
           </UDropdownMenu>
         </div>
@@ -88,23 +97,10 @@ function folderActions(project: Project) {
             <h2 class="font-semibold text-highlighted leading-snug">
               {{ folder.ungrouped ? t('catalog.project.ungroupedTitle') : folder.title }}
             </h2>
-            <p class="text-xs text-muted mt-1">
-              {{ t('catalog.deck.count', folder.count) }}
-              <template v-if="folder.themes.length">
-                · {{ folder.themes.join(', ') }}
-              </template>
-              <span
-                v-if="sharedBySlug.get(folder.routeSlug)"
-                class="inline-flex items-center gap-0.5"
-                :title="t('catalog.folders.sharedAccess', { n: sharedBySlug.get(folder.routeSlug) })"
-              >
-                · <UIcon
-                  name="i-lucide-users"
-                  class="size-3"
-                />
-                {{ sharedBySlug.get(folder.routeSlug) }}
-              </span>
-            </p>
+            <FactList
+              class="mt-1"
+              :facts="folderFacts(folder.routeSlug, folder.count)"
+            />
           </div>
         </div>
       </template>

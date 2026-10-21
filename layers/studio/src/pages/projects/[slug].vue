@@ -44,12 +44,6 @@ const decks = computed(() =>
 const contents = computed(() => buildFolderContents(decks.value))
 const titleOf = (slug: string) => decks.value.find(d => d.slug === slug)?.title ?? slug
 
-// A theme shared by every deck is named once for the folder instead of on each card.
-const sharedTheme = computed(() => {
-  const themes = new Set(decks.value.map(d => d.theme))
-  return themes.size === 1 ? [...themes][0] : undefined
-})
-
 const breadcrumb = computed(() => [
   { label: t('common.home'), to: '/' },
   { label: projectTitle.value },
@@ -128,7 +122,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
             icon="i-lucide-ellipsis-vertical"
             color="neutral"
             variant="ghost"
-            :aria-label="t('catalog.folders.actionsLabel')"
+            :aria-label="t('catalog.folders.actionsLabel', { name: projectTitle })"
           />
         </UDropdownMenu>
         <UButton
@@ -145,7 +139,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       v-if="decks.length"
       class="-mt-4 text-sm text-muted"
     >
-      {{ sharedTheme ? t('catalog.folder.sortedWithTheme', { theme: sharedTheme }) : t('catalog.folder.sorted') }}
+      {{ t('catalog.folder.sorted') }}
     </p>
 
     <AsyncSection

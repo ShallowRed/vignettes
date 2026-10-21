@@ -27,11 +27,11 @@ Validated against `DeckMetaSchema` of `@vignettes/core/deck`. An unknown key is 
 
 Written `:tag{…}` on a line of the slide. The parser reads them and removes them from the body.
 
-- `:slide-background`: Background image of this slide (image)
-- `:pretitle`: Text above the title (text)
-- `:subtitle`: Text below the title (text)
-- `:layout`: Layout of the slide and its props (name, src, type, fit, lightbox)
-- `:quicklink`: Link pinned to the bottom of the slide (text, href)
+- `:slide-background`: Background image of this slide (attribute image)
+- `:pretitle`: Text above the title (attribute text)
+- `:subtitle`: Text below the title (attribute text)
+- `:layout`: Layout of the slide (attributes name, src, type, fit, lightbox)
+- `:quicklink`: Link pinned to the bottom of the slide (attributes text, href)
 
 ## Layouts
 
@@ -56,30 +56,30 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 `@vignettes/nuxt`, shipped with every deck:
 
 - `Quote`: Quote with optional author, role and avatar
-- `FullScreenImage`: Full-screen image (overlay, heading), also written `full-screen-image`; takes the whole slide
-- `Iframe`: Embedded web page (lightbox, fullwidth)
-- `Image`: Image with framing (fit, position, rounded, shadow), also written `deck-image`
+- `FullScreenImage`: Full-screen image (attributes overlay, heading), also written `full-screen-image`; takes the whole slide
+- `Iframe`: Embedded web page (attributes lightbox, fullwidth)
+- `Image`: Image with framing (attributes fit, position, rounded, shadow), also written `deck-image`
 - `Mermaid`: Mermaid diagram (flowchart, sequence…)
 - `IconInline`: Inline icon (Remix / Iconify), also written `i`
-- `Columns`: Side-by-side columns (::column, span for the widths), also written `TwoColumns`, `ThreeColumns`
+- `Columns`: Side-by-side columns (::column, attribute span for the widths), also written `TwoColumns`, `ThreeColumns`
 - `Column`, also written `column`
-- `SplitSlide`: Text beside a media pane in one block of the slide (src, type, ratio, reverse, fit), also written `split-slide`
-- `Highlight`: Highlight box (size sm/md, variant)
+- `SplitSlide`: Text beside a media pane in one block of the slide (attributes src, type, ratio, reverse, fit), also written `split-slide`
+- `Highlight`: Highlight box (attributes size sm or md, variant)
 - `Notes`: Speaker notes, shown in the speaker view (S key), also written `notes`
-- `Fragments`: List whose items appear one at a time (effect, dim), also written `fragments`
+- `Fragments`: List whose items appear one at a time (attributes effect, dim), also written `fragments`
 
 `@vignettes/schemas`, the explanation kit:
 
-- `Scheme`: Illustrated steps linked by arrows, which appear one at a time (::Step, size, tiles, arrows), also written `scheme`
+- `Scheme`: Illustrated steps linked by arrows, which appear one at a time (::Step, attributes size, tiles, arrows), also written `scheme`
 - `Step`, also written `step`
 - `Diagram`: Cards placed on a grid or ranked automatically, linked by arrows (::Node, ::Edge, ::Area), also written `diagram`
 - `Node`, also written `node`
 - `Edge`, also written `edge`
 - `Area`, also written `area`
-- `JsonTour`: A file shown beside the description of its parts, zone by zone (::Zone, file, height, panel), also written `json-tour`
+- `JsonTour`: A file shown beside the description of its parts, zone by zone (::Zone, attributes file, height, panel), also written `json-tour`
 - `Zone`, also written `zone`
 
 `@vignettes/storybook`, live story embeds:
 
-- `StoryFrame`: Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (ratio, previewWidth, lightbox)
-- `Screens`: Gallery of Storybook screens (cols, gap, align)
+- `StoryFrame`: Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (attributes ratio, previewWidth, lightbox)
+- `Screens`: Gallery of Storybook screens (attributes cols, gap, align)
