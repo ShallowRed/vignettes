@@ -70,14 +70,14 @@
         "theme": "Visual theme",
         "parser": "Slide splitting: separator (---) or heading (headings)",
         "lang": "Language of the document; French typography applies in fr",
-        "project": "Catalog folder (also set in Sharing and settings)",
-        "status": "Visibility (Sharing and settings takes over once the presentation is published)",
-        "unlisted": "Reachable by link but absent from the catalog",
+        "project": "Catalog folder; for a presentation created in the studio, choose it in Sharing and settings",
+        "status": "Visibility; for a presentation created in the studio, set it in Sharing and settings",
+        "unlisted": "Reachable by link but absent from the catalog; for a presentation created in the studio, set it in Sharing and settings",
         "storybook": "Address of the published Storybook, without iframe.html, used by ::StoryFrame and by the story option of :layout",
         "backgrounds": "Background images per heading level",
         "code": "Colors and font size of the code blocks: a theme (nuit, sombre, clair) or its settings",
         "reveal": "Reveal.js options: format, numbering, transitions…",
-        "accessPassword": "Password of the semi-private status (better set in Sharing and settings)",
+        "accessPassword": "Password of the semi-private status; for a presentation created in the studio, enter it in Sharing and settings",
         "titleDefault": "the identifier"
       },
       "backgrounds": {

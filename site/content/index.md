@@ -16,7 +16,7 @@ Vignettes
 
 #links
 
-:::u-button{size="xl" to="/demarrer/premiere-presentation" trailing-icon="i-lucide-arrow-right"}
+:::u-button{size="xl" to="/demarrer/rejoindre-le-studio" trailing-icon="i-lucide-arrow-right"}
 
 Démarrer
 
@@ -31,6 +31,12 @@ Démarrer
 :::u-button{size="xl" to="/ecrire/ecrire-avec-un-agent" color="neutral" variant="outline"}
 
 Écrire avec un agent
+
+:::
+
+:::u-button{size="xl" to="/studio/problemes-frequents" color="neutral" variant="outline"}
+
+Problèmes fréquents
 
 :::
 
