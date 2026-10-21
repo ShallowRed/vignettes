@@ -1,5 +1,6 @@
 import { EditorState } from '@codemirror/state'
 import { describe, expect, it } from 'vitest'
+import { sniffImageType } from '../../layers/studio/shared/storage/media-s3'
 import { imageDirectiveInsertion } from '../../layers/studio/src/utils/editor-commands'
 import { imageUploadFailure } from '../../layers/studio/src/utils/image-upload-failure'
 
@@ -40,6 +41,10 @@ describe('imageUploadFailure', () => {
     expect(imageUploadFailure(refused('size'), file, t, 'fr').description).toBe('editor.imageUpload.size {"size":"12,3","limit":10}')
   })
 
+  it('names a content that does not match its extension', () => {
+    expect(imageUploadFailure(refused('content'), file, t, 'en').description).toBe('editor.imageUpload.content {}')
+  })
+
   it('names a storage failure', () => {
     expect(imageUploadFailure(refused('storage'), file, t, 'en').description).toBe('editor.imageUpload.storage {}')
   })
@@ -47,5 +52,31 @@ describe('imageUploadFailure', () => {
   it('shows the server message for another refusal, and none without an answer', () => {
     expect(imageUploadFailure({ data: { statusMessage: 'Forbidden' } }, file, t, 'en').description).toBe('Forbidden')
     expect(imageUploadFailure(new TypeError('Failed to fetch'), file, t, 'en').description).toBeUndefined()
+  })
+})
+
+describe('sniffImageType', () => {
+  const bytes = (...parts: (string | number[])[]) => new Uint8Array(parts.flatMap(part => typeof part === 'string' ? [...new TextEncoder().encode(part)] : part))
+
+  it('reads the signature of each binary format', () => {
+    expect(sniffImageType(bytes([0x89], 'PNG\r\n\x1A\n', [0, 0]))).toBe('image/png')
+    expect(sniffImageType(bytes([0xFF, 0xD8, 0xFF, 0xE0]))).toBe('image/jpeg')
+    expect(sniffImageType(bytes('GIF89a', [1, 0]))).toBe('image/gif')
+    expect(sniffImageType(bytes('RIFF', [0, 0, 0, 0], 'WEBPVP8 '))).toBe('image/webp')
+    expect(sniffImageType(bytes([0, 0, 0, 24], 'ftypmif1', [0, 0, 0, 0], 'mif1avif'))).toBe('image/avif')
+  })
+
+  it('finds the svg root after the XML prolog', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"/>'
+    expect(sniffImageType(bytes(svg))).toBe('image/svg+xml')
+    expect(sniffImageType(bytes('\uFEFF<?xml version="1.0"?>\n<!-- logo -->\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n', svg))).toBe('image/svg+xml')
+  })
+
+  it('refuses text with another root, a doctype that declares entities, and unknown bytes', () => {
+    expect(sniffImageType(bytes('<html><svg></svg></html>'))).toBeUndefined()
+    expect(sniffImageType(bytes('<!DOCTYPE svg [<!ENTITY a "a">]><svg/>'))).toBeUndefined()
+    expect(sniffImageType(bytes('<svgx/>'))).toBeUndefined()
+    expect(sniffImageType(bytes('plain text'))).toBeUndefined()
+    expect(sniffImageType(bytes('ftyp'))).toBeUndefined()
   })
 })

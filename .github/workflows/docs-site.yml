@@ -44,7 +44,7 @@ jobs:
       id-token: write # OIDC to Infisical, which returns VPS_DOCS_SSH_KEY
     steps:
       - name: Download the tested site
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: docs-site
           path: public
@@ -53,7 +53,7 @@ jobs:
         run: tar -czf site.tar.gz -C public .
 
       - name: Fetch the deploy key from Infisical (OIDC)
-        uses: Infisical/secrets-action@v1.0.16
+        uses: Infisical/secrets-action@77ab1f4ccd183a543cb5b42435fbd181189f4995 # v1.0.16
         with:
           method: oidc
           identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}

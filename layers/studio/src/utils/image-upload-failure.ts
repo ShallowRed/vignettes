@@ -17,6 +17,8 @@ export function imageUploadFailure(error: unknown, file: File, t: Translate, loc
     const megabytes = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 })
     return { title, description: t('editor.imageUpload.size', { size: megabytes.format(file.size / 2 ** 20), limit: MAX_MEDIA_MEGABYTES }) }
   }
+  if (reason === 'content')
+    return { title, description: t('editor.imageUpload.content') }
   if (reason === 'storage')
     return { title, description: t('editor.imageUpload.storage') }
   return { title, description: requestErrorMessage(error, '') || undefined }

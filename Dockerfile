@@ -12,7 +12,7 @@
 #
 # L'image ne contient aucun deck : le contenu est dans la base et le bucket.
 
-FROM node:22-slim AS base
+FROM node:22-slim@sha256:3ed98443660ff48413b5af19ecefce3b9d50845a901a43420d47cc63a9fddbe9 AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=/pnpm:$PATH
 RUN corepack enable
@@ -39,7 +39,7 @@ FROM scratch AS output
 COPY --from=build /app/.output /
 
 # ---- runtime : minimal + CLI Infisical pour l'injection des secrets ----
-FROM node:22-slim AS runtime
+FROM node:22-slim@sha256:3ed98443660ff48413b5af19ecefce3b9d50845a901a43420d47cc63a9fddbe9 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000

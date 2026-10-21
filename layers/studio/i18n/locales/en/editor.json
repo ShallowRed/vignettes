@@ -103,6 +103,7 @@
       "failed": "The image “{name}” was not uploaded",
       "type": "The studio accepts images in the formats {formats}.",
       "size": "The image weighs {size}\u00a0MB, over the {limit}\u00a0MB limit.",
+      "content": "The content of the file does not match its extension or is not a readable image.",
       "storage": "The image storage is unavailable."
     },
     "json": {

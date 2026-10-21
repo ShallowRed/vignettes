@@ -1,0 +1,17 @@
+# The Dockerfile pins its base image and the workflows pin their actions by
+# digest: Dependabot proposes the new digests.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    # better-sqlite3 is built for Node 22, the version that mise.toml pins.
+    ignore:
+      - dependency-name: node
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

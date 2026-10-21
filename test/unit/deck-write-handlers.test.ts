@@ -85,8 +85,9 @@ describe('uploading an image (POST /api/media)', () => {
     await expect(uploadMedia(collab({ query: { deck: 'deck' } }))).rejects.toMatchObject({ statusCode: 400 })
   })
 
-  function upload(type: string, bytes = 8) {
-    return uploadMedia(editor({ parts: [{ name: 'file', filename: 'picture', type, data: Buffer.alloc(bytes, 1) }] }))
+  const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+  function upload(type: string, { bytes = 8, data = Buffer.concat([PNG_SIGNATURE, Buffer.alloc(bytes - PNG_SIGNATURE.length, 1)]) } = {}) {
+    return uploadMedia(editor({ parts: [{ name: 'file', filename: 'picture', type, data }] }))
   }
 
   it('names the accepted formats when it refuses a type (415)', async () => {
@@ -97,8 +98,24 @@ describe('uploading an image (POST /api/media)', () => {
     })
   })
 
+  it('stores a raster image under the type of its bytes', async () => {
+    const jpeg = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0, 0])
+    await expect(upload('image/png', { data: jpeg })).resolves.toMatchObject({ src: expect.stringMatching(/\.jpg$/) })
+    expect(storeMedia).toHaveBeenLastCalledWith(expect.stringMatching(/\.jpg$/), jpeg, 'image/jpeg')
+    await expect(upload('image/svg+xml')).resolves.toMatchObject({ src: expect.stringMatching(/\.png$/) })
+  })
+
+  it('refuses a file whose content does not match its declared type (415)', async () => {
+    await expect(upload('image/png', { data: Buffer.from('plain text') })).rejects.toMatchObject({
+      statusCode: 415,
+      statusMessage: 'The content of the file does not match its declared type image/png',
+      data: { reason: 'content' },
+    })
+    await expect(upload('image/png', { data: Buffer.from('<svg/>') })).rejects.toMatchObject({ statusCode: 415, data: { reason: 'content' } })
+  })
+
   it('names the limit when it refuses a size (413)', async () => {
-    await expect(upload('image/png', 10 * 1024 * 1024 + 1)).rejects.toMatchObject({
+    await expect(upload('image/png', { bytes: 10 * 1024 * 1024 + 1 })).rejects.toMatchObject({
       statusCode: 413,
       statusMessage: 'The image weighs more than the 10 MB limit',
       data: { reason: 'size' },

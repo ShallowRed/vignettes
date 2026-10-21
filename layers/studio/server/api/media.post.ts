@@ -1,11 +1,13 @@
 import type { MediaRefusal } from '#shared/storage/media-s3'
 import { isPrivileged } from '#shared/access'
-import { IMAGE_FORMAT_NAMES, MAX_MEDIA_BYTES, MAX_MEDIA_MEGABYTES } from '#shared/storage/media-s3'
+import { IMAGE_FORMAT_NAMES, imageExtFor, MAX_MEDIA_BYTES, MAX_MEDIA_MEGABYTES, sniffImageType } from '#shared/storage/media-s3'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../utils/access'
 import { getActorRole } from '../utils/actor'
 import { mediaNameOf, storeMedia } from '../utils/media-store'
 import { useDeckMeta, useMediaIndex } from '../utils/sources'
+
+const SVG = 'image/svg+xml'
 
 /**
  * POST /api/media?deck=<slug> — upload an image. Allowed to privileged roles, and
@@ -15,8 +17,9 @@ import { useDeckMeta, useMediaIndex } from '../utils/sources'
  * content-hashed and stored in the frozen bucket under `media/` (falling back to
  * a local `.media/` dir when no S3 creds are configured, e.g. in dev). Returns an
  * app-relative `/media/<hash>.<ext>` src so the stored markdown never hardcodes a
- * bucket URL. The upload records the deck in the media index, which `/media/**`
- * reads to decide who may see the image. A refusal names its cause in its message
+ * bucket URL. The bytes of the file decide its type.
+ * The upload records the deck in the media index, which `/media/**` reads to
+ * decide who may see the image. A refusal names its cause in its message
  * and, for the editor to word it in the interface language, in `data.reason`.
  */
 export default defineEventHandler(async (event) => {
@@ -39,8 +42,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Expected a `file` upload' })
 
   const mime = file.type || ''
-  const name = mediaNameOf(file.data, mime)
-  if (!name) {
+  if (!imageExtFor(mime)) {
     throw createError({
       statusCode: 415,
       statusMessage: `Unsupported image type ${mime || '(none)'}: the accepted formats are ${IMAGE_FORMAT_NAMES.join(', ')}`,
@@ -54,9 +56,22 @@ export default defineEventHandler(async (event) => {
       data: { reason: 'size' satisfies MediaRefusal },
     })
   }
+  // A browser declares the type of a file from its extension. A raster image
+  // saved under another extension is stored under the type of its bytes; an
+  // SVG has to be declared as one.
+  const sniffed = sniffImageType(file.data)
+  const type = sniffed && (sniffed !== SVG || mime === SVG) ? sniffed : undefined
+  if (!type) {
+    throw createError({
+      statusCode: 415,
+      statusMessage: `The content of the file does not match its declared type ${mime}`,
+      data: { reason: 'content' satisfies MediaRefusal },
+    })
+  }
 
+  const name = mediaNameOf(file.data, type)!
   try {
-    await storeMedia(name, file.data, mime)
+    await storeMedia(name, file.data, type)
   }
   catch (cause) {
     throw createError({

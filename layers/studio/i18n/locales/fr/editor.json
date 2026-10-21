@@ -103,6 +103,7 @@
       "failed": "L'image « {name} » n'a pas été téléversée",
       "type": "Le studio accepte les images aux formats {formats}.",
       "size": "L'image pèse {size}\u00a0Mo, au-delà de la limite de {limit}\u00a0Mo.",
+      "content": "Le contenu du fichier ne correspond pas à son extension ou n'est pas une image lisible.",
       "storage": "Le stockage des images est indisponible."
     },
     "json": {
