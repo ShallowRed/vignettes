@@ -1,6 +1,7 @@
 import { sealSession } from 'h3'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { getActor, getActorFromRequest, getAppSession, openUserSession } from '../../layers/studio/server/utils/actor'
+import { mintToken, useTokenStore } from '../../layers/studio/server/utils/personal-token'
 import { useUserStore } from '../../layers/studio/server/utils/users'
 import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
@@ -73,6 +74,20 @@ describe('the lifetimes of a session', () => {
     const post = request('POST', minutesAgo(10))
     await sessionActivity(post)
     expect(post.sessionSet).toBeUndefined()
+  })
+
+  it('leaves an idle session as it is on a request made with a personal token', async () => {
+    await seedAccount(1, 'alice', 'editor')
+    const { secret, tokenHash, prefix } = mintToken()
+    await useTokenStore().create(1, { name: 'CLI', scope: 'read', tokenHash, prefix, expiresAt: new Date(Date.now() + HOUR) }, new Date())
+    const request = asUser(1, 'alice', {
+      method: 'GET',
+      path: '/api/projects',
+      headers: { authorization: `Bearer ${secret}` },
+      session: { user: { id: 1, login: 'alice' }, activeAt: Date.now() - 10 * 60_000 },
+    })
+    await sessionActivity(request)
+    expect(request.sessionSet).toBeUndefined()
   })
 
   it('reads the account once per request', async () => {

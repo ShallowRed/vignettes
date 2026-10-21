@@ -175,6 +175,6 @@ Production is SSR, not static hosting:
 
 ### One instance at a time
 
-The application runs as a single process. Three pieces of state are kept in the memory of that process: the rate limiter of the password attempts (`server/utils/rate-limit.ts`), the editors of a deck since its last snapshot (`noteContributor` in `server/utils/collab.ts`) and the open collaborative documents of the Hocuspocus server (`useCollabServer`, same file). On an instance running SQLite, the file on a volume, replicated by Litestream, also accepts one writer.
+The application runs as a single process. Three pieces of state are kept in the memory of that process: the rate limiter of the password attempts and of the personal tokens (failures, creations, requests) (`server/utils/rate-limit.ts`), the editors of a deck since its last snapshot (`noteContributor` in `server/utils/collab.ts`) and the open collaborative documents of the Hocuspocus server (`useCollabServer`, same file). On an instance running SQLite, the file on a volume, replicated by Litestream, also accepts one writer.
 
-With a second replica, each replica would count the password attempts separately, a snapshot would credit only the editors who reached the replica that writes it, and two editors on different replicas would edit the same deck in two documents that never merge. Running several replicas requires moving these three to a shared store first.
+With a second replica, each replica would count the password attempts and the token requests separately, a snapshot would credit only the editors who reached the replica that writes it, and two editors on different replicas would edit the same deck in two documents that never merge. Running several replicas requires moving these three to a shared store first.

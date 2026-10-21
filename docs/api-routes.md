@@ -2,7 +2,7 @@
 
 The Nitro server lives in `server/` at the repository root (`srcDir` is `src/`). `server/api/**` answers under `/api/**`, `server/routes/**` under `/`, `server/middleware/**` runs on every request, and `server/utils/**` holds the adapters (session, access gate, stores, collaboration).
 
-Every route resolves the actor from the session cookie. Roles are `anonymous | viewer | editor | owner`; `owner` and `editor` are privileged. Deck statuses are `public | private | semi-private | draft`. One gate, `gateDeckAccess` in `server/utils/access.ts`, decides reads on a deck; `assertCanEditDeck`, `assertCanShareDeck`, `assertPrivileged`, `assertOwner`, and `assertCanCreateInProject` decide writes. The pure decision functions are in `shared/access`, documented in [access-matrix.md](access-matrix.md). A `sharer` of a deck is whoever may edit it (`canShare`).
+Every route resolves the actor from the session cookie, and the routes listed under [Personal tokens](#personal-tokens) also from a personal token. Roles are `anonymous | viewer | editor | owner`; `owner` and `editor` are privileged. Deck statuses are `public | private | semi-private | draft`. One gate, `gateDeckAccess` in `server/utils/access.ts`, decides reads on a deck; `assertCanEditDeck`, `assertCanShareDeck`, `assertPrivileged`, `assertOwner`, and `assertCanCreateInProject` decide writes. The pure decision functions are in `shared/access`, documented in [access-matrix.md](access-matrix.md). A `sharer` of a deck is whoever may edit it (`canShare`).
 
 ## Catalog
 
@@ -73,7 +73,8 @@ A grant never lowers what the global role already allows; `strongerGrant` in `sh
 | `GET /api/admin/users` | owner | Every known identity and its role |
 | `POST /api/admin/users/invite` | owner | Pre-provision an account by provider handle so grants apply before its first login |
 | `PATCH /api/admin/users/:id` | owner | Change a global role; an owner cannot change their own |
-| `DELETE /api/admin/users/:id` | owner | Remove an account and its grants; refused for yourself and for owners |
+| `DELETE /api/admin/users/:id` | owner | Remove an account, its grants and its personal tokens; refused for yourself and for owners |
+| `DELETE /api/admin/users/:id/tokens` | owner | Revoke every active personal token of an account |
 
 ## Session
 
@@ -117,13 +118,32 @@ The kit answers 404 unless `NUXT_RECETTE_ENABLED=1` or the app runs in developme
 | `GET /api/content/decks?slugs=<slug>[,<slug>]` | content token, or privileged | `content:pull`: the catalog axes and the published markdown of live decks; the access password column stays on the instance, and a hash written in the frontmatter travels with the markdown |
 | `POST /api/content/theme-rename` | content token, or privileged | `theme:rename`: rename a theme in the `theme` column, the published versions, the snapshots and the drafts of the decks declaring it, in one transaction, or say which decks it would rewrite |
 
+## Personal tokens
+
+A personal token lets the command line and the scripts act as an account without a browser session. A request carries `Authorization: Bearer vgt_…`; `getActor` reads it, refuses an unknown, revoked or expired token with 401, and answers 403 on a route outside `TOKEN_ROUTES` of `server/utils/personal-token.ts` or beyond the token's scope. The token acts with the rights of its account, its role capped at `editor`, as [access-matrix.md](access-matrix.md#personal-tokens) describes.
+
+| Route | Access | Effect |
+|-------|--------|--------|
+| `GET /api/tokens` | session | The tokens of the account, newest first, with their state: active, revoked or expired |
+| `POST /api/tokens` | session | Create a token `{ name, scope, days }`: `read` or `write`, 90 days by default, 365 at most; the response carries the secret, and the server shows it only in this response; 10 per account every hour |
+| `DELETE /api/tokens/:id` | session | Revoke an active token of the account; remove a revoked or expired one from its list |
+| `GET /api/tokens/current` | token | The account, its role as the token applies it, the name, prefix, scope and expiry of the token |
+| `DELETE /api/tokens/current` | token | Revoke the token of the request |
+
+The routes that accept a token, with the scope each one requires:
+
+- `read`: `GET /api/tokens/current`, `DELETE /api/tokens/current`, `GET /api/projects`, `GET /api/presentations/:slug` (`?draft` included), `GET /api/presentations/:slug/markdown`, `GET /api/content/decks`.
+- `write`, which includes `read`: `POST /api/presentations`, `PUT /api/presentations/:slug`, `POST /api/presentations/:slug/publish`, `POST /api/media`, `POST /api/content/push`, `POST /api/content/theme-rename`.
+
+The server answers 429 after 20 invalid tokens from one client address in 10 minutes, the address that `clientAddress` (`server/utils/client-address.ts`) reads, and after 300 requests with one token in 5 minutes. The security log records each creation and revocation on a `[security] token-creation` or `token-revocation` line, a `[token]` line records each refused token, and each of these lines names the token by its prefix. The `[api]` and `[content]` lines add that prefix to the login.
+
 ## Password-protected decks
 
 When a semi-private deck is requested without its cookie, the gate answers 401 with `{ requiresPassword: true }`; the deck page redirects to `/unlock/:slug`, which posts the password to the `unlock` route of the deck and receives the `access_<slug>` cookie for 24 hours.
 
 ## Content token
 
-`NUXT_CONTENT_TOKEN` lets a script reach an instance without a browser session. `Authorization: Bearer <token>` is accepted as an `editor` actor by the markdown write path, `PUT /api/presentations/:slug`, `POST /api/presentations/:slug/publish` and `GET /api/presentations/:slug?draft`, which `scripts/content-import.ts --remote` uses, and by the content script routes above. Every other guard ignores it.
+`NUXT_CONTENT_TOKEN` lets a script reach an instance without a browser session. `Authorization: Bearer <token>` is accepted as an `editor` actor by the markdown write path, `PUT /api/presentations/:slug`, `POST /api/presentations/:slug/publish` and `GET /api/presentations/:slug?draft`, which `scripts/content-import.ts --remote` uses, and by the content script routes above. Every other guard ignores it. A personal token of an account with the editor or owner role reaches the same routes.
 
 ## Response headers
 
@@ -137,4 +157,4 @@ A request body above 2 MB answers 413, and above 11 MB for `POST /api/media`. A 
 
 ## Requests from another origin
 
-A request other than `GET`, `HEAD` and `OPTIONS` that does not carry the content token, and the upgrade of `/collab`, answer 403 when they do not come from a page of the instance: `Origin` must equal the address of the request, or, when the browser sends no `Origin`, `Sec-Fetch-Site` must be `same-origin`. The server builds that address from `Host` and `X-Forwarded-Proto`, as nuxt-auth-utils builds the OAuth callback, and never reads `X-Forwarded-Host`. Configure the proxy to keep `Host` and to send `X-Forwarded-Proto: https`, one value; any other value refuses every write with 403.
+A request other than `GET`, `HEAD` and `OPTIONS` that does not carry the content token or a valid personal token, and the upgrade of `/collab`, answer 403 when they do not come from a page of the instance: `Origin` must equal the address of the request, or, when the browser sends no `Origin`, `Sec-Fetch-Site` must be `same-origin`. The server builds that address from `Host` and `X-Forwarded-Proto`, as nuxt-auth-utils builds the OAuth callback, and never reads `X-Forwarded-Host`. Configure the proxy to keep `Host` and to send `X-Forwarded-Proto: https`, one value; any other value refuses every write with 403.

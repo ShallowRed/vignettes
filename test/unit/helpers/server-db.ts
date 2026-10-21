@@ -101,9 +101,7 @@ export function stubH3Globals() {
   vi.stubGlobal('getRouterParam', (e: any, name: string) => e.params?.[name])
   vi.stubGlobal('readBody', async (e: any) => e.body)
   vi.stubGlobal('readMultipartFormData', async (e: any) => e.parts)
-  // As h3 does, `xForwardedFor` reads the first value of the header.
-  vi.stubGlobal('getRequestIP', (e: any, opts?: { xForwardedFor?: boolean }) =>
-    (opts?.xForwardedFor && e.headers?.['x-forwarded-for']?.split(',')[0].trim()) || (e.ip ?? '127.0.0.1'))
+  vi.stubGlobal('getRequestIP', (e: any) => e.ip ?? '127.0.0.1')
   vi.stubGlobal('setResponseStatus', (e: any, code: number) => {
     e.status = code
   })
@@ -140,6 +138,11 @@ export function asUser(id: number, login: string, over: Record<string, any> = {}
 /** An anonymous H3-ish event. */
 export function anon(over: Record<string, unknown> = {}): any {
   return { ...over }
+}
+
+/** An H3-ish event carrying `Authorization: Bearer <token>`. */
+export function bearer(token: string, over: Record<string, unknown> = {}): any {
+  return anon({ headers: { authorization: `Bearer ${token}` }, ...over })
 }
 
 /** An account the way a login creates it (role stored in the db). */

@@ -236,6 +236,14 @@ export async function assertCanCreateInProject(event: H3Event, project?: string)
   return actor
 }
 
+/** 401 unless a signed-in account makes the request. */
+export async function assertSignedIn(event: H3Event): Promise<Actor & { id: number, login: string }> {
+  const actor = await getActor(event)
+  if (actor.id === undefined || !actor.login)
+    throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+  return { ...actor, id: actor.id, login: actor.login }
+}
+
 /** 403/401 unless the actor's global role is `owner` or `editor` (catalog administration). */
 export async function assertPrivileged(event: H3Event): Promise<Actor> {
   const actor = await getActor(event)

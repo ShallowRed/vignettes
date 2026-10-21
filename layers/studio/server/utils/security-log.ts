@@ -11,6 +11,8 @@ export type SecurityEvent
     | 'grant-change'
     | 'deck-password-change'
     | 'deck-password-lockout'
+    | 'token-creation'
+    | 'token-revocation'
 
 type Details = Record<string, string | number | null | undefined>
 

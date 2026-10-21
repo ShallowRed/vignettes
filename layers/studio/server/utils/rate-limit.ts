@@ -31,6 +31,12 @@ export function hitRateLimit(key: string, limit: number, windowMs: number, now: 
   return current.count <= limit
 }
 
+/** Whether `key` used up its `limit` in the current window, without recording an attempt. */
+export function rateLimitReached(key: string, limit: number, now: number = Date.now()): boolean {
+  const current = windows.get(key)
+  return current !== undefined && now < current.resetAt && current.count >= limit
+}
+
 function prune(now: number): void {
   for (const [key, window] of windows) {
     if (now >= window.resetAt)

@@ -1,8 +1,9 @@
-import type { AppSession, Role } from '#shared/access'
+import type { AppSession, Role, TokenScope } from '#shared/access'
 import type { H3Event, SessionConfig } from 'h3'
 import { resolveRole } from '#shared/access'
 import { unsealSession } from 'h3'
 import { serverConfig } from './config'
+import { authenticatePersonalToken, personalTokenActor } from './personal-token'
 import { useUserStore } from './users'
 
 interface SessionUser {
@@ -31,6 +32,15 @@ export interface Actor {
   id?: number
   login?: string
   role: Role
+  /** The personal token the request carries, when it authenticates by one. */
+  token?: { id: number, name: string, prefix: string, scope: TokenScope, expiresAt: Date }
+}
+
+/** The actor as a log line names it: the login, and the token it used. */
+export function actorLabel(actor: Actor | null | undefined): string {
+  if (!actor?.login)
+    return 'anonymous'
+  return actor.token ? `${actor.login} via ${actor.token.prefix}` : actor.login
 }
 
 const ANONYMOUS: Actor = { role: 'anonymous' }
@@ -75,14 +85,15 @@ async function readActor(event: H3Event): Promise<Actor> {
 }
 
 /**
- * The actor for an H3 request: anonymous without a session, and with a stale or
- * ended one. `getActor` keeps it in `event.context.actor` for the rest of the request, so that the
- * middlewares and the route read the account once.
+ * The actor for an H3 request: the account of its personal token, else of its
+ * session; anonymous without either, and with a stale or ended session.
+ * `getActor` keeps it in `event.context.actor` for the rest of the request, so
+ * that the middlewares and the route read the account once.
  */
 export async function getActor(event: H3Event): Promise<Actor> {
   if (event.context?.actor)
     return event.context.actor as Actor
-  const actor = await readActor(event)
+  const actor = await personalTokenActor(event) ?? await readActor(event)
   if (event.context)
     event.context.actor = actor
   return actor
@@ -94,6 +105,10 @@ export async function getActor(event: H3Event): Promise<Actor> {
  * `session-activity` middleware calls it on each `GET` request.
  */
 export async function keepSessionActive(event: H3Event): Promise<void> {
+  // A request made with a personal token leaves the session as it is, and its
+  // route is checked once the router has matched it.
+  if (await authenticatePersonalToken(event))
+    return
   if (!(await getActor(event)).id)
     return
   const session = await getUserSession(event) as SessionData

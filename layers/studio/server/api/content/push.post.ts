@@ -2,6 +2,7 @@ import { LifecycleSchema } from '#shared/access'
 import { DeckSlugSchema } from '#shared/presentations'
 import { z } from 'zod'
 import { assertContentScript } from '../../utils/access'
+import { actorLabel } from '../../utils/actor'
 import { pushStubs } from '../../utils/content-push'
 import { useContentArchive, useProjectStore } from '../../utils/sources'
 
@@ -29,7 +30,7 @@ export default defineEventHandler(async (event) => {
     const results = await pushStubs(useContentArchive(), stubs, { apply, folder })
     const written = results.filter(r => r.action === 'create' || r.action === 'republish')
     if (apply && written.length)
-      console.info(`[content] ${actor.login} pushed ${written.map(r => `${r.slug} (${r.action})`).join(', ')}`)
+      console.info(`[content] ${actorLabel(actor)} pushed ${written.map(r => `${r.slug} (${r.action})`).join(', ')}`)
     return results
   }
   catch (error) {

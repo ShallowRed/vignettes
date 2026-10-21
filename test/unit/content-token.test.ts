@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { assertOwner, assertPrivileged } from '../../layers/studio/server/utils/access'
 import { useDeckMeta } from '../../layers/studio/server/utils/sources'
-import { anon, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
+import { bearer, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
 
 // The content token stands in for a session on the markdown write path and the content script routes.
 stubH3Globals()
@@ -14,7 +14,6 @@ const { default: uploadMedia } = await import('../../layers/studio/server/api/me
 const { default: listHistory } = await import('../../layers/studio/server/api/presentations/[slug]/history.get')
 const { default: duplicate } = await import('../../layers/studio/server/api/presentations/[slug]/duplicate.post')
 
-const bearer = (token: string, over: Record<string, unknown> = {}) => anon({ headers: { authorization: `Bearer ${token}` }, ...over })
 const deck = { params: { slug: 'deck' } }
 const raw = '---\ntitle: Deck\n---\n\n# Hello\n'
 

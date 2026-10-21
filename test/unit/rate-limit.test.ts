@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { hitRateLimit, resetRateLimits } from '../../layers/studio/server/utils/rate-limit'
+import { hitRateLimit, rateLimitReached, resetRateLimits } from '../../layers/studio/server/utils/rate-limit'
 
 describe('hitRateLimit', () => {
   beforeEach(resetRateLimits)
@@ -20,5 +20,12 @@ describe('hitRateLimit', () => {
     expect(hitRateLimit('a', 1, 1000, 0)).toBe(true)
     expect(hitRateLimit('a', 1, 1000, 0)).toBe(false)
     expect(hitRateLimit('b', 1, 1000, 0)).toBe(true)
+  })
+
+  it('tells a key past its limit without recording an attempt', () => {
+    hitRateLimit('k', 2, 1000, 0)
+    expect(rateLimitReached('k', 2, 0)).toBe(false)
+    hitRateLimit('k', 2, 1000, 0)
+    expect([rateLimitReached('k', 2, 500), rateLimitReached('k', 2, 1000), rateLimitReached('other', 2, 0)]).toEqual([true, false, false])
   })
 })

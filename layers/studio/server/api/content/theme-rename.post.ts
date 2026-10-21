@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { assertContentScript } from '../../utils/access'
+import { actorLabel } from '../../utils/actor'
 import { useContentRewrites } from '../../utils/sources'
 import { themeRenameChanges, themeRenameSummary } from '../../utils/theme-rename'
 
@@ -26,6 +27,6 @@ export default defineEventHandler(async (event) => {
   const rename = apply ? await rewrites.rewrite(change, { at: new Date() }) : change(await rewrites.read())
   const summary = themeRenameSummary(rename)
   if (apply && summary.length)
-    console.info(`[content] ${actor.login} renamed the theme ${from} to ${to} in ${summary.map(deck => deck.slug).join(', ')}`)
+    console.info(`[content] ${actorLabel(actor)} renamed the theme ${from} to ${to} in ${summary.map(deck => deck.slug).join(', ')}`)
   return summary
 })

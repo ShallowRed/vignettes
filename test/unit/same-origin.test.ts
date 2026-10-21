@@ -23,9 +23,9 @@ function request(method: string, headers: Record<string, string>) {
 }
 
 describe('the same-origin guard', () => {
-  it.each(['POST', 'PUT', 'PATCH', 'DELETE'])('lets a %s from a page of the instance through', (method) => {
-    expect(sameOrigin(request(method, { origin: 'https://studio.example' }))).toBeUndefined()
-    expect(sameOrigin(request(method, { 'sec-fetch-site': 'same-origin' }))).toBeUndefined()
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE'])('lets a %s from a page of the instance through', async (method) => {
+    await expect(sameOrigin(request(method, { origin: 'https://studio.example' }))).resolves.toBeUndefined()
+    await expect(sameOrigin(request(method, { 'sec-fetch-site': 'same-origin' }))).resolves.toBeUndefined()
   })
 
   it.each([
@@ -35,22 +35,22 @@ describe('the same-origin guard', () => {
     ['an opaque origin', { origin: 'null' }],
     ['a same-site page', { 'sec-fetch-site': 'same-site' }],
     ['a request without either header', {}],
-  ])('refuses a POST from %s (403)', (_from, headers) => {
-    expect(() => sameOrigin(request('POST', headers))).toThrow(expect.objectContaining({ statusCode: 403 }))
+  ])('refuses a POST from %s (403)', async (_from, headers) => {
+    await expect(sameOrigin(request('POST', headers))).rejects.toThrow(expect.objectContaining({ statusCode: 403 }))
   })
 
-  it('compares the Origin with Host, whatever X-Forwarded-Host claims', () => {
+  it('compares the Origin with Host, whatever X-Forwarded-Host claims', async () => {
     const forged = request('POST', { 'origin': 'https://other.example', 'x-forwarded-host': 'other.example' })
-    expect(() => sameOrigin(forged)).toThrow(expect.objectContaining({ statusCode: 403 }))
+    await expect(sameOrigin(forged)).rejects.toThrow(expect.objectContaining({ statusCode: 403 }))
   })
 
-  it('lets a request carrying the content token through, and every GET', () => {
-    expect(sameOrigin(request('PUT', { authorization: 'Bearer content-token-of-the-test' }))).toBeUndefined()
-    expect(sameOrigin(request('GET', { origin: 'https://other.example' }))).toBeUndefined()
+  it('lets a request carrying the content token through, and every GET', async () => {
+    await expect(sameOrigin(request('PUT', { authorization: 'Bearer content-token-of-the-test' }))).resolves.toBeUndefined()
+    await expect(sameOrigin(request('GET', { origin: 'https://other.example' }))).resolves.toBeUndefined()
   })
 
-  it('checks the origin of a request whose bearer is another token', () => {
+  it('checks the origin of a request whose bearer is another token', async () => {
     const forged = request('POST', { authorization: 'Bearer x', origin: 'https://other.example' })
-    expect(() => sameOrigin(forged)).toThrow(expect.objectContaining({ statusCode: 403 }))
+    await expect(sameOrigin(forged)).rejects.toThrow(expect.objectContaining({ statusCode: 403 }))
   })
 })
