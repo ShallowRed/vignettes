@@ -43,10 +43,13 @@ export default defineNuxtConfig({
 
   hooks: {
     // A package README is published at the path of its package, without the
-    // `readme` segment its file name gives it.
+    // `readme` segment its file name gives it, and the navigation names it by
+    // its package, without the `@vignettes/` scope its title gives it.
     'content:file:afterParse': ({ content }) => {
-      if (typeof content.path === 'string' && content.path.endsWith('/readme'))
+      if (typeof content.path === 'string' && content.path.endsWith('/readme')) {
         content.path = content.path.slice(0, -'/readme'.length)
+        content.navigation = { title: content.path.split('/').pop() }
+      }
     },
   },
 
