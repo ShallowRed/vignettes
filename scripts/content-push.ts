@@ -10,17 +10,20 @@
  *   node scripts/content-push.ts <slug> --staging           # target the staging instance
  *   node scripts/content-push.ts <slug> --content=examples # read another content directory
  *   node scripts/content-push.ts <slug> --unlisted         # create it outside the catalog
+ *   node scripts/content-push.ts <slug> --folder=<slug>    # create it in this folder of the instance
  *
  * The instance decides per slug (`server/utils/content-push.ts`): a deck it
  * does not know is created from the frontmatter and from `registry.yml`, a deck
  * it owns gets a new published version with its access axes untouched, a
  * trashed deck is refused, an identical text is a no-op. A folder the instance
- * lacks is reported, not created.
+ * lacks is reported, not created. With `--folder`, a created deck goes to that
+ * folder and its `project` key names it; the instance refuses a folder it lacks
+ * and a known deck filed in another folder.
  */
 
 import type { PushedStub, PushResult } from '../layers/studio/server/utils/content-push.ts'
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
@@ -30,15 +33,16 @@ const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
 const STAGING = args.includes('--staging')
 const UNLISTED = args.includes('--unlisted')
+const FOLDER = args.find(a => a.startsWith('--folder='))?.slice(9) || undefined
 const slugs = (args.find(a => !a.startsWith('--')) ?? '').split(',').map(s => s.trim()).filter(Boolean)
 if (slugs.length === 0) {
-  console.error('usage: content-push.ts <slug>[,<slug>] [--apply] [--staging]')
+  console.error('usage: content-push.ts <slug>[,<slug>] [--apply] [--staging] [--folder=<slug>]')
   process.exit(2)
 }
 
 const instance = instanceFromEnv(STAGING)
 const OVERRIDE = args.find(a => a.startsWith('--content='))?.slice(10)
-const CONTENT_DIR = OVERRIDE ? join(process.cwd(), OVERRIDE) : contentDir(process.cwd())
+const CONTENT_DIR = OVERRIDE ? resolve(OVERRIDE) : contentDir(process.cwd())
 
 interface RegistryEntry { slug?: string, alias?: string, lifecycle?: string, frozenBundle?: string }
 const REGISTRY = existsSync(join(CONTENT_DIR, 'registry.yml'))
@@ -71,7 +75,7 @@ const LABEL: Record<PushResult['action'], string> = {
   trashed: 'à la corbeille : refusé, restaurer d\'abord',
 }
 try {
-  const results = await callInstance<PushResult[]>(instance, '/api/content/push', { stubs: slugs.map(readStub), apply: APPLY })
+  const results = await callInstance<PushResult[]>(instance, '/api/content/push', { stubs: slugs.map(readStub), apply: APPLY, folder: FOLDER })
   for (const r of results)
     console.log(`  · ${r.slug} : ${LABEL[r.action]}${r.folderMissing ? ` ; dossier « ${r.folderMissing} » absent de l'instance (à créer dans l'interface)` : ''}`)
 }

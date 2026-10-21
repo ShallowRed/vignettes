@@ -55,6 +55,12 @@ Then set the other variables in the Environment tab of the dashboard, or with `s
 - `NUXT_PUBLIC_HELP_URL=<address of the documentation site>`: the « Documentation » link.
 - `NUXT_PUBLIC_FEEDBACK_URL`: the « Envoyer un retour » link, for example the address of a Tchap room.
 
+Scalingo gives a container the variables of the app when it starts it ([environment](https://doc.scalingo.com/platform/app/environment)), and a running container keeps the values it started with. After changing a variable on a running app, restart it so that new containers read the values:
+
+```sh
+sc restart
+```
+
 ## Deploy
 
 With git, from a checkout of the repository ([deploy with git](https://doc.scalingo.com/platform/deployment/deploy-with-git)):
@@ -62,6 +68,13 @@ With git, from a checkout of the repository ([deploy with git](https://doc.scali
 ```sh
 sc git-setup
 git push scalingo main:main
+```
+
+Or deploy an archive of a commit with the CLI ([deploy from an archive](https://doc.scalingo.com/platform/deployment/deploy-from-archive)). The archive goes through the Scalingo API, so use it when `git push` stops at the host key of `ssh.osc-fr1.scalingo.com`, whose fingerprint Scalingo does not publish. The archive holds the code in a subdirectory, which `--prefix` creates, and the second argument names the version:
+
+```sh
+git archive --format=tar.gz --prefix=vignettes/ -o "${TMPDIR:-/tmp}/vignettes.tar.gz" main
+sc deploy "${TMPDIR:-/tmp}/vignettes.tar.gz" "$(git rev-parse --short main)"
 ```
 
 Or link the GitHub repository, so that each push to `main` deploys:
@@ -108,6 +121,8 @@ INFISICAL_DISABLE=1 \
 NUXT_CONTENT_TOKEN="$(sc env-get NUXT_CONTENT_TOKEN)" \
 MISE_ENV=<env> mise run content:push -- <slug>[,<slug>] --apply
 ```
+
+A new deck goes to the folder that the `project` key of its frontmatter names. `--folder <slug>` creates it in that folder of the instance and sets its `project` key to it. The instance refuses a folder it lacks, which you create in the studio first, and a known deck filed in another folder, which you move from the studio.
 
 ## Check the instance
 

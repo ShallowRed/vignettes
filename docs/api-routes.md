@@ -110,7 +110,7 @@ The kit answers 404 unless `NUXT_RECETTE_ENABLED=1` or the app runs in developme
 
 | Route | Access | Effect |
 |-------|--------|--------|
-| `POST /api/content/push` | content token, or privileged | `content:push`: publish stubs of the content space, or say what it would do; a new deck takes its access axes from the frontmatter, a known one keeps them |
+| `POST /api/content/push` | content token, or privileged | `content:push`: publish stubs of the content space, or say what it would do; a new deck takes its access axes from the frontmatter, a known one keeps them; a `folder` files a created deck there and sets its `project` key, and refuses a known deck filed elsewhere |
 | `GET /api/content/decks?slugs=<slug>[,<slug>]` | content token, or privileged | `content:pull`: the catalog axes and the published markdown of live decks; the access password column stays on the instance, and a hash written in the frontmatter travels with the markdown |
 | `POST /api/content/theme-rename` | content token, or privileged | `theme:rename`: rename a theme in the `theme` column, the published versions, the snapshots and the drafts of the decks declaring it, in one transaction, or say which decks it would rewrite |
 

@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { useProjectStore } from '../../layers/studio/server/utils/sources'
 import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { NOW, seedDeck } from './helpers/adapters'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
@@ -68,6 +69,29 @@ describe('the content routes', () => {
     await expect(push(token({ body: { stubs: [stub('locked', '---\naccessPassword: hunter22\n---\n\n# L')], apply: true } })))
       .rejects
       .toMatchObject({ statusCode: 400 })
+  })
+
+  it('push files a created deck in the folder it names, and refuses a folder the instance lacks or a deck filed elsewhere', async () => {
+    await expect(push(token({ body: { stubs: [stub('filed', '# F')], apply: true, folder: 'nowhere' } })))
+      .rejects
+      .toMatchObject({ statusCode: 400, statusMessage: 'No folder "nowhere"' })
+
+    const { slug: folder } = await useProjectStore().create({ title: 'Équipe' })
+    const raw = '---\ntitle: Filed\nstatus: public\nproject: ailleurs\n---\n\n# F'
+    await expect(push(token({ body: { stubs: [stub('filed', raw)], apply: true, folder } })))
+      .resolves
+      .toEqual([{ slug: 'filed', action: 'create', folderMissing: null }])
+    expect((await testRows().select('decks', { slug: 'filed' }))[0]).toMatchObject({ project: folder, status: 'public' })
+    expect((await testRows().select('deckVersions', { deckSlug: 'filed' }))[0]!.raw).toBe(`---\ntitle: Filed\nstatus: public\nproject: ${folder}\n---\n\n# F`)
+    await expect(push(token({ body: { stubs: [stub('filed', raw)], apply: true, folder } })))
+      .resolves
+      .toEqual([{ slug: 'filed', action: 'identical', folderMissing: null }])
+
+    await push(token({ body: { stubs: [stub('elsewhere', '# E')], apply: true } }))
+    await expect(push(token({ body: { stubs: [stub('elsewhere', '# E')], apply: true, folder } })))
+      .rejects
+      .toMatchObject({ statusCode: 400, statusMessage: `elsewhere: filed in no folder, move it to "${folder}" from the studio` })
+    expect((await testRows().select('decks', { slug: 'elsewhere' }))[0]!.project).toBeNull()
   })
 
   it('pull answers the live decks without their access password', async () => {

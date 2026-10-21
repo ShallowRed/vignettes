@@ -89,7 +89,7 @@ The database is the only runtime source of content. Each deck has a draft (a Yjs
 | `mise run content:plan` | What an import would do, without writing |
 | `mise run content:import` | Import the stubs the database does not own yet |
 | `mise run content:republish -- <slug>` | New published version from the stub, access rules untouched |
-| `mise run content:push -- <slug> --apply` | Same, on a deployed instance with its content token; `--content <dir>` reads another content directory, `--unlisted` keeps the deck out of the catalog |
+| `mise run content:push -- <slug> --apply` | Same, on a deployed instance with its content token; `--content <dir>` reads another content directory, `--unlisted` keeps the deck out of the catalog, `--folder <slug>` creates it in a folder of the instance |
 | `mise run content:pull -- <slug> --apply` | The reverse: bring the published version of a deck from a deployed instance into the local database, for a deck that only exists there, before rebuilding its frozen bundle |
 | `mise run theme:rename -- <from> <to> --apply` | Rename the theme the decks of a deployed instance declare, in every published version, draft and snapshot; `--deck <slug>` limits it to named decks |
 | `mise run theme:push -- <name> --apply` | Publish a theme of the content space to the object storage the deployed instances serve it from |

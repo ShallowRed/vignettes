@@ -183,8 +183,9 @@ flag "--apply"
 flag "--staging"
 flag "--unlisted" help="Create the deck outside the catalog, reachable by its link"
 flag "--content <dir>" help="Read another content directory than presentations/"
+flag "--folder <slug>" help="File a created deck in this folder of the instance, whatever its project key says"
 """
-run = "INFISICAL_ENV=${usage_staging:+staging} INFISICAL_SECRETS=NUXT_CONTENT_TOKEN sh scripts/with-secrets.sh node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging} ${usage_unlisted:+--unlisted} ${usage_content:+--content=\"$usage_content\"}"
+run = "INFISICAL_ENV=${usage_staging:+staging} INFISICAL_SECRETS=NUXT_CONTENT_TOKEN sh scripts/with-secrets.sh node scripts/content-push.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging} ${usage_unlisted:+--unlisted} ${usage_content:+--content=\"$usage_content\"} ${usage_folder:+--folder=\"$usage_folder\"}"
 
 [tasks."content:pull"]
 description = "Pull the published version of decks from the production instance into the local database with NUXT_CONTENT_TOKEN (dry run; --apply writes, --staging reads the staging instance): mise run content:pull -- <slug>[,<slug>]"

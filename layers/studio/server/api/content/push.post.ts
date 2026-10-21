@@ -3,7 +3,7 @@ import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { assertContentScript } from '../../utils/access'
 import { pushStubs } from '../../utils/content-push'
-import { useContentArchive } from '../../utils/sources'
+import { useContentArchive, useProjectStore } from '../../utils/sources'
 
 const BodySchema = z.object({
   stubs: z.array(z.object({
@@ -13,6 +13,7 @@ const BodySchema = z.object({
     unlisted: z.boolean(),
   })).min(1),
   apply: z.boolean(),
+  folder: z.string().min(1).optional(),
 })
 
 /** POST /api/content/push, for `content:push`: publish stubs of the content space, or plan it. */
@@ -21,10 +22,13 @@ export default defineEventHandler(async (event) => {
   const parsed = BodySchema.safeParse(await readBody(event))
   if (!parsed.success)
     throw createError({ statusCode: 400, statusMessage: `Invalid push: ${parsed.error.issues.map(i => i.path.join('.') || i.message).join(', ')}` })
+  const { stubs, apply, folder } = parsed.data
+  if (folder && !await useProjectStore().isLive(folder))
+    throw createError({ statusCode: 400, statusMessage: `No folder "${folder}"` })
   try {
-    const results = await pushStubs(useContentArchive(), parsed.data.stubs, { apply: parsed.data.apply })
+    const results = await pushStubs(useContentArchive(), stubs, { apply, folder })
     const written = results.filter(r => r.action === 'create' || r.action === 'republish')
-    if (parsed.data.apply && written.length)
+    if (apply && written.length)
       console.info(`[content] ${actor.login} pushed ${written.map(r => `${r.slug} (${r.action})`).join(', ')}`)
     return results
   }
