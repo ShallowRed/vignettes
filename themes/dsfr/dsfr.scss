@@ -6,16 +6,16 @@
 // Reveal draws each slide's surface on a background layer that fills the screen
 // and carries the slide's own classes. Painting that layer keeps the color
 // edge to edge, and Reveal reads it to mark the slide `has-dark-background`,
-// which switches its controls to light on its own. Reveal's print view moves
-// each background layer into the `.pdf-page` of its slide.
-.reveal :is(.backgrounds, .pdf-page) {
-  .slide-background.slide-h1 {
-    background-color: var(--dsfr-blue-france-975);
-  }
+// which switches its controls to light on its own. The rules leave out the
+// parent of the layer: Reveal's print view moves it into the `.pdf-page` of its
+// slide, and the scroll view, under 435 pixels wide, into the
+// `.scroll-page-content` of its slide.
+.reveal .slide-background.slide-h1 {
+  background-color: var(--dsfr-blue-france-975);
+}
 
-  .slide-background.slide-h2 {
-    background-color: var(--dsfr-blue-france-sun-113);
-  }
+.reveal .slide-background.slide-h2 {
+  background-color: var(--dsfr-blue-france-sun-113);
 }
 
 // A divider sets the text tokens to light values, so its headings, text, lists,

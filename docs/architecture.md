@@ -106,7 +106,7 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 2. **H2**: Horizontal slide separator
 3. **H3**: Vertical slide separator (nested under H2)
 4. **HR** (`---`): Alternative horizontal separator
-5. Each slide tagged with `headingLevel` for CSS classes (`slide-h1`, `slide-h2`, etc.)
+5. Each slide tagged with the class of its role, which `surfaceLevel` gives (`slide-h1` title, `slide-h2` section, `slide-h3` content)
 6. **`:slide-background{image="..."}`**: Inline override for per-slide background image; extracted and removed from rendered output by the parser.
 7. **Full-slide components** (list in `FULL_SLIDE_COMPONENTS`): skip header/body split, render all children in `body`. CSS class `layout-full` applied.
 8. **`:layout{name="..." ...}`**: Slide-level layout annotation. Unlike full-slide components, preserves header/body split. Supports `media-right`, `media-left`, `media-right-wide`, and `media-left-wide` for two-column layouts with media, plus extra props such as `fit="contain|cover"`. The layouts are declared in `DECK_LAYOUTS` of `@vignettes/core/deck`, their geometry in `@vignettes/theme-kit`.

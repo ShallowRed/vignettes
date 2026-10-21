@@ -8,8 +8,8 @@ export interface DeckPreview {
   title?: string
   pretitle?: string
   subtitle?: string
-  /** Level of the title slide's heading, which may change the theme's colors. */
-  headingLevel?: 'h1' | 'h2' | 'h3'
+  /** The `surfaceLevel` of the title slide, which may change the theme's colors. */
+  surface?: 'h1' | 'h2' | 'h3'
   /** Background image of the title slide: its own, the deck's, or the theme's. */
   background?: string
 }

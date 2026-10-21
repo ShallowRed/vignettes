@@ -17,6 +17,8 @@ export interface Slide {
   body: unknown
   verticalSlides?: Slide[]
   headingLevel?: string
+  /** A `##` slide made of its heading and at most one short paragraph (see `isSectionSlide`). */
+  section?: boolean
   backgroundImage?: string
   /** Share of black laid over the background image, from 0 to 1. */
   backgroundOverlay?: number
@@ -26,6 +28,15 @@ export interface Slide {
   /** Extra props for the layout (e.g. media src/type). */
   layoutProps?: Record<string, string>
   quicklink?: { text: string, href: string }
+}
+
+/**
+ * The role of a slide, named by the heading level of its theme surface: `h1`
+ * for the title slide, `h2` for a section, `h3` for a content slide. A `##`
+ * slide that is not a section is a content slide.
+ */
+export function surfaceLevel(slide: Pick<Slide, 'headingLevel' | 'section'>): string | undefined {
+  return slide.headingLevel === 'h2' && !slide.section ? 'h3' : slide.headingLevel
 }
 
 export type AssetKind = 'image' | 'iframe' | 'storybook' | 'video'

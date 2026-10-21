@@ -72,7 +72,7 @@ const REVEAL_KEYS: readonly FrontmatterKey[] = [
   { key: 'pdfSeparateFragments', descriptionKey: 'reference.frontmatter.reveal.pdfSeparateFragments', values: BOOLEAN, default: 'true', snippet: 'pdfSeparateFragments: ${false}' },
 ]
 
-/** Background images per heading level, nested under `backgrounds:`. */
+/** Background images per slide role, nested under `backgrounds:`. */
 const BACKGROUND_KEYS: readonly FrontmatterKey[] = [
   { key: 'h1', descriptionKey: 'reference.frontmatter.backgrounds.h1', snippet: 'h1: ${/backgrounds/title.svg}' },
   { key: 'h2', descriptionKey: 'reference.frontmatter.backgrounds.h2', snippet: 'h2: ${/backgrounds/section.svg}' },
@@ -181,8 +181,8 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     labelKey: 'reference.templates.cover.label',
     descriptionKey: 'reference.templates.cover.description',
     snippet: {
-      fr: '---\n\n## ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
-      en: '---\n\n## ${Presentation title}\n\n:subtitle{text="${Subtitle or tagline}"}',
+      fr: '---\n\n# ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
+      en: '---\n\n# ${Presentation title}\n\n:subtitle{text="${Subtitle or tagline}"}',
     },
   },
   {

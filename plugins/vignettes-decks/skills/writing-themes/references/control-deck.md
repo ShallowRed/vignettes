@@ -17,6 +17,8 @@ parser: heading
 
 ## Une section
 
+Une ligne avec [un lien](https://example.org) sur la surface de la section.
+
 ### Un contenu court
 
 Une phrase sous le titre.
@@ -99,9 +101,9 @@ Une étape par agent
 ::
 :::
 
-## Une section avec du contenu
+## Un titre `##` avec du contenu
 
-Ce paragraphe et ce diagramme sont sur le fond de la section.
+Cette diapositive a un titre `##`, un paragraphe et un diagramme : elle prend le fond d'une diapositive de contenu.
 
 ::Mermaid
 ```mermaid

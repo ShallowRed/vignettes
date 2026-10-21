@@ -44,7 +44,10 @@
     margin-bottom: 0.5em;
   }
 
-  h3 {
+  // The title of a content slide opened by a `##` takes the size of a `###`.
+  h3,
+  section.slide-h3 :is(header, hgroup) h2 {
+    padding-bottom: 0;
     font-size: 2.5rem;
     line-height: 1.1;
     letter-spacing: -0.015em;

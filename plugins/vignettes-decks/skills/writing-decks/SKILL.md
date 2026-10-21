@@ -44,6 +44,8 @@ parser: heading
 
 With `parser: heading`, the headings cut the slides; with the default `separator` parser, `---` and `----` lines do. Pick one per deck.
 
+With either parser, a `##` slide that holds its heading and at most one paragraph of 140 characters or fewer is a section, which the themes paint in contrast. A `##` slide with more content, a list, a component or a `:layout` takes the layout of a content slide. Write a section as its `##` heading alone, or with one short sentence under it.
+
 One idea per slide, stated by its heading. When the audience has to read a slide to follow, it holds too much: move the detail to `::Notes`, which the speaker view shows. Vertical slides hold the depth a question might call for. A deck presents the work; open questions and decisions to take belong in the notes of the project.
 
 Follow the writing rules of the project and of its author for the text itself.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PresentationData } from '../types/presentation.ts'
+import type { PresentationData, Slide } from '../types/presentation.ts'
 import { buildComponentMap } from '@vignettes/core/deck'
 import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
@@ -27,7 +27,7 @@ const mdcComponents: Record<string, any> = Object.fromEntries(
 
 // Reveal draws the background from these attributes. An overlay is black under
 // the image, made that much transparent.
-function backgroundAttrs(slide: { headingLevel?: string, backgroundImage?: string, backgroundOverlay?: number }) {
+function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgroundImage' | 'backgroundOverlay'>) {
   return {
     'data-background-image': resolveSlideBackground(
       slide,
@@ -47,10 +47,10 @@ function backgroundAttrs(slide: { headingLevel?: string, backgroundImage?: strin
     :key="index"
   >
     <!-- Horizontal section with vertical slides. The wrapper is Reveal's stack,
-         not a slide: it carries `stack-<level>` rather than `slide-<level>`, so a
-         theme rule written for a heading level cannot reach, through descendant
+         not a slide: it carries `stack-<level>` and no `slide-<role>` class, so a
+         theme rule written for a slide role cannot reach, through descendant
          selectors, the slides nested inside. The section's own content is the
-         first of its vertical slides and keeps its `slide-<level>` class. -->
+         first of its vertical slides and keeps its `slide-<role>` class. -->
     <section
       v-if="section.verticalSlides && section.verticalSlides.length > 0"
       :class="section.headingLevel ? `stack-${section.headingLevel}` : ''"

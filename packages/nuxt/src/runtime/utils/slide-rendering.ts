@@ -1,7 +1,7 @@
 import type { MDCElement, MDCNode, MDCRoot } from '@nuxtjs/mdc'
 import type { Slide } from '../types/presentation.ts'
 import htmlTags from '@nuxtjs/mdc/runtime/parser/utils/html-tags-list'
-import { buildComponentMap, componentKey, deckAttributes } from '@vignettes/core/deck'
+import { buildComponentMap, componentKey, deckAttributes, surfaceLevel } from '@vignettes/core/deck'
 import { getMediaFit, resolveSlideBackground } from '@vignettes/core/render'
 
 export { getMediaFit, resolveSlideBackground }
@@ -126,10 +126,11 @@ export function quicklinkParts(text: string): { prefix: string, label: string } 
   return { prefix: text.slice(0, idx + 2), label: text.slice(idx + 3) }
 }
 
-export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'layout' | 'headingVisibility'>): string[] {
+export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'section' | 'layout' | 'headingVisibility'>): string[] {
   const classes: string[] = []
-  if (slide.headingLevel)
-    classes.push(`slide-${slide.headingLevel}`)
+  const surface = surfaceLevel(slide)
+  if (surface)
+    classes.push(`slide-${surface}`)
   if (slide.layout)
     classes.push(`layout-${slide.layout}`)
   if (slide.headingVisibility)

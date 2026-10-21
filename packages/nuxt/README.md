@@ -55,7 +55,7 @@ storybook: https://sb.example # root for live story embeds
 
 By default, `---` separates horizontal slides and `----` vertical ones. With `parser: heading`, `#` opens the title slide, `##` starts a horizontal slide, a thematic break (`---`, `***`) outside the title slide starts one too, and `###` nests a vertical slide under it. A line inside fenced code or inside a block component (`::Name` … `::`) never separates slides. `splitSlides` of `@vignettes/core/deck` holds these rules.
 
-Each slide is tagged with its heading level, `slide-h1`, `slide-h2` or `slide-h3`, which themes style. A section holding vertical slides is wrapped in Reveal's stack, which carries `stack-h1` or `stack-h2` instead: the wrapper is not a slide, so a rule written for a heading level cannot reach the slides nested under it.
+Each slide is tagged with the class of its role, which themes style: `slide-h1` for the title slide, `slide-h2` for a section, `slide-h3` for a content slide. A section is a `##` slide made of its heading and at most one paragraph of 140 characters or fewer, besides its `::Notes` and its annotations other than `:layout`; `isSectionSlide` of `@vignettes/core/deck` holds this rule. A `##` slide with more content carries `slide-h3`, and the keys of `backgrounds` follow the same roles. A section holding vertical slides is wrapped in Reveal's stack, which carries `stack-h1` or `stack-h2` instead: the wrapper is not a slide, so a rule written for a slide role cannot reach the slides nested under it.
 
 ## Annotations
 

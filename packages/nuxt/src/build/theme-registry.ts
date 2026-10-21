@@ -33,7 +33,7 @@ export interface ThemeManifest {
   reveal?: Record<string, unknown>
   /** Code theme of the deck blocks by default: a name of `CODE_THEMES`, or its properties. */
   code?: unknown
-  /** Background images per heading level, relative to the theme directory or absolute URLs. */
+  /** Background images per slide role, relative to the theme directory or absolute URLs. */
   backgrounds?: Partial<Record<'h1' | 'h2' | 'h3' | 'default', string>>
   /**
    * The title slide as a catalog card draws it. `fonts` names a sass module

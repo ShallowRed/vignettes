@@ -75,16 +75,16 @@
         "status": "Visibilité ; pour une présentation créée dans le studio, réglez-la dans Réglages et partage",
         "unlisted": "Accessible par lien mais absente du catalogue ; pour une présentation créée dans le studio, réglez ce choix dans Réglages et partage",
         "storybook": "Adresse du Storybook publié, sans iframe.html, qui sert aux ::StoryFrame et à l'option story de :layout",
-        "backgrounds": "Images de fond par niveau de titre",
+        "backgrounds": "Images de fond par rôle de diapositive",
         "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
         "reveal": "Réglages d'affichage de Reveal.js, le moteur des présentations : format, numérotation, transitions…",
         "accessPassword": "Mot de passe du statut semi-private ; pour une présentation créée dans le studio, saisissez-le dans Réglages et partage",
         "titleDefault": "l'identifiant"
       },
       "backgrounds": {
-        "h1": "Fond des diapositives ouvertes par un titre #",
-        "h2": "Fond des diapositives ouvertes par un titre ##",
-        "h3": "Fond des diapositives ouvertes par un titre ###",
+        "h1": "Fond de la diapositive de titre (#)",
+        "h2": "Fond des sections : un titre ## seul ou suivi d'un paragraphe court",
+        "h3": "Fond des diapositives de contenu",
         "default": "Fond des autres diapositives"
       },
       "code": {

@@ -1,10 +1,11 @@
 /**
  * Slide section structural skeleton.
  *
- * The `slide-h1`, `slide-h2`, `slide-h3` classes are produced by the slide
- * engine when a slide consists only of a heading at the matching level (used
- * as section dividers). The flex skeleton here is identical in every theme
- * we ship (DSFR, minimal). Each theme is still free to set its own
+ * The engine tags each slide with the class of its role (`surfaceLevel` of
+ * `@vignettes/core/deck`): `slide-h1` for the title slide, `slide-h2` for a
+ * section, a `##` slide made of its heading and at most one short paragraph,
+ * and `slide-h3` for a content slide, whose heading may be a `##`. The flex
+ * skeleton here is identical in every theme we ship (DSFR, minimal). Each theme is still free to set its own
  * `header { min-height }`, `article { padding }`, colors, and typography.
  *
  * What stays in this layer: positioning primitives (display: flex, ordering,
@@ -98,6 +99,18 @@
   flex-direction: column;
   align-self: stretch;
   min-height: 0;
+}
+
+// `FullScreenImage` lays the slide over a photo: the slide heading and the
+// text take the light color of the component.
+.reveal .slides section.layout-full > div:has(> .full-screen-image) {
+  --text-title: #fff;
+  --text-default: #fff;
+  --text-mention: #fff;
+
+  > :is(h1, h2, h3, h4, h5, h6) {
+    text-shadow: 0 2px 8px rgb(0 0 0 / 50%);
+  }
 }
 
 // `FullScreenImage{heading="hidden"}` hides the slide heading, and `heading="print"`

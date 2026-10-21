@@ -1,11 +1,10 @@
-import type { DeckPreview, PresentationListItem, TitleSlide } from '#shared/presentations'
+import type { PresentationListItem, TitleSlide } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
 import { canList, canShare, isPrivileged, mayEdit } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
-import { readTitleSlide, UNGROUPED_PROJECT } from '#shared/presentations'
+import { readTitleSlide, titleSlidePreview, UNGROUPED_PROJECT } from '#shared/presentations'
 import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
-import { resolveSlideBackground } from '@vignettes/core/render'
 import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
@@ -91,17 +90,7 @@ async function deckStats(): Promise<Map<string, DeckStats>> {
 function deckPreview(stats: DeckStats | undefined, theme: string): Pick<PresentationListItem, 'preview'> {
   if (!stats)
     return {}
-  const { title, pretitle, subtitle, headingLevel, backgroundImage, backgrounds } = stats.titleSlide
-  const resolved = resolveThemeName(theme)
-  const preview: DeckPreview = {
-    theme: resolved,
-    title,
-    pretitle,
-    subtitle,
-    headingLevel,
-    background: resolveSlideBackground({ headingLevel: headingLevel ?? 'h1', backgroundImage }, resolved, backgrounds),
-  }
-  return { preview }
+  return { preview: titleSlidePreview(stats.titleSlide, resolveThemeName(theme)) }
 }
 
 function deckDates(stats: DeckStats | undefined, canEdit: boolean, unpublishedDraftAt?: number | null): Pick<PresentationListItem, 'slideCount' | 'updatedAt'> {

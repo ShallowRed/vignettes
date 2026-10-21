@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
+import { getSlideClasses } from '../../packages/nuxt/src/runtime/utils/slide-rendering.ts'
 
 async function bodyOf(raw: string) {
   const [slide] = await headingParser.parse(raw)
@@ -46,5 +47,24 @@ describe('full screen image', () => {
     const [slide] = await headingParser.parse('## Title\n\nText')
     expect(slide!.backgroundImage).toBeUndefined()
     expect(slide!.backgroundOverlay).toBeUndefined()
+  })
+})
+
+describe('section slides', () => {
+  const sectionOf = async (raw: string) => (await headingParser.parse(raw)).map(slide => slide.section ?? false)
+
+  it('marks the ## slide of a vertical stack and leaves its ### slides', async () => {
+    const [stack] = await headingParser.parse('## Part one\n\n### First point\n\nSome text.')
+    expect(stack!.verticalSlides!.map(slide => slide.section ?? false)).toEqual([true, false])
+  })
+
+  it('tags a section slide-h2 and a ## slide with content slide-h3', async () => {
+    const slides = await headingParser.parse('## Part one\n\n## A list\n\n- One point')
+    expect(slides.map(slide => getSlideClasses(slide))).toEqual([['slide-h2'], ['slide-h3']])
+  })
+
+  it('leaves the other heading levels', async () => {
+    expect(await sectionOf('# Title')).toEqual([false])
+    expect(await sectionOf('### Alone')).toEqual([false])
   })
 })

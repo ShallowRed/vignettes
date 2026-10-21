@@ -121,10 +121,14 @@ body {
   margin-bottom: 0.5em;
 }
 
-.reveal h3 {
+// The title of a content slide opened by a `##` takes the style of a `###`.
+.reveal h3,
+.reveal section.slide-h3 :is(header, hgroup) h2 {
   font-size: 2rem;
   font-weight: 600;
   color: $dark-grey;
+  border-bottom: none;
+  padding-bottom: 0;
   margin-bottom: 0.5em;
 }
 
@@ -416,9 +420,9 @@ body {
    SLIDE VERTICAL CENTERING (like DSFR)
    ============================================ */
 
-// Title slides (h1, h2) — flex skeleton lives in themes/shared/_slide-structure.scss
+// Title slides and sections (h1, h2): the flex skeleton is in packages/theme-kit/_slide-structure.scss
 
-// Content slides (h3) — flex skeleton lives in themes/shared/_slide-structure.scss
+// Content slides (h3): the flex skeleton is in packages/theme-kit/_slide-structure.scss
 .reveal section.slide-h3 {
   header {
     height: 6rem;

@@ -1,6 +1,6 @@
 import type { ParserId } from './parser.ts'
 import { isRefusedEmbed, readAttribute } from './attributes.ts'
-import { componentKey } from './components.ts'
+import { ANNOTATION_TAGS, componentKey, NOTES_COMPONENT } from './components.ts'
 
 /**
  * The slide boundaries of a deck, read from its markdown text: the one
@@ -36,8 +36,11 @@ const ATX_RE = /^ {0,3}(#{1,6})(?:[ \t]|$)/
 const THEMATIC_BREAK_RE = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/
 const SETEXT_H1_RE = /^ {0,3}=+[ \t]*$/
 const SETEXT_H2_RE = /^ {0,3}-+[ \t]*$/
-// Lines that open a block other than a paragraph, so no setext underline lifts them.
-const OTHER_BLOCK_RE = /^ {0,3}(?:[-*+>|<#]|\d+[.)])/
+// Lines that open a block other than a paragraph, so no setext underline lifts
+// them: a quote, a table, a heading, a list item, an html comment, an html
+// block tag and a line of html tags alone.
+const HTML_BLOCK_TAGS = 'address|article|aside|blockquote|details|div|dl|figure|footer|header|hr|li|main|nav|ol|p|pre|section|table|ul|h[1-6]'
+const OTHER_BLOCK_RE = new RegExp(`^ {0,3}(?:[>|]|#{1,6}(?:[ \\t]|$)|[-*+](?:[ \\t]|$)|\\d{1,9}[.)](?:[ \\t]|$)|<!--|<\\/?(?:${HTML_BLOCK_TAGS})(?:[\\s/>]|$)|(?:<\\/?[a-z][\\w-]*(?:\\s[^>]*)?>\\s*)+$)`, 'i')
 
 type Kind = 'blank' | 'nested' | 'text' | 'h1' | 'h2' | 'h3' | 'break'
 
@@ -356,6 +359,63 @@ export function attributeMentions(raw: string): AttributeMention[] {
     }
   }
   return mentions
+}
+
+// The annotations a section keeps: `:layout` brings a media or a grid, so a
+// slide that names one is a content slide.
+const SECTION_ANNOTATION_RE = new RegExp(`^\\s*:(?:${ANNOTATION_TAGS.filter(tag => tag !== 'layout').join('|')})\\{[^}]*\\}\\s*$`)
+const BLOCK_COMPONENT_RE = /^[ \t]*(:{2,})([a-z][\w-]*)(?:[^\w\n-][^\n]*)?\n[\s\S]*?^[ \t]*\1[ \t]*$/gim
+const COMMENT_RE = /^\s*<!--.*-->\s*$/
+// A line that holds a component or an image alone.
+const STANDALONE_RE = /^\s*(?::[a-z][\w-]*(?:\[[^\]]*\])?(?:\{[^}]*\})?|!\[[^\]]*\]\([^)]*\))\s*$/i
+const SECTION_TEXT_MAX_LENGTH = 140
+
+/** The text a reader sees of a markdown line: no link targets, attributes, component names or markup. */
+function displayedText(line: string): string {
+  return line
+    .replace(/\]\([^)]*\)/g, ']')
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/(^|\s):[a-z][\w-]*/gi, '$1')
+    .replace(/<[^>]+>|[*_`[\]]/g, '')
+    .trim()
+}
+
+/**
+ * Whether a slide is a section: its first heading is a `##`, and the slide
+ * holds besides it at most one paragraph of text of at most 140 characters,
+ * its speaker notes and the annotations other than `:layout`. A `##` slide
+ * with more content is a content slide. `text` is the markdown of one slide,
+ * as `splitSlides` gives it.
+ */
+export function isSectionSlide(text: string): boolean {
+  const withoutNotes = text.replace(BLOCK_COMPONENT_RE, (block, _colons, name: string) =>
+    componentKey(name) === componentKey(NOTES_COMPONENT) ? '' : block)
+  let heading = false
+  const paragraphs: string[] = []
+  let inParagraph = false
+  for (const line of scan(withoutNotes.split('\n'), 0)) {
+    if (line.kind === 'blank' || line.kind === 'break' || SECTION_ANNOTATION_RE.test(line.text) || COMMENT_RE.test(line.text)) {
+      inParagraph = false
+      continue
+    }
+    if (line.kind === 'h2' && !heading) {
+      heading = true
+      // A setext heading lifts the paragraph above its underline.
+      if (line.from !== undefined)
+        paragraphs.pop()
+      inParagraph = false
+      continue
+    }
+    if (line.kind !== 'text' || OTHER_BLOCK_RE.test(line.text) || STANDALONE_RE.test(line.text))
+      return false
+    const text = displayedText(line.text)
+    if (inParagraph)
+      paragraphs[paragraphs.length - 1] += ` ${text}`
+    else
+      paragraphs.push(text)
+    inParagraph = true
+  }
+  return heading && paragraphs.length <= 1 && (paragraphs[0]?.length ?? 0) <= SECTION_TEXT_MAX_LENGTH
 }
 
 /** A slide's position and first source line, for the editor and the catalog. */

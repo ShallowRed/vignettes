@@ -88,6 +88,11 @@ describe('resolveSlideBackground (precedence preserved)', () => {
     expect(resolveSlideBackground({ headingLevel: 'h1' }, 'brand')).toBe('/themes/brand/assets/slide-contrast.png')
   })
 
+  it('gives the section background to a section and the content background to another ## slide', () => {
+    expect(resolveSlideBackground({ headingLevel: 'h2', section: true }, 'brand')).toBe('/themes/brand/assets/slide-contrast.png')
+    expect(resolveSlideBackground({ headingLevel: 'h2' }, 'brand')).toBe('/themes/brand/assets/slide-subtle.png')
+  })
+
   it('returns undefined for a theme with no backgrounds', () => {
     expect(resolveSlideBackground({ headingLevel: 'h1' }, 'minimal')).toBeUndefined()
   })

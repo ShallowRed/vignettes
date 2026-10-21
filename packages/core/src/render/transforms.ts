@@ -1,5 +1,6 @@
 import type { AssetRef, DeckModel, Slide } from '../deck/model.ts'
 import type { DeckMeta, ThemeBackgrounds } from '../deck/schema.ts'
+import { surfaceLevel } from '../deck/model.ts'
 import { isDeckUrl } from '../deck/urls.ts'
 import { getThemeTokens } from '../theme/tokens.ts'
 import { buildStoryUrl } from './storybook.ts'
@@ -86,9 +87,9 @@ export function resolveSlideMedia(
 }
 
 // Precedence: slide-level backgroundImage override → deck frontmatter
-// backgrounds map → theme tokens' per-heading-level background.
+// backgrounds map → theme tokens' background for the slide's `surfaceLevel`.
 export function resolveSlideBackground(
-  slide: Pick<Slide, 'headingLevel' | 'backgroundImage'>,
+  slide: Pick<Slide, 'headingLevel' | 'section' | 'backgroundImage'>,
   theme?: string,
   customBackgrounds?: ThemeBackgrounds,
 ): string | undefined {
@@ -97,7 +98,7 @@ export function resolveSlideBackground(
   const backgrounds = customBackgrounds ?? getThemeTokens(theme)?.backgrounds
   if (!backgrounds)
     return undefined
-  const level = slide.headingLevel as keyof ThemeBackgrounds | undefined
+  const level = surfaceLevel(slide) as keyof ThemeBackgrounds | undefined
   // The schema accepts keys it does not name, so a value read by level is not a
   // string by construction.
   const named = level ? backgrounds[level] : undefined

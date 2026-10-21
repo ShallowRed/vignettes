@@ -75,16 +75,16 @@
         "status": "Visibility; for a presentation created in the studio, set it in Settings and sharing",
         "unlisted": "Reachable by link but absent from the catalog; for a presentation created in the studio, set it in Settings and sharing",
         "storybook": "Address of the published Storybook, without iframe.html, used by ::StoryFrame and by the story option of :layout",
-        "backgrounds": "Background images per heading level",
+        "backgrounds": "Background images per slide role",
         "code": "Colors and font size of the code blocks: a theme (nuit, sombre, clair) or its settings",
         "reveal": "Display settings of Reveal.js, the engine of the presentations: format, numbering, transitions…",
         "accessPassword": "Password of the semi-private status; for a presentation created in the studio, enter it in Settings and sharing",
         "titleDefault": "the identifier"
       },
       "backgrounds": {
-        "h1": "Background of the slides opened by a # heading",
-        "h2": "Background of the slides opened by a ## heading",
-        "h3": "Background of the slides opened by a ### heading",
+        "h1": "Background of the title slide (#)",
+        "h2": "Background of the sections: a ## heading alone or with one short paragraph",
+        "h3": "Background of the content slides",
         "default": "Background of the other slides"
       },
       "code": {

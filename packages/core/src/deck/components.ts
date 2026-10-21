@@ -79,6 +79,9 @@ export interface DeckComponent {
   images?: readonly string[]
 }
 
+/** The speaker notes, which the audience never sees. */
+export const NOTES_COMPONENT = 'Notes'
+
 /** The components the render layer ships. */
 export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   {
@@ -137,7 +140,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     description: { fr: 'Encadré de mise en avant (attributs size sm ou md, variant)', en: 'Highlight box (attributes size sm or md, variant)' },
   },
   {
-    name: 'Notes',
+    name: NOTES_COMPONENT,
     aliases: ['notes'],
     snippet: { fr: '::Notes\n${Ce que dit l\'orateur.}\n::', en: '::Notes\n${What the speaker says.}\n::' },
     description: { fr: 'Notes de l\'orateur, visibles dans la vue conférencier (touche S)', en: 'Speaker notes, shown in the speaker view (S key)' },

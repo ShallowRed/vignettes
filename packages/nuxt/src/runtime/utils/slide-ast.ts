@@ -7,6 +7,7 @@ import {
   BACKGROUND_ANNOTATION_TAG,
   fullSlideComponentNames,
   HTML_REWRITTEN_COMPONENT_TAGS,
+  isSectionSlide,
   splitSlides,
   STRIPPED_ANNOTATION_TAGS,
 } from '@vignettes/core/deck'
@@ -264,24 +265,31 @@ function groupByPosition(sources: SlideSource[]): SlideSource[][] {
   return groups
 }
 
+// The slide of one source, marked when it is a section.
+async function sourceSlide(source: SlideSource, definitions?: string): Promise<{ children: any[], slide: Slide }> {
+  const children = await parseChunk(source.text, definitions)
+  const slide = createSlide(children)
+  return { children, slide: isSectionSlide(source.text) ? { ...slide, section: true } : slide }
+}
+
 // Heading decks: a stack carries its vertical slides only.
 async function headingSlide(group: SlideSource[], definitions: string): Promise<Slide> {
-  const parts = await Promise.all(group.map(source => parseChunk(source.text, definitions)))
+  const parts = await Promise.all(group.map(source => sourceSlide(source, definitions)))
   if (parts.length === 1)
-    return createSlide(parts[0]!)
+    return parts[0]!.slide
   return {
     body: { type: 'root', children: [] },
-    verticalSlides: parts.map(part => createSlide(part)),
-    headingLevel: getHeadingLevel(parts.flat()),
+    verticalSlides: parts.map(part => part.slide),
+    headingLevel: getHeadingLevel(parts.flatMap(part => part.children)),
   }
 }
 
 // Separator decks: a stack carries its vertical slides only.
 async function separatorSlide(group: SlideSource[]): Promise<Slide> {
-  const parts = await Promise.all(group.map(source => parseChunk(source.text)))
+  const parts = await Promise.all(group.map(source => sourceSlide(source)))
   if (parts.length === 1)
-    return createSlide(parts[0]!)
-  const verticalSlides = parts.map(part => createSlide(part))
+    return parts[0]!.slide
+  const verticalSlides = parts.map(part => part.slide)
   return {
     body: { type: 'root', children: [] },
     verticalSlides,

@@ -13,7 +13,7 @@ description: >-
 
 A theme is a directory holding a `theme.json` manifest, an SCSS entry named after the theme and an optional `assets/` directory. The references beside this file are copied from the repository:
 
-- `references/theme-system.md`: the layers, the manifest, the token contract, the compilation, the publication of a tenant theme, the slide classes by heading level, and the section "Checking a theme".
+- `references/theme-system.md`: the layers, the manifest, the token contract, the compilation, the publication of a tenant theme, the slide classes by role, and the section "Checking a theme".
 - `references/theme-kit.md`: `@vignettes/theme-kit`, its base skin and its `layout` preset.
 - `references/theme-dsfr.md`: `@vignettes/theme-dsfr`, its Sass variables and its entries.
 - `references/control-deck.md`: the deck that shows each slide role and each element a theme colors.

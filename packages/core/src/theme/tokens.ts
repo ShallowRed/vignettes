@@ -18,7 +18,7 @@ export interface ThemePreview {
   textColor?: string
   surface?: string
   /**
-   * Colors for a first slide of another heading level, whose background differs.
+   * Colors for a first slide of another role, whose background differs.
    * `titleGradient: 'none'` removes the gradient.
    */
   levels?: Partial<Record<'h1' | 'h2' | 'h3', Pick<ThemePreview, 'titleColor' | 'titleGradient' | 'textColor'>>>

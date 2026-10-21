@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readTitleSlide } from '../../layers/studio/shared/presentations/title-slide'
+import { readTitleSlide, titleSlidePreview } from '../../layers/studio/shared/presentations/title-slide'
 
 describe('readTitleSlide', () => {
   it('reads the title, the annotations and the backgrounds of a separator deck', () => {
@@ -61,5 +61,23 @@ describe('readTitleSlide', () => {
   it('ignores headings inside fenced code', () => {
     const raw = '```md\n# Not a title\n```\n\n# Real title'
     expect(readTitleSlide(raw).title).toBe('Real title')
+  })
+})
+
+describe('titleSlidePreview', () => {
+  const backgrounds = 'backgrounds:\n  h1: /title.png\n  h2: /section.png\n  h3: /content.png'
+
+  it('gives a ## title slide the section surface or the content surface', () => {
+    const section = readTitleSlide(`---\n${backgrounds}\n---\n\n## Part one\n\nWhat this part covers.`)
+    const content = readTitleSlide(`---\n${backgrounds}\n---\n\n## Part one\n\n- A point\n- Another point`)
+    expect(section.section).toBe(true)
+    expect(titleSlidePreview(section, 'minimal')).toMatchObject({ surface: 'h2', background: '/section.png' })
+    expect(titleSlidePreview(content, 'minimal')).toMatchObject({ surface: 'h3', background: '/content.png' })
+  })
+
+  it('keeps the base colors and the title background for a deck without a heading', () => {
+    const preview = titleSlidePreview(readTitleSlide(`---\n${backgrounds}\n---\n\nSome text.`), 'minimal')
+    expect(preview.surface).toBeUndefined()
+    expect(preview.background).toBe('/title.png')
   })
 })

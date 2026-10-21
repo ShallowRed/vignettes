@@ -14,7 +14,7 @@ const tokens = computed(() => {
   if (!props.preview)
     return undefined
   const { levels, ...base } = getThemeTokens(props.preview.theme)?.preview ?? {}
-  const level = props.preview.headingLevel ? levels?.[props.preview.headingLevel] : undefined
+  const level = props.preview.surface ? levels?.[props.preview.surface] : undefined
   return { ...base, ...level }
 })
 const gradient = computed(() => tokens.value?.titleGradient && tokens.value.titleGradient !== 'none'

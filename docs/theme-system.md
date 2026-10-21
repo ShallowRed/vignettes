@@ -7,7 +7,7 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Themes build on this layer and never replace it.
 2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. Made to be extended, by a brand and by the application's own `dsfr` theme. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
 
-   The package paints no slide surface, so a brand decides its own. `themes/dsfr/` adds flat surfaces from the DSFR palette: the title slide on `blue-france-975`, section dividers on `blue-france-sun-113` with light text, content slides on white, painted on Reveal's background layer (see "Slides by heading level").
+   The package paints no slide surface, so a brand decides its own. `themes/dsfr/` adds flat surfaces from the DSFR palette: the title slide on `blue-france-975`, section dividers on `blue-france-sun-113` with light text, content slides on white, painted on Reveal's background layer (see "Slides by role").
 3. **Themes and brands**: `themes/<name>/` in the application (`dsfr`, `minimal`) and `themes/<name>/` in the content space (`NUXT_CONTENT_DIR`, `presentations/` by default) for a tenant's brands. A brand extends the DSFR base or the engine alone.
 
 ## Manifest
@@ -34,13 +34,13 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 | `extends` | Theme this one builds on; checked at build time |
 | `aliases` | Other frontmatter names that resolve to this theme. A tenant uses it to point a name already present in its decks to its brand. An alias that shadows another theme's name is reported at build time |
 | `lang`, `parser`, `reveal` | Deck defaults the theme carries (language for orthotypography, slide parser, Reveal config) |
-| `backgrounds` | Background image per heading level (`h1`, `h2`, `h3`, `default`), relative to the theme directory or absolute URLs |
+| `backgrounds` | Background image of the title slide (`h1`), the sections (`h2`), the content slides (`h3`) and the others (`default`), relative to the theme directory or absolute URLs |
 | `entry` | SCSS entry, `<name>.scss` by default |
 | `assets` | Extra directories copied under `public/themes/<name>/`: `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root |
 | `code` | Code theme of the deck blocks by default: a name of `CODE_THEMES` (`nuit`, `sombre`, `clair`), or its properties |
 | `preview` | How the catalog draws the card of a deck on this theme, without loading the theme's stylesheet |
 
-`preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names an SCSS entry declaring the font faces, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/fonts` is the value the DSFR theme uses. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another heading level, and `titleGradient: 'none'` removes the gradient there.
+`preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names an SCSS entry declaring the font faces, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/fonts` is the value the DSFR theme uses. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another role, and `titleGradient: 'none'` removes the gradient there.
 
 ```json
 {
@@ -155,9 +155,9 @@ Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `
 
 A deck whose frontmatter declares no `theme:` renders in the fallback theme of the instance. The create form preselects that theme and a catalog card previews such a deck with it. `runtimeConfig.public.defaultTheme` names it (`dsfr` in this application) and `NUXT_PUBLIC_DEFAULT_THEME` overrides it at run time. Without a host setting, `@vignettes/nuxt` falls back to `minimal`. A name that matches no registered theme is reported at boot under `[themes]` and ignored.
 
-## Slides by heading level
+## Slides by role
 
-The engine tags each `<section>`: `slide-h1` (title slide), `slide-h2` (section divider), `slide-h3` (heading plus body). The flex skeleton comes from `packages/theme-kit/_slide-structure.scss`; themes set sizes and colors, and backgrounds come from the manifest.
+The engine tags each `<section>` with the class of its role, which `surfaceLevel` of `packages/core/src/deck/model.ts` gives: `slide-h1` for the title slide, `slide-h2` for a section divider, `slide-h3` for a content slide. A section divider is a `##` slide made of its heading and at most one paragraph of 140 characters or fewer, besides its speaker notes and its annotations other than `:layout` (`isSectionSlide` of `packages/core/src/deck/split.ts`). A `##` slide with more content is a content slide and carries `slide-h3`; the manifest's `h2` and `h3` backgrounds follow the same roles. The flex skeleton comes from `packages/theme-kit/_slide-structure.scss`; themes set sizes and colors, and backgrounds come from the manifest.
 
 A section that holds vertical slides is wrapped in Reveal's stack. That wrapper carries `stack-h1` / `stack-h2` instead of a `slide-` class, and the section's own content is the first of its vertical slides, keeping its own `slide-` class. So a rule written as `.reveal section.slide-h2 h3` styles the divider alone and cannot reach the slides nested under it. Target `stack-h2` to style the wrapper itself.
 
@@ -165,12 +165,12 @@ A flat color surface goes on Reveal's background layer: Reveal creates one `.sli
 
 ## Checking a theme
 
-`examples/controle-du-theme.md` is a deck that holds each slide role and each element a theme colors: the title slide, a section, a short and a long content slide, inline code, a list, a table, a quote, a code block, columns, the `media-right` and `media-left-wide` layouts, a Mermaid diagram, a `Diagram`, and a section with content. Write the name of the theme under check in its `theme:`, import it in a local studio, and read every slide, the vertical ones included:
+`examples/controle-du-theme.md` is a deck that holds each slide role and each element a theme colors: the title slide, a section, a short and a long content slide, inline code, a list, a table, a quote, a code block, columns, the `media-right` and `media-left-wide` layouts, a Mermaid diagram, a `Diagram`, and a `##` slide with content. Write the name of the theme under check in its `theme:`, import it in a local studio, and read every slide, the vertical ones included:
 
 - Sizes: 1280 × 720 and 1920 × 1080, then 390 pixels wide. Under 435 pixels, reveal.js switches to its scroll view: the slides follow one another, each scaled to the width of the screen, so the body text measures a few pixels whatever the theme. Each section keeps its surface edge to edge.
 - Contrast: 4.5:1 or more between a text and its surface, 3:1 for a text of 24 pixels or more, or of 18.5 pixels or more in bold (RGAA, criterion 3.2). The pairs are `--text-title`, `--text-default` and `--text-mention` on `--surface`; `--accent` on `--surface` for the links and on `--accent-bg` for the inline code of the base skin; `--on-contrast` on `--surface-contrast`; the title, the text and the links of a section on its surface.
 - Inline code: an inline box with a padding and a background. At the end of a line, the browser can break a segment at a space it holds: the background stops at the end of the line and starts again on the next one without its padding. Read the three long segments of the long content slide at each width.
-- Diagrams: Mermaid fills its boxes with `--accent-bg`, outlines them with `--accent` and writes their labels in `--on-surface-title`; its lines take the `--text-mention` of the slide, its free text the `--text-default` of the slide, and it measures its labels with the font of the slide. On the last slide, the lines and the free text turn light on the section surface, and the boxes keep their light fill. The renderer scales a diagram down to the width of its column, and its height follows: a wide font scales a wide diagram down further, and a tall diagram can reach the navigation arrows.
+- Diagrams: Mermaid fills its boxes with `--accent-bg`, outlines them with `--accent` and writes their labels in `--on-surface-title`; its lines take the `--text-mention` of the slide, its free text the `--text-default` of the slide, and it measures its labels with the font of the slide. The last slide has a `##` heading and a diagram: it takes the surface of a content slide. The renderer scales a diagram down to the width of its column, and its height follows: a wide font scales a wide diagram down further, and a tall diagram can reach the navigation arrows.
 - The PDF export prints the section surfaces.
 
 ## Troubleshooting

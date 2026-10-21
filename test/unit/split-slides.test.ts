@@ -1,4 +1,4 @@
-import { attributeMentions, componentMentions, splitSlides } from '@vignettes/core/deck'
+import { attributeMentions, componentMentions, isSectionSlide, splitSlides } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
@@ -113,5 +113,63 @@ describe('attributeMentions', () => {
   it('leaves out the frontmatter and fenced code', () => {
     const raw = '---\nstorybook: javascript:x\n---\n\n```md\n::Iframe{src="javascript:x"}\n```\n'
     expect(attributeMentions(raw)).toEqual([])
+  })
+})
+
+describe('splitSlides, a setext underline after another block', () => {
+  it('keeps a thematic break under an html block tag', () => {
+    expect(positions('## A\n\n<div>Block</div>\n---\n\n## B', 'heading')).toEqual(['1:0.0', '4:1.0', '6:2.0'])
+  })
+
+  it('lifts a line in italics into a setext heading', () => {
+    expect(positions('# T\n\n*A line*\n---\n\nx', 'heading')).toEqual(['1:0.0', '3:1.0'])
+  })
+})
+
+describe('isSectionSlide', () => {
+  const sections = (raw: string, parser: 'heading' | 'separator') =>
+    splitSlides(raw, parser).map(slide => isSectionSlide(slide.text))
+
+  it.each([
+    ['a heading alone', '## Part one'],
+    ['a heading and one line', '## Part one\n\nWhat this part covers.'],
+    ['a heading and one paragraph on two lines', '## Part one\n\nWhat this part\ncovers.'],
+    ['a line in italics', '## Part one\n\n*A line in italics.*'],
+    ['a line in bold', '## Part one\n\n**A line in bold.**'],
+    ['a line that opens with an inline component', '## Part one\n\n:i{name="ri:heart-line"} Merci'],
+    ['a line that opens with a number', '## Part one\n\n2026, the year in review'],
+    ['a line that opens with an inline tag', '## Part one\n\n<abbr title="Interface">API</abbr> en bref'],
+    ['an html comment', '## Part one\n\n<!-- to rewrite -->\n\nOne line.'],
+    ['speaker notes and annotations', '## Part one\n\n:pretitle{text="Chapter"}\n\n::Notes\nWhat to say.\n\nMore to say.\n::'],
+    ['a setext heading', 'Part one\n--------\n\nOne line.'],
+    ['a short line whose link target is long', `## Part one\n\n[Read the guide of the procedure.](https://example.com/${'a'.repeat(120)})`],
+  ])('reads %s as a section', (_, text) => {
+    expect(isSectionSlide(text)).toBe(true)
+  })
+
+  it.each([
+    ['two paragraphs', '## Part one\n\nThe first line.\n\nThe second line.'],
+    ['a paragraph longer than 140 characters', `## Part one\n\n${'word '.repeat(30)}`],
+    ['a list', '## Part one\n\n- One point'],
+    ['a numbered list', '## Part one\n\n1. One point'],
+    ['a quote', '## Part one\n\n> A quote'],
+    ['an image alone', '## Part one\n\n![A photo](/a.png)'],
+    ['a component alone', '## Part one\n\n:StoryFrame{story="a--b"}'],
+    ['a block component', '## Part one\n\n::Highlight\nKey message.\n::'],
+    ['a layout', '## Part one\n\n:layout{name="media-right" src="/a.png"}'],
+    ['a ### heading', '### Alone'],
+    ['a # heading', '# Title'],
+  ])('reads %s as a content slide', (_, text) => {
+    expect(isSectionSlide(text)).toBe(false)
+  })
+
+  it('reads the displayed text of a long paragraph', () => {
+    expect(isSectionSlide(`## Part one\n\n[${'word '.repeat(30)}](/a)`)).toBe(false)
+  })
+
+  it('applies to the slides of both parsers', () => {
+    const body = '## Part one\n\nOne line.\n\n### A point\n\nSome text.'
+    expect(sections(`# Title\n\n${body}`, 'heading')).toEqual([false, true, false])
+    expect(sections(`# Title\n\n---\n\n## Part one\n\nOne line.\n\n---\n\n## A list\n\n- One point`, 'separator')).toEqual([false, true, false])
   })
 })

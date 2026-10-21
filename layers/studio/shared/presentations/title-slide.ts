@@ -1,13 +1,16 @@
 import type { ThemeBackgrounds } from '@vignettes/core/deck'
-import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import type { DeckPreview } from './list-item'
+import { isSectionSlide, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel } from '@vignettes/core/deck'
+import { resolveSlideBackground } from '@vignettes/core/render'
 
 /** The first slide of a deck, read from its markdown for a catalog card. */
 export interface TitleSlide {
   title?: string
   pretitle?: string
   subtitle?: string
-  /** Level of the slide's heading, which picks the theme background. */
   headingLevel?: 'h1' | 'h2' | 'h3'
+  /** A `##` slide made of its heading and at most one short paragraph (see `isSectionSlide`). */
+  section?: boolean
   /** `:slide-background{image}` on the slide. */
   backgroundImage?: string
   /** The deck's frontmatter `backgrounds`, which override the theme's. */
@@ -86,7 +89,25 @@ export function readTitleSlide(raw: string): TitleSlide {
     pretitle: annotation(slide, 'pretitle', 'text'),
     subtitle: annotation(slide, 'subtitle', 'text') ?? (at === -1 ? undefined : leadParagraph(slide.slice(at + 1))),
     headingLevel: level && level <= 3 ? `h${level}` as TitleSlide['headingLevel'] : undefined,
+    ...(isSectionSlide(slide.join('\n')) ? { section: true } : {}),
     backgroundImage: annotation(slide, 'slide-background', 'image'),
     backgrounds: data.backgrounds && typeof data.backgrounds === 'object' ? data.backgrounds as ThemeBackgrounds : undefined,
+  }
+}
+
+/**
+ * The catalog card of a deck, in its resolved theme: the title slide takes the
+ * colors and the background of its `surfaceLevel`; a deck without a heading
+ * keeps the base colors and takes the background of a title slide.
+ */
+export function titleSlidePreview(slide: TitleSlide, theme: string): DeckPreview {
+  const { title, pretitle, subtitle, headingLevel, section, backgroundImage, backgrounds } = slide
+  return {
+    theme,
+    title,
+    pretitle,
+    subtitle,
+    surface: headingLevel && surfaceLevel({ headingLevel, section }) as DeckPreview['surface'],
+    background: resolveSlideBackground({ headingLevel: headingLevel ?? 'h1', section, backgroundImage }, theme, backgrounds),
   }
 }
