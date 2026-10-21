@@ -15,7 +15,9 @@ vi.mock('../../layers/studio/server/utils/actor', async importOriginal => ({
 }))
 
 const { default: collab } = await import('../../layers/studio/server/routes/collab')
-const knock = (deck: string) => collab.upgrade!(new Request(`http://localhost/collab?deck=${deck}`) as any)
+function knock(deck: string, origin: string | null = 'http://localhost') {
+  return collab.upgrade!(new Request(`http://localhost/collab?deck=${deck}`, { headers: origin ? { origin } : {} }) as any)
+}
 
 beforeEach(async () => {
   await useDeckMeta().update('deck', { title: 'Deck' })
@@ -43,6 +45,12 @@ describe('collab room upgrade', () => {
     actor.current = { id: 2, login: 'collab', role: 'editor' }
     await useDeckMeta().softDelete('deck')
     await expect(knock('deck')).rejects.toMatchObject({ status: 404 })
+  })
+
+  it('refuses a socket opened by a page of another origin (403)', async () => {
+    await usePermissionStore().set('deck', 2, 'editor', 'boss')
+    await expect(knock('deck', 'https://other.example')).rejects.toMatchObject({ status: 403 })
+    await expect(knock('deck', null)).rejects.toMatchObject({ status: 403 })
   })
 
   it('refuses a malformed deck parameter (400)', async () => {

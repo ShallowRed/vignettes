@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { safeRedirectPath } from '#shared/access'
+
 definePageMeta({
   layout: false,
 })
@@ -15,10 +17,7 @@ const verifyApi = computed(() => {
   const api = route.query.api as string | undefined
   return api && api.startsWith('/api/') ? api : `/api/presentations/${slug.value}`
 })
-const returnTo = computed(() => {
-  const r = route.query.return as string | undefined
-  return r && r.startsWith('/') && !r.startsWith('//') ? r : `/slides/${slug.value}`
-})
+const returnTo = computed(() => safeRedirectPath(route.query.return, `/slides/${slug.value}`))
 
 const password = ref('')
 const errorMessage = ref('')

@@ -11,7 +11,7 @@
  * so we upsert the account with its role — mirroring the real GitHub handler.
  * `onConflictDoUpdate` keeps the role stable, hence one account per role.
  */
-import { RoleSchema } from '#shared/access'
+import { RoleSchema, safeRedirectPath } from '#shared/access'
 import { useUserStore } from '../../utils/users'
 
 // Deterministic, high ids that cannot collide with real GitHub user ids in dev.
@@ -39,8 +39,5 @@ export default defineEventHandler(async (event) => {
     user: { id: account.id, login: account.login, name: account.name, role },
   })
 
-  const redirect = typeof query.redirect === 'string' && query.redirect.startsWith('/') && !query.redirect.startsWith('//')
-    ? query.redirect
-    : '/'
-  return sendRedirect(event, redirect)
+  return sendRedirect(event, safeRedirectPath(query.redirect))
 })

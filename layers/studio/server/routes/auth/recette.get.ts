@@ -1,3 +1,4 @@
+import { safeRedirectPath } from '#shared/access'
 import { RECETTE_PERSONAS } from '#shared/recette/personas'
 import { assertRecette } from '../../utils/recette'
 import { useUserStore } from '../../utils/users'
@@ -27,8 +28,5 @@ export default defineEventHandler(async (event) => {
     await setUserSession(event, { user: { id: persona.id, login: persona.login, name: persona.name, role: persona.role } })
   }
 
-  const redirect = typeof query.redirect === 'string' && query.redirect.startsWith('/') && !query.redirect.startsWith('//')
-    ? query.redirect
-    : '/'
-  return sendRedirect(event, redirect)
+  return sendRedirect(event, safeRedirectPath(query.redirect))
 })

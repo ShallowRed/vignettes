@@ -80,6 +80,29 @@ test('every authoring component renders its own markup', async ({ page, browserN
   await expect.soft(slides.locator('aside.notes'), 'Notes stay out of the slide').toBeHidden()
 })
 
+test('the deck page sends the security headers', async ({ request, browserName }) => {
+  test.skip(browserName !== 'chromium', 'The response does not depend on the browser.')
+  const headers = (await request.get(DECK)).headers()
+
+  expect(headers['content-security-policy']).toContain('frame-ancestors \'self\'')
+  expect(headers['content-security-policy']).toMatch(/script-src 'self' 'nonce-[^']+'/)
+  expect(headers['x-content-type-options']).toBe('nosniff')
+  expect(headers['x-powered-by']).toBeUndefined()
+})
+
+test('every component renders within the policy of the page', async ({ page }) => {
+  await page.addInitScript(() => {
+    const reports: string[] = ((window as any).__violations = [])
+    document.addEventListener('securitypolicyviolation', event =>
+      reports.push(`${event.violatedDirective} ${event.blockedURI}`))
+  })
+  await page.goto(DECK)
+  await expect(page.locator('.reveal')).toHaveClass(/\bready\b/)
+  await expect(page.locator('.mermaid-container > svg')).toHaveCount(1)
+
+  expect(await page.evaluate(() => (window as any).__violations as string[])).toEqual([])
+})
+
 test.describe('below 435px, where Reveal lays the deck out as a scrolling page', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 

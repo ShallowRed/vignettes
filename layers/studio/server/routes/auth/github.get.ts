@@ -6,7 +6,7 @@
  * so a store failure falls through to onError (fail closed).
  */
 
-import { resolveRole } from '#shared/access'
+import { resolveRole, safeRedirectPath } from '#shared/access'
 import { serverConfig } from '../../utils/config'
 import { useUserStore } from '../../utils/users'
 
@@ -33,11 +33,9 @@ export default defineOAuthGitHubEventHandler({
       },
     })
 
-    // Honour a stashed destination, but only same-origin paths (avoid open-redirect).
     const intended = getCookie(event, 'auth_redirect')
     deleteCookie(event, 'auth_redirect')
-    const isSafe = intended && intended.startsWith('/') && !intended.startsWith('//')
-    return sendRedirect(event, isSafe ? intended : '/')
+    return sendRedirect(event, safeRedirectPath(intended))
   },
   onError(event, error) {
     console.error('GitHub OAuth error:', error)

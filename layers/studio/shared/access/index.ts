@@ -1,6 +1,7 @@
 export * from './decide'
 export * from './handles'
 export * from './permissions'
+export * from './redirect'
 export * from './resolve-role'
 export * from './role-config'
 export * from './roles'

@@ -122,3 +122,17 @@ When a semi-private deck is requested without its cookie, the gate answers 401 w
 ## Content token
 
 `NUXT_CONTENT_TOKEN` lets a script reach an instance without a browser session. `Authorization: Bearer <token>` is accepted as an `editor` actor by the markdown write path, `PUT /api/presentations/:slug`, `POST /api/presentations/:slug/publish` and `GET /api/presentations/:slug?draft`, which `scripts/content-import.ts --remote` uses, and by the content script routes above. Every other guard ignores it.
+
+## Response headers
+
+Every response carries `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` and a `Content-Security-Policy` limited to `frame-ancestors 'self'`, `base-uri 'self'`, `object-src 'none'` and `form-action 'self'`: the `/**` route rule of the studio layer sets them, from `server/utils/security-headers.ts`. The studio frames its own pages; to let another site frame a deck, add its origin to `frame-ancestors` in `BASE_DIRECTIVES` of that file. `/media` serves an SVG with its own sandboxing policy and as an attachment. A request received over https, directly or through a proxy that sets `X-Forwarded-Proto`, gets `Strict-Transport-Security: max-age=31536000`, which a proxy that sets its own value replaces.
+
+A rendered page replaces that policy with the one `pagePolicy` writes, `default-src 'self'` at its base. Its scripts are the build's files and the inline scripts of the renderer, which carry a nonce drawn for the response; a script written in a deck's Markdown has no nonce, and the browser blocks it. The speaker view of Reveal writes its inline script into a blank window that takes this policy: `SPEAKER_VIEW_SCRIPT_HASH` allows it, and a unit test fails when an update of reveal.js changes that script. `'unsafe-eval'` lets zod try `new Function` when it builds its first object schema, as `#shared/access` loads; `z.config({ jitless: true })` would come after that. Frames, images and media accept any https origin, since a deck embeds any page and the editor previews the deck as it is typed, and any port of `http://localhost` and `http://127.0.0.1`, for a Storybook or a page served on the presenter's machine. A deck that embeds another http page or image shows an empty frame or a missing image, and the browser console names the blocked address.
+
+## Request bodies
+
+A request body above 2 MB answers 413, and above 11 MB for `POST /api/media`. A chunked body, which declares no `Content-Length`, answers 411.
+
+## Requests from another origin
+
+A request other than `GET`, `HEAD` and `OPTIONS` that does not carry the content token, and the upgrade of `/collab`, answer 403 when they do not come from a page of the instance: `Origin` must equal the address of the request, or, when the browser sends no `Origin`, `Sec-Fetch-Site` must be `same-origin`. The server builds that address from `Host` and `X-Forwarded-Proto`, as nuxt-auth-utils builds the OAuth callback, and never reads `X-Forwarded-Host`. Configure the proxy to keep `Host` and to send `X-Forwarded-Proto: https`, one value; any other value refuses every write with 403.

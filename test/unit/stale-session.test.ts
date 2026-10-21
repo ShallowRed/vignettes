@@ -24,7 +24,7 @@ async function sessionCookie(id: number, login: string): Promise<string> {
   return `nuxt-session=${encodeURIComponent(sealed)}`
 }
 
-const knock = async (cookie: string) => collab.upgrade!(new Request('http://localhost/collab?deck=deck', { headers: { cookie } }) as any)
+const knock = async (cookie: string) => collab.upgrade!(new Request('http://localhost/collab?deck=deck', { headers: { cookie, origin: 'http://localhost' } }) as any)
 
 /** Eve's account, removed by the owner, then Zoe's, created after, with an editor grant on `deck`. */
 async function removeEveThenAddZoe() {

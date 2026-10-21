@@ -7,7 +7,8 @@ vi.stubGlobal('defineOAuthGitHubEventHandler', (handler: unknown) => handler)
 vi.stubGlobal('defineOAuthGoogleEventHandler', (handler: unknown) => handler)
 const sealed = vi.fn()
 vi.stubGlobal('setUserSession', sealed)
-vi.stubGlobal('getCookie', () => undefined)
+let stashed: string | undefined
+vi.stubGlobal('getCookie', () => stashed)
 vi.stubGlobal('deleteCookie', () => {})
 vi.stubGlobal('sendRedirect', (_event: unknown, to: string) => to)
 
@@ -22,6 +23,7 @@ const githubUser = { id: 4242, login: 'octocat', name: 'Octo Cat', avatar_url: '
 const googleUser = { sub: '108976543210987654321', email: 'Octo@Example.org', email_verified: true, name: 'Octo Cat', picture: 'https://pictures/octo' }
 
 beforeEach(() => {
+  stashed = undefined
   sealed.mockReset()
   upsertOAuthLogin.mockReset()
 })
@@ -42,5 +44,13 @@ describe.each([
     upsertOAuthLogin.mockRejectedValue(new Error('database is unavailable'))
     await expect(signIn()).rejects.toThrow('database is unavailable')
     expect(sealed).not.toHaveBeenCalled()
+  })
+
+  it('returns to the stashed path of this instance, and home for another site', async () => {
+    upsertOAuthLogin.mockResolvedValue({ id: 7, role: 'editor' })
+    stashed = '/edit/deck'
+    expect(await signIn()).toBe('/edit/deck')
+    stashed = '/\\other.example'
+    expect(await signIn()).toBe('/')
   })
 })

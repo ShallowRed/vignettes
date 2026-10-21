@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { SECURITY_HEADERS } from './server/utils/security-headers'
 
 /** One file per area of the interface, the same list for every locale. */
 const MESSAGE_FILES = ['common', 'catalog', 'deck', 'editor', 'reference', 'admin', 'auth', 'recette']
@@ -38,6 +39,11 @@ export default defineNuxtConfig({
   css: [fileURLToPath(new URL('./src/assets/css/tailwind.css', import.meta.url))],
   alias: {
     '#shared': fileURLToPath(new URL('./shared', import.meta.url)),
+  },
+  // Nitro sets route rule headers on every response it matches; a handler may
+  // replace one (https://nitro.build/config#routerules).
+  routeRules: {
+    '/**': { headers: SECURITY_HEADERS },
   },
   nitro: {
     // The starting points of a new deck, read by `server/utils/templates.ts`.

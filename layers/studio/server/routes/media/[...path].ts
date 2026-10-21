@@ -61,11 +61,13 @@ export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Content-Type', resolvedType)
   setResponseHeader(event, 'Content-Length', body.byteLength)
   setResponseHeader(event, 'Cache-Control', access.public ? 'public, max-age=31536000, immutable' : 'private, max-age=31536000, immutable')
-  // Uploaded files are user-supplied. Stop the browser from sniffing them into an
-  // executable type, and sandbox SVG (which can embed inline script) so nothing
-  // runs when one is opened as a top-level document. Inline <img> use is unaffected.
-  setResponseHeader(event, 'X-Content-Type-Options', 'nosniff')
-  if (resolvedType === 'image/svg+xml')
+  // Uploaded files are user-supplied; the route rule of every response stops the
+  // browser from sniffing them into an executable type. An SVG can embed inline
+  // script: it is sandboxed, and downloaded when opened as a top-level document.
+  // Inline <img> use is unaffected.
+  if (resolvedType === 'image/svg+xml') {
     setResponseHeader(event, 'Content-Security-Policy', 'default-src \'none\'; style-src \'unsafe-inline\'; sandbox')
+    setResponseHeader(event, 'Content-Disposition', 'attachment')
+  }
   return body
 })

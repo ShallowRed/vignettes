@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { safeRedirectPath } from '#shared/access'
+
 definePageMeta({
   layout: false,
 })
@@ -10,9 +12,9 @@ const error = computed(() => route.query.error as string | undefined)
 // Carry the intended destination across the OAuth round-trip: stash it in a
 // short-lived cookie the GitHub onSuccess handler reads to redirect back.
 const redirectCookie = useCookie('auth_redirect', { maxAge: 600, sameSite: 'lax' })
-const redirect = computed(() => route.query.redirect as string | undefined)
+const redirect = computed(() => route.query.redirect ? safeRedirectPath(route.query.redirect) : undefined)
 onMounted(() => {
-  if (redirect.value && redirect.value.startsWith('/'))
+  if (redirect.value)
     redirectCookie.value = redirect.value
 })
 
@@ -33,8 +35,7 @@ const noProvider = computed(() => providers.value && !providers.value.github && 
 // iteration on gated features logs in as a synthetic per-role account instead.
 // `import.meta.dev` is a build constant → this block is stripped from production.
 const isDev = import.meta.dev
-const devRedirect = computed(() =>
-  redirect.value?.startsWith('/') ? `&redirect=${encodeURIComponent(redirect.value)}` : '')
+const devRedirect = computed(() => redirect.value ? `&redirect=${encodeURIComponent(redirect.value)}` : '')
 const devRoles = computed(() => [
   { role: 'owner', label: t('common.role.owner'), icon: 'i-lucide-shield' },
   { role: 'editor', label: t('common.role.editor'), icon: 'i-lucide-pencil' },
