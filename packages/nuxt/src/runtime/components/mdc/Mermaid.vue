@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { MermaidConfig } from 'mermaid'
 import { inject, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { useDeckMessages } from '../../composables/useDeckMessages.ts'
+import { sharedFitScale } from '../../utils/diagram-fit.ts'
 
 const props = defineProps<{
   theme?: 'default' | 'dark' | 'forest' | 'neutral'
@@ -43,6 +45,90 @@ function applySteps(svgRoot: SVGElement, steps: string) {
       mark(el, step)
   })
 }
+
+// A `%%{init}%%` block in the diagram overrides these.
+const SLIDE_SEQUENCE = {
+  mirrorActors: false,
+  actorMargin: 30,
+  messageMargin: 14,
+  boxMargin: 4,
+  noteMargin: 6,
+  diagramMarginY: 4,
+  wrap: true,
+  width: 180,
+}
+
+// Lengths in the slide's own unit, before Reveal scales the slide to the screen.
+// The body ends at the bottom of the slide, less the bottom paddings: in the
+// scroll view the article takes the height of its content.
+function fitSlideDiagrams(slide: HTMLElement) {
+  if (!slide.offsetHeight)
+    return
+  const ratio = slide.getBoundingClientRect().height / slide.offsetHeight
+  const body = slide.querySelector<HTMLElement>('article') ?? slide
+  const padding = getComputedStyle(body)
+  const top = body.getBoundingClientRect().top / ratio + Number.parseFloat(padding.paddingTop)
+  const slideStyle = getComputedStyle(slide)
+  const bottom = slide.getBoundingClientRect().bottom / ratio - Number.parseFloat(slideStyle.paddingBottom)
+    - (body === slide ? 0 : Number.parseFloat(padding.paddingBottom))
+  const room = bottom - top
+  const used = usedHeight(laidOutChildren(body)) / ratio
+  const drawn = [...slide.querySelectorAll<HTMLElement>('.mermaid-container')]
+    .flatMap(box => [...box.querySelectorAll<SVGSVGElement>(':scope > svg')].map(svg => ({ box, svg })))
+  const rooms = drawn.map(({ box, svg }) => {
+    const { width, height } = svg.viewBox.baseVal
+    return {
+      width,
+      height,
+      availableWidth: box.clientWidth,
+      availableHeight: svg.getBoundingClientRect().height / ratio + room - used,
+    }
+  })
+  const scale = sharedFitScale(rooms)
+  for (const { svg } of drawn) {
+    svg.style.maxWidth = '100%'
+    svg.style.width = `${svg.viewBox.baseVal.width * scale}px`
+  }
+}
+
+// The boxes a parent lays out: MDC wraps slots in `display: contents` elements.
+function laidOutChildren(parent: Element): Element[] {
+  return [...parent.children].flatMap(el => getComputedStyle(el).display === 'contents' ? laidOutChildren(el) : [el])
+}
+
+// From the top margin of the highest block to the bottom margin of the lowest.
+function usedHeight(blocks: Element[]): number {
+  let top = Infinity
+  let bottom = -Infinity
+  for (const el of blocks) {
+    const rect = el.getBoundingClientRect()
+    if (!rect.height)
+      continue
+    const style = getComputedStyle(el)
+    top = Math.min(top, rect.top - Number.parseFloat(style.marginTop))
+    bottom = Math.max(bottom, rect.bottom + Number.parseFloat(style.marginBottom))
+  }
+  return bottom > top ? bottom - top : 0
+}
+
+let resizeObserver: ResizeObserver | undefined
+let mutationObserver: MutationObserver | undefined
+
+// Fits again when the slide is shown or resized, when a block changes size (an
+// image loads), and when the editor preview changes the content.
+function watchSlide(slide: HTMLElement) {
+  const body = slide.querySelector<HTMLElement>('article') ?? slide
+  const fit = () => {
+    fitSlideDiagrams(slide)
+    for (const el of [slide, body, ...laidOutChildren(body)])
+      resizeObserver?.observe(el)
+  }
+  resizeObserver = new ResizeObserver(fit)
+  mutationObserver = new MutationObserver(fit)
+  mutationObserver.observe(body, { childList: true, subtree: true, characterData: true })
+  fit()
+}
+
 const container = ref<HTMLElement | null>(null)
 const hiddenSlot = ref<HTMLElement | null>(null)
 const fullscreenOverlay = ref<HTMLElement | null>(null)
@@ -59,30 +145,26 @@ const dragStart = { x: 0, y: 0 }
 const MIN_SCALE = 0.25
 const MAX_SCALE = 5
 
-function openFullscreen() {
-  if (!container.value)
+// The overlay content exists once `isFullscreen` renders it.
+async function openFullscreen() {
+  const svg = container.value?.querySelector('svg')
+  if (!svg)
     return
-  const svg = container.value.querySelector('svg')
-  if (!svg || !fullscreenContent.value)
+  isFullscreen.value = true
+  await nextTick()
+  if (!fullscreenContent.value)
     return
 
-  const clone = svg.cloneNode(true) as SVGElement
+  const clone = svg.cloneNode(true) as SVGSVGElement
   clone.style.maxWidth = 'none'
-  clone.style.width = ''
+  clone.style.width = `${svg.viewBox.baseVal.width}px`
   clone.style.height = ''
-  fullscreenContent.value.innerHTML = ''
-  fullscreenContent.value.appendChild(clone)
+  fullscreenContent.value.replaceChildren(clone)
 
   scale.value = 1
   panX.value = 0
   panY.value = 0
-  updateTransform()
-
-  isFullscreen.value = true
-
-  nextTick(() => {
-    resetTransform()
-  })
+  resetTransform()
 }
 
 function closeFullscreen() {
@@ -108,9 +190,10 @@ function resetTransform() {
     return
 
   const spaceRect = space.getBoundingClientRect()
-  const svgRect = svg.getBoundingClientRect()
-  const svgWidth = svgRect.width / scale.value
-  const svgHeight = svgRect.height / scale.value
+  // The layout size, measured before the transform scales it.
+  const svgStyle = getComputedStyle(svg)
+  const svgWidth = Number.parseFloat(svgStyle.width)
+  const svgHeight = Number.parseFloat(svgStyle.height)
 
   const fitScale = Math.min(
     (spaceRect.width * 0.9) / svgWidth,
@@ -203,6 +286,9 @@ function onOverlayClick(e: MouseEvent) {
   }
 }
 
+// The print view waits for every `data-rendering` element to lose the attribute.
+const rendering = ref(true)
+
 onMounted(async () => {
   document.addEventListener('keydown', onKeyDown)
   document.addEventListener('mousemove', onMouseMove)
@@ -210,6 +296,15 @@ onMounted(async () => {
   document.addEventListener('touchmove', onTouchMove, { passive: false })
   document.addEventListener('touchend', onTouchEnd)
 
+  try {
+    await draw()
+  }
+  finally {
+    rendering.value = false
+  }
+})
+
+async function draw() {
   await nextTick()
 
   if (!container.value || !hiddenSlot.value)
@@ -250,7 +345,7 @@ onMounted(async () => {
   const slideToken = (name: string, fallback: string) => slide.getPropertyValue(name).trim() || fallback
   const font = { fontFamily: style.fontFamily, fontSize: style.fontSize }
 
-  mermaid.initialize({
+  const config: MermaidConfig = {
     startOnLoad: false,
     // Without a named theme, the diagram takes the colors of the deck's theme.
     theme: props.theme || 'base',
@@ -268,15 +363,22 @@ onMounted(async () => {
           edgeLabelBackground: token('--surface', '#ffffff'),
         },
     fontFamily: style.fontFamily,
+    sequence: SLIDE_SEQUENCE,
     // Deck source is author-editable and rendered for every viewer, so keep
     // Mermaid's DOMPurify pass on: strict encodes HTML in labels and disables
     // click directives.
     securityLevel: 'strict',
-  })
+  }
 
   try {
-    const { svg } = await mermaid.render(diagramId, code)
+    const { svg } = await inTurn(() => {
+      mermaid.initialize(config)
+      return mermaid.render(diagramId, code)
+    })
     container.value.innerHTML = svg
+    const section = container.value.closest('section')
+    if (section)
+      watchSlide(section)
     if (props.steps) {
       const svgRoot = container.value.querySelector('svg')
       if (svgRoot)
@@ -294,9 +396,11 @@ onMounted(async () => {
     pre.textContent = code
     container.value.replaceChildren(pre)
   }
-})
+}
 
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  mutationObserver?.disconnect()
   document.removeEventListener('keydown', onKeyDown)
   document.removeEventListener('mousemove', onMouseMove)
   document.removeEventListener('mouseup', onMouseUp)
@@ -305,8 +409,23 @@ onBeforeUnmount(() => {
 })
 </script>
 
+<script lang="ts">
+// Mermaid keeps one configuration for the page: each diagram sets it with the
+// font of its slide, then renders, before the next diagram sets it.
+let renderQueue: Promise<unknown> = Promise.resolve()
+
+function inTurn<T>(task: () => Promise<T>): Promise<T> {
+  const run = renderQueue.then(task)
+  renderQueue = run.catch(() => {})
+  return run
+}
+</script>
+
 <template>
-  <div class="mermaid-wrapper">
+  <div
+    class="mermaid-wrapper"
+    :data-rendering="rendering || undefined"
+  >
     <div
       ref="hiddenSlot"
       style="display: none;"
@@ -324,6 +443,7 @@ onBeforeUnmount(() => {
         :aria-label="messages.enlargeDiagram"
         :title="messages.fullscreen"
         @click="openFullscreen"
+        @keydown.space.stop
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -519,8 +639,17 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(4px);
 }
 
-.mermaid-diagram:hover .expand-button {
+.mermaid-diagram:hover .expand-button,
+.expand-button:focus-visible {
   opacity: 1;
+}
+
+/* On a touch screen the button stays shown, 44 pixels wide at any slide scale. */
+@media (hover: none) {
+  .expand-button {
+    opacity: 1;
+    zoom: calc(1.375 / var(--slide-scale, 1));
+  }
 }
 
 .expand-button:hover {

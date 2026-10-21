@@ -119,6 +119,8 @@ Perfection is reached when there is nothing left to take away.
 
 `SplitSlide` puts its own text beside a media pane inside the body, where a `:layout` splits the whole slide: use it for one block among others on a slide that keeps its normal structure. It takes `src`, `type` (`iframe` or `image`), `ratio` (`1:1`, `1:2`, `2:1`, `1:3`, `3:1`), `reverse` to put the media first, `fit` and `lightbox`.
 
+`Mermaid` draws a diagram in the colors and the font of the theme, and reduces it, without enlarging it, to fit the width of its column and the height the other blocks of the slide leave; the diagrams of one slide take the same reduction. For sequence diagrams it sets `mirrorActors: false`, `width: 180`, `actorMargin: 30`, `messageMargin: 14`, `boxMargin: 4`, `noteMargin: 6`, `diagramMarginY: 4` and `wrap: true`. A `%%{init: …}%%` block at the top of the diagram overrides these values.
+
 Two more modules extend the set: `@vignettes/schemas` for the explanation kit, `@vignettes/storybook` for live story embeds. A tenant declares its own components the same way, with `registerDeckComponents` from `@vignettes/core/deck`.
 
 ## Addresses and bound attributes

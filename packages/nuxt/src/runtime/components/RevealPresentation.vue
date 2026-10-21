@@ -187,6 +187,24 @@ function framesSettled(frames: HTMLIFrameElement[]): Promise<unknown> {
   ])
 }
 
+// A component drawn after its mount, such as a Mermaid diagram, carries
+// `data-rendering` until it is drawn.
+function drawingsSettled(root: HTMLElement): Promise<unknown> {
+  const drawn = new Promise<void>((resolve) => {
+    const pending = () => root.querySelector('[data-rendering]') !== null
+    if (!pending())
+      return resolve()
+    const observer = new MutationObserver(() => {
+      if (pending())
+        return
+      observer.disconnect()
+      resolve()
+    })
+    observer.observe(root, { subtree: true, childList: true, attributeFilter: ['data-rendering'] })
+  })
+  return Promise.race([drawn, new Promise(resolve => setTimeout(resolve, FRAMES_MAX_MS))])
+}
+
 // Chrome prints a sheet of exactly the page size when its sides are a multiple
 // of 8px, and rounds other sizes up, which leaves a white line along the page
 // background. The pages grow to the next multiple of 8px, filled by their
@@ -209,8 +227,8 @@ function fitPagesToSheets(root: HTMLElement) {
 // Reveal's `ready`: the frames load and the dialog opens on `pdf-ready`, when the
 // pages exist. A theme sizes a slide at 100% of its parent, and a print page is
 // the slide plus its margin, so each slide gets its own height back first, and
-// the frames load at their printed size. The dialog waits for the fonts, or the
-// PDF takes the fallback font.
+// the frames load at their printed size. The dialog waits for the diagrams, and
+// for the fonts, or the PDF takes the fallback font.
 async function printWhenPaged() {
   const instance = getInstance()
   if (!instance || !revealContainer.value)
@@ -223,7 +241,7 @@ async function printWhenPaged() {
   const frames = Array.from(revealContainer.value.querySelectorAll('iframe'))
   const settled = framesSettled(frames)
   frames.forEach(loadFrame)
-  await Promise.all([document.fonts.ready, settled])
+  await Promise.all([document.fonts.ready, settled, drawingsSettled(revealContainer.value)])
   if (!printSupported)
     return
   preparingPrint.value = false

@@ -69,8 +69,9 @@ Une légende
 
 ::Mermaid
 ```mermaid
-flowchart LR
-  source[Markdown] --> diapo[Diapositive]
+flowchart TD
+  source[Markdown] --> decoupe[Découpage] --> analyse[Analyse MDC] --> composants[Composants]
+  composants --> theme[Thème] --> reveal[Reveal] --> diapo[Diapositive] --> pdf[Export PDF]
 ```
 ::
 

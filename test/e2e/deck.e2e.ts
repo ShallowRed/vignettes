@@ -103,6 +103,59 @@ test('every component renders within the policy of the page', async ({ page }) =
   expect(await page.evaluate(() => (window as any).__violations as string[])).toEqual([])
 })
 
+// The fixture diagram is taller than the slide: drawn at its own size, it
+// would pass the bottom of the article.
+for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+  test(`a Mermaid diagram ends above the bottom of the slide at ${viewport.width} × ${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.goto(`${DECK}#/mermaid`)
+    const svg = page.locator('section#mermaid .mermaid-container > svg')
+    await expect(svg).toHaveCount(1)
+
+    await expect.poll(() => svg.evaluate((el) => {
+      const section = el.closest('section')!
+      const article = el.closest('article')!
+      const ratio = section.getBoundingClientRect().height / section.offsetHeight
+      const paddings = Number.parseFloat(getComputedStyle(section).paddingBottom) + Number.parseFloat(getComputedStyle(article).paddingBottom)
+      return Math.round(section.getBoundingClientRect().bottom - paddings * ratio - el.getBoundingClientRect().bottom)
+    })).toBeGreaterThanOrEqual(0)
+  })
+}
+
+test('the enlarge button opens a Mermaid diagram on a click and on Enter', async ({ page }) => {
+  await page.goto(`${DECK}#/mermaid`)
+  const button = page.locator('section#mermaid .expand-button')
+  const overlay = page.locator('.mermaid-fullscreen-content > svg')
+  await expect(page.locator('section#mermaid .mermaid-container > svg')).toHaveCount(1)
+
+  await page.locator('section#mermaid .mermaid-diagram').hover()
+  await button.click()
+  await expect(overlay).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(overlay).toHaveCount(0)
+
+  await button.focus()
+  await page.keyboard.press('Enter')
+  await expect(overlay).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await button.focus()
+  await page.keyboard.press('Space')
+  await expect(overlay).toBeVisible()
+  await expect(page).toHaveURL(/#\/mermaid$/)
+})
+
+test('the print view opens the dialog once every diagram is drawn', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'The print view opens the dialog in Chromium only.')
+  await page.addInitScript(() => {
+    window.print = () => {
+      (window as any).__pendingAtPrint = document.querySelectorAll('[data-rendering]').length
+    }
+  })
+  await page.goto(`${DECK}?print-pdf`)
+  await expect.poll(() => page.evaluate(() => (window as any).__pendingAtPrint)).toBe(0)
+})
+
 test.describe('below 435px, where Reveal lays the deck out as a scrolling page', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
