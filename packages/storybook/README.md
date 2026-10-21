@@ -1,6 +1,6 @@
 # @vignettes/storybook
 
-Embeds a live Storybook story in a slide. The deck stays in step with the design system: no screenshot to regenerate, the story renders from its own source.
+Embeds a live Storybook story in a slide. The slide loads the story from the published Storybook, and shows the component as that Storybook renders it when the deck opens.
 
 ```bash
 pnpm add @vignettes/storybook
@@ -50,19 +50,17 @@ The value is the Storybook story id, `<componentId>--<storyName>`. `lightbox="tr
 
 `StoryFrame` takes `story`, or `src` for an explicit URL, and:
 
-| prop | meaning |
-|---|---|
-| `type` | `iframe` or `image`; without it, a story or a URL is a page, and a URL ending with an image extension an image |
-| `ratio` | named (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or raw, `16/9` |
-| `fit` | `cover`, the default, or `contain` |
-| `previewWidth` | logical iframe width before scaling, `1440` by default; raise it to show more of the page |
-| `raw` | render at native size, without scaling |
-| `label` | caption under the frame, or use the default slot |
-| `lightbox` | click to open the screen full-screen |
-| `title` | accessible iframe title, or image alt |
+- `type` is `iframe` or `image`. Without it, a story or a URL renders as a page, and a URL ending with an image extension as an image.
+- `ratio` is a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a raw ratio such as `16/9`.
+- `fit` is `cover`, the default, or `contain`.
+- `previewWidth` is the logical iframe width before scaling, `1440` by default; raise it to show more of the page.
+- `raw` renders the frame at native size, without scaling.
+- `label` is the caption under the frame; the default slot takes a caption too.
+- `lightbox` opens the screen full-screen on click.
+- `title` is the accessible iframe title, or the image alt.
 
-An iframe renders at its logical width and is scaled down to fit, so the whole page is visible rather than its top-left corner. `StoryFrame` also works on its own in a slide body, without `Screens`.
+An iframe renders at its logical width and the frame scales it down to fit, so the frame shows the whole page. `StoryFrame` also works on its own in a slide body, without `Screens`.
 
 ## Frozen decks
 
-`@vignettes/freeze` copies a built Storybook into the bundle and rewrites the embeds to point at that copy, so a frozen deck keeps rendering its stories without the design system's server.
+`@vignettes/freeze` copies a built Storybook into the bundle and rewrites the embeds to point at that copy, so a frozen deck renders its stories from the bundle.

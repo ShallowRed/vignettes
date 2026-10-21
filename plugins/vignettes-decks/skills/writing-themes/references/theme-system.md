@@ -6,11 +6,9 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 ## Layers
 
-1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Themes build on this layer and never replace it. Its Reveal patches display inline `code` as an `inline-block` box, and the renderer puts the code and the punctuation next to it in a `code-group` span that the kit keeps on one line: the segment moves to the next line whole, with its punctuation, and breaks inside its box only when it is longer than the line.
-2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. Made to be extended, by a brand and by the application's own `dsfr` theme. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
-
-   The package paints no slide surface, so a brand decides its own. `themes/dsfr/` adds flat surfaces from the DSFR palette: the title slide on `blue-france-975`, section dividers on `blue-france-sun-113` with light text, content slides on white, painted on Reveal's background layer (see "Slides by role").
-3. **Themes and brands**: `themes/<name>/` in the application (`dsfr`, `minimal`) and `themes/<name>/` in the content space (`NUXT_CONTENT_DIR`, `presentations/` by default) for a tenant's brands. A brand extends the DSFR base or the engine alone.
+- The engine, package `@vignettes/theme-kit` (`packages/theme-kit/`), holds the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Every theme builds on this layer. Its Reveal patches display inline `code` as an `inline-block` box, and the renderer puts the code and the punctuation next to it in a `code-group` span that the kit keeps on one line: the segment moves to the next line whole, with its punctuation, and breaks inside its box only when it is longer than the line.
+- The DSFR base, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`), is the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. A brand extends it, and so does the application's own `dsfr` theme. The build copies the Marianne font files from the `@gouvfr/dsfr` npm package. `@vignettes/theme-dsfr` leaves the surface of each slide role to the theme that extends it. `themes/dsfr/` paints flat surfaces from the DSFR palette on Reveal's background layer (see "Slides by role"): the title slide on `blue-france-975`, section dividers on `blue-france-sun-113` with light text, content slides on white.
+- The application's themes (`dsfr`, `minimal`) are in `themes/<name>/`, and a tenant's brands in `themes/<name>/` of the content space (`NUXT_CONTENT_DIR`, `presentations/` by default). A brand extends the DSFR base or the engine alone.
 
 ## Manifest
 
@@ -30,17 +28,15 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 }
 ```
 
-| Field | Role |
-|-------|------|
-| `name` | Equals the directory name; used in `theme:` frontmatter and as `/themes/<name>.css` |
-| `extends` | Theme this one builds on; checked at build time |
-| `aliases` | Other frontmatter names that resolve to this theme. A tenant uses it to point a name already present in its decks to its brand. An alias that shadows another theme's name is reported at build time |
-| `lang`, `parser`, `reveal` | Deck defaults the theme carries (language for orthotypography, slide parser, Reveal config) |
-| `backgrounds` | Background image of the title slide (`h1`), the sections (`h2`), the content slides (`h3`) and the others (`default`), relative to the theme directory or absolute URLs |
-| `entry` | SCSS entry, `<name>.scss` by default |
-| `assets` | Extra directories copied under `public/themes/<name>/`: `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root |
-| `code` | Code theme of the deck blocks by default: a name of `CODE_THEMES` (`nuit`, `sombre`, `clair`), or its properties |
-| `preview` | How the catalog draws the card of a deck on this theme, without loading the theme's stylesheet |
+- `name` equals the directory name. A deck names the theme with it in `theme:`, and the stylesheet is `/themes/<name>.css`.
+- `extends` names the theme this one builds on; the build checks it.
+- `aliases` lists other frontmatter names that resolve to this theme. A tenant uses it to point a name already present in its decks to its brand. The build reports an alias that shadows another theme's name.
+- `lang`, `parser` and `reveal` are the deck defaults the theme carries: the language for orthotypography, the slide parser and the Reveal config.
+- `backgrounds` gives the background image of the title slide (`h1`), the sections (`h2`), the content slides (`h3`) and the others (`default`), as a path relative to the theme directory or an absolute URL.
+- `entry` is the SCSS entry, `<name>.scss` by default.
+- `assets` lists extra directories copied under `public/themes/<name>/`, as `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root.
+- `code` is the default code theme of the deck blocks: a name of `CODE_THEMES` (`nuit`, `sombre`, `clair`), or its properties.
+- `preview` describes how the catalog draws the card of a deck on this theme, without loading the theme's stylesheet.
 
 `preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names an SCSS entry declaring the font faces, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/fonts` is the value the DSFR theme uses. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another role, and `titleGradient: 'none'` removes the gradient there.
 
@@ -60,32 +56,26 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 ## Tenant themes at runtime
 
-Themes of the content space are not part of the image. `mise run theme:push -- <name>[,<name>] --apply` compiles them locally and uploads `themes/<name>.css`, `themes/<name>/assets/`, and `themes/<name>/tokens.json` to the bucket, then rebuilds `themes/index.json` from every published theme. On a deployment, `server/utils/themes.ts` reads that index (cached for a minute; `POST /api/admin/themes/reload` forces it), merges it with the themes found on disk in the content space (development), and applies the result with `setThemeRegistry`. The `theme-registry` server middleware hands the registry to page requests and the universal plugin `src/plugins/theme-registry.ts` seeds the client with it, so both sides resolve names, aliases and backgrounds identically. `/themes/**` (`server/routes/themes/[...path].ts`) streams the files from the bucket for names that have no static file under `public/themes/`.
+Themes of the content space reach a deployment through the bucket. `mise run theme:push -- <name>[,<name>] --apply` compiles them locally and uploads `themes/<name>.css`, `themes/<name>/assets/`, and `themes/<name>/tokens.json` to the bucket, then rebuilds `themes/index.json` from every published theme. On a deployment, `server/utils/themes.ts` reads that index (cached for a minute; `POST /api/admin/themes/reload` forces it), merges it with the themes found on disk in the content space (development), and applies the result with `setThemeRegistry`. The `theme-registry` server middleware hands the registry to page requests and the universal plugin `src/plugins/theme-registry.ts` seeds the client with it, so both sides resolve names, aliases and backgrounds identically. `/themes/**` (`server/routes/themes/[...path].ts`) streams the files from the bucket for names that have no static file under `public/themes/`.
 
 ## Renaming a theme in a deployed instance
 
-A deck's theme is written in the frontmatter of each of its published versions, of its draft and of its snapshots, and in the `theme` column the catalog reads. `mise run theme:rename -- <from> <to>` rewrites all of them in one instance, through the app container, listing the decks it would touch before `--apply` writes anything. The rule of what a theme declaration looks like lives in `scripts/lib/theme-rename.ts`.
+A deck's theme is written in the frontmatter of each of its published versions, of its draft and of its snapshots, and in the `theme` column the catalog reads. `mise run theme:rename -- <from> <to>` rewrites all of them in one instance, through the app container, listing the decks it would touch before `--apply` writes anything. `scripts/lib/theme-rename.ts` defines what a theme declaration looks like.
 
 ## The semantic token contract
 
-Code that must not care which theme is active (the engine layer, MDC components such as `Highlight.vue`) references these custom properties only. Each theme sets them.
+Code that works under any theme (the engine layer, MDC components such as `Highlight.vue`) reads these custom properties only, and each theme sets them:
 
-| Token | Purpose |
-|-------|---------|
-| `--accent` | Primary color (links, dividers, accents) |
-| `--accent-soft` | Lighter accent (hover tints) |
-| `--accent-bg` | Very light tint (callout backgrounds) |
-| `--surface` | Page background |
-| `--surface-contrast` | Inverse surface (dark blocks, code panels) |
-| `--on-contrast` | Text color on `--surface-contrast` |
-| `--text-default` | Body text |
-| `--text-title` | Headings, strong text |
-| `--text-mention` | Muted text (small, captions) |
-| `--border` | Outline of a box drawn by a component |
-| `--radius` | Corners of that box |
-| `--shadow` | Elevation of that box |
+- `--accent` is the primary color, for links, dividers and accents.
+- `--accent-soft` is a lighter accent, for hover tints.
+- `--accent-bg` is a very light tint, for callout backgrounds.
+- `--surface` is the page background.
+- `--surface-contrast` is the inverse surface, for dark blocks and code panels.
+- `--on-contrast` is the text color on `--surface-contrast`.
+- `--text-default` colors the body text, `--text-title` the headings and strong text, `--text-mention` the muted text (small print, captions).
+- `--border`, `--radius` and `--shadow` give the outline, the corners and the elevation of a box drawn by a component.
 
-`packages/theme-kit/_semantic-tokens.scss` provides defaults so a theme still renders if it forgets one.
+`packages/theme-kit/_semantic-tokens.scss` gives each token a default value, which applies when a theme omits it.
 
 The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
 
@@ -95,7 +85,7 @@ A deck sets the colors of its code blocks in its frontmatter (`code: sombre`, or
 
 A deck without a code theme takes the one its theme names in its manifest (`"code": "clair"`). `clair` is the light palette: one DSFR illustrative tone per kind of value, each with a contrast of 5:1 or more against the block. When the theme names none, the deck carries neither the class nor the properties and its tokens keep the colors of the highlight theme.
 
-`reveal--code-block` is added only when the frontmatter of the deck names a `background`: the renderer then paints the block. The code theme of a theme never adds it, because the theme draws its own block.
+`RevealPresentation` adds `reveal--code-block` when the frontmatter of the deck names a `background`, and the renderer then draws the block. With a code theme named in a manifest, the theme's stylesheet draws the block.
 
 A theme reads `--code-size` as a minimum for its own size, and `--code-min-size`, in slide units, as the smallest size of a code block (`0px` in the kit; `15px` in `dsfr` and `minimal`, where a block in a narrow column stays readable): `font-size: max(var(--code-size, 0px), 0.7em, var(--code-min-size))`.
 
@@ -155,13 +145,13 @@ Add `theme.json`, run `pnpm build:themes`, and use `theme: mytheme` in a deck. `
 
 ## The fallback theme
 
-A deck whose frontmatter declares no `theme:` renders in the fallback theme of the instance. The create form preselects that theme and a catalog card previews such a deck with it. `runtimeConfig.public.defaultTheme` names it (`dsfr` in this application) and `NUXT_PUBLIC_DEFAULT_THEME` overrides it at run time. Without a host setting, `@vignettes/nuxt` falls back to `minimal`. A name that matches no registered theme is reported at boot under `[themes]` and ignored.
+A deck whose frontmatter declares no `theme:` renders in the fallback theme of the instance. The create form preselects that theme and a catalog card previews such a deck with it. `runtimeConfig.public.defaultTheme` names it (`dsfr` in this application) and `NUXT_PUBLIC_DEFAULT_THEME` overrides it at run time. Without a host setting, `@vignettes/nuxt` falls back to `minimal`. When that name matches no registered theme, the server ignores it and writes a `[themes]` warning at boot that names the theme applied.
 
 ## Slides by role
 
 The engine tags each `<section>` with the class of its role, which `surfaceLevel` of `packages/core/src/deck/model.ts` gives: `slide-h1` for the title slide, `slide-h2` for a section divider, `slide-h3` for a content slide. A section divider is a `##` slide made of its heading and at most one paragraph of 140 characters or fewer, besides its speaker notes and its annotations other than `:layout` (`isSectionSlide` of `packages/core/src/deck/split.ts`). A `##` slide with more content is a content slide and carries `slide-h3`; the manifest's `h2` and `h3` backgrounds follow the same roles. The flex skeleton comes from `packages/theme-kit/_slide-structure.scss`; themes set sizes and colors, and backgrounds come from the manifest.
 
-A section that holds vertical slides is wrapped in Reveal's stack. That wrapper carries `stack-h1` / `stack-h2` instead of a `slide-` class, and the section's own content is the first of its vertical slides, keeping its own `slide-` class. So a rule written as `.reveal section.slide-h2 h3` styles the divider alone and cannot reach the slides nested under it. Target `stack-h2` to style the wrapper itself.
+A section that holds vertical slides is wrapped in Reveal's stack. That wrapper carries `stack-h1` or `stack-h2` and no `slide-` class, and the section's own content is the first of its vertical slides, with its own `slide-` class. So a rule written as `.reveal section.slide-h2 h3` styles the divider alone and cannot reach the slides nested under it. Target `stack-h2` to style the wrapper itself.
 
 A flat color surface goes on Reveal's background layer: Reveal creates one `.slide-background` per slide under `.reveal .backgrounds`, copies the slide's classes onto it, and fills the screen with it whatever the aspect ratio. A rule such as `.reveal .slide-background.slide-h2 { background-color: … }` colors the divider edge to edge, and Reveal reads that computed color to mark the slide and the deck `has-dark-background`, which switches its controls to light on its own. Painting the section itself leaves the viewport color visible around the slide on screens of another ratio. The rule leaves out the parent of the layer: the print view moves the layer into the `.pdf-page` of its slide, and the scroll view, under 435 pixels wide, into the `.scroll-page-content` of its slide.
 

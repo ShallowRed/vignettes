@@ -2,7 +2,7 @@
 
 # @vignettes/theme-kit
 
-The engine CSS layer that every [Vignettes](https://github.com/ShallowRed/vignettes) theme builds on. It is pure SCSS with no JavaScript and no dependencies.
+The engine CSS layer that every [Vignettes](https://github.com/ShallowRed/vignettes) theme builds on. It is a set of SCSS files, and Sass is the one tool it needs.
 
 A Vignettes theme sets colors, typography and sizes. This package provides what every theme shares: the semantic token contract, the Reveal.js patches, the slide skeleton, the media-layout grid, the spacing scale and the quicklink styles.
 
@@ -33,7 +33,7 @@ pnpm add -D @vignettes/theme-kit sass
 .reveal h1 { font-size: 3em; }
 ```
 
-Compile it with Sass and its package importer, which is what resolves `pkg:`:
+Compile it with Sass and its package importer, which resolves `pkg:`:
 
 ```js
 import * as sass from 'sass'
@@ -49,21 +49,15 @@ const { css } = sass.compile('mytheme.scss', {
 
 Code that works under any theme reads these custom properties only. A theme sets them, and this package ships defaults so a theme that omits one still renders.
 
-| Token | Purpose |
-|-------|---------|
-| `--accent` | Primary color: links, dividers, accents |
-| `--accent-soft` | Lighter accent, for hover tints |
-| `--accent-bg` | Very light tint, for callout backgrounds |
-| `--surface` | Page background |
-| `--surface-contrast` | Inverse surface: dark blocks, code panels |
-| `--on-contrast` | Text color on `--surface-contrast` |
-| `--text-default` | Body text |
-| `--text-title` | Headings and strong text |
-| `--text-mention` | Muted text: captions, small print |
-| `--border` | Outline of a box drawn by a component |
-| `--radius` | Corners of that box |
-| `--shadow` | Elevation of that box |
-| `--code-min-size` | Smallest size of a code block, in slide units; `0px` by default |
+- `--accent` is the primary color, for links, dividers and accents.
+- `--accent-soft` is a lighter accent, for hover tints.
+- `--accent-bg` is a very light tint, for callout backgrounds.
+- `--surface` is the page background.
+- `--surface-contrast` is the inverse surface, for dark blocks and code panels.
+- `--on-contrast` is the text color on `--surface-contrast`.
+- `--text-default` colors the body text, `--text-title` the headings and strong text, `--text-mention` the muted text (captions, small print).
+- `--border`, `--radius` and `--shadow` give the outline, the corners and the elevation of a box drawn by a component.
+- `--code-min-size` is the smallest size of a code block, in slide units, `0px` by default.
 
 The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
 
@@ -85,7 +79,7 @@ Applies the nine color tokens to the page background, the text, the headings, th
 @use 'pkg:@vignettes/theme-kit/presets/layout';
 ```
 
-The type scale and the spacing of the French state design system, without its colors. Use it to keep those proportions under your own palette; [@vignettes/theme-dsfr](https://www.npmjs.com/package/@vignettes/theme-dsfr) is the full theme.
+Gives a theme the type scale and the spacing of the French state design system, and leaves the colors to the theme. Use it to keep those proportions under your own palette; [@vignettes/theme-dsfr](https://www.npmjs.com/package/@vignettes/theme-dsfr) is the full theme.
 
 ## Reference
 

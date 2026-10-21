@@ -58,7 +58,7 @@ One entry per source
 
 Nodes and edges are fragments in writing order, each edge appearing with the later of its nodes; `step="2"` on a node or an edge moves it in that order.
 
-`Area` draws a named region behind the cards, so an arrow leaving it reads as data going from one machine to another. It takes `at` and `span` like a node, a `picto`, and `label` as `legend` (the title on the top border) or `header` (a centred band above the cards). Regions are not fragments.
+`Area` draws a named region behind the cards, so an arrow leaving it reads as data going from one machine to another. It takes `at` and `span` like a node, a `picto`, and `label` as `legend` (the title on the top border) or `header` (a centred band above the cards). Regions show with the slide, outside the fragment order.
 
 ## JsonTour: a file read beside the description of what it holds
 
