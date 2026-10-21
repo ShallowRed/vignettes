@@ -27,7 +27,9 @@ const outsider = (over: Record<string, unknown> = {}) => asUser(13, 'outsider', 
 const expiredDeckEditor = (over: Record<string, unknown> = {}) => asUser(14, 'expired', over)
 const expiredFolderEditor = (over: Record<string, unknown> = {}) => asUser(15, 'expfolder', over)
 const temporary = (over: Record<string, unknown> = {}) => asUser(17, 'temp', over)
-const inDays = (n: number) => new Date(Math.floor(Date.now() / 1000 + n * 86_400) * 1000)
+// One instant for the file, so a limit and a request built from it compare equal.
+const NOW = Date.now()
+const inDays = (n: number) => new Date(Math.floor(NOW / 1000 + n * 86_400) * 1000)
 
 const SHARERS = { owner, editor, deckEditor, folderEditor }
 const REFUSED = [
