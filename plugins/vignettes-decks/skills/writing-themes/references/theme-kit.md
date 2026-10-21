@@ -63,6 +63,7 @@ Code that works under any theme reads these custom properties only. A theme sets
 | `--border` | Outline of a box drawn by a component |
 | `--radius` | Corners of that box |
 | `--shadow` | Elevation of that box |
+| `--code-min-size` | Smallest size of a code block, in slide units; `0px` by default |
 
 The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
 

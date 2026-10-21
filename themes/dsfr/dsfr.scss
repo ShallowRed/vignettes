@@ -3,6 +3,10 @@
 // text, content slides on white.
 @use 'pkg:@vignettes/theme-dsfr';
 
+:root {
+  --code-min-size: 15px;
+}
+
 // Reveal draws each slide's surface on a background layer that fills the screen
 // and carries the slide's own classes. Painting that layer keeps the color
 // edge to edge, and Reveal reads it to mark the slide `has-dark-background`,

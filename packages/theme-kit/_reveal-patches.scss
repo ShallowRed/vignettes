@@ -37,3 +37,36 @@
 html.reveal-print * {
   print-color-adjust: exact;
 }
+
+// `reveal.css` sets the text color of `.reveal-viewport`, a class the `.reveal`
+// element also carries, with the specificity of a theme's `.reveal` rule and
+// after it.
+.reveal.reveal-viewport {
+  color: var(--text-default);
+}
+
+// Reveal draws the slide number in Helvetica on a grey box.
+:root .reveal .slide-number {
+  font-family: inherit;
+  background-color: transparent;
+  color: var(--text-mention);
+}
+
+// Inline code moves to the next line as a whole box, with its padding on both
+// sides; a segment longer than the line breaks inside its own box. The renderer
+// puts the code and the punctuation next to it in a `.code-group`,
+// kept on one line.
+.reveal :not(pre) > code {
+  display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.reveal .code-group {
+  white-space: nowrap;
+
+  > code {
+    white-space: normal;
+  }
+}

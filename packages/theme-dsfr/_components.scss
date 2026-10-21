@@ -110,7 +110,7 @@
   margin: 16px auto;
   text-align: left;
   // `--code-size` : corps plancher du thème de code du deck (frontmatter `code`).
-  font-size: max(var(--code-size, 0px), 0.62em);
+  font-size: max(var(--code-size, 0px), 0.62em, var(--code-min-size));
   font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
   font-weight: 500;
   line-height: 1.55;
@@ -129,13 +129,12 @@
   background: var(--code-background, #1b1b35) !important;
 }
 
-// Code inline dans la prose : visible et surligné (graisse + fond bleuté).
 .reveal code {
   font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
-  font-weight: 600;
-  color: var(--dsfr-blue-france-main-525, #000091);
-  background: #e3e3fd;
-  padding: 0.15em 0.45em;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 0 0.45em;
   border-radius: 4px;
   font-size: 0.9em;
 }

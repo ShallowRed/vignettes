@@ -38,13 +38,13 @@
   }
 
   // `min-height: 0` holds the body to the slide's height, so a figure can shrink
-  // its image; `safe` starts a body taller than the slide at its top.
+  // its image.
   article {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    justify-content: safe center;
+    justify-content: start;
   }
 }
 

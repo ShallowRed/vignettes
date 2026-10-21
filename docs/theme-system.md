@@ -4,7 +4,7 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 ## Layers
 
-1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Themes build on this layer and never replace it.
+1. **Engine**, package `@vignettes/theme-kit` (`packages/theme-kit/`): the CSS every theme needs to work with the Vue components: the semantic token contract, Reveal patches, the MDC `display: contents` bridge, the media-layout grid, the `slide-h1/h2/h3` flex skeleton, quicklinks, and the `layout` scale preset. Themes build on this layer and never replace it. Its Reveal patches display inline `code` as an `inline-block` box, and the renderer puts the code and the punctuation next to it in a `code-group` span that the kit keeps on one line: the segment moves to the next line whole, with its punctuation, and breaks inside its box only when it is longer than the line.
 2. **DSFR base**, package `@vignettes/theme-dsfr` (`packages/theme-dsfr/`): the French state design system as a brand-neutral theme: palette, Marianne typography, `layout` scale, light surfaces. Made to be extended, by a brand and by the application's own `dsfr` theme. The Marianne font files come from the `@gouvfr/dsfr` npm package at build time.
 
    The package paints no slide surface, so a brand decides its own. `themes/dsfr/` adds flat surfaces from the DSFR palette: the title slide on `blue-france-975`, section dividers on `blue-france-sun-113` with light text, content slides on white, painted on Reveal's background layer (see "Slides by role").
@@ -95,7 +95,7 @@ A deck without a code theme takes the one its theme names in its manifest (`"cod
 
 `reveal--code-block` is added only when the frontmatter of the deck names a `background`: the renderer then paints the block. The code theme of a theme never adds it, because the theme draws its own block.
 
-A theme reads `--code-size` as a minimum for its own size: `font-size: max(var(--code-size, 0px), 0.7em)`.
+A theme reads `--code-size` as a minimum for its own size, and `--code-min-size`, in slide units, as the smallest size of a code block (`0px` in the kit; `15px` in `dsfr` and `minimal`, where a block in a narrow column stays readable): `font-size: max(var(--code-size, 0px), 0.7em, var(--code-min-size))`.
 
 ## Compilation
 

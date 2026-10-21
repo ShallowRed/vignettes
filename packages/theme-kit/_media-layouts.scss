@@ -11,6 +11,9 @@
   section[class*="layout-media"] {
     display: grid !important;
     grid-template-columns: 1fr 1.5fr;
+    // A row of bounded height lets `max-height: 100%` limit a tall image to the
+    // height of the slide.
+    grid-template-rows: minmax(0, 1fr);
     gap: 2.5rem;
     align-items: stretch;
   }

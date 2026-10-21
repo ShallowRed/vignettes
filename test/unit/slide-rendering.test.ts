@@ -31,6 +31,23 @@ describe('keepKnownComponents', () => {
     expect(keepKnownComponents(tree, [])).toEqual(root(el('div', [el('p', [text('title')]), el('p', [text('body')])])))
   })
 
+  it('groups an inline code with the punctuation next to it', () => {
+    const code = (value: string) => el('code', [text(value)])
+    const group = (...children: MDCNode[]) => el('span', children, { class: 'code-group' })
+    const tree = root(
+      el('p', [text('lance '), code('a'), text(', puis '), code('b'), text('.')]),
+      el('li', [text('le thème ('), code('c'), text(') et « '), code('d'), text(' » : '), code('e'), text(' :')]),
+      el('p', [code('f'), text(' suivi')]),
+      el('pre', [code('g'), text('.')]),
+    )
+    expect(keepKnownComponents(tree, [])).toEqual(root(
+      el('p', [text('lance '), group(code('a'), text(',')), text(' puis '), group(code('b'), text('.'))]),
+      el('li', [text('le thème '), group(text('('), code('c'), text(')')), text(' et '), group(text('« '), code('d'), text(' »')), text(' : '), group(code('e'), text(' :'))]),
+      el('p', [code('f'), text(' suivi')]),
+      el('pre', [code('g'), text('.')]),
+    ))
+  })
+
   it('keeps html elements and the inside of an svg', () => {
     const tree = root(el('svg', [el('path', [], { d: 'M0 0' })]), el('table', [el('tr', [el('td', [text('1')])])]))
     expect(keepKnownComponents(tree, [])).toEqual(tree)

@@ -70,6 +70,52 @@ function rendersAsIs(node: MDCElement, keys: Set<string>): boolean {
   return node.tag === 'svg' || node.tag === 'binding' || htmlTags.has(node.tag) || keys.has(componentKey(node.tag))
 }
 
+// Punctuation next to an inline `code`, with no space or with the space French
+// puts there: an opening bracket or quote before it, a closing one or a mark after it.
+const PUNCTUATION_BEFORE_RE = /[([{«“‘][ \u00A0\u202F]?$/
+const PUNCTUATION_AFTER_RE = /^(?:[ \u00A0\u202F]?[:;!?»]+|[.,…)\]}’”'"]+)/
+
+function textValue(node: MDCNode | undefined): string | undefined {
+  return node?.type === 'text' ? node.value : undefined
+}
+
+/**
+ * The children with each inline `code` and the punctuation next to it in a
+ * `code-group` span, which the theme kit keeps on one line: a line break
+ * leaves no mark alone at the start of a line.
+ */
+function groupCodeWithPunctuation(children: MDCNode[]): MDCNode[] {
+  const nodes = [...children]
+  const out: MDCNode[] = []
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]!
+    const previous = textValue(out.at(-1)) ?? ''
+    const next = textValue(nodes[i + 1]) ?? ''
+    const before = node.type === 'element' && node.tag === 'code' ? previous.match(PUNCTUATION_BEFORE_RE)?.[0] ?? '' : ''
+    const after = node.type === 'element' && node.tag === 'code' ? next.match(PUNCTUATION_AFTER_RE)?.[0] ?? '' : ''
+    if (!before && !after) {
+      out.push(node)
+      continue
+    }
+    const group: MDCNode[] = [node]
+    if (before) {
+      out.pop()
+      if (previous.length > before.length)
+        out.push({ type: 'text', value: previous.slice(0, -before.length) })
+      group.unshift({ type: 'text', value: before })
+    }
+    if (after) {
+      group.push({ type: 'text', value: after })
+      if (next.length > after.length)
+        nodes[i + 1] = { type: 'text', value: next.slice(after.length) }
+      else
+        i++
+    }
+    out.push({ type: 'element', tag: 'span', props: { class: 'code-group' }, children: group })
+  }
+  return out
+}
+
 /**
  * The tree with each component outside `known` replaced by its content. MDC
  * resolves an unknown name among the global components of the host application
@@ -85,8 +131,12 @@ export function keepKnownComponents(tree: MDCRoot, known: Iterable<string>): MDC
     const node = safeNode(unsafe)
     if (node?.type !== 'element')
       return node ? [node] : []
-    if (rendersAsIs(node, keys))
-      return [{ ...node, children: node.tag === 'svg' ? safeNodes(node.children) : visitAll(node.children, node.tag) }]
+    if (rendersAsIs(node, keys)) {
+      if (node.tag === 'svg')
+        return [{ ...node, children: safeNodes(node.children) }]
+      const children = visitAll(node.children, node.tag)
+      return [{ ...node, children: node.tag === 'pre' ? children : groupCodeWithPunctuation(children) }]
+    }
     const tag = INLINE_PARENTS.has(parentTag ?? '') ? 'span' : 'div'
     // The named slots of the component become plain content.
     const content = node.children.flatMap(child =>

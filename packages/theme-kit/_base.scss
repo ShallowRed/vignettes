@@ -9,7 +9,6 @@
 // theme; `:root` raises the specificity above it.
 :root .reveal-viewport {
   background: var(--surface);
-  color: var(--text-default);
 }
 
 .reveal {
@@ -50,7 +49,7 @@
   }
 
   :not(pre) > code {
-    padding: 0.05em 0.3em;
+    padding: 0 0.3em;
     border-radius: 0.2em;
     color: var(--accent);
     background: var(--accent-bg);
