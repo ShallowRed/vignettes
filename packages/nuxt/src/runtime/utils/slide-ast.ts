@@ -264,16 +264,15 @@ function groupByPosition(sources: SlideSource[]): SlideSource[][] {
   return groups
 }
 
-// Heading decks: a stack keeps the whole section in its body.
+// Heading decks: a stack carries its vertical slides only.
 async function headingSlide(group: SlideSource[], definitions: string): Promise<Slide> {
   const parts = await Promise.all(group.map(source => parseChunk(source.text, definitions)))
   if (parts.length === 1)
     return createSlide(parts[0]!)
-  const children = parts.flat()
   return {
-    body: { type: 'root', children },
+    body: { type: 'root', children: [] },
     verticalSlides: parts.map(part => createSlide(part)),
-    headingLevel: getHeadingLevel(children),
+    headingLevel: getHeadingLevel(parts.flat()),
   }
 }
 

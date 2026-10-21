@@ -172,4 +172,9 @@ describe('unknownDeckComponents', () => {
     registerDeckComponents([{ name: 'Callout' }])
     expect(await unknownIn('# Title\n\n:subtitle{text="Sub"}\n\n::Callout\nKept\n::')).toEqual([])
   })
+
+  it('knows the annotations of a vertical slide and names its unknown components', async () => {
+    const raw = '## Section\n\n:slide-background{image="/a.svg"}\n\n### Sub\n\n:layout{name="media-right"}\n:quicklink{text="Back" href="/"}\n\n::Callout\nDropped\n::'
+    expect(await unknownIn(raw)).toEqual(['callout'])
+  })
 })
