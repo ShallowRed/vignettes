@@ -1,9 +1,9 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the snippet placeholder syntax */
-import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, registerDeckComponents, resetDeckComponents } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, registerDeckComponents, resetDeckComponents, RevealConfigSchema } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, describe, expect, it } from 'vitest'
-import { annotationEntries, componentEntries, SLIDE_TEMPLATES } from '../../layers/studio/src/config/editor-reference'
+import { annotationEntries, componentEntries, FRONTMATTER_KEYS, SLIDE_TEMPLATES } from '../../layers/studio/src/config/editor-reference'
 
 afterEach(() => resetDeckComponents())
 
@@ -46,6 +46,13 @@ describe('componentEntries', () => {
 describe('annotationEntries', () => {
   it('offers each annotation of the contract under its tag', () => {
     expect(annotationEntries('en').map(entry => entry.label)).toEqual(DECK_ANNOTATIONS.map(annotation => `:${annotation.tag}`))
+  })
+})
+
+describe('frontmatter keys', () => {
+  it('offers under `reveal` only options that reach Reveal', () => {
+    const offered = FRONTMATTER_KEYS.find(entry => entry.key === 'reveal')!.children!.map(child => child.key)
+    expect(offered.filter(key => !Object.hasOwn(RevealConfigSchema.shape, key))).toEqual([])
   })
 })
 

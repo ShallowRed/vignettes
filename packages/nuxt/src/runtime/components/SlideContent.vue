@@ -2,9 +2,10 @@
 import type { MDCRoot } from '@nuxtjs/mdc'
 import type { PresentationMetadata, Slide } from '../types/presentation.ts'
 import MDCRenderer from '@nuxtjs/mdc/runtime/components/MDCRenderer.vue'
-import { EMBED_SANDBOX, resolveSlideMedia } from '@vignettes/core/render'
+import { isDeckUrl } from '@vignettes/core/deck'
+import { resolveSlideMedia } from '@vignettes/core/render'
 import { computed } from 'vue'
-import { useFrameSource } from '../composables/useFrameSource.ts'
+import { useFrameAttributes } from '../composables/useFrameAttributes.ts'
 import { getLayoutStrategy } from '../config/layouts.ts'
 import { keepKnownComponents, quicklinkParts } from '../utils/slide-rendering.ts'
 
@@ -14,7 +15,7 @@ const props = defineProps<{
   mdcComponents: Record<string, any>
 }>()
 
-const frameSource = useFrameSource()
+const frameAttributes = useFrameAttributes()
 
 const layoutStrategy = computed(() => getLayoutStrategy(props.slide.layout))
 
@@ -27,12 +28,18 @@ const header = computed(() => rendered(props.slide.header))
 const pretitle = computed(() => rendered(props.slide.pretitle))
 const subtitle = computed(() => rendered(props.slide.subtitle))
 
+// MDCRenderer reads `component` of its data as the root element of the slide
+// and `mdc.components` as a map of tags: a deck's frontmatter gives neither.
+const renderData = computed(() => Object.fromEntries(
+  Object.entries(props.metadata ?? {}).filter(([key]) => key !== 'component' && key !== 'mdc'),
+))
+
 // null when the slide has no media.
 const mediaParts = computed(() =>
   resolveSlideMedia(props.slide.layoutProps, { storybook: props.metadata?.storybook }))
 
 const parsedQuicklink = computed(() => {
-  if (!props.slide.quicklink)
+  if (!props.slide.quicklink || !isDeckUrl(props.slide.quicklink.href))
     return null
   return {
     ...props.slide.quicklink,
@@ -45,7 +52,7 @@ const parsedQuicklink = computed(() => {
   <template v-if="layoutStrategy === 'full'">
     <MDCRenderer
       :body="body"
-      :data="metadata"
+      :data="renderData"
       :components="mdcComponents"
     />
   </template>
@@ -59,14 +66,14 @@ const parsedQuicklink = computed(() => {
         >
           <MDCRenderer
             :body="pretitle"
-            :data="metadata"
+            :data="renderData"
             :components="mdcComponents"
           />
         </div>
         <div class="slide-heading">
           <MDCRenderer
             :body="header"
-            :data="metadata"
+            :data="renderData"
             :components="mdcComponents"
           />
         </div>
@@ -76,7 +83,7 @@ const parsedQuicklink = computed(() => {
         >
           <MDCRenderer
             :body="subtitle"
-            :data="metadata"
+            :data="renderData"
             :components="mdcComponents"
           />
         </div>
@@ -85,7 +92,7 @@ const parsedQuicklink = computed(() => {
       <header v-else-if="header?.children?.length">
         <MDCRenderer
           :body="header"
-          :data="metadata"
+          :data="renderData"
           :components="mdcComponents"
         />
       </header>
@@ -93,7 +100,7 @@ const parsedQuicklink = computed(() => {
       <article v-if="body?.children?.length">
         <MDCRenderer
           :body="body"
-          :data="metadata"
+          :data="renderData"
           :components="mdcComponents"
         />
       </article>
@@ -119,9 +126,8 @@ const parsedQuicklink = computed(() => {
     >
       <iframe
         v-if="mediaParts.type === 'iframe'"
-        v-bind="frameSource(mediaParts.src)"
+        v-bind="frameAttributes(mediaParts.src)"
         :title="mediaParts.title"
-        :sandbox="EMBED_SANDBOX"
         frameborder="0"
         allowfullscreen
       />

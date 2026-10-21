@@ -1,4 +1,4 @@
-import { componentMentions, splitSlides } from '@vignettes/core/deck'
+import { attributeMentions, componentMentions, splitSlides } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
@@ -81,5 +81,31 @@ describe('componentMentions', () => {
   it('leaves out the frontmatter, fenced code and inline code', () => {
     const raw = '---\ntitle: ":Callout"\n---\n\n```md\n::Callout\n```\n\nWrite `::Callout` to\n\n::Callout\n::'
     expect(componentMentions(raw, ['Callout']).map(mention => mention.line)).toEqual([11])
+  })
+})
+
+describe('attributeMentions', () => {
+  it('places each refused address and binding by line and column', () => {
+    const raw = [
+      '# Title',
+      '::Iframe{src="javascript:alert(1)" title="t"}',
+      '[a](javascript:alert(2)) ![b](/b.png) [c]{:href="storybook"}',
+      ':layout{name="media-right" :src=\'"data:text/html,x"\'}',
+      '::Image{src="data:image/png;base64,AA" :preview="true"}',
+      '::Iframe{:src=\'"javascript:alert(\\\'x\\\')"\'}',
+    ].join('\n')
+    const found = attributeMentions(raw).map(({ line, column, length, reason }) => [line, raw.split('\n')[line - 1]!.slice(column, column + length), reason])
+    expect(found).toEqual([
+      [2, 'src="javascript:alert(1)"', 'url'],
+      [3, ':href="storybook"', 'binding'],
+      [3, 'javascript:alert(2)', 'url'],
+      [4, ':src=\'"data:text/html,x"\'', 'url'],
+      [6, ':src=\'"javascript:alert(\\\'x\\\')"\'', 'url'],
+    ])
+  })
+
+  it('leaves out the frontmatter and fenced code', () => {
+    const raw = '---\nstorybook: javascript:x\n---\n\n```md\n::Iframe{src="javascript:x"}\n```\n'
+    expect(attributeMentions(raw)).toEqual([])
   })
 })

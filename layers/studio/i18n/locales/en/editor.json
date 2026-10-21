@@ -131,7 +131,11 @@
       "unknownComponent": "“{name}” is not a known component: the preview and the presentation show its content without formatting. The help lists the components.",
       "unknownComponentShort": "Line {line}: unknown component “{name}”",
       "parseFailed": "The text could not be parsed",
-      "more": "{n} more"
+      "more": "{n} more",
+      "refusedUrl": "Address refused: a deck takes an https:// or http:// address, or a path on this site.",
+      "refusedUrlShort": "Line {line}: address refused",
+      "refusedBinding": "Attribute refused: an attribute written with “:” takes a JSON value, such as true, 2 or \"text\", and a deck ignores v-bind, v-on, {'@'} and v-model.",
+      "refusedBindingShort": "Line {line}: attribute “{name}” refused"
     }
   }
 }

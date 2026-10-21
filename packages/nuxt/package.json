@@ -12,7 +12,7 @@
     "./slide-map": "./src/runtime/utils/slide-map.ts",
     "./presentation-data": "./src/runtime/composables/usePresentation.ts",
     "./deck-messages": "./src/runtime/composables/useDeckMessages.ts",
-    "./frame-source": "./src/runtime/composables/useFrameSource.ts",
+    "./frame-attributes": "./src/runtime/composables/useFrameAttributes.ts",
     "./injection-keys": "./src/runtime/config/injection-keys.ts"
   },
   "main": "./src/module.ts",

@@ -2,4 +2,4 @@
 // re-exported here for `~/utils` imports.
 
 export type { StoryUrlOptions } from '@vignettes/core/render'
-export { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '@vignettes/core/render'
+export { buildStoryUrl, resolveAspectRatio } from '@vignettes/core/render'

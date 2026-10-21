@@ -131,7 +131,11 @@
       "unknownComponent": "« {name} » n'est pas un composant connu : l'aperçu et la présentation affichent son contenu sans mise en forme. L'aide liste les composants.",
       "unknownComponentShort": "Ligne {line} : composant « {name} » inconnu",
       "parseFailed": "Le texte n'a pas pu être analysé",
-      "more": "{n} autre | {n} autre | {n} autres"
+      "more": "{n} autre | {n} autre | {n} autres",
+      "refusedUrl": "Adresse refusée : une présentation accepte une adresse en https:// ou http://, ou un chemin de ce site.",
+      "refusedUrlShort": "Ligne {line} : adresse refusée",
+      "refusedBinding": "Attribut refusé : un attribut précédé de « : » prend une valeur JSON, comme true, 2 ou \"texte\", et une présentation ignore v-bind, v-on, {'@'} et v-model.",
+      "refusedBindingShort": "Ligne {line} : attribut « {name} » refusé"
     }
   }
 }

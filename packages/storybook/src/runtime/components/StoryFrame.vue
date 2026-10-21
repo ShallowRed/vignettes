@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { inferMediaType } from '@vignettes/core/render'
 import { useDeckMessages } from '@vignettes/nuxt/deck-messages'
-import { useFrameSource } from '@vignettes/nuxt/frame-source'
+import { useFrameAttributes } from '@vignettes/nuxt/frame-attributes'
 import { STORYBOOK_BASE } from '@vignettes/nuxt/injection-keys'
 import { computed, inject } from 'vue'
-import { buildStoryUrl, EMBED_SANDBOX, resolveAspectRatio } from '../storybook.ts'
+import { buildStoryUrl, resolveAspectRatio } from '../storybook.ts'
 
 // Embeds a Storybook story (by id, resolved against the deck's `storybook` root) or an
 // arbitrary iframe/image. Iframes render at a logical width (`previewWidth`) and scale down
@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const messages = useDeckMessages()
-const frameSource = useFrameSource()
+const frameAttributes = useFrameAttributes()
 
 const storybookBase = inject(STORYBOOK_BASE, undefined)
 
@@ -94,9 +94,8 @@ const scaledFrameStyle = computed(() =>
         class="story-frame__lightbox"
       >
         <iframe
-          v-bind="frameSource(resolvedSrc)"
+          v-bind="frameAttributes(resolvedSrc)"
           :title="props.title || props.label || 'Story'"
-          :sandbox="EMBED_SANDBOX"
           frameborder="0"
           data-preload
         />
@@ -105,9 +104,8 @@ const scaledFrameStyle = computed(() =>
 
       <iframe
         v-else-if="isIframe"
-        v-bind="frameSource(resolvedSrc)"
+        v-bind="frameAttributes(resolvedSrc)"
         :title="props.title || props.label || 'Story'"
-        :sandbox="EMBED_SANDBOX"
         frameborder="0"
         allowfullscreen
         data-preload

@@ -1,4 +1,4 @@
-import { parseDeckMeta, readDeckFile } from '@vignettes/core/deck'
+import { deckRevealOptions, parseDeckMeta, readDeckFile } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 
 describe('parseDeckMeta', () => {
@@ -36,5 +36,12 @@ describe('readDeckFile', () => {
 
   it('reports a block that is not YAML without a key', () => {
     expect(readDeckFile('---\ntitle: [Bilan\n---\n')).toMatchObject({ valid: false, issues: [{ key: '' }] })
+  })
+})
+
+describe('deckRevealOptions', () => {
+  it('keeps the options the schema names and leaves out the others', () => {
+    expect(deckRevealOptions({ width: 1200, dependencies: [{ src: 'data:text/javascript,alert(1)' }] })).toEqual({ width: 1200 })
+    expect(deckRevealOptions(undefined)).toEqual({})
   })
 })

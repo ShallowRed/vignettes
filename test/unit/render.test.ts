@@ -7,6 +7,10 @@ import {
 import { describe, expect, it } from 'vitest'
 
 describe('mergeRevealConfig', () => {
+  it('keeps an option the studio adds, such as the editor\'s `scrollActivationWidth: null`', () => {
+    expect(mergeRevealConfig({ scrollActivationWidth: null } as never)).toHaveProperty('scrollActivationWidth', null)
+  })
+
   it('returns the defaults when no deck config is given', () => {
     expect(mergeRevealConfig()).toEqual(DEFAULT_REVEAL_CONFIG)
   })

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { PublicationStatusSchema } from '../status.ts'
 import { splitFrontmatter } from './frontmatter.ts'
+import { DECK_URL_MESSAGE, isDeckUrl } from './urls.ts'
 
 /**
  * Single source of truth for a deck's validated config: centralizes validation,
@@ -8,12 +9,16 @@ import { splitFrontmatter } from './frontmatter.ts'
  * enums. Unknown keys pass through (`.catchall`) to keep authoring freedom.
  */
 
-/** Reveal.js options forwarded to `Reveal.initialize()`. Loose by design. */
+/**
+ * Reveal.js options a deck gives to `Reveal.initialize()`. An unknown key
+ * passes validation, and `deckRevealOptions` leaves it out.
+ */
 export const RevealConfigSchema = z
   .object({
     hash: z.boolean().optional(),
     center: z.boolean().optional(),
     transition: z.string().optional(),
+    backgroundTransition: z.string().optional(),
     slideNumber: z.union([z.string(), z.boolean()]).optional(),
     embedded: z.boolean().optional(),
     margin: z.coerce.number().optional(),
@@ -58,7 +63,8 @@ export const DeckMetaSchema = z
     /** Free string; existence is checked separately (isKnownTheme) so a CSS-only theme isn't rejected. */
     theme: z.string().optional(),
     parser: z.enum(['heading', 'separator']).optional(),
-    storybook: z.string().optional(),
+    /** Root of the live story embeds. */
+    storybook: z.string().refine(value => isDeckUrl(value), { message: DECK_URL_MESSAGE }).optional(),
     backgrounds: ThemeBackgroundsSchema.optional(),
     reveal: RevealConfigSchema.optional(),
     /** Code theme: a name from CODE_THEMES, or theme properties with an optional base `theme`. */
@@ -77,8 +83,20 @@ export const DeckMetaSchema = z
   .catchall(z.unknown())
 
 export type RevealConfig = z.infer<typeof RevealConfigSchema>
+
 export type ThemeBackgrounds = z.infer<typeof ThemeBackgroundsSchema>
 export type DeckMeta = z.infer<typeof DeckMetaSchema>
+
+/**
+ * The Reveal options of a deck's frontmatter that `RevealConfigSchema` names.
+ * Reveal reads other options too, and one of them, `dependencies`, loads a
+ * script.
+ */
+export function deckRevealOptions(reveal: unknown): Partial<RevealConfig> {
+  if (!reveal || typeof reveal !== 'object')
+    return {}
+  return Object.fromEntries(Object.entries(reveal).filter(([key]) => Object.hasOwn(RevealConfigSchema.shape, key)))
+}
 
 export interface ParseResult {
   /** On failure, falls back to the raw input (non-destructive). */

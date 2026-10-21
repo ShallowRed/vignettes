@@ -1,5 +1,6 @@
 import type { AssetRef, DeckModel, Slide } from '../deck/model.ts'
 import type { DeckMeta, ThemeBackgrounds } from '../deck/schema.ts'
+import { isDeckUrl } from '../deck/urls.ts'
 import { getThemeTokens } from '../theme/tokens.ts'
 import { buildStoryUrl } from './storybook.ts'
 
@@ -41,7 +42,7 @@ export function getMediaFit(layoutProps?: Record<string, string>): 'cover' | 'co
   return layoutProps?.fit === 'contain' ? 'contain' : 'cover'
 }
 
-/** Returns null when the slide has no media. */
+/** Returns null when the slide has no media, or when its address is outside `isDeckUrl`. */
 export function resolveSlideMedia(
   layoutProps: Record<string, string> | undefined,
   opts: { storybook?: string } = {},
@@ -56,6 +57,8 @@ export function resolveSlideMedia(
     return null
 
   const type = inferMediaType(src, lp.type, Boolean(storySrc))
+  if (!isDeckUrl(src, type === 'image' ? 'image' : 'page'))
+    return null
   const fit = getMediaFit(lp)
   // MDC kebab-cases camelCase attribute keys, so `previewWidth="1600"` arrives as
   // `preview-width` — check that first, with camel/lower forms as fallbacks.

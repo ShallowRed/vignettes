@@ -121,6 +121,14 @@ Perfection is reached when there is nothing left to take away.
 
 Two more modules extend the set: `@vignettes/schemas` for the explanation kit, `@vignettes/storybook` for live story embeds. A tenant declares its own components the same way, with `registerDeckComponents` from `@vignettes/core/deck`.
 
+## Addresses and bound attributes
+
+An address in a deck, for `storybook`, a `src`, an `href`, a markdown link or `:slide-background`, is an `http://` or `https://` URL or a path on the site that shows the deck. An image also takes a `data:image` URL; a component lists its image props under `images` in its declaration. `isDeckUrl` of `@vignettes/core/deck` holds the rule: the schema reports another address, the parser and the renderer remove it, and the editor marks it in the `{…}` attributes of a component, an annotation or a span, and in an inline markdown link or image.
+
+An attribute written with a colon, as `:preview="true"`, takes a JSON value: `true`, `2`, `"text"`, an array or an object. The parser removes a bound attribute whose value is not JSON, and the directives `v-bind`, `v-on`, `@` and `v-model`.
+
+Each frame of a slide carries a sandbox and the `strict-origin-when-cross-origin` referrer policy. A frame keeps the origin of its page, except a file an account uploaded to the site (`/media/`, see `isUploadedFile`), which runs in an opaque origin, without its cookies and storage.
+
 ## Themes
 
 A theme is a directory with a `theme.json` manifest and an SCSS entry that builds on `@vignettes/theme-kit`. The module compiles the themes it discovers in the application and in the content space to `public/themes/` when Nuxt starts, in development and for a build, and watches them in development. An application that compiles its themes in its own build script sets `vignettes: { compileThemes: false }`. `docs/theme-system.md` of the repository holds the reference.

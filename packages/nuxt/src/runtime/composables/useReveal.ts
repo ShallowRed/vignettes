@@ -1,7 +1,8 @@
 import type { RevealApi } from 'reveal.js'
 import type { Ref } from 'vue'
 import type { RevealConfig } from '../types/presentation.ts'
-import { EMBED_SANDBOX, mergeRevealConfig, scrollViewLinks } from '@vignettes/core/render'
+import { isDeckUrl } from '@vignettes/core/deck'
+import { EMBED_REFERRER_POLICY, embedSandbox, mergeRevealConfig, scrollViewLinks } from '@vignettes/core/render'
 
 export function useReveal(
   container: Ref<HTMLElement | null>,
@@ -13,7 +14,8 @@ export function useReveal(
 
   // Reveal's preview overlay creates its own iframe that escapes the sandbox we
   // put on inline embeds; without this a link clicked inside the lightbox could
-  // navigate the whole window away. Apply EMBED_SANDBOX and reload under the policy.
+  // navigate the whole window away. Apply the sandbox of inline embeds and
+  // reload under the policy.
   function sandboxOverlayIframes() {
     const root = container.value
     if (!root)
@@ -22,12 +24,15 @@ export function useReveal(
       '.r-overlay iframe:not([data-embed-sandboxed])',
     )
     iframes.forEach((iframe) => {
-      iframe.setAttribute('sandbox', EMBED_SANDBOX)
+      const src = iframe.getAttribute('src') ?? ''
+      iframe.setAttribute('sandbox', embedSandbox(src, window.location.origin))
+      iframe.setAttribute('referrerpolicy', EMBED_REFERRER_POLICY)
       iframe.setAttribute('data-embed-sandboxed', '')
       // Re-trigger the load so the sandbox policy applies to the document.
-      const src = iframe.getAttribute('src')
-      if (src)
+      if (src && isDeckUrl(src))
         iframe.setAttribute('src', src)
+      else
+        iframe.removeAttribute('src')
     })
   }
 

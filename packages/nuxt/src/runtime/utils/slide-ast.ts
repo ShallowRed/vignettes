@@ -10,6 +10,7 @@ import {
   splitSlides,
   STRIPPED_ANNOTATION_TAGS,
 } from '@vignettes/core/deck'
+import { safeNodes } from './slide-rendering.ts'
 
 // Renames the MDC components whose tag the HTML pass would rewrite.
 function remarkRewrittenComponentTags() {
@@ -233,7 +234,7 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
 // break as frontmatter; the frontmatter is split off before the slides.
 async function parseChunk(text: string, definitions = ''): Promise<any[]> {
   const ast = await parseDeckMarkdown(`\n${text.trim()}${definitions}`)
-  return ast.body?.children ?? []
+  return safeNodes(ast.body?.children ?? [])
 }
 
 const FENCE_RE = /^ {0,3}(?:`{3,}|~{3,})/

@@ -1,4 +1,5 @@
 import type { ParserId } from './parser.ts'
+import { readAttribute } from './attributes.ts'
 import { componentKey } from './components.ts'
 
 /**
@@ -258,16 +259,11 @@ const DIRECTIVE_RE = /(^|[\s([])(:+)([a-z][\w-]*)/gi
 const INLINE_CODE_RE = /(`+)[^`]+\1/g
 
 /**
- * The places where the components named in `names` are written, outside the
- * frontmatter, fenced code and inline code. Names compare as `componentKey`
- * compares them.
+ * The lines of a deck outside the frontmatter and fenced code, with inline code
+ * blanked so the columns stay those of the source.
  */
-export function componentMentions(raw: string, names: Iterable<string>): ComponentMention[] {
-  const wanted = new Set([...names].map(componentKey))
-  if (!wanted.size)
-    return []
+function* proseLines(raw: string): Generator<{ line: number, prose: string }> {
   const lines = raw.split('\n')
-  const mentions: ComponentMention[] = []
   let fence: string | undefined
   for (let index = frontmatterLineCount(raw); index < lines.length; index++) {
     const text = lines[index]!.replace(/\r$/, '')
@@ -281,11 +277,75 @@ export function componentMentions(raw: string, names: Iterable<string>): Compone
       fence = fenceOpen[1]
       continue
     }
-    const prose = text.replace(INLINE_CODE_RE, code => ' '.repeat(code.length))
+    yield { line: index + 1, prose: text.replace(INLINE_CODE_RE, code => ' '.repeat(code.length)) }
+  }
+}
+
+/**
+ * The places where the components named in `names` are written, outside the
+ * frontmatter, fenced code and inline code. Names compare as `componentKey`
+ * compares them.
+ */
+export function componentMentions(raw: string, names: Iterable<string>): ComponentMention[] {
+  const wanted = new Set([...names].map(componentKey))
+  if (!wanted.size)
+    return []
+  const mentions: ComponentMention[] = []
+  for (const { line, prose } of proseLines(raw)) {
     for (const match of prose.matchAll(DIRECTIVE_RE)) {
       const [, before, colons, name] = match
       if (wanted.has(componentKey(name!)))
-        mentions.push({ name: name!, line: index + 1, column: match.index + before!.length, length: colons!.length + name!.length })
+        mentions.push({ name: name!, line, column: match.index + before!.length, length: colons!.length + name!.length })
+    }
+  }
+  return mentions
+}
+
+/** An attribute written in the source that `readAttribute` refuses. */
+export interface AttributeMention {
+  name: string
+  reason: 'url' | 'binding'
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of the attribute, and length of its text. */
+  column: number
+  length: number
+}
+
+const ATTRIBUTE_BLOCK_RE = /\{([^{}]*)\}/g
+// A quoted value keeps its backslash escapes, as `\'` in `'"x\'y"'`.
+const ATTRIBUTE_RE = /(^|\s)([:@]?[\w:.-]+)=(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|([^\s"']+))/g
+const BLOCK_TAG_RE = /:+([a-z][\w-]*)(?:\[[^\]]*\])?$/i
+// The destination of a markdown link keeps one level of balanced parentheses.
+const MARKDOWN_LINK_RE = /(!?)\[[^\]]*\]\(\s*<?((?:[^\s()<>]|\([^\s()]*\))+)/g
+
+/**
+ * The attributes of the source that the deck refuses: in the `{…}` block of a
+ * component, an annotation or a span, and the address of an inline markdown
+ * link or image. Outside the frontmatter, fenced code and inline code.
+ */
+export function attributeMentions(raw: string): AttributeMention[] {
+  const mentions: AttributeMention[] = []
+  const check = (tag: string, name: string, value: string, line: number, column: number, length: number) => {
+    const reading = readAttribute(tag, name, value)
+    if ('refused' in reading)
+      mentions.push({ name, reason: reading.refused, line, column, length })
+  }
+  for (const { line, prose } of proseLines(raw)) {
+    for (const block of prose.matchAll(ATTRIBUTE_BLOCK_RE)) {
+      const before = prose.slice(0, block.index)
+      const tag = BLOCK_TAG_RE.exec(before)?.[1] ?? (before.endsWith(')') ? 'a' : 'span')
+      for (const attribute of block[1]!.matchAll(ATTRIBUTE_RE)) {
+        const [text, space, name, ...values] = attribute
+        const column = block.index + 1 + attribute.index + space!.length
+        const value = values.find(value => value !== undefined)!.replace(/\\(.)/g, '$1')
+        check(tag, name!, value, line, column, text.length - space!.length)
+      }
+    }
+    for (const link of prose.matchAll(MARKDOWN_LINK_RE)) {
+      const [text, bang, url] = link
+      const image = bang === '!'
+      check(image ? 'img' : 'a', image ? 'src' : 'href', url!, line, link.index + text.length - url!.length, url!.length)
     }
   }
   return mentions

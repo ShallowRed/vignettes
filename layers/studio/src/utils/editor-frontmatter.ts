@@ -5,6 +5,7 @@ import type { FrontmatterKey, Translate } from '../config/editor-reference'
 import type { Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { Decoration, hoverTooltip, ViewPlugin, WidgetType } from '@codemirror/view'
+import { DECK_URL_MESSAGE, DeckMetaSchema, RevealConfigSchema } from '@vignettes/core/deck'
 import { load, YAMLException } from 'js-yaml'
 import { FRONTMATTER_KEYS, inLanguage, LEGACY_FRONTMATTER_KEYS } from '../config/editor-reference'
 import { problemMarks, problemMessage } from './editor-problems'
@@ -12,8 +13,8 @@ import { problemMarks, problemMessage } from './editor-problems'
 /**
  * The guide to a deck's frontmatter in the source pane: completion of keys,
  * nested keys and closed values, a tooltip describing the key under the
- * pointer, marks on invalid YAML, unknown keys and values outside their set,
- * and a hint on an empty line of the block.
+ * pointer, marks on invalid YAML, unknown keys, values outside their set and
+ * addresses the deck refuses, and a hint on an empty line of the block.
  */
 
 export interface FrontmatterOptions {
@@ -148,8 +149,9 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
     return []
   const problems: Problem[] = []
   const yaml = state.sliceDoc(state.doc.line(2).from, state.doc.line(end).from)
+  let data: unknown
   try {
-    load(yaml)
+    data = load(yaml)
   }
   catch (error) {
     if (error instanceof YAMLException) {
@@ -158,6 +160,10 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
       return problems
     }
   }
+  const parsed = DeckMetaSchema.safeParse(data ?? {})
+  const refusedUrls = new Set(parsed.success
+    ? []
+    : parsed.error.issues.filter(issue => issue.message === DECK_URL_MESSAGE && issue.path.length === 1).map(issue => String(issue.path[0])))
 
   for (let n = 2; n < end; n++) {
     const line = state.doc.line(n)
@@ -170,13 +176,21 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
     const scope = fieldsAt(state, n, indent)
     const field = scope?.fields.find(f => f.key === match[2])
     if (!field) {
-      const known = indent === 0 && LEGACY_FRONTMATTER_KEYS.includes(match[2]!)
-      // Reveal takes many more options than the guide lists.
-      if (!known && scope && scope.parent?.key !== 'reveal')
+      // Under `reveal`, the deck passes the options `RevealConfigSchema` names,
+      // more than the guide lists.
+      const known = indent === 0
+        ? LEGACY_FRONTMATTER_KEYS.includes(match[2]!)
+        : scope?.parent?.key === 'reveal' && Object.hasOwn(RevealConfigSchema.shape, match[2]!)
+      if (!known && scope)
         problems.push({ from: keyFrom, to: keyTo, severity: 'info', message: t('editor.frontmatter.unknownKey', { key: match[2] }) })
       continue
     }
     const value = match[3]!.replace(/\s#.*$/, '').trim()
+    if (indent === 0 && refusedUrls.has(field.key) && value) {
+      const valueFrom = line.from + line.text.indexOf(value, keyTo - line.from + 1)
+      problems.push({ from: valueFrom, to: valueFrom + value.length, severity: 'error', message: t('editor.diagnostics.refusedUrl') })
+      continue
+    }
     if (field.values && value && !OPEN_VALUES.has(field.key) && !field.values.map(unquote).includes(unquote(value))) {
       const valueFrom = line.from + line.text.indexOf(value, keyTo - line.from + 1)
       problems.push({

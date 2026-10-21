@@ -1,5 +1,7 @@
 // Pure Storybook embed URL helpers, shared by the renderer and tests.
 
+import { isDeckUrl } from '../deck/urls.ts'
+
 export interface StoryUrlOptions {
   /** Reveal Storybook UI chrome (toolbar) instead of the bare canvas. */
   full?: boolean
@@ -7,13 +9,13 @@ export interface StoryUrlOptions {
   globals?: Record<string, string>
 }
 
-/** Returns the `iframe.html?id=…` URL, or undefined when base/story missing. */
+/** Returns the `iframe.html?id=…` URL, or undefined when base/story missing or the base is outside `isDeckUrl`. */
 export function buildStoryUrl(
   base?: string,
   story?: string,
   options: StoryUrlOptions = {},
 ): string | undefined {
-  if (!base || !story)
+  if (!base || !story || !isDeckUrl(base))
     return undefined
   const clean = base.replace(/\/+$/, '')
   const path = options.full ? 'index.html?path=/story' : 'iframe.html?id'
@@ -28,7 +30,7 @@ export function buildStoryUrl(
     params.set('globals', globals)
   }
   const query = params.toString()
-  return `${clean}/${path}${sep}${story}${query ? `&${query}` : ''}`
+  return `${clean}/${path}${sep}${encodeURIComponent(story)}${query ? `&${query}` : ''}`
 }
 
 // Named aspect ratios plus passthrough for raw `w/h`; returns a CSS aspect-ratio.

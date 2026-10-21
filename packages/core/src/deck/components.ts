@@ -16,11 +16,14 @@ export interface DeckAnnotation {
   tag: string
   snippet: LocalizedText
   description: LocalizedText
+  /** The attributes that take the address of an image, which may be a `data:image` URL (see `isDeckUrl`). */
+  images?: readonly string[]
 }
 
 export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   {
     tag: 'slide-background',
+    images: ['image'],
     snippet: { fr: ':slide-background{image="${/backgrounds/exemple.svg}"}', en: ':slide-background{image="${/backgrounds/example.svg}"}' },
     description: { fr: 'Image de fond propre à cette diapo (image)', en: 'Background image of this slide (image)' },
   },
@@ -72,12 +75,15 @@ export interface DeckComponent {
    */
   snippet?: LocalizedText
   description?: LocalizedText
+  /** The props that take the address of an image, which may be a `data:image` URL (see `isDeckUrl`). */
+  images?: readonly string[]
 }
 
 /** The components the render layer ships. */
 export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Quote',
+    images: ['avatar'],
     snippet: { fr: '::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation.}\n::', en: '::Quote{author="${Author}" role="${Role}"}\n${The quote.}\n::' },
     description: { fr: 'Citation avec auteur, rôle et avatar optionnels', en: 'Quote with optional author, role and avatar' },
   },
@@ -85,6 +91,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     name: 'FullScreenImage',
     aliases: ['full-screen-image'],
     fullSlide: true,
+    images: ['src'],
     snippet: { fr: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
     description: { fr: 'Image plein écran (overlay, heading)', en: 'Full-screen image (overlay, heading)' },
   },
@@ -96,6 +103,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Image',
     aliases: ['deck-image'],
+    images: ['src'],
     snippet: { fr: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
     description: { fr: 'Image avec cadrage (fit, position, rounded, shadow)', en: 'Image with framing (fit, position, rounded, shadow)' },
   },

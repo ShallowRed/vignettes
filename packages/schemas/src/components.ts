@@ -34,6 +34,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'JsonTour',
     aliases: ['json-tour'],
+    images: ['image'],
     snippet: {
       fr: ':::JsonTour{file="${exemple.json}"}\n::Zone{lines="${2-3}" title="${Identité}"}\n${Ce que ces lignes contiennent.}\n::\n\n```json\n{\n  "name": "${exemple}",\n  "version": 1\n}\n```\n\n:::',
       en: ':::JsonTour{file="${example.json}"}\n::Zone{lines="${2-3}" title="${Identity}"}\n${What these lines hold.}\n::\n\n```json\n{\n  "name": "${example}",\n  "version": 1\n}\n```\n\n:::',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDeckMessages } from '../../composables/useDeckMessages.ts'
-import { useFrameSource } from '../../composables/useFrameSource.ts'
+import { useFrameAttributes } from '../../composables/useFrameAttributes.ts'
 
 interface Props {
   src: string
@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const messages = useDeckMessages()
-const frameSource = useFrameSource()
+const frameAttributes = useFrameAttributes()
 </script>
 
 <template>
@@ -39,7 +39,7 @@ const frameSource = useFrameSource()
       class="iframe-lightbox-link"
     >
       <iframe
-        v-bind="frameSource(props.src)"
+        v-bind="frameAttributes(props.src)"
         :title="props.title"
         :style="{ width: props.width, height: props.height }"
         :allow="props.allow"
@@ -52,7 +52,7 @@ const frameSource = useFrameSource()
     </a>
     <iframe
       v-else
-      v-bind="frameSource(props.src)"
+      v-bind="frameAttributes(props.src)"
       :title="props.title"
       :style="{ width: props.width, height: props.height }"
       :allow="props.allow"

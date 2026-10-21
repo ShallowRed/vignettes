@@ -1,4 +1,5 @@
 import type { RevealConfig } from '../deck/schema.ts'
+import { isUploadedFile } from '../deck/urls.ts'
 
 // Shared render helpers for the live composable and the frozen bundle: Reveal
 // defaults, the iframe sandbox policy, and asset-URL rebasing.
@@ -29,12 +30,34 @@ export function mergeRevealConfig(config?: Partial<RevealConfig>): RevealConfig 
   return { ...DEFAULT_REVEAL_CONFIG, ...(config || {}) }
 }
 
-// `sandbox` value for embedded story/app iframes. Crucially OMITS
-// `allow-top-navigation` (and its by-user-activation variant): otherwise an
-// embedded app calling window.parent.location.assign(...) would replace the whole
-// slides window. Flags propagate to nested iframes; plain <a href> still works.
+// `sandbox` value for embedded story/app iframes of another site. Each flag lets
+// the embedded page do one thing:
+// - `allow-scripts`: a story or an app runs its script;
+// - `allow-same-origin`: the page keeps the origin of its site, so its storage,
+//   its cookies and the requests Storybook makes for its own index work;
+// - `allow-forms`: an app submits its forms;
+// - `allow-popups allow-popups-to-escape-sandbox`: a link that opens a new tab
+//   opens an ordinary one;
+// - `allow-storage-access-by-user-activation`: an app asks for its cookies on a click.
+// It OMITS `allow-top-navigation` (and its by-user-activation variant): otherwise
+// an embedded app calling window.parent.location.assign(...) would replace the
+// whole slides window. Flags propagate to nested iframes; plain <a href> still works.
 export const EMBED_SANDBOX
   = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-storage-access-by-user-activation'
+
+/**
+ * The sandbox of a frame that shows `src` in a page of `origin`. A file an
+ * account uploaded to the site (`isUploadedFile`) loses `allow-same-origin`:
+ * with `allow-scripts`, a script it carries could reach the deck's page and
+ * remove its own sandbox. It runs in an opaque origin.
+ */
+export function embedSandbox(src: string, origin: string): string {
+  return isUploadedFile(src, origin) ? EMBED_SANDBOX.replace(' allow-same-origin', '') : EMBED_SANDBOX
+}
+
+// The deck's address stays out of the requests of its frames: another site
+// receives the origin alone, which a video host checks before it plays.
+export const EMBED_REFERRER_POLICY = 'strict-origin-when-cross-origin' as const
 
 // Directories whose root-absolute URLs a self-contained bundle rebases to a
 // location-relative prefix.

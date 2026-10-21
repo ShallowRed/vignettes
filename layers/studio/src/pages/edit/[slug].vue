@@ -15,7 +15,7 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
-import type { ComponentMention } from '@vignettes/core/deck'
+import type { AttributeMention, ComponentMention } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import { STATUS_CONFIG } from '#shared/presentations'
@@ -23,7 +23,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { componentMentions, parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { attributeMentions, componentMentions, parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
 import Codemirror from 'vue-codemirror6'
@@ -444,11 +444,25 @@ const cmModel = computed({
 let timer: ReturnType<typeof setTimeout> | null = null
 
 // What the last parse found: the components no registered component answers
-// to, which the deck draws as plain content, or a failure after which the
-// preview keeps the last good render.
+// to, which the deck draws as plain content, the attributes the deck refuses,
+// or a failure after which the preview keeps the last good render.
 const unknownMentions = ref<ComponentMention[]>([])
+const refusedMentions = ref<AttributeMention[]>([])
 const parseFailed = ref(false)
 let parsedText = ''
+
+const previewIssues = computed(() => [
+  ...unknownMentions.value.map(mention => ({
+    ...mention,
+    short: t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name }),
+    message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
+  })),
+  ...refusedMentions.value.map(mention => ({
+    ...mention,
+    short: t(mention.reason === 'url' ? 'editor.diagnostics.refusedUrlShort' : 'editor.diagnostics.refusedBindingShort', { line: mention.line, name: mention.name }),
+    message: t(mention.reason === 'url' ? 'editor.diagnostics.refusedUrl' : 'editor.diagnostics.refusedBinding'),
+  })),
+].sort((a, b) => a.line - b.line || a.column - b.column))
 
 async function reparse() {
   const text = raw.value
@@ -456,6 +470,7 @@ async function reparse() {
     const data = await buildPresentationData(text)
     preview.value = data
     unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
+    refusedMentions.value = attributeMentions(text)
     parseFailed.value = false
     parsedText = text
     // Let Reveal register added/removed slides, then re-align to the caret so a
@@ -471,14 +486,10 @@ async function reparse() {
 
 // The marks go to the text that was parsed; a text typed since then gets its
 // own parse.
-watch([unknownMentions, editorView, locale], ([mentions, view]) => {
+watch([previewIssues, editorView], ([issues, view]) => {
   if (!view || view.state.doc.toString() !== parsedText)
     return
-  const problems = mentions.map(mention => ({
-    ...mention,
-    severity: 'warning' as const,
-    message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
-  }))
+  const problems = issues.map(issue => ({ ...issue, severity: 'warning' as const }))
   view.dispatch({ effects: setPreviewProblems.of(placeProblems(view.state, problems)) })
 })
 
@@ -1036,7 +1047,7 @@ async function onMetaSaved() {
              the commands of the deck page on the right. -->
         <div class="editor-stage__top">
           <ul
-            v-if="parseFailed || unknownMentions.length"
+            v-if="parseFailed || previewIssues.length"
             class="editor-stage__issues"
             :aria-label="t('editor.diagnostics.list')"
           >
@@ -1052,28 +1063,28 @@ async function onMetaSaved() {
               />
             </li>
             <li
-              v-for="mention in unknownMentions.slice(0, MENTIONS_SHOWN)"
-              :key="`${mention.line}-${mention.column}`"
+              v-for="issue in previewIssues.slice(0, MENTIONS_SHOWN)"
+              :key="`${issue.line}-${issue.column}`"
               class="max-w-full"
             >
-              <UTooltip :text="t('editor.diagnostics.unknownComponent', { name: mention.name })">
+              <UTooltip :text="issue.message">
                 <UButton
-                  :label="t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name })"
+                  :label="issue.short"
                   icon="i-lucide-triangle-alert"
                   color="neutral"
                   variant="outline"
                   size="sm"
                   class="max-w-full"
                   :ui="{ label: 'truncate', leadingIcon: 'text-warning' }"
-                  @click="goToLine(mention.line)"
+                  @click="goToLine(issue.line)"
                 />
               </UTooltip>
             </li>
             <li
-              v-if="unknownMentions.length > MENTIONS_SHOWN"
+              v-if="previewIssues.length > MENTIONS_SHOWN"
               class="px-1 text-xs text-muted"
             >
-              {{ t('editor.diagnostics.more', unknownMentions.length - MENTIONS_SHOWN) }}
+              {{ t('editor.diagnostics.more', previewIssues.length - MENTIONS_SHOWN) }}
             </li>
           </ul>
 
