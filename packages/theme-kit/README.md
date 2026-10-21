@@ -58,6 +58,9 @@ Code that works under any theme reads these custom properties only. A theme sets
 | `--text-default` | Body text |
 | `--text-title` | Headings and strong text |
 | `--text-mention` | Muted text: captions, small print |
+| `--border` | Outline of a box drawn by a component |
+| `--radius` | Corners of that box |
+| `--shadow` | Elevation of that box |
 
 The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
 
@@ -71,7 +74,7 @@ The kit derives three more tokens from the text intensities, at the root of the 
 @use 'pkg:@vignettes/theme-kit/base';
 ```
 
-Applies the nine tokens to the page background, the text, the headings, the links, inline code, quotes, list markers and the navigation controls, with a system font. With the layout preset, a theme can consist of the nine tokens alone: [examples/themes](https://github.com/ShallowRed/vignettes/tree/main/examples/themes) holds a dark theme and a brand theme written that way. A theme that draws these elements itself leaves the base skin out.
+Applies the nine color tokens to the page background, the text, the headings, the links, inline code, quotes, list markers and the navigation controls, with a system font. With the layout preset, a theme can consist of the tokens alone: [examples/themes](https://github.com/ShallowRed/vignettes/tree/main/examples/themes) holds a dark theme and a brand theme written that way. A theme that draws these elements itself leaves the base skin out.
 
 ## The layout preset
 

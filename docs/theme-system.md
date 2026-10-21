@@ -120,7 +120,7 @@ A brand on the DSFR base:
 .reveal section.slide-h2 h2 { color: var(--dsfr-grey-950) !important; }
 ```
 
-A theme made of the nine tokens alone, with the base skin of the kit and the DSFR sizes (`examples/themes/exemple-sombre` and `exemple-marque` are complete examples):
+A theme made of the tokens, with the base skin of the kit and the DSFR sizes (`examples/themes/exemple-sombre` and `exemple-marque` are complete examples; `exemple-marque` also paints its section slides):
 
 ```scss
 @use 'pkg:@vignettes/theme-kit';
@@ -130,7 +130,7 @@ A theme made of the nine tokens alone, with the base skin of the kit and the DSF
 :root {
   --accent: #c2410c;
   --surface: #fffdf9;
-  // the seven other tokens of the contract
+  // the ten other tokens of the contract
 }
 ```
 
@@ -161,7 +161,17 @@ The engine tags each `<section>`: `slide-h1` (title slide), `slide-h2` (section 
 
 A section that holds vertical slides is wrapped in Reveal's stack. That wrapper carries `stack-h1` / `stack-h2` instead of a `slide-` class, and the section's own content is the first of its vertical slides, keeping its own `slide-` class. So a rule written as `.reveal section.slide-h2 h3` styles the divider alone and cannot reach the slides nested under it. Target `stack-h2` to style the wrapper itself.
 
-A flat color surface goes on Reveal's background layer rather than on the section: Reveal creates one `.slide-background` per slide under `.reveal .backgrounds`, copies the slide's classes onto it, and fills the screen with it whatever the aspect ratio. A rule such as `.reveal .backgrounds .slide-background.slide-h2 { background-color: … }` colors the divider edge to edge, and Reveal reads that computed color to mark the slide and the deck `has-dark-background`, which switches its controls to light on its own. Painting the section itself leaves the viewport color visible around the slide on screens of another ratio.
+A flat color surface goes on Reveal's background layer: Reveal creates one `.slide-background` per slide under `.reveal .backgrounds`, copies the slide's classes onto it, and fills the screen with it whatever the aspect ratio. A rule such as `.reveal .slide-background.slide-h2 { background-color: … }` colors the divider edge to edge, and Reveal reads that computed color to mark the slide and the deck `has-dark-background`, which switches its controls to light on its own. Painting the section itself leaves the viewport color visible around the slide on screens of another ratio. The rule leaves out the parent of the layer: the print view moves the layer into the `.pdf-page` of its slide, and the scroll view, under 435 pixels wide, into the `.scroll-page-content` of its slide.
+
+## Checking a theme
+
+`examples/controle-du-theme.md` is a deck that holds each slide role and each element a theme colors: the title slide, a section, a short and a long content slide, inline code, a list, a table, a quote, a code block, columns, the `media-right` and `media-left-wide` layouts, a Mermaid diagram, a `Diagram`, and a section with content. Write the name of the theme under check in its `theme:`, import it in a local studio, and read every slide, the vertical ones included:
+
+- Sizes: 1280 × 720 and 1920 × 1080, then 390 pixels wide. Under 435 pixels, reveal.js switches to its scroll view: the slides follow one another, each scaled to the width of the screen, so the body text measures a few pixels whatever the theme. Each section keeps its surface edge to edge.
+- Contrast: 4.5:1 or more between a text and its surface, 3:1 for a text of 24 pixels or more, or of 18.5 pixels or more in bold (RGAA, criterion 3.2). The pairs are `--text-title`, `--text-default` and `--text-mention` on `--surface`; `--accent` on `--surface` for the links and on `--accent-bg` for the inline code of the base skin; `--on-contrast` on `--surface-contrast`; the title, the text and the links of a section on its surface.
+- Inline code: an inline box with a padding and a background. At the end of a line, the browser can break a segment at a space it holds: the background stops at the end of the line and starts again on the next one without its padding. Read the three long segments of the long content slide at each width.
+- Diagrams: Mermaid fills its boxes with `--accent-bg`, outlines them with `--accent` and writes their labels in `--on-surface-title`; its lines take the `--text-mention` of the slide, its free text the `--text-default` of the slide, and it measures its labels with the font of the slide. On the last slide, the lines and the free text turn light on the section surface, and the boxes keep their light fill. The renderer scales a diagram down to the width of its column, and its height follows: a wide font scales a wide diagram down further, and a tall diagram can reach the navigation arrows.
+- The PDF export prints the section surfaces.
 
 ## Troubleshooting
 

@@ -1,4 +1,4 @@
-// A dark theme: the kit, its base skin and layout preset, and the nine tokens.
+// A dark theme: the kit, its base skin and layout preset, and the twelve tokens.
 @use 'pkg:@vignettes/theme-kit';
 @use 'pkg:@vignettes/theme-kit/base';
 @use 'pkg:@vignettes/theme-kit/presets/layout';
@@ -13,4 +13,7 @@
   --text-default: #c9d1e0;
   --text-title: #ffffff;
   --text-mention: #8a94a8;
+  --border: #2a3550;
+  --radius: 0.375rem;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }

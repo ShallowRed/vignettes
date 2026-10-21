@@ -15,12 +15,13 @@ on:
   push:
     branches: [main]
     # What the site reads: its own files, the packages and their READMEs, the
-    # themes, the example deck and the pictograms of the studio.
+    # themes, the example decks, `docs/theme-system.md` and the pictograms of the studio.
     paths:
       - 'site/**'
       - 'packages/**'
       - 'themes/**'
       - 'examples/**'
+      - docs/theme-system.md
       - 'public/pictograms/**'
       - pnpm-lock.yaml
       - pnpm-workspace.yaml

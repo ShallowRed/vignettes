@@ -1,7 +1,7 @@
 {
   "name": "vignettes-decks",
-  "description": "Write a Vignettes deck: format, components, layouts and live Storybook embeds",
-  "version": "0.1.0",
+  "description": "Write a Vignettes deck: format, components, layouts and live Storybook embeds; write a Vignettes theme",
+  "version": "0.2.0",
   "author": {
     "name": "Lucas Poulain"
   }

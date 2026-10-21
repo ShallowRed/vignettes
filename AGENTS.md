@@ -26,4 +26,4 @@ The format is defined once, in `packages/core/src/deck`: `split.ts` cuts the sli
 
 An extension package declares its components as data (`packages/schemas/src/components.ts`, `packages/storybook/src/components.ts`) and registers them in its Nuxt plugin.
 
-After a change to the format or to the README of `packages/nuxt`, `packages/schemas` or `packages/storybook`, run `node scripts/deck-plugin.ts`: it writes the references of the deck authoring plugin, and `test/unit/deck-plugin.test.ts` fails while they differ from their sources.
+After a change to the format, to `docs/theme-system.md`, to `examples/controle-du-theme.md` or to the README of `packages/nuxt`, `packages/schemas`, `packages/storybook`, `packages/theme-kit` or `packages/theme-dsfr`, run `node scripts/deck-plugin.ts`: it writes the references of the deck authoring plugin, and `test/unit/deck-plugin.test.ts` fails while they differ from their sources.

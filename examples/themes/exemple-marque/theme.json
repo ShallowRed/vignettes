@@ -2,5 +2,12 @@
   "name": "exemple-marque",
   "lang": "fr",
   "parser": "heading",
-  "code": "clair"
+  "code": "clair",
+  "reveal": { "slideNumber": true },
+  "preview": {
+    "fontFamily": "system-ui, sans-serif",
+    "titleColor": "#1c1917",
+    "textColor": "#3f3a36",
+    "surface": "#fffdf9"
+  }
 }
