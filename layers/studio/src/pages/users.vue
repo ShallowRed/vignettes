@@ -101,7 +101,10 @@ const inviteOpen = ref(false)
       <h1 class="text-xl font-semibold text-highlighted">
         {{ t('admin.users.title') }}
       </h1>
-      <span class="text-sm text-muted whitespace-nowrap">{{ t('admin.users.count', accounts.length) }}</span>
+      <span
+        v-if="isOwner"
+        class="text-sm text-muted whitespace-nowrap"
+      >{{ t('admin.users.count', accounts.length) }}</span>
       <div class="flex-1" />
       <UButton
         v-if="isOwner"
@@ -112,13 +115,12 @@ const inviteOpen = ref(false)
       />
     </div>
 
-    <UAlert
+    <ErrorState
       v-if="!isOwner"
-      color="error"
-      variant="subtle"
       icon="i-lucide-lock"
       :title="t('admin.access.restrictedTitle')"
       :description="t('admin.users.restrictedDescription')"
+      :back="{ to: '/' }"
     />
 
     <ul
@@ -128,7 +130,7 @@ const inviteOpen = ref(false)
       <li
         v-for="account in accounts"
         :key="account.id"
-        class="flex flex-wrap items-center gap-3 rounded-lg bg-elevated px-3 py-2"
+        class="flex flex-wrap items-center gap-3 list-row"
       >
         <UAvatar
           :src="account.avatarUrl ?? undefined"

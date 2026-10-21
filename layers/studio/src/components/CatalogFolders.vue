@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import type { DropdownMenuItem } from '@nuxt/ui'
 import { buildCatalogFolders } from '#shared/presentations'
+import { useProjectActions } from '../composables/useProjectActions'
 import { projectColorStyle } from '../utils/project-colors'
 
 // Projects rendered as folders: the catalog's primary entry point. The folder
@@ -35,16 +35,13 @@ const sharedBySlug = computed(() =>
 const projectBySlug = computed(() =>
   new Map((props.projects ?? []).map(p => [p.slug, p])))
 
-function folderActions(project: Project): DropdownMenuItem[][] {
-  return [
-    [
-      { label: t('catalog.folders.edit'), icon: 'i-lucide-pencil', onSelect: () => emit('editProject', project) },
-      { label: t('catalog.folders.manageAccess'), icon: 'i-lucide-users', onSelect: () => emit('manageAccess', project) },
-    ],
-    [
-      { label: t('catalog.folders.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => emit('removeProject', project) },
-    ],
-  ]
+const projectActions = useProjectActions()
+function folderActions(project: Project) {
+  return projectActions({
+    edit: () => emit('editProject', project),
+    manageAccess: () => emit('manageAccess', project),
+    remove: () => emit('removeProject', project),
+  })
 }
 </script>
 
@@ -84,7 +81,7 @@ function folderActions(project: Project): DropdownMenuItem[][] {
         <div class="flex items-start gap-3">
           <UIcon
             :name="`i-lucide-${folder.icon || 'folder'}`"
-            class="size-6 shrink-0 mt-0.5 text-dimmed"
+            class="size-6 shrink-0 mt-0.5 project-tint"
             :style="projectColorStyle(folder.color)"
           />
           <div class="min-w-0">

@@ -11,7 +11,6 @@
       "settingsTooltip": "Titre, accès, partage, dossier, thème, variantes et alias",
       "settingsTooltipSharing": "Qui peut ouvrir la présentation, et ses accès individuels",
       "notFoundTitle": "Présentation introuvable",
-      "backToCatalog": "Retour au catalogue",
       "openedOnSlide": "Ouvert sur la diapositive {slide} sur {total}",
       "metaLoadFailed": "Impossible de charger les métadonnées",
       "sourcePane": "Source de la présentation",

@@ -23,7 +23,8 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { attributeMentions, componentMentions, parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { attributeMentions, componentMentions, deckRevealOptions, parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
 import Codemirror from 'vue-codemirror6'
@@ -38,6 +39,7 @@ import { editorKeymap } from '../../utils/editor-keymap'
 import { placeProblems, previewProblemMarks, setPreviewProblems } from '../../utils/editor-problems'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
+import { wrappedLines } from '../../utils/editor-wrap'
 import { requestErrorMessage } from '../../utils/request-error'
 import { saveTextFile } from '../../utils/save-file'
 
@@ -72,16 +74,15 @@ const loadError = computed(() => loadErrorStatus.value !== null)
  * other failure says that the load failed.
  */
 const refusal = computed(() => {
-  const back = { label: t('editor.page.backToCatalog'), icon: 'i-lucide-arrow-left', color: 'neutral' as const, variant: 'subtle' as const, to: '/' }
   switch (loadErrorStatus.value) {
     case 401:
-      return { icon: 'i-lucide-log-in', title: t('editor.page.signInTitle'), description: t('editor.page.signInMessage'), actions: [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=${encodeURIComponent(`/edit/${slug}`)}` }, back] }
+      return { icon: 'i-lucide-lock', title: t('editor.page.signInTitle'), description: t('editor.page.signInMessage'), actions: [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=${encodeURIComponent(`/edit/${slug}`)}` }] }
     case 403:
-      return { icon: 'i-lucide-eye', title: t('editor.page.readOnlyTitle'), description: t('editor.page.readOnlyMessage'), actions: [{ label: t('editor.page.openDeck'), icon: 'i-lucide-play', to: `/slides/${slug}` }, back] }
+      return { icon: 'i-lucide-eye', title: t('editor.page.readOnlyTitle'), description: t('editor.page.readOnlyMessage'), actions: [{ label: t('editor.page.openDeck'), icon: 'i-lucide-play', to: `/slides/${slug}` }] }
     case 404:
-      return { icon: 'i-lucide-file-x', title: t('editor.page.notFoundTitle'), description: t('editor.page.notFoundMessage'), actions: [back] }
+      return { icon: 'i-lucide-file-question', title: t('editor.page.notFoundTitle'), description: t('editor.page.notFoundMessage') }
     default:
-      return { icon: 'i-lucide-triangle-alert', title: t('editor.page.failedTitle'), description: t('editor.page.failedMessage'), actions: [back] }
+      return { icon: 'i-lucide-triangle-alert', title: t('editor.page.failedTitle'), description: t('editor.page.failedMessage') }
   }
 })
 const saveState = ref<'idle' | 'saving' | 'error'>('idle')
@@ -385,19 +386,26 @@ const breadcrumb = computed(() => {
   ]
 })
 
-// The slide proportions, so the preview frame matches the deck.
+// The slide proportions, so the preview frame matches the deck. Before the first
+// parse, the server render included, they come from the loaded text: its theme's
+// Reveal settings, then its own `reveal:`.
+const loadedReveal = computed(() => {
+  const meta = splitFrontmatter(data.value?.content ?? '').data
+  const theme = typeof meta.theme === 'string' ? meta.theme : getDefaultTheme()
+  return { ...getThemeTokens(theme)?.reveal, ...deckRevealOptions(meta.reveal) }
+})
 const previewRatio = computed(() => {
-  const reveal = preview.value?.metadata?.reveal as { width?: number, height?: number } | undefined
-  return (reveal?.width ?? 960) / (reveal?.height ?? 700)
+  const reveal = (preview.value?.metadata?.reveal ?? loadedReveal.value) as { width?: number, height?: number }
+  return (reveal.width ?? 960) / (reveal.height ?? 700)
 })
 
-// Off by default: one source line per screen line keeps the line numbers, the
-// folds and the nesting of components readable. The choice is kept per browser.
+// On by default, so a paragraph stays in the pane; a wrapped line continues
+// under its own text. The choice is kept per browser.
 const WRAP_LINES_KEY = 'vignettes:editor-wrap-lines'
-const wrapLines = ref(false)
+const wrapLines = ref(true)
 onMounted(() => {
   try {
-    wrapLines.value = localStorage.getItem(WRAP_LINES_KEY) === '1'
+    wrapLines.value = localStorage.getItem(WRAP_LINES_KEY) !== '0'
   }
   catch {}
 })
@@ -415,7 +423,7 @@ function toggleWrap() {
 
 const extensions = computed<Extension[]>(() => [
   markdown({ codeLanguages: CODE_LANGUAGES }),
-  ...(wrapLines.value ? [EditorView.lineWrapping] : []),
+  ...(wrapLines.value ? [wrappedLines()] : []),
   highlightActiveLine(),
   ...deckStructure(t),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
@@ -745,14 +753,28 @@ async function onMetaSaved() {
 </script>
 
 <template>
-  <div class="tailwind-app h-screen flex flex-col overflow-hidden bg-muted">
+  <!-- A deck the reader may not open shows nothing of itself: not its slug,
+       not its status, not the actions of an editor. -->
+  <NuxtLayout
+    v-if="loadError"
+    name="default"
+  >
+    <ErrorState
+      :icon="refusal.icon"
+      :title="refusal.title"
+      :description="refusal.description"
+      :actions="refusal.actions"
+      :back="{ to: '/' }"
+    />
+  </NuxtLayout>
+  <div
+    v-else
+    class="tailwind-app h-screen flex flex-col overflow-hidden bg-muted"
+  >
     <!-- The way back reads as on the catalog pages: the brand mark, then the
          path from the home page through the folder to this deck. The deck's
          own state and its publication sit on the right. -->
-    <!-- A deck the reader may not open shows nothing of itself: not its slug,
-         not its status, not the actions of an editor. -->
     <header
-      v-if="!loadError"
       class="flex items-center gap-2 sm:gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
     >
       <UTooltip :text="t('editor.page.backHome')">
@@ -938,23 +960,10 @@ async function onMetaSaved() {
       </UTooltip>
     </header>
 
-    <div
-      v-if="loadError"
-      class="flex-1 grid place-items-center"
-    >
-      <UEmpty
-        :icon="refusal.icon"
-        :title="refusal.title"
-        :description="refusal.description"
-        :actions="refusal.actions"
-      />
-    </div>
-
     <!-- The source pane takes a share of the width set by dragging its edge, kept
          in a cookie so the page renders at that share. Below the `md` width the
          slide sits above the source, across the whole width. -->
     <UDashboardGroup
-      v-else
       storage-key="editor"
       class="relative flex-1 min-h-0 max-md:flex-col"
     >
@@ -1121,14 +1130,16 @@ async function onMetaSaved() {
                a mismatch that crashes the minified prod build.
                The frame keeps the slide view at every width: Reveal lays a deck
                narrower than `scrollActivationWidth` (435px) out as its scroll
-               view, a column of pages the frame cannot show. -->
+               view, a column of pages the frame cannot show. The status bar
+               gives the slide number, so Reveal's arrows, number and progress
+               bar stay off. -->
             <ClientOnly>
               <RevealPresentation
                 v-if="preview?.slides?.length"
                 ref="previewInstance"
                 :key="preview.metadata.theme"
                 :theme="preview.metadata.theme"
-                :config="{ ...preview.metadata.reveal, fragments: previewFragments, scrollActivationWidth: null }"
+                :config="{ ...preview.metadata.reveal, fragments: previewFragments, scrollActivationWidth: null, controls: false, slideNumber: false, progress: false }"
                 :lang="preview.metadata.lang"
                 :code="preview.metadata.code"
                 :controls="false"

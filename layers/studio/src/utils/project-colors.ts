@@ -1,6 +1,7 @@
 // Project accent colors, stored as hex (matches the existing projects.yml data).
-// The folder icon and picker tint from the raw value via inline styles, so any
-// stored hex renders — the palette is just the set the picker offers.
+// The folder icon takes the stored hex through `--project-color` and the
+// `project-tint` class, so any stored value renders; the palette lists the
+// colors the picker offers.
 export const PROJECT_COLORS = [
   '#2563eb', // blue
   '#0891b2', // cyan
@@ -18,9 +19,9 @@ export const PROJECT_COLORS = [
 
 export type ProjectColor = (typeof PROJECT_COLORS)[number]
 
-/** Inline style tinting an element by the project color, or none when unset. */
+/** Inline style giving a `project-tint` element the project color, or none when unset. */
 export function projectColorStyle(color?: string | null): Record<string, string> {
-  return color ? { color } : {}
+  return color ? { '--project-color': color } : {}
 }
 
 /** Inline style filling a swatch with the project color. */

@@ -396,7 +396,7 @@ const audience = computed(() => {
               v-if="canShare"
               ref="sharingSection"
               tabindex="-1"
-              class="settings__row outline-none"
+              class="settings__row settings__row--stacked outline-none"
             >
               <div>
                 <p class="settings__label">
@@ -586,6 +586,11 @@ const audience = computed(() => {
   .settings__row {
     grid-template-columns: 13rem 1fr;
     align-items: start;
+  }
+
+  /* A row whose controls need the panel's width (the sharing form) sits under its label. */
+  .settings__row--stacked {
+    grid-template-columns: 1fr;
   }
 }
 

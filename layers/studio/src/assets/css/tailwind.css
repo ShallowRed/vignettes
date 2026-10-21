@@ -112,3 +112,22 @@
     }
   }
 }
+
+/* A row of a list laid on the page background (accounts, trash): the surface
+ * and the shadow of the catalog cards, which stay distinct from `bg-muted` in
+ * both color modes. */
+@utility list-row {
+  @apply rounded-lg bg-default px-3 py-2 shadow-sm;
+}
+
+/* A folder icon in its folder's color (`--project-color`, set by
+ * `projectColorStyle`), or dimmed without one. Dark mode lifts a dark color to
+ * a lightness that reads on the dark cards. */
+@utility project-tint {
+  color: var(--project-color, var(--ui-text-dimmed));
+
+  .dark & {
+    --project-color-lifted: oklch(from var(--project-color) max(l, 0.72) c h);
+    color: var(--project-color-lifted, var(--ui-text-dimmed));
+  }
+}

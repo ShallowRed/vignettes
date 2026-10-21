@@ -26,7 +26,8 @@ const style = computed(() => ({
   '--preview-title': tokens.value?.titleColor,
   '--preview-title-gradient': gradient.value,
   '--preview-text': tokens.value?.textColor,
-  '--preview-surface': tokens.value?.surface,
+  // Without a title slide, the frame is an empty surface of the studio.
+  '--preview-surface': props.preview ? tokens.value?.surface : 'var(--ui-bg)',
   'backgroundImage': props.preview?.background ? `url("${props.preview.background}")` : undefined,
 }))
 
@@ -135,6 +136,5 @@ useHead(() => ({
   display: grid;
   place-items: center;
   color: var(--ui-text-dimmed);
-  background: var(--ui-bg-muted);
 }
 </style>

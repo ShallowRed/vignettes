@@ -147,9 +147,6 @@
       "resetFilters": "Reset the filters"
     },
     "folder": {
-      "edit": "Edit",
-      "manageAccess": "Manage access",
-      "delete": "Delete",
       "sorted": "Sorted by last update",
       "sortedWithTheme": "Theme {theme} · Sorted by last update",
       "emptyTitle": "Empty folder",

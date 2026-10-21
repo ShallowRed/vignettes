@@ -50,13 +50,12 @@ async function confirmPurge() {
       </h1>
     </div>
 
-    <UAlert
+    <ErrorState
       v-if="!canView"
-      color="error"
-      variant="subtle"
       icon="i-lucide-lock"
       :title="t('admin.access.restrictedTitle')"
       :description="t('admin.trash.restrictedDescription')"
+      :back="{ to: '/' }"
     />
 
     <AsyncSection
@@ -98,7 +97,7 @@ async function confirmPurge() {
             <li
               v-for="project in projects"
               :key="project.slug"
-              class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
+              class="flex items-center gap-3 list-row"
             >
               <UIcon
                 name="i-lucide-folder"
@@ -148,7 +147,7 @@ async function confirmPurge() {
             <li
               v-for="deck in decks"
               :key="deck.slug"
-              class="flex items-center gap-3 rounded-lg bg-elevated px-3 py-2"
+              class="flex items-center gap-3 list-row"
             >
               <UIcon
                 name="i-lucide-presentation"

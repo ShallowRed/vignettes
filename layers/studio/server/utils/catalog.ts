@@ -104,9 +104,10 @@ function deckPreview(stats: DeckStats | undefined, theme: string): Pick<Presenta
   return { preview }
 }
 
-function deckDates(stats: DeckStats | undefined, canEdit: boolean): Pick<PresentationListItem, 'slideCount' | 'updatedAt'> {
+function deckDates(stats: DeckStats | undefined, canEdit: boolean, unpublishedDraftAt?: number | null): Pick<PresentationListItem, 'slideCount' | 'updatedAt'> {
+  // A deck never published dates from its draft, which only an editor sees.
   if (!stats)
-    return {}
+    return unpublishedDraftAt ? { updatedAt: unpublishedDraftAt } : {}
   const draftSavedAt = canEdit ? stats.draftSavedAt ?? 0 : 0
   return { slideCount: stats.slideCount, updatedAt: Math.max(stats.updatedAt, draftSavedAt) }
 }
@@ -135,6 +136,10 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   const mayShare = (slug: string) => canShare(actor.role, grants.get(slug))
   const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d.slug)).map(d => d.slug)))
   const stats = await deckStats()
+  const drafts = useDraftStore()
+  const unpublishedDrafts = new Map(await Promise.all(decks
+    .filter(d => !d.published && canEdit(d.slug))
+    .map(async d => [d.slug, await drafts.stamp(d.slug)] as const)))
 
   return decks
     // A deck with no published version has nothing to serve: only those who can
@@ -153,7 +158,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       family: deck.family,
       variantLabel: deck.variantLabel,
       supersededBy: deck.supersededBy,
-      ...deckDates(stats.get(deck.slug), canEdit(deck.slug)),
+      ...deckDates(stats.get(deck.slug), canEdit(deck.slug), unpublishedDrafts.get(deck.slug)),
       ...deckPreview(stats.get(deck.slug), deck.theme || fallbackTheme),
       ...(canEdit(deck.slug) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),

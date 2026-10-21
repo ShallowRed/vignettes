@@ -133,7 +133,8 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
       }),
     ]),
   },
-  { accessorKey: 'title', header: sortableHeader(t('common.fields.title')) },
+  // On a phone the title wraps on two lines, where the other columns keep one.
+  { accessorKey: 'title', header: sortableHeader(t('common.fields.title')), meta: { class: { td: 'max-sm:whitespace-normal' } } },
   { accessorKey: 'status', header: sortableHeader(t('catalog.fields.status')) },
   { accessorKey: 'project', header: sortableHeader(t('catalog.fields.project')) },
   { accessorKey: 'theme', header: sortableHeader(t('catalog.fields.theme')) },
@@ -261,8 +262,8 @@ function clearSelection() {
     >
       <!-- Taxonomies stripped to plain text (clean base): no colour, no icon. -->
       <template #title-cell="{ row }">
-        <div class="flex items-center gap-2 min-w-48">
-          <span class="font-medium text-highlighted">{{ row.original.title }}</span>
+        <div class="flex items-center gap-2 min-w-48 max-sm:min-w-0">
+          <span class="font-medium text-highlighted max-sm:line-clamp-2">{{ row.original.title }}</span>
           <span
             v-if="row.original.unlisted"
             class="text-xs text-muted"
@@ -329,9 +330,11 @@ function clearSelection() {
               :aria-label="t('catalog.table.view')"
             />
           </UTooltip>
+          <!-- A frozen deck keeps the pencil's place, so the icons of every row line up. -->
           <UTooltip
-            v-if="admin && !isFrozen(row.original)"
+            v-if="admin"
             :text="t('catalog.deck.editContent')"
+            :disabled="isFrozen(row.original)"
           >
             <UButton
               :to="`/edit/${row.original.slug}`"
@@ -339,6 +342,7 @@ function clearSelection() {
               color="neutral"
               variant="ghost"
               size="sm"
+              :class="{ invisible: isFrozen(row.original) }"
               :aria-label="t('common.actions.edit')"
             />
           </UTooltip>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+// The layout follows what the page shows: the deck in `presentation`, an error
+// screen in `default` (https://nuxt.com/docs/guide/directory-structure/layouts).
 definePageMeta({
-  layout: 'presentation',
+  layout: false,
 })
 
 const { t } = useI18n()
@@ -29,6 +31,8 @@ const needsLogin = computed(() => !requiresPassword.value && (error.value as any
 // one screen covers both: naming either case would confirm the slug. The raw
 // message of the failed request is left out for the same reason.
 const notFound = computed(() => (error.value as any)?.statusCode === 404)
+// A closed deck that is not sent to the password prompt shows an error screen.
+const errorShown = computed(() => Boolean(error.value) && !requiresPassword.value)
 
 // `replace: true`: this route only ever bounces to /unlock, so keeping it in
 // history would trap Back (it re-fires the watch and bounces forward again).
@@ -39,27 +43,32 @@ watch(requiresPassword, (needsPassword) => {
 </script>
 
 <template>
-  <div class="presentation-page">
-    <!-- No <ClientOnly>: SSR-safe markup must prerender for the frozen bundle. -->
-    <template v-if="presentationData && presentationData.slides.length > 0">
+  <NuxtLayout :name="errorShown ? 'default' : 'presentation'">
+    <div
+      v-if="!errorShown"
+      class="presentation-page"
+    >
+      <!-- No <ClientOnly>: SSR-safe markup must prerender for the frozen bundle. -->
       <StudioDeck
+        v-if="presentationData && presentationData.slides.length > 0"
         :slug="slug"
         :presentation-data="presentationData"
         :draft="draftPreview"
       />
-    </template>
-
+    </div>
     <DeckError
       v-else-if="needsLogin"
+      icon="i-lucide-lock"
       :title="t('auth.deckError.privateTitle')"
       :message="t('auth.deckError.privateMessage')"
       :login-redirect="`/slides/${slug}`"
     />
     <DeckError
-      v-else-if="error && !requiresPassword"
+      v-else
+      :icon="notFound ? 'i-lucide-file-question' : 'i-lucide-triangle-alert'"
       :title="notFound ? t('auth.deckError.notFoundTitle') : undefined"
       :message="notFound ? t('auth.deckError.notFoundMessage') : undefined"
       :account-login="notFound ? user?.login : undefined"
     />
-  </div>
+  </NuxtLayout>
 </template>

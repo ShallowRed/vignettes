@@ -176,6 +176,7 @@ async function copyLink() {
           /></g></svg>
         </DeckControlButton>
         <DeckControlButton
+          class="deck-controls__speaker"
           :label="messages.speakerView"
           shortcut="S"
           @click="openSpeakerView"
@@ -401,6 +402,13 @@ async function copyLink() {
   right: 0;
   left: auto;
   transform: none;
+}
+
+/* The speaker view opens a second window, which a phone does not have. */
+@media (max-width: 767px) {
+  .deck-controls__speaker {
+    display: none;
+  }
 }
 
 @media print {

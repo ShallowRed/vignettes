@@ -6,6 +6,7 @@ import { EditorState } from '@codemirror/state'
 import { EditorView, lineNumbers } from '@codemirror/view'
 import { DIFF_CONFIG, diffFolding, foldIdenticalPassages } from '../utils/diff-folding'
 import { editorTheme } from '../utils/editor-theme'
+import { wrappedLines } from '../utils/editor-wrap'
 
 /**
  * A read-only unified diff of two markdown texts, in the writer's theme: the
@@ -113,7 +114,7 @@ function mount() {
       extensions: [
         EditorState.readOnly.of(true),
         EditorView.editable.of(false),
-        EditorView.lineWrapping,
+        wrappedLines(),
         lineNumbers(),
         markdown(),
         ...(props.from === props.to ? [] : [unifiedMergeView({ original: props.from, mergeControls: false, diffConfig: DIFF_CONFIG }), diffFolding({ unfold: n => t('deck.diff.unfold', { n }), fold: n => t('deck.diff.fold', { n }) })]),

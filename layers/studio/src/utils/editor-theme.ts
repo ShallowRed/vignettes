@@ -96,6 +96,7 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
       padding: '8px 0 50vh',
     },
     '.cm-line': { padding: '0 16px 0 8px' },
+    '.cm-lineWrapping .cm-line': { paddingInlineStart: 'calc(var(--hanging-indent, 0ch) + 8px)', textIndent: 'calc(-1 * var(--hanging-indent, 0ch))' },
     '.cm-cursor, .cm-dropCursor': {
       borderLeftColor: palette.heading,
       borderLeftWidth: '2px',

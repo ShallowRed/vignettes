@@ -87,3 +87,15 @@ describe('unpublished changes', () => {
     expect(listed.find(d => d.slug === 'live')?.unpublishedChanges).toBeUndefined()
   })
 })
+
+describe('the date of a deck never published', () => {
+  const DRAFT = '---\ntitle: Brouillon\n---\n# Brouillon\n'
+
+  it('is the last draft save, for whoever may edit the deck', async () => {
+    await useProjectPermissionStore().set('client', 10, 'editor', 'boss')
+    await useDraftStore().save('draft-deck', markdownToYDocUpdate(DRAFT))
+    const stamp = await useDraftStore().stamp('draft-deck')
+    const listed = await listVisiblePresentations(collab())
+    expect(listed.find(d => d.slug === 'draft-deck')?.updatedAt).toBe(stamp)
+  })
+})

@@ -147,9 +147,6 @@
       "resetFilters": "Réinitialiser les filtres"
     },
     "folder": {
-      "edit": "Modifier",
-      "manageAccess": "Gérer l'accès",
-      "delete": "Supprimer",
       "sorted": "Triées par dernière modification",
       "sortedWithTheme": "Thème {theme} · Triées par dernière modification",
       "emptyTitle": "Dossier vide",

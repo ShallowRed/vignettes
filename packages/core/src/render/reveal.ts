@@ -24,6 +24,8 @@ export const DEFAULT_REVEAL_CONFIG: RevealConfig = {
   autoPlayMedia: null,
   preloadIframes: null,
   autoSlide: 0,
+  // The scroll view of a phone stacks the slides at the width of the screen.
+  scrollLayout: 'compact',
 }
 
 export function mergeRevealConfig(config?: Partial<RevealConfig>): RevealConfig {

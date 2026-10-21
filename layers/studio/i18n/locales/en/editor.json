@@ -11,7 +11,6 @@
       "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
       "settingsTooltipSharing": "Who can open the presentation, and its individual grants",
       "notFoundTitle": "Presentation not found",
-      "backToCatalog": "Back to the catalog",
       "openedOnSlide": "Opened on slide {slide} of {total}",
       "metaLoadFailed": "Unable to load the metadata",
       "sourcePane": "Presentation source",

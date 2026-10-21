@@ -5,6 +5,7 @@ import { buildFolderContents, UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '../../composables/useAppSession'
 import { useCatalog } from '../../composables/useCatalog'
 import { useModalTarget } from '../../composables/useModalTarget'
+import { useProjectActions } from '../../composables/useProjectActions'
 import { projectColorStyle } from '../../utils/project-colors'
 
 // A project folder's contents: the decks grouped under one project, reached from
@@ -58,17 +59,21 @@ useHead(() => ({ title: `${projectTitle.value} · Vignettes` }))
 
 const isOwner = computed(() => role.value === 'owner')
 
-// Project access (owner only): a master-key grant over every deck in the project.
+// The owner's folder menu, as on the folder cards: edit the folder, manage its
+// access (a master-key grant over every deck in it), or trash it whole.
 const accessOpen = ref(false)
+const editProjectOpen = ref(false)
+const deleteProjectOpen = ref(false)
 const currentProject = computed(() => projects.value.find(p => p.slug === projectKey.value))
 const projectRef = computed(() => ({ slug: projectKey.value, title: projectTitle.value, color: currentProject.value?.color ?? null, icon: currentProject.value?.icon ?? null }))
 // Divers and a folder slug left on decks without its project row have nothing to manage.
-const canManageAccess = computed(() => isOwner.value && Boolean(currentProject.value))
-
-// Project lifecycle (owner only): edit metadata, or trash the whole folder.
-const editProjectOpen = ref(false)
-const deleteProjectOpen = ref(false)
 const canManageProject = computed(() => isOwner.value && Boolean(currentProject.value))
+const projectActions = useProjectActions()
+const folderActions = computed(() => projectActions({
+  edit: () => { editProjectOpen.value = true },
+  manageAccess: () => { accessOpen.value = true },
+  remove: () => { deleteProjectOpen.value = true },
+}))
 
 // Create a deck straight into this folder: privileged roles anywhere, and a
 // collaborator holding an `editor` grant on THIS folder (the server accepts
@@ -105,7 +110,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       <div class="flex items-center gap-3 min-w-0">
         <UIcon
           :name="`i-lucide-${currentProject?.icon || 'folder'}`"
-          class="size-5 shrink-0 text-dimmed"
+          class="size-5 shrink-0 project-tint"
           :style="projectColorStyle(currentProject?.color)"
         />
         <h1 class="text-xl font-semibold text-highlighted">
@@ -113,40 +118,25 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
         </h1>
         <span class="text-sm text-muted whitespace-nowrap">{{ t('catalog.deck.count', decks.length) }}</span>
       </div>
-      <div class="flex flex-wrap items-center gap-3 sm:ms-auto">
+      <div class="flex items-center gap-3 ms-auto">
+        <UDropdownMenu
+          v-if="canManageProject"
+          :items="folderActions"
+          :content="{ align: 'end' }"
+        >
+          <UButton
+            icon="i-lucide-ellipsis-vertical"
+            color="neutral"
+            variant="ghost"
+            :aria-label="t('catalog.folders.actionsLabel')"
+          />
+        </UDropdownMenu>
         <UButton
           v-if="canCreateHere"
           icon="i-lucide-file-plus-2"
           :label="t('common.actions.newDeck')"
-          size="sm"
+          class="shrink-0"
           @click="createOpen = true"
-        />
-        <UButton
-          v-if="canManageProject"
-          icon="i-lucide-pencil"
-          :label="t('catalog.folder.edit')"
-          color="neutral"
-          variant="subtle"
-          size="sm"
-          @click="editProjectOpen = true"
-        />
-        <UButton
-          v-if="canManageAccess"
-          icon="i-lucide-users"
-          :label="t('catalog.folder.manageAccess')"
-          color="neutral"
-          variant="subtle"
-          size="sm"
-          @click="accessOpen = true"
-        />
-        <UButton
-          v-if="canManageProject"
-          icon="i-lucide-trash-2"
-          :label="t('catalog.folder.delete')"
-          color="error"
-          variant="ghost"
-          size="sm"
-          @click="deleteProjectOpen = true"
         />
       </div>
     </div>
@@ -243,7 +233,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
       :mode="duplicateMode"
     />
     <ProjectAccessSlideover
-      v-if="canManageAccess"
+      v-if="canManageProject"
       v-model:open="accessOpen"
       :project="projectRef"
     />
