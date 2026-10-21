@@ -1,6 +1,7 @@
-import type { DeckGrant, PublicationStatus, Role } from '#shared/access'
+import type { DeckGrant, PublicationStatus, Role, TokenScope } from '#shared/access'
 import { PublicationStatusSchema } from '@vignettes/core/status'
 import { DeckGrantSchema, RoleSchema } from '../../shared/access/roles.ts'
+import { TokenScopeSchema } from '../../shared/access/tokens.ts'
 
 /** How the adapters read the values they store: an invalid one fails closed. */
 
@@ -20,4 +21,10 @@ export function readGrant(value: string): DeckGrant {
 export function readRole(value: string): Role {
   const parsed = RoleSchema.safeParse(value)
   return parsed.success ? parsed.data : 'viewer'
+}
+
+/** An invalid stored token scope degrades to reading. */
+export function readTokenScope(value: string): TokenScope {
+  const parsed = TokenScopeSchema.safeParse(value)
+  return parsed.success ? parsed.data : 'read'
 }

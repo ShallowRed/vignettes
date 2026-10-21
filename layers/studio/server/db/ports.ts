@@ -1,4 +1,4 @@
-import type { DeckGrant, Lifecycle, PublicationStatus, UserStore } from '#shared/access'
+import type { DeckGrant, Lifecycle, PublicationStatus, Role, TokenScope, UserStore } from '#shared/access'
 import type { PublishedEntry, PublishedEntryDetail } from '#shared/presentations'
 import type { Project, ProjectDirectory } from '#shared/projects'
 import type { ContentSource, ContentWriter, DeckDirectory, DraftStore } from '@vignettes/core/deck'
@@ -370,6 +370,54 @@ export interface ContentRewrites {
   rewrite: <C extends ContentChanges>(change: (content: StoredContent) => C, options?: { migration?: string, at?: Date }) => Promise<C>
 }
 
+/** A personal access token as its holder lists it, without its secret. */
+export interface PersonalToken {
+  id: number
+  userId: number
+  name: string
+  /** The first characters of the secret, `vgt_` included. */
+  prefix: string
+  scope: TokenScope
+  createdAt: Date
+  expiresAt: Date
+  lastUsedAt: Date | null
+  revokedAt: Date | null
+}
+
+/** A token found by its secret: its hash, and the login and role its account holds now. */
+export interface HeldToken extends PersonalToken {
+  tokenHash: string
+  holder: { login: string, role: Role }
+}
+
+export interface TokenInput {
+  name: string
+  scope: TokenScope
+  /** The SHA-256 of the secret; the secret itself is never stored. */
+  tokenHash: string
+  prefix: string
+  expiresAt: Date
+}
+
+/** The personal access tokens of the accounts. */
+export interface TokenStore {
+  create: (userId: number, input: TokenInput, at: Date) => Promise<PersonalToken>
+  /** The token of this hash, revoked and expired ones included; null when none. */
+  findByHash: (tokenHash: string) => Promise<HeldToken | null>
+  /** The tokens of an account, newest first. */
+  listForUser: (userId: number) => Promise<PersonalToken[]>
+  /** Revokes a token of this account. False when it has no such token, or the token was revoked already. */
+  revoke: (id: number, userId: number, at: Date) => Promise<boolean>
+  /** Revokes every token of the account not revoked yet; returns how many. */
+  revokeAllForUser: (userId: number, at: Date) => Promise<number>
+  /** Deletes a revoked or expired token of this account. False when it has no such token, or the token is still active. */
+  remove: (id: number, userId: number, at: Date) => Promise<boolean>
+  /** Records a use of the token. */
+  touch: (id: number, at: Date) => Promise<void>
+  /** account id → number of tokens neither revoked nor expired at this date; an account without one is left out. */
+  activeCounts: (at: Date) => Promise<Map<number, number>>
+}
+
 /** What an adapter provides: every store, over one database. */
 export interface Stores {
   content: DeckContent
@@ -381,6 +429,7 @@ export interface Stores {
   deckGrants: DeckGrantStore
   projectGrants: ProjectGrantStore
   users: UserStore
+  tokens: TokenStore
   drafts: DraftStore
   snapshots: SnapshotStore
   mediaIndex: MediaIndex

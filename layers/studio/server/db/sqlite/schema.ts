@@ -154,3 +154,24 @@ export const dataMigrations = sqliteTable('data_migrations', {
   name: text('name').primaryKey(),
   appliedAt: integer('applied_at', { mode: 'timestamp' }).notNull(),
 })
+
+/**
+ * Personal access tokens: an account's secret for the command line and the
+ * scripts, acting with the account's rights. The secret itself is never stored:
+ * `tokenHash` is its SHA-256, and `prefix` its first characters, shown in the
+ * lists and the logs. A revoked or expired token stays listed until its holder
+ * removes it.
+ */
+export const personalTokens = sqliteTable('personal_tokens', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  name: text('name').notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  prefix: text('prefix').notNull(),
+  /** `read` or `write`. */
+  scope: text('scope').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+  revokedAt: integer('revoked_at', { mode: 'timestamp' }),
+}, table => [index('personal_tokens_user_id_idx').on(table.userId)])

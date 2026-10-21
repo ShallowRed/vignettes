@@ -120,3 +120,16 @@ export const dataMigrations = pgTable('data_migrations', {
   name: text('name').primaryKey(),
   appliedAt: date('applied_at').notNull(),
 })
+
+export const personalTokens = pgTable('personal_tokens', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  name: text('name').notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  prefix: text('prefix').notNull(),
+  scope: text('scope').notNull(),
+  createdAt: date('created_at').notNull(),
+  expiresAt: date('expires_at').notNull(),
+  lastUsedAt: date('last_used_at'),
+  revokedAt: date('revoked_at'),
+}, table => [index('personal_tokens_user_id_idx').on(table.userId)])

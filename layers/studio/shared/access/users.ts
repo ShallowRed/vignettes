@@ -66,8 +66,9 @@ export interface UserStore {
   /** Change the role and end every session of the account. */
   setRole: (id: number, role: Role) => Promise<void>
   /**
-   * Delete an account and every grant it holds (one transaction). Permanent —
-   * the next login with the same identity starts a fresh account with no access.
+   * Delete an account, every grant it holds and its personal access tokens, in
+   * one transaction. The deletion is permanent: the next login with the same
+   * identity starts a fresh account with no access.
    * Returns false when the id is unknown.
    */
   remove: (id: number) => Promise<boolean>

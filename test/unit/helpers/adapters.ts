@@ -55,7 +55,7 @@ export interface StoreAdapter {
 }
 
 /** Every table, children first, so the foreign keys hold while the tables empty. */
-export const TABLES: TableName[] = ['deckPermissions', 'projectPermissions', 'deckAliases', 'deckDrafts', 'deckDraftSnapshots', 'deckMedia', 'deckVersions', 'decks', 'projects', 'users', 'dataMigrations']
+export const TABLES: TableName[] = ['personalTokens', 'deckPermissions', 'projectPermissions', 'deckAliases', 'deckDrafts', 'deckDraftSnapshots', 'deckMedia', 'deckVersions', 'decks', 'projects', 'users', 'dataMigrations']
 
 const table = (name: TableName) => schema[name] as any
 

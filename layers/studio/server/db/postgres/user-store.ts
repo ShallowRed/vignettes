@@ -3,7 +3,7 @@ import type { PostgresDb } from './index.ts'
 import { and, asc, eq, sql } from 'drizzle-orm'
 import { handleKey, invitedPlaceholder, isInvitedPlaceholder } from '../identities.ts'
 import { readRole } from '../stored-values.ts'
-import { deckPermissions, projectPermissions, users } from './schema.ts'
+import { deckPermissions, personalTokens, projectPermissions, users } from './schema.ts'
 
 type NewUser = Omit<typeof users.$inferInsert, 'id'>
 
@@ -161,6 +161,7 @@ export function createUserStore(db: PostgresDb): UserStore {
           return false
         await tx.delete(deckPermissions).where(eq(deckPermissions.userId, id))
         await tx.delete(projectPermissions).where(eq(projectPermissions.userId, id))
+        await tx.delete(personalTokens).where(eq(personalTokens.userId, id))
         await tx.delete(users).where(eq(users.id, id))
         return true
       })

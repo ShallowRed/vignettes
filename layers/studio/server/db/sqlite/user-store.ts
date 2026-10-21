@@ -3,7 +3,7 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { and, asc, eq, sql } from 'drizzle-orm'
 import { handleKey, invitedPlaceholder, isInvitedPlaceholder } from '../identities.ts'
 import { readRole } from '../stored-values.ts'
-import { deckPermissions, projectPermissions, users } from './schema.ts'
+import { deckPermissions, personalTokens, projectPermissions, users } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
@@ -167,6 +167,7 @@ export function createUserStore(db: Db): UserStore {
       db.transaction((tx) => {
         tx.delete(deckPermissions).where(eq(deckPermissions.userId, id)).run()
         tx.delete(projectPermissions).where(eq(projectPermissions.userId, id)).run()
+        tx.delete(personalTokens).where(eq(personalTokens.userId, id)).run()
         tx.delete(users).where(eq(users.id, id)).run()
       })
       return true

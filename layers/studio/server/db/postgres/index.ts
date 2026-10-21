@@ -25,6 +25,7 @@ import { createProjectPermissionStore } from './project-permission-store.ts'
 import { createProjectStore } from './project-store.ts'
 import * as schema from './schema.ts'
 import { createSnapshotStore } from './snapshot-store.ts'
+import { createTokenStore } from './token-store.ts'
 import { createUserStore } from './user-store.ts'
 import { createVersionHistory } from './version-history.ts'
 
@@ -144,6 +145,7 @@ export function createPostgresStores(db: PostgresDb): Stores {
     deckGrants: createPermissionStore(db),
     projectGrants: createProjectPermissionStore(db),
     users: createUserStore(db),
+    tokens: createTokenStore(db),
     drafts: createDraftStore(db),
     snapshots: createSnapshotStore(db),
     mediaIndex: createMediaIndex(db),

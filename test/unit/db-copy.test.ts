@@ -26,12 +26,14 @@ describe('copy of a SQLite database into PostgreSQL', () => {
     await from.drafts.save('deck', markdownToYDocUpdate('# Draft'))
     await from.snapshots.add('deck', { raw: '# Snapshot', authors: ['alice'], at: NOW })
     await from.deckGrants.set('deck', 101, 'editor', 'alice')
+    const token = { name: 'CLI', scope: 'write' as const, prefix: 'vgt_00000000', expiresAt: NOW }
+    await from.tokens.create(101, { ...token, tokenHash: 'hash-1' }, NOW)
 
     // A server that started on the target recorded its data migrations there.
     await target.db.insert(pgSchema.dataMigrations).values({ name: 'index-existing-deck-media', appliedAt: NOW })
     const copied = await copySqliteToPostgres(source, target.db)
 
-    expect(copied).toMatchObject({ users: 1, projects: 1, decks: 1, deck_versions: 1, deck_draft_snapshots: 1, deck_drafts: 1, deck_permissions: 1, data_migrations: 0 })
+    expect(copied).toMatchObject({ users: 1, projects: 1, decks: 1, deck_versions: 1, deck_draft_snapshots: 1, deck_drafts: 1, deck_permissions: 1, personal_tokens: 1, data_migrations: 0 })
     expect(await target.db.select().from(pgSchema.dataMigrations)).toEqual([])
     const to = createPostgresStores(target.db)
     expect(await to.archive.decks()).toEqual(await from.archive.decks())
@@ -41,6 +43,8 @@ describe('copy of a SQLite database into PostgreSQL', () => {
     await to.content.writer.save({ slug: 'deck', raw: '# Two', actor: 'alice' })
     expect((await to.versionHistory.list('deck')).map(version => version.id)).toEqual([2, 1])
     await expect(to.users.upsertOAuthLogin({ provider: 'google', providerId: 'sub-carol', login: 'carol@example.com' }, 'viewer')).resolves.toMatchObject({ id: 203 })
+    expect(await to.tokens.listForUser(101)).toEqual(await from.tokens.listForUser(101))
+    await expect(to.tokens.create(101, { ...token, tokenHash: 'hash-2' }, NOW)).resolves.toMatchObject({ id: 2 })
 
     await expect(copySqliteToPostgres(source, target.db)).rejects.toThrow(/already holds rows/)
   })

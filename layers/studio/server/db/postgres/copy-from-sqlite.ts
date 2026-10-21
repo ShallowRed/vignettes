@@ -5,10 +5,10 @@ import * as sqlite from '../sqlite/schema.ts'
 import * as postgres from './schema.ts'
 
 /** The tables, each after the ones its foreign keys name. */
-const TABLES = ['users', 'projects', 'decks', 'deckVersions', 'deckDraftSnapshots', 'deckDrafts', 'deckAliases', 'deckPermissions', 'projectPermissions', 'deckMedia', 'dataMigrations'] as const
+const TABLES = ['users', 'projects', 'decks', 'deckVersions', 'deckDraftSnapshots', 'deckDrafts', 'deckAliases', 'deckPermissions', 'projectPermissions', 'deckMedia', 'personalTokens', 'dataMigrations'] as const
 
 /** The tables whose id comes from a sequence. */
-const SEQUENCED = ['users', 'deckVersions', 'deckDraftSnapshots'] as const
+const SEQUENCED = ['users', 'deckVersions', 'deckDraftSnapshots', 'personalTokens'] as const
 
 /** Rows per insert, under the 65,535 parameters of a PostgreSQL statement. */
 const BATCH = 1000
