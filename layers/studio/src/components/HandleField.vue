@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { IdentityProvider } from '#shared/access'
-import { handleField, IDENTITY_PROVIDER_ITEMS } from '#shared/access'
+import { handleField, IDENTITY_PROVIDER_ITEMS, isProviderHandle } from '#shared/access'
 
 /**
  * An account named by its provider handle: the provider, the Google address or
- * GitHub username, and the reminder that no email is sent. The default slot
- * ends the row, for a button acting on the handle.
+ * GitHub username, and the reminder that no email is sent. Until the handle is
+ * valid, the help asks for one: the form's button that acts on the handle stays
+ * disabled until then. The default slot ends the row, for such a button.
  */
 defineProps<{ error?: string, autofocus?: boolean }>()
 
@@ -16,13 +17,16 @@ const { t } = useI18n()
 
 const isGoogle = computed(() => provider.value === 'google')
 const field = computed(() => handleField(provider.value))
+const help = computed(() => isProviderHandle(provider.value, handle.value)
+  ? t('deck.grantForm.noEmailNotice', { provider: isGoogle.value ? 'Google' : 'GitHub' })
+  : t(field.value.missingKey))
 </script>
 
 <template>
   <UFormField
     :label="t(field.labelKey)"
     :error="error"
-    :help="t('deck.grantForm.noEmailNotice', { provider: isGoogle ? 'Google' : 'GitHub' })"
+    :help="help"
   >
     <div class="flex items-center gap-2">
       <USelect

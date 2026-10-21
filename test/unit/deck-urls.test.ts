@@ -1,4 +1,4 @@
-import { deckAttributes, isDeckUrl, parseDeckMeta, readAttribute, urlKindOf } from '@vignettes/core/deck'
+import { deckAttributes, isDeckUrl, isRefusedEmbed, isRefusedEmbedUrl, parseDeckMeta, readAttribute, urlKindOf } from '@vignettes/core/deck'
 import { buildStoryUrl, EMBED_SANDBOX, embedSandbox, resolveSlideMedia } from '@vignettes/core/render'
 import { describe, expect, it } from 'vitest'
 
@@ -47,6 +47,25 @@ describe('isDeckUrl', () => {
   it('refuses what is not a string', () => {
     expect(isDeckUrl(undefined)).toBe(false)
     expect(isDeckUrl(1)).toBe(false)
+  })
+})
+
+describe('isRefusedEmbedUrl', () => {
+  it('refuses an http address of another machine', () => {
+    for (const url of ['http://example.com/a.png', 'HTTP://example.com', ' http://192.168.1.2:6006'])
+      expect(isRefusedEmbedUrl(url)).toBe(true)
+  })
+
+  it('takes https, the presenter machine over http, and the paths of the site', () => {
+    for (const url of ['https://example.com', 'http://localhost:6006/', 'http://127.0.0.1/a.png', '/images/a.png', 'a.png', undefined])
+      expect(isRefusedEmbedUrl(url)).toBe(false)
+  })
+
+  it('applies to what the page loads, a link excepted', () => {
+    expect(isRefusedEmbed('iframe', 'src', 'http://example.com')).toBe(true)
+    expect(isRefusedEmbed('quote', 'avatar', 'http://example.com/a.png')).toBe(true)
+    expect(isRefusedEmbed('a', 'href', 'http://example.com')).toBe(false)
+    expect(isRefusedEmbed('quote', 'author', 'http://example.com')).toBe(false)
   })
 })
 

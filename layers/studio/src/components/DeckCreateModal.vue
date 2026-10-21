@@ -7,14 +7,15 @@ import { slugify } from '@vignettes/core/slugify'
 import { getDefaultTheme, knownThemes } from '@vignettes/core/theme'
 import { deckApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
+import { useDerivedSlug } from '../composables/useDerivedSlug'
 import { useFormModal } from '../composables/useFormModal'
 import { templatesQuery } from '../queries'
 import { requestErrorMessage } from '../utils/request-error'
 
 // Create-deck modal: the deck is born in the database (draft status) and opens
 // in the editor. It starts from a template, with the title and theme typed here,
-// or from a Markdown file, whose frontmatter gives them. The slug is the user's
-// to type; the wand fills it from the title on demand. `defaultProject`
+// or from a Markdown file, whose frontmatter gives them. The slug follows the
+// title until the user types one (`useDerivedSlug`). `defaultProject`
 // pre-selects a folder (folder-page create).
 const props = defineProps<{ projects?: Project[], defaultProject?: string }>()
 
@@ -40,14 +41,14 @@ const fileTheme = ref<string | undefined>(undefined)
 // The slug the server refused as taken, shown on its field until it changes.
 const takenSlug = ref('')
 
-const { state, errorMessage, runIfValid } = useFormModal(
+const { state, errorMessage, runIfValid, onReset } = useFormModal(
   open,
   () => ({ start: templates.value?.[0] ?? '', title: '', slug: '', project: props.defaultProject ?? NONE, theme: getDefaultTheme() }),
-  () => {
-    file.value = null
-    takenSlug.value = ''
-  },
 )
+onReset(() => {
+  file.value = null
+  takenSlug.value = ''
+})
 
 watch(templates, (ids) => {
   const first = ids?.[0]
@@ -57,6 +58,8 @@ watch(templates, (ids) => {
 
 const fromFile = computed(() => state.start === FILE)
 const title = computed(() => (fromFile.value ? fileTitle.value : state.title).trim())
+const { slug, fill: fillSlug } = useDerivedSlug(state, () => title.value, value => slugify(value, { lower: true, strict: true }))
+onReset(fillSlug)
 
 function startLabel(id: string, part: 'label' | 'description') {
   const key = `catalog.deckCreate.start.${id}.${part}`
@@ -69,7 +72,7 @@ const startItems = computed(() => [
 ])
 
 // The file is read here with the reading the server applies, so a refused
-// frontmatter shows before the submit and the wand has a title to work from.
+// frontmatter shows before the submit and the slug has a title to follow.
 watch(file, async (chosen) => {
   fileRaw.value = ''
   fileIssues.value = []
@@ -99,17 +102,11 @@ function issuesMessage(issues: DeckFileIssue[]): string {
 
 const fileError = computed(() => fileIssues.value.length ? issuesMessage(fileIssues.value) : '')
 
-// Filling from the title is an explicit act (the wand), never automatic: the
-// slug is the user's to choose.
-function slugFromTitle() {
-  state.slug = slugify(title.value, { lower: true, strict: true })
-}
-
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 const slugError = computed(() => {
   if (!slugValid.value)
     return t('catalog.form.slugInvalid')
-  return state.slug && state.slug === takenSlug.value ? t('catalog.deckCreate.slugTaken', { slug: state.slug }) : undefined
+  return state.slug && state.slug === takenSlug.value ? t('catalog.form.addressTaken', { slug: state.slug }) : undefined
 })
 
 const projectItems = computed(() => [
@@ -147,13 +144,26 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
   },
 })
 
-const canSubmit = computed(() => {
-  const source = fromFile.value ? Boolean(fileRaw.value) && fileIssues.value.length === 0 : Boolean(state.start)
-  return source && title.value.length > 0 && isDeckSlug(state.slug) && !slugError.value && !pending.value
+// What the form still needs before it can be sent; the fields that hold an
+// error show it.
+const blockedReason = computed(() => {
+  if (fromFile.value && !fileRaw.value)
+    return t('catalog.form.missing.file')
+  if (fromFile.value && fileIssues.value.length > 0)
+    return t('catalog.form.missing.fileInvalid')
+  if (!state.start)
+    return t('catalog.form.missing.start')
+  if (!title.value)
+    return t('catalog.form.missing.title')
+  if (!state.slug)
+    return t('catalog.form.missing.address')
+  if (!isDeckSlug(state.slug) || slugError.value)
+    return t('catalog.form.missing.addressInvalid')
+  return undefined
 })
 
 function submit() {
-  runIfValid(canSubmit.value, runCreate)
+  runIfValid(!blockedReason.value && !pending.value, runCreate)
 }
 </script>
 
@@ -217,13 +227,14 @@ function submit() {
         </UFormField>
 
         <UFormField
-          :label="t('common.fields.slug')"
+          :label="t('common.fields.address')"
           :error="slugError"
-          :help="t('catalog.deckCreate.slugHelp')"
+          :help="t('catalog.form.deckAddressHelp', { slug: state.slug || '…' })"
+          required
         >
           <div class="flex items-center gap-2">
             <UInput
-              v-model="state.slug"
+              v-model="slug"
               :placeholder="t('common.fields.slugPlaceholder')"
               class="flex-1 font-mono"
             />
@@ -233,7 +244,7 @@ function submit() {
               variant="subtle"
               :aria-label="t('common.actions.fillFromTitle')"
               :disabled="!title"
-              @click="slugFromTitle"
+              @click="fillSlug"
             />
           </div>
         </UFormField>
@@ -273,21 +284,14 @@ function submit() {
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton
-          :label="t('common.actions.cancel')"
-          color="neutral"
-          variant="ghost"
-          @click="close"
-        />
-        <UButton
-          :label="t('catalog.deckCreate.submit')"
-          icon="i-lucide-file-plus-2"
-          :loading="pending"
-          :disabled="!canSubmit"
-          @click="submit"
-        />
-      </div>
+      <FormModalFooter
+        :label="t('catalog.deckCreate.submit')"
+        icon="i-lucide-file-plus-2"
+        :loading="pending"
+        :blocked-reason="blockedReason"
+        @cancel="close"
+        @submit="submit"
+      />
     </template>
   </UModal>
 </template>

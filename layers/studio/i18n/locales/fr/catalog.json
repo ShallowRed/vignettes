@@ -75,10 +75,8 @@
     "deckCreate": {
       "description": "Crée une présentation privée et l'ouvre dans l'éditeur.",
       "titlePlaceholder": "Titre de la présentation",
-      "slugHelp": "Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre.",
       "submit": "Créer et modifier",
       "created": "Présentation créée",
-      "slugTaken": "Le slug « {slug} » est déjà pris.",
       "start": {
         "label": "Point de départ",
         "blank": {
@@ -107,24 +105,34 @@
     "form": {
       "slugInvalid": "Lettres, chiffres, tirets et underscores uniquement",
       "createFailed": "Échec de la création",
-      "identifierTaken": "L'identifiant « {slug} » est déjà pris."
+      "addressTaken": "L'adresse « {slug} » est déjà prise.",
+      "deckAddressHelp": "L'adresse suit le titre tant que vous ne la modifiez pas : /slides/{slug}",
+      "missing": {
+        "file": "Choisissez un fichier .md.",
+        "title": "Saisissez un titre.",
+        "name": "Saisissez un nom.",
+        "address": "Saisissez une adresse.",
+        "fileInvalid": "Corrigez le fichier, ou choisissez un autre point de départ.",
+        "start": "Choisissez un point de départ.",
+        "addressInvalid": "Corrigez l'adresse."
+      }
     },
     "projectCreate": {
       "description": "Un dossier pour regrouper des présentations.",
       "namePlaceholder": "Nom du dossier",
-      "identifierHelp": "Optionnel : laissé vide, il sera dérivé du nom. La baguette le remplit depuis le nom.",
       "fillFromName": "Remplir depuis le nom",
       "colorHelp": "Optionnel : teinte l'icône du dossier.",
       "submit": "Créer le dossier",
-      "created": "Dossier créé"
+      "created": "Dossier créé",
+      "addressHelp": "L'adresse suit le nom tant que vous ne la modifiez pas : /projects/{slug}"
     },
     "projectEdit": {
       "title": "Modifier le dossier",
-      "description": "Nom, couleur et identifiant.",
-      "identifierHelp": "Segment d'URL (/projects/…). Le changer casse les anciens liens du dossier.",
+      "description": "Nom, couleur et adresse.",
       "regenerateFromName": "Régénérer depuis le nom",
       "saved": "Dossier mis à jour",
-      "saveFailed": "Échec de la mise à jour"
+      "saveFailed": "Échec de la mise à jour",
+      "addressHelp": "Adresse du dossier : /projects/{slug}. La changer casse les anciens liens du dossier."
     },
     "projectDelete": {
       "title": "Mettre le dossier à la corbeille ?",

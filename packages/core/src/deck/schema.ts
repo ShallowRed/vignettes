@@ -82,6 +82,12 @@ export const DeckMetaSchema = z
   })
   .catchall(z.unknown())
 
+/**
+ * The frontmatter keys whose addresses the page loads as a frame or an image:
+ * the root of the story embeds and the background images.
+ */
+export const FRONTMATTER_EMBED_KEYS: readonly string[] = ['storybook', 'backgrounds']
+
 export type RevealConfig = z.infer<typeof RevealConfigSchema>
 
 export type ThemeBackgrounds = z.infer<typeof ThemeBackgroundsSchema>

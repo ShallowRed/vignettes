@@ -75,10 +75,8 @@
     "deckCreate": {
       "description": "Creates a private presentation and opens it in the editor.",
       "titlePlaceholder": "Title of the presentation",
-      "slugHelp": "Identifier in the URL (/slides/…). The wand fills it from the title.",
       "submit": "Create and edit",
       "created": "Presentation created",
-      "slugTaken": "The slug “{slug}” is already taken.",
       "start": {
         "label": "Start from",
         "blank": {
@@ -107,24 +105,34 @@
     "form": {
       "slugInvalid": "Letters, digits, hyphens and underscores only",
       "createFailed": "Creation failed",
-      "identifierTaken": "The identifier “{slug}” is already taken."
+      "addressTaken": "The address “{slug}” is already taken.",
+      "deckAddressHelp": "The address follows the title until you change it: /slides/{slug}",
+      "missing": {
+        "file": "Choose a .md file.",
+        "title": "Type a title.",
+        "name": "Type a name.",
+        "address": "Type an address.",
+        "fileInvalid": "Fix the file, or choose another starting point.",
+        "start": "Choose a starting point.",
+        "addressInvalid": "Fix the address."
+      }
     },
     "projectCreate": {
       "description": "A folder to group presentations.",
       "namePlaceholder": "Name of the folder",
-      "identifierHelp": "Optional: left empty, it is derived from the name. The wand fills it from the name.",
       "fillFromName": "Fill from the name",
       "colorHelp": "Optional: tints the folder icon.",
       "submit": "Create the folder",
-      "created": "Folder created"
+      "created": "Folder created",
+      "addressHelp": "The address follows the name until you change it: /projects/{slug}"
     },
     "projectEdit": {
       "title": "Edit the folder",
-      "description": "Name, color and identifier.",
-      "identifierHelp": "URL segment (/projects/…). Changing it breaks the old links to the folder.",
+      "description": "Name, color and address.",
       "regenerateFromName": "Regenerate from the name",
       "saved": "Folder updated",
-      "saveFailed": "Update failed"
+      "saveFailed": "Update failed",
+      "addressHelp": "Address of the folder: /projects/{slug}. Changing it breaks the old links to the folder."
     },
     "projectDelete": {
       "title": "Move the folder to the trash?",

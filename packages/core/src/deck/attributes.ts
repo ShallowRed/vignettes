@@ -1,6 +1,6 @@
 import type { DeckUrlKind } from './urls.ts'
 import { componentKey, DECK_ANNOTATIONS, deckComponents } from './components.ts'
-import { isDeckUrl } from './urls.ts'
+import { isDeckUrl, isRefusedEmbedUrl } from './urls.ts'
 
 /**
  * The attributes an element of a deck keeps. MDC computes a bound attribute
@@ -27,6 +27,9 @@ const URL_ATTRIBUTES: Readonly<Record<string, DeckUrlKind>> = {
   databackgroundvideo: 'page',
 }
 
+// The attributes whose address opens on a click; the others load theirs in the page.
+const LINK_ATTRIBUTES = new Set(['href', 'action', 'formaction', 'xlinkhref'])
+
 const BOUND_RE = /^(?::|v-bind:)(.+)$/
 // Vue directives MDC applies: a whole object of attributes, a handler, a model.
 const DIRECTIVE_RE = /^(?:v-bind$|v-on:|@|v-model)/
@@ -48,6 +51,15 @@ export function urlKindOf(tag: string, name: string): DeckUrlKind | undefined {
   if (tagKey === 'img' && key === 'src')
     return 'image'
   return URL_ATTRIBUTES[key]
+}
+
+/**
+ * Whether the page of a deck refuses to load the address that the attribute
+ * `name` of an element `tag` gives (`isRefusedEmbedUrl`). The deck keeps the
+ * attribute.
+ */
+export function isRefusedEmbed(tag: string, name: string, value: unknown): boolean {
+  return urlKindOf(tag, name) !== undefined && !LINK_ATTRIBUTES.has(attributeKey(name)) && isRefusedEmbedUrl(value)
 }
 
 export type AttributeReading

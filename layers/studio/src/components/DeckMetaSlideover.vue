@@ -547,27 +547,14 @@ const audience = computed(() => {
       v-if="privileged"
       #footer
     >
-      <div class="flex items-center justify-end gap-2 w-full">
-        <p
-          v-if="saveBlocked"
-          class="settings__hint mr-auto"
-        >
-          {{ t('deck.meta.passwordMissingWarning') }}
-        </p>
-        <UButton
-          :label="t('common.actions.cancel')"
-          color="neutral"
-          variant="ghost"
-          @click="close"
-        />
-        <UButton
-          :label="t('common.actions.save')"
-          icon="i-lucide-check"
-          :loading="saving"
-          :disabled="saveBlocked"
-          @click="() => save()"
-        />
-      </div>
+      <FormModalFooter
+        :label="t('common.actions.save')"
+        icon="i-lucide-check"
+        :loading="saving"
+        :blocked-reason="saveBlocked ? t('deck.meta.passwordMissing') : undefined"
+        @cancel="close"
+        @submit="() => save()"
+      />
     </template>
   </USlideover>
 </template>

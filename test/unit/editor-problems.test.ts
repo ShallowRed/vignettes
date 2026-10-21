@@ -28,4 +28,16 @@ describe('frontmatterProblems', () => {
     const problems = frontmatterProblems(state, key => key)
     expect(problems.map(({ from, to, severity }) => [state.sliceDoc(from, to), severity])).toEqual([['dependencies', 'info']])
   })
+
+  it('gives a line and a short text to the problems the editor lists', () => {
+    const doc = '---\ntitle: T\ntheme: inconnu\nstorybook: http://sb.example\nreveal:\n  width: large\n---\n# T'
+    const state = EditorState.create({ doc })
+    const problems = frontmatterProblems(state, (key: string, params?: unknown) => params ? `${key} ${JSON.stringify(params)}` : key)
+    expect(problems.map(({ from, to, severity, short }) => [state.sliceDoc(from, to), severity, short?.split(' ')[0]])).toEqual([
+      ['inconnu', 'warning', 'editor.frontmatter.unknownThemeShort'],
+      ['http://sb.example', 'warning', 'editor.diagnostics.refusedEmbedShort'],
+      ['large', 'error', 'editor.frontmatter.invalidValueShort'],
+    ])
+    expect(problems[2]!.message).toBe('editor.frontmatter.expected.number')
+  })
 })

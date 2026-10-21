@@ -30,9 +30,9 @@ export function isProviderHandle(provider: IdentityProvider, handle: string): bo
   return rest.length === 0 && !!local && !!domain && domain.includes('.')
 }
 
-/** Message keys of the placeholder and the label of the handle field, per provider. */
-export function handleField(provider: IdentityProvider): { labelKey: string, placeholderKey: string } {
+/** Message keys of the label, the placeholder and the request for a valid handle of the handle field, per provider. */
+export function handleField(provider: IdentityProvider): { labelKey: string, placeholderKey: string, missingKey: string } {
   return provider === 'google'
-    ? { labelKey: 'deck.handles.googleLabel', placeholderKey: 'deck.handles.googlePlaceholder' }
-    : { labelKey: 'deck.handles.githubLabel', placeholderKey: 'deck.handles.githubPlaceholder' }
+    ? { labelKey: 'deck.handles.googleLabel', placeholderKey: 'deck.handles.googlePlaceholder', missingKey: 'deck.handles.googleMissing' }
+    : { labelKey: 'deck.handles.githubLabel', placeholderKey: 'deck.handles.githubPlaceholder', missingKey: 'deck.handles.githubMissing' }
 }

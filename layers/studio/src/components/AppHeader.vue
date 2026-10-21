@@ -98,6 +98,8 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
         to="/login"
         icon="i-lucide-log-in"
         :label="t('common.actions.signIn')"
+        :aria-label="t('common.actions.signIn')"
+        :ui="{ label: 'hidden sm:inline' }"
         color="neutral"
         variant="subtle"
       />

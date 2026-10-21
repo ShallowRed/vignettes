@@ -45,15 +45,21 @@ const { mutate: runSave, isLoading: pending } = useMutation({
   },
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
-      ? t('catalog.form.identifierTaken', { slug: state.slug })
+      ? t('catalog.form.addressTaken', { slug: state.slug })
       : requestErrorMessage(e, t('catalog.projectEdit.saveFailed'))
   },
 })
 
-const canSubmit = computed(() => state.title.trim().length > 0 && slugValid.value && !pending.value)
+const blockedReason = computed(() => {
+  if (!state.title.trim())
+    return t('catalog.form.missing.name')
+  if (!state.slug)
+    return t('catalog.form.missing.address')
+  return slugValid.value ? undefined : t('catalog.form.missing.addressInvalid')
+})
 
 function submit() {
-  runIfValid(canSubmit.value, runSave)
+  runIfValid(!blockedReason.value && !pending.value, runSave)
 }
 
 function close() {
@@ -84,9 +90,9 @@ function close() {
         </UFormField>
 
         <UFormField
-          :label="t('common.fields.identifier')"
+          :label="t('common.fields.address')"
           :error="slugValid ? undefined : t('catalog.form.slugInvalid')"
-          :help="t('catalog.projectEdit.identifierHelp')"
+          :help="t('catalog.projectEdit.addressHelp', { slug: state.slug || '…' })"
         >
           <div class="flex items-center gap-2">
             <UInput
@@ -158,21 +164,14 @@ function close() {
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton
-          :label="t('common.actions.cancel')"
-          color="neutral"
-          variant="ghost"
-          @click="close"
-        />
-        <UButton
-          :label="t('common.actions.save')"
-          icon="i-lucide-check"
-          :loading="pending"
-          :disabled="!canSubmit"
-          @click="submit"
-        />
-      </div>
+      <FormModalFooter
+        :label="t('common.actions.save')"
+        icon="i-lucide-check"
+        :loading="pending"
+        :blocked-reason="blockedReason"
+        @cancel="close"
+        @submit="submit"
+      />
     </template>
   </UModal>
 </template>

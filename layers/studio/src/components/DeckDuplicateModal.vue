@@ -5,6 +5,7 @@ import { isDeckSlug } from '@vignettes/core/deck'
 import { slugify } from '@vignettes/core/slugify'
 import { deckApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
+import { useDerivedSlug } from '../composables/useDerivedSlug'
 import { useFormModal } from '../composables/useFormModal'
 import { requestErrorMessage } from '../utils/request-error'
 
@@ -25,20 +26,38 @@ const { t } = useI18n()
 const toast = useToast()
 const { invalidatePresentations } = useCatalogCache()
 
-const { state, errorMessage, runIfValid } = useFormModal(
+// The slug the server refused as taken.
+const takenSlug = ref('')
+const { state, errorMessage, runIfValid, onReset } = useFormModal(
   open,
   () => ({ title: props.item.title, slug: '', variantLabel: '', sourceVariantLabel: props.item.variantLabel ?? '' }),
 )
-
+onReset(() => {
+  takenSlug.value = ''
+})
 const isVariant = computed(() => props.mode === 'variant')
+// A variant's slug follows its title and its label, as `talk-en`.
+const { slug, fill: fillSlug } = useDerivedSlug(
+  state,
+  () => isVariant.value ? `${state.title} ${state.variantLabel}` : state.title,
+  value => slugify(value, { lower: true, strict: true }),
+)
+onReset(fillSlug)
 // The source needs a label too, or the family card would show its slug.
 const askSourceLabel = computed(() => isVariant.value && !props.item.variantLabel)
 
-function slugFromTitle() {
-  state.slug = slugify(state.title, { lower: true, strict: true })
-}
+// The copy opens with the title of the source, so its slug may be the
+// source's: the footer says so until the person changes a field.
+const pristine = computed(() => state.title === props.item.title && !state.variantLabel && state.sourceVariantLabel === (props.item.variantLabel ?? ''))
+const sourceSlug = computed(() => state.slug === props.item.slug)
 
-const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
+const slugError = computed(() => {
+  if (state.slug !== '' && !isDeckSlug(state.slug))
+    return t('catalog.form.slugInvalid')
+  if (sourceSlug.value && !pristine.value)
+    return t('deck.duplicate.sourceAddress')
+  return state.slug && state.slug === takenSlug.value ? t('catalog.form.addressTaken', { slug: state.slug }) : undefined
+})
 
 function close() {
   open.value = false
@@ -64,21 +83,34 @@ const { mutate: runCopy, isLoading: pending } = useMutation({
     await navigateTo(`/edit/${state.slug}`)
   },
   onError(e: any) {
-    errorMessage.value = e?.statusCode === 409
-      ? t('deck.duplicate.slugTaken', { slug: state.slug })
-      : requestErrorMessage(e, t('deck.duplicate.failed'))
+    if (e?.statusCode === 409) {
+      takenSlug.value = state.slug
+      return
+    }
+    errorMessage.value = requestErrorMessage(e, t('deck.duplicate.failed'))
   },
 })
 
-const canSubmit = computed(() =>
-  state.title.trim().length > 0
-  && isDeckSlug(state.slug)
-  && (!isVariant.value || state.variantLabel.trim().length > 0)
-  && (!askSourceLabel.value || state.sourceVariantLabel.trim().length > 0)
-  && !pending.value)
+// What the form still needs before it can be sent; the fields that hold an
+// error show it.
+const blockedReason = computed(() => {
+  if (!state.title.trim())
+    return t('catalog.form.missing.title')
+  if (askSourceLabel.value && !state.sourceVariantLabel.trim())
+    return t('deck.duplicate.missingSourceLabel')
+  if (isVariant.value && !state.variantLabel.trim())
+    return t('deck.duplicate.missingVariantLabel')
+  if (!state.slug)
+    return t('catalog.form.missing.address')
+  if (sourceSlug.value)
+    return t('deck.duplicate.sourceAddress')
+  if (!isDeckSlug(state.slug) || slugError.value)
+    return t('catalog.form.missing.addressInvalid')
+  return undefined
+})
 
 function submit() {
-  runIfValid(canSubmit.value, runCopy)
+  runIfValid(!blockedReason.value && !pending.value, runCopy)
 }
 </script>
 
@@ -107,13 +139,14 @@ function submit() {
         </UFormField>
 
         <UFormField
-          :label="t('common.fields.slug')"
-          :error="slugValid ? undefined : t('deck.duplicate.slugInvalid')"
-          :help="t('deck.duplicate.slugHelp')"
+          :label="t('common.fields.address')"
+          :error="slugError"
+          :help="t(isVariant ? 'deck.duplicate.variantAddressHelp' : 'catalog.form.deckAddressHelp', { slug: state.slug || '…' })"
+          required
         >
           <div class="flex items-center gap-2">
             <UInput
-              v-model="state.slug"
+              v-model="slug"
               :placeholder="t('common.fields.slugPlaceholder')"
               class="flex-1 font-mono"
             />
@@ -122,7 +155,8 @@ function submit() {
               color="neutral"
               variant="subtle"
               :aria-label="t('common.actions.fillFromTitle')"
-              @click="slugFromTitle"
+              :disabled="!state.title.trim()"
+              @click="fillSlug"
             />
           </div>
         </UFormField>
@@ -169,21 +203,14 @@ function submit() {
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton
-          :label="t('common.actions.cancel')"
-          color="neutral"
-          variant="ghost"
-          @click="close"
-        />
-        <UButton
-          :label="isVariant ? t('deck.duplicate.createVariant') : t('deck.duplicate.createEdition')"
-          icon="i-lucide-copy-plus"
-          :loading="pending"
-          :disabled="!canSubmit"
-          @click="submit"
-        />
-      </div>
+      <FormModalFooter
+        :label="isVariant ? t('deck.duplicate.createVariant') : t('deck.duplicate.createEdition')"
+        icon="i-lucide-copy-plus"
+        :loading="pending"
+        :blocked-reason="blockedReason"
+        @cancel="close"
+        @submit="submit"
+      />
     </template>
   </UModal>
 </template>

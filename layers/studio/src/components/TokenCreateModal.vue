@@ -20,14 +20,14 @@ const queryCache = useQueryCache()
 
 const secret = ref<string | null>(null)
 const copied = ref(false)
-const { state, errorMessage, runIfValid } = useFormModal(
+const { state, errorMessage, runIfValid, onReset } = useFormModal(
   open,
   () => ({ name: '', scope: 'write' as TokenScope, days: DEFAULT_TOKEN_DAYS }),
-  () => {
-    secret.value = null
-    copied.value = false
-  },
 )
+onReset(() => {
+  secret.value = null
+  copied.value = false
+})
 watch(open, (now) => {
   if (!now)
     secret.value = null

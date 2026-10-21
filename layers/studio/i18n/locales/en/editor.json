@@ -66,7 +66,9 @@
       "fragmentSteps": "Show fragments step by step",
       "fragmentStepsActive": "Fragments step by step: the preview shows the fragment under the cursor",
       "followCursor": "Follow the slide under the cursor",
-      "followCursorActive": "Following the slide under the cursor: on"
+      "followCursorActive": "Following the slide under the cursor: on",
+      "presentDraft": "Present the draft",
+      "frame": "Preview slide: the arrow keys change the slide"
     },
     "toolbar": {
       "headingMenu": "Heading",
@@ -124,7 +126,18 @@
       "invalidYaml": "Invalid YAML: {reason}",
       "unknownKey": "Unknown key: “{key}” has no effect.",
       "expectedValue": "Expected value: {values}.",
-      "completionHint": "Ctrl + Space: available settings"
+      "completionHint": "Ctrl + Space: available settings",
+      "invalidYamlShort": "Line {line}: unreadable front matter",
+      "invalidValue": "Value refused by the presentation format.",
+      "invalidValueShort": "Line {line}: value of “{key}” refused",
+      "expected": {
+        "number": "Value refused: this key takes a number, such as 1280.",
+        "boolean": "Value refused: this key takes true or false.",
+        "string": "Value refused: this key takes a text."
+      },
+      "expectedValueShort": "Line {line}: unknown value of “{key}”",
+      "unknownTheme": "Unknown theme: the preview and the presentation show without a theme. Available themes: {themes}.",
+      "unknownThemeShort": "Line {line}: unknown theme “{theme}”"
     },
     "diagnostics": {
       "list": "Problems found by the preview",
@@ -135,7 +148,9 @@
       "refusedUrl": "Address refused: a deck takes an https:// or http:// address, or a path on this site.",
       "refusedUrlShort": "Line {line}: address refused",
       "refusedBinding": "Attribute refused: an attribute written with “:” takes a JSON value, such as true, 2 or \"text\", and a deck ignores v-bind, v-on, {'@'} and v-model.",
-      "refusedBindingShort": "Line {line}: attribute “{name}” refused"
+      "refusedBindingShort": "Line {line}: attribute “{name}” refused",
+      "refusedEmbed": "http:// address: the browser blocks this frame, image or video in the studio. Write the address with https://, or with http://localhost for a server on your computer.",
+      "refusedEmbedShort": "Line {line}: http:// address blocked"
     }
   }
 }

@@ -1,5 +1,5 @@
 import type { ParserId } from './parser.ts'
-import { readAttribute } from './attributes.ts'
+import { isRefusedEmbed, readAttribute } from './attributes.ts'
 import { componentKey } from './components.ts'
 
 /**
@@ -301,10 +301,14 @@ export function componentMentions(raw: string, names: Iterable<string>): Compone
   return mentions
 }
 
-/** An attribute written in the source that `readAttribute` refuses. */
+/**
+ * An attribute written in the source that `readAttribute` refuses (`url`,
+ * `binding`), or whose address the page refuses to load (`http`, see
+ * `isRefusedEmbed`).
+ */
 export interface AttributeMention {
   name: string
-  reason: 'url' | 'binding'
+  reason: 'url' | 'binding' | 'http'
   /** 1-based line in the whole document. */
   line: number
   /** 0-based column of the attribute, and length of its text. */
@@ -320,9 +324,10 @@ const BLOCK_TAG_RE = /:+([a-z][\w-]*)(?:\[[^\]]*\])?$/i
 const MARKDOWN_LINK_RE = /(!?)\[[^\]]*\]\(\s*<?((?:[^\s()<>]|\([^\s()]*\))+)/g
 
 /**
- * The attributes of the source that the deck refuses: in the `{…}` block of a
- * component, an annotation or a span, and the address of an inline markdown
- * link or image. Outside the frontmatter, fenced code and inline code.
+ * The attributes of the source that the deck refuses, or whose address the
+ * page refuses to load: in the `{…}` block of a component, an annotation or a
+ * span, and the address of an inline markdown link or image. Outside the
+ * frontmatter, fenced code and inline code.
  */
 export function attributeMentions(raw: string): AttributeMention[] {
   const mentions: AttributeMention[] = []
@@ -330,6 +335,8 @@ export function attributeMentions(raw: string): AttributeMention[] {
     const reading = readAttribute(tag, name, value)
     if ('refused' in reading)
       mentions.push({ name, reason: reading.refused, line, column, length })
+    else if (isRefusedEmbed(tag, reading.name, reading.value))
+      mentions.push({ name, reason: 'http', line, column, length })
   }
   for (const { line, prose } of proseLines(raw)) {
     for (const block of prose.matchAll(ATTRIBUTE_BLOCK_RE)) {

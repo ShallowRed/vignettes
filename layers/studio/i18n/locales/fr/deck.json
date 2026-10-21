@@ -75,7 +75,8 @@
       "supersededByHint": "La présentation passe dans les éditions remplacées du dossier.",
       "noReplacement": "Aucune",
       "saved": "Réglages enregistrés",
-      "saveFailed": "Échec de l'enregistrement"
+      "saveFailed": "Échec de l'enregistrement",
+      "passwordMissing": "Saisissez un mot de passe."
     },
     "delete": {
       "title": "Mettre à la corbeille ?",
@@ -89,8 +90,6 @@
       "editionTitle": "Nouvelle édition",
       "variantDescription": "Une copie de « {title} » dans la même famille : les deux partagent une carte et se rejoignent depuis le lecteur.",
       "editionDescription": "Une copie de « {title} » qui la remplace : l'ancienne passe dans les éditions remplacées du dossier.",
-      "slugInvalid": "Lettres, chiffres, tirets et underscores uniquement",
-      "slugHelp": "Identifiant de l'URL (/slides/…). La baguette le remplit depuis le titre.",
       "sourceLabel": "Libellé de l'original",
       "sourceLabelHelp": "FR, Vidéo, Long…",
       "variantLabel": "Libellé de la variante",
@@ -101,8 +100,11 @@
       "createEdition": "Créer l'édition",
       "variantCreated": "Variante créée",
       "editionCreated": "Nouvelle édition créée",
-      "slugTaken": "Le slug « {slug} » est déjà pris.",
-      "failed": "Échec de la copie"
+      "failed": "Échec de la copie",
+      "sourceAddress": "C'est l'adresse de la présentation d'origine : changez le titre ou l'adresse.",
+      "missingSourceLabel": "Saisissez le libellé de l'original.",
+      "missingVariantLabel": "Saisissez le libellé de la variante.",
+      "variantAddressHelp": "L'adresse suit le titre et le libellé de la variante tant que vous ne la modifiez pas : /slides/{slug}"
     },
     "history": {
       "title": "Historique",
@@ -207,7 +209,9 @@
       "googleLabel": "Adresse du compte Google",
       "googlePlaceholder": "prenom.nom{'@'}gmail.com",
       "githubLabel": "Nom d'utilisateur GitHub",
-      "githubPlaceholder": "nom-utilisateur"
+      "githubPlaceholder": "nom-utilisateur",
+      "googleMissing": "Saisissez l'adresse d'un compte Google.",
+      "githubMissing": "Saisissez un nom d'utilisateur GitHub."
     }
   }
 }

@@ -75,7 +75,8 @@
       "supersededByHint": "The presentation moves to the replaced editions of the folder.",
       "noReplacement": "None",
       "saved": "Settings saved",
-      "saveFailed": "Saving failed"
+      "saveFailed": "Saving failed",
+      "passwordMissing": "Type a password."
     },
     "delete": {
       "title": "Move to trash?",
@@ -89,8 +90,6 @@
       "editionTitle": "New edition",
       "variantDescription": "A copy of \"{title}\" in the same family: both share a card and link to each other from the viewer.",
       "editionDescription": "A copy of \"{title}\" that replaces it: the old one moves to the replaced editions of the folder.",
-      "slugInvalid": "Letters, digits, hyphens and underscores only",
-      "slugHelp": "Identifier in the URL (/slides/…). The wand fills it from the title.",
       "sourceLabel": "Label of the original",
       "sourceLabelHelp": "FR, Video, Long…",
       "variantLabel": "Label of the variant",
@@ -101,8 +100,11 @@
       "createEdition": "Create the edition",
       "variantCreated": "Variant created",
       "editionCreated": "New edition created",
-      "slugTaken": "The slug \"{slug}\" is already taken.",
-      "failed": "Copy failed"
+      "failed": "Copy failed",
+      "sourceAddress": "This is the address of the original presentation: change the title or the address.",
+      "missingSourceLabel": "Type the label of the original.",
+      "missingVariantLabel": "Type the label of the variant.",
+      "variantAddressHelp": "The address follows the title and the label of the variant until you change it: /slides/{slug}"
     },
     "history": {
       "title": "History",
@@ -207,7 +209,9 @@
       "googleLabel": "Google account address",
       "googlePlaceholder": "first.last{'@'}gmail.com",
       "githubLabel": "GitHub username",
-      "githubPlaceholder": "username"
+      "githubPlaceholder": "username",
+      "googleMissing": "Type the address of a Google account.",
+      "githubMissing": "Type a GitHub username."
     }
   }
 }

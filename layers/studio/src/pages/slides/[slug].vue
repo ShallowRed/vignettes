@@ -34,6 +34,19 @@ const notFound = computed(() => (error.value as any)?.statusCode === 404)
 // A closed deck that is not sent to the password prompt shows an error screen.
 const errorShown = computed(() => Boolean(error.value) && !requiresPassword.value)
 
+// Whoever may edit a deck that has no published version learns so, with the
+// way to its editor and its draft. The viewer route tells the others nothing
+// about the deck. The answer is read with the deck, on the server too, so the
+// server and the browser render the same screen.
+const requestFetch = useRequestFetch()
+const { data: editorView } = useAsyncData(
+  `deck-viewer-${slug}`,
+  () => user.value
+    ? requestFetch<{ canEdit: boolean, published?: boolean }>(`/api/presentations/${slug}/viewer`).catch(() => null)
+    : Promise.resolve(null),
+)
+const unpublished = computed(() => notFound.value && editorView.value?.canEdit === true && editorView.value.published === false)
+
 // `replace: true`: this route only ever bounces to /unlock, so keeping it in
 // history would trap Back (it re-fires the watch and bounces forward again).
 watch(requiresPassword, (needsPassword) => {
@@ -62,6 +75,17 @@ watch(requiresPassword, (needsPassword) => {
       :title="t('auth.deckError.privateTitle')"
       :message="t('auth.deckError.privateMessage')"
       :login-redirect="`/slides/${slug}`"
+    />
+    <ErrorState
+      v-else-if="unpublished"
+      icon="i-lucide-file-pen-line"
+      :title="t('auth.deckError.unpublishedTitle')"
+      :description="t('auth.deckError.unpublishedMessage')"
+      :actions="[
+        { label: t('auth.viewer.openEditor'), icon: 'i-lucide-pencil', to: `/edit/${slug}` },
+        { label: t('editor.preview.presentDraft'), icon: 'i-lucide-play', to: `/slides/${slug}?draft`, external: true, color: 'neutral', variant: 'subtle' },
+      ]"
+      :back="{ to: '/' }"
     />
     <DeckError
       v-else

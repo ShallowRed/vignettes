@@ -23,7 +23,7 @@ const provider = ref<IdentityProvider>('google')
 const handle = ref('')
 const role = ref<Role>('viewer')
 const field = computed(() => handleField(provider.value))
-const valid = computed(() => isProviderHandle(provider.value, handle.value))
+const blockedReason = computed(() => isProviderHandle(provider.value, handle.value) ? undefined : t(field.value.missingKey))
 
 const roleItems = computed(() => [
   { label: t('common.role.viewer'), value: 'viewer' },
@@ -58,7 +58,7 @@ const { mutate: submit, isLoading: busy } = useMutation({
 })
 
 function add() {
-  if (valid.value && !busy.value)
+  if (!blockedReason.value && !busy.value)
     submit()
 }
 </script>
@@ -110,21 +110,14 @@ function add() {
       </form>
     </template>
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton
-          :label="t('common.actions.cancel')"
-          color="neutral"
-          variant="ghost"
-          @click="() => { open = false }"
-        />
-        <UButton
-          :label="t('admin.invite.submit')"
-          icon="i-lucide-user-plus"
-          :disabled="!valid || busy"
-          :loading="busy"
-          @click="add"
-        />
-      </div>
+      <FormModalFooter
+        :label="t('admin.invite.submit')"
+        icon="i-lucide-user-plus"
+        :loading="busy"
+        :blocked-reason="blockedReason"
+        @cancel="() => { open = false }"
+        @submit="add"
+      />
     </template>
   </UModal>
 </template>

@@ -66,7 +66,9 @@
       "fragmentSteps": "Afficher les fragments pas à pas",
       "fragmentStepsActive": "Fragments pas à pas : l'aperçu montre le fragment sous le curseur",
       "followCursor": "Suivre la diapositive au curseur",
-      "followCursorActive": "Suivi de la diapositive au curseur : activé"
+      "followCursorActive": "Suivi de la diapositive au curseur : activé",
+      "presentDraft": "Présenter le brouillon",
+      "frame": "Diapositive de l'aperçu : les flèches changent de diapositive"
     },
     "toolbar": {
       "headingMenu": "Titre",
@@ -124,7 +126,18 @@
       "invalidYaml": "YAML invalide : {reason}",
       "unknownKey": "Clé inconnue : « {key} » n'a aucun effet.",
       "expectedValue": "Valeur attendue : {values}.",
-      "completionHint": "Ctrl + Espace : réglages disponibles"
+      "completionHint": "Ctrl + Espace : réglages disponibles",
+      "invalidYamlShort": "Ligne {line} : en-tête illisible",
+      "invalidValue": "Valeur refusée par le format de la présentation.",
+      "invalidValueShort": "Ligne {line} : valeur de « {key} » refusée",
+      "expected": {
+        "number": "Valeur refusée : cette clé prend un nombre, comme 1280.",
+        "boolean": "Valeur refusée : cette clé prend true ou false.",
+        "string": "Valeur refusée : cette clé prend un texte."
+      },
+      "expectedValueShort": "Ligne {line} : valeur de « {key} » inconnue",
+      "unknownTheme": "Thème inconnu : l'aperçu et la présentation s'affichent sans thème. Thèmes disponibles : {themes}.",
+      "unknownThemeShort": "Ligne {line} : thème « {theme} » inconnu"
     },
     "diagnostics": {
       "list": "Problèmes trouvés par l'aperçu",
@@ -135,7 +148,9 @@
       "refusedUrl": "Adresse refusée : une présentation accepte une adresse en https:// ou http://, ou un chemin de ce site.",
       "refusedUrlShort": "Ligne {line} : adresse refusée",
       "refusedBinding": "Attribut refusé : un attribut précédé de « : » prend une valeur JSON, comme true, 2 ou \"texte\", et une présentation ignore v-bind, v-on, {'@'} et v-model.",
-      "refusedBindingShort": "Ligne {line} : attribut « {name} » refusé"
+      "refusedBindingShort": "Ligne {line} : attribut « {name} » refusé",
+      "refusedEmbed": "Adresse en http:// : le navigateur bloque ce cadre, cette image ou cette vidéo dans le studio. Écrivez l'adresse en https://, ou en http://localhost pour un serveur de votre ordinateur.",
+      "refusedEmbedShort": "Ligne {line} : adresse en http:// bloquée"
     }
   }
 }

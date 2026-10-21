@@ -19,7 +19,7 @@ useHead({ title: () => `${props.presentationData.metadata.title || props.slug ||
 
 // The deck renders without this answer, so it loads after the page.
 interface Variant { slug: string, alias: string | null, title: string, variantLabel: string }
-const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
+const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], published?: boolean, unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
   server: false,
   lazy: true,
   immediate: Boolean(props.slug),
@@ -117,8 +117,9 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
       >
         <UIcon name="i-lucide-pencil" />
       </DeckControlButton>
+      <!-- A deck never published has no other version to open. -->
       <DeckControlButton
-        v-if="viewer.canEdit"
+        v-if="viewer.canEdit && !(draft && viewer.published === false)"
         :label="draft ? t('auth.viewer.viewPublished') : t('auth.viewer.viewDraft')"
         :to="draftHref"
         :badge="!draft && viewer.unpublishedChanges"

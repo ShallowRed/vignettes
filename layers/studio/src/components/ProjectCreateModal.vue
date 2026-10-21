@@ -5,22 +5,25 @@ import { useMutation } from '@pinia/colada'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { projectApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
+import { useDerivedSlug } from '../composables/useDerivedSlug'
 import { useFormModal } from '../composables/useFormModal'
 import { PROJECT_COLORS, projectSwatchStyle } from '../utils/project-colors'
 import { requestErrorMessage } from '../utils/request-error'
 
 const emit = defineEmits<{ created: [Project] }>()
 // Create-project modal: a first-class catalog folder. The slug follows the
-// title until edited by hand; the wand re-derives it on demand.
+// title until edited by hand (`useDerivedSlug`); left empty, the server derives it.
 const open = defineModel<boolean>('open', { required: true })
 const { t } = useI18n()
 const toast = useToast()
 const { invalidateAll } = useCatalogCache()
 
-const { state, errorMessage, runIfValid } = useFormModal(
+const { state, errorMessage, runIfValid, onReset } = useFormModal(
   open,
   () => ({ title: '', slug: '', color: null as string | null, icon: null as string | null }),
 )
+const { slug, fill: fillSlug } = useDerivedSlug(state, () => state.title, slugifyProject)
+onReset(fillSlug)
 
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 
@@ -40,19 +43,23 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
   },
   onError(e: any) {
     errorMessage.value = e?.statusCode === 409
-      ? t('catalog.form.identifierTaken', { slug: state.slug })
+      ? t('catalog.form.addressTaken', { slug: state.slug })
       : requestErrorMessage(e, t('catalog.form.createFailed'))
   },
 })
 
-const canSubmit = computed(() => state.title.trim().length > 0 && slugValid.value && !pending.value)
+const blockedReason = computed(() => {
+  if (!state.title.trim())
+    return t('catalog.form.missing.name')
+  return slugValid.value ? undefined : t('catalog.form.missing.addressInvalid')
+})
 
 function close() {
   open.value = false
 }
 
 function submit() {
-  runIfValid(canSubmit.value, runCreate)
+  runIfValid(!blockedReason.value && !pending.value, runCreate)
 }
 </script>
 
@@ -80,13 +87,13 @@ function submit() {
         </UFormField>
 
         <UFormField
-          :label="t('common.fields.identifier')"
+          :label="t('common.fields.address')"
           :error="slugValid ? undefined : t('catalog.form.slugInvalid')"
-          :help="t('catalog.projectCreate.identifierHelp')"
+          :help="t('catalog.projectCreate.addressHelp', { slug: state.slug || '…' })"
         >
           <div class="flex items-center gap-2">
             <UInput
-              v-model="state.slug"
+              v-model="slug"
               :placeholder="t('common.fields.folderSlugPlaceholder')"
               class="flex-1 font-mono"
             />
@@ -95,7 +102,8 @@ function submit() {
               color="neutral"
               variant="subtle"
               :aria-label="t('catalog.projectCreate.fillFromName')"
-              @click="() => { state.slug = slugifyProject(state.title) }"
+              :disabled="!state.title.trim()"
+              @click="fillSlug"
             />
           </div>
         </UFormField>
@@ -157,21 +165,14 @@ function submit() {
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton
-          :label="t('common.actions.cancel')"
-          color="neutral"
-          variant="ghost"
-          @click="close"
-        />
-        <UButton
-          :label="t('catalog.projectCreate.submit')"
-          icon="i-lucide-folder-plus"
-          :loading="pending"
-          :disabled="!canSubmit"
-          @click="submit"
-        />
-      </div>
+      <FormModalFooter
+        :label="t('catalog.projectCreate.submit')"
+        icon="i-lucide-folder-plus"
+        :loading="pending"
+        :blocked-reason="blockedReason"
+        @cancel="close"
+        @submit="submit"
+      />
     </template>
   </UModal>
 </template>

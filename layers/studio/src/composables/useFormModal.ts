@@ -7,20 +7,27 @@ import type { Ref } from 'vue'
  * open-watch and the "bail if invalid, clear error, run" dance.
  *
  * `initial` is called on each open, so a modal that edits an entity can read the
- * current props there. `onReset` runs after the reset for any extra per-open
- * bookkeeping (e.g. a "slug edited by hand" flag).
+ * current props there. The callbacks given to `onReset` run after the reset, for
+ * any extra per-open bookkeeping (e.g. a slug derived from the title).
  */
-export function useFormModal<T extends object>(open: Ref<boolean>, initial: () => T, onReset?: () => void) {
+export function useFormModal<T extends object>(open: Ref<boolean>, initial: () => T) {
   const state = reactive(initial()) as T
   const errorMessage = ref('')
+  const resets: Array<() => void> = []
 
   watch(open, (now) => {
     if (now) {
       Object.assign(state, initial())
       errorMessage.value = ''
-      onReset?.()
+      for (const reset of resets)
+        reset()
     }
   })
+
+  /** Run `callback` each time the modal opens, after the reset. */
+  function onReset(callback: () => void) {
+    resets.push(callback)
+  }
 
   /** Clear the error, then run `action` when `valid`. */
   function runIfValid(valid: boolean, action: () => void) {
@@ -30,5 +37,5 @@ export function useFormModal<T extends object>(open: Ref<boolean>, initial: () =
     action()
   }
 
-  return { state, errorMessage, runIfValid }
+  return { state, errorMessage, runIfValid, onReset }
 }

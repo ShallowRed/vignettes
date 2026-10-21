@@ -18,6 +18,7 @@ import type { Extension } from '@codemirror/state'
 import type { AttributeMention, ComponentMention } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
+import type { LineProblem } from '../../utils/editor-problems'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
@@ -34,6 +35,7 @@ import { projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
+import { listedFrontmatterProblems } from '../../utils/editor-frontmatter'
 import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
 import { placeProblems, previewProblemMarks, setPreviewProblems } from '../../utils/editor-problems'
@@ -117,21 +119,22 @@ const publishedRaw = ref<string | null>(null)
 const publishedAt = ref<number | null>(null)
 const docSynced = ref(false)
 const synced = ref(true)
+const neverPublished = computed(() => publishedRaw.value === null)
 const unpublished = computed<boolean | null>(() => {
   if (collabEnabled.value && !docSynced.value)
     return null
-  if (publishedRaw.value === null)
+  if (neverPublished.value)
     return true
   return raw.value !== publishedRaw.value
 })
 const publishedAtLabel = computed(() =>
   publishedAt.value ? new Date(publishedAt.value).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' }) : null)
 const publicationLabel = computed(() =>
-  publishedRaw.value === null ? t('editor.publication.neverPublished') : unpublished.value ? t('editor.publication.unpublishedChanges') : t('editor.publication.upToDate'))
+  neverPublished.value ? t('editor.publication.neverPublished') : unpublished.value ? t('editor.publication.unpublishedChanges') : t('editor.publication.upToDate'))
 const publishLabel = computed(() =>
   unpublished.value === false ? t('editor.publication.published') : t('editor.publication.publish'))
 const publicationHint = computed(() => {
-  if (publishedRaw.value === null)
+  if (neverPublished.value)
     return t('editor.publication.hintNeverPublished')
   const date = publishedAtLabel.value
   if (unpublished.value)
@@ -223,6 +226,8 @@ const editorView = computed(() => cm.value?.view)
 // data ref above, and Vue would overwrite it with the component instance on
 // mount — nuking `preview.value.slides`/`.metadata` and crashing every downstream
 // computed. Hence the distinct "previewInstance" key.
+const previewFrame = useTemplateRef<HTMLElement>('previewFrame')
+const previewHasFocus = () => previewFrame.value?.matches(':focus-within') ?? false
 const previewRef = useTemplateRef<{ slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => RevealApi | null }>('previewInstance')
 const followCursor = ref(true)
 const cursorLine = ref(1)
@@ -452,24 +457,37 @@ const cmModel = computed({
 // path as the live routes guarantees fidelity.
 let timer: ReturnType<typeof setTimeout> | null = null
 
-// What the last parse found: the components no registered component answers
-// to, which the deck draws as plain content, the attributes the deck refuses,
-// or a failure after which the preview keeps the last good render.
+// What the last parse found: the problems of the frontmatter, the components
+// no registered component answers to, which the deck draws as plain content,
+// the attributes the deck refuses or whose address the page does not load, or
+// a failure after which the preview keeps the last good render.
+const frontmatterIssues = ref<Array<LineProblem & { short: string }>>([])
 const unknownMentions = ref<ComponentMention[]>([])
 const refusedMentions = ref<AttributeMention[]>([])
 const parseFailed = ref(false)
 let parsedText = ''
 
+const ATTRIBUTE_MESSAGES: Record<AttributeMention['reason'], { short: string, message: string }> = {
+  url: { short: 'editor.diagnostics.refusedUrlShort', message: 'editor.diagnostics.refusedUrl' },
+  binding: { short: 'editor.diagnostics.refusedBindingShort', message: 'editor.diagnostics.refusedBinding' },
+  http: { short: 'editor.diagnostics.refusedEmbedShort', message: 'editor.diagnostics.refusedEmbed' },
+}
+
+// The frontmatter guide marks its own problems in the source pane; the list
+// shows them with the others.
 const previewIssues = computed(() => [
+  ...frontmatterIssues.value.map(problem => ({ ...problem, marked: true })),
   ...unknownMentions.value.map(mention => ({
     ...mention,
     short: t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name }),
     message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
+    marked: false,
   })),
   ...refusedMentions.value.map(mention => ({
     ...mention,
-    short: t(mention.reason === 'url' ? 'editor.diagnostics.refusedUrlShort' : 'editor.diagnostics.refusedBindingShort', { line: mention.line, name: mention.name }),
-    message: t(mention.reason === 'url' ? 'editor.diagnostics.refusedUrl' : 'editor.diagnostics.refusedBinding'),
+    short: t(ATTRIBUTE_MESSAGES[mention.reason].short, { line: mention.line, name: mention.name }),
+    message: t(ATTRIBUTE_MESSAGES[mention.reason].message),
+    marked: false,
   })),
 ].sort((a, b) => a.line - b.line || a.column - b.column))
 
@@ -480,6 +498,7 @@ async function reparse() {
     preview.value = data
     unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
     refusedMentions.value = attributeMentions(text)
+    frontmatterIssues.value = listedFrontmatterProblems(text, t)
     parseFailed.value = false
     parsedText = text
     // Let Reveal register added/removed slides, then re-align to the caret so a
@@ -498,7 +517,7 @@ async function reparse() {
 watch([previewIssues, editorView], ([issues, view]) => {
   if (!view || view.state.doc.toString() !== parsedText)
     return
-  const problems = issues.map(issue => ({ ...issue, severity: 'warning' as const }))
+  const problems = issues.filter(issue => !issue.marked).map(issue => ({ ...issue, severity: 'warning' as const }))
   view.dispatch({ effects: setPreviewProblems.of(placeProblems(view.state, problems)) })
 })
 
@@ -721,7 +740,7 @@ async function onRestored(stamp: number | null) {
 // the one the page loaded.
 const downloadItems = computed(() => [
   { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(`${slug}.md`, raw.value, 'text/markdown') },
-  { label: t('editor.page.downloadPublished'), icon: 'i-lucide-file-down', disabled: publishedRaw.value === null, onSelect: () => saveTextFile(`${slug}.md`, publishedRaw.value ?? '', 'text/markdown') },
+  { label: t('editor.page.downloadPublished'), icon: 'i-lucide-file-down', disabled: neverPublished.value, onSelect: () => saveTextFile(`${slug}.md`, publishedRaw.value ?? '', 'text/markdown') },
 ])
 
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
@@ -1104,16 +1123,16 @@ async function onMetaSaved() {
             :aria-label="t('editor.preview.controls')"
           >
             <DeckControlButton
-              :label="t('editor.preview.present')"
+              :label="neverPublished ? t('editor.preview.presentDraft') : t('editor.preview.present')"
               primary
-              :to="`/slides/${slug}${cursorSlideHash}`"
+              :to="`/slides/${slug}${neverPublished ? '?draft' : ''}${cursorSlideHash}`"
               target="_blank"
               rel="noopener"
             >
               <UIcon name="i-lucide-play" />
             </DeckControlButton>
             <DeckControlButton
-              v-if="writable"
+              v-if="writable && !neverPublished"
               :label="t('editor.preview.draftPreview')"
               :to="`/slides/${slug}?draft${cursorSlideHash}`"
               target="_blank"
@@ -1124,7 +1143,13 @@ async function onMetaSaved() {
         </div>
 
         <div class="editor-stage__area">
-          <div class="editor-stage__frame">
+          <div
+            ref="previewFrame"
+            class="editor-stage__frame"
+            tabindex="0"
+            role="group"
+            :aria-label="t('editor.preview.frame')"
+          >
             <!-- Client-only: the preview is driven by CodeMirror input + an async
                client-side reparse, so `preview` is always null on the server.
                SSR-ing it renders the placeholder, then hydration swaps to Reveal —
@@ -1133,14 +1158,16 @@ async function onMetaSaved() {
                narrower than `scrollActivationWidth` (435px) out as its scroll
                view, a column of pages the frame cannot show. The status bar
                gives the slide number, so Reveal's arrows, number and progress
-               bar stay off. -->
+               bar stay off. Reveal reads the keyboard while the frame holds the
+               focus, given by a click or by Tab (`keyboardCondition`), so a key
+               typed elsewhere in the page stays there. -->
             <ClientOnly>
               <RevealPresentation
                 v-if="preview?.slides?.length"
                 ref="previewInstance"
                 :key="preview.metadata.theme"
                 :theme="preview.metadata.theme"
-                :config="{ ...preview.metadata.reveal, fragments: previewFragments, scrollActivationWidth: null, controls: false, slideNumber: false, progress: false }"
+                :config="{ ...preview.metadata.reveal, fragments: previewFragments, scrollActivationWidth: null, controls: false, slideNumber: false, progress: false, embedded: true, keyboardCondition: previewHasFocus }"
                 :lang="preview.metadata.lang"
                 :code="preview.metadata.code"
                 :controls="false"
@@ -1286,6 +1313,11 @@ async function onMetaSaved() {
 /* The preview's frames would take the pointer from a drag of the pane edge. */
 [data-dragging='true'] ~ .editor-stage {
   pointer-events: none;
+}
+
+.editor-stage__frame:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
 }
 
 .editor-stage__frame :deep(.reveal) {

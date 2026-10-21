@@ -131,6 +131,13 @@ describe('the variants the viewer route offers', () => {
     expect(collaborator.variants.map(v => v.slug)).toEqual(['talk', 'talk-en', 'talk-secret'])
   })
 
+  it('tells whoever may edit whether the deck has a published version', async () => {
+    await expect(viewer(owner({ params: { slug: 'talk' } }))).resolves.toMatchObject({ canEdit: true, published: true })
+    await duplicate(owner({ params: { slug: 'talk' }, body: { slug: 'talk-draft', mode: 'variant', variantLabel: 'B' } }))
+    await expect(viewer(owner({ params: { slug: 'talk-draft' } }))).resolves.toMatchObject({ canEdit: true, published: false })
+    await expect(viewer(anon({ params: { slug: 'talk-draft' } }))).resolves.not.toHaveProperty('published')
+  })
+
   it('offers nothing on a trashed or frozen deck', async () => {
     await patch('talk', { family: 'Conf', variantLabel: 'FR' })
     await useDeckMeta().softDelete('talk')

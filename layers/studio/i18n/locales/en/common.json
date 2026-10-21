@@ -17,14 +17,13 @@
     },
     "fields": {
       "title": "Title",
-      "slug": "Slug",
       "name": "Name",
-      "identifier": "Identifier",
       "icon": "Icon",
       "color": "Color",
       "noColor": "No color",
-      "slugPlaceholder": "my-slug",
-      "folderSlugPlaceholder": "my-folder"
+      "slugPlaceholder": "my-presentation",
+      "folderSlugPlaceholder": "my-folder",
+      "address": "Address"
     },
     "or": "or",
     "role": {

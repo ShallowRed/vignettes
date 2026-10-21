@@ -16,6 +16,8 @@ export interface Problem {
   to: number
   severity: Severity
   message: string
+  /** The problem in a few words, with its line, for the list under the preview. */
+  short?: string
 }
 
 /** A problem placed by line, as the parse of the preview reports it. */

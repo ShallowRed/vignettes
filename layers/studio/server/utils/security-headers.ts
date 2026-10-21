@@ -1,3 +1,5 @@
+import { LOCAL_HTTP_HOSTS } from '@vignettes/core/deck'
+
 /**
  * The directives of every response. The studio frames its own pages: to let
  * another site frame a deck, add its origin to `frame-ancestors` here.
@@ -32,9 +34,10 @@ export const SPEAKER_VIEW_SCRIPT_HASH = 'sha256-wfrJpa7dmlxqHmakgJIolYIQ+LOJmVS3
 
 /**
  * A deck may embed a page, an image or a video served on the presenter's
- * machine, such as a Storybook in development.
+ * machine, such as a Storybook in development. The editor warns about the
+ * other `http:` addresses (`isRefusedEmbedUrl`).
  */
-const LOCAL = 'http://localhost:* http://127.0.0.1:*'
+const LOCAL = LOCAL_HTTP_HOSTS.map(host => `http://${host}:*`).join(' ')
 
 /**
  * The policy of a rendered page. A deck embeds any https page (`::Iframe`, a

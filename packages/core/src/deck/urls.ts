@@ -46,6 +46,27 @@ export function isDeckUrl(value: unknown, kind: DeckUrlKind = 'page'): value is 
 }
 
 /**
+ * The hosts a deck may load a frame, an image or a media from over `http:`:
+ * the presenter's machine, such as a Storybook in development. The policy of
+ * the studio's pages takes every other host over `https:` only.
+ */
+export const LOCAL_HTTP_HOSTS: readonly string[] = ['localhost', '127.0.0.1']
+
+/**
+ * Whether the page of a deck refuses to load `value` as a frame, an image or a
+ * media: an `http:` address of a host outside `LOCAL_HTTP_HOSTS`. A link to it
+ * opens.
+ */
+export function isRefusedEmbedUrl(value: unknown): boolean {
+  if (typeof value !== 'string')
+    return false
+  const url = parsedForm(value)
+  if (!/^http:/i.test(url) || !URL.canParse(url))
+    return false
+  return !LOCAL_HTTP_HOSTS.includes(new URL(url).hostname)
+}
+
+/**
  * The paths of the site that serve a file an account uploaded: `/media/` of the
  * studio. The other files of the site come from the application, its content
  * space and its frozen bundles, which the operator publishes.

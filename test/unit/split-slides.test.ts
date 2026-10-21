@@ -104,6 +104,12 @@ describe('attributeMentions', () => {
     ])
   })
 
+  it('places an http address the page does not load, and leaves an http link', () => {
+    const raw = '::Iframe{src="http://example.com" title="t"}\n![a](http://example.com/a.png) [b](http://example.com)\n::Iframe{src="http://localhost:6006"}'
+    const found = attributeMentions(raw).map(({ line, reason }) => [line, reason])
+    expect(found).toEqual([[1, 'http'], [2, 'http']])
+  })
+
   it('leaves out the frontmatter and fenced code', () => {
     const raw = '---\nstorybook: javascript:x\n---\n\n```md\n::Iframe{src="javascript:x"}\n```\n'
     expect(attributeMentions(raw)).toEqual([])
