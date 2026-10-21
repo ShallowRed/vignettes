@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { headingParserInsertion } from '../../layers/studio/server/db/heading-parser'
 import { themeRenameChanges } from '../../layers/studio/server/utils/theme-rename'
 import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
@@ -49,7 +49,7 @@ describe.each(ADAPTERS)('data migrations ($name)', (adapter) => {
     const [draft] = await db.rows.select('deckDrafts', { deckSlug: 'old' })
     expect(yDocUpdateToMarkdown(new Uint8Array(draft!.ydoc))).toBe('---\nparser: heading\n---\n\n# Old draft')
     expect((await db.rows.select('dataMigrations')).map(row => row.name).sort())
-      .toEqual(['explicit-heading-parser', 'index-existing-deck-images', 'index-existing-deck-media'])
+      .toEqual(['explicit-heading-parser', 'index-existing-deck-images', 'index-existing-deck-media', 'replace-directory-names-that-are-not-slugs'])
 
     // A deck written after the migration relies on the new default and stays untouched.
     await db.rows.update('deckVersions', { raw: '# Separator deck' }, { deckSlug: 'explicit' })
@@ -71,6 +71,32 @@ describe.each(ADAPTERS)('data migrations ($name)', (adapter) => {
       { name: 'bbb.webp', slug: 'published' },
       { name: 'ccc.jpg', slug: 'drafted' },
     ])
+  })
+})
+
+describe.each(ADAPTERS)('data migrations of the directory names ($name)', (adapter) => {
+  const db = useAdapter(adapter)
+
+  it('moves an alias that is not a slug to the historical ones, clears such a bundle, and keeps the slugs', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await seedDeck(db.rows, 'climbs', { alias: 'climbs', frozenBundle: '..' })
+    await seedDeck(db.rows, 'nested', { alias: 'talk.v2', frozenBundle: 'nested-2026' })
+    await seedDeck(db.rows, 'taken', { alias: 'été' })
+    await seedDeck(db.rows, 'holder', { alias: 'taken' })
+    await seedDeck(db.rows, 'valid', { alias: 'valid-talk', frozenBundle: 'valid-2026' })
+
+    await db.migrateData()
+
+    expect((await db.rows.select('decks')).map(row => [row.slug, row.alias, row.frozenBundle]).sort()).toEqual([
+      ['climbs', 'climbs', null],
+      ['holder', 'taken', null],
+      ['nested', 'nested', 'nested-2026'],
+      ['taken', null, null],
+      ['valid', 'valid-talk', 'valid-2026'],
+    ])
+    expect((await db.rows.select('deckAliases')).map(row => [row.alias, row.deckSlug]).sort())
+      .toEqual([['talk.v2', 'nested'], ['été', 'taken']])
+    vi.restoreAllMocks()
   })
 })
 

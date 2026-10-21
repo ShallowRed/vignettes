@@ -46,6 +46,12 @@ describe('buildFreezeDescriptor', () => {
     expect(with_.steps.find(s => s.id === 'embed-storybook')?.enabled).toBe(true)
   })
 
+  it('refuses a slug, a bundle or a theme that is not a slug', () => {
+    expect(() => buildFreezeDescriptor({ alias: 'talk', frozenBundle: '..' })).toThrow('the bundle ".." is not a slug')
+    expect(() => buildFreezeDescriptor({ alias: 'codimd/abc' })).toThrow('is not a slug')
+    expect(() => buildFreezeDescriptor({ alias: 'talk' }, { theme: '"><script>' })).toThrow('the theme')
+  })
+
   it('carries the deck theme', () => {
     const d = buildFreezeDescriptor({ alias: 'deck' }, { theme: 'dsfr' })
     expect(d.theme).toBe('dsfr')

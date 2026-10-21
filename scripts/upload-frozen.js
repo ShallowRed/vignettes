@@ -10,6 +10,7 @@ import { readdir } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import process from 'node:process'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { makeFrozenS3Client } from '../layers/studio/server/utils/frozen-s3-client.ts'
 import { contentTypeOf } from '../layers/studio/shared/storage/content-types.ts'
 import {
@@ -47,6 +48,10 @@ async function main() {
   const { alias, dir: dirArg, dryRun } = parseArgs(process.argv.slice(2))
   if (!alias) {
     console.error('Usage: node scripts/upload-frozen.js <alias> [--dir <path>] [--dry-run]')
+    process.exit(2)
+  }
+  if (!isDeckSlug(alias)) {
+    console.error(`❌ "${alias}" is not a bundle name: it may hold letters, digits, - and _`)
     process.exit(2)
   }
   const dir = dirArg ?? join('.frozen', alias)

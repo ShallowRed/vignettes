@@ -5,6 +5,8 @@ import type { Project } from '#shared/projects'
 import { isExpired, PUBLICATION_STATUSES, sharingLimit } from '#shared/access'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { useMutation, useQuery } from '@pinia/colada'
+import { isDeckSlug } from '@vignettes/core/deck'
+import { slugify } from '@vignettes/core/slugify'
 import { deckApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
 import { useCatalog, useCatalogCache } from '../composables/useCatalog'
@@ -132,6 +134,12 @@ const replacementItems = computed(() => [
   ...folderDecks.value.map(d => ({ label: d.title, value: d.slug })),
 ])
 
+// A slug stays as typed; any other text becomes one, since the alias names a path segment of `/p/`.
+function aliasOf(text: string): string {
+  const trimmed = text.trim()
+  return isDeckSlug(trimmed) ? trimmed : slugify(trimmed, { lower: true, strict: true })
+}
+
 function close() {
   open.value = false
 }
@@ -141,7 +149,7 @@ const { mutate: save, isLoading: saving } = useMutation({
     status: state.status,
     unlisted: state.unlisted,
     project: state.project === NONE ? null : state.project,
-    alias: state.alias.trim() || null,
+    alias: aliasOf(state.alias) || null,
     family: state.family.trim() || null,
     variantLabel: state.variantLabel.trim() || null,
     supersededBy: state.supersededBy === NONE ? null : state.supersededBy,
@@ -305,6 +313,7 @@ const audience = computed(() => {
                 class="w-full font-mono"
                 :ui="{ base: 'ps-9', leading: 'ps-3' }"
                 :aria-label="t('deck.meta.alias')"
+                @blur="state.alias = aliasOf(state.alias)"
               >
                 <template #leading>
                   <span class="text-sm text-dimmed">/p/</span>

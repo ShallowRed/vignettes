@@ -12,7 +12,7 @@
       "theme": "Thème",
       "fromFrontmatter": "Se règle dans l'en-tête de la présentation, avec l'éditeur.",
       "stableAddress": "Adresse stable",
-      "stableAddressHint": "Un lien qui ne change pas si l'identifiant change. Vide, la présentation n'en a pas.",
+      "stableAddressHint": "Un lien qui ne change pas si l'identifiant change. Il contient des lettres, des chiffres, - et _. Vide, la présentation n'en a pas.",
       "alias": "Alias",
       "aliasPlaceholder": "mon-alias",
       "audienceTitle": "Qui peut ouvrir cette présentation",

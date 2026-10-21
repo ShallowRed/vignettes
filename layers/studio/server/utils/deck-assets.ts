@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { resolve } from 'node:path'
 import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
 import { isFrozenS3Configured } from '#shared/storage/frozen-s3'
@@ -11,6 +11,7 @@ import { deckAssetKey, deckAssetLocalPath } from '@vignettes/core/deck-assets'
 import { decideMediaAccess } from './access'
 import { serverConfig } from './config'
 import { makeFrozenS3Client } from './frozen-s3-client'
+import { fileUnder, requestPathSegments } from './request-path'
 
 /**
  * Serve a deck asset of the content space (`presentations/assets/<prefix>/...`,
@@ -23,10 +24,7 @@ import { makeFrozenS3Client } from './frozen-s3-client'
  * theme, named in stylesheets the index never reads, so they stay open.
  */
 export async function serveDeckAsset(event: H3Event, prefix: string, { gated = false }: { gated?: boolean } = {}): Promise<Buffer> {
-  const raw = getRouterParam(event, 'path') || ''
-  const parts = decodeURIComponent(raw).split('/').filter(Boolean)
-  if (parts.length === 0 || parts.includes('..'))
-    throw createError({ statusCode: 404, statusMessage: 'Not found' })
+  const parts = requestPathSegments(event)
 
   // 404 rather than 403, which would tell which files exist.
   const access = gated ? await decideMediaAccess(event, assetKey(prefix, parts.join('/'))) : null
@@ -52,8 +50,9 @@ export async function serveDeckAsset(event: H3Event, prefix: string, { gated = f
     }
   }
   else {
+    const file = fileUnder(resolve(process.cwd(), deckAssetLocalPath(serverConfig().contentDir, prefix)), parts)
     try {
-      body = await readFile(join(process.cwd(), deckAssetLocalPath(serverConfig().contentDir, prefix, ...parts)))
+      body = await readFile(file)
     }
     catch {
       throw createError({ statusCode: 404, statusMessage: 'Asset not found' })

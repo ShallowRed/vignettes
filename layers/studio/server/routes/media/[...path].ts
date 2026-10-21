@@ -9,6 +9,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { decideMediaAccess } from '../../utils/access'
 import { serverConfig } from '../../utils/config'
 import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
+import { fileUnder, requestPathSegments } from '../../utils/request-path'
 
 /**
  * Media server: `/media/<hash>.<ext>` streams an uploaded image from the frozen
@@ -19,11 +20,8 @@ import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
  */
 
 export default defineEventHandler(async (event) => {
-  const raw = getRouterParam(event, 'path') || ''
-  const name = decodeURIComponent(raw).split('/').filter(Boolean).join('/')
-  // Defence in depth against path traversal.
-  if (!name || name.includes('..'))
-    throw createError({ statusCode: 400, statusMessage: 'Bad request' })
+  const segments = requestPathSegments(event)
+  const name = segments.join('/')
 
   // 404 rather than 403, which would tell which hashes exist.
   const access = await decideMediaAccess(event, name)
@@ -50,8 +48,9 @@ export default defineEventHandler(async (event) => {
     }
   }
   else {
+    const file = fileUnder(join(process.cwd(), '.media'), segments)
     try {
-      body = await readFile(join(process.cwd(), '.media', name))
+      body = await readFile(file)
     }
     catch {
       throw createError({ statusCode: 404, statusMessage: 'Not found' })

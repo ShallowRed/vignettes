@@ -1,4 +1,5 @@
 import type { ContentChanges, ContentRewrites, StoredContent } from './ports.ts'
+import { isDeckSlug } from '@vignettes/core/deck'
 import * as Y from 'yjs'
 import { DECK_TEXT_FIELD, yDocUpdateToMarkdown } from '../../shared/collab/ydoc.ts'
 import { referencedImages } from '../../shared/storage/media-refs.ts'
@@ -50,6 +51,30 @@ function indexExistingDeckMedia({ versions, snapshots, drafts }: StoredContent):
   return { media: texts.map(({ slug, raw }) => ({ slug, names: referencedImages(raw) })) }
 }
 
+/**
+ * The alias and the frozen bundle of a deck name a path segment of `/p/` and
+ * `/frozen/`, and the bundle a directory of `.frozen/`. An alias that is not a
+ * slug becomes a historical alias of the deck, and the slug takes its place. When
+ * another deck holds the slug, the deck is left without an alias and its links
+ * answer 404. A frozen bundle that is not
+ * a slug is cleared, and the deck's slug names its bundle.
+ */
+function replaceDirectoryNamesThatAreNotSlugs({ decks }: StoredContent): ContentChanges {
+  const isSafe = (name: string | null) => name === null || isDeckSlug(name)
+  const taken = new Set(decks.map(deck => deck.alias))
+  const changed = decks.filter(deck => !isSafe(deck.alias) || !isSafe(deck.frozenBundle))
+  for (const { slug, alias, frozenBundle } of changed)
+    console.warn(`[data-migrations] ${slug}: replaces what is not a slug in alias ${JSON.stringify(alias)}, frozen bundle ${JSON.stringify(frozenBundle)}`)
+  return {
+    directory: changed.map(({ slug, alias, frozenBundle }) => ({
+      slug,
+      alias: isSafe(alias) ? alias : taken.has(slug) ? null : slug,
+      frozenBundle: isSafe(frozenBundle) ? frozenBundle : null,
+    })),
+    aliases: changed.flatMap(({ slug, alias }) => alias !== null && !isDeckSlug(alias) ? [{ alias, slug }] : []),
+  }
+}
+
 const DATA_MIGRATIONS: DataMigration[] = [
   { name: 'explicit-heading-parser', change: explicitHeadingParser },
   { name: 'index-existing-deck-media', change: indexExistingDeckMedia },
@@ -57,6 +82,7 @@ const DATA_MIGRATIONS: DataMigration[] = [
   // space: `/images/**` is served with the visibility of the decks citing it,
   // and a file no deck cites answers 404.
   { name: 'index-existing-deck-images', change: indexExistingDeckMedia },
+  { name: 'replace-directory-names-that-are-not-slugs', change: replaceDirectoryNamesThatAreNotSlugs },
 ]
 
 /** Runs the data migrations not applied yet, each in its own transaction. */

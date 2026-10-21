@@ -8,6 +8,7 @@ import { themeLocalPath, themeObjectKey } from '#shared/storage/themes-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { serverConfig } from '../../utils/config'
 import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
+import { fileUnder, requestPathSegments } from '../../utils/request-path'
 
 /**
  * Tenant theme files: `/themes/<name>.css` and `/themes/<name>/assets/...`
@@ -18,10 +19,7 @@ import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
  * Theme files are public by nature (a stylesheet loads without a session).
  */
 export default defineEventHandler(async (event) => {
-  const raw = getRouterParam(event, 'path') || ''
-  const parts = decodeURIComponent(raw).split('/').filter(Boolean)
-  if (parts.length === 0 || parts.includes('..'))
-    throw createError({ statusCode: 404, statusMessage: 'Not found' })
+  const parts = requestPathSegments(event)
 
   const cfg = serverConfig().frozenS3
   let body: Buffer
@@ -42,8 +40,9 @@ export default defineEventHandler(async (event) => {
     }
   }
   else {
+    const file = fileUnder(join(process.cwd(), themeLocalPath()), parts)
     try {
-      body = await readFile(join(process.cwd(), themeLocalPath(...parts)))
+      body = await readFile(file)
     }
     catch {
       throw createError({ statusCode: 404, statusMessage: 'Theme not found' })

@@ -19,6 +19,11 @@ const workdir = mkdtempSync(join(tmpdir(), 'frozen-'))
 beforeAll(() => {
   mkdirSync(join(workdir, '.frozen', 'talk-2026'), { recursive: true })
   writeFileSync(join(workdir, '.frozen', 'talk-2026', 'index.html'), '<h1>talk</h1>')
+  mkdirSync(join(workdir, '.frozen', 'notes-2026'))
+  writeFileSync(join(workdir, '.frozen', 'notes-2026', 'index.html'), '<h1>notes</h1>')
+  mkdirSync(join(workdir, '.data'))
+  writeFileSync(join(workdir, '.data', 'slides.db'), 'accounts')
+  writeFileSync(join(workdir, 'package.json'), '{}')
   process.chdir(workdir)
 })
 afterAll(() => {
@@ -62,5 +67,29 @@ describe('the frozen bundle route', () => {
     const event = anon({ params: { path: 'talk-2026/' }, query: { password: 'anything' } })
     await expect(serveFrozen(event)).rejects.toMatchObject({ statusCode: 401 })
     expect(event.setCookies).toBeUndefined()
+  })
+})
+
+describe('the frozen bundle route, on a path out of its bundle', () => {
+  it('answers 404 on "..%2F" in the bundle segment, even with ".." stored as the bundle', async () => {
+    await publishedDeck('public')
+    await useDeckMeta().update('talk', { frozenBundle: '..' })
+    await expect(serveFrozen(anon({ params: { path: '..%2F.data%2Fslides.db' } }))).rejects.toMatchObject({ statusCode: 404 })
+  })
+
+  it('answers 404 on "..%2F" after the bundle segment', async () => {
+    await publishedDeck('public')
+    await useDeckMeta().update('talk', { frozenBundle: 'talk-2026' })
+    await expect(serveFrozen(anon({ params: { path: 'talk-2026/..%2F..%2F.data%2Fslides.db' } }))).rejects.toMatchObject({ statusCode: 404 })
+  })
+
+  it('gates a name on the deck whose bundle it reads, when it is also the alias of another deck', async () => {
+    await useDbContent().writer.save({ slug: 'notes', raw: '---\ntitle: Notes\n---\n\n# Notes', actor: 'test' })
+    await useDeckMeta().update('notes', { status: 'private', lifecycle: 'frozen', alias: 'notes', frozenBundle: 'notes-2026' })
+    // A public deck whose alias spells the bundle of the private one.
+    await publishedDeck('public')
+    await useDeckMeta().update('talk', { alias: 'notes-2026', frozenBundle: 'talk-2026' })
+
+    await expect(serveFrozen(anon({ params: { path: 'notes-2026/' } }))).rejects.toMatchObject({ statusCode: 401 })
   })
 })

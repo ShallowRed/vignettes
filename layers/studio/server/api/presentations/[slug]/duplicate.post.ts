@@ -1,12 +1,13 @@
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
-import { isDeckSlug, splitFrontmatter, stringifyDocument } from '@vignettes/core/deck'
+import { DeckSlugSchema } from '#shared/presentations'
+import { splitFrontmatter, stringifyDocument } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { assertCanCreateInProject, assertCanEditDeck } from '../../../utils/access'
 import { currentDraftText, useDraftStore } from '../../../utils/collab'
 import { useDbContent, useDeckMeta } from '../../../utils/sources'
 
 const BodySchema = z.object({
-  slug: z.string().refine(isDeckSlug, 'Invalid slug'),
+  slug: DeckSlugSchema,
   title: z.string().trim().min(1).optional(),
   /** `variant`: a version beside the source (a language, a format); `edition`: the deck that replaces it. */
   mode: z.enum(['variant', 'edition']),

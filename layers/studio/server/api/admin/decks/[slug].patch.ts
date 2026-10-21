@@ -1,5 +1,5 @@
 import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
-import { familyFolder, replacementLoops } from '#shared/presentations'
+import { DeckSlugSchema, familyFolder, replacementLoops } from '#shared/presentations'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { getActorRole } from '../../../utils/actor'
@@ -12,12 +12,13 @@ const PatchSchema = z.object({
   status: PublicationStatusSchema.optional(),
   lifecycle: LifecycleSchema.optional(),
   project: z.string().nullable().optional(),
-  alias: z.string().min(1).nullable().optional(),
-  frozenBundle: z.string().nullable().optional(),
+  // Each names a path segment of `/p/` or `/frozen/`, and the bundle a directory of `.frozen/`.
+  alias: DeckSlugSchema.nullable().optional(),
+  frozenBundle: DeckSlugSchema.nullable().optional(),
   unlisted: z.boolean().optional(),
   family: z.string().trim().min(1).max(120).nullable().optional(),
   variantLabel: z.string().trim().min(1).max(40).nullable().optional(),
-  supersededBy: z.string().refine(isDeckSlug, 'Invalid slug').nullable().optional(),
+  supersededBy: DeckSlugSchema.nullable().optional(),
   // Plain password, hashed server-side (null clears it). The UI sets it next to
   // the semi-private status so the two can no longer drift apart.
   accessPassword: z.string().min(8).max(200).nullable().optional(),

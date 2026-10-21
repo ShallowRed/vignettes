@@ -12,7 +12,7 @@
       "theme": "Theme",
       "fromFrontmatter": "Set in the presentation's front matter, from the editor.",
       "stableAddress": "Stable address",
-      "stableAddressHint": "A link that stays the same if the identifier changes. Empty, the presentation has none.",
+      "stableAddressHint": "A link that stays the same if the identifier changes. It may hold letters, digits, - and _. Empty, the presentation has none.",
       "alias": "Alias",
       "aliasPlaceholder": "my-alias",
       "audienceTitle": "Who can open this presentation",

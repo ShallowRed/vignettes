@@ -2,7 +2,7 @@ import type { ContentRewrites, StoredContent } from '../ports.ts'
 import type { PostgresDb } from './index.ts'
 import { eq } from 'drizzle-orm'
 import { recordDeckMedia } from './media-index.ts'
-import { dataMigrations, deckDrafts, deckDraftSnapshots, decks, deckVersions } from './schema.ts'
+import { dataMigrations, deckAliases, deckDrafts, deckDraftSnapshots, decks, deckVersions } from './schema.ts'
 
 /**
  * The stored content, its rows locked until the transaction of the caller ends:
@@ -10,7 +10,7 @@ import { dataMigrations, deckDrafts, deckDraftSnapshots, decks, deckVersions } f
  */
 async function readContent(db: PostgresDb): Promise<StoredContent> {
   return {
-    decks: await db.select({ slug: decks.slug, theme: decks.theme }).from(decks).orderBy(decks.slug).for('update'),
+    decks: await db.select({ slug: decks.slug, theme: decks.theme, alias: decks.alias, frozenBundle: decks.frozenBundle }).from(decks).orderBy(decks.slug).for('update'),
     versions: await db.select({ id: deckVersions.id, slug: deckVersions.deckSlug, raw: deckVersions.raw }).from(deckVersions).orderBy(deckVersions.id).for('update'),
     snapshots: await db.select({ id: deckDraftSnapshots.id, slug: deckDraftSnapshots.deckSlug, raw: deckDraftSnapshots.raw }).from(deckDraftSnapshots).orderBy(deckDraftSnapshots.id).for('update'),
     drafts: await db.select({ slug: deckDrafts.deckSlug, ydoc: deckDrafts.ydoc }).from(deckDrafts).orderBy(deckDrafts.deckSlug).for('update'),
@@ -32,6 +32,10 @@ export function createContentRewrites(db: PostgresDb): ContentRewrites {
         const stamp = at ? { updatedAt: at } : {}
         for (const { slug, theme } of changes.themes ?? [])
           await tx.update(decks).set({ theme, ...stamp }).where(eq(decks.slug, slug))
+        for (const { slug, alias, frozenBundle } of changes.directory ?? [])
+          await tx.update(decks).set({ alias, frozenBundle, ...stamp }).where(eq(decks.slug, slug))
+        for (const { alias, slug } of changes.aliases ?? [])
+          await tx.insert(deckAliases).values({ alias, deckSlug: slug }).onConflictDoNothing()
         for (const { id, raw } of changes.versions ?? [])
           await tx.update(deckVersions).set({ raw }).where(eq(deckVersions.id, id))
         for (const { id, raw } of changes.snapshots ?? [])

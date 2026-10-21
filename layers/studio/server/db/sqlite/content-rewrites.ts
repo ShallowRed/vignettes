@@ -3,13 +3,13 @@ import type { ContentRewrites, StoredContent } from '../ports.ts'
 import { Buffer } from 'node:buffer'
 import { eq } from 'drizzle-orm'
 import { recordDeckMedia } from './media-index.ts'
-import { dataMigrations, deckDrafts, deckDraftSnapshots, decks, deckVersions } from './schema.ts'
+import { dataMigrations, deckAliases, deckDrafts, deckDraftSnapshots, decks, deckVersions } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
 
 function readContent(db: Db): StoredContent {
   return {
-    decks: db.select({ slug: decks.slug, theme: decks.theme }).from(decks).all(),
+    decks: db.select({ slug: decks.slug, theme: decks.theme, alias: decks.alias, frozenBundle: decks.frozenBundle }).from(decks).all(),
     versions: db.select({ id: deckVersions.id, slug: deckVersions.deckSlug, raw: deckVersions.raw }).from(deckVersions).all(),
     snapshots: db.select({ id: deckDraftSnapshots.id, slug: deckDraftSnapshots.deckSlug, raw: deckDraftSnapshots.raw }).from(deckDraftSnapshots).all(),
     drafts: db.select({ slug: deckDrafts.deckSlug, ydoc: deckDrafts.ydoc }).from(deckDrafts).all().map(({ slug, ydoc }) => ({ slug, ydoc: new Uint8Array(ydoc) })),
@@ -33,6 +33,10 @@ export function createContentRewrites(db: Db): ContentRewrites {
         const stamp = at ? { updatedAt: at } : {}
         for (const { slug, theme } of changes.themes ?? [])
           tx.update(decks).set({ theme, ...stamp }).where(eq(decks.slug, slug)).run()
+        for (const { slug, alias, frozenBundle } of changes.directory ?? [])
+          tx.update(decks).set({ alias, frozenBundle, ...stamp }).where(eq(decks.slug, slug)).run()
+        for (const { alias, slug } of changes.aliases ?? [])
+          tx.insert(deckAliases).values({ alias, deckSlug: slug }).onConflictDoNothing().run()
         for (const { id, raw } of changes.versions ?? [])
           tx.update(deckVersions).set({ raw }).where(eq(deckVersions.id, id)).run()
         for (const { id, raw } of changes.snapshots ?? [])

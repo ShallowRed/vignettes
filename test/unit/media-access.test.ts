@@ -140,6 +140,10 @@ describe('the /media/** route', () => {
   it('answers 404 on an image no deck references', async () => {
     await expect(serveMedia(anon({ params: { path: 'abc123.png' } }))).rejects.toMatchObject({ statusCode: 404 })
   })
+
+  it('answers 404 on a path that climbs out of the directory', async () => {
+    await expect(serveMedia(anon({ params: { path: '..%2F.data%2Fslides.db' } }))).rejects.toMatchObject({ statusCode: 404 })
+  })
 })
 
 describe('verifyAccessPassword', () => {

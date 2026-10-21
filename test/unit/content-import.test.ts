@@ -23,4 +23,18 @@ describe('content import (scripts/content-import.ts)', () => {
     expect(plan).toMatch(/decks à créer \(1\)\n {2}· bilan\n/)
     expect(plan).toContain('casse : frontmatter illisible, stub ignoré')
   })
+
+  it('leaves out a registry entry whose bundle is not a slug and says so in the plan', () => {
+    const content = join(dir, 'registry')
+    const db = join(dir, 'registry.db')
+    migrateSqlite(openSqlite(db))
+    mkdirSync(content)
+    writeFileSync(join(content, 'talk.md'), '---\ntitle: Talk\n---\n\n# Talk\n')
+    writeFileSync(join(content, 'registry.yml'), 'talk:\n  lifecycle: frozen\n  frozenBundle: ..\n')
+
+    const plan = execFileSync(process.execPath, ['scripts/content-import.ts', `--content=${content}`, `--db=${db}`], { encoding: 'utf8' })
+
+    expect(plan).toMatch(/alias canoniques \(0\)\n/)
+    expect(plan).toContain('entrée de registre "talk" ignorée')
+  })
 })

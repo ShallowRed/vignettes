@@ -43,6 +43,15 @@ describe('the family fields of PATCH /api/admin/decks/:slug', () => {
   })
 })
 
+describe('the alias and the frozen bundle of PATCH /api/admin/decks/:slug', () => {
+  it('accepts only slugs', async () => {
+    for (const frozenBundle of ['..', '../.data', 'a/b', '.', 'talk\\..'])
+      await expect(patch('talk', { frozenBundle })).rejects.toMatchObject({ statusCode: 400 })
+    await expect(patch('talk', { alias: '../probe' })).rejects.toMatchObject({ statusCode: 400 })
+    await expect(patch('talk', { frozenBundle: 'talk-2026', alias: 'talk_v2' })).resolves.toMatchObject({ frozenBundle: 'talk-2026', alias: 'talk_v2' })
+  })
+})
+
 describe('the folder of PATCH /api/admin/decks/:slug', () => {
   it('refuses a move to a folder that does not exist', async () => {
     await expect(patch('talk', { project: 'nowhere' })).rejects.toMatchObject({ statusCode: 400 })

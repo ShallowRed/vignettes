@@ -50,6 +50,6 @@ describe('the themes route', () => {
   })
 
   it('refuses a path that climbs out of the directory', async () => {
-    await expect(serveTheme({ params: { path: '../.env' } })).rejects.toMatchObject({ statusCode: 404 })
+    await expect(serveTheme({ params: { path: '..%2F.env' } })).rejects.toMatchObject({ statusCode: 404 })
   })
 })

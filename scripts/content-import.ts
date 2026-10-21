@@ -33,7 +33,7 @@ import type { ArchiveWrite } from '../layers/studio/server/db/ports.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
-import { splitFrontmatter } from '@vignettes/core/deck'
+import { isDeckSlug, splitFrontmatter } from '@vignettes/core/deck'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
 import { describeDatabase } from '../layers/studio/server/db/config.ts'
@@ -89,7 +89,12 @@ interface RegistryEntry {
 
 interface ProjectEntry { title?: string, order?: number, color?: string }
 
-const registry = readYaml<Record<string, RegistryEntry>>('registry.yml')
+// The alias, the slug and the bundle each name a path segment of `/p/` or `/frozen/`.
+const registryEntries = Object.entries(readYaml<Record<string, RegistryEntry>>('registry.yml'))
+const refusedEntries = registryEntries
+  .filter(([alias, entry]) => ![alias, entry?.slug, entry?.frozenBundle].every(name => name == null || isDeckSlug(name)))
+  .map(([alias]) => alias)
+const registry = Object.fromEntries(registryEntries.filter(([alias]) => !refusedEntries.includes(alias)))
 const projectsYml = readYaml<Record<string, ProjectEntry>>('projects.yml')
 
 /** Registry entries indexed by the stub slug they describe (defaults to the alias). */
@@ -176,6 +181,9 @@ const plan = {
   republish: [] as string[],
   warnings: [] as string[],
 }
+
+for (const alias of refusedEntries)
+  plan.warnings.push(`entrée de registre "${alias}" ignorée : son alias, son slug ou son frozenBundle contient un caractère autre que des lettres, des chiffres, - et _`)
 
 /** A managed deck taken back from its stub: version + content axes only. */
 const republishPlans: { slug: string, title: string | null, theme: string | null, raw: string }[] = []

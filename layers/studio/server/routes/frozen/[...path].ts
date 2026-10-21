@@ -1,3 +1,4 @@
+import type { DeckDirectoryEntry } from '@vignettes/core/deck'
 import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
@@ -8,58 +9,52 @@ import {
   isFrozenS3Configured,
 } from '#shared/storage/frozen-s3'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
 import { serverConfig } from '../../utils/config'
 import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
+import { fileUnder, requestPathSegments } from '../../utils/request-path'
 import { deckDirectory } from '../../utils/sources'
 
 /**
- * Frozen-bundle static server. `/frozen/<bundle>/<...>` resolves the bundle to
- * its deck, gates the request on that deck, then serves the asset from S3, or
- * from the local `.frozen/` directory when no S3 credentials are configured.
+ * Frozen-bundle static server. `/frozen/<name>/<...>` resolves the name to its
+ * deck, gates the request on that deck, then serves the asset of the deck's own
+ * bundle from S3, or from the local `.frozen/` directory when no S3 credentials
+ * are configured.
  * The bundle is resolved and the deck is read on every request: both are
  * lookups in the local database, and a memo here once left a closed deck open
  * and an undeclared bundle unreachable.
  */
 
-/** The slug of the deck a bundle name (the `/frozen/<bundle>/` segment) belongs to. */
-async function slugOfBundle(bundle: string): Promise<string | null> {
-  // `frozenBundle` defaults to the alias, and to the slug when the deck has neither.
-  const byAlias = await deckDirectory.resolveAlias(bundle)
-  if (byAlias)
-    return byAlias.slug
+/**
+ * The deck the `/frozen/<name>/` segment names: by the bundle it declares, which
+ * is the name `/p/` redirects to, or else by its alias.
+ */
+async function deckOfName(name: string): Promise<DeckDirectoryEntry | null> {
   const all = await deckDirectory.list()
-  return all.find(entry => (entry.frozenBundle ?? entry.slug) === bundle)?.slug ?? null
+  return all.find(entry => (entry.frozenBundle ?? entry.slug) === name) ?? await deckDirectory.resolveAlias(name)
 }
 
 /** Normalise the asset path within a bundle: directory-ish → index.html. */
-function normaliseAssetPath(rest: string[]): string {
-  const parts = rest.filter(Boolean)
+function normaliseAssetPath(parts: string[]): string[] {
   if (parts.length === 0)
-    return 'index.html'
-  const last = parts[parts.length - 1]!
-  if (!extname(last))
-    return [...parts, 'index.html'].join('/')
-  return parts.join('/')
+    return ['index.html']
+  if (!extname(parts[parts.length - 1]!))
+    return [...parts, 'index.html']
+  return parts
 }
 
 export default defineEventHandler(async (event) => {
-  const raw = getRouterParam(event, 'path') || ''
-  const segments = decodeURIComponent(raw).split('/').filter(Boolean)
-  if (segments.length === 0)
+  const [name, ...rest] = requestPathSegments(event) as [string, ...string[]]
+  const deck = isDeckSlug(name) ? await deckOfName(name) : null
+  // The bundle read is the one of the deck the gate decides on, whatever name the URL gives.
+  const bundle = deck ? deck.frozenBundle ?? deck.slug : null
+  const gate = deck && bundle && isDeckSlug(bundle) ? await gateOptionsOf(deck.slug) : null
+  if (!gate || !bundle)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  const [bundle, ...rest] = segments as [string, ...string[]]
-  // Defence in depth against path traversal.
-  if (rest.includes('..'))
-    throw createError({ statusCode: 400, statusMessage: 'Bad request' })
-
-  const slug = await slugOfBundle(bundle)
-  const gate = slug ? await gateOptionsOf(slug) : null
-  if (!gate)
-    throw createError({ statusCode: 404, statusMessage: 'Not found' })
-
-  const assetPath = normaliseAssetPath(rest)
+  const assetParts = normaliseAssetPath(rest)
+  const assetPath = assetParts.join('/')
   // The gate comes before any byte is read. A visitor unlocks a protected deck
   // through `/p/<alias>`, and arrives here carrying the cookie.
   await gateDeckAccess(event, gate)
@@ -92,8 +87,9 @@ export default defineEventHandler(async (event) => {
   }
   else {
     source = 'local'
+    const file = fileUnder(join(process.cwd(), '.frozen', bundle), assetParts)
     try {
-      body = await readFile(join(process.cwd(), '.frozen', bundle, assetPath))
+      body = await readFile(file)
     }
     catch {
       throw createError({ statusCode: 404, statusMessage: 'Asset not found' })

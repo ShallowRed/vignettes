@@ -326,8 +326,8 @@ export interface StoredText {
 
 /** The texts and drafts of every deck, trashed ones included. */
 export interface StoredContent {
-  /** The theme each deck row names. */
-  decks: { slug: string, theme: string | null }[]
+  /** The theme, the alias and the frozen bundle each deck row names. */
+  decks: { slug: string, theme: string | null, alias: string | null, frozenBundle: string | null }[]
   versions: StoredText[]
   snapshots: StoredText[]
   /** The Yjs state of each draft. */
@@ -337,6 +337,10 @@ export interface StoredContent {
 /** What a rewrite writes back; a text or a draft left out keeps its value. */
 export interface ContentChanges {
   themes?: { slug: string, theme: string }[]
+  /** The alias and the frozen bundle of these decks, null clearing the column. */
+  directory?: { slug: string, alias: string | null, frozenBundle: string | null }[]
+  /** Historical aliases added to these decks; one already recorded stays as it is. */
+  aliases?: { alias: string, slug: string }[]
   versions?: { id: number, raw: string }[]
   snapshots?: { id: number, raw: string }[]
   drafts?: { slug: string, ydoc: Uint8Array }[]

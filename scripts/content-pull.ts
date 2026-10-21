@@ -22,6 +22,7 @@
  */
 
 import process from 'node:process'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { describeDatabase } from '../layers/studio/server/db/config.ts'
 import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 import { scriptDatabaseConfig } from './lib/database.ts'
@@ -73,12 +74,18 @@ const LABEL: Record<string, string> = {
   identical: 'identique à la version publiée locale, rien à faire',
   trashed: 'à la corbeille en local : refusé, restaurer d\'abord',
   missing: 'absent de l\'instance, ou sans version publiée',
+  unsafe: 'ignoré : son alias ou son frozenBundle contient un caractère autre que des lettres, des chiffres, - et _',
 }
 
 for (const [i, deck] of pulled.entries()) {
   const slug = slugs[i]!
   if (!deck || deck.raw == null) {
     console.log(`  · ${slug} : ${LABEL.missing}`)
+    continue
+  }
+  // The alias and the bundle each name a path segment of `/p/` or `/frozen/`.
+  if (![deck.alias, deck.frozenBundle].every(name => name == null || isDeckSlug(name))) {
+    console.warn(`  ⚠ ${slug} : ${LABEL.unsafe}`)
     continue
   }
   const local = locals.get(slug)

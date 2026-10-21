@@ -3,6 +3,8 @@
 // static bundle: no server, no database, no Nuxt runtime, served for good under
 // the deck's stable alias.
 
+import { isDeckSlug } from '@vignettes/core/deck'
+
 /** Minimal deck-entry shape a freeze needs (mirrors the server's directory entry). */
 export interface FreezeRegistryEntry {
   alias: string
@@ -59,6 +61,11 @@ export function buildFreezeDescriptor(
 ): FreezeDescriptor {
   const slug = entry.slug || entry.alias
   const bundle = entry.frozenBundle || entry.alias
+  // Each name builds a directory, an object key or a URL of the bundle.
+  for (const [what, name] of [['slug', slug], ['bundle', bundle], ['theme', options.theme]] as const) {
+    if (name !== undefined && !isDeckSlug(name))
+      throw new Error(`the ${what} "${name}" is not a slug: it may hold letters, digits, - and _`)
+  }
   const baseUrl = `/frozen/${bundle}/`
   const embedsStorybook = Boolean(options.storybookDir)
 

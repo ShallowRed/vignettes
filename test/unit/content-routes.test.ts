@@ -65,6 +65,12 @@ describe('the content routes', () => {
       .toEqual([{ slug: 'binned', action: 'trashed', folderMissing: null }])
   })
 
+  it('push refuses an alias or a frozen bundle that is not a slug', async () => {
+    for (const registry of [{ alias: '../probe', lifecycle: 'frozen', frozenBundle: null }, { alias: 'probe', lifecycle: 'frozen', frozenBundle: '..' }])
+      await expect(push(token({ body: { stubs: [stub('probe', '# P', { registry })], apply: true } }))).rejects.toMatchObject({ statusCode: 400 })
+    expect(await testRows().select('decks', { slug: 'probe' })).toEqual([])
+  })
+
   it('push refuses a plaintext access password', async () => {
     await expect(push(token({ body: { stubs: [stub('locked', '---\naccessPassword: hunter22\n---\n\n# L')], apply: true } })))
       .rejects

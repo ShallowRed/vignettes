@@ -7,6 +7,7 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { DECK_ASSET_PREFIXES, deckAssetLocalPath } from '@vignettes/core/deck-assets'
+import { safePathSegments } from '@vignettes/core/paths'
 
 /**
  * Copy `public/` into `outDir`, keeping only the frozen deck's theme and what
@@ -98,12 +99,18 @@ export function copyDeckAssets(root: string, markdown: string, outDir: string, c
   const copied: string[] = []
   const missing: string[] = []
   for (const url of referencedDeckAssets(markdown)) {
-    const target = join(outDir, url.replace(/^\//, ''))
+    // The deck text is written by its editors: a `..` segment would copy a file from outside the content space.
+    const segments = safePathSegments(url)
+    if (!segments) {
+      missing.push(url)
+      continue
+    }
+    const target = join(outDir, ...segments)
     if (existsSync(target)) {
       copied.push(url)
       continue
     }
-    const [, prefix, ...parts] = url.split('/')
+    const [prefix, ...parts] = segments as [string, ...string[]]
     const source = join(root, deckAssetLocalPath(contentDirName, prefix, ...parts))
     if (!existsSync(source)) {
       missing.push(url)

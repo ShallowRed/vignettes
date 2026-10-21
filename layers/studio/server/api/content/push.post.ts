@@ -1,5 +1,5 @@
 import { LifecycleSchema } from '#shared/access'
-import { isDeckSlug } from '@vignettes/core/deck'
+import { DeckSlugSchema } from '#shared/presentations'
 import { z } from 'zod'
 import { assertContentScript } from '../../utils/access'
 import { pushStubs } from '../../utils/content-push'
@@ -7,9 +7,9 @@ import { useContentArchive, useProjectStore } from '../../utils/sources'
 
 const BodySchema = z.object({
   stubs: z.array(z.object({
-    slug: z.string().refine(isDeckSlug, 'Invalid slug'),
+    slug: DeckSlugSchema,
     raw: z.string().min(1),
-    registry: z.object({ alias: z.string().min(1), lifecycle: LifecycleSchema, frozenBundle: z.string().nullable() }).nullable(),
+    registry: z.object({ alias: DeckSlugSchema, lifecycle: LifecycleSchema, frozenBundle: DeckSlugSchema.nullable() }).nullable(),
     unlisted: z.boolean(),
   })).min(1),
   apply: z.boolean(),

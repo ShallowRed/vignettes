@@ -70,6 +70,11 @@ describe('bundle asset copying', () => {
     expect(result.missing).toEqual([])
   })
 
+  it('reports an asset path out of the content space as missing, and copies nothing', () => {
+    const result = copyDeckAssets(root, '![](/images/../../.data/slides.db)', out)
+    expect(result).toEqual({ copied: [], missing: ['/images/../../.data/slides.db'] })
+  })
+
   it('reports a missing asset instead of failing the freeze', () => {
     expect(copyDeckAssets(root, '![](/images/gone.png)', out).missing).toEqual(['/images/gone.png'])
   })
