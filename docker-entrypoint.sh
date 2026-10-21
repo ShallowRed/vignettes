@@ -35,9 +35,9 @@ done
 export INFISICAL_TOKEN
 
 echo "[entrypoint] Injection des secrets (${INFISICAL_ENV}) + démarrage de l'app."
+# Root only: the folders of each environment hold the secrets of other jobs and instances.
 exec infisical run \
   --projectId="$INFISICAL_PROJECT_ID" \
   --env="$INFISICAL_ENV" \
   --domain="$INFISICAL_API_URL" \
-  --recursive \
   -- "$@"
