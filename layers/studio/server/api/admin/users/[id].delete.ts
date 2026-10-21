@@ -1,4 +1,5 @@
 import { assertOwner } from '../../../utils/access'
+import { securityLog } from '../../../utils/security-log'
 import { useUserStore } from '../../../utils/users'
 
 /**
@@ -27,5 +28,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Demote an owner before removing the account' })
 
   await store.remove(id)
+  securityLog(event, 'account-removal', { account: id }, actor.login)
   return { removed: true }
 })

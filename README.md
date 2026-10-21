@@ -127,6 +127,7 @@ On Scalingo, the Node.js buildpack builds the app from the repository and the `P
 | `NUXT_CONTENT_DIR` | Content space: deck stubs and tenant themes, `presentations/` by default |
 | `NUXT_CONTENT_TOKEN` | Bearer token that lets `content:republish:prod`, `content:push`, `content:pull` and `theme:rename` reach the instance without a session |
 | `NUXT_FROZEN_S3_*` | Object storage for frozen bundles, uploaded media, and the database replica. The bucket name and the two keys are required together; without them the app serves `.frozen/`, `.media/` and `.themes/` from disk, and a production server on PostgreSQL stops at boot |
+| `NUXT_TRUSTED_PROXY_HOPS` | The number of proxies in front of the server that append the client address to `X-Forwarded-For`, which the rate limits read: `1` behind Caddy or the Scalingo router. Without it, the rate limits count by the address of the socket |
 | `NUXT_RECETTE_ENABLED` | Exposes the demonstration and acceptance kit (`/recette`) outside development, and creates its data set and its five accounts at boot |
 | `NUXT_PUBLIC_HELP_URL`, `NUXT_PUBLIC_FEEDBACK_URL` | Addresses of the « Documentation » and « Envoyer un retour » links, shown in the header and in the status bar of the editor, each hidden while empty |
 

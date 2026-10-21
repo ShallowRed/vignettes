@@ -23,7 +23,7 @@ describe('the API error log', () => {
       cause,
     })
     await errorHook()(failure, { event: { method: 'POST', path: '/api/media?deck=notes' } })
-    expect(error).toHaveBeenCalledWith('[api] POST /api/media 503 The image storage did not accept the file (anonymous)', cause)
+    expect(error).toHaveBeenCalledWith('[api] POST /api/media 503 The image storage did not accept the file (anonymous from 127.0.0.1)', cause)
     error.mockRestore()
   })
 })

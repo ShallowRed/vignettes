@@ -1,6 +1,6 @@
 import type { UserStore } from '#shared/access'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import { handleKey, invitedPlaceholder, isInvitedPlaceholder } from '../identities.ts'
 import { readRole } from '../stored-values.ts'
 import { deckPermissions, projectPermissions, users } from './schema.ts'
@@ -136,8 +136,12 @@ export function createUserStore(db: Db): UserStore {
     },
 
     async getAccount(id) {
-      const row = db.select({ login: users.login, role: users.role }).from(users).where(eq(users.id, id)).get()
-      return row ? { login: row.login, role: readRole(row.role) } : null
+      const row = db.select({ login: users.login, role: users.role, sessionVersion: users.sessionVersion }).from(users).where(eq(users.id, id)).get()
+      return row ? { ...row, role: readRole(row.role) } : null
+    },
+
+    async endSessions(id) {
+      db.update(users).set({ sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, id)).run()
     },
 
     async list() {
@@ -153,7 +157,7 @@ export function createUserStore(db: Db): UserStore {
     },
 
     async setRole(id, role) {
-      db.update(users).set({ role }).where(eq(users.id, id)).run()
+      db.update(users).set({ role, sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, id)).run()
     },
 
     async remove(id) {

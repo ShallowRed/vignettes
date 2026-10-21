@@ -12,7 +12,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { createPostgresStores, openPglite, MIGRATIONS_DIR as POSTGRES_MIGRATIONS } from '../../layers/studio/server/db/postgres/index'
 import * as pgSchema from '../../layers/studio/server/db/postgres/schema'
 import { createSqliteStores, migrateSqlite, openSqlite, MIGRATIONS_DIR as REPOSITORY_MIGRATIONS } from '../../layers/studio/server/db/sqlite/index'
-import { freshSqlite, PGLITE_TIMEOUT, postgresRows, seedDeck, seedUser, sqliteRows } from './helpers/adapters'
+import { freshSqlite, PGLITE_TIMEOUT, seedDeck, sqliteRows } from './helpers/adapters'
 
 const MIGRATIONS_DIR = join(process.cwd(), REPOSITORY_MIGRATIONS)
 
@@ -88,8 +88,10 @@ describe('the account ids on a populated database', () => {
     migrateSqliteFolder(db, { migrationsFolder: before })
     rmSync(before, { recursive: true })
     const stores = createSqliteStores(db)
-    await seedUser(sqliteRows(db), 101, 'alice')
-    await seedUser(sqliteRows(db), 202, 'bob')
+    // The columns `users` had then: the schema module describes the last migration.
+    const insert = db.$client.prepare('INSERT INTO users (id, provider_id, login, created_at, last_login_at) VALUES (?, ?, ?, 0, 0)')
+    insert.run(101, '101', 'alice')
+    insert.run(202, '202', 'bob')
     await seedDeck(sqliteRows(db), 'deck')
     await stores.deckGrants.set('deck', 202, 'editor', 'alice')
 
@@ -99,6 +101,7 @@ describe('the account ids on a populated database', () => {
     expect(db.$client.pragma('foreign_keys', { simple: true })).toBe(1)
     expect((await stores.users.list()).map(account => account.id)).toEqual([101, 202])
     expect((await stores.deckGrants.listForDeck('deck')).map(grant => grant.userId)).toEqual([202])
+    await expect(stores.users.getAccount(101)).resolves.toEqual({ login: 'alice', role: 'viewer', sessionVersion: 0 })
     await stores.users.remove(202)
     await expect(stores.users.upsertOAuthLogin(carol, 'viewer')).resolves.toMatchObject({ id: 203 })
     db.$client.close()
@@ -111,7 +114,7 @@ describe('the account ids on a populated database', () => {
     const before = migrationsBefore(folder, '0001')
     await migratePgliteFolder(db, { migrationsFolder: before })
     rmSync(before, { recursive: true })
-    await seedUser(postgresRows(db), 101, 'alice')
+    await client.query(`INSERT INTO users (id, provider_id, login, created_at, last_login_at) VALUES (101, '101', 'alice', now(), now())`)
 
     await migratePgliteFolder(db, { migrationsFolder: folder })
 

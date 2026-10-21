@@ -2,8 +2,9 @@ import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
 import { DeckSlugSchema, familyFolder, replacementLoops } from '#shared/presentations'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
-import { getActorRole } from '../../../utils/actor'
+import { getActor } from '../../../utils/actor'
 import { hashAccessPassword } from '../../../utils/password'
+import { securityLog } from '../../../utils/security-log'
 import { useDeckMeta, useProjectStore } from '../../../utils/sources'
 
 // The title and the theme are absent on purpose: each publication reads them
@@ -30,7 +31,7 @@ const PatchSchema = z.object({
  * and the yaml registry entry for this deck.
  */
 export default defineEventHandler(async (event) => {
-  const role = await getActorRole(event)
+  const { role, login } = await getActor(event)
   if (role !== 'owner' && role !== 'editor') {
     throw createError({
       statusCode: role === 'anonymous' ? 401 : 403,
@@ -92,5 +93,8 @@ export default defineEventHandler(async (event) => {
   if (accessPassword !== undefined)
     patch.accessPasswordHash = accessPassword === null ? null : await hashAccessPassword(accessPassword)
 
-  return await useDeckMeta().update(slug, patch)
+  const updated = await useDeckMeta().update(slug, patch)
+  if (accessPassword !== undefined)
+    securityLog(event, 'deck-password-change', { deck: slug, password: accessPassword === null ? 'removed' : 'set' }, login)
+  return updated
 })

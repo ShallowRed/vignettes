@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RecettePersona } from '#shared/recette/personas'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PREFIX } from '#shared/recette/personas'
+import { postForm } from '../utils/post-form'
 import { requestErrorMessage } from '../utils/request-error'
 
 /**
@@ -49,7 +50,8 @@ async function seed() {
   }
 }
 
-const personaLink = (key: string, redirect = '/') => `/auth/recette?as=${key}&redirect=${encodeURIComponent(redirect)}`
+/** Opens the app as a persona, then `redirect`, in this tab or in `target`. */
+const openAs = (key: string, redirect = '/', target?: string) => postForm('/auth/recette', { as: key, redirect }, target)
 
 interface Step {
   id: string
@@ -188,8 +190,7 @@ useHead({ title: () => t('recette.page.pageTitle') })
             variant="subtle"
             size="sm"
             class="mt-2"
-            :to="personaLink('me', '/recette')"
-            external
+            @click="openAs('me', '/recette')"
           />
         </div>
 
@@ -264,8 +265,7 @@ useHead({ title: () => t('recette.page.pageTitle') })
               color="neutral"
               variant="subtle"
               size="sm"
-              :to="personaLink(block.key, '/recette')"
-              external
+              @click="openAs(block.key, '/recette')"
             />
           </div>
         </template>
@@ -282,10 +282,8 @@ useHead({ title: () => t('recette.page.pageTitle') })
               class="mt-0.5"
             />
             <ULink
-              :to="step.to ? personaLink(block.key, step.to) : undefined"
-              target="_blank"
-              external
               class="inline-flex items-center gap-1.5 font-medium text-highlighted hover:text-primary"
+              @click="step.to && openAs(block.key, step.to, '_blank')"
             >
               {{ step.target }}
               <UIcon

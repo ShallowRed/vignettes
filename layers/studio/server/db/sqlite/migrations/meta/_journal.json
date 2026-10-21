@@ -141,6 +141,13 @@
       "when": 1792576589189,
       "tag": "0019_users_autoincrement",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1792579213657,
+      "tag": "0020_users_session_version",
+      "breakpoints": true
     }
   ]
 }

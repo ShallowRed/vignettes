@@ -21,7 +21,8 @@ process.env.NUXT_RECETTE_ENABLED = '1'
 
 const { default: status } = await import('../../layers/studio/server/api/recette/status.get')
 const { default: seed } = await import('../../layers/studio/server/api/recette/seed.post')
-const { default: openAs } = await import('../../layers/studio/server/routes/auth/recette.get')
+const { default: openAs } = await import('../../layers/studio/server/routes/auth/recette')
+const { default: logout } = await import('../../layers/studio/server/routes/auth/logout')
 
 // The seeded images land in `.media/` under the working directory.
 const cwd = process.cwd()
@@ -79,6 +80,14 @@ describe('recette kit gate', () => {
     }
   })
 
+  it('refuses the pass after a logout of its holder, which also removes it from the browser', async () => {
+    const pass = await ownerPass()
+    const signOut = asUser(1, 'boss', { method: 'POST', cookies: { recette_pass: pass } })
+    await logout(signOut)
+    expect(signOut.deletedCookies).toContain('recette_pass')
+    await expect(status(asUser(2, 'v', { cookies: { recette_pass: pass } }))).rejects.toMatchObject({ statusCode: 403 })
+  })
+
   it('refuses the pass once its id names another owner (403)', async () => {
     const pass = await ownerPass()
     await useUserStore().remove(1)
@@ -90,13 +99,13 @@ describe('recette kit gate', () => {
 describe('persona switch', () => {
   it('opens the app as a persona with its role, and `me` restores the owner', async () => {
     const pass = await ownerPass()
-    const asCollab = asUser(2, 'v', { cookies: { recette_pass: pass }, query: { as: 'collab', redirect: '/projects/recette-partage' } })
+    const asCollab = asUser(2, 'v', { cookies: { recette_pass: pass }, method: 'POST', body: { as: 'collab', redirect: '/projects/recette-partage' } })
     await openAs(asCollab)
     expect(asCollab.sessionSet.user).toMatchObject({ id: persona('collab').id, role: 'viewer' })
     expect(asCollab.redirectedTo).toBe('/projects/recette-partage')
     await expect(useUserStore().getAccount(persona('collab').id)).resolves.toMatchObject({ role: 'viewer' })
 
-    const back = asUser(persona('collab').id, 'recette-collab', { cookies: { recette_pass: pass }, query: { as: 'me' } })
+    const back = asUser(persona('collab').id, 'recette-collab', { cookies: { recette_pass: pass }, method: 'POST', body: { as: 'me' } })
     await openAs(back)
     expect(back.sessionSet.user).toMatchObject({ id: 1, login: 'boss' })
     expect(back.redirectedTo).toBe('/')
@@ -104,16 +113,21 @@ describe('persona switch', () => {
 
   it('opens the app without a session as the anonymous visitor, and keeps the pass', async () => {
     const pass = await ownerPass()
-    const asVisitor = asUser(1, 'boss', { cookies: { recette_pass: pass }, query: { as: 'anonymous', redirect: '/slides/recette-mdp' } })
+    const asVisitor = asUser(1, 'boss', { cookies: { recette_pass: pass }, method: 'POST', body: { as: 'anonymous', redirect: '/slides/recette-mdp' } })
     await openAs(asVisitor)
     expect(asVisitor.sessionCleared).toBe(true)
     expect(asVisitor.sessionSet).toBeUndefined()
     expect(asVisitor.redirectedTo).toBe('/slides/recette-mdp')
   })
 
+  it('answers 405 to a GET, which a link on another site can send', async () => {
+    const pass = await ownerPass()
+    await expect(openAs(asUser(1, 'boss', { cookies: { recette_pass: pass }, query: { as: 'collab' } }))).rejects.toMatchObject({ statusCode: 405 })
+  })
+
   it('rejects an unknown persona (400)', async () => {
     await ownerPass()
-    await expect(openAs(asUser(1, 'boss', { query: { as: 'root' } }))).rejects.toMatchObject({ statusCode: 400 })
+    await expect(openAs(asUser(1, 'boss', { method: 'POST', body: { as: 'root' } }))).rejects.toMatchObject({ statusCode: 400 })
   })
 })
 

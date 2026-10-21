@@ -1,6 +1,7 @@
 import { GrantBodySchema, mayGrantUntil, mayWriteGrantOf } from '#shared/access'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertCanShareDeck, sharingLimitOn } from '../../../../../utils/access'
+import { securityLog } from '../../../../../utils/security-log'
 import { usePermissionStore } from '../../../../../utils/sources'
 import { useUserStore } from '../../../../../utils/users'
 
@@ -41,5 +42,6 @@ export default defineEventHandler(async (event) => {
   }
 
   await usePermissionStore().set(slug, userId, parsed.data.role, actor.login ?? 'unknown', until)
+  securityLog(event, 'grant-change', { deck: slug, account: userId, role: parsed.data.role, until: until?.toISOString() }, actor.login)
   return { ok: true, slug, userId, role: parsed.data.role }
 })

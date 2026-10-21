@@ -5,10 +5,12 @@ import { canShare, decideAccess, isPrivileged, mayEdit, sharingLimit } from '#sh
 import { resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { accessCookieName, mintAccessPass, verifyAccessPass } from './access-pass'
 import { getActor } from './actor'
+import { clientAddress } from './client-address'
 import { serverConfig } from './config'
 import { contentTokenActor } from './content-token'
 import { hashAccessPassword, needsRehash, verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
+import { securityLog } from './security-log'
 import { publishedSource, useDeckMeta, useGrants, useMediaIndex, usePermissionStore, useProjectPermissionStore } from './sources'
 
 // Semi-private decks are guarded by a shared password, so throttle guesses per
@@ -75,7 +77,7 @@ export async function decideDeckAccess(event: H3Event, opts: GateOptions): Promi
   const grant = await resolveGrant(actor, slug)
   const hasPassword = Boolean(storedHash)
   const passwordGranted = hasPassword
-    ? await resolvePasswordGrant(event, slug, storedHash!, opts.password)
+    ? await resolvePasswordGrant(event, actor, slug, storedHash!, opts.password)
     : false
 
   return decideAccess({ status, lifecycle, role: actor.role, grant, hasPassword, passwordGranted })
@@ -264,15 +266,16 @@ export async function assertOwner(event: H3Event): Promise<Actor> {
 }
 
 /** Password satisfied by a prior `access_<slug>` cookie, or by the right posted password (sets a 24h cookie). */
-async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: string, password: string | undefined): Promise<boolean> {
+async function resolvePasswordGrant(event: H3Event, actor: Actor, slug: string, storedHash: string, password: string | undefined): Promise<boolean> {
   if (verifyAccessPass(getCookie(event, accessCookieName(slug)), slug, storedHash))
     return true
   if (!password)
     return false
 
-  const client = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
-  if (!hitRateLimit(`unlock:${client}:${slug}`, PASSWORD_ATTEMPTS, PASSWORD_WINDOW_MS))
+  if (!hitRateLimit(`unlock:${clientAddress(event)}:${slug}`, PASSWORD_ATTEMPTS, PASSWORD_WINDOW_MS)) {
+    securityLog(event, 'deck-password-lockout', { deck: slug }, actor.login)
     throw createError({ statusCode: 429, statusMessage: 'Too many attempts, try again later' })
+  }
 
   const valid = await verifyAccessPassword(password, storedHash)
   if (!valid)

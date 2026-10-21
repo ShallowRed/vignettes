@@ -1,6 +1,7 @@
 import { RoleSchema } from '#shared/access'
 import { z } from 'zod'
 import { assertOwner } from '../../../utils/access'
+import { securityLog } from '../../../utils/security-log'
 import { useUserStore } from '../../../utils/users'
 
 const PatchSchema = z.object({
@@ -33,5 +34,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Unknown user' })
   }
   await store.setRole(id, parsed.data.role)
+  securityLog(event, 'role-change', { account: id, role: parsed.data.role }, actor.login)
   return { ok: true, id, role: parsed.data.role }
 })

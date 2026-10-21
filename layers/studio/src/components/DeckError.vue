@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { postForm } from '../utils/post-form'
+
 // Full-screen error placeholder for deck routes; self-contained for the bare
 // `presentation` layout. `loginRedirect` turns it into a sign-in prompt (private
 // deck reached anonymously): the CTA goes to /login and comes back here after.
@@ -40,7 +42,12 @@ const { t } = useI18n()
         <strong>{{ accountLogin }}</strong>
       </template>
       <template #switchAccount>
-        <a href="/auth/logout">{{ t('auth.deckError.switchAccount') }}</a>
+        <button
+          type="button"
+          @click="postForm('/auth/logout')"
+        >
+          {{ t('auth.deckError.switchAccount') }}
+        </button>
       </template>
     </i18n-t>
     <NuxtLink
@@ -103,8 +110,14 @@ const { t } = useI18n()
   color: #94a3b8;
 }
 
-.deck-error__account a {
+.deck-error__account button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
   color: #93c5fd;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .deck-error__back {

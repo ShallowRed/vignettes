@@ -7,7 +7,9 @@
  */
 
 import { resolveRole, safeRedirectPath } from '#shared/access'
+import { openUserSession } from '../../utils/actor'
 import { serverConfig } from '../../utils/config'
+import { securityLog } from '../../utils/security-log'
 import { useUserStore } from '../../utils/users'
 
 export default defineOAuthGitHubEventHandler({
@@ -23,15 +25,8 @@ export default defineOAuthGitHubEventHandler({
       { claimInvited: true, firstAccountOwns: roles.owner.length === 0 },
     )
 
-    await setUserSession(event, {
-      user: {
-        id,
-        login: user.login,
-        name: user.name,
-        avatar: user.avatar_url,
-        role,
-      },
-    })
+    await openUserSession(event, { id, login: user.login, name: user.name, avatar: user.avatar_url, role })
+    securityLog(event, 'login', { provider: 'github', account: id }, user.login)
 
     const intended = getCookie(event, 'auth_redirect')
     deleteCookie(event, 'auth_redirect')
@@ -39,6 +34,7 @@ export default defineOAuthGitHubEventHandler({
   },
   onError(event, error) {
     console.error('GitHub OAuth error:', error)
+    securityLog(event, 'login-failure', { provider: 'github' })
     return sendRedirect(event, '/login?error=oauth_failed')
   },
 })

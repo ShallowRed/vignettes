@@ -40,11 +40,12 @@ In GitHub, under Settings, Developer settings, OAuth Apps, create an app with th
 sc env-set \
   'NUXT_DATABASE_URL=$SCALINGO_POSTGRESQL_URL' \
   NODE_EXTRA_CA_CERTS=/usr/share/ca-certificates/Scalingo/scalingo-database.pem \
+  NUXT_TRUSTED_PROXY_HOPS=1 \
   NUXT_SESSION_PASSWORD="$(node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'))")" \
   NUXT_CONTENT_TOKEN="$(node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))")"
 ```
 
-`NUXT_DATABASE_URL` references the addon URL, as the [environment](https://doc.scalingo.com/platform/app/environment) page describes; the single quotes keep `$` for Scalingo. Without it, the instance runs on PGlite on the container's disk, which Scalingo empties at each restart. node-postgres treats the `sslmode=prefer` of the URL as `verify-full`. To verify the certificate, Node needs the Scalingo database authority, which `NODE_EXTRA_CA_CERTS` adds from the path that the [Symfony page](https://doc.scalingo.com/languages/php/symfony) gives.
+`NUXT_DATABASE_URL` references the addon URL, as the [environment](https://doc.scalingo.com/platform/app/environment) page describes; the single quotes keep `$` for Scalingo. Without it, the instance runs on PGlite on the container's disk, which Scalingo empties at each restart. node-postgres treats the `sslmode=prefer` of the URL as `verify-full`. To verify the certificate, Node needs the Scalingo database authority, which `NODE_EXTRA_CA_CERTS` adds from the path that the [Symfony page](https://doc.scalingo.com/languages/php/symfony) gives. `NUXT_TRUSTED_PROXY_HOPS=1` counts the router as one proxy, which adds the client address to `X-Forwarded-For` ([routing](https://doc.scalingo.com/platform/internals/routing)): the rate limit of the deck passwords counts by that address.
 
 Then set the other variables in the Environment tab of the dashboard, or with `sc env-set --file <file>` from a file kept outside the repository:
 

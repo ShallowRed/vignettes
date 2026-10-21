@@ -162,12 +162,11 @@ describe('gateDeckAccess', () => {
       .toMatchObject({ statusCode: 401, data: { requiresPassword: true } })
   })
 
-  it('throttles password guessing to 429 after the limit', async () => {
+  it('throttles a client that writes another X-Forwarded-For at each try', async () => {
     const storedHash = await hashAccessPassword('open-sesame')
-    const wrong = () => unlockDeck(anon({ body: { password: 'nope' }, ip: '10.0.0.9' }), { slug: 'd', status: 'semi-private', storedHash })
-    // 10 wrong tries are answered as bad-password (401); the 11th is rate-limited.
+    const forged = (i: number) => anon({ body: { password: 'nope' }, ip: '10.0.0.9', headers: { 'x-forwarded-for': `198.51.100.${i}` } })
     for (let i = 0; i < 10; i++)
-      await expect(wrong()).rejects.toMatchObject({ statusCode: 401 })
-    await expect(wrong()).rejects.toMatchObject({ statusCode: 429 })
+      await expect(unlockDeck(forged(i), { slug: 'd', status: 'semi-private', storedHash })).rejects.toMatchObject({ statusCode: 401 })
+    await expect(unlockDeck(forged(10), { slug: 'd', status: 'semi-private', storedHash })).rejects.toMatchObject({ statusCode: 429 })
   })
 })

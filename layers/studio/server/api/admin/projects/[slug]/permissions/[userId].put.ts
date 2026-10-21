@@ -1,6 +1,7 @@
 import { GrantBodySchema } from '#shared/access'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertOwner } from '../../../../../utils/access'
+import { securityLog } from '../../../../../utils/security-log'
 import { useProjectPermissionStore } from '../../../../../utils/sources'
 import { useUserStore } from '../../../../../utils/users'
 
@@ -28,5 +29,6 @@ export default defineEventHandler(async (event) => {
   }
 
   await useProjectPermissionStore().set(slug, userId, parsed.data.role, owner.login ?? 'unknown', parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null)
+  securityLog(event, 'grant-change', { folder: slug, account: userId, role: parsed.data.role, until: parsed.data.expiresAt ?? undefined }, owner.login)
   return { ok: true, project: slug, userId, role: parsed.data.role }
 })

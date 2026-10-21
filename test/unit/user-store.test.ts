@@ -9,7 +9,7 @@ describe.each(ADAPTERS)('user store ($name)', (adapter) => {
 
   it('seeds a new user with the bootstrap role', async () => {
     await expect(store().upsertOnLogin(alice, 'owner')).resolves.toBe('owner')
-    await expect(store().getAccount(1)).resolves.toEqual({ login: 'alice', role: 'owner' })
+    await expect(store().getAccount(1)).resolves.toEqual({ login: 'alice', role: 'owner', sessionVersion: 0 })
   })
 
   it('keeps the stored role on re-login (database is the truth)', async () => {
@@ -53,7 +53,15 @@ describe.each(ADAPTERS)('user store ($name)', (adapter) => {
     expect(eve.id).toBeGreaterThan(50)
     expect(zoe.id).toBeGreaterThan(eve.id)
     await expect(store().getAccount(eve.id)).resolves.toBeNull()
-    await expect(store().getAccount(zoe.id)).resolves.toEqual({ login: 'zoe@example.com', role: 'editor' })
+    await expect(store().getAccount(zoe.id)).resolves.toEqual({ login: 'zoe@example.com', role: 'editor', sessionVersion: 0 })
+  })
+
+  it('raises the session version when the sessions end and when the role changes', async () => {
+    await store().upsertOnLogin(alice, 'editor')
+    await expect(store().getAccount(1)).resolves.toMatchObject({ sessionVersion: 0 })
+    await store().endSessions(1)
+    await store().setRole(1, 'viewer')
+    await expect(store().getAccount(1)).resolves.toEqual({ login: 'alice', role: 'viewer', sessionVersion: 2 })
   })
 
   describe('upsertOAuthLogin', () => {

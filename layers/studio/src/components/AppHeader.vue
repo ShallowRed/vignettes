@@ -3,6 +3,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { ROLE_CONFIG } from '#shared/access'
 import { useAppSession } from '../composables/useAppSession'
 import { useInstanceLinks } from '../composables/useInstanceLinks'
+import { postForm } from '../utils/post-form'
 
 // App chrome: brand left; the links of the instance, language, color mode and
 // identity (sign-in/out, role) right.
@@ -30,7 +31,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
         { label: t('common.header.trash'), icon: 'i-lucide-trash-2', to: '/trash' },
       ]]
     : []),
-  [{ label: t('common.actions.signOut'), icon: 'i-lucide-log-out', to: '/auth/logout', external: true }],
+  [{ label: t('common.actions.signOut'), icon: 'i-lucide-log-out', onSelect: () => postForm('/auth/logout') }],
 ])
 </script>
 

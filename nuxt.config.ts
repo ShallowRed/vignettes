@@ -1,3 +1,4 @@
+import type { SessionConfig } from 'h3'
 import { join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -99,6 +100,19 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // The lifetimes of a session, passed to h3 `useSession` by nuxt-auth-utils
+    // (https://github.com/atinux/nuxt-auth-utils#configuration). `maxAge`, in
+    // seconds, counts from the login. `seal.ttl`, in milliseconds, is the life
+    // of each seal, and `keepSessionActive`, called by the `session-activity`
+    // middleware, reseals a session in use: a session that no request uses for
+    // two hours ends.
+    session: {
+      // The default of the module: `NUXT_SESSION_PASSWORD` gives the value at runtime.
+      password: '',
+      maxAge: 8 * 60 * 60,
+      // h3 spreads `seal` over the iron defaults, and its type asks for all of them.
+      seal: { ttl: 2 * 60 * 60 * 1000 } as SessionConfig['seal'],
+    },
     // Shared TTL (ms) for the file/registry content sources.
     sourceCacheTtlMs: process.env.NUXT_SOURCE_CACHE_TTL_MS || '',
     public: {

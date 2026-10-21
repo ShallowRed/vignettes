@@ -72,6 +72,7 @@ export const users = pgTable('users', {
   role: text('role').notNull().default('viewer'),
   createdAt: date('created_at').notNull(),
   lastLoginAt: date('last_login_at').notNull(),
+  sessionVersion: integer('session_version').notNull().default(0),
 }, table => [uniqueIndex('users_provider_identity').on(table.provider, table.providerId)])
 
 export const projects = pgTable('projects', {

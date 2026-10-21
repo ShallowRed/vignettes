@@ -130,8 +130,12 @@ export function createUserStore(db: PostgresDb): UserStore {
     },
 
     async getAccount(id) {
-      const [row] = await db.select({ login: users.login, role: users.role }).from(users).where(eq(users.id, id))
-      return row ? { login: row.login, role: readRole(row.role) } : null
+      const [row] = await db.select({ login: users.login, role: users.role, sessionVersion: users.sessionVersion }).from(users).where(eq(users.id, id))
+      return row ? { ...row, role: readRole(row.role) } : null
+    },
+
+    async endSessions(id) {
+      await db.update(users).set({ sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, id))
     },
 
     async list() {
@@ -147,7 +151,7 @@ export function createUserStore(db: PostgresDb): UserStore {
     },
 
     async setRole(id, role) {
-      await db.update(users).set({ role }).where(eq(users.id, id))
+      await db.update(users).set({ role, sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, id))
     },
 
     async remove(id) {

@@ -77,18 +77,33 @@ export function stubH3Globals() {
   vi.stubGlobal('defineEventHandler', (handler: any) => handler)
   vi.stubGlobal('defineWebSocketHandler', (handler: any) => handler)
   vi.stubGlobal('createError', (e: any) => Object.assign(new Error(e.statusMessage), e))
-  vi.stubGlobal('getUserSession', async (e: any) => e.session ?? null)
+  // As h3 does, reading the session of a request without a session cookie
+  // creates one and sets its cookie.
+  vi.stubGlobal('getUserSession', async (e: any) => {
+    if (!e.cookies?.['nuxt-session'])
+      (e.setCookies ??= {})['nuxt-session'] = 'new-session'
+    return e.session ?? {}
+  })
   vi.stubGlobal('getCookie', (e: any, name: string) => e.cookies?.[name])
+  vi.stubGlobal('deleteCookie', (e: any, name: string) => {
+    ;(e.deletedCookies ??= []).push(name)
+  })
   vi.stubGlobal('getRequestHeader', (e: any, name: string) => e.headers?.[name.toLowerCase()])
   vi.stubGlobal('setCookie', (e: any, name: string, value: string) => {
     ;(e.setCookies ??= {})[name] = value
   })
   vi.stubGlobal('getQuery', (e: any) => e.query ?? {})
+  vi.stubGlobal('assertMethod', (e: any, method: string) => {
+    if ((e.method ?? 'GET') !== method)
+      throw Object.assign(new Error('Method Not Allowed'), { statusCode: 405 })
+  })
   vi.stubGlobal('useRuntimeConfig', (e: any) => e?.runtimeConfig ?? { public: {} })
   vi.stubGlobal('getRouterParam', (e: any, name: string) => e.params?.[name])
   vi.stubGlobal('readBody', async (e: any) => e.body)
   vi.stubGlobal('readMultipartFormData', async (e: any) => e.parts)
-  vi.stubGlobal('getRequestIP', (e: any) => e.ip ?? '127.0.0.1')
+  // As h3 does, `xForwardedFor` reads the first value of the header.
+  vi.stubGlobal('getRequestIP', (e: any, opts?: { xForwardedFor?: boolean }) =>
+    (opts?.xForwardedFor && e.headers?.['x-forwarded-for']?.split(',')[0].trim()) || (e.ip ?? '127.0.0.1'))
   vi.stubGlobal('setResponseStatus', (e: any, code: number) => {
     e.status = code
   })
@@ -96,6 +111,10 @@ export function stubH3Globals() {
     e.responseHeaders = { ...e.responseHeaders, [name]: value }
   })
   vi.stubGlobal('setUserSession', async (e: any, session: unknown) => {
+    e.sessionSet = session
+    ;(e.setCookies ??= {})['nuxt-session'] = 'resealed-session'
+  })
+  vi.stubGlobal('replaceUserSession', async (e: any, session: unknown) => {
     e.sessionSet = session
   })
   vi.stubGlobal('clearUserSession', async (e: any) => {
@@ -113,9 +132,9 @@ export function stubH3Globals() {
   })
 }
 
-/** An H3-ish event authenticated as the given user (role read from the db). */
-export function asUser(id: number, login: string, over: Record<string, unknown> = {}): any {
-  return { session: { user: { id, login } }, ...over }
+/** An H3-ish event authenticated as the given user (role read from the db), in a session resealed just now. */
+export function asUser(id: number, login: string, over: Record<string, any> = {}): any {
+  return { session: { user: { id, login }, activeAt: Date.now() }, ...over, cookies: { 'nuxt-session': 'sealed', ...over.cookies } }
 }
 
 /** An anonymous H3-ish event. */

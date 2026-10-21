@@ -77,12 +77,14 @@ A grant never lowers what the global role already allows; `strongerGrant` in `sh
 
 ## Session
 
+A session ends eight hours after the login, or after two hours without a `GET` request whose response is not cached publicly (`runtimeConfig.session` in `nuxt.config.ts`). A logout or a change of role ends every session of the account. A collaboration socket that is already open stays open until it reconnects: the session is checked when the socket opens, and the messages of the socket do not count as requests.
+
 | Route | Effect |
 |-------|--------|
 | `GET /api/auth/session` | The current user, or `null`, and the resolved role |
 | `GET /api/auth/providers` | The OAuth providers this deployment has credentials for |
-| `GET /auth/github`, `GET /auth/google` | OAuth handlers; the role comes from `NUXT_OWNER_LOGINS` and `NUXT_EDITOR_LOGINS`, other handles become `viewer` |
-| `GET /auth/logout` | Clear the session |
+| `GET /auth/github`, `GET /auth/google` | OAuth handlers; the role comes from `NUXT_OWNER_LOGINS` and `NUXT_EDITOR_LOGINS`, for a Google address once Google has verified it, and other handles become `viewer` |
+| `POST /auth/logout` | End every session of the account and clear the cookie; another method answers 405 |
 | `GET /auth/dev-login?role=<role>` | Development only: sign in as a given role |
 | `POST /api/admin/hash-password` | Hash a password for a semi-private deck |
 
@@ -103,7 +105,7 @@ A grant never lowers what the global role already allows; `strongerGrant` in `sh
 |-------|--------|--------|
 | `GET /api/recette/status` | owner, or a persona holding the pass | State of the `recette-*` data set |
 | `POST /api/recette/seed` | owner | Reset the data set |
-| `GET /auth/recette?as=<persona>` | pass | Open the app as a persona |
+| `POST /auth/recette`, body `as=<persona>` | pass | Open the app as a persona |
 
 The kit answers 404 unless `NUXT_RECETTE_ENABLED=1` or the app runs in development. See [recette-staging.md](recette-staging.md).
 

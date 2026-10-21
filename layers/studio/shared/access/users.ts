@@ -55,9 +55,15 @@ export interface UserStore {
   invite: (identity: { provider: 'github' | 'google', handle: string }) => Promise<UserAccount>
   /** Id-keyed variant for synthetic accounts (dev-login) whose internal id is fixed. */
   upsertOnLogin: (profile: UserProfile, bootstrapRole: Role) => Promise<Role>
-  /** The login and the role of an account, for checking a session against its row. */
-  getAccount: (id: number) => Promise<Pick<UserAccount, 'login' | 'role'> | null>
+  /**
+   * The login, the role and the session version of an account, for checking a
+   * session against its row. A session of another version is ended.
+   */
+  getAccount: (id: number) => Promise<(Pick<UserAccount, 'login' | 'role'> & { sessionVersion: number }) | null>
+  /** Raise the session version, which ends every session of the account. */
+  endSessions: (id: number) => Promise<void>
   list: () => Promise<UserAccount[]>
+  /** Change the role and end every session of the account. */
   setRole: (id: number, role: Role) => Promise<void>
   /**
    * Delete an account and every grant it holds (one transaction). Permanent —

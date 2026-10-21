@@ -23,6 +23,8 @@ export interface ServerConfig {
   secureCookies: boolean
   roleMap: RoleMap
   frozenS3: FrozenS3Config
+  /** The number of proxies in front of the server that append to `X-Forwarded-For` (see `clientAddress`). */
+  trustedProxyHops: number
 }
 
 export function serverConfig(): ServerConfig {
@@ -37,6 +39,7 @@ export function serverConfig(): ServerConfig {
     secureCookies: process.env.NODE_ENV === 'production',
     roleMap: readRoleMap(env),
     frozenS3: frozenS3ConfigFromEnv(env),
+    trustedProxyHops: /^\d+$/.test(env.NUXT_TRUSTED_PROXY_HOPS ?? '') ? Number(env.NUXT_TRUSTED_PROXY_HOPS) : 0,
   }
 }
 

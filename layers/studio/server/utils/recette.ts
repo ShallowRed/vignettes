@@ -27,8 +27,11 @@ const PASS_TTL_MS = 12 * 60 * 60 * 1000
 
 export interface RecettePass {
   exp: number
-  /** The owner identity that opened the kit, restored by `?as=me`. */
-  user: { id: number, login: string, name?: string }
+  /**
+   * The owner identity that opened the kit, restored by `as=me`, with the
+   * session version of the account then: a logout or a change of role ends the pass.
+   */
+  user: { id: number, login: string, name?: string, sessionVersion?: number }
 }
 
 function passSecret(): string {
@@ -54,6 +57,11 @@ export function mintRecettePass(event: H3Event, user: RecettePass['user']): Rece
     maxAge: PASS_TTL_MS / 1000,
   })
   return pass
+}
+
+/** Remove the pass from this browser, at logout. */
+export function clearRecettePass(event: H3Event): void {
+  deleteCookie(event, PASS_COOKIE)
 }
 
 /** The pass carried by this browser, when its signature and expiry hold. */
@@ -89,12 +97,12 @@ export async function assertRecette(event: H3Event): Promise<RecettePass> {
   const actor = await getActor(event)
   if (actor.role === 'owner' && actor.id && actor.login) {
     const session = await getUserSession(event).catch(() => null)
-    const name = (session?.user as { name?: string } | undefined)?.name
-    return mintRecettePass(event, { id: actor.id, login: actor.login, name })
+    const { name, sessionVersion } = (session?.user ?? {}) as { name?: string, sessionVersion?: number }
+    return mintRecettePass(event, { id: actor.id, login: actor.login, name, sessionVersion })
   }
   const pass = readRecettePass(event)
   const holder = pass && await useUserStore().getAccount(pass.user.id)
-  if (!pass || holder?.role !== 'owner' || holder.login !== pass.user.login)
+  if (!pass || holder?.role !== 'owner' || holder.login !== pass.user.login || holder.sessionVersion !== (pass.user.sessionVersion ?? 0))
     throw createError({ statusCode: 403, statusMessage: 'Le kit de recette s\'ouvre avec un compte propriétaire' })
   return pass
 }

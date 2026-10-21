@@ -8,7 +8,9 @@
  */
 
 import { resolveRole, safeRedirectPath } from '#shared/access'
+import { openUserSession } from '../../utils/actor'
 import { serverConfig } from '../../utils/config'
+import { securityLog } from '../../utils/security-log'
 import { useUserStore } from '../../utils/users'
 
 export default defineOAuthGoogleEventHandler({
@@ -19,21 +21,14 @@ export default defineOAuthGoogleEventHandler({
     const verified = user.email_verified === true
     const { id, role } = await useUserStore().upsertOAuthLogin(
       { provider: 'google', providerId: String(user.sub), login, name: user.name, avatarUrl: user.picture },
-      resolveRole(login, roles),
-      // A verified email may claim a pre-provisioned invited account; an
-      // unverified one must never inherit an invitation's grants.
+      // A role of `NUXT_OWNER_LOGINS` or `NUXT_EDITOR_LOGINS`, or a
+      // pre-provisioned invited account, goes to a verified email only.
+      verified ? resolveRole(login, roles) : 'viewer',
       { claimInvited: verified, firstAccountOwns: verified && roles.owner.length === 0 },
     )
 
-    await setUserSession(event, {
-      user: {
-        id,
-        login,
-        name: user.name,
-        avatar: user.picture,
-        role,
-      },
-    })
+    await openUserSession(event, { id, login, name: user.name, avatar: user.picture, role })
+    securityLog(event, 'login', { provider: 'google', account: id, email: verified ? 'verified' : 'unverified' }, login)
 
     const intended = getCookie(event, 'auth_redirect')
     deleteCookie(event, 'auth_redirect')
@@ -41,6 +36,7 @@ export default defineOAuthGoogleEventHandler({
   },
   onError(event, error) {
     console.error('Google OAuth error:', error)
+    securityLog(event, 'login-failure', { provider: 'google' })
     return sendRedirect(event, '/login?error=oauth_failed')
   },
 })

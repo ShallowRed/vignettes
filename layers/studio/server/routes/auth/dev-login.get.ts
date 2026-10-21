@@ -12,6 +12,7 @@
  * `onConflictDoUpdate` keeps the role stable, hence one account per role.
  */
 import { RoleSchema, safeRedirectPath } from '#shared/access'
+import { openUserSession } from '../../utils/actor'
 import { useUserStore } from '../../utils/users'
 
 // Deterministic, high ids that cannot collide with real GitHub user ids in dev.
@@ -35,9 +36,7 @@ export default defineEventHandler(async (event) => {
     .upsertOnLogin({ id: account.id, login: account.login, name: account.name, avatarUrl: null }, role)
     .catch(() => {})
 
-  await setUserSession(event, {
-    user: { id: account.id, login: account.login, name: account.name, role },
-  })
+  await openUserSession(event, { id: account.id, login: account.login, name: account.name, role })
 
   return sendRedirect(event, safeRedirectPath(query.redirect))
 })

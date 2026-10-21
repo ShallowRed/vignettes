@@ -6,7 +6,7 @@
 
 ## Activation
 
-Le kit répond 404 tant que la variable `NUXT_RECETTE_ENABLED=1` est absente de l'environnement du conteneur ; en développement local il est toujours actif (`import.meta.dev`). Sur l'instance de référence, seule l'instance de staging définit cette variable. Le code est dans `server/utils/recette.ts`, `server/api/recette/`, `server/routes/auth/recette.get.ts` et `src/pages/recette.vue`.
+Le kit répond 404 tant que la variable `NUXT_RECETTE_ENABLED=1` est absente de l'environnement du conteneur ; en développement local il est toujours actif (`import.meta.dev`). Sur l'instance de référence, seule l'instance de staging définit cette variable. Le code est dans `server/utils/recette.ts`, `server/api/recette/`, `server/routes/auth/recette.ts` et `src/pages/recette.vue`.
 
 ## Accès
 
@@ -14,7 +14,7 @@ La page s'ouvre avec un compte **owner** (connexion Google ou GitHub habituelle)
 Le serveur pose alors un laissez-passer signé (cookie `recette_pass`, 12 heures,
 signé avec `NUXT_SESSION_PASSWORD`). Ce laissez-passer permet ensuite, depuis le
 même navigateur, d'ouvrir l'application en tant que n'importe quel persona et de
-revenir à son compte (`/auth/recette?as=me`) sans repasser par OAuth.
+revenir à son compte par le bouton « Revenir à mon compte », sans repasser par OAuth.
 
 ## Jeu de données
 

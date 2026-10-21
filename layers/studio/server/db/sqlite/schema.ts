@@ -75,6 +75,8 @@ export const deckDrafts = sqliteTable('deck_drafts', {
  * `role` is the runtime truth — the env login map only seeds it on first login.
  * Defaults to the least-privileged role. For Google accounts `login` is the email
  * (GitHub logins cannot contain `@`, so the namespaces cannot collide).
+ * A session carries the `sessionVersion` of its login, and a session of an
+ * older version is anonymous: raising it ends every session of the account.
  */
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -86,6 +88,7 @@ export const users = sqliteTable('users', {
   role: text('role').notNull().default('viewer'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }).notNull(),
+  sessionVersion: integer('session_version').notNull().default(0),
 }, table => [uniqueIndex('users_provider_identity').on(table.provider, table.providerId)])
 
 /** Catalog grouping axis (absorbs projects.yml). */

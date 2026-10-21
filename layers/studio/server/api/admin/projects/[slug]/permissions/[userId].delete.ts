@@ -1,10 +1,11 @@
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertOwner } from '../../../../../utils/access'
+import { securityLog } from '../../../../../utils/security-log'
 import { useProjectPermissionStore } from '../../../../../utils/sources'
 
 /** DELETE /api/admin/projects/:slug/permissions/:userId — revoke a project grant (owner only). */
 export default defineEventHandler(async (event) => {
-  await assertOwner(event)
+  const owner = await assertOwner(event)
 
   const slug = getRouterParam(event, 'slug')
   const userId = Number(getRouterParam(event, 'userId'))
@@ -13,5 +14,6 @@ export default defineEventHandler(async (event) => {
   }
 
   await useProjectPermissionStore().remove(slug, userId)
+  securityLog(event, 'grant-change', { folder: slug, account: userId, role: 'none' }, owner.login)
   return { ok: true }
 })

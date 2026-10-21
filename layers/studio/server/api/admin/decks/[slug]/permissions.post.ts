@@ -2,6 +2,7 @@ import { HandleGrantBodySchema, mayGrantUntil, mayWriteGrantOf } from '#shared/a
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertCanShareDeck, sharingLimitOn } from '../../../../utils/access'
 import { hitRateLimit } from '../../../../utils/rate-limit'
+import { securityLog } from '../../../../utils/security-log'
 import { usePermissionStore } from '../../../../utils/sources'
 import { useUserStore } from '../../../../utils/users'
 
@@ -45,5 +46,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'You cannot change your own grant' })
   }
   await usePermissionStore().set(slug, user.id, role, actor.login ?? 'unknown', until)
+  securityLog(event, 'grant-change', { deck: slug, account: user.id, role, until: until?.toISOString() }, actor.login)
   return { ok: true, slug, userId: user.id, login: user.login, role }
 })
