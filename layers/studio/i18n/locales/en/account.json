@@ -1,0 +1,61 @@
+{
+  "account": {
+    "tokens": {
+      "pageTitle": "Access tokens · Vignettes",
+      "title": "Access tokens",
+      "intro": "A token gives the command line and your scripts the rights of your account.",
+      "count": "{n} tokens | {n} token | {n} tokens",
+      "create": "Create a token",
+      "restrictedDescription": "Sign in to manage your access tokens.",
+      "emptyTitle": "No token",
+      "emptyDescription": "Create a token to publish from the command line or a script.",
+      "scope": {
+        "read": "Read",
+        "write": "Read and publish",
+        "readDescription": "Read the presentations and the folders.",
+        "writeDescription": "Read, create, save and publish the presentations."
+      },
+      "state": {
+        "revoked": "Revoked",
+        "expired": "Expired"
+      },
+      "createdOn": "Created on {date}",
+      "lastUsed": "Used on {date}",
+      "neverUsed": "Never used",
+      "expiresOn": "Expires on {date}",
+      "expiredOn": "Expired on {date}",
+      "revokedOn": "Revoked on {date}",
+      "revoke": "Revoke",
+      "revokeOf": "Revoke {name}",
+      "removeOf": "Remove {name} from the list",
+      "revokeConfirmTitle": "Revoke this token?",
+      "revokeConfirmNotice": "The commands and the scripts that use this token will be refused.",
+      "revokeConfirmAction": "Revoke the token",
+      "revoked": "Token revoked",
+      "removed": "Token removed from the list",
+      "actionFailed": "The action on the token failed",
+      "form": {
+        "description": "The token acts with the rights of your account.",
+        "name": "Name",
+        "namePlaceholder": "CLI MacBook",
+        "nameHelp": "This name tells the token apart in the list.",
+        "scope": "Scope",
+        "duration": "Duration",
+        "days": "{n} days",
+        "submit": "Create the token",
+        "failed": "The token could not be created",
+        "tooMany": "You created too many tokens within the hour. Try again later."
+      },
+      "created": {
+        "title": "Token created",
+        "notice": "Copy this token now: the studio shows it only once.",
+        "secret": "Token",
+        "copy": "Copy the token",
+        "copied": "Token copied",
+        "copyFailed": "The browser refused to copy. The token is selected: copy it with the keyboard.",
+        "usage": "A script sends it in the header of its requests:",
+        "done": "Done"
+      }
+    }
+  }
+}

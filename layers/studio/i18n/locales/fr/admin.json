@@ -21,7 +21,14 @@
       "removeConfirmTitle": "Retirer ce compte ?",
       "removeConfirmNotice": "Le compte et tous ses accès partagés seront retirés.",
       "removeConfirmDescription": "Ses présentations ne sont pas touchées (le contenu n'appartient à personne). Une nouvelle connexion avec la même identité repartira de zéro, sans accès.",
-      "removeConfirmAction": "Retirer le compte"
+      "removeConfirmAction": "Retirer le compte",
+      "activeTokens": "{n} jeton actif | {n} jeton actif | {n} jetons actifs",
+      "revokeTokens": "Révoquer les jetons de {login}",
+      "revokeTokensConfirmTitle": "Révoquer les jetons de ce compte ?",
+      "revokeTokensConfirmNotice": "Les jetons actifs du compte seront révoqués, et les commandes et les scripts qui les utilisent seront refusés.",
+      "revokeTokensConfirmAction": "Révoquer les jetons",
+      "tokensRevoked": "{n} jeton révoqué | {n} jeton révoqué | {n} jetons révoqués",
+      "revokeTokensFailed": "La révocation des jetons a échoué"
     },
     "invite": {
       "title": "Ajouter un compte",

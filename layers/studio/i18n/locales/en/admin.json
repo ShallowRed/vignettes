@@ -21,7 +21,14 @@
       "removeConfirmTitle": "Remove this account?",
       "removeConfirmNotice": "The account and all the grants it holds will be removed.",
       "removeConfirmDescription": "Their presentations are not affected (content belongs to no one). A new sign-in with the same identity will start from scratch, with no access.",
-      "removeConfirmAction": "Remove the account"
+      "removeConfirmAction": "Remove the account",
+      "activeTokens": "{n} active tokens | {n} active token | {n} active tokens",
+      "revokeTokens": "Revoke the tokens of {login}",
+      "revokeTokensConfirmTitle": "Revoke the tokens of this account?",
+      "revokeTokensConfirmNotice": "The active tokens of the account will be revoked, and the commands and the scripts that use them will be refused.",
+      "revokeTokensConfirmAction": "Revoke the tokens",
+      "tokensRevoked": "{n} tokens revoked | {n} token revoked | {n} tokens revoked",
+      "revokeTokensFailed": "The tokens could not be revoked"
     },
     "invite": {
       "title": "Add an account",

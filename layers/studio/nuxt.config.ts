@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { SECURITY_HEADERS } from './server/utils/security-headers'
 
 /** One file per area of the interface, the same list for every locale. */
-const MESSAGE_FILES = ['common', 'catalog', 'deck', 'editor', 'reference', 'admin', 'auth', 'recette']
+const MESSAGE_FILES = ['common', 'catalog', 'deck', 'editor', 'reference', 'admin', 'account', 'auth', 'recette']
 const messageFiles = (locale: string) => MESSAGE_FILES.map(area => `${locale}/${area}.json`)
 
 /**

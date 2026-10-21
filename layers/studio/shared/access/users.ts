@@ -19,6 +19,12 @@ export interface UserAccount extends UserProfile {
   invited?: boolean
 }
 
+/** An account as the accounts page lists it. */
+export interface AccountSummary extends UserAccount {
+  /** Personal tokens neither revoked nor expired. */
+  activeTokens: number
+}
+
 /**
  * External OAuth identity. `providerId` stays a string: Google subs are ~21
  * digits and would silently lose precision as a JS number.

@@ -23,6 +23,7 @@ const linkItems = computed<DropdownMenuItem[]>(() =>
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
   [{ type: 'label', label: user.value?.login || user.value?.name || t('common.header.account'), avatar: user.value?.avatar ? { src: user.value.avatar } : undefined }],
+  [{ label: t('common.header.tokens'), icon: 'i-lucide-key-round', to: '/tokens' }],
   // Management entries live here rather than as bare header icons: they are
   // occasional destinations, not primary navigation.
   ...(privileged.value

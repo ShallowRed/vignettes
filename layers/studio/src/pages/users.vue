@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Role, UserAccount } from '#shared/access'
+import type { AccountSummary, Role } from '#shared/access'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { usersApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
@@ -21,7 +21,7 @@ const queryCache = useQueryCache()
 const requestFetch = useRequestFetch()
 
 const usersQ = useQuery({ ...usersQuery(requestFetch), enabled: () => isOwner.value })
-const accounts = computed<UserAccount[]>(() => usersQ.data.value ?? [])
+const accounts = computed<AccountSummary[]>(() => usersQ.data.value ?? [])
 
 const breadcrumb = computed(() => [
   { label: t('common.home'), to: '/' },
@@ -51,7 +51,7 @@ const { mutate: changeRole, isLoading: changingRole } = useMutation({
 })
 
 // Removal goes through a confirmation modal naming what disappears.
-const removeTarget = ref<UserAccount | null>(null)
+const removeTarget = ref<AccountSummary | null>(null)
 const removeOpen = computed({
   get: () => removeTarget.value !== null,
   set: (v: boolean) => {
@@ -69,7 +69,26 @@ const { mutate: runRemove, isLoading: removing } = useMutation({
   onSettled: invalidate,
 })
 
-const busy = computed(() => changingRole.value || removing.value)
+// Revoking the tokens of an account goes through a confirmation too: its scripts stop working.
+const revokeTarget = ref<AccountSummary | null>(null)
+const revokeOpen = computed({
+  get: () => revokeTarget.value !== null,
+  set: (v: boolean) => {
+    if (!v)
+      revokeTarget.value = null
+  },
+})
+const { mutate: runRevokeTokens, isLoading: revoking } = useMutation({
+  mutation: (id: number) => usersApi.revokeTokens(requestFetch, id),
+  onSuccess(result) {
+    toast.add({ title: t('admin.users.tokensRevoked', result.revoked), icon: 'i-lucide-check', color: 'success' })
+    revokeTarget.value = null
+  },
+  onError: e => onError(e, t('admin.users.revokeTokensFailed')),
+  onSettled: invalidate,
+})
+
+const busy = computed(() => changingRole.value || removing.value || revoking.value)
 
 const inviteOpen = ref(false)
 </script>
@@ -131,6 +150,9 @@ const inviteOpen = ref(false)
             <template v-else>
               {{ t('admin.users.lastLogin', { date: shortDate(account.lastLoginAt, locale) }) }}
             </template>
+            <template v-if="account.activeTokens">
+              · {{ t('admin.users.activeTokens', account.activeTokens) }}
+            </template>
           </p>
         </div>
         <div class="flex-1" />
@@ -142,19 +164,62 @@ const inviteOpen = ref(false)
           :aria-label="t('admin.users.roleOf', { login: account.login })"
           @update:model-value="(to: any) => changeRole({ id: account.id, to })"
         />
-        <UButton
-          icon="i-lucide-trash-2"
-          color="error"
-          variant="ghost"
-          size="xs"
-          :disabled="busy || account.id === user?.id || account.role === 'owner'"
-          :aria-label="t('admin.users.remove', { login: account.login })"
-          @click="removeTarget = account"
-        />
+        <UTooltip :text="t('admin.users.revokeTokens', { login: account.login })">
+          <UButton
+            icon="i-lucide-key-round"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :disabled="busy || !account.activeTokens"
+            :aria-label="t('admin.users.revokeTokens', { login: account.login })"
+            @click="revokeTarget = account"
+          />
+        </UTooltip>
+        <UTooltip :text="t('admin.users.remove', { login: account.login })">
+          <UButton
+            icon="i-lucide-trash-2"
+            color="error"
+            variant="ghost"
+            size="xs"
+            :disabled="busy || account.id === user?.id || account.role === 'owner'"
+            :aria-label="t('admin.users.remove', { login: account.login })"
+            @click="removeTarget = account"
+          />
+        </UTooltip>
       </li>
     </ul>
 
     <UserInviteModal v-model:open="inviteOpen" />
+
+    <UModal
+      v-model:open="revokeOpen"
+      :title="t('admin.users.revokeTokensConfirmTitle')"
+      :description="revokeTarget ? `${revokeTarget.login} · ${t('admin.users.activeTokens', revokeTarget.activeTokens)}` : undefined"
+    >
+      <template #body>
+        <ActionNotice
+          tone="critical"
+          :title="t('admin.users.revokeTokensConfirmNotice')"
+        />
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton
+            :label="t('common.actions.cancel')"
+            color="neutral"
+            variant="ghost"
+            @click="revokeTarget = null"
+          />
+          <UButton
+            :label="t('admin.users.revokeTokensConfirmAction')"
+            color="error"
+            icon="i-lucide-key-round"
+            :loading="revoking"
+            @click="revokeTarget && runRevokeTokens(revokeTarget.id)"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <UModal
       v-model:open="removeOpen"

@@ -13,6 +13,9 @@ export type TokenScope = z.infer<typeof TokenScopeSchema>
 export const DEFAULT_TOKEN_DAYS = 90
 export const MAX_TOKEN_DAYS = 365
 
+/** The durations the studio offers when it creates a token, in days. */
+export const TOKEN_DURATIONS = [30, DEFAULT_TOKEN_DAYS, MAX_TOKEN_DAYS]
+
 /** What `POST /api/tokens` accepts. */
 export const TokenRequestSchema = z.object({
   name: z.string().trim().min(1).max(100),

@@ -150,6 +150,13 @@ describe('the tokens of one account', () => {
     expect(await listTokens(session(EDITOR, 'GET', '/api/tokens'))).toEqual([])
   })
 
+  it('counts the active tokens of each account for the owner', async () => {
+    await tokenOf(VIEWER)
+    await tokenOf(VIEWER)
+    const accounts = await listUsers(session(OWNER, 'GET', '/api/admin/users'))
+    expect(accounts.map(account => [account.login, account.activeTokens])).toEqual([['ann', 0], ['eve', 0], ['vic', 2]])
+  })
+
   it('refuses the session of a removed account (401)', async () => {
     await useUserStore().remove(VIEWER.id)
     await expect(tokenOf(VIEWER)).rejects.toMatchObject({ statusCode: 401 })

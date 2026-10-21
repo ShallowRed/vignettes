@@ -70,7 +70,7 @@ A grant never lowers what the global role already allows; `strongerGrant` in `sh
 
 | Route | Access | Effect |
 |-------|--------|--------|
-| `GET /api/admin/users` | owner | Every known identity and its role |
+| `GET /api/admin/users` | owner | Every known identity, its role and its number of active personal tokens |
 | `POST /api/admin/users/invite` | owner | Pre-provision an account by provider handle so grants apply before its first login |
 | `PATCH /api/admin/users/:id` | owner | Change a global role; an owner cannot change their own |
 | `DELETE /api/admin/users/:id` | owner | Remove an account, its grants and its personal tokens; refused for yourself and for owners |

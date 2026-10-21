@@ -21,6 +21,11 @@ export const trashKeys = {
   all: ['trash'] as const,
 }
 
+/** The personal access tokens of the signed-in account. */
+export const tokenKeys = {
+  all: ['tokens'] as const,
+}
+
 /** Known identities (for the sharing pickers). */
 export const usersKeys = {
   all: ['users'] as const,

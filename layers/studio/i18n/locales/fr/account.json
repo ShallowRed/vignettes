@@ -1,0 +1,61 @@
+{
+  "account": {
+    "tokens": {
+      "pageTitle": "Jetons d'accès · Vignettes",
+      "title": "Jetons d'accès",
+      "intro": "Un jeton donne à la ligne de commande et à vos scripts les droits de votre compte.",
+      "count": "{n} jeton | {n} jeton | {n} jetons",
+      "create": "Créer un jeton",
+      "restrictedDescription": "Connectez-vous pour gérer vos jetons d'accès.",
+      "emptyTitle": "Aucun jeton",
+      "emptyDescription": "Créez un jeton pour publier depuis la ligne de commande ou un script.",
+      "scope": {
+        "read": "Lecture",
+        "write": "Lecture et publication",
+        "readDescription": "Lire les présentations et les dossiers.",
+        "writeDescription": "Lire, créer, enregistrer et publier les présentations."
+      },
+      "state": {
+        "revoked": "Révoqué",
+        "expired": "Expiré"
+      },
+      "createdOn": "Créé le {date}",
+      "lastUsed": "Utilisé le {date}",
+      "neverUsed": "Jamais utilisé",
+      "expiresOn": "Expire le {date}",
+      "expiredOn": "Expiré le {date}",
+      "revokedOn": "Révoqué le {date}",
+      "revoke": "Révoquer",
+      "revokeOf": "Révoquer {name}",
+      "removeOf": "Retirer {name} de la liste",
+      "revokeConfirmTitle": "Révoquer ce jeton ?",
+      "revokeConfirmNotice": "Les commandes et les scripts qui utilisent ce jeton seront refusés.",
+      "revokeConfirmAction": "Révoquer le jeton",
+      "revoked": "Jeton révoqué",
+      "removed": "Jeton retiré de la liste",
+      "actionFailed": "L'action sur le jeton a échoué",
+      "form": {
+        "description": "Le jeton agit avec les droits de votre compte.",
+        "name": "Nom",
+        "namePlaceholder": "CLI MacBook",
+        "nameHelp": "Ce nom distingue le jeton dans la liste.",
+        "scope": "Portée",
+        "duration": "Durée",
+        "days": "{n} jours",
+        "submit": "Créer le jeton",
+        "failed": "La création du jeton a échoué",
+        "tooMany": "Vous avez créé trop de jetons dans l'heure. Réessayez plus tard."
+      },
+      "created": {
+        "title": "Jeton créé",
+        "notice": "Copiez ce jeton maintenant : le studio l'affiche une seule fois.",
+        "secret": "Jeton",
+        "copy": "Copier le jeton",
+        "copied": "Jeton copié",
+        "copyFailed": "Le navigateur a refusé la copie. Le jeton est sélectionné : copiez-le au clavier.",
+        "usage": "Un script l'envoie dans l'en-tête de ses requêtes :",
+        "done": "Terminé"
+      }
+    }
+  }
+}
