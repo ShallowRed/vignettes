@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const listed = (await usePermissionStore().listForDeck(slug)).find(grant => grant.userId === userId)
-  const known = actor.role === 'owner' ? await useUserStore().getRole(userId) != null : listed !== undefined
+  const known = actor.role === 'owner' ? await useUserStore().getAccount(userId) != null : listed !== undefined
   if (!known) {
     throw createError({ statusCode: 404, statusMessage: 'Unknown user' })
   }

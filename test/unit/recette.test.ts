@@ -78,6 +78,13 @@ describe('recette kit gate', () => {
       await useUserStore().setRole(1, 'owner')
     }
   })
+
+  it('refuses the pass once its id names another owner (403)', async () => {
+    const pass = await ownerPass()
+    await useUserStore().remove(1)
+    await seedAccount(1, 'eve', 'owner')
+    await expect(status(asUser(2, 'v', { cookies: { recette_pass: pass } }))).rejects.toMatchObject({ statusCode: 403 })
+  })
 })
 
 describe('persona switch', () => {
@@ -87,7 +94,7 @@ describe('persona switch', () => {
     await openAs(asCollab)
     expect(asCollab.sessionSet.user).toMatchObject({ id: persona('collab').id, role: 'viewer' })
     expect(asCollab.redirectedTo).toBe('/projects/recette-partage')
-    await expect(useUserStore().getRole(persona('collab').id)).resolves.toBe('viewer')
+    await expect(useUserStore().getAccount(persona('collab').id)).resolves.toMatchObject({ role: 'viewer' })
 
     const back = asUser(persona('collab').id, 'recette-collab', { cookies: { recette_pass: pass }, query: { as: 'me' } })
     await openAs(back)

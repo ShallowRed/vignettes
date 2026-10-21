@@ -68,15 +68,16 @@ export const deckDrafts = sqliteTable('deck_drafts', {
 })
 
 /**
- * Identities seen at OAuth login. `id` is an internal key (historically the
- * GitHub numeric id; new rows autoincrement above it) — the external identity is
+ * Identities seen at OAuth login. `id` is an internal key: historically the
+ * GitHub numeric id, then an autoincrement above every id ever given, so the id
+ * of a removed account is never given again. The external identity is
  * `(provider, providerId)`, kept as text because Google subs overflow JS numbers.
  * `role` is the runtime truth — the env login map only seeds it on first login.
  * Defaults to the least-privileged role. For Google accounts `login` is the email
  * (GitHub logins cannot contain `@`, so the namespaces cannot collide).
  */
 export const users = sqliteTable('users', {
-  id: integer('id').primaryKey(),
+  id: integer('id').primaryKey({ autoIncrement: true }),
   provider: text('provider').notNull().default('github'),
   providerId: text('provider_id').notNull().default(''),
   login: text('login').notNull().unique(),

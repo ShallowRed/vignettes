@@ -7,7 +7,7 @@
  * Gated on `import.meta.dev`: in a production build the constant is `false`, the
  * guard becomes dead code and the route always 404s. It is never a prod path.
  *
- * Role resolution is database-first (`resolveActorRole` ignores the sealed role),
+ * Role resolution is database-first (`resolveActor` ignores the sealed role),
  * so we upsert the account with its role — mirroring the real GitHub handler.
  * `onConflictDoUpdate` keeps the role stable, hence one account per role.
  */

@@ -88,7 +88,7 @@ describe('sharing a deck by handle (POST /api/admin/decks/:slug/permissions)', (
     it(`lets ${name} grant a handle that never logged in, as an invited viewer account`, async () => {
       const result = await shareByHandle(as(onDeck({ body: handleBody('new-person', 'editor') })))
       expect(result).toEqual({ ok: true, slug: 'deck', userId: result.userId, login: 'new-person', role: 'editor' })
-      expect(await useUserStore().getRole(result.userId)).toBe('viewer')
+      expect(await useUserStore().getAccount(result.userId)).toMatchObject({ role: 'viewer' })
       expect((await useUserStore().list()).find(u => u.id === result.userId)?.invited).toBe(true)
       expect(await usePermissionStore().get('deck', result.userId)).toBe('editor')
     })

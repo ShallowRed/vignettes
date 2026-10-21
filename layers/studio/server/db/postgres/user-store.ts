@@ -7,19 +7,9 @@ import { deckPermissions, projectPermissions, users } from './schema.ts'
 
 type NewUser = Omit<typeof users.$inferInsert, 'id'>
 
-/**
- * Inserts an account under the next id above every existing one, the rule the
- * SQLite rowid follows. The table lock makes two first logins wait for each
- * other, so they get two ids.
- */
 async function insertUser(db: PostgresDb, values: NewUser): Promise<typeof users.$inferSelect> {
-  return db.transaction(async (tx) => {
-    await tx.execute(sql`lock table ${users} in share row exclusive mode`)
-    const [row] = await tx.insert(users)
-      .values({ ...values, id: sql`(select coalesce(max(${users.id}), 0) + 1 from ${users})` })
-      .returning()
-    return row!
-  })
+  const [row] = await db.insert(users).values(values).returning()
+  return row!
 }
 
 /** PostgreSQL adapter for the `UserStore` port. */
@@ -104,6 +94,11 @@ export function createUserStore(db: PostgresDb): UserStore {
           },
         })
         .returning({ role: users.role })
+      // An explicit id leaves the identity sequence behind. The sequence moves to
+      // the greater of that id and its next value, so it never goes back, and a
+      // new id is above every id given, as with the SQLite AUTOINCREMENT.
+      const sequence = sql`pg_get_serial_sequence('users', 'id')`
+      await db.execute(sql`select setval(${sequence}, greatest(${profile.id}, nextval(${sequence})))`)
       return readRole(row!.role)
     },
 
@@ -134,9 +129,9 @@ export function createUserStore(db: PostgresDb): UserStore {
       }
     },
 
-    async getRole(id) {
-      const [row] = await db.select({ role: users.role }).from(users).where(eq(users.id, id))
-      return row ? readRole(row.role) : null
+    async getAccount(id) {
+      const [row] = await db.select({ login: users.login, role: users.role }).from(users).where(eq(users.id, id))
+      return row ? { login: row.login, role: readRole(row.role) } : null
     },
 
     async list() {

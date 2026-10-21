@@ -2,7 +2,7 @@
  * GitHub OAuth handler. Upserts the user; the database owns the role from then
  * on, the env map (`NUXT_OWNER_LOGINS` / `NUXT_EDITOR_LOGINS`) only seeds the
  * first login. The role in the session is a display snapshot, not an authority
- * (see `resolveActorRole`). Without a row there is no safe internal id to seal,
+ * (see `resolveActor`). Without a row there is no safe internal id to seal,
  * so a store failure falls through to onError (fail closed).
  */
 

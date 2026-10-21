@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const store = useUserStore()
-  if (await store.getRole(id) == null) {
+  if (await store.getAccount(id) == null) {
     throw createError({ statusCode: 404, statusMessage: 'Unknown user' })
   }
   await store.setRole(id, parsed.data.role)

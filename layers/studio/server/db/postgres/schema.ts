@@ -58,11 +58,12 @@ export const deckDrafts = pgTable('deck_drafts', {
 })
 
 /**
- * `id` has no sequence: like the SQLite rowid, a new account takes the next id
- * above every existing one, historical GitHub ids included.
+ * `id` takes the next value of its identity sequence, which only grows, as the
+ * SQLite `AUTOINCREMENT`: an id is never given twice, historical GitHub ids
+ * included.
  */
 export const users = pgTable('users', {
-  id: integer('id').primaryKey(),
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
   provider: text('provider').notNull().default('github'),
   providerId: text('provider_id').notNull().default(''),
   login: text('login').notNull().unique(),

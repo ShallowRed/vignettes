@@ -93,7 +93,8 @@ export async function assertRecette(event: H3Event): Promise<RecettePass> {
     return mintRecettePass(event, { id: actor.id, login: actor.login, name })
   }
   const pass = readRecettePass(event)
-  if (!pass || await useUserStore().getRole(pass.user.id) !== 'owner')
+  const holder = pass && await useUserStore().getAccount(pass.user.id)
+  if (!pass || holder?.role !== 'owner' || holder.login !== pass.user.login)
     throw createError({ statusCode: 403, statusMessage: 'Le kit de recette s\'ouvre avec un compte propriétaire' })
   return pass
 }
@@ -265,8 +266,8 @@ export async function hasRecetteData(): Promise<boolean> {
   if (seeded.some(Boolean))
     return true
   const users = useUserStore()
-  const roles = await Promise.all(RECETTE_PERSONAS.map(persona => users.getRole(persona.id)))
-  return roles.some(role => role !== null)
+  const accounts = await Promise.all(RECETTE_PERSONAS.map(persona => users.getAccount(persona.id)))
+  return accounts.some(account => account !== null)
 }
 
 /**

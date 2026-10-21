@@ -1,13 +1,18 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
+import { PGlite } from '@electric-sql/pglite'
 import Database from 'better-sqlite3'
 import { sql } from 'drizzle-orm'
+import { migrate as migrateSqliteFolder } from 'drizzle-orm/better-sqlite3/migrator'
+import { drizzle } from 'drizzle-orm/pglite'
+import { migrate as migratePgliteFolder } from 'drizzle-orm/pglite/migrator'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openPglite } from '../../layers/studio/server/db/postgres/index'
-import { migrateSqlite, MIGRATIONS_DIR as REPOSITORY_MIGRATIONS } from '../../layers/studio/server/db/sqlite/index'
-import { freshSqlite, PGLITE_TIMEOUT } from './helpers/adapters'
+import { createPostgresStores, openPglite, MIGRATIONS_DIR as POSTGRES_MIGRATIONS } from '../../layers/studio/server/db/postgres/index'
+import * as pgSchema from '../../layers/studio/server/db/postgres/schema'
+import { createSqliteStores, migrateSqlite, openSqlite, MIGRATIONS_DIR as REPOSITORY_MIGRATIONS } from '../../layers/studio/server/db/sqlite/index'
+import { freshSqlite, PGLITE_TIMEOUT, postgresRows, seedDeck, seedUser, sqliteRows } from './helpers/adapters'
 
 const MIGRATIONS_DIR = join(process.cwd(), REPOSITORY_MIGRATIONS)
 
@@ -27,6 +32,13 @@ describe('database migrations', () => {
     const db = freshSqlite()
     // Second pass over the same database must not re-run or throw.
     expect(() => migrateSqlite(db)).not.toThrow()
+  })
+
+  it('refuse a database that holds a row whose foreign key names no row', () => {
+    const db = freshSqlite()
+    db.$client.pragma('foreign_keys = OFF')
+    db.$client.prepare(`INSERT INTO deck_permissions (deck_slug, user_id, role, granted_by, created_at) VALUES ('gone', 7, 'viewer', 'boss', 0)`).run()
+    expect(() => migrateSqlite(db)).toThrow(/^The database holds foreign keys that name no row \(2\), the first in deck_permissions, parent \w+, before the migrations$/)
   })
 
   it('0010 backfills provider identity on a populated database', () => {
@@ -53,6 +65,62 @@ describe('database migrations', () => {
       { id: 202, provider: 'github', provider_id: '202' },
     ])
   })
+})
+
+/** A copy of a migrations folder that stops before `tag`, the folder of an instance that has not taken it yet. */
+function migrationsBefore(folder: string, tag: string): string {
+  const dir = mkdtempSync(join(tmpdir(), 'slides-migrations-'))
+  const journal = JSON.parse(readFileSync(join(folder, 'meta/_journal.json'), 'utf-8')) as { entries: { tag: string }[] }
+  journal.entries = journal.entries.filter(entry => entry.tag < tag)
+  mkdirSync(join(dir, 'meta'))
+  writeFileSync(join(dir, 'meta/_journal.json'), JSON.stringify(journal))
+  for (const entry of journal.entries)
+    copyFileSync(join(folder, `${entry.tag}.sql`), join(dir, `${entry.tag}.sql`))
+  return dir
+}
+
+describe('the account ids on a populated database', () => {
+  const carol = { provider: 'google' as const, providerId: 'sub-carol', login: 'carol@example.com' }
+
+  it('0019 of SQLite keeps the accounts and their grants, and gives no id twice', async () => {
+    const db = openSqlite(':memory:')
+    const before = migrationsBefore(MIGRATIONS_DIR, '0019')
+    migrateSqliteFolder(db, { migrationsFolder: before })
+    rmSync(before, { recursive: true })
+    const stores = createSqliteStores(db)
+    await seedUser(sqliteRows(db), 101, 'alice')
+    await seedUser(sqliteRows(db), 202, 'bob')
+    await seedDeck(sqliteRows(db), 'deck')
+    await stores.deckGrants.set('deck', 202, 'editor', 'alice')
+
+    // The rebuild drops `users` while `deck_permissions` names it.
+    migrateSqlite(db)
+
+    expect(db.$client.pragma('foreign_keys', { simple: true })).toBe(1)
+    expect((await stores.users.list()).map(account => account.id)).toEqual([101, 202])
+    expect((await stores.deckGrants.listForDeck('deck')).map(grant => grant.userId)).toEqual([202])
+    await stores.users.remove(202)
+    await expect(stores.users.upsertOAuthLogin(carol, 'viewer')).resolves.toMatchObject({ id: 203 })
+    db.$client.close()
+  })
+
+  it('0001 of PostgreSQL starts the sequence past the existing ids', async () => {
+    const client = await PGlite.create()
+    const db = drizzle({ client, schema: pgSchema })
+    const folder = join(process.cwd(), POSTGRES_MIGRATIONS)
+    const before = migrationsBefore(folder, '0001')
+    await migratePgliteFolder(db, { migrationsFolder: before })
+    rmSync(before, { recursive: true })
+    await seedUser(postgresRows(db), 101, 'alice')
+
+    await migratePgliteFolder(db, { migrationsFolder: folder })
+
+    const users = createPostgresStores(db).users
+    await users.upsertOnLogin({ id: 50, login: 'dev-owner' }, 'owner')
+    const { id } = await users.upsertOAuthLogin(carol, 'viewer')
+    expect(id).toBeGreaterThan(101)
+    await client.close()
+  }, PGLITE_TIMEOUT)
 })
 
 /** The Nitro app a plugin receives, reduced to the hooks it registers. */

@@ -17,29 +17,37 @@ export interface Actor {
   role: Role
 }
 
+const ANONYMOUS: Actor = { role: 'anonymous' }
+
 /**
- * Resolve the actor's role from the session identity, database first. A missing
- * row or an unreachable database falls back to the env login map — never to the
- * role sealed in the session, so a revoked privilege cannot survive via a stale
- * cookie, and a wiped database self-heals from the bootstrap map.
+ * The actor of a session identity, its role read from the database. `null` for
+ * a stale session: its account is removed, or its id names another login. An
+ * unreachable database falls back to the env login map, never to the role
+ * sealed in the session, so a revoked privilege cannot survive via a stale cookie.
  */
-async function resolveActorRole(user: SessionUser | undefined): Promise<Role> {
+async function resolveActor(user: SessionUser | undefined): Promise<Actor | null> {
   if (!user?.id)
-    return 'anonymous'
-  const fromMap = () => resolveRole(user.login, serverConfig().roleMap)
+    return ANONYMOUS
+  let account
   try {
-    return await useUserStore().getRole(user.id) ?? fromMap()
+    account = await useUserStore().getAccount(user.id)
   }
   catch {
-    return fromMap()
+    return { id: user.id, login: user.login, role: resolveRole(user.login, serverConfig().roleMap) }
   }
+  if (!account || account.login !== user.login)
+    return null
+  return { id: user.id, login: user.login, role: account.role }
 }
 
-/** The actor for an H3 request; anonymous (no identity) when no session. */
+/** The actor for an H3 request: anonymous without a session, and with a stale one, which it clears. */
 export async function getActor(event: H3Event): Promise<Actor> {
   const session = await getUserSession(event).catch(() => null)
-  const user = session?.user as SessionUser | undefined
-  return { id: user?.id, login: user?.login, role: await resolveActorRole(user) }
+  const actor = await resolveActor(session?.user as SessionUser | undefined)
+  if (actor)
+    return actor
+  await clearUserSession(event)
+  return ANONYMOUS
 }
 
 /** The actor's `Role` for an H3 request; `anonymous` when no session. */
@@ -53,11 +61,12 @@ export async function getActorRole(event: H3Event): Promise<Role> {
  * and the SSR seed, so the header renders the same branch on server and client.
  */
 export async function getAppSession(event: H3Event): Promise<AppSession> {
-  const session = await getUserSession(event).catch(() => null)
+  const actor = await getActor(event)
+  const session = actor.id ? await getUserSession(event).catch(() => null) : null
   return {
     user: session?.user || null,
     loggedIn: !!session?.user,
-    role: await getActorRole(event),
+    role: actor.role,
   }
 }
 
@@ -72,10 +81,10 @@ interface RequestWithCookies {
 }
 
 /**
- * `getActorRole` for a request that carries no H3Event, which is every
- * WebSocket upgrade: unseal the nuxt-auth-utils session cookie directly. The
- * password falls back to the env var because runtimeConfig only merges it at
- * the first `getUserSession` call.
+ * `getActor` for a request that carries no H3Event, which is every WebSocket
+ * upgrade: unseal the nuxt-auth-utils session cookie directly. A stale session
+ * is anonymous; the next HTTP request clears it. The password falls back to the
+ * env var because runtimeConfig only merges it at the first `getUserSession` call.
  */
 export async function getActorFromRequest(request: RequestWithCookies): Promise<Actor> {
   const config = useRuntimeConfig().session as { name?: string, password?: string, maxAge?: number }
@@ -87,6 +96,5 @@ export async function getActorFromRequest(request: RequestWithCookies): Promise<
 
   const session = await unsealSession(undefined as never, { password, maxAge: config?.maxAge }, sealed)
     .catch(() => null)
-  const user = (session?.data as { user?: SessionUser })?.user
-  return { id: user?.id, login: user?.login, role: await resolveActorRole(user) }
+  return await resolveActor((session?.data as { user?: SessionUser })?.user) ?? ANONYMOUS
 }

@@ -15,10 +15,12 @@ describe('copy of a SQLite database into PostgreSQL', () => {
 
   afterAll(() => target.close(), PGLITE_TIMEOUT)
 
-  it('copies every row, then numbers the next version after the copied ones', async () => {
+  it('copies every row, then numbers the next version and the next account after the ids the source gave', async () => {
     const source = freshSqlite()
     const from = createSqliteStores(source)
     await seedUser(sqliteRows(source), 101, 'alice')
+    await seedUser(sqliteRows(source), 202, 'bob')
+    await from.users.remove(202)
     await from.projects.create({ title: 'Atelier' })
     await from.content.writer.save({ slug: 'deck', raw: '---\ntitle: Deck\nproject: atelier\n---\n\n# One', actor: 'alice' })
     await from.drafts.save('deck', markdownToYDocUpdate('# Draft'))
@@ -38,6 +40,7 @@ describe('copy of a SQLite database into PostgreSQL', () => {
     expect(await to.deckGrants.listForDeck('deck')).toEqual(await from.deckGrants.listForDeck('deck'))
     await to.content.writer.save({ slug: 'deck', raw: '# Two', actor: 'alice' })
     expect((await to.versionHistory.list('deck')).map(version => version.id)).toEqual([2, 1])
+    await expect(to.users.upsertOAuthLogin({ provider: 'google', providerId: 'sub-carol', login: 'carol@example.com' }, 'viewer')).resolves.toMatchObject({ id: 203 })
 
     await expect(copySqliteToPostgres(source, target.db)).rejects.toThrow(/already holds rows/)
   })

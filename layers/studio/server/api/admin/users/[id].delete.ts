@@ -6,8 +6,9 @@ import { useUserStore } from '../../../utils/users'
  * (owner only). Permanent, but not destructive of content: decks and versions
  * never belong to a user. Guards: not yourself (no lock-out), and never an
  * owner (demote first, so removing the wrong account stays a two-step act).
- * A live session for the removed account degrades on its next request: role
- * resolution is database-first, so the stale cookie no longer resolves.
+ * A live session of the removed account is anonymous from its next request:
+ * `getActor` refuses a session whose id names no row, and the store never gives
+ * that id to another account.
  */
 export default defineEventHandler(async (event) => {
   const actor = await assertOwner(event)
@@ -19,10 +20,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'You cannot remove your own account' })
 
   const store = useUserStore()
-  const role = await store.getRole(id)
-  if (role === null)
+  const account = await store.getAccount(id)
+  if (!account)
     throw createError({ statusCode: 404, statusMessage: 'Unknown user' })
-  if (role === 'owner')
+  if (account.role === 'owner')
     throw createError({ statusCode: 400, statusMessage: 'Demote an owner before removing the account' })
 
   await store.remove(id)

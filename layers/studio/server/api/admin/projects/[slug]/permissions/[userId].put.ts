@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { role: editor | viewer }' })
   }
 
-  if (await useUserStore().getRole(userId) == null) {
+  if (await useUserStore().getAccount(userId) == null) {
     throw createError({ statusCode: 404, statusMessage: 'Unknown user' })
   }
 

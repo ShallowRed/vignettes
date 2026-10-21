@@ -9,7 +9,7 @@ describe.each(ADAPTERS)('user store ($name)', (adapter) => {
 
   it('seeds a new user with the bootstrap role', async () => {
     await expect(store().upsertOnLogin(alice, 'owner')).resolves.toBe('owner')
-    await expect(store().getRole(1)).resolves.toBe('owner')
+    await expect(store().getAccount(1)).resolves.toEqual({ login: 'alice', role: 'owner' })
   })
 
   it('keeps the stored role on re-login (database is the truth)', async () => {
@@ -28,13 +28,13 @@ describe.each(ADAPTERS)('user store ($name)', (adapter) => {
   })
 
   it('returns null for an unknown user', async () => {
-    await expect(store().getRole(404)).resolves.toBeNull()
+    await expect(store().getAccount(404)).resolves.toBeNull()
   })
 
   it('degrades an invalid stored role to viewer', async () => {
     await store().upsertOnLogin(alice, 'owner')
     await db.rows.update('users', { role: 'superadmin' }, { id: 1 })
-    await expect(store().getRole(1)).resolves.toBe('viewer')
+    await expect(store().getAccount(1)).resolves.toMatchObject({ role: 'viewer' })
   })
 
   it('two id-keyed accounts coexist under the provider-identity index', async () => {
@@ -42,6 +42,18 @@ describe.each(ADAPTERS)('user store ($name)', (adapter) => {
     // the second insert would collide on ('github', '').
     await store().upsertOnLogin({ id: 900_000_001, login: 'dev-owner' }, 'owner')
     await expect(store().upsertOnLogin({ id: 900_000_002, login: 'dev-editor' }, 'editor')).resolves.toBe('editor')
+  })
+
+  it('never gives the id of a removed account again', async () => {
+    await store().upsertOnLogin({ id: 50, login: 'dev-owner' }, 'owner')
+    const eve = await store().invite({ provider: 'google', handle: 'eve@example.com' })
+    await store().remove(50)
+    await store().remove(eve.id)
+    const zoe = await store().upsertOAuthLogin({ provider: 'google', providerId: 'sub-zoe', login: 'zoe@example.com' }, 'editor')
+    expect(eve.id).toBeGreaterThan(50)
+    expect(zoe.id).toBeGreaterThan(eve.id)
+    await expect(store().getAccount(eve.id)).resolves.toBeNull()
+    await expect(store().getAccount(zoe.id)).resolves.toEqual({ login: 'zoe@example.com', role: 'editor' })
   })
 
   describe('upsertOAuthLogin', () => {
@@ -185,7 +197,7 @@ describe.each(ADAPTERS)('user store ($name)', (adapter) => {
       const account = await store().invite({ provider: 'google', handle: 'gone@example.com' })
       await db.stores.deckGrants.set('deck', account.id, 'viewer', 'boss')
       await expect(store().remove(account.id)).resolves.toBe(true)
-      await expect(store().getRole(account.id)).resolves.toBeNull()
+      await expect(store().getAccount(account.id)).resolves.toBeNull()
       await expect(db.stores.deckGrants.get('deck', account.id)).resolves.toBeNull()
     })
 

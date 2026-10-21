@@ -55,7 +55,8 @@ export interface UserStore {
   invite: (identity: { provider: 'github' | 'google', handle: string }) => Promise<UserAccount>
   /** Id-keyed variant for synthetic accounts (dev-login) whose internal id is fixed. */
   upsertOnLogin: (profile: UserProfile, bootstrapRole: Role) => Promise<Role>
-  getRole: (id: number) => Promise<Role | null>
+  /** The login and the role of an account, for checking a session against its row. */
+  getAccount: (id: number) => Promise<Pick<UserAccount, 'login' | 'role'> | null>
   list: () => Promise<UserAccount[]>
   setRole: (id: number, role: Role) => Promise<void>
   /**

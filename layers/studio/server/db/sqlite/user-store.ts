@@ -56,8 +56,8 @@ export function createUserStore(db: Db): UserStore {
         }
       }
       const firstAccount = opts?.firstAccountOwns && !db.select({ id: users.id }).from(users).limit(1).get()
-      // No explicit id: SQLite mints the next rowid above every existing id,
-      // so internal ids never collide with the historical GitHub-id rows.
+      // No explicit id: AUTOINCREMENT mints one above every id ever given, the
+      // historical GitHub ids and the ids of removed accounts included.
       const row = db.insert(users)
         .values({
           provider: identity.provider,
@@ -135,9 +135,9 @@ export function createUserStore(db: Db): UserStore {
       }
     },
 
-    async getRole(id) {
-      const row = db.select({ role: users.role }).from(users).where(eq(users.id, id)).get()
-      return row ? readRole(row.role) : null
+    async getAccount(id) {
+      const row = db.select({ login: users.login, role: users.role }).from(users).where(eq(users.id, id)).get()
+      return row ? { login: row.login, role: readRole(row.role) } : null
     },
 
     async list() {
