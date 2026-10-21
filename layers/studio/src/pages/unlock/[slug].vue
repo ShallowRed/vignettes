@@ -8,8 +8,9 @@ const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
 // Query params from the redirecting deck page (both optional, default to the
-// slides route): `api` = endpoint to verify against (sets the access cookie),
-// `return` = URL to send the user back to once unlocked.
+// slides route): `api` = endpoint of the deck, whose `/unlock` route verifies
+// the password and sets the access cookie, `return` = URL to send the user back
+// to once unlocked.
 const verifyApi = computed(() => {
   const api = route.query.api as string | undefined
   return api && api.startsWith('/api/') ? api : `/api/presentations/${slug.value}`
@@ -28,8 +29,7 @@ async function unlock() {
   errorMessage.value = ''
 
   try {
-    const sep = verifyApi.value.includes('?') ? '&' : '?'
-    await $fetch(`${verifyApi.value}${sep}password=${encodeURIComponent(password.value)}`)
+    await $fetch(`${verifyApi.value}/unlock`, { method: 'POST', body: { password: password.value } })
     // `replace: true`: drop /unlock from history so Back skips it (the cookie is
     // now set, so returning here would just re-redirect to the deck).
     await navigateTo(returnTo.value, { replace: true })

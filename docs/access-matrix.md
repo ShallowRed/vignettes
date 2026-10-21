@@ -22,7 +22,7 @@ Who can open what, and who sees what in the catalog. The pure decision lives in 
 ## Status semantics
 
 - `public` opens to everyone, listed to everyone (except `unlisted`/archived).
-- `semi-private` ("Mot de passe") opens with the deck's password. The cookie lasts 24 h and carries an HMAC signature of the slug, the expiry and the password hash: changing the password invalidates the cookies already issued. Attempts are limited to 10 per 5 min per IP. It fails closed: with no hash defined, nobody opens it; the UI blocks saving this state without a password. Never listed to the public (reached by link).
+- `semi-private` ("Mot de passe") opens with the deck's password. The cookie lasts 24 h and carries an HMAC signature of the slug, the expiry and the password hash: changing the password invalidates the cookies already issued. Attempts are limited to 10 per 5 min per IP. The hash is scrypt with N=2^14, r=8, p=5, a set of the OWASP Password Storage cheat sheet, and a hash of the former parameters is replaced at the next right password. That replacement ends the `access_<slug>` cookies already issued for the deck, and their holders type the password once more. A hash written in the frontmatter of an unmanaged deck stays until its author replaces it with `pnpm hash-password`. It fails closed: with no hash defined, nobody opens it; the UI blocks saving this state without a password. Never listed to the public (reached by link).
 - `private` opens to the privileged roles (global Editor/Owner) and the grant holders. Never listed to the public.
 
 ### Uploaded images

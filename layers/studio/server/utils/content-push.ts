@@ -49,7 +49,7 @@ export async function pushStubs(archive: ContentArchive, stubs: PushedStub[], { 
     // The column holds the scrypt output of `hashAccessPassword`, so a plaintext
     // password here would lock the deck for everyone.
     if (accessPassword !== null && !isAccessPasswordHash(accessPassword))
-      throw new Error(`${slug}: accessPassword is not a \`salt:hash\` produced by the application`)
+      throw new Error(`${slug}: accessPassword is not a hash produced by the application`)
     const title = (meta.title as string | undefined) ?? null
     const theme = (meta.theme as string | undefined) ?? null
     const project = (meta.project as string | undefined) ?? null

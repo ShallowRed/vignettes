@@ -19,7 +19,7 @@
     "preview": "nuxt preview",
     "preview:static": "pnpm generate && nuxt preview",
     "prepare": "nuxt prepare",
-    "hash-password": "node scripts/hash-password.js",
+    "hash-password": "node scripts/hash-password.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",

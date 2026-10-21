@@ -18,6 +18,13 @@ describe.each(ADAPTERS)('deck meta ($name)', (adapter) => {
     expect((await meta().get('d'))!.status).toBe('private')
   })
 
+  it('replaces a password hash still in place, and leaves updatedAt as it is', async () => {
+    await seedDeck(db.rows, 'd', { managed: true, accessPasswordHash: 'old', updatedAt: NOW })
+    await expect(meta().replacePasswordHash('d', 'other', 'new')).resolves.toBe(false)
+    await expect(meta().replacePasswordHash('d', 'old', 'new')).resolves.toBe(true)
+    expect((await db.rows.select('decks', { slug: 'd' }))[0]).toMatchObject({ accessPasswordHash: 'new', updatedAt: NOW })
+  })
+
   it('update makes the row managed, creating or patching it', async () => {
     const created = await meta().update('fresh', { status: 'public', alias: 'fresh-alias' })
     expect(created).toMatchObject({ slug: 'fresh', status: 'public', alias: 'fresh-alias', managed: true })

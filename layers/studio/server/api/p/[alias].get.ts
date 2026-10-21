@@ -33,8 +33,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
   // The gate comes before the frozen redirect, so a frozen private deck is not
-  // served for having a bundle. The unlock form verifies its password here.
-  await gateDeckAccess(event, { ...gate, unlock: true })
+  // served for having a bundle.
+  await gateDeckAccess(event, gate)
 
   // Frozen/archived: content is a static bundle; report the target to redirect to.
   if (entry.lifecycle === 'frozen' || entry.lifecycle === 'archived') {

@@ -14,6 +14,7 @@ Every route resolves the actor from the session cookie. Roles are `anonymous | v
 | `GET /api/presentations/:slug/markdown` | gate | The Markdown of the published version as a `<slug>.md` attachment; `?draft` returns the draft, the live text of an open collab room included, to actors who may edit the deck |
 | `GET /api/templates` | any | The ids of the templates a new deck starts from, the default one first |
 | `GET /api/p/:alias` | gate | Resolve a directory alias: live decks return their published markdown, frozen ones the bundle URL |
+| `POST /api/presentations/:slug/unlock`, `POST /api/p/:alias/unlock` | gate | The password of a semi-private deck, in the body `{ password }`; the right one sets the `access_<slug>` cookie |
 
 ## Deck lifecycle
 
@@ -116,7 +117,7 @@ The kit answers 404 unless `NUXT_RECETTE_ENABLED=1` or the app runs in developme
 
 ## Password-protected decks
 
-When a semi-private deck is requested without its cookie, the gate answers 401 with `{ requiresPassword: true }`; the deck page redirects to `/unlock/:slug`, which verifies `?password=` against the stored hash and sets the `access_<slug>` cookie for 24 hours.
+When a semi-private deck is requested without its cookie, the gate answers 401 with `{ requiresPassword: true }`; the deck page redirects to `/unlock/:slug`, which posts the password to the `unlock` route of the deck and receives the `access_<slug>` cookie for 24 hours.
 
 ## Content token
 

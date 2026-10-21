@@ -52,8 +52,7 @@ export default defineEventHandler(async (event) => {
   if (!gate)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  // The unlock form verifies its password against this route.
-  await gateDeckAccess(event, { ...gate, unlock: true })
+  await gateDeckAccess(event, gate)
 
   // A frozen bundle carries its own Storybook copy: point the deck's embeds at it.
   const bundle = readBundleConfig()

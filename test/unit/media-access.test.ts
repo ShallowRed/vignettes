@@ -83,15 +83,6 @@ describe('decideMediaAccess', () => {
     expect(await decideMediaAccess(anon(), 'abc123.png')).toMatchObject({ allowed: false })
   })
 
-  it('ignores the password parameter on a request for an image', async () => {
-    await deckWithImage('locked', 'semi-private', 'abc123.png', await hashAccessPassword('open-sesame'))
-    // The deck page is what answers `?password=`. Answering it here would say
-    // which images exist and would mint the unlock cookie from one of them.
-    const event = anon({ query: { password: 'open-sesame' } })
-    expect(await decideMediaAccess(event, 'abc123.png')).toMatchObject({ allowed: false })
-    expect(event.setCookies).toBeUndefined()
-  })
-
   it('serves it to an owner, privately', async () => {
     await seedAccount(1, 'boss', 'owner')
     await deckWithImage('secret', 'private', 'abc123.png')
@@ -155,5 +146,10 @@ describe('verifyAccessPassword', () => {
     const stored = await hashAccessPassword('open-sesame')
     await expect(verifyAccessPassword('open-sesame', stored)).resolves.toBe(true)
     await expect(verifyAccessPassword('wrong', stored)).resolves.toBe(false)
+  })
+
+  it('denies a hash whose parameters the application does not write', async () => {
+    const stored = await hashAccessPassword('open-sesame')
+    await expect(verifyAccessPassword('open-sesame', stored.replace('scrypt$14$8$5$', 'scrypt$30$8$5$'))).resolves.toBe(false)
   })
 })

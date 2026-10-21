@@ -70,6 +70,12 @@ export interface DeckMetaStore {
    * turns into the metadata truth, shadowing file frontmatter).
    */
   update: (slug: string, patch: DeckMetaPatch) => Promise<DeckMetaRecord>
+  /**
+   * Replace the password hash of a deck while it is still `from`, without
+   * touching `updatedAt`: a visitor's unlock writes it, not an edit. Returns
+   * false when the row holds another hash.
+   */
+  replacePasswordHash: (slug: string, from: string, to: string) => Promise<boolean>
   /** Move a deck to the trash (reversible). Returns false when nothing existed. */
   softDelete: (slug: string) => Promise<boolean>
   /** Bring a trashed deck back. Returns false when nothing was trashed. */

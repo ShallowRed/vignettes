@@ -79,6 +79,14 @@ export function createDeckMeta(db: Db): DeckMetaStore {
       return toMeta(row)
     },
 
+    async replacePasswordHash(slug, from, to) {
+      const res = db.update(decks)
+        .set({ accessPasswordHash: to })
+        .where(and(eq(decks.slug, slug), eq(decks.accessPasswordHash, from)))
+        .run()
+      return res.changes > 0
+    },
+
     async softDelete(slug) {
       const res = db.update(decks)
         .set({ deletedAt: new Date() })

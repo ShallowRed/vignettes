@@ -7,7 +7,7 @@ import { accessCookieName, mintAccessPass, verifyAccessPass } from './access-pas
 import { getActor } from './actor'
 import { serverConfig } from './config'
 import { contentTokenActor } from './content-token'
-import { verifyAccessPassword } from './password'
+import { hashAccessPassword, needsRehash, verifyAccessPassword } from './password'
 import { hitRateLimit } from './rate-limit'
 import { publishedSource, useDeckMeta, useGrants, useMediaIndex, usePermissionStore, useProjectPermissionStore } from './sources'
 
@@ -29,13 +29,10 @@ export interface GateOptions {
   /** The deck's access-password hash (db column or frontmatter), if any. */
   storedHash?: string
   /**
-   * Whether this request may unlock the deck with `?password=`. Only the routes
-   * the unlock form calls set it. Everywhere else the visitor passes on the
-   * cookie those routes gave them: answering the parameter on an image or a
-   * stylesheet would tell which files exist, through the rate limit, and would
-   * mint the cookie from them.
+   * The password the visitor posted to an unlock route (`unlockDeck`). Every
+   * other route lets the visitor in on the cookie the unlock route gave them.
    */
-  unlock?: boolean
+  password?: string
 }
 
 /**
@@ -78,10 +75,23 @@ export async function decideDeckAccess(event: H3Event, opts: GateOptions): Promi
   const grant = await resolveGrant(actor, slug)
   const hasPassword = Boolean(storedHash)
   const passwordGranted = hasPassword
-    ? await resolvePasswordGrant(event, slug, storedHash!, opts.unlock === true)
+    ? await resolvePasswordGrant(event, slug, storedHash!, opts.password)
     : false
 
   return decideAccess({ status, lifecycle, role: actor.role, grant, hasPassword, passwordGranted })
+}
+
+/**
+ * The unlock routes: the password of a semi-private deck, posted in the body of
+ * the request so that no URL carries it. A right password sets the cookie of
+ * the deck; a wrong one answers as the gate does.
+ */
+export async function unlockDeck(event: H3Event, gate: GateOptions): Promise<{ unlocked: true }> {
+  const body = await readBody<{ password?: unknown }>(event).catch(() => null)
+  if (typeof body?.password !== 'string' || !body.password)
+    throw createError({ statusCode: 400, statusMessage: 'Body must be { password }' })
+  await gateDeckAccess(event, { ...gate, password: body.password })
+  return { unlocked: true }
 }
 
 /** Throws `createError` on deny/needs-password; returns normally on allow. */
@@ -253,12 +263,10 @@ export async function assertOwner(event: H3Event): Promise<Actor> {
   return actor
 }
 
-/** Password satisfied by a prior `access_<slug>` cookie, or a valid `?password=` param (sets a 24h cookie). */
-async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: string, unlock: boolean): Promise<boolean> {
+/** Password satisfied by a prior `access_<slug>` cookie, or by the right posted password (sets a 24h cookie). */
+async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: string, password: string | undefined): Promise<boolean> {
   if (verifyAccessPass(getCookie(event, accessCookieName(slug)), slug, storedHash))
     return true
-
-  const password = unlock ? getQuery(event).password as string | undefined : undefined
   if (!password)
     return false
 
@@ -270,7 +278,8 @@ async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: st
   if (!valid)
     return false
 
-  const pass = mintAccessPass(slug, storedHash)
+  const signedHash = needsRehash(storedHash) ? await rehash(slug, storedHash, password) : storedHash
+  const pass = mintAccessPass(slug, signedHash)
   setCookie(event, accessCookieName(slug), pass.value, {
     httpOnly: true,
     secure: serverConfig().secureCookies,
@@ -279,4 +288,20 @@ async function resolvePasswordGrant(event: H3Event, slug: string, storedHash: st
     maxAge: pass.maxAge,
   })
   return true
+}
+
+/**
+ * Hashes the password of a managed deck again with the current parameters, and
+ * returns the hash the cookie signs. A hash read from the frontmatter of a deck
+ * whose row is unmanaged stays as it is. When another unlock replaced the hash
+ * first, its hash comes from the same password, and the cookie signs that one.
+ */
+async function rehash(slug: string, storedHash: string, password: string): Promise<string> {
+  const meta = await useDeckMeta().get(slug)
+  if (!meta?.managed || meta.accessPasswordHash !== storedHash)
+    return storedHash
+  const rehashed = await hashAccessPassword(password)
+  if (await useDeckMeta().replacePasswordHash(slug, storedHash, rehashed))
+    return rehashed
+  return (await useDeckMeta().get(slug))?.accessPasswordHash ?? storedHash
 }

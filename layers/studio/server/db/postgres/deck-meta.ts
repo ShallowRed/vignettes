@@ -74,6 +74,14 @@ export function createDeckMeta(db: PostgresDb): DeckMetaStore {
       return toMeta(row!)
     },
 
+    async replacePasswordHash(slug, from, to) {
+      const rows = await db.update(decks)
+        .set({ accessPasswordHash: to })
+        .where(and(eq(decks.slug, slug), eq(decks.accessPasswordHash, from)))
+        .returning({ slug: decks.slug })
+      return rows.length > 0
+    },
+
     async softDelete(slug) {
       const rows = await db.update(decks)
         .set({ deletedAt: new Date() })

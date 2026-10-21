@@ -1,7 +1,7 @@
 import process from 'node:process'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { assertCanEditDeck, assertOwner, assertPrivileged, gateDeckAccess } from '../../layers/studio/server/utils/access'
-import { accessCookieName, mintAccessPass, verifyAccessPass } from '../../layers/studio/server/utils/access-pass'
+import { assertCanEditDeck, assertOwner, assertPrivileged, gateDeckAccess, unlockDeck } from '../../layers/studio/server/utils/access'
+import { accessCookieName, mintAccessPass } from '../../layers/studio/server/utils/access-pass'
 import { hashAccessPassword } from '../../layers/studio/server/utils/password'
 import { resetRateLimits } from '../../layers/studio/server/utils/rate-limit'
 import { useDeckMeta, usePermissionStore } from '../../layers/studio/server/utils/sources'
@@ -112,14 +112,17 @@ describe('gateDeckAccess', () => {
       .toMatchObject({ statusCode: 401, data: { requiresPassword: true } })
   })
 
-  it('unlocks a semi-private deck with the right password and sets a signed cookie', async () => {
+  it('answers a wrong posted password as the gate does, and a body without one with 400', async () => {
     const storedHash = await hashAccessPassword('open-sesame')
-    const event = anon({ query: { password: 'open-sesame' } })
-    await expect(gateDeckAccess(event, { slug: 'd', status: 'semi-private', storedHash, unlock: true })).resolves.toBeUndefined()
-    expect(verifyAccessPass(event.setCookies?.access_d, 'd', storedHash)).toBe(true)
+    await expect(unlockDeck(anon({ body: { password: 'nope' } }), { slug: 'd', status: 'semi-private', storedHash }))
+      .rejects
+      .toMatchObject({ statusCode: 401, data: { requiresPassword: true } })
+    await expect(unlockDeck(anon({ body: {} }), { slug: 'd', status: 'semi-private', storedHash }))
+      .rejects
+      .toMatchObject({ statusCode: 400 })
   })
 
-  it('ignores the password on a route that did not opt into unlocking', async () => {
+  it('ignores a password in the query string', async () => {
     const storedHash = await hashAccessPassword('open-sesame')
     const event = anon({ query: { password: 'open-sesame' } })
     await expect(gateDeckAccess(event, { slug: 'd', status: 'semi-private', storedHash }))
@@ -161,7 +164,7 @@ describe('gateDeckAccess', () => {
 
   it('throttles password guessing to 429 after the limit', async () => {
     const storedHash = await hashAccessPassword('open-sesame')
-    const wrong = () => gateDeckAccess(anon({ query: { password: 'nope' }, ip: '10.0.0.9' }), { slug: 'd', status: 'semi-private', storedHash, unlock: true })
+    const wrong = () => unlockDeck(anon({ body: { password: 'nope' }, ip: '10.0.0.9' }), { slug: 'd', status: 'semi-private', storedHash })
     // 10 wrong tries are answered as bad-password (401); the 11th is rate-limited.
     for (let i = 0; i < 10; i++)
       await expect(wrong()).rejects.toMatchObject({ statusCode: 401 })
