@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { Buffer } from 'node:buffer'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { storeMedia } from '../../layers/studio/server/utils/media-store'
 import { useDbContent, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
@@ -6,6 +8,10 @@ import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpe
 // object each test builds, and the stores hit a migrated temp file.
 stubH3Globals()
 setupServerDb()
+vi.mock('../../layers/studio/server/utils/media-store', async importOriginal => ({
+  ...await importOriginal<typeof import('../../layers/studio/server/utils/media-store')>(),
+  storeMedia: vi.fn(),
+}))
 
 const { default: saveDraft } = await import('../../layers/studio/server/api/presentations/[slug].put')
 const { default: createDeck } = await import('../../layers/studio/server/api/presentations.post')
@@ -77,6 +83,39 @@ describe('uploading an image (POST /api/media)', () => {
     await usePermissionStore().set('deck', 10, 'editor', 'boss')
     // Past the guard, the handler complains about the (absent) file, not the right.
     await expect(uploadMedia(collab({ query: { deck: 'deck' } }))).rejects.toMatchObject({ statusCode: 400 })
+  })
+
+  function upload(type: string, bytes = 8) {
+    return uploadMedia(editor({ parts: [{ name: 'file', filename: 'picture', type, data: Buffer.alloc(bytes, 1) }] }))
+  }
+
+  it('names the accepted formats when it refuses a type (415)', async () => {
+    await expect(upload('image/bmp')).rejects.toMatchObject({
+      statusCode: 415,
+      statusMessage: 'Unsupported image type image/bmp: the accepted formats are PNG, JPG, WEBP, GIF, SVG, AVIF',
+      data: { reason: 'type' },
+    })
+  })
+
+  it('names the limit when it refuses a size (413)', async () => {
+    await expect(upload('image/png', 10 * 1024 * 1024 + 1)).rejects.toMatchObject({
+      statusCode: 413,
+      statusMessage: 'The image weighs more than the 10 MB limit',
+      data: { reason: 'size' },
+    })
+  })
+
+  it('reports a storage failure as such (503)', async () => {
+    vi.mocked(storeMedia).mockRejectedValueOnce(new Error('bucket unreachable'))
+    await expect(upload('image/png')).rejects.toMatchObject({
+      statusCode: 503,
+      statusMessage: 'The image storage did not accept the file',
+      data: { reason: 'storage' },
+    })
+  })
+
+  it('answers the address of a stored image', async () => {
+    await expect(upload('image/png')).resolves.toMatchObject({ src: expect.stringMatching(/^\/media\/[0-9a-f]{32}\.png$/) })
   })
 })
 

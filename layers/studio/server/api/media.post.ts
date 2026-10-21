@@ -1,5 +1,6 @@
+import type { MediaRefusal } from '#shared/storage/media-s3'
 import { isPrivileged } from '#shared/access'
-import { MAX_MEDIA_BYTES } from '#shared/storage/media-s3'
+import { IMAGE_FORMAT_NAMES, MAX_MEDIA_BYTES, MAX_MEDIA_MEGABYTES } from '#shared/storage/media-s3'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../utils/access'
 import { getActorRole } from '../utils/actor'
@@ -15,7 +16,8 @@ import { useDeckMeta, useMediaIndex } from '../utils/sources'
  * a local `.media/` dir when no S3 creds are configured, e.g. in dev). Returns an
  * app-relative `/media/<hash>.<ext>` src so the stored markdown never hardcodes a
  * bucket URL. The upload records the deck in the media index, which `/media/**`
- * reads to decide who may see the image.
+ * reads to decide who may see the image. A refusal names its cause in its message
+ * and, for the editor to word it in the interface language, in `data.reason`.
  */
 export default defineEventHandler(async (event) => {
   const query = getQuery(event).deck
@@ -38,12 +40,32 @@ export default defineEventHandler(async (event) => {
 
   const mime = file.type || ''
   const name = mediaNameOf(file.data, mime)
-  if (!name)
-    throw createError({ statusCode: 415, statusMessage: 'Unsupported image type' })
-  if (file.data.length > MAX_MEDIA_BYTES)
-    throw createError({ statusCode: 413, statusMessage: 'Image exceeds 10 MB' })
+  if (!name) {
+    throw createError({
+      statusCode: 415,
+      statusMessage: `Unsupported image type ${mime || '(none)'}: the accepted formats are ${IMAGE_FORMAT_NAMES.join(', ')}`,
+      data: { reason: 'type' satisfies MediaRefusal },
+    })
+  }
+  if (file.data.length > MAX_MEDIA_BYTES) {
+    throw createError({
+      statusCode: 413,
+      statusMessage: `The image weighs more than the ${MAX_MEDIA_MEGABYTES} MB limit`,
+      data: { reason: 'size' satisfies MediaRefusal },
+    })
+  }
 
-  await storeMedia(name, file.data, mime)
+  try {
+    await storeMedia(name, file.data, mime)
+  }
+  catch (cause) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'The image storage did not accept the file',
+      data: { reason: 'storage' satisfies MediaRefusal },
+      cause,
+    })
+  }
 
   // The draft that references the image is saved a few seconds later.
   if (deck && await useDeckMeta().existsIncludingTrashed(deck))

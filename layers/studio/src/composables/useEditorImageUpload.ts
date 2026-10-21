@@ -1,17 +1,19 @@
 import type { Extension } from '@codemirror/state'
 import type { Ref } from 'vue'
 import { EditorView } from '@codemirror/view'
-import { safeInsertPos } from '../utils/editor-commands'
+import { imageDirectiveInsertion } from '../utils/editor-commands'
+import { imageUploadFailure } from '../utils/image-upload-failure'
 
 /**
- * Paste/drop image upload for the markdown editor: uploads to /api/media and
- * inserts an `::Image` directive at the caret (or the drop point). Self-contained
- * so the editor page's setup stays about the document, not file I/O. `writable`
- * gates it — a read-only editor ignores pasted/dropped files.
+ * Image upload for the markdown editor: uploads to /api/media and inserts an
+ * `::Image` directive at the caret (or the drop point). Paste, drop and the
+ * toolbar's file chooser all go through `uploadImages`. Self-contained so the
+ * editor page's setup stays about the document, not file I/O. `writable`
+ * gates paste and drop: a read-only editor ignores pasted or dropped files.
  */
 export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
   const toast = useToast()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
 
   async function uploadImage(file: File): Promise<string> {
     const body = new FormData()
@@ -21,27 +23,19 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
     return res.src
   }
 
-  function insertUploadedImage(view: EditorView, at: number, src: string): void {
-    const pos = safeInsertPos(view.state.doc, at)
-    const line = view.state.doc.lineAt(pos)
-    const lead = line.text.trim().length > 0 ? '\n\n' : ''
-    const text = `${lead}::Image{src="${src}" alt=""}\n::\n`
-    view.dispatch({ changes: { from: pos, insert: text }, selection: { anchor: pos + text.length } })
-    view.focus()
-  }
-
   function imageFilesFrom(list: FileList | null | undefined): File[] {
     return [...(list ?? [])].filter(f => f.type.startsWith('image/'))
   }
 
-  async function uploadAndInsert(view: EditorView, files: File[]): Promise<void> {
+  async function uploadImages(view: EditorView, files: File[]): Promise<void> {
     for (const file of files) {
       try {
         const src = await uploadImage(file)
-        insertUploadedImage(view, view.state.selection.main.head, src)
+        view.dispatch(imageDirectiveInsertion(view.state, view.state.selection.main.head, src))
+        view.focus()
       }
-      catch {
-        toast.add({ title: t('editor.imageUpload.failed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+      catch (error) {
+        toast.add({ ...imageUploadFailure(error, file, t, locale.value), icon: 'i-lucide-triangle-alert', color: 'error' })
       }
     }
   }
@@ -54,7 +48,7 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
       if (!files.length)
         return false
       event.preventDefault()
-      uploadAndInsert(view, files)
+      uploadImages(view, files)
       return true
     },
     drop(event, view) {
@@ -67,10 +61,10 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
       if (pos != null)
         view.dispatch({ selection: { anchor: pos } })
-      uploadAndInsert(view, files)
+      uploadImages(view, files)
       return true
     },
   })
 
-  return { imageUploadHandlers }
+  return { imageUploadHandlers, uploadImages }
 }

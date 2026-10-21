@@ -2,7 +2,7 @@
  * One log line per API request that ends in an error: method, path, status, the
  * message the client received and the account that asked. A refusal the
  * interface shows as a toast can then be read on the instance. A server error
- * also logs its stack.
+ * also logs its stack and the error it wraps, such as a storage failure.
  */
 
 import { getActor } from '../utils/actor'
@@ -18,7 +18,7 @@ export default defineNitroPlugin((nitroApp) => {
     const actor = await getActor(event).catch(() => null)
     const line = `[api] ${event.method} ${path} ${status} ${message} (${actor?.login ?? 'anonymous'})`
     if (status >= 500)
-      console.error(line, error.stack)
+      console.error(line, error.cause instanceof Error ? error.cause : error.stack)
     else
       console.warn(line)
   })

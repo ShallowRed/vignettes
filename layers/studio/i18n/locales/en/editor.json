@@ -79,11 +79,12 @@
       "orderedList": "Numbered list",
       "quote": "Quote",
       "link": "Link",
-      "image": "Image",
+      "image": "Image from an address",
       "newSlide": "New slide",
       "newSlideShort": "Slide",
       "templates": "Templates",
       "insert": "Insert",
+      "uploadImage": "Upload an image",
       "formatJson": "Format the JSON block under the cursor, otherwise all of them"
     },
     "placeholders": {
@@ -99,7 +100,10 @@
       "help": "Help"
     },
     "imageUpload": {
-      "failed": "The image upload failed"
+      "failed": "The image “{name}” was not uploaded",
+      "type": "The studio accepts images in the formats {formats}.",
+      "size": "The image weighs {size}\u00a0MB, over the {limit}\u00a0MB limit.",
+      "storage": "The image storage is unavailable."
     },
     "json": {
       "noBlock": "No ```json block to format",

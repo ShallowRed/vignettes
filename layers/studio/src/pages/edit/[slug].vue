@@ -355,9 +355,12 @@ const shortcutKeymap = keymap.of([
   },
 ])
 
-// Image upload (paste / drop): uploads to /api/media and inserts an ::Image
-// directive at the caret/drop position.
-const { imageUploadHandlers } = useEditorImageUpload(writable, slug)
+const { imageUploadHandlers, uploadImages } = useEditorImageUpload(writable, slug)
+
+function uploadChosenImages(files: File[]) {
+  if (editorView.value)
+    uploadImages(editorView.value, files)
+}
 
 // Appended by startCollab (yCollab + remote-caret styling + Yjs undo keymap).
 const collabExtensions = shallowRef<Extension[]>([])
@@ -959,6 +962,7 @@ async function onMetaSaved() {
         <EditorToolbar
           :view="editorView"
           :disabled="!writable"
+          @upload-images="uploadChosenImages"
         >
           <template #end>
             <UTooltip :text="fragmentSteps ? t('editor.preview.fragmentStepsActive') : t('editor.preview.fragmentSteps')">

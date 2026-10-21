@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
 import { annotationEntries, componentEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 import { formatJson, jsonFormatNotice } from '../utils/editor-json'
@@ -11,6 +12,8 @@ const props = defineProps<{
   view?: EditorView
   disabled?: boolean
 }>()
+
+const emit = defineEmits<{ uploadImages: [files: File[]] }>()
 
 function run(action: (view: EditorView) => void) {
   if (props.view)
@@ -31,9 +34,22 @@ function beautifyJson(view: EditorView) {
 // control gives clear feedback. tailwind-merge lets this win over the variant.
 const btnHover = 'hover:bg-accented'
 
-// Discoverability menu: every engine component/annotation, inserted as a
-// tabbable snippet from the same reference the autocompletion uses.
+const imageInput = useTemplateRef<HTMLInputElement>('imageInput')
+
+function onImagesChosen() {
+  const input = imageInput.value
+  if (!input?.files?.length)
+    return
+  emit('uploadImages', [...input.files])
+  // Choosing the same file again must fire `change` again.
+  input.value = ''
+}
+
+// Discoverability menu: an image from a file, then every engine
+// component/annotation, inserted as a tabbable snippet from the same reference
+// the autocompletion uses.
 const insertItems = computed<DropdownMenuItem[][]>(() => [
+  [{ label: t('editor.toolbar.uploadImage'), icon: 'i-lucide-image-up', onSelect: () => imageInput.value?.click() }],
   componentEntries(locale.value).map(entry => ({
     label: entry.label,
     onSelect: () => run(view => insertSnippet(view, entry.snippet)),
@@ -147,6 +163,14 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
         />
       </UDropdownMenu>
 
+      <input
+        ref="imageInput"
+        type="file"
+        :accept="IMAGE_MIME_TYPES.join(',')"
+        multiple
+        hidden
+        @change="onImagesChosen"
+      >
       <UDropdownMenu
         :items="insertItems"
         :content="{ align: 'start' }"

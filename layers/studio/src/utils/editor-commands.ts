@@ -1,4 +1,4 @@
-import type { Text } from '@codemirror/state'
+import type { EditorState, Text, TransactionSpec } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { snippet } from '@codemirror/autocomplete'
 
@@ -76,6 +76,14 @@ export function safeInsertPos(doc: Text, pos: number): number {
       return Math.max(pos, doc.line(i).to)
   }
   return pos
+}
+
+/** An `::Image` directive for an uploaded image at `at`, on its own paragraph, the caret after it. */
+export function imageDirectiveInsertion(state: EditorState, at: number, src: string): TransactionSpec {
+  const pos = safeInsertPos(state.doc, at)
+  const lead = state.doc.lineAt(pos).text.trim().length > 0 ? '\n\n' : ''
+  const insert = `${lead}::Image{src="${src}" alt=""}\n::\n`
+  return { changes: { from: pos, insert }, selection: { anchor: pos + insert.length } }
 }
 
 /** Insert a whole-slide template on its own paragraph after the current line. */

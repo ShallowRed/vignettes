@@ -21,4 +21,14 @@ export function imageExtFor(mime: string): string | undefined {
   return IMAGE_EXT[mime]
 }
 
-export const MAX_MEDIA_BYTES = 10 * 1024 * 1024
+/** The mime types an upload may carry, for the `accept` of a file chooser. */
+export const IMAGE_MIME_TYPES: readonly string[] = Object.keys(IMAGE_EXT)
+
+/** The accepted formats as people name them: PNG, JPG… */
+export const IMAGE_FORMAT_NAMES: readonly string[] = Object.values(IMAGE_EXT).map(ext => ext.toUpperCase())
+
+export const MAX_MEDIA_MEGABYTES = 10
+export const MAX_MEDIA_BYTES = MAX_MEDIA_MEGABYTES * 1024 * 1024
+
+/** Why `POST /api/media` refused an image, sent in the `data` of its error. */
+export type MediaRefusal = 'type' | 'size' | 'storage'

@@ -79,11 +79,12 @@
       "orderedList": "Liste numérotée",
       "quote": "Citation",
       "link": "Lien",
-      "image": "Image",
+      "image": "Image par son adresse",
       "newSlide": "Nouvelle diapositive",
       "newSlideShort": "Diapo",
       "templates": "Modèles",
       "insert": "Insérer",
+      "uploadImage": "Téléverser une image",
       "formatJson": "Mettre en forme le bloc JSON sous le curseur, sinon tous"
     },
     "placeholders": {
@@ -99,7 +100,10 @@
       "help": "Aide"
     },
     "imageUpload": {
-      "failed": "Échec de l'import de l'image"
+      "failed": "L'image « {name} » n'a pas été téléversée",
+      "type": "Le studio accepte les images aux formats {formats}.",
+      "size": "L'image pèse {size}\u00a0Mo, au-delà de la limite de {limit}\u00a0Mo.",
+      "storage": "Le stockage des images est indisponible."
     },
     "json": {
       "noBlock": "Aucun bloc ```json à mettre en forme",
