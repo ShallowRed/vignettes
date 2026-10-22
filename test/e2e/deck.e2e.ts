@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
 const DECK = '/slides/composants'
@@ -145,6 +146,29 @@ test('the enlarge button opens a Mermaid diagram on a click and on Enter', async
   await expect(page).toHaveURL(/#\/mermaid$/)
 })
 
+// The page framed on the sixth slide of the fixture deck.
+const FRAMES_DECK = '/slides/cadres'
+const FRAMED_PAGE = 'http://127.0.0.1:3210/page-integree.html'
+async function serveFramedPage(page: Page) {
+  const served = { count: 0 }
+  await page.route(FRAMED_PAGE, (route) => {
+    served.count++
+    return route.fulfill({ contentType: 'text/html', body: '<p>Page intégrée</p>' })
+  })
+  return served
+}
+
+test('a frame loads when its slide is shown', async ({ page }) => {
+  await serveFramedPage(page)
+  await page.goto(FRAMES_DECK)
+  await expect(page.locator('.reveal')).toHaveClass(/\bready\b/)
+  const frame = page.locator('section#page-integree iframe')
+  await expect(frame).not.toHaveAttribute('src')
+
+  await page.evaluate(() => window.location.hash = '#/page-integree')
+  await expect(frame).toHaveAttribute('src', FRAMED_PAGE)
+})
+
 test('the print view opens the dialog once every diagram is drawn', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'The print view opens the dialog in Chromium only.')
   await page.addInitScript(() => {
@@ -168,4 +192,30 @@ test.describe('below 435px, where Reveal lays the deck out as a scrolling page',
     await expect(slide).toBeInViewport({ ratio: 0.9 })
     await expect(page).toHaveURL(/#\/fond$/)
   })
+
+  for (const [opening, width] of [['at 390px', 390], ['at 1280px, then narrowed to 390px', 1280]] as const) {
+    test(`a frame loads once as the page scrolls, with the deck opened ${opening}`, async ({ page }) => {
+      const served = await serveFramedPage(page)
+      await page.setViewportSize({ width, height: 844 })
+      await page.goto(FRAMES_DECK)
+      await expect(page.locator('.reveal.ready')).toHaveCount(1)
+      await page.setViewportSize({ width: 390, height: 844 })
+      await expect(page.locator('.reveal.reveal-scroll')).toHaveCount(1)
+      const frame = page.locator('section#page-integree iframe')
+
+      await frame.scrollIntoViewIfNeeded()
+      await expect(frame).toHaveAttribute('src', FRAMED_PAGE)
+      // Each scroll event makes Reveal sync the pages it loads.
+      const viewport = page.locator('.reveal-viewport')
+      const bottom = await viewport.evaluate(element => element.scrollTop)
+      for (const top of [0, bottom, 0, bottom]) {
+        await viewport.evaluate((element, top) => new Promise((resolve) => {
+          element.addEventListener('scroll', resolve, { once: true })
+          element.scrollTop = top
+        }), top)
+      }
+      await expect(frame).toHaveAttribute('src', FRAMED_PAGE)
+      expect(served.count).toBe(1)
+    })
+  }
 })

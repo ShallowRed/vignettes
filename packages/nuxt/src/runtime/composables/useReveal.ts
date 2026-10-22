@@ -2,7 +2,7 @@ import type { RevealApi } from 'reveal.js'
 import type { Ref } from 'vue'
 import type { RevealConfig } from '../types/presentation.ts'
 import { isDeckUrl } from '@vignettes/core/deck'
-import { EMBED_REFERRER_POLICY, embedSandbox, mergeRevealConfig, scrollViewLinks } from '@vignettes/core/render'
+import { EMBED_REFERRER_POLICY, embedSandbox, mergeRevealConfig, scrollViewFrames, scrollViewLinks } from '@vignettes/core/render'
 
 export function useReveal(
   container: Ref<HTMLElement | null>,
@@ -82,7 +82,7 @@ export function useReveal(
 
     const mergedConfig = mergeRevealConfig(config)
 
-    revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [RevealNotes, scrollViewLinks] })
+    revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [RevealNotes, scrollViewLinks, scrollViewFrames] })
     await revealInstance.initialize()
 
     // Sync to pick up Vue-rendered content (lightbox, previews, fragments won't

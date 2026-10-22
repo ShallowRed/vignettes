@@ -5,7 +5,9 @@ interface RevealDeck {
   configure: (options: Record<string, unknown>) => void
   on: (type: string, listener: () => void) => void
   getViewportElement: () => HTMLElement
+  getSlidesElement: () => HTMLElement
   scroll: {
+    activate: () => void
     isActive: () => boolean
     scrollToSlide: (slide: HTMLElement) => void
   }
@@ -42,6 +44,36 @@ export function scrollViewLinks() {
           return scrollToSlide(slide)
         const viewport = deck.getViewportElement()
         viewport.scrollTop += page.getBoundingClientRect().top - viewport.getBoundingClientRect().top
+      }
+    },
+  }
+}
+
+/**
+ * Reveal plugin that loads every frame of the deck in the scroll view. The
+ * frames wait in Reveal's lazy `data-src` until their slide is shown, and the
+ * scroll view of Reveal 5.2.1 loads and unloads a page on alternate scroll
+ * events: a frame would reload on each scroll, or stay blank. A frame with
+ * `src` and without Reveal's `data-src` and `data-lazy-loaded` stays loaded.
+ *
+ * The frozen bundle inlines the source of this function, so its body refers to
+ * nothing outside it.
+ */
+export function scrollViewFrames() {
+  return {
+    id: 'scroll-view-frames',
+    init(deck: RevealDeck) {
+      const scrollView = deck.scroll
+      const activate = scrollView.activate.bind(scrollView)
+      scrollView.activate = () => {
+        activate()
+        deck.getSlidesElement().querySelectorAll('iframe[data-src], iframe[data-lazy-loaded]').forEach((frame) => {
+          const src = frame.getAttribute('data-src')
+          if (src && frame.getAttribute('src') !== src)
+            frame.setAttribute('src', src)
+          frame.removeAttribute('data-src')
+          frame.removeAttribute('data-lazy-loaded')
+        })
       }
     },
   }

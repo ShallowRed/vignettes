@@ -44,7 +44,6 @@ const frameAttributes = useFrameAttributes()
         :style="{ width: props.width, height: props.height }"
         :allow="props.allow"
         :frameborder="props.frameborder"
-        data-preload
       />
       <div class="expand-hint">
         <span>{{ messages.enlarge }}</span>
@@ -58,7 +57,6 @@ const frameAttributes = useFrameAttributes()
       :allow="props.allow"
       :frameborder="props.frameborder"
       allowfullscreen
-      data-preload
     />
   </div>
 </template>

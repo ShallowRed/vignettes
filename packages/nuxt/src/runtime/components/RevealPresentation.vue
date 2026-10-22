@@ -7,7 +7,7 @@ import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useReveal } from '../composables/useReveal.ts'
 import { useTheme } from '../composables/useTheme.ts'
-import { DECK_MESSAGES_KEY, PRINT_VIEW_KEY } from '../config/injection-keys.ts'
+import { DECK_MESSAGES_KEY } from '../config/injection-keys.ts'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
 import '../assets/code-theme.css'
@@ -66,10 +66,8 @@ const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().
 
 // A `?print-pdf` load is detected at setup, before Reveal initializes, so the
 // print config (full-page layout, one slide per page) applies from the start.
-// The server detects it too, and renders the frames of the print view unloaded.
 const requestUrl = useRequestURL()
 const isPrintMode = new RegExp(PRINT_PDF_QUERY, 'i').test(requestUrl.search)
-provide(PRINT_VIEW_KEY, isPrintMode)
 
 const effectiveConfig = isPrintMode
   ? buildPrintView({ meta: { reveal: props.config }, slides: [], assets: [] }, {

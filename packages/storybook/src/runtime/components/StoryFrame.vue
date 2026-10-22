@@ -97,7 +97,6 @@ const scaledFrameStyle = computed(() =>
           v-bind="frameAttributes(resolvedSrc)"
           :title="props.title || props.label || 'Story'"
           frameborder="0"
-          data-preload
         />
         <span class="story-frame__hint">{{ messages.enlarge }}</span>
       </a>
@@ -108,7 +107,6 @@ const scaledFrameStyle = computed(() =>
         :title="props.title || props.label || 'Story'"
         frameborder="0"
         allowfullscreen
-        data-preload
       />
 
       <img

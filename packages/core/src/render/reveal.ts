@@ -22,7 +22,9 @@ export const DEFAULT_REVEAL_CONFIG: RevealConfig = {
   help: true,
   showNotes: false,
   autoPlayMedia: null,
-  preloadIframes: null,
+  // Reveal loads the frames of a slide when the slide is shown: a frame that
+  // takes the focus once loaded takes it on its own slide only.
+  preloadIframes: false,
   autoSlide: 0,
   // The scroll view of a phone stacks the slides at the width of the screen.
   scrollLayout: 'compact',
