@@ -25,6 +25,10 @@ export default defineAppConfig({
           base: 'wrap-anywhere',
         },
       },
+      // A group of three cards takes one row on a wide screen.
+      cardGroup: {
+        base: 'lg:grid-cols-3',
+      },
     },
   },
 })
