@@ -1,10 +1,10 @@
+import { basename, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineCollection, defineContentConfig } from '@nuxt/content'
+import { references } from './references'
 
-// The `docs` collection of Docus, extended with the references kept beside the
-// code: the READMEs of the packages an author reads, under the reference of the
-// Écrire section, and the theme system with the READMEs of the theme packages,
-// under the reference of the Thèmes section.
+// The `docs` collection of Docus, extended with the references of
+// `references.ts`, each published under its own path.
 export default defineContentConfig({
   collections: {
     docs: defineCollection({
@@ -16,21 +16,11 @@ export default defineContentConfig({
           exclude: ['index.md'],
           prefix: '/',
         },
-        {
-          cwd: fileURLToPath(new URL('../packages', import.meta.url)),
-          include: '{nuxt,schemas,storybook}/README.md',
-          prefix: '/ecrire/reference',
-        },
-        {
-          cwd: fileURLToPath(new URL('../packages', import.meta.url)),
-          include: '{theme-kit,theme-dsfr}/README.md',
-          prefix: '/themes/reference',
-        },
-        {
-          cwd: fileURLToPath(new URL('../docs', import.meta.url)),
-          include: 'theme-system.md',
-          prefix: '/themes/reference',
-        },
+        ...references.map(({ file, path }) => ({
+          cwd: dirname(fileURLToPath(new URL(`../${file}`, import.meta.url))),
+          include: basename(file),
+          prefix: path,
+        })),
       ],
     }),
   },

@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { referenceFolder, references } from './references'
 
 // The documentation site: a Docus application that installs the render module
 // and its two extension modules, so the pages show live decks.
@@ -33,6 +34,8 @@ export default defineNuxtConfig({
     },
   },
 
+  routeRules: Object.fromEntries(references.map(({ path, previous }) => [previous, { redirect: { to: path, statusCode: 301 } }])),
+
   nitro: {
     // The pictograms of `Scheme` steps and the images of the example deck, served as the studio serves them.
     publicAssets: [
@@ -42,14 +45,27 @@ export default defineNuxtConfig({
   },
 
   hooks: {
-    // A package README is published at the path of its package, without the
-    // `readme` segment its file name gives it, and the navigation names it by
-    // its package, without the `@vignettes/` scope its title gives it.
+    // A reference is published at its path, without the file name segment
+    // its source adds, and sorted by its rank in `references.ts`. It has no
+    // frontmatter: Nuxt Content takes its title and description from its first
+    // heading and paragraph, which Docus shows above the body, so the hook
+    // removes them from the body and gives the page its French title.
     'content:file:afterParse': ({ content }) => {
-      if (typeof content.path === 'string' && content.path.endsWith('/readme')) {
-        content.path = content.path.slice(0, -'/readme'.length)
-        content.navigation = { title: content.path.split('/').pop() }
-      }
+      const reference = references.find(({ path }) => String(content.path).startsWith(`${path}/`))
+      if (!reference)
+        return
+      const { path, title } = reference
+      const rank = references.indexOf(reference) + 1
+      content.path = path
+      content.stem = `${referenceFolder}/${rank}.${path.split('/').pop()}`
+      content.title = title
+      content.seo = { ...content.seo as object, title }
+      content.navigation = { title }
+      const body = content.body as { value: [string, ...unknown[]][] }
+      if (body.value[0]?.[0] === 'h1')
+        body.value.shift()
+      if (body.value[0]?.[0] === 'p')
+        body.value.shift()
     },
   },
 
