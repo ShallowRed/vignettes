@@ -105,13 +105,19 @@ flowchart LR
 
 ### Un diagramme dessiné
 
-:::Diagram{layout="grid" cols="3"}
-::Node{id="depot" at="1,1" picto="document/contract" title="Dépôt"}
+:::Diagram{layout="grid" cols="3" rows="2"}
+::Area{at="2,1" span="2,1" title="Le service" color="purple"}
 ::
-::Node{id="instruction" at="2,1" picto="digital/data-visualization" title="Instruction"}
+::Node{id="depot" at="1,1" picto="document/contract" title="Dépôt" color="green"}
+::
+::Node{id="instruction" at="2,1" picto="digital/data-visualization" title="Instruction" :emphasis="true"}
 Une étape par agent
 ::
 ::Node{id="reponse" at="3,1" picto="digital/application" title="Réponse" :planned="true"}
+::
+::Area{at="1,2" span="1,1" title="Envoi" tone="subject"}
+::
+::Node{id="pieces" at="1,2" title="Pièces" variant="flow"}
 ::
 ::Edge{from="depot" to="instruction" label="transmet"}
 ::

@@ -116,7 +116,7 @@ Attributes:
 - `span` (`string`): Cells spanned as `cols,rows`.
 - `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
 - `icon` (`string`): Remix icon, `ri:server-line`, lighter than a pictogram.
-- `color` (`string`): A DSFR illustrative colour for the icon and the title.
+- `color` (`string`): Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
 - `title` (`string`): Title of the card.
 - `n` (`string | number`): Number in a badge.
 - `planned` (`boolean`): Draws a dashed frame, for a target state.
@@ -164,7 +164,7 @@ Attributes:
 - `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
 - `icon` (`string`): Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram.
 - `tone` (`'neutral' | 'subject'`): `subject` tints the region that the story follows; `neutral` is the default.
-- `color` (`string`): A DSFR illustrative colour, `green-emeraude`, `purple-glycine`…; tints and outlines the region.
+- `color` (`string`): Color of the title, the surface and the outline of the region: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
 - `label` (`'legend' | 'header'`): Where the title sits: on the top border like a legend, or as a header band inside.
 
 <!-- /component -->
@@ -235,6 +235,6 @@ Content: What these lines hold, in markdown.
 
 <!-- /component -->
 
-## Colours
+## Colors
 
-The cards take their tints from the DSFR illustrative palette, by name: `color="blue-france"`, `green-emeraude`, `orange-terre-battue` and the rest of the DSFR set.
+`color` on a `Node` or an `Area` takes the name of a palette entry of the theme, such as `color="green"`, or a hexadecimal color or a color function, such as `color="#2a7f62"` or `color="oklch(55% 0.1 160)"`. The node takes the color for its title and its icon; the region takes it for its title, and mixes from it its surface and its outline. `@vignettes/theme-kit` defines `blue`, `green`, `yellow`, `orange`, `brown`, `pink`, `purple` and `grey`, and a theme adds names of its own: the `dsfr` theme adds the DSFR illustrative palette, such as `green-emeraude`. A name the theme leaves undefined takes the accent.

@@ -1,0 +1,42 @@
+/**
+ * The tints a card or a region of a diagram takes with `color="<name>"`.
+ *
+ * Each name sets three properties: `-bg` the surface of a region, `-main` its
+ * outline, `-text` the title and the icon of a card or a region, readable on
+ * `-bg`. A theme redefines them, and may add names of its own with the same
+ * three properties.
+ */
+
+:root {
+  --palette-blue-bg: #eff6ff;
+  --palette-blue-main: #3b82f6;
+  --palette-blue-text: #1e40af;
+
+  --palette-green-bg: #f0fdf4;
+  --palette-green-main: #22c55e;
+  --palette-green-text: #166534;
+
+  --palette-yellow-bg: #fefce8;
+  --palette-yellow-main: #eab308;
+  --palette-yellow-text: #854d0e;
+
+  --palette-orange-bg: #fff7ed;
+  --palette-orange-main: #f97316;
+  --palette-orange-text: #9a3412;
+
+  --palette-brown-bg: #faf6f1;
+  --palette-brown-main: #a47148;
+  --palette-brown-text: #6b4426;
+
+  --palette-pink-bg: #fdf2f8;
+  --palette-pink-main: #ec4899;
+  --palette-pink-text: #9d174d;
+
+  --palette-purple-bg: #faf5ff;
+  --palette-purple-main: #a855f7;
+  --palette-purple-text: #6b21a8;
+
+  --palette-grey-bg: #f9fafb;
+  --palette-grey-main: #9ca3af;
+  --palette-grey-text: #374151;
+}

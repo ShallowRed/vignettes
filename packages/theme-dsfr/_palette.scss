@@ -1,6 +1,7 @@
 /**
- * Default tints of the explanation cards, from the DSFR illustrative palette.
- * A theme redefines any of these properties to colour the cards its own way.
+ * The DSFR illustrative palette, for the cards and the regions of a diagram:
+ * the generic names of the theme kit point to one DSFR tone each, and the theme
+ * also defines the DSFR names, such as `color="green-emeraude"`.
  */
 
 :root {
@@ -75,4 +76,36 @@
   --palette-purple-glycine-bg: #fef3fd;
   --palette-purple-glycine-main: #a558a0;
   --palette-purple-glycine-text: #6e445a;
+
+  --palette-blue-bg: var(--palette-blue-cumulus-bg);
+  --palette-blue-main: var(--palette-blue-cumulus-main);
+  --palette-blue-text: var(--palette-blue-cumulus-text);
+
+  --palette-green-bg: var(--palette-green-emeraude-bg);
+  --palette-green-main: var(--palette-green-emeraude-main);
+  --palette-green-text: var(--palette-green-emeraude-text);
+
+  --palette-yellow-bg: var(--palette-yellow-tournesol-bg);
+  --palette-yellow-main: var(--palette-yellow-tournesol-main);
+  --palette-yellow-text: var(--palette-yellow-tournesol-text);
+
+  --palette-orange-bg: var(--palette-orange-terre-battue-bg);
+  --palette-orange-main: var(--palette-orange-terre-battue-main);
+  --palette-orange-text: var(--palette-orange-terre-battue-text);
+
+  --palette-brown-bg: var(--palette-brown-caramel-bg);
+  --palette-brown-main: var(--palette-brown-caramel-main);
+  --palette-brown-text: var(--palette-brown-caramel-text);
+
+  --palette-pink-bg: var(--palette-pink-tuile-bg);
+  --palette-pink-main: var(--palette-pink-tuile-main);
+  --palette-pink-text: var(--palette-pink-tuile-text);
+
+  --palette-purple-bg: var(--palette-purple-glycine-bg);
+  --palette-purple-main: var(--palette-purple-glycine-main);
+  --palette-purple-text: var(--palette-purple-glycine-text);
+
+  --palette-grey-bg: var(--palette-beige-gris-galet-bg);
+  --palette-grey-main: var(--palette-beige-gris-galet-main);
+  --palette-grey-text: var(--palette-beige-gris-galet-text);
 }

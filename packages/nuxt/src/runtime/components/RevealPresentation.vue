@@ -400,7 +400,7 @@ onUnmounted(() => {
 }
 
 .deck-veil__mark i {
-  background: var(--accent, #000091);
+  background: var(--accent, currentColor);
   opacity: 0.18;
   animation: deck-veil-fill 1200ms ease-in-out infinite;
 }

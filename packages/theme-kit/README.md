@@ -50,6 +50,8 @@ Code that works under any theme reads these custom properties only. A theme sets
 - `--accent` is the primary color, for links, dividers and accents.
 - `--accent-soft` is a lighter accent, for hover tints.
 - `--accent-bg` is a very light tint, for callout backgrounds.
+- `--accent-strong` is the accent mixed with the title color, for text on `--accent-soft` or `--accent-bg`, derived from `--accent` by default.
+- `--accent-line` is the accent mixed with the surface, for the outlines of a diagram: the cards, the subject regions and the edge labels, derived from `--accent` by default.
 - `--surface` is the page background.
 - `--surface-contrast` is the inverse surface, for dark blocks and code panels.
 - `--on-contrast` is the text color on `--surface-contrast`.
@@ -59,9 +61,13 @@ Code that works under any theme reads these custom properties only. A theme sets
 
 The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
 
+## The card palette
+
+`color="green"` on a node or a region of a diagram (`@vignettes/schemas`) reads three properties: `--palette-green-text` for the title and the icon of the node or the region, `--palette-green-bg` for the surface of a region and `--palette-green-main` for its outline. The kit defines `blue`, `green`, `yellow`, `orange`, `brown`, `pink`, `purple` and `grey`. A theme redefines these properties, and adds names of its own with the same three properties. A name the theme leaves undefined takes the accent tokens.
+
 ## What it contains
 
-`_semantic-tokens.scss` declares the contract above. `_reveal-patches.scss` adapts Reveal.js defaults and bridges MDC's wrapper elements with `display: contents`. `_slide-structure.scss` is the flex skeleton of the three slide kinds the engine tags on each section: `slide-h1` for a title slide, `slide-h2` for a section divider, `slide-h3` for a heading with body. It aligns the content of a slide vertically, as `:layout{align}` asks or by the default of the slide kind and of its layout, and reads two size tokens a theme sets on `.reveal`: `--slide-heading-min-height`, the height a content slide keeps for its heading, and `--slide-body-padding-y`, the space above and below its body. `_media-layouts.scss` is the grid behind the media layouts. `_spacing.scss` and `_quicklinks.scss` cover the spacing scale and the in-deck navigation links.
+`_semantic-tokens.scss` declares the contract above, `_palette.scss` the card palette. `_reveal-patches.scss` adapts Reveal.js defaults and bridges MDC's wrapper elements with `display: contents`. `_slide-structure.scss` is the flex skeleton of the three slide kinds the engine tags on each section: `slide-h1` for a title slide, `slide-h2` for a section divider, `slide-h3` for a heading with body. It aligns the content of a slide vertically, as `:layout{align}` asks or by the default of the slide kind and of its layout, and reads two size tokens a theme sets on `.reveal`: `--slide-heading-min-height`, the height a content slide keeps for its heading, and `--slide-body-padding-y`, the space above and below its body. `_media-layouts.scss` is the grid behind the media layouts. `_spacing.scss` and `_quicklinks.scss` cover the spacing scale and the in-deck navigation links.
 
 ## The base skin
 

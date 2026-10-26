@@ -73,7 +73,7 @@ const frameAttributes = useFrameAttributes()
 .iframe-container {
   position: relative;
   width: 100%;
-  border: 1px solid var(--border, #e0e0e0);
+  border: 1px solid var(--border);
   overflow: hidden;
   box-shadow: var(--shadow, 0 2px 8px rgba(0, 0, 0, 0.12));
 }

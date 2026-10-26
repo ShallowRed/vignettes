@@ -3,7 +3,7 @@ import { normalizeIconName } from '@vignettes/core/deck'
 import { computed } from 'vue'
 import { paletteVars } from '../palette.ts'
 
-// The card shared by `::Step` (schemes) and `::Node` (diagrams): a DSFR pictogram
+// The card shared by `::Step` (schemes) and `::Node` (diagrams): a pictogram
 // or a Remix icon, a number badge, a title and a caption.
 interface Props {
   /** Pictogram path relative to /pictograms, e.g. `digital/coding`. */
@@ -16,7 +16,7 @@ interface Props {
   planned?: boolean
   /** `row` sets the pictogram beside the text instead of above it. */
   orientation?: 'column' | 'row'
-  /** A DSFR illustrative colour for the icon and the title. */
+  /** Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`. */
   color?: string
 }
 
@@ -34,7 +34,7 @@ const style = computed(() => paletteVars(props.color))
       'picto-card--planned': planned,
       'picto-card--row': orientation === 'row',
       'picto-card--icon': !!iconName && !pictoSrc,
-      'picto-card--colored': !!color,
+      'picto-card--colored': !!style,
     }"
     :style="style"
   >
@@ -90,7 +90,7 @@ const style = computed(() => paletteVars(props.color))
 }
 
 .picto-card--planned {
-  border: 2px dashed var(--accent, #000091);
+  border: 2px dashed var(--accent);
 }
 
 /* Pictogram beside the text: the card keeps one line of title and stays short,
@@ -127,8 +127,8 @@ const style = computed(() => paletteVars(props.color))
   width: 1.6em;
   height: 1.6em;
   border-radius: 50%;
-  background: var(--accent, #000091);
-  color: var(--on-contrast, #fff);
+  background: var(--accent);
+  color: var(--on-contrast);
   font-size: 0.75em;
   font-weight: 700;
 }
@@ -143,7 +143,7 @@ const style = computed(() => paletteVars(props.color))
 .picto-card__icon {
   width: calc(var(--scheme-picto, 6em) * 0.5);
   height: calc(var(--scheme-picto, 6em) * 0.5);
-  color: var(--tone-text, var(--text-title, #161616));
+  color: var(--tone-text, var(--text-title));
 }
 
 .picto-card--row .picto-card__icon {
@@ -161,7 +161,7 @@ const style = computed(() => paletteVars(props.color))
   margin: 0;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--text-title, #161616);
+  color: var(--text-title);
 }
 
 .picto-card--colored .picto-card__title {
@@ -171,7 +171,7 @@ const style = computed(() => paletteVars(props.color))
 .picto-card__text {
   font-size: 0.8em;
   line-height: 1.35;
-  color: var(--text-mention, #666);
+  color: var(--text-mention);
 }
 
 .picto-card__text:empty {

@@ -68,11 +68,11 @@ onMounted(() => {
 }
 
 .json-tour-zone :deep(.picto-card) {
-  background: var(--surface, #fff);
+  background: var(--surface);
   --text-title: var(--on-surface-title);
   --text-default: var(--on-surface-default);
   --text-mention: var(--on-surface-mention);
-  border: 1px solid var(--border, #e0e0e0);
+  border: 1px solid var(--border);
 }
 
 /* An icon stays sharp at the tour's small sizes, where a pictogram's detail is
@@ -80,13 +80,13 @@ onMounted(() => {
 .json-tour-zone :deep(.picto-card--row .picto-card__icon) {
   width: calc(var(--scheme-picto, 6em) * 0.75);
   height: calc(var(--scheme-picto, 6em) * 0.75);
-  color: var(--accent, #000091);
+  color: var(--accent);
 }
 
 /* The current zone turns its border to the accent and thickens it outward. */
 .json-tour-zone.current-fragment :deep(.picto-card) {
-  background: var(--accent-bg, #f5f5fe);
-  border-color: var(--accent, #000091);
-  box-shadow: 0 0 0 1px var(--accent, #000091);
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 </style>

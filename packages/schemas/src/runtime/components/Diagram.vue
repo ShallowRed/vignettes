@@ -440,7 +440,7 @@ onBeforeUnmount(() => observer?.disconnect())
   height: 100%;
   overflow: visible;
   pointer-events: none;
-  color: var(--accent, #000091);
+  color: var(--accent);
 }
 
 .diagram__edge path {
@@ -457,7 +457,7 @@ onBeforeUnmount(() => observer?.disconnect())
    that shrank with them stopped being readable on a projected slide. */
 .diagram__edge text {
   font-size: var(--diagram-label, 0.8em);
-  fill: var(--on-surface-default, #161616);
+  fill: var(--on-surface-default);
   font-family: inherit;
 }
 
@@ -466,8 +466,8 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .diagram__label-plate {
-  fill: var(--surface, #fff);
-  stroke: #ecebfd;
+  fill: var(--surface);
+  stroke: var(--accent-line);
   stroke-width: 1;
 }
 
@@ -491,15 +491,15 @@ onBeforeUnmount(() => observer?.disconnect())
 
 /* A card that paints its own surface sets its text from the surface tokens. */
 .diagram--cards-outlined :deep(.picto-card) {
-  background: var(--surface, #fff);
+  background: var(--surface);
   --text-title: var(--on-surface-title);
   --text-default: var(--on-surface-default);
   --text-mention: var(--on-surface-mention);
-  border: 1px solid #cacafb;
+  border: 1px solid var(--accent-line);
 }
 
 .diagram--cards-outlined :deep(.picto-card--planned) {
-  border: 2px dashed var(--accent, #000091);
+  border: 2px dashed var(--accent);
 }
 
 .diagram--dim:has(.current-fragment) :deep(.fragment.visible:not(.current-fragment)) {
@@ -510,12 +510,12 @@ onBeforeUnmount(() => observer?.disconnect())
 /* The current card turns its own border to the accent and thickens it outward,
    so it keeps a single outline; a planned card keeps its dashes alone. */
 .diagram :deep(.diagram-node.current-fragment .picto-card) {
-  background: var(--accent-bg, #f5f5fe);
+  background: var(--accent-bg);
   --text-title: var(--on-surface-title);
   --text-default: var(--on-surface-default);
   --text-mention: var(--on-surface-mention);
-  border-color: var(--accent, #000091);
-  box-shadow: 0 0 0 1px var(--accent, #000091);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .diagram :deep(.diagram-node.current-fragment .picto-card--planned) {

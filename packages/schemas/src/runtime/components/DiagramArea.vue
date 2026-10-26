@@ -19,7 +19,7 @@ interface Props {
   icon?: string
   /** `subject` tints the region that the story follows; `neutral` is the default. */
   tone?: 'neutral' | 'subject'
-  /** A DSFR illustrative colour, `green-emeraude`, `purple-glycine`…; tints and outlines the region. */
+  /** Color of the title, the surface and the outline of the region: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`. */
   color?: string
   /** Where the title sits: on the top border like a legend, or as a header band inside. */
   label?: 'legend' | 'header'
@@ -30,8 +30,10 @@ const props = defineProps<Props>()
 const pictoSrc = computed(() => (props.picto ? `/pictograms/${props.picto}.svg` : undefined))
 const iconName = computed(() => (props.icon ? normalizeIconName(props.icon) : undefined))
 
+const tint = computed(() => paletteVars(props.color))
+
 const style = computed(() => {
-  const s: Record<string, string> = { ...paletteVars(props.color) }
+  const s: Record<string, string> = { ...tint.value }
   if (props.at) {
     const [col, row] = props.at.split(',').map(v => Number.parseInt(v.trim(), 10))
     const [sc, sr] = (props.span ?? '1,1').split(',').map(v => Number.parseInt(v.trim(), 10) || 1)
@@ -50,7 +52,7 @@ const style = computed(() => {
     :class="[
       `diagram-area--${tone ?? 'neutral'}`,
       `diagram-area--${label ?? 'legend'}`,
-      { 'diagram-area--colored': !!color },
+      { 'diagram-area--colored': !!tint },
     ]"
     :style="style"
   >
@@ -81,8 +83,8 @@ const style = computed(() => {
    grid centres its items, so the region has to claim its cells' full size. */
 .diagram-area {
   --tone-bg: rgb(255 255 255 / 45%);
-  --tone-main: #c6c6d6;
-  --tone-text: var(--on-surface-default, #3a3a3a);
+  --tone-main: color-mix(in srgb, var(--text-mention) 40%, var(--surface));
+  --tone-text: var(--on-surface-default);
   position: relative;
   align-self: stretch;
   justify-self: stretch;
@@ -100,8 +102,8 @@ const style = computed(() => {
 }
 
 .diagram-area--subject {
-  --tone-bg: rgb(232 232 254 / 45%);
-  --tone-main: #b1b1f7;
+  --tone-bg: color-mix(in srgb, var(--accent-soft) 45%, transparent);
+  --tone-main: var(--accent-line);
 }
 
 /* The label interrupts the top border, the way a fieldset legend does. The
@@ -118,7 +120,7 @@ const style = computed(() => {
   align-items: center;
   margin: 0;
   padding: 0 0.5em;
-  background: var(--surface-page, #f7f7fc);
+  background: var(--surface);
   color: var(--tone-text);
   font-size: 0.8em;
   font-weight: 700;

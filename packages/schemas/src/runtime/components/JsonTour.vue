@@ -327,7 +327,7 @@ onBeforeUnmount(() => {
   margin: 0;
   font-family: var(--r-code-font, monospace);
   font-size: calc(var(--json-tour-scale, 1) * 0.72em);
-  color: var(--text-mention, #666);
+  color: var(--text-mention);
   font-weight: 600;
 }
 
@@ -393,7 +393,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 0;
   height: 0;
-  border: 3px solid var(--accent, #000091);
+  border: 3px solid var(--accent);
   border-radius: 6px;
   box-shadow: 0 0 0 9999px rgb(255 255 255 / 55%);
   opacity: 0;

@@ -66,10 +66,10 @@ provide(SCHEME_TILES, props.tiles)
 }
 
 .scheme :deep(.scheme-step.current-fragment .scheme-step__card) {
-  background: var(--accent-bg, #f5f5fe);
+  background: var(--accent-bg);
   --text-title: var(--on-surface-title);
   --text-default: var(--on-surface-default);
   --text-mention: var(--on-surface-mention);
-  box-shadow: inset 0 0 0 2px var(--accent, #000091);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 </style>

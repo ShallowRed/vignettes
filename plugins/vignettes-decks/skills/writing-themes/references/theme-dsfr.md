@@ -36,9 +36,11 @@ That entry imports the engine layer and the `layout` preset. Compile it with Sas
 
 `variables` exposes the DSFR Sass variables, all declared `!default`, so your own values take precedence when you set them before the `@use` of the theme. The theme also publishes every token as a custom property (`--dsfr-blue-france-main-525`, `--dsfr-text-default` and so on) and maps them onto the engine's semantic contract (`--accent`, `--surface`, `--text-default`), which the components read under any theme.
 
+`_palette.scss` gives the cards and the regions of a diagram the DSFR illustrative palette. Each generic name of the theme kit points to one DSFR tone (`green` to `green-emeraude`, `blue` to `blue-cumulus`), and the theme also defines the eighteen DSFR names, such as `color="green-menthe"` or `color="orange-terre-battue"`.
+
 ## Entries
 
-- `pkg:@vignettes/theme-dsfr` is the theme: variables, fonts, engine layer, layout preset, base, typography, components, utilities.
+- `pkg:@vignettes/theme-dsfr` is the theme: variables, fonts, engine layer, layout preset, base, typography, components, utilities, palette.
 - `pkg:@vignettes/theme-dsfr/variables` contains the Sass variables, to read or override them.
 - `pkg:@vignettes/theme-dsfr/fonts` contains the Marianne `@font-face` rules.
 

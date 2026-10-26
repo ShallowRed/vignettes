@@ -1,4 +1,5 @@
-// A dark theme: the kit, its base skin and layout preset, and the twelve tokens.
+// A dark theme: the kit, its base skin and layout preset, the twelve tokens, and
+// the palette of the diagram cards in dark tints.
 @use 'pkg:@vignettes/theme-kit';
 @use 'pkg:@vignettes/theme-kit/base';
 @use 'pkg:@vignettes/theme-kit/presets/layout';
@@ -16,4 +17,29 @@
   --border: #2a3550;
   --radius: 0.375rem;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+
+  --palette-blue-bg: #172554;
+  --palette-blue-main: #60a5fa;
+  --palette-blue-text: #93c5fd;
+  --palette-green-bg: #052e16;
+  --palette-green-main: #4ade80;
+  --palette-green-text: #86efac;
+  --palette-yellow-bg: #422006;
+  --palette-yellow-main: #facc15;
+  --palette-yellow-text: #fde047;
+  --palette-orange-bg: #431407;
+  --palette-orange-main: #fb923c;
+  --palette-orange-text: #fdba74;
+  --palette-brown-bg: #2b1d14;
+  --palette-brown-main: #c08a5b;
+  --palette-brown-text: #e3c09f;
+  --palette-pink-bg: #500724;
+  --palette-pink-main: #f472b6;
+  --palette-pink-text: #f9a8d4;
+  --palette-purple-bg: #3b0764;
+  --palette-purple-main: #c084fc;
+  --palette-purple-text: #d8b4fe;
+  --palette-grey-bg: #1f2937;
+  --palette-grey-main: #9ca3af;
+  --palette-grey-text: #d1d5db;
 }

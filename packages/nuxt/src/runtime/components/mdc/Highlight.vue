@@ -82,8 +82,8 @@ defineSlots<{
 }
 
 .highlight--accent {
-  border-left: 4px solid var(--accent, #000091);
-  background: var(--accent-bg, #f5f5fe);
+  border-left: 4px solid var(--accent);
+  background: var(--accent-bg);
   --text-title: var(--on-surface-title);
   --text-default: var(--on-surface-default);
   --text-mention: var(--on-surface-mention);
@@ -98,30 +98,30 @@ defineSlots<{
 }
 
 .highlight--contrast {
-  background: var(--surface-contrast, #161616);
-  color: var(--on-contrast, #ffffff);
+  background: var(--surface-contrast);
+  color: var(--on-contrast);
   padding: 1.2em 1.6em;
   border-radius: var(--radius, 6px);
 }
 
 .highlight :deep(strong) {
-  color: var(--accent, #000091);
+  color: var(--accent);
 }
 
 .highlight--contrast :deep(strong) {
-  color: var(--accent-soft, #e3e3fd);
+  color: var(--accent-soft);
 }
 
 .highlight :deep(em) {
   font-style: normal;
   text-decoration: underline;
-  text-decoration-color: var(--accent, #000091);
+  text-decoration-color: var(--accent);
   text-underline-offset: 4px;
   text-decoration-thickness: 2px;
 }
 
 .highlight--contrast :deep(em) {
-  text-decoration-color: var(--accent-soft, #e3e3fd);
+  text-decoration-color: var(--accent-soft);
 }
 /* In a sentence the highlight is a phrase of the paragraph, in the accent color. */
 p > .highlight {
@@ -134,6 +134,6 @@ p > .highlight {
   font-size: inherit;
   line-height: inherit;
   font-weight: 700;
-  color: var(--accent, #000091);
+  color: var(--accent);
 }
 </style>

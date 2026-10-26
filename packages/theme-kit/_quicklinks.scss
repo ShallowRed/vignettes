@@ -27,7 +27,7 @@
   }
 
   .slide-quicklink {
-    color: var(--r-link-color, #000091);
+    color: var(--r-link-color, var(--accent));
     text-decoration: underline;
     text-underline-offset: 2px;
   }

@@ -69,13 +69,15 @@ Code that works under any theme (the engine layer, MDC components such as `Highl
 - `--accent` is the primary color, for links, dividers and accents.
 - `--accent-soft` is a lighter accent, for hover tints.
 - `--accent-bg` is a very light tint, for callout backgrounds.
+- `--accent-strong` is the accent mixed with the title color, for text on `--accent-soft` or `--accent-bg`, derived from `--accent` by default.
+- `--accent-line` is the accent mixed with the surface, for the outlines of a diagram: the cards, the subject regions and the edge labels, derived from `--accent` by default.
 - `--surface` is the page background.
 - `--surface-contrast` is the inverse surface, for dark blocks and code panels.
 - `--on-contrast` is the text color on `--surface-contrast`.
 - `--text-default` colors the body text, `--text-title` the headings and strong text, `--text-mention` the muted text (small print, captions).
 - `--border`, `--radius` and `--shadow` give the outline, the corners and the elevation of a box drawn by a component.
 
-`packages/theme-kit/_semantic-tokens.scss` gives each token a default value, which applies when a theme omits it.
+`packages/theme-kit/_semantic-tokens.scss` gives each token a default value, which applies when a theme omits it. `packages/theme-kit/_palette.scss` defines the tints of the diagram cards, `--palette-<name>-bg`, `-main` and `-text`, under eight generic names a theme redefines.
 
 The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
 
@@ -157,10 +159,10 @@ A flat color surface goes on Reveal's background layer: Reveal creates one `.sli
 
 ## Checking a theme
 
-`examples/controle-du-theme.md` is a deck that holds each slide role and each element a theme colors: the title slide, a section, a short and a long content slide, inline code, a list, a table, a quote, a code block, columns, a media on the right, a media taking two thirds of the width on the left, a media at the bottom, an image behind the text on a card, an image behind the text under a veil, a Mermaid diagram, a `Diagram`, and a `##` slide with content. Write the name of the theme under check in its `theme:`, import it in a local studio, and read every slide, the vertical ones included:
+`examples/controle-du-theme.md` is a deck that holds each slide role and each element a theme colors: the title slide, a section, a short and a long content slide, inline code, a list, a table, a quote, a code block, columns, a media on the right, a media taking two thirds of the width on the left, a media at the bottom, an image behind the text on a card, an image behind the text under a veil, a Mermaid diagram, a `Diagram` with a colored region and colored nodes, and a `##` slide with content. Write the name of the theme under check in its `theme:`, import it in a local studio, and read every slide, the vertical ones included:
 
 - Sizes: 1280 × 720 and 1920 × 1080, then 390 pixels wide. Under 435 pixels, reveal.js switches to its scroll view: the slides follow one another, each scaled to the width of the screen, so the body text measures a few pixels whatever the theme. Each section keeps its surface edge to edge.
-- Contrast: 4.5:1 or more between a text and its surface, 3:1 for a text of 24 pixels or more, or of 18.5 pixels or more in bold (RGAA, criterion 3.2). The pairs are `--text-title`, `--text-default` and `--text-mention` on `--surface`; `--accent` on `--surface` for the links and on `--accent-bg` for the inline code of the base skin; `--on-contrast` on `--surface-contrast`; the title, the text and the links of a section on its surface.
+- Contrast: 4.5:1 or more between a text and its surface, 3:1 for a text of 24 pixels or more, or of 18.5 pixels or more in bold (RGAA, criterion 3.2). The pairs are `--text-title`, `--text-default` and `--text-mention` on `--surface`; `--accent` on `--surface` for the links and on `--accent-bg` for the inline code of the base skin; `--accent-strong` on `--accent-soft` for an emphasized diagram node; each `--palette-<name>-text` on `--surface` and on its `--palette-<name>-bg`; `--on-contrast` on `--surface-contrast`; the title, the text and the links of a section on its surface.
 - Inline code: an inline box with a padding and a background. At the end of a line, the browser can break a segment at a space it holds: the background stops at the end of the line and starts again on the next one without its padding. Read the three long segments of the long content slide at each width.
 - Diagrams: Mermaid fills its boxes with `--accent-bg`, outlines them with `--accent` and writes their labels in `--on-surface-title`; its lines take the `--text-mention` of the slide, its free text the `--text-default` of the slide, and it measures its labels with the font of the slide. The last slide has a `##` heading and a diagram: it takes the surface of a content slide. The renderer scales a diagram down to the width of its column, and its height follows: a wide font scales a wide diagram down further, and a tall diagram can reach the navigation arrows.
 - The PDF export prints the section surfaces.

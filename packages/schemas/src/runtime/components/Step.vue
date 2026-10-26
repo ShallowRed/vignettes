@@ -81,7 +81,7 @@ const orientation = inject(SCHEME_TILES, 'column')
   align-self: center;
   width: 2.2em;
   font-size: 1.6em;
-  color: var(--accent, #000091);
+  color: var(--accent);
 }
 
 .scheme-step__card {

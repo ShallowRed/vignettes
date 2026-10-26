@@ -12,6 +12,12 @@
  *   --accent / --accent-soft / --accent-bg
  *       the brand/primary color and its lighter companions used for tints,
  *       borders, link highlighting, etc.
+ *   --accent-strong
+ *       the accent mixed with the title color, for text set on --accent-soft
+ *       or --accent-bg; derived from --accent unless the theme sets it.
+ *   --accent-line
+ *       the accent mixed with the surface, for the outlines of a diagram: the
+ *       cards, the subject regions and the edge labels; derived from --accent unless the theme sets it.
  *   --surface / --surface-contrast / --on-contrast
  *       background colors and the matching text color on dark backgrounds.
  *   --text-default / --text-title / --text-mention
@@ -31,6 +37,8 @@
   --accent: #1c4fd8;
   --accent-soft: #dbe4fb;
   --accent-bg: #f4f6fd;
+  --accent-strong: color-mix(in srgb, var(--accent) 70%, var(--text-title));
+  --accent-line: color-mix(in srgb, var(--accent) 35%, var(--surface));
 
   // Surfaces
   --surface: #ffffff;

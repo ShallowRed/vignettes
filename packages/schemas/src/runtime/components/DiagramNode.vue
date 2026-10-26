@@ -14,7 +14,7 @@ interface Props {
   picto?: string
   /** Remix icon, `ri:server-line`, lighter than a pictogram. */
   icon?: string
-  /** A DSFR illustrative colour for the icon and the title. */
+  /** Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`. */
   color?: string
   /** Title of the card. */
   title?: string
@@ -96,7 +96,7 @@ onMounted(() => {
 .diagram-node--flow :deep(.picto-card) {
   padding: 0.5em 1.1em;
   border-radius: 999px;
-  background: var(--accent-soft, #e3e3fd);
+  background: var(--accent-soft);
   border: none;
   text-align: center;
   --text-title: var(--on-surface-title);
@@ -107,10 +107,10 @@ onMounted(() => {
 .diagram-node--flow :deep(.picto-card__title) {
   font-size: 0.9em;
   font-weight: 400;
-  color: var(--dsfr-blue-france-sun-113, #000091);
+  color: var(--accent-strong);
 }
 
-/* A heading in the grid: no card, the title in the running text colour. */
+/* A heading in the grid: no card, the title in the running text color. */
 .diagram-node.diagram-node--plain :deep(.picto-card),
 .diagram-node.diagram-node--plain.current-fragment :deep(.picto-card) {
   padding: 0.2em 0;
@@ -122,24 +122,24 @@ onMounted(() => {
 }
 
 .diagram-node.diagram-node--flow.current-fragment :deep(.picto-card) {
-  background: var(--accent-soft, #e3e3fd);
+  background: var(--accent-soft);
 }
 
 .diagram-node--plain :deep(.picto-card__title) {
-  color: var(--text-title, #161616);
+  color: var(--text-title);
 }
 
 .diagram-node.diagram-node--emphasis :deep(.picto-card) {
-  background: var(--accent-soft, #e3e3fd);
+  background: var(--accent-soft);
   --text-title: var(--on-surface-title);
   --text-default: var(--on-surface-default);
   --text-mention: var(--on-surface-mention);
-  border-color: var(--accent, #000091);
+  border-color: var(--accent);
 }
 
 .diagram-node--emphasis :deep(.picto-card__title),
 .diagram-node--emphasis :deep(.picto-card__icon) {
-  color: var(--dsfr-blue-france-sun-113, #000091);
+  color: var(--accent-strong);
 }
 
 .diagram-node--entity :deep(.picto-card) {
@@ -156,11 +156,11 @@ onMounted(() => {
 
 .diagram-node--entity :deep(.picto-card__title) {
   padding-bottom: 0.35em;
-  border-bottom: 1px solid var(--accent-soft, #e3e3fd);
+  border-bottom: 1px solid var(--accent-line);
 }
 
 .diagram-node--entity :deep(.picto-card__text) {
-  color: var(--text-default, #161616);
+  color: var(--text-default);
 }
 
 .diagram-node--entity :deep(.picto-card__text ul) {
@@ -172,7 +172,7 @@ onMounted(() => {
 
 .diagram-node--entity :deep(.picto-card__text li) {
   padding: 0.2em 0;
-  border-bottom: 1px solid #f0f0f5;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, var(--surface));
   line-height: 1.3;
 }
 

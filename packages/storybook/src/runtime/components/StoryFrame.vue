@@ -165,11 +165,11 @@ const scaledFrameStyle = computed(() =>
   position: relative;
   width: 100%;
   overflow: hidden;
-  background: var(--surface, #fff);
+  background: var(--surface);
   --text-title: var(--on-surface-title);
   --text-default: var(--on-surface-default);
   --text-mention: var(--on-surface-mention);
-  border: 1px solid var(--border, #e0e0e0);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow, 0 2px 8px rgba(0, 0, 0, 0.12));
 }
 
@@ -256,7 +256,7 @@ const scaledFrameStyle = computed(() =>
 .story-frame__caption {
   font-size: 0.6em;
   line-height: 1.3;
-  color: var(--text-mention, #6b6b6b);
+  color: var(--text-mention);
   text-align: center;
 }
 
@@ -264,7 +264,7 @@ const scaledFrameStyle = computed(() =>
   margin: 0.3rem 0 0;
   font-size: 0.55em;
   line-height: 1.35;
-  color: var(--text-mention, #6b6b6b);
+  color: var(--text-mention);
   text-align: center;
   pointer-events: none;
 }
@@ -283,6 +283,6 @@ const scaledFrameStyle = computed(() =>
   text-align: center;
   padding: 1rem;
   font-size: 0.55em;
-  color: var(--text-mention, #888);
+  color: var(--text-mention);
 }
 </style>

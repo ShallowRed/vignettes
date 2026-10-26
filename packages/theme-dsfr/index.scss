@@ -13,6 +13,7 @@
 @use 'typography';
 @use 'components';
 @use 'utilities';
+@use 'palette';
 
 // Generate CSS custom properties from Sass variables
 :root {
@@ -59,6 +60,7 @@
   --accent: var(--dsfr-blue-france-main-525);
   --accent-soft: var(--dsfr-blue-france-850);
   --accent-bg: var(--dsfr-blue-france-950);
+  --accent-strong: var(--dsfr-blue-france-sun-113);
   --surface: var(--dsfr-background-default);
   --surface-contrast: var(--dsfr-background-contrast);
   --on-contrast: var(--dsfr-grey-1000);
