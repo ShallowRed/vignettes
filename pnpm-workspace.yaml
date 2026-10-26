@@ -1,10 +1,13 @@
-# pnpm audit skips two advisories without a patched release: node-forge comes
-# with listhen, the development server of Nuxt, and braces with @parcel/watcher. The built server contains
-# neither package.
+# pnpm audit skips three advisories without a patched release: node-forge comes
+# with listhen, the development server of Nuxt, and braces with @parcel/watcher.
+# The third covers zod 3, which @nuxt/content requires for the documentation
+# site: the fix shipped in zod 4.6.6. The built server contains none of these
+# packages.
 auditConfig:
   ignoreGhsas:
     - GHSA-86w9-cpqp-85rv
     - GHSA-vfj7-8cjw-p6xm
+    - GHSA-mrhx-c7xc-m3w5
 
 catalogMode: prefer
 
@@ -109,7 +112,7 @@ catalog:
   vue-tsc: ^3.3.11
   y-codemirror.next: ^0.3.5
   yjs: ^13.6.31
-  zod: ^4.4.3
+  zod: ^4.6.7
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
