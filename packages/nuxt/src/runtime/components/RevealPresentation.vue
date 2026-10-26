@@ -399,8 +399,10 @@ onUnmounted(() => {
   animation: deck-veil-appear 200ms ease 1s forwards;
 }
 
+/* Until the theme stylesheet applies, --accent is unset: the fallback repeats
+   the default accent of theme-kit. */
 .deck-veil__mark i {
-  background: var(--accent, currentColor);
+  background: var(--accent, #1c4fd8);
   opacity: 0.18;
   animation: deck-veil-fill 1200ms ease-in-out infinite;
 }
