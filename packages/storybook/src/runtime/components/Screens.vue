@@ -4,13 +4,20 @@ import { computed } from 'vue'
 interface Props {
   /** Column count; defaults to an even auto-fit row. */
   cols?: string | number
+  /** CSS gap between the frames. */
   gap?: string
+  /** Vertical alignment of the frames in their row. */
   align?: 'start' | 'center' | 'stretch'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   align: 'stretch',
 })
+
+defineSlots<{
+  /** The `::StoryFrame` blocks. */
+  default?: () => unknown
+}>()
 
 const columns = computed(() => {
   const n = typeof props.cols === 'string' ? Number.parseInt(props.cols, 10) : props.cols

@@ -1,11 +1,19 @@
 <script setup lang="ts">
 interface Props {
+  /** Name of the person quoted. */
   author?: string
+  /** Role of the person quoted, under the name. */
   role?: string
+  /** Address of a portrait beside the name. */
   avatar?: string
 }
 
 const props = defineProps<Props>()
+
+defineSlots<{
+  /** The quote, in markdown. */
+  default?: () => unknown
+}>()
 </script>
 
 <template>

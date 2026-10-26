@@ -4,16 +4,22 @@ import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '../injection-keys
 
 // One card of a `:::Scheme`, preceded by an arrow after the first one.
 interface Props {
-  /** Pictogram path relative to /pictograms, e.g. `digital/coding`. */
+  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
   picto?: string
-  /** Remix icon instead of a pictogram. */
+  /** Remix icon, `ri:server-line`, lighter than a pictogram. */
   icon?: string
+  /** Title of the step. */
   title?: string
   /** Step number shown in a badge. */
   n?: string | number
 }
 
 defineProps<Props>()
+
+defineSlots<{
+  /** The caption, in markdown. */
+  default?: () => unknown
+}>()
 
 const asFragment = inject(SCHEME_FRAGMENTS, true)
 const withArrow = inject(SCHEME_ARROWS, true)

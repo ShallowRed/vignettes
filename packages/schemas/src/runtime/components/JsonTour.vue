@@ -13,12 +13,15 @@ interface Props {
   height?: string
   /** Width of the code panel, any CSS length. */
   panel?: string
+  /** Scale of the zone cards. */
   size?: 'xs' | 'sm' | 'md'
+  /** Shows the zones one at a time. */
   fragments?: boolean
-  /** Put the code panel under the zones, full width, for a narrow column beside a media pane. */
+  /** Puts the code panel under the zones, at full width, for a narrow column beside a media pane. */
   stack?: boolean
   /** Screenshot shown beside the tour; the current zone's `spot` is highlighted on it. */
   image?: string
+  /** Text alternative of `image`. */
   alt?: string
   /** Words of the file to paint, separated by `|`; a word matches whole. */
   mark?: string
@@ -33,6 +36,11 @@ const props = withDefaults(defineProps<Props>(), {
   fragments: true,
   stack: false,
 })
+
+defineSlots<{
+  /** The `::Zone` blocks, then a fenced code block: the file shown in the panel. */
+  default?: () => unknown
+}>()
 
 const root = ref<HTMLElement | null>(null)
 const tourId = useId()

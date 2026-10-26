@@ -4,18 +4,23 @@ import { DIAGRAM } from '../injection-keys.ts'
 
 // One card of a `:::Diagram`, addressed by `id` from the `::Edge` children.
 interface Props {
+  /** Name the `::Edge` blocks use to reach the node. */
   id: string
   /** Grid cell as `col,row` (1-based), for `layout="grid"`. */
   at?: string
   /** Cells spanned as `cols,rows`. */
   span?: string
+  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
   picto?: string
-  /** Remix icon instead of a pictogram. */
+  /** Remix icon, `ri:server-line`, lighter than a pictogram. */
   icon?: string
   /** A DSFR illustrative colour for the icon and the title. */
   color?: string
+  /** Title of the card. */
   title?: string
+  /** Number in a badge. */
   n?: string | number
+  /** Draws a dashed frame, for a target state. */
   planned?: boolean
   /** Fragment step; defaults to the writing order. */
   step?: string | number
@@ -32,6 +37,11 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+defineSlots<{
+  /** The caption, in markdown; with `variant="entity"`, a list of attributes, one per item. */
+  default?: () => unknown
+}>()
 
 const registry = inject(DIAGRAM, null)
 const orientation = computed(() => props.orientation ?? registry?.tiles ?? 'column')

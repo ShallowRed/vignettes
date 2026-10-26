@@ -26,4 +26,6 @@ The format is defined once, in `packages/core/src/deck`: `split.ts` cuts the sli
 
 An extension package declares its components as data (`packages/schemas/src/components.ts`, `packages/storybook/src/components.ts`) and registers them in its Nuxt plugin.
 
+The README of `packages/nuxt`, `packages/schemas` and `packages/storybook` holds the reference of each component between `<!-- component: Name -->` and `<!-- /component -->`. After a change to the props or the slots of a component, or to its entry in the contract, run `node scripts/component-reference.ts`: it writes these blocks from the `defineProps`, `withDefaults` and `defineSlots` of the Vue file and their JSDoc, and `test/unit/component-reference.test.ts` fails while a README differs from its components. Write a JSDoc comment on each prop and slot.
+
 After a change to the format, to `docs/theme-system.md`, to `examples/controle-du-theme.md` or to the README of `packages/nuxt`, `packages/schemas`, `packages/storybook`, `packages/theme-kit` or `packages/theme-dsfr`, run `node scripts/deck-plugin.ts`: it writes the references of the deck authoring plugin, and `test/unit/deck-plugin.test.ts` fails while they differ from their sources.

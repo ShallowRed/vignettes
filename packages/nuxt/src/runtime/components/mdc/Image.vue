@@ -2,15 +2,23 @@
 import { computed } from 'vue'
 
 interface Props {
+  /** Address of the image. */
   src: string
+  /** Text alternative of the image. */
   alt?: string
+  /** CSS width of the image. */
   width?: string
+  /** CSS height of the image. */
   height?: string
+  /** CSS `object-fit` of the image in its box. */
   fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+  /** CSS `object-position` of the image in its box. */
   position?: string
+  /** Rounds the corners. */
   rounded?: boolean
+  /** Draws a shadow under the image. */
   shadow?: boolean
-  /** Enable Reveal.js lightbox. Pass `true` to use `src` as preview, or a URL for a distinct thumbnail. */
+  /** Opens the image full-screen on click: `true` shows `src`, an address shows another image. */
   preview?: boolean | string
 }
 
@@ -23,6 +31,11 @@ const props = withDefaults(defineProps<Props>(), {
   rounded: false,
   shadow: true,
 })
+
+defineSlots<{
+  /** The caption, in markdown. */
+  default?: () => unknown
+}>()
 
 const previewSrc = computed(() => {
   if (!props.preview)

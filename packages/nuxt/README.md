@@ -84,41 +84,221 @@ The parser also reads the attributes of decks written before `media` and `size`:
 
 ## Components
 
-MDC uses colons, and the count says what the component wraps: `:::Name` a container of other components, `::Name` a leaf wrapping text, `:name{…}` an inline. A parent container always takes more colons than its children.
+MDC uses colons, and the count says what the component wraps: `:::Name` a container of other components, `::Name` a leaf wrapping text, `:name{…}` an inline. A parent container always takes more colons than its children. A `boolean` or `number` attribute takes a colon and a JSON value, as `:preview="true"`: without the colon, its value is the text (see [Addresses and bound attributes](#addresses-and-bound-attributes)).
 
-The module ships the generic set: `Quote`, `Image`, `Iframe`, `Mermaid`, `IconInline` (aliased `:i`), `Columns` (aliased `TwoColumns` and `ThreeColumns`), `Column`, `Highlight`, `Notes` and `Fragments`.
+The module ships the components below. Two more modules extend the set: `@vignettes/schemas` for the explanation kit, `@vignettes/storybook` for live story embeds. A tenant declares its own components the same way, with `registerDeckComponents` from `@vignettes/core/deck`.
+
+### Quote
+
+<!-- component: Quote -->
 
 ```markdown
-::Image{src="/diagram.png" alt="Architecture" width="80%" :preview="true"}
-Figure 1: the architecture
+::Quote{author="Author" role="Role"}
+The quote.
 ::
-
-::Quote{author="Antoine de Saint-Exupéry"}
-Perfection is reached when there is nothing left to take away.
-::
-
-### :i{name="ri:timer-flash-line"} A heading with an icon
 ```
 
-`Notes` renders Reveal's speaker notes, shown in the speaker view opened with the `S` key. `Fragments` reveals its list items one at a time.
+Attributes:
 
-`Columns` lays its children side by side and takes `size` (`xs` to `xl`) for their text scale. Without `Column` children it splits the body at a horizontal rule or at each `H3` or `H4`. With `Column` children the breaks are theirs, and each one takes `span` (a weight, `span="2"` beside `span="1"` gives two thirds and one third) or `ratio` (an explicit width, `ratio="2/3"`).
+- `author` (`string`): Name of the person quoted.
+- `role` (`string`): Role of the person quoted, under the name.
+- `avatar` (`string`): Address of a portrait beside the name.
+
+Content: The quote, in markdown.
+
+<!-- /component -->
+
+### Highlight
+
+<!-- component: Highlight -->
 
 ```markdown
-:::columns{size="sm"}
-  ::column{span="2"}
-  ### The wide one
-  ::
+::Highlight{size="sm"}
+Key message.
+::
+```
 
-  ::column{span="1"}
-  ### The narrow one
-  ::
+Attributes:
+
+- `size` (`'sm' | 'md' | 'lg' | 'xl'`, default `'md'`): Text size of the message.
+- `variant` (`'default' | 'accent' | 'contrast'`, default `'default'`): `default` sets the text alone, `accent` adds a bar and a tint in the accent color, `contrast` puts it in a dark box.
+- `center` (`boolean`, default `false`): Centers the message, except with `variant="accent"`, which keeps it aligned left.
+
+Content: The message, in markdown.
+
+<!-- /component -->
+
+### Fragments
+
+<!-- component: Fragments -->
+
+Also written `fragments`.
+
+```markdown
+::Fragments
+- First point
+- Second point
+::
+```
+
+Attributes:
+
+- `effect` (`string`, default `'fade-in'`): Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…
+- `dim` (`boolean`, default `false`): Dims the items already shown once a later one is current.
+
+Content: A markdown list, whose items appear one at a time; each other block is one step.
+
+<!-- /component -->
+
+### IconInline
+
+<!-- component: IconInline -->
+
+Also written `i`.
+
+```markdown
+:i{name="ri:home-line"}
+```
+
+Attributes:
+
+- `name` (`string`, required): Iconify name of the icon, `ri:home-line`; the Remix class `ri-home-line` works too.
+- `size` (`string | number`, default `'1.2em'`): CSS size of the icon.
+
+<!-- /component -->
+
+### Columns
+
+`Columns` lays its children side by side. Without `Column` children it splits the body at a horizontal rule or at each `H3` or `H4`; with `Column` children the breaks are theirs.
+
+<!-- component: Columns -->
+
+Also written `TwoColumns`, `ThreeColumns`.
+
+```markdown
+:::Columns
+::column
+Column 1
+::
+::column
+Column 2
+::
 :::
 ```
 
+Attributes:
+
+- `size` (`'xs' | 'sm' | 'md' | 'lg' | 'xl'`, default `'md'`): Text scale of the columns.
+
+Content: `::column` blocks, or markdown that splits in two at its first horizontal rule, or else before each `###` or `####` heading.
+
+<!-- /component -->
+
+### Column
+
+<!-- component: Column -->
+
+Also written `column`.
+
+Attributes:
+
+- `span` (`number | string`): Weight of the column in the row: `span="2"` beside `span="1"` gives two thirds and one third.
+- `ratio` (`string`): Width of the column as a fraction of the row: `2/3`, `1/4`.
+
+Content: The text of the column, in markdown.
+
+<!-- /component -->
+
+### Image
+
+<!-- component: Image -->
+
+Also written `deck-image`.
+
+```markdown
+::Image{src="/images/placeholder.svg" alt="Description"}
+::
+```
+
+Attributes:
+
+- `src` (`string`, required): Address of the image.
+- `alt` (`string`, default `''`): Text alternative of the image.
+- `width` (`string`, default `'auto'`): CSS width of the image.
+- `height` (`string`, default `'auto'`): CSS height of the image.
+- `fit` (`'contain' | 'cover' | 'fill' | 'none' | 'scale-down'`, default `'contain'`): CSS `object-fit` of the image in its box.
+- `position` (`string`, default `'center'`): CSS `object-position` of the image in its box.
+- `rounded` (`boolean`, default `false`): Rounds the corners.
+- `shadow` (`boolean`, default `true`): Draws a shadow under the image.
+- `preview` (`boolean | string`): Opens the image full-screen on click: `true` shows `src`, an address shows another image.
+
+Content: The caption, in markdown.
+
+<!-- /component -->
+
+### Iframe
+
+<!-- component: Iframe -->
+
+```markdown
+::Iframe{src="https://example.com" title="Title"}
+::
+```
+
+Attributes:
+
+- `src` (`string`, required): Address of the page.
+- `title` (`string`, default `''`): Accessible title of the frame.
+- `width` (`string`, default `'100%'`): CSS width of the frame.
+- `height` (`string`, default `'500px'`): CSS height of the frame.
+- `allow` (`string`, default `'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'`): Permissions policy of the frame, its `allow` attribute.
+- `frameborder` (`string`, default `'0'`): The `frameborder` attribute of the frame.
+- `fullwidth` (`boolean`, default `true`): Stretches the frame to the width of its column.
+- `lightbox` (`boolean`, default `false`): Opens the page full-screen on click.
+
+<!-- /component -->
+
+### Mermaid
+
 `Mermaid` draws a diagram in the colors and the font of the theme, and reduces it, without enlarging it, to fit the width of its column and the height the other blocks of the slide leave; the diagrams of one slide take the same reduction. For sequence diagrams it sets `mirrorActors: false`, `width: 180`, `actorMargin: 30`, `messageMargin: 14`, `boxMargin: 4`, `noteMargin: 6`, `diagramMarginY: 4` and `wrap: true`. A `%%{init: …}%%` block at the top of the diagram overrides these values.
 
-Two more modules extend the set: `@vignettes/schemas` for the explanation kit, `@vignettes/storybook` for live story embeds. A tenant declares its own components the same way, with `registerDeckComponents` from `@vignettes/core/deck`.
+<!-- component: Mermaid -->
+
+````markdown
+::Mermaid
+```mermaid
+flowchart LR
+    A[Start] --> B[End]
+```
+::
+````
+
+Attributes:
+
+- `theme` (`'default' | 'dark' | 'forest' | 'neutral'`): A Mermaid theme; without it, the diagram takes the colors and the font of the deck theme.
+- `steps` (`string`): Reveal steps as node-id groups: `A,B|C|D` shows A and B, then C, then D; edges follow their later node.
+
+Content: A fenced code block in `mermaid`.
+
+<!-- /component -->
+
+### Notes
+
+`Notes` renders Reveal's speaker notes, shown in the speaker view opened with the `S` key.
+
+<!-- component: Notes -->
+
+Also written `notes`.
+
+```markdown
+::Notes
+What the speaker says.
+::
+```
+
+Content: The notes, in markdown.
+
+<!-- /component -->
 
 ## Addresses and bound attributes
 

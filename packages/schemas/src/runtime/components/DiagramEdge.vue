@@ -5,9 +5,13 @@ import { DIAGRAM } from '../injection-keys.ts'
 
 // An arrow between two `::Node` ids; drawn by the enclosing `:::Diagram`.
 interface Props {
+  /** `id` of the node the arrow leaves. */
   from: string
+  /** `id` of the node the arrow reaches. */
   to: string
+  /** Text on the arrow. */
   label?: string
+  /** Draws a dashed arrow. */
   dashed?: boolean
   /** `false` leaves the arrowhead off, for the leg that reaches a flow box. */
   arrow?: boolean
@@ -15,6 +19,7 @@ interface Props {
   step?: string | number
   /** Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); geometry decides when absent. */
   anchors?: string
+  /** Route of this arrow, over the `route` of the diagram. */
   route?: 'curve' | 'orthogonal'
 }
 

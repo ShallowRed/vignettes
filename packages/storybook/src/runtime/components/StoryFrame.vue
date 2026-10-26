@@ -14,21 +14,25 @@ interface Props {
   story?: string
   /** Explicit URL, used when `story` is absent. */
   src?: string
+  /** Kind of media; without it, a story or an address is a page, and an address that ends with an image extension an image. */
   type?: 'iframe' | 'image'
+  /** CSS `object-fit` of an image in the frame. */
   fit?: 'cover' | 'contain'
-  /** Named (`desktop`, `wide`, `mobile`…) or raw `16/9`. */
+  /** Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. */
   ratio?: string
   /** Logical width (px) the iframe renders at before scaling; higher = more of the page visible. */
   viewport?: string | number
   /** The name of `viewport` in the earlier format. */
   previewWidth?: string | number
-  /** Render the iframe at native size (1:1), no scaling. */
+  /** Renders the frame at its native size, without scaling. */
   raw?: boolean
   /** Caption under the frame; overrides the default slot. */
   label?: string
+  /** Opens the screen full-screen on click. */
   lightbox?: boolean
+  /** Accessible title of the frame, or the text alternative of an image. */
   title?: string
-  /** Let the frame grow to fill available height (galleries). */
+  /** Lets the frame grow to fill the available height, in a gallery. */
   grow?: boolean
   /** Incentive text shown beside the frame to invite interaction. */
   hint?: string
@@ -40,6 +44,11 @@ const props = withDefaults(defineProps<Props>(), {
   lightbox: false,
   grow: false,
 })
+
+defineSlots<{
+  /** The caption under the frame, in markdown. */
+  default?: () => unknown
+}>()
 
 const messages = useDeckMessages()
 const frameAttributes = useFrameAttributes()

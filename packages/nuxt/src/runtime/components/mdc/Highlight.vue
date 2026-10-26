@@ -1,7 +1,10 @@
 <script setup lang="ts">
 interface Props {
+  /** Text size of the message. */
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  /** `default` sets the text alone, `accent` adds a bar and a tint in the accent color, `contrast` puts it in a dark box. */
   variant?: 'default' | 'accent' | 'contrast'
+  /** Centers the message, except with `variant="accent"`, which keeps it aligned left. */
   center?: boolean
 }
 
@@ -10,6 +13,11 @@ withDefaults(defineProps<Props>(), {
   variant: 'default',
   center: false,
 })
+
+defineSlots<{
+  /** The message, in markdown. */
+  default?: () => unknown
+}>()
 </script>
 
 <template>

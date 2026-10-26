@@ -5,9 +5,15 @@ import { useDeckMessages } from '../../composables/useDeckMessages.ts'
 import { sharedFitScale } from '../../utils/diagram-fit.ts'
 
 const props = defineProps<{
+  /** A Mermaid theme; without it, the diagram takes the colors and the font of the deck theme. */
   theme?: 'default' | 'dark' | 'forest' | 'neutral'
   /** Reveal steps as node-id groups: `A,B|C|D` shows A and B, then C, then D; edges follow their later node. */
   steps?: string
+}>()
+
+defineSlots<{
+  /** A fenced code block in `mermaid`. */
+  default?: () => unknown
 }>()
 
 const messages = useDeckMessages()

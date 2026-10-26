@@ -5,12 +5,13 @@ import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '../injection-keys
 // A row of `::Step` cards linked by arrows, each step a Reveal fragment by
 // default so the diagram builds up as the speaker talks.
 interface Props {
-  /** Reveal each step as a fragment (`:fragments="false"` shows the whole row at once). */
+  /** Reveals each step as a fragment; `:fragments="false"` shows the whole row at once. */
   fragments?: boolean
-  /** Dim the steps already shown once a later one is current. */
+  /** Dims the steps already shown once a later one is current. */
   dim?: boolean
-  /** Link the steps with arrows (`:arrows="false"` for a plain row of cards). */
+  /** Links the steps with arrows; `:arrows="false"` gives a plain row of cards. */
   arrows?: boolean
+  /** Scale of the pictograms. */
   size?: 'sm' | 'md' | 'lg'
   /** Card shape for every `::Step`: pictogram above the text, or beside it. */
   tiles?: 'column' | 'row'
@@ -23,6 +24,11 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'md',
   tiles: 'column',
 })
+
+defineSlots<{
+  /** The `::Step` blocks of the row. */
+  default?: () => unknown
+}>()
 
 provide(SCHEME_FRAGMENTS, props.fragments)
 provide(SCHEME_ARROWS, props.arrows)

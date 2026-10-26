@@ -11,8 +11,9 @@ interface Props {
   at?: string
   /** Cells spanned as `cols,rows`. */
   span?: string
+  /** Name of the region. */
   title?: string
-  /** DSFR pictogram, path under /pictograms. */
+  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
   picto?: string
   /** Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram. */
   icon?: string

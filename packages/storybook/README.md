@@ -37,29 +37,59 @@ The value is the Storybook story id, `<componentId>--<storyName>`. `lightbox` le
 
 ## Several screens side by side
 
+`Screens` lays its `StoryFrame` children in a row. An iframe renders at its logical width and the frame scales it down to fit, so the frame shows the whole page. `StoryFrame` also works on its own in a slide body, without `Screens`.
+
+### Screens
+
+<!-- component: Screens -->
+
 ```markdown
-:::Screens{cols="3" gap="1rem"}
-::StoryFrame{story="home-scenario-a--page" ratio="portrait" label="A · Landing" lightbox}
+:::Screens{cols="2"}
+::StoryFrame{story="story-id" label="Label" lightbox}
 ::
-::StoryFrame{story="home-scenario-b--page" ratio="portrait" label="B · Routing" lightbox}
+::StoryFrame{story="story-id" label="Label" lightbox}
 ::
 :::
 ```
 
-`Screens` takes `cols` for a fixed column count, or lays an even auto-fit row when it is omitted, plus `gap` (default `1.5rem`) and `align` (`start` | `center` | `stretch`).
+Attributes:
 
-`StoryFrame` takes `story`, or `src` for an explicit URL, and:
+- `cols` (`string | number`): Column count; defaults to an even auto-fit row.
+- `gap` (`string`): CSS gap between the frames.
+- `align` (`'start' | 'center' | 'stretch'`, default `'stretch'`): Vertical alignment of the frames in their row.
 
-- `type` is `iframe` or `image`. Without it, a story or a URL renders as a page, and a URL ending with an image extension as an image.
-- `ratio` is a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a raw ratio such as `16/9`.
-- `fit` is `cover`, the default, or `contain`.
-- `viewport` is the logical iframe width before scaling, `1440` by default; raise it to show more of the page.
-- `raw` renders the frame at native size, without scaling.
-- `label` is the caption under the frame; the default slot takes a caption too.
-- `lightbox` opens the screen full-screen on click.
-- `title` is the accessible iframe title, or the image alt.
+Content: The `::StoryFrame` blocks.
 
-An iframe renders at its logical width and the frame scales it down to fit, so the frame shows the whole page. `StoryFrame` also works on its own in a slide body, without `Screens`.
+<!-- /component -->
+
+### StoryFrame
+
+<!-- component: StoryFrame -->
+
+```markdown
+::StoryFrame{story="story-id" ratio="16/9" viewport="760" label="Label" lightbox}
+::
+```
+
+Attributes:
+
+- `story` (`string`): Storybook story id (`<componentId>--<storyName>`).
+- `src` (`string`): Explicit URL, used when `story` is absent.
+- `type` (`'iframe' | 'image'`): Kind of media; without it, a story or an address is a page, and an address that ends with an image extension an image.
+- `fit` (`'cover' | 'contain'`, default `'cover'`): CSS `object-fit` of an image in the frame.
+- `ratio` (`string`): Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`.
+- `viewport` (`string | number`): Logical width (px) the iframe renders at before scaling; higher = more of the page visible.
+- `previewWidth` (`string | number`): The name of `viewport` in the earlier format.
+- `raw` (`boolean`, default `false`): Renders the frame at its native size, without scaling.
+- `label` (`string`): Caption under the frame; overrides the default slot.
+- `lightbox` (`boolean`, default `false`): Opens the screen full-screen on click.
+- `title` (`string`): Accessible title of the frame, or the text alternative of an image.
+- `grow` (`boolean`, default `false`): Lets the frame grow to fill the available height, in a gallery.
+- `hint` (`string`): Incentive text shown beside the frame to invite interaction.
+
+Content: The caption under the frame, in markdown.
+
+<!-- /component -->
 
 ## Frozen decks
 

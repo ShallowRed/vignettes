@@ -2,15 +2,18 @@
 import { computed, onMounted, ref } from 'vue'
 
 interface Props {
-  /** Column count when auto-splitting by headings; ignored when explicit `::column` children are used. */
-  count?: number
+  /** Text scale of the columns. */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  count: 2,
   size: 'md',
 })
+
+defineSlots<{
+  /** `::column` blocks, or markdown that splits in two at its first horizontal rule, or else before each `###` or `####` heading. */
+  default?: () => unknown
+}>()
 
 const container = ref<HTMLElement | null>(null)
 

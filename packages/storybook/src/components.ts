@@ -17,8 +17,8 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Screens',
     snippet: {
-      fr: ':::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n:::',
-      en: ':::Screens{cols="${2}"}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n:::',
+      fr: ':::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::\n:::',
+      en: ':::Screens{cols="${2}"}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n:::',
     },
     description: {
       fr: 'Galerie d\'écrans Storybook (attributs cols, gap, align)',

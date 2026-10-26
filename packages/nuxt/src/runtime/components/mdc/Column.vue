@@ -2,13 +2,18 @@
 import { computed } from 'vue'
 
 interface Props {
-  /** Relative weight in the columns row (span=2 vs span=1 => 2/3 + 1/3). */
+  /** Weight of the column in the row: `span="2"` beside `span="1"` gives two thirds and one third. */
   span?: number | string
-  /** Explicit width ratio, e.g. "2/3", "1/4". */
+  /** Width of the column as a fraction of the row: `2/3`, `1/4`. */
   ratio?: string
 }
 
 const props = defineProps<Props>()
+
+defineSlots<{
+  /** The text of the column, in markdown. */
+  default?: () => unknown
+}>()
 
 const parsedSpan = computed(() => {
   if (props.span === undefined || props.span === null || props.span === '')

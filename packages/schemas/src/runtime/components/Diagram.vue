@@ -9,15 +9,21 @@ import { DIAGRAM } from '../injection-keys.ts'
 // them by rank. Nodes and edges are Reveal fragments in writing order unless
 // they carry a `step`.
 interface Props {
+  /** `grid` places each node at its `at` cell; `auto` ranks the nodes with dagre and ignores `at`. */
   layout?: 'grid' | 'auto'
+  /** Number of grid columns. */
   cols?: string | number
   /** Column tracks as a CSS `grid-template-columns` value; overrides `cols`. */
   columns?: string
+  /** Number of grid rows; the grid takes as many as its nodes need when absent. */
   rows?: string | number
   /** Rank direction for the automatic layout: left to right or top to bottom. */
   direction?: 'LR' | 'TB'
+  /** Scale of the cards; `xs` leaves room for the arrows and their labels in a stack of cards. */
   size?: 'xs' | 'sm' | 'md' | 'lg'
+  /** Shows the nodes and the edges one at a time, in writing order; each edge appears with the later of its nodes. */
   fragments?: boolean
+  /** Dims the nodes already shown once a later one is current. */
   dim?: boolean
   /** Card width in px for the automatic layout (grid cells size their own). */
   nodeWidth?: string | number
@@ -25,9 +31,9 @@ interface Props {
   height?: string | number
   /** Grid gaps as `row column` CSS lengths. */
   gap?: string
-  /** Default edge route: curved (default) or orthogonal elbows. */
+  /** Default edge route: curved, or orthogonal elbows. */
   route?: 'curve' | 'orthogonal'
-  /** Card surface: `outlined` (white card with a border, default) or `plain`. */
+  /** Card surface: `outlined`, a white card with a border, or `plain`. */
   cards?: 'outlined' | 'plain'
   /** Card shape for every `::Node`: pictogram above the text, or beside it. */
   tiles?: 'column' | 'row'
@@ -47,6 +53,11 @@ const props = withDefaults(defineProps<Props>(), {
   cards: 'outlined',
   tiles: 'column',
 })
+
+defineSlots<{
+  /** The `::Node`, `::Edge` and `::Area` blocks. */
+  default?: () => unknown
+}>()
 
 const root = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLElement | null>(null)

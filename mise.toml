@@ -276,6 +276,11 @@ description = "ESLint on the whole repo"
 depends = [ "install" ]
 run = "pnpm eslint ."
 
+[tasks."components:reference"]
+description = "Write the reference of each deck component into the README of its package, from the props and the slots of its Vue file"
+depends = [ "install" ]
+run = "node scripts/component-reference.ts"
+
 [tasks."deck:plugin"]
 description = "Regenerate the references of the deck authoring plugin (plugins/vignettes-decks) from the deck core and the package READMEs"
 depends = [ "install" ]

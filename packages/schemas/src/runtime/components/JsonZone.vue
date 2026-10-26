@@ -9,10 +9,13 @@ interface Props {
   lines?: string
   /** Area to highlight on the tour's image, `x,y,w,h` in percent. */
   spot?: string
+  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
   picto?: string
   /** Remix icon (`ri:shield-check-line`), sharper than a pictogram at the xs and sm sizes. */
   icon?: string
+  /** Title of the zone card. */
   title?: string
+  /** Number in a badge. */
   n?: string | number
   /** Fragment step; defaults to the writing order. */
   step?: string | number
@@ -25,6 +28,11 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+defineSlots<{
+  /** What these lines hold, in markdown. */
+  default?: () => unknown
+}>()
 
 const registry = inject(JSON_TOUR, null)
 const el = ref<HTMLElement | null>(null)

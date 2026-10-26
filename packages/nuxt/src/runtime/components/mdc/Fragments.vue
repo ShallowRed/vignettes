@@ -4,9 +4,9 @@ import { inject, onMounted, ref } from 'vue'
 // Turns each direct child (each item of a direct list) into a Reveal fragment,
 // revealed one step at a time with the arrow keys.
 interface Props {
-  /** Reveal fragment effect: fade-in (default), fade-up, fade-left, grow, highlight-current-blue, … */
+  /** Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`… */
   effect?: string
-  /** Once a later fragment is current, the earlier ones are dimmed. */
+  /** Dims the items already shown once a later one is current. */
   dim?: boolean
 }
 
@@ -14,6 +14,11 @@ const props = withDefaults(defineProps<Props>(), {
   effect: 'fade-in',
   dim: false,
 })
+
+defineSlots<{
+  /** A markdown list, whose items appear one at a time; each other block is one step. */
+  default?: () => unknown
+}>()
 
 const root = ref<HTMLElement | null>(null)
 const revealSync = inject<(() => void) | undefined>('revealSync', undefined)

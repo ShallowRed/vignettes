@@ -4,7 +4,9 @@ import { normalizeIconName } from '@vignettes/core/deck'
 import { computed } from 'vue'
 
 interface Props {
+  /** Iconify name of the icon, `ri:home-line`; the Remix class `ri-home-line` works too. */
   name: string
+  /** CSS size of the icon. */
   size?: string | number
 }
 

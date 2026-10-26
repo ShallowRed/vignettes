@@ -16,78 +16,227 @@ export default defineNuxtConfig({
 
 The module registers its components globally and declares them to the deck contract, so `::Scheme` and the others resolve in a deck body and the parser knows their shape.
 
-Pictograms come from `/pictograms/<folder>/<name>.svg`, served by the application from its public directory or its content space.
+Pictograms come from `/pictograms/<folder>/<name>.svg`, served by the application from its public directory or its content space. A `boolean` or `number` attribute takes a colon and a JSON value, as `:fragments="false"`.
 
-## Scheme: pictogram steps that build up as you speak
+## Scheme
+
+`Scheme` lays its `Step` children in a row linked by arrows. Each step is a fragment by default, so the row builds up as the speaker talks. With `dim`, the steps already shown fade once a later one is current, and the current step takes an accent frame.
+
+<!-- component: Scheme -->
+
+Also written `scheme`.
 
 ```markdown
 :::Scheme
-::Step{n="1" picto="buildings/city-hall" title="A rule"}
-Written by an administration.
+::Step{n="1" picto="buildings/city-hall" title="First step"}
+Caption
 ::
-::Step{n="2" picto="digital/coding" title="Some code"}
-::
-:::
-```
-
-`Scheme` lays its `Step` children in a row linked by arrows. Each step is a fragment by default, so the row builds up as the speaker talks; `:fragments="false"` shows it whole. With `dim` (default `true`) the steps already shown fade once a later one is current, and the current step takes an accent frame. `size` is `sm` | `md` | `lg` and sets the pictogram scale; `tiles` is `column` (default) or `row` to put the pictogram beside the text. `:arrows="false"` gives a plain row of cards.
-
-`Step` takes `picto`, `title` and `n` for its number badge, or `icon` for a Remix icon where a pictogram is too much. The default slot is the caption.
-
-## Diagram: cards placed on a grid or ranked, linked by drawn arrows
-
-```markdown
-:::Diagram{layout="grid" cols="3"}
-::Node{id="src" at="1,2" picto="document/contract" title="Sources"}
-::
-::Node{id="cat" at="2,2" picto="digital/data-visualization" title="Catalogue"}
-One entry per source
-::
-::Node{id="api" at="3,1" picto="digital/application" title="API" :planned="true"}
-::
-::Edge{from="src" to="cat" label="feeds"}
-::
-::Edge{from="cat" to="api" :dashed="true"}
+::Step{n="2" picto="digital/coding" title="Second step"}
 ::
 :::
 ```
 
-`layout="grid"` places each `Node` at `at="col,row"`, spanning `span="cols,rows"`. `layout="auto"` ignores `at` and lets dagre rank the nodes, with `direction` as `LR` or `TB` and `nodeWidth` in pixels.
+Attributes:
 
-`Diagram` takes `gap` (a `"row col"` pair of CSS lengths), `route` (`curve`, the default, or `orthogonal` elbows), `cards` (`outlined`, the default, or `plain`), `tiles` (`column` or `row`), plus `size`, `dim` and `fragments` as on `Scheme`. `size="xs"` suits a stack of cards that has to leave room for the arrows and their labels; a node takes `orientation` to override the diagram's `tiles`.
+- `fragments` (`boolean`, default `true`): Reveals each step as a fragment; `:fragments="false"` shows the whole row at once.
+- `dim` (`boolean`, default `true`): Dims the steps already shown once a later one is current.
+- `arrows` (`boolean`, default `true`): Links the steps with arrows; `:arrows="false"` gives a plain row of cards.
+- `size` (`'sm' | 'md' | 'lg'`, default `'md'`): Scale of the pictograms.
+- `tiles` (`'column' | 'row'`, default `'column'`): Card shape for every `::Step`: pictogram above the text, or beside it.
 
-`Edge` draws an arrow between two node ids, with `label`, `dashed`, `route` per edge, and `anchors="right,top"` to force the sides it leaves and enters by, which geometry decides otherwise. `planned` gives a node a dashed frame. `variant="entity"` turns a node into a left-aligned box whose caption lists attributes, one per list item, for data-model diagrams.
+Content: The `::Step` blocks of the row.
 
-Nodes and edges are fragments in writing order, each edge appearing with the later of its nodes; `step="2"` on a node or an edge moves it in that order.
+<!-- /component -->
 
-`Area` draws a named region behind the cards, so an arrow leaving it reads as data going from one machine to another. It takes `at` and `span` like a node, a `picto`, and `label` as `legend` (the title on the top border) or `header` (a centred band above the cards). Regions show with the slide, outside the fragment order.
+### Step
 
-## JsonTour: a file read beside the description of what it holds
+<!-- component: Step -->
+
+Also written `step`.
+
+Attributes:
+
+- `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+- `icon` (`string`): Remix icon, `ri:server-line`, lighter than a pictogram.
+- `title` (`string`): Title of the step.
+- `n` (`string | number`): Step number shown in a badge.
+
+Content: The caption, in markdown.
+
+<!-- /component -->
+
+## Diagram
+
+`Diagram` places cards on a grid or ranks them automatically, and links them by drawn arrows. `step` on a node or an edge moves it in the order of the fragments.
+
+<!-- component: Diagram -->
+
+Also written `diagram`.
 
 ```markdown
-:::JsonTour{file="deck.json" size="xs" height="430px" panel="46%"}
-::Zone{lines="2-8" picto="document/document" title="Identity"}
-A name, an owner, a version.
+:::Diagram{layout="grid" cols="2"}
+::Node{id="a" at="1,1" title="Source"}
 ::
-::Zone{lines="9-12" picto="digital/coding" title="Content"}
-The slides the deck holds.
+::Node{id="b" at="2,1" title="Destination"}
+::
+::Edge{from="a" to="b" label="feeds"}
+::
+:::
+```
+
+Attributes:
+
+- `layout` (`'grid' | 'auto'`, default `'grid'`): `grid` places each node at its `at` cell; `auto` ranks the nodes with dagre and ignores `at`.
+- `cols` (`string | number`, default `3`): Number of grid columns.
+- `columns` (`string`): Column tracks as a CSS `grid-template-columns` value; overrides `cols`.
+- `rows` (`string | number`): Number of grid rows; the grid takes as many as its nodes need when absent.
+- `direction` (`'LR' | 'TB'`, default `'LR'`): Rank direction for the automatic layout: left to right or top to bottom.
+- `size` (`'xs' | 'sm' | 'md' | 'lg'`, default `'md'`): Scale of the cards; `xs` leaves room for the arrows and their labels in a stack of cards.
+- `fragments` (`boolean`, default `true`): Shows the nodes and the edges one at a time, in writing order; each edge appears with the later of its nodes.
+- `dim` (`boolean`, default `true`): Dims the nodes already shown once a later one is current.
+- `nodeWidth` (`string | number`, default `200`): Card width in px for the automatic layout (grid cells size their own).
+- `height` (`string | number`, default `460`): Height budget in px for the automatic layout; a taller graph is scaled down.
+- `gap` (`string`, default `'1.2em 3em'`): Grid gaps as `row column` CSS lengths.
+- `route` (`'curve' | 'orthogonal'`, default `'curve'`): Default edge route: curved, or orthogonal elbows.
+- `cards` (`'outlined' | 'plain'`, default `'outlined'`): Card surface: `outlined`, a white card with a border, or `plain`.
+- `tiles` (`'column' | 'row'`, default `'column'`): Card shape for every `::Node`: pictogram above the text, or beside it.
+
+Content: The `::Node`, `::Edge` and `::Area` blocks.
+
+<!-- /component -->
+
+### Node
+
+<!-- component: Node -->
+
+Also written `node`.
+
+Attributes:
+
+- `id` (`string`, required): Name the `::Edge` blocks use to reach the node.
+- `at` (`string`): Grid cell as `col,row` (1-based), for `layout="grid"`.
+- `span` (`string`): Cells spanned as `cols,rows`.
+- `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+- `icon` (`string`): Remix icon, `ri:server-line`, lighter than a pictogram.
+- `color` (`string`): A DSFR illustrative colour for the icon and the title.
+- `title` (`string`): Title of the card.
+- `n` (`string | number`): Number in a badge.
+- `planned` (`boolean`): Draws a dashed frame, for a target state.
+- `step` (`string | number`): Fragment step; defaults to the writing order.
+- `variant` (`'card' | 'entity' | 'flow' | 'plain'`): `entity`: left-aligned box whose caption lists attributes, one per list item. `flow`: a pill for the data that travels between two machines. `plain`: title and caption without a card, for a row or column heading.
+- `emphasis` (`boolean`): Fills the card with the accent: the one node the screen is about.
+- `orientation` (`'column' | 'row'`): Pictogram above the text or beside it; defaults to the diagram's `tiles`.
+
+Content: The caption, in markdown; with `variant="entity"`, a list of attributes, one per item.
+
+<!-- /component -->
+
+### Edge
+
+<!-- component: Edge -->
+
+Also written `edge`.
+
+Attributes:
+
+- `from` (`string`, required): `id` of the node the arrow leaves.
+- `to` (`string`, required): `id` of the node the arrow reaches.
+- `label` (`string`): Text on the arrow.
+- `dashed` (`boolean`): Draws a dashed arrow.
+- `arrow` (`boolean`): `false` leaves the arrowhead off, for the leg that reaches a flow box.
+- `step` (`string | number`): Fragment step; defaults to the later of the two nodes.
+- `anchors` (`string`): Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); geometry decides when absent.
+- `route` (`'curve' | 'orthogonal'`): Route of this arrow, over the `route` of the diagram.
+
+<!-- /component -->
+
+### Area
+
+`Area` draws a named region behind the cards, so an arrow leaving it reads as data going from one machine to another. Regions show with the slide, outside the fragment order.
+
+<!-- component: Area -->
+
+Also written `area`.
+
+Attributes:
+
+- `at` (`string`): Grid cell the region starts at, `col,row` (1-based).
+- `span` (`string`): Cells spanned as `cols,rows`.
+- `title` (`string`): Name of the region.
+- `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+- `icon` (`string`): Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram.
+- `tone` (`'neutral' | 'subject'`): `subject` tints the region that the story follows; `neutral` is the default.
+- `color` (`string`): A DSFR illustrative colour, `green-emeraude`, `purple-glycine`…; tints and outlines the region.
+- `label` (`'legend' | 'header'`): Where the title sits: on the top border like a legend, or as a header band inside.
+
+<!-- /component -->
+
+## JsonTour
+
+`JsonTour` shows a file beside the description of what it holds. The fenced code block of its content becomes a panel pinned to the right of the slide. Each `Zone` is a fragment that highlights the `lines` it names and scrolls the panel to them.
+
+A deck that spreads a tour over several slides, one zone per slide, sets `:fragments="false"` and `:current="true"` on the zone of each slide, which takes the accent frame of the current step. With `image`, each `Zone` names with `spot` the area of the image it frames while the rest dims.
+
+<!-- component: JsonTour -->
+
+Also written `json-tour`.
+
+````markdown
+:::JsonTour{file="example.json"}
+::Zone{lines="2-3" title="Identity"}
+What these lines hold.
 ::
 
 ```json
-{ … }
+{
+  "name": "example",
+  "version": 1
+}
 ```
 
 :::
-```
+````
 
-The fenced code block of the default slot becomes a panel pinned to the right of the slide. Each `Zone` is a fragment that highlights the `lines` it names and scrolls the panel to them. `lines` takes `12` or `12-24`, counted from the first line of the fence.
+Attributes:
 
-`JsonTour` takes `file` (the name shown above the panel), `height` (the panel height in slide pixels, the deck being 1280x720), `panel` (its width), `size` (`xs` | `sm` | `md`, the scale of the zone cards) and `fragments`. `Zone` takes `lines`, `picto`, `title`, `n`, and `step` to override the writing order.
+- `file` (`string`): File name shown above the code panel.
+- `height` (`string`, default `'330px'`): Maximum height of the code panel, in slide pixels (the deck is 1280x720).
+- `panel` (`string`, default `'47%'`): Width of the code panel, any CSS length.
+- `size` (`'xs' | 'sm' | 'md'`, default `'sm'`): Scale of the zone cards.
+- `fragments` (`boolean`, default `true`): Shows the zones one at a time.
+- `stack` (`boolean`, default `false`): Puts the code panel under the zones, at full width, for a narrow column beside a media pane.
+- `image` (`string`): Screenshot shown beside the tour; the current zone's `spot` is highlighted on it.
+- `alt` (`string`): Text alternative of `image`.
+- `mark` (`string`): Words of the file to paint, separated by `|`; a word matches whole.
+- `underline` (`string`): Words of the file to underline, separated by `|`; a word matches whole.
 
-`mark` and `underline` name words of the file, separated by `|`, to paint or to underline wherever they occur whole. On a `Zone`, the same two props search the zone's lines only, and the words show their mark while the zone is current. A deck that spreads a tour over several slides, one zone per slide, sets `:fragments="false"` and `:current="true"` on the zone of each slide, which takes the accent frame of the current step.
+Content: The `::Zone` blocks, then a fenced code block: the file shown in the panel.
 
-`:stack="true"` puts the panel under the zones at full width, for a narrow column beside a media pane. `image` with `alt` shows a screenshot to the right of the tour, and each `Zone` then names with `spot="x,y,w,h"`, in percent of the image, the area it frames while the rest dims.
+<!-- /component -->
+
+### Zone
+
+<!-- component: Zone -->
+
+Also written `zone`.
+
+Attributes:
+
+- `lines` (`string`): Line range in the file, `12` or `12-24`.
+- `spot` (`string`): Area to highlight on the tour's image, `x,y,w,h` in percent.
+- `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+- `icon` (`string`): Remix icon (`ri:shield-check-line`), sharper than a pictogram at the xs and sm sizes.
+- `title` (`string`): Title of the zone card.
+- `n` (`string | number`): Number in a badge.
+- `step` (`string | number`): Fragment step; defaults to the writing order.
+- `current` (`boolean`): The step this slide is on, for a tour whose steps a deck spreads over several slides.
+- `mark` (`string`): Words of its lines to paint while the zone is current, separated by `|`.
+- `underline` (`string`): Words of its lines to underline while the zone is current, separated by `|`.
+
+Content: What these lines hold, in markdown.
+
+<!-- /component -->
 
 ## Colours
 
-The cards take their tints from the DSFR illustrative palette, by name: `palette="blue-france"`, `green-emeraude`, `orange-terre-battue` and the rest of the DSFR set.
+The cards take their tints from the DSFR illustrative palette, by name: `color="blue-france"`, `green-emeraude`, `orange-terre-battue` and the rest of the DSFR set.
