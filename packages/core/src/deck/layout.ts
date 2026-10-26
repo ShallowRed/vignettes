@@ -303,6 +303,13 @@ export function legacyComponentLayout(name: string, props: Attributes): Attribut
   return Object.fromEntries(Object.entries(read(props)).filter(([, value]) => value !== undefined && value !== ''))
 }
 
+// The settings of a media, which a slide without one leaves unused; the
+// settings of a media pane, which an image behind the text leaves unused; and
+// the setting of an image behind the text, which a pane leaves unused.
+const MEDIA_SETTINGS = ['size', 'type', 'fit', 'position', 'alt', 'lightbox', 'hint', 'viewport', 'veil'] as const
+const PANE_SETTINGS = ['size', 'lightbox', 'hint', 'viewport'] as const
+const BEHIND_SETTINGS = ['veil'] as const
+
 /**
  * Reads the attributes of a `:layout` annotation. A source without `media`
  * goes to the right; `media` without a source gives no media pane. The issues
@@ -328,7 +335,7 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
   }
 
   if (!placement) {
-    unused(['size', 'type', 'fit', 'position', 'alt', 'lightbox', 'hint', 'viewport', 'veil'])
+    unused([...MEDIA_SETTINGS])
     return { layout, issues }
   }
   if (!source) {
@@ -343,9 +350,9 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
 
   const side = placement === 'right' || placement === 'left'
   if (placement === 'behind')
-    unused(['size', 'lightbox', 'hint', 'viewport'])
+    unused([...PANE_SETTINGS])
   else
-    unused(['veil'])
+    unused([...BEHIND_SETTINGS])
 
   const veil = attrs.veil ? Number(PERCENT_RE.exec(attrs.veil)![1]) / 100 : undefined
   layout.media = {
@@ -364,4 +371,64 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
   if (layout.media.size === undefined)
     delete layout.media.size
   return { layout, issues }
+}
+
+/** The attributes of `:layout` in their current form: each attribute of the decks written before `media` and `size` is translated. */
+export function modernLayoutAttributes(attributes: Attributes): Attributes {
+  return modernAttributes(attributes).attributes
+}
+
+const ATTRIBUTE_ORDER = LAYOUT_ATTRIBUTES.map(attribute => attribute.name)
+const FLAGS = new Set(LAYOUT_ATTRIBUTES.filter(attribute => attribute.flag).map(attribute => attribute.name))
+
+/**
+ * The text of a `:layout` annotation with these attributes in their current
+ * form, in the order of `LAYOUT_ATTRIBUTES`; an empty string without any. A
+ * flag is written alone when it is on and left out when it is off.
+ */
+export function layoutSource(attributes: Attributes): string {
+  const modern = modernLayoutAttributes(attributes)
+  const rank = (key: string) => ATTRIBUTE_ORDER.includes(key) ? ATTRIBUTE_ORDER.indexOf(key) : ATTRIBUTE_ORDER.length
+  const parts = Object.keys(modern).sort((a, b) => rank(a) - rank(b)).flatMap((key) => {
+    const value = modern[key]
+    if (value === undefined || value === '')
+      return []
+    if (FLAGS.has(key))
+      return value === false || value === 'false' ? [] : [key]
+    const text = String(value)
+    if (!text.includes('"'))
+      return [`${key}="${text}"`]
+    // MDC decodes the entities of an attribute value, and reads no backslash escape.
+    return [text.includes('\'') ? `${key}="${text.replaceAll('"', '&quot;')}"` : `${key}='${text}'`]
+  })
+  return parts.length ? `:layout{${parts.join(' ')}}` : ''
+}
+
+/** The value of an attribute of `:layout` when the annotation leaves it out. */
+export function layoutDefault(name: string): string | undefined {
+  return LAYOUT_ATTRIBUTES.find(attribute => attribute.name === name)?.default
+}
+
+/**
+ * The attributes of an annotation in their current form, with the media at
+ * `placement`, or without a media for `none`: the settings the new placement
+ * leaves unused go, and behind the text a story or a page goes too.
+ */
+export function layoutForPlacement(attributes: Attributes, placement: MediaPlacement | 'none'): Attributes {
+  const next = { ...modernLayoutAttributes(attributes) }
+  const drop = (names: readonly string[]) => names.forEach(name => delete next[name])
+  if (placement === 'none') {
+    drop(['media', 'src', 'story', ...MEDIA_SETTINGS])
+    return next
+  }
+  next.media = placement
+  if (placement === 'behind') {
+    drop([...PANE_SETTINGS, 'story'])
+    if (next.type === 'iframe')
+      delete next.type
+  }
+  else {
+    drop(BEHIND_SETTINGS)
+  }
+  return next
 }

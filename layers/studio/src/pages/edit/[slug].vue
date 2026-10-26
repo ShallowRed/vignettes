@@ -15,7 +15,7 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
-import type { AttributeMention, ComponentMention } from '@vignettes/core/deck'
+import type { AttributeMention, ComponentMention, LayoutIssueKind, LayoutMention } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { LineProblem } from '../../utils/editor-problems'
@@ -24,7 +24,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { attributeMentions, componentMentions, deckRevealOptions, parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { attributeMentions, componentMentions, deckRevealOptions, layoutMentions, parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
@@ -464,6 +464,7 @@ let timer: ReturnType<typeof setTimeout> | null = null
 const frontmatterIssues = ref<Array<LineProblem & { short: string }>>([])
 const unknownMentions = ref<ComponentMention[]>([])
 const refusedMentions = ref<AttributeMention[]>([])
+const layoutIssues = ref<LayoutMention[]>([])
 const parseFailed = ref(false)
 let parsedText = ''
 
@@ -471,6 +472,15 @@ const ATTRIBUTE_MESSAGES: Record<AttributeMention['reason'], { short: string, me
   url: { short: 'editor.diagnostics.refusedUrlShort', message: 'editor.diagnostics.refusedUrl' },
   binding: { short: 'editor.diagnostics.refusedBindingShort', message: 'editor.diagnostics.refusedBinding' },
   http: { short: 'editor.diagnostics.refusedEmbedShort', message: 'editor.diagnostics.refusedEmbed' },
+}
+
+const LAYOUT_MESSAGES: Record<LayoutIssueKind, string> = {
+  'unknown-attribute': 'editor.diagnostics.layoutUnknownAttribute',
+  'invalid-value': 'editor.diagnostics.layoutInvalidValue',
+  'legacy': 'editor.diagnostics.layoutLegacy',
+  'missing-source': 'editor.diagnostics.layoutMissingSource',
+  'unused': 'editor.diagnostics.layoutUnused',
+  'behind-needs-image': 'editor.diagnostics.layoutBehindNeedsImage',
 }
 
 // The frontmatter guide marks its own problems in the source pane; the list
@@ -489,6 +499,12 @@ const previewIssues = computed(() => [
     message: t(ATTRIBUTE_MESSAGES[mention.reason].message),
     marked: false,
   })),
+  ...layoutIssues.value.map(mention => ({
+    ...mention,
+    short: t(`${LAYOUT_MESSAGES[mention.kind]}Short`, { line: mention.line, name: mention.attribute }),
+    message: t(LAYOUT_MESSAGES[mention.kind], { name: mention.attribute }),
+    marked: false,
+  })),
 ].sort((a, b) => a.line - b.line || a.column - b.column))
 
 async function reparse() {
@@ -498,6 +514,7 @@ async function reparse() {
     preview.value = data
     unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
     refusedMentions.value = attributeMentions(text)
+    layoutIssues.value = layoutMentions(text)
     frontmatterIssues.value = listedFrontmatterProblems(text, t)
     parseFailed.value = false
     parsedText = text

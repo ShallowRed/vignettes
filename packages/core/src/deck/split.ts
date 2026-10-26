@@ -1,6 +1,8 @@
+import type { LayoutIssueKind } from './layout.ts'
 import type { ParserId } from './parser.ts'
 import { isRefusedEmbed, readAttribute } from './attributes.ts'
 import { ANNOTATION_TAGS, componentKey, NOTES_COMPONENT } from './components.ts'
+import { readLayout } from './layout.ts'
 
 /**
  * The slide boundaries of a deck, read from its markdown text: the one
@@ -320,8 +322,31 @@ export interface AttributeMention {
 }
 
 const ATTRIBUTE_BLOCK_RE = /\{([^{}]*)\}/g
-// A quoted value keeps its backslash escapes, as `\'` in `'"x\'y"'`.
-const ATTRIBUTE_RE = /(^|\s)([:@]?[\w:.-]+)=(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|([^\s"']+))/g
+// A quoted value keeps its backslash escapes, as `\'` in `'"x\'y"'`. An
+// attribute written alone has no value.
+const ATTRIBUTE_RE = /(^|\s)([:@]?[\w:.-]+)(?:=(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|([^\s"']+)))?/g
+
+interface WrittenAttribute {
+  name: string
+  /** Undefined for an attribute written alone. */
+  value?: string
+  /** 0-based column in the line, and length of the attribute's text. */
+  column: number
+  length: number
+}
+
+/** The attributes of the `{…}` block whose content starts at `offset` in its line. */
+function* blockAttributes(content: string, offset: number): Generator<WrittenAttribute> {
+  for (const attribute of content.matchAll(ATTRIBUTE_RE)) {
+    const [text, space, name, ...values] = attribute
+    yield {
+      name: name!,
+      value: values.find(value => value !== undefined)?.replace(/\\(.)/g, '$1'),
+      column: offset + attribute.index + space!.length,
+      length: text.length - space!.length,
+    }
+  }
+}
 const BLOCK_TAG_RE = /:+([a-z][\w-]*)(?:\[[^\]]*\])?$/i
 // The destination of a markdown link keeps one level of balanced parentheses.
 const MARKDOWN_LINK_RE = /(!?)\[[^\]]*\]\(\s*<?((?:[^\s()<>]|\([^\s()]*\))+)/g
@@ -345,11 +370,9 @@ export function attributeMentions(raw: string): AttributeMention[] {
     for (const block of prose.matchAll(ATTRIBUTE_BLOCK_RE)) {
       const before = prose.slice(0, block.index)
       const tag = BLOCK_TAG_RE.exec(before)?.[1] ?? (before.endsWith(')') ? 'a' : 'span')
-      for (const attribute of block[1]!.matchAll(ATTRIBUTE_RE)) {
-        const [text, space, name, ...values] = attribute
-        const column = block.index + 1 + attribute.index + space!.length
-        const value = values.find(value => value !== undefined)!.replace(/\\(.)/g, '$1')
-        check(tag, name!, value, line, column, text.length - space!.length)
+      for (const { name, value, column, length } of blockAttributes(block[1]!, block.index + 1)) {
+        if (value !== undefined)
+          check(tag, name, value, line, column, length)
       }
     }
     for (const link of prose.matchAll(MARKDOWN_LINK_RE)) {
@@ -359,6 +382,78 @@ export function attributeMentions(raw: string): AttributeMention[] {
     }
   }
   return mentions
+}
+
+/** An attribute written in a `:layout` annotation: its value, `true` when written alone, and its place in the line. */
+export interface LayoutAnnotationAttribute {
+  name: string
+  value: string | true
+  /** 0-based column, and length of the attribute's text. */
+  column: number
+  length: number
+}
+
+/** A `:layout{…}` annotation written in the source. */
+export interface LayoutAnnotation {
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of `:layout`, and length of the annotation's text. */
+  column: number
+  length: number
+  attributes: LayoutAnnotationAttribute[]
+}
+
+const LAYOUT_ANNOTATION_RE = /:layout\{([^{}]*)\}/g
+
+/** The `:layout` annotations of a deck, outside the frontmatter, fenced code and inline code. */
+export function layoutAnnotations(raw: string): LayoutAnnotation[] {
+  const annotations: LayoutAnnotation[] = []
+  for (const { line, prose } of proseLines(raw)) {
+    for (const block of prose.matchAll(LAYOUT_ANNOTATION_RE)) {
+      // MDC decodes `&quot;`, which `layoutSource` writes in a value holding both quotes.
+      const attributes = [...blockAttributes(block[1]!, block.index + ':layout{'.length)]
+        .map(({ value, ...attribute }) => ({ ...attribute, value: value === undefined ? true as const : value.replaceAll('&quot;', '"') }))
+      annotations.push({ line, column: block.index, length: block[0].length, attributes })
+    }
+  }
+  return annotations
+}
+
+/** The attributes of an annotation, by name, as `readLayout` reads them. */
+export function layoutAnnotationValues(annotation: LayoutAnnotation): Record<string, string | true> {
+  return Object.fromEntries(annotation.attributes.map(attribute => [attribute.name, attribute.value]))
+}
+
+/** An attribute of a `:layout` annotation that `readLayout` leaves out or translates, placed in the source. */
+export interface LayoutMention {
+  kind: LayoutIssueKind
+  attribute: string
+  /** 1-based line, 0-based column and length of the marked text: the attribute, or the annotation when it names no attribute. */
+  line: number
+  column: number
+  length: number
+}
+
+/**
+ * The issues `readLayout` finds in each `:layout` annotation of a deck, placed
+ * on their attribute. The attributes of the earlier writing of an annotation
+ * make one issue, on the whole annotation.
+ */
+export function layoutMentions(raw: string): LayoutMention[] {
+  return layoutAnnotations(raw).flatMap((annotation) => {
+    const { issues } = readLayout(layoutAnnotationValues(annotation))
+    const legacy = issues.find(issue => issue.kind === 'legacy')
+    const placed = [...issues.filter(issue => issue.kind !== 'legacy'), ...(legacy ? [{ kind: legacy.kind, attribute: '' }] : [])]
+    return placed.map((issue) => {
+      const written = annotation.attributes.find(attribute => attribute.name === issue.attribute)
+      return {
+        ...issue,
+        line: annotation.line,
+        column: written?.column ?? annotation.column,
+        length: written?.length ?? annotation.length,
+      }
+    })
+  })
 }
 
 // The annotations a section keeps: `:layout` brings a media or a grid, so a

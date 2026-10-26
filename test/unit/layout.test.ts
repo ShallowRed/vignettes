@@ -1,4 +1,4 @@
-import { LAYOUT_ATTRIBUTES, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
+import { LAYOUT_ATTRIBUTES, layoutAnnotations, layoutForPlacement, layoutMentions, layoutSource, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 
 describe('readLayout', () => {
@@ -87,6 +87,51 @@ describe('readLayout', () => {
 
   it('reports a name the earlier format never had', () => {
     expect(readLayout({ name: 'media-rigth', src: '/a.png' }).issues).toEqual([{ kind: 'unknown-attribute', attribute: 'name' }])
+  })
+})
+
+describe('layoutSource', () => {
+  it('writes the attributes of the earlier writing in their current form, in the order of the reference', () => {
+    expect(layoutSource({ lightbox: 'true', story: 'a--b', name: 'media-right-xwide', previewWidth: '1600' }))
+      .toBe(':layout{media="right" size="3/4" story="a--b" lightbox viewport="1600"}')
+  })
+
+  it('keeps a value that holds a double quote, and writes nothing without attributes', () => {
+    expect(layoutSource({ media: 'right', src: '/a.png', alt: 'Le "parcours"' })).toBe(':layout{media="right" src="/a.png" alt=\'Le "parcours"\'}')
+    expect(layoutSource({ lightbox: false })).toBe('')
+  })
+
+  it('writes a value that holds both quotes with an entity, which the annotation reads back', () => {
+    const source = layoutSource({ media: 'right', src: '/a.png', alt: 'L\'outil "X"' })
+    expect(source).toBe(':layout{media="right" src="/a.png" alt="L\'outil &quot;X&quot;"}')
+    expect(layoutAnnotations(source)[0]!.attributes.find(attribute => attribute.name === 'alt')!.value).toBe('L\'outil "X"')
+  })
+})
+
+describe('layoutForPlacement', () => {
+  it('keeps the settings the new placement uses', () => {
+    expect(layoutForPlacement({ media: 'right', size: '2/3', src: '/a.png', align: 'top' }, 'left')).toEqual({ media: 'left', size: '2/3', src: '/a.png', align: 'top' })
+  })
+
+  it('drops a story, a page and the pane settings behind the text, and the veil elsewhere', () => {
+    expect(layoutForPlacement({ media: 'right', story: 'a--b', src: '/a.png', type: 'iframe', size: '3/4', viewport: '1600', lightbox: true }, 'behind')).toEqual({ media: 'behind', src: '/a.png' })
+    expect(layoutForPlacement({ media: 'behind', src: '/a.png', veil: '40%' }, 'top')).toEqual({ media: 'top', src: '/a.png' })
+  })
+
+  it('keeps the heading and the alignment without a media, in the current form', () => {
+    expect(layoutForPlacement({ name: 'grid-compact', src: '/a.png', align: 'top' }, 'none')).toEqual({ heading: 'compact', align: 'top' })
+  })
+})
+
+describe('layoutMentions', () => {
+  it('places each issue on its attribute, outside code', () => {
+    const raw = '## Un\n\n:layout{media="middle" src="/a.png" lightbox}\n\n`:layout{colour="red"}`\n'
+    expect(layoutMentions(raw)).toEqual([{ kind: 'invalid-value', attribute: 'media', line: 3, column: 8, length: 14 }])
+  })
+
+  it('reads an attribute written alone as on, and marks the earlier writing once on the whole annotation', () => {
+    expect(layoutMentions('## Un\n\n:layout{name="media-right" src="/a.png" previewWidth="1600" lightbox}\n'))
+      .toEqual([{ kind: 'legacy', attribute: '', line: 3, column: 0, length: 69 }])
   })
 })
 

@@ -5,6 +5,7 @@ import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
 import { annotationEntries, componentEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 import { formatJson, jsonFormatNotice } from '../utils/editor-json'
+import { btnHover } from '../utils/toolbar-buttons'
 
 // The markdown pane's formatting and insertion bar; every action targets the
 // live EditorView.
@@ -28,11 +29,6 @@ function beautifyJson(view: EditorView) {
   if (notice)
     toast.add({ ...notice, icon: 'i-lucide-braces' })
 }
-
-// Ghost buttons sit on a bg-elevated rail, whose default ghost hover (also
-// bg-elevated) is invisible; bump the hover a step to bg-accented so every
-// control gives clear feedback. tailwind-merge lets this win over the variant.
-const btnHover = 'hover:bg-accented'
 
 const imageInput = useTemplateRef<HTMLInputElement>('imageInput')
 
@@ -173,6 +169,11 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
         hidden
         @change="onImagesChosen"
       >
+      <EditorLayoutPanel
+        :view="view"
+        :disabled="disabled"
+      />
+
       <UDropdownMenu
         :items="insertItems"
         :content="{ align: 'start' }"

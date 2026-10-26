@@ -25,7 +25,7 @@ interface DeckStructure {
 }
 
 const SEPARATOR_RE = /^\s*-{3,4}\s*$/
-const HEADING_RE = /^(#{1,6})\s/
+export const HEADING_RE = /^(#{1,6})\s/
 
 function readStructure(state: EditorState): DeckStructure {
   const text = state.doc.toString()
@@ -66,6 +66,19 @@ function blockAt(blocks: SlideBlock[], line: number): SlideBlock | undefined {
 
 export function slideBlockAt(state: EditorState, line: number): SlideBlock | undefined {
   return blockAt(state.field(structureField).blocks, line)
+}
+
+/**
+ * The lines of the slide at `line`, without the separator that opens it: `from`
+ * is the line after the separator. A line of the frontmatter gives the first slide.
+ */
+export function slideContentAt(state: EditorState, line: number): SlideBlock | undefined {
+  const { frontmatterEnd, blocks } = state.field(structureField)
+  const block = blockAt(blocks, Math.max(line, frontmatterEnd + 1))
+  if (!block)
+    return undefined
+  const opened = block.from > frontmatterEnd && SEPARATOR_RE.test(state.doc.line(block.from).text)
+  return { from: opened ? block.from + 1 : block.from, to: block.to }
 }
 
 // ── Current slide ────────────────────────────────────────────────────────────

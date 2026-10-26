@@ -150,7 +150,69 @@
       "refusedBinding": "Attribut refusé : un attribut précédé de « : » prend une valeur JSON, comme true, 2 ou \"texte\", et une présentation ignore v-bind, v-on, {'@'} et v-model.",
       "refusedBindingShort": "Ligne {line} : attribut « {name} » refusé",
       "refusedEmbed": "Adresse en http:// : le navigateur bloque ce cadre, cette image ou cette vidéo dans le studio. Écrivez l'adresse en https://, ou en http://localhost pour un serveur de votre ordinateur.",
-      "refusedEmbedShort": "Ligne {line} : adresse en http:// bloquée"
+      "refusedEmbedShort": "Ligne {line} : adresse en http:// bloquée",
+      "layoutUnknownAttribute": "Réglage inconnu de :layout : « {name} ». Choisissez un réglage dans l'aide.",
+      "layoutUnknownAttributeShort": "Ligne {line} : réglage « {name} » inconnu",
+      "layoutInvalidValue": "Valeur inconnue pour « {name} ». Choisissez une valeur dans l'aide.",
+      "layoutInvalidValueShort": "Ligne {line} : valeur de « {name} » inconnue",
+      "layoutLegacy": "Format de :layout à convertir : cliquez sur « Convertir » dans le panneau Mise en page.",
+      "layoutLegacyShort": "Ligne {line} : format de :layout à convertir",
+      "layoutMissingSource": "Média sans adresse : ajoutez l'attribut src ou story.",
+      "layoutMissingSourceShort": "Ligne {line} : média sans adresse",
+      "layoutUnused": "« {name} » est sans effet sur cette diapositive.",
+      "layoutUnusedShort": "Ligne {line} : « {name} » sans effet",
+      "layoutBehindNeedsImage": "Derrière le texte, le média est une image : indiquez son adresse dans src.",
+      "layoutBehindNeedsImageShort": "Ligne {line} : image requise derrière le texte"
+    },
+    "layout": {
+      "open": "Mise en page",
+      "placement": "Média",
+      "placements": {
+        "none": "Sans média",
+        "right": "À droite",
+        "left": "À gauche",
+        "top": "En haut",
+        "bottom": "En bas",
+        "behind": "Derrière"
+      },
+      "size": "Part du média",
+      "sizeAuto": "Auto",
+      "src": "Adresse de l'image ou de la page",
+      "story": "Story du Storybook",
+      "alt": "Description du média",
+      "fit": "Cadrage",
+      "fits": {
+        "cover": "Remplir",
+        "contain": "Entier"
+      },
+      "position": "Partie gardée",
+      "positions": {
+        "center": "Centre",
+        "top": "Haut",
+        "bottom": "Bas",
+        "left": "Gauche",
+        "right": "Droite"
+      },
+      "veil": "Voile",
+      "veilNone": "Cadre",
+      "lightbox": "Agrandir au clic",
+      "align": "Alignement vertical",
+      "aligns": {
+        "auto": "Auto",
+        "top": "Haut",
+        "center": "Centre",
+        "bottom": "Bas"
+      },
+      "heading": "Titre",
+      "headings": {
+        "normal": "Normal",
+        "compact": "Compact",
+        "hidden": "Masqué",
+        "print": "À l'impression"
+      },
+      "legacy": "Format de :layout à convertir en attributs.",
+      "modernize": "Convertir",
+      "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story."
     }
   }
 }

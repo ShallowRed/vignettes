@@ -150,7 +150,69 @@
       "refusedBinding": "Attribute refused: an attribute written with “:” takes a JSON value, such as true, 2 or \"text\", and a deck ignores v-bind, v-on, {'@'} and v-model.",
       "refusedBindingShort": "Line {line}: attribute “{name}” refused",
       "refusedEmbed": "http:// address: the browser blocks this frame, image or video in the studio. Write the address with https://, or with http://localhost for a server on your computer.",
-      "refusedEmbedShort": "Line {line}: http:// address blocked"
+      "refusedEmbedShort": "Line {line}: http:// address blocked",
+      "layoutUnknownAttribute": "Unknown :layout setting: “{name}”. Pick a setting from the help.",
+      "layoutUnknownAttributeShort": "Line {line}: unknown setting “{name}”",
+      "layoutInvalidValue": "Unknown value for “{name}”. Pick a value from the help.",
+      "layoutInvalidValueShort": "Line {line}: unknown value of “{name}”",
+      "layoutLegacy": ":layout format to convert: click “Convert” in the Layout panel.",
+      "layoutLegacyShort": "Line {line}: :layout format to convert",
+      "layoutMissingSource": "Media without an address: add the src or story attribute.",
+      "layoutMissingSourceShort": "Line {line}: media without an address",
+      "layoutUnused": "“{name}” has no effect on this slide.",
+      "layoutUnusedShort": "Line {line}: “{name}” has no effect",
+      "layoutBehindNeedsImage": "Behind the text, the media is an image: enter its address in src.",
+      "layoutBehindNeedsImageShort": "Line {line}: image required behind the text"
+    },
+    "layout": {
+      "open": "Layout",
+      "placement": "Media",
+      "placements": {
+        "none": "No media",
+        "right": "Right",
+        "left": "Left",
+        "top": "Top",
+        "bottom": "Bottom",
+        "behind": "Behind"
+      },
+      "size": "Media share",
+      "sizeAuto": "Auto",
+      "src": "Address of the image or the page",
+      "story": "Storybook story",
+      "alt": "Media description",
+      "fit": "Framing",
+      "fits": {
+        "cover": "Fill",
+        "contain": "Whole"
+      },
+      "position": "Part kept",
+      "positions": {
+        "center": "Center",
+        "top": "Top",
+        "bottom": "Bottom",
+        "left": "Left",
+        "right": "Right"
+      },
+      "veil": "Veil",
+      "veilNone": "Card",
+      "lightbox": "Enlarge on click",
+      "align": "Vertical alignment",
+      "aligns": {
+        "auto": "Auto",
+        "top": "Top",
+        "center": "Center",
+        "bottom": "Bottom"
+      },
+      "heading": "Heading",
+      "headings": {
+        "normal": "Normal",
+        "compact": "Compact",
+        "hidden": "Hidden",
+        "print": "In print"
+      },
+      "legacy": ":layout format to convert into attributes.",
+      "modernize": "Convert",
+      "missingSource": "Enter the address of an image or a page, or the id of a story."
     }
   }
 }
