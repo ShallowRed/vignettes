@@ -8,6 +8,8 @@ import {
   fullSlideComponentNames,
   HTML_REWRITTEN_COMPONENT_TAGS,
   isSectionSlide,
+  legacyComponentLayout,
+  readLayout,
   splitSlides,
   STRIPPED_ANNOTATION_TAGS,
 } from '@vignettes/core/deck'
@@ -54,18 +56,10 @@ function isItalicParagraph(node: any): boolean {
   return children.length === 1 && children[0].type === 'element' && children[0].tag === 'em'
 }
 
-// 'full' when a descendant takes the whole slide.
-function getSlideLayout(children: any[]): string | undefined {
-  for (const node of children) {
-    if (node.type === 'element' && fullSlideComponentNames().includes(node.tag))
-      return 'full'
-    if (node.children) {
-      const childLayout = getSlideLayout(node.children)
-      if (childLayout)
-        return childLayout
-    }
-  }
-  return undefined
+function hasFullSlideComponent(children: any[]): boolean {
+  return children.some(node =>
+    (node.type === 'element' && fullSlideComponentNames().includes(node.tag))
+    || (node.children && hasFullSlideComponent(node.children)))
 }
 
 function extractBackgroundOverride(children: any[]): string | undefined {
@@ -73,31 +67,18 @@ function extractBackgroundOverride(children: any[]): string | undefined {
   return node?.props.image
 }
 
-// `FullScreenImage` sets the slide background, which Reveal spreads over the
-// whole screen and the whole printed page; the component keeps the text over it.
-const FULL_SCREEN_IMAGE_TAGS = ['FullScreenImage', 'full-screen-image']
-
-function findFullScreenImage(children: any[]): any | undefined {
-  for (const node of children) {
-    if (node.type === 'element' && FULL_SCREEN_IMAGE_TAGS.includes(node.tag) && node.props?.src)
-      return node
-    const nested = node.children && findFullScreenImage(node.children)
-    if (nested)
-      return nested
+// A component of the earlier format that laid a media beside or behind the
+// text (see `legacyComponentLayout`) gives its attributes to the slide layout
+// and leaves its text in the slide.
+function unwrapLegacyMedia(children: any[]): { children: any[], attributes?: Record<string, unknown> } {
+  const index = children.findIndex(n => n.type === 'element' && legacyComponentLayout(n.tag, n.props ?? {}))
+  if (index === -1)
+    return { children }
+  const node = children[index]
+  return {
+    children: [...children.slice(0, index), ...(node.children ?? []), ...children.slice(index + 1)],
+    attributes: legacyComponentLayout(node.tag, node.props ?? {}),
   }
-  return undefined
-}
-
-function overlayOf(node: any): number | undefined {
-  const value = Number.parseFloat(node?.props?.overlay)
-  return value > 0 ? Math.min(value, 1) : undefined
-}
-
-const HEADING_VISIBILITIES = ['hidden', 'print'] as const
-
-function headingVisibilityOf(node: any): Slide['headingVisibility'] {
-  const value = node?.props?.heading
-  return HEADING_VISIBILITIES.includes(value) ? value : undefined
 }
 
 function filterBackgroundNodes(children: any[]): any[] {
@@ -131,12 +112,8 @@ function extractQuicklink(children: any[]): { text: string, href: string } | und
   return { text: node.props.text, href: node.props.href }
 }
 
-function extractLayout(children: any[]): { name: string, props: Record<string, string> } | undefined {
-  const node = children.find(n => n.type === 'element' && n.tag === 'layout' && n.props?.name)
-  if (!node)
-    return undefined
-  const { name, ...rest } = node.props
-  return { name, props: rest }
+function extractLayoutAttributes(children: any[]): Record<string, unknown> | undefined {
+  return children.find(n => n.type === 'element' && n.tag === 'layout')?.props
 }
 
 // The :slide-background tag is filtered separately by filterBackgroundNodes().
@@ -148,38 +125,32 @@ function filterAnnotationNodes(children: any[]): any[] {
 
 /**
  * Builds a Slide: first heading -> `header`, rest -> `body`; supports :pretitle,
- * :subtitle, :layout, :quicklink. A detected FULL_SLIDE_COMPONENT (without an
- * explicit :layout{}) keeps all children in `body` with no header/body split.
+ * :subtitle, :layout, :quicklink. A FULL_SLIDE_COMPONENT on a slide without a
+ * media keeps all children in `body` with no header/body split.
  */
 export function createSlide(children: any[], headingLevel?: string): Slide {
-  const level = headingLevel || getHeadingLevel(children)
+  const backgroundImage = extractBackgroundOverride(children)
+  const withoutBackground = filterBackgroundNodes(children)
+  const layoutAttributes = extractLayoutAttributes(withoutBackground)
+  const legacy = layoutAttributes ? { children: withoutBackground } : unwrapLegacyMedia(withoutBackground)
+  const filtered = legacy.children
+  const level = headingLevel || getHeadingLevel(filtered)
 
-  const fullScreenImage = findFullScreenImage(children)
-  const backgroundImage = extractBackgroundOverride(children) ?? fullScreenImage?.props.src
-  const backgroundOverlay = overlayOf(fullScreenImage)
-  const headingVisibility = headingVisibilityOf(fullScreenImage)
-  const filtered = filterBackgroundNodes(children)
-
-  const layoutInfo = extractLayout(filtered)
+  const attributes = layoutAttributes ?? legacy.attributes
+  const layout = attributes ? readLayout(attributes).layout : undefined
   const pretitle = extractPretitle(filtered)
   const explicitSubtitle = extractExplicitSubtitle(filtered)
   const quicklink = extractQuicklink(filtered)
   const cleaned = filterAnnotationNodes(filtered)
-
-  if (!layoutInfo) {
-    const fullLayout = getSlideLayout(cleaned)
-    if (fullLayout) {
-      return {
-        body: { type: 'root', children: cleaned },
-        headingLevel: level,
-        layout: fullLayout,
-        backgroundImage,
-        backgroundOverlay,
-        headingVisibility,
-        quicklink,
-      }
-    }
+  const shared = {
+    headingLevel: level,
+    ...(layout?.media || layout?.heading || layout?.align ? { layout } : {}),
+    backgroundImage,
+    quicklink,
   }
+
+  if (!layout?.media && hasFullSlideComponent(cleaned))
+    return { body: { type: 'root', children: cleaned }, fullSlide: true, ...shared }
 
   const firstHeadingIndex = cleaned.findIndex((node: any) =>
     node.type === 'element' && /^h[1-6]$/.test(node.tag),
@@ -209,26 +180,11 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
           ...cleaned.slice(bodyStartIndex),
         ],
       },
-      headingLevel: level,
-      layout: layoutInfo?.name,
-      layoutProps: layoutInfo?.props,
-      backgroundImage,
-      backgroundOverlay,
-      headingVisibility,
-      quicklink,
+      ...shared,
     }
   }
 
-  return {
-    body: { type: 'root', children: cleaned },
-    headingLevel: level,
-    layout: layoutInfo?.name,
-    layoutProps: layoutInfo?.props,
-    backgroundImage,
-    backgroundOverlay,
-    headingVisibility,
-    quicklink,
-  }
+  return { body: { type: 'root', children: cleaned }, ...shared }
 }
 
 // The leading newline keeps MDC from reading a slide that opens on a thematic

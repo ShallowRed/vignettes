@@ -5,19 +5,52 @@
  * `@vignettes/core/deck`): `slide-h1` for the title slide, `slide-h2` for a
  * section, a `##` slide made of its heading and at most one short paragraph,
  * and `slide-h3` for a content slide, whose heading may be a `##`. The flex
- * skeleton here is identical in every theme we ship (DSFR, minimal). Each theme is still free to set its own
- * `header { min-height }`, `article { padding }`, colors, and typography.
+ * skeleton here is identical in every theme.
  *
  * What stays in this layer: positioning primitives (display: flex, ordering,
- * `width: 100%`).
- * What belongs in a theme/preset: sizes, paddings, colors, typography.
+ * `width: 100%`, the vertical alignment of the content).
+ * What belongs in a theme or a preset: sizes, as the tokens below, colors and
+ * typography.
+ *
+ * Size tokens, set on `.reveal`:
+ * - `--slide-heading-min-height`: the height a content slide keeps for its heading;
+ * - `--slide-body-padding-y`: the space above and below the body of a content slide.
  */
+
+// The vertical alignment of the content, as a value of `justify-content`:
+// `:layout{align}` sets it, and without it the slide takes the default of its
+// role and of its layout. `safe` keeps a content taller than its space from
+// overflowing above it. The defaults are under `:where` so `align` overrides
+// them.
+.reveal .slides section {
+  --slide-align: safe center;
+}
+
+.reveal .slides section:where(.layout-media-top, .layout-media-bottom, .media-size-3-4:is(.layout-media-right, .layout-media-left)) {
+  --slide-align: flex-start;
+}
+
+.reveal .slides section:where(.layout-media-behind.media-card) {
+  --slide-align: safe flex-end;
+}
+
+.reveal .slides section.align-top {
+  --slide-align: flex-start;
+}
+
+.reveal .slides section.align-center {
+  --slide-align: safe center;
+}
+
+.reveal .slides section.align-bottom {
+  --slide-align: safe flex-end;
+}
 
 .reveal section.slide-h1,
 .reveal section.slide-h2 {
   display: flex !important;
   flex-direction: column;
-  justify-content: center;
+  justify-content: var(--slide-align);
   align-items: start;
 }
 
@@ -30,6 +63,7 @@
     display: flex;
     flex-direction: column;
     justify-content: end;
+    min-height: var(--slide-heading-min-height, 0);
   }
 
   header h3,
@@ -44,7 +78,8 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    justify-content: start;
+    justify-content: var(--slide-align);
+    padding-block: var(--slide-body-padding-y, 0);
   }
 }
 
@@ -53,25 +88,23 @@
 }
 
 /**
- * `grid-compact` layout modifier.
+ * `:layout{heading="compact"}`.
  *
  * For comparison slides whose body is a tall gallery (e.g. a 2×2 `Screens` grid
  * of full-height page screenshots): the default slide title eats ~⅓ of the
  * height. Here we shrink the heading row to a single compact line and hand the
  * remaining vertical space to the article, so each screenshot can show its whole
- * hero without being clipped. CSS-only (registered as 'default' strategy).
+ * hero without being clipped.
  */
-// Doubled-up class selector (`.slide-h3.layout-grid-compact`) so it overrides the
-// DSFR-layout preset's `section.slide-h3 header { min-height: 8rem }` and article
-// padding (same specificity otherwise — preset wins by source order).
-.reveal section.layout-grid-compact,
-.reveal section.slide-h3.layout-grid-compact {
+.reveal section.heading-compact {
+  --slide-heading-min-height: 0;
+  --slide-body-padding-y: 0;
+
   justify-content: start;
 
   header,
   hgroup {
     flex: 0 0 auto;
-    min-height: 0; // drop the reserved 8rem title band → gallery reclaims it
     margin-bottom: 0.9em; // light breathing room under the compact title
   }
 
@@ -85,9 +118,6 @@
   article {
     flex: 1 1 auto;
     min-height: 0;
-    padding-top: 0; // drop the preset's 2rem vertical padding
-    padding-bottom: 0;
-    justify-content: center;
   }
 }
 
@@ -101,31 +131,20 @@
   min-height: 0;
 }
 
-// `FullScreenImage` lays the slide over a photo: the slide heading and the
-// text take the light color of the component.
-.reveal .slides section.layout-full > div:has(> .full-screen-image) {
-  --text-title: #fff;
-  --text-default: #fff;
-  --text-mention: #fff;
-
-  > :is(h1, h2, h3, h4, h5, h6) {
-    text-shadow: 0 2px 8px rgb(0 0 0 / 50%);
-  }
-}
-
-// `FullScreenImage{heading="hidden"}` hides the slide heading, and `heading="print"`
-// hides it on screen only. The heading stays readable by assistive technologies.
-.reveal section.heading-hidden,
-html:not(.reveal-print) .reveal section.heading-print {
-  &.layout-full > div > :is(h1, h2, h3, h4, h5, h6),
-  .slide-content-pane > :is(header, hgroup) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+// Hidden on screen and read by assistive technologies: the slide heading of
+// `:layout{heading="hidden"}`, of `heading="print"` on screen only, and the
+// description of an image behind the text.
+.reveal section.heading-hidden.layout-full > div > :is(h1, h2, h3, h4, h5, h6),
+.reveal section.heading-hidden .slide-content-pane > :is(header, hgroup),
+html:not(.reveal-print) .reveal section.heading-print.layout-full > div > :is(h1, h2, h3, h4, h5, h6),
+html:not(.reveal-print) .reveal section.heading-print .slide-content-pane > :is(header, hgroup),
+.reveal .slide-media-description {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 // Reveal's print stylesheet sets every slide to `display: block !important`; the
@@ -134,7 +153,7 @@ html:not(.reveal-print) .reveal section.heading-print {
 html.reveal-print .reveal .slides {
   section.slide-h1,
   section.slide-h2,
-  section.slide-h3:not([class*="layout-media"]) {
+  section.slide-h3:not(.layout-media) {
     display: flex !important;
   }
 }

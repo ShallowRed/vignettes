@@ -26,27 +26,71 @@ describe('image components', () => {
   })
 })
 
-describe('full screen image', () => {
-  it('sets the slide background and its overlay', async () => {
+describe('full screen image of the earlier format', () => {
+  it('lays its image behind the text, with its veil', async () => {
     const [slide] = await headingParser.parse('::FullScreenImage{src="/bg.png" overlay="0.4"}\n# Title\n::')
-    expect(slide!.backgroundImage).toBe('/bg.png')
-    expect(slide!.backgroundOverlay).toBe(0.4)
+    expect(slide!.layout?.media).toMatchObject({ placement: 'behind', src: '/bg.png', veil: 0.4 })
+    expect(slide!.header).toBeDefined()
   })
 
   it('hides the slide heading on request', async () => {
     const [slide] = await headingParser.parse('### Title\n\n::FullScreenImage{src="/bg.png" heading="print"}\n::')
-    expect(slide!.headingVisibility).toBe('print')
+    expect(slide!.layout?.heading).toBe('print')
   })
 
   it('ignores an unknown heading value', async () => {
     const [slide] = await headingParser.parse('### Title\n\n::FullScreenImage{src="/bg.png" heading="none"}\n::')
-    expect(slide!.headingVisibility).toBeUndefined()
+    expect(slide!.layout?.heading).toBeUndefined()
   })
 
   it('leaves a slide without one to its theme background', async () => {
     const [slide] = await headingParser.parse('## Title\n\nText')
     expect(slide!.backgroundImage).toBeUndefined()
-    expect(slide!.backgroundOverlay).toBeUndefined()
+    expect(slide!.layout).toBeUndefined()
+  })
+})
+
+describe('slide layouts', () => {
+  it('splits the heading from the body beside a media, and names the layout in the classes', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n:layout{media="left" size="2/3" src="/a.png"}\n\nText')
+    expect(slide!.header).toBeDefined()
+    expect(slide!.layout?.media).toMatchObject({ placement: 'left', size: '2/3', src: '/a.png' })
+    expect(getSlideClasses(slide!)).toEqual(['slide-h3', 'layout-media', 'layout-media-left', 'media-size-2-3'])
+  })
+
+  it('names a media behind the text and its card or veil in the classes', async () => {
+    const [card] = await headingParser.parse('### Title\n\n:layout{media="behind" src="/a.jpg"}')
+    const [veil] = await headingParser.parse('### Title\n\n:layout{media="behind" src="/a.jpg" veil="40%"}')
+    expect(getSlideClasses(card!)).toEqual(['slide-h3', 'layout-media', 'layout-media-behind', 'media-card'])
+    expect(getSlideClasses(veil!)).toEqual(['slide-h3', 'layout-media', 'layout-media-behind', 'media-veil'])
+  })
+
+  it('names the heading mode in the classes', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n:layout{heading="compact"}\n\nText')
+    expect(getSlideClasses(slide!)).toEqual(['slide-h3', 'heading-compact'])
+  })
+
+  it('names the vertical alignment in the classes', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n:layout{align="top"}\n\nText')
+    expect(getSlideClasses(slide!)).toEqual(['slide-h3', 'align-top'])
+  })
+
+  it('drops an unknown name and places the source on the right', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n:layout{name="media-rigth" src="/a.png"}\n\nText')
+    expect(getSlideClasses(slide!)).toEqual(['slide-h3', 'layout-media', 'layout-media-right', 'media-size-1-2'])
+  })
+
+  it('keeps the heading of a slide that names the full layout of the earlier format', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n:layout{name="full"}\n\nText')
+    expect(slide!.header).toBeDefined()
+    expect(slide!.fullSlide).toBeUndefined()
+  })
+
+  it('places the text of a split slide of the earlier format beside its media', async () => {
+    const [slide] = await headingParser.parse('### Title\n\n::SplitSlide{src="/a.png" type="image" ratio="1:1"}\nThe text.\n::')
+    expect(slide!.layout?.media).toMatchObject({ placement: 'right', size: '1/2', src: '/a.png', type: 'image' })
+    expect(JSON.stringify(slide!.body)).toContain('The text.')
+    expect(JSON.stringify(slide!.body)).not.toContain('SplitSlide')
   })
 })
 

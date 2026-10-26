@@ -1,9 +1,9 @@
 import type { Slide } from '@vignettes/core/deck'
+import { inferMediaType, readLayout } from '@vignettes/core/deck'
 import {
+  behindMedia,
   buildDeckModel,
   collectAssets,
-  getMediaFit,
-  inferMediaType,
   resolveSlideBackground,
   resolveSlideMedia,
   runTransforms,
@@ -22,61 +22,62 @@ beforeAll(() => setThemeRegistry({
 }))
 afterAll(() => setThemeRegistry(null))
 
+const media = (attributes: Record<string, unknown>) => readLayout(attributes).layout.media
+
 describe('resolveSlideMedia (extracted from SlideContent.mediaParts)', () => {
-  it('returns null without layoutProps or src', () => {
+  it('returns null without a media or behind the text', () => {
     expect(resolveSlideMedia(undefined)).toBeNull()
-    expect(resolveSlideMedia({ title: 'x' })).toBeNull()
+    expect(resolveSlideMedia(media({ alt: 'x' }))).toBeNull()
+    expect(resolveSlideMedia(media({ media: 'behind', src: '/images/x.png' }))).toBeNull()
   })
 
   it('resolves a story id to a scaled, interactive iframe', () => {
-    const media = resolveSlideMedia({ story: 'comp--page' }, { storybook: 'https://sb.example' })!
-    expect(media.type).toBe('iframe')
-    expect(media.src).toBe('https://sb.example/iframe.html?id=comp--page&viewMode=story')
-    expect(media.scaled).toBe(true)
-    expect(media.interactive).toBe(true) // no lightbox → interactive in place
-    expect(media.previewWidth).toBe(1440)
+    const frame = resolveSlideMedia(media({ story: 'comp--page' }), { storybook: 'https://sb.example' })!
+    expect(frame.type).toBe('iframe')
+    expect(frame.src).toBe('https://sb.example/iframe.html?id=comp--page&viewMode=story')
+    expect(frame.scaled).toBe(true)
+    expect(frame.interactive).toBe(true) // no lightbox → interactive in place
+    expect(frame.viewport).toBe(1440)
   })
 
-  it('honors preview-width (MDC kebab-case) and disables scaling on fit=contain', () => {
-    const media = resolveSlideMedia(
-      { 'story': 'c--p', 'preview-width': '1600', 'fit': 'contain' },
-      { storybook: 'https://sb' },
-    )!
-    expect(media.fit).toBe('contain')
-    expect(media.scaled).toBe(false)
-    expect(media.previewWidth).toBe(1600)
+  it('honors the viewport and disables scaling on fit=contain', () => {
+    const frame = resolveSlideMedia(media({ story: 'c--p', viewport: '1600', fit: 'contain' }), { storybook: 'https://sb' })!
+    expect(frame.fit).toBe('contain')
+    expect(frame.scaled).toBe(false)
+    expect(frame.viewport).toBe(1600)
   })
 
   it('falls back to an explicit image src/type', () => {
-    const media = resolveSlideMedia({ src: '/images/x.png', type: 'image' })!
-    expect(media.type).toBe('image')
-    expect(media.scaled).toBe(false)
+    const image = resolveSlideMedia(media({ src: '/images/x.png', type: 'image' }))!
+    expect(image.type).toBe('image')
+    expect(image.scaled).toBe(false)
   })
 
   it('exposes lightbox preview link/image', () => {
-    const frame = resolveSlideMedia({ story: 'c--p', lightbox: 'true' }, { storybook: 'https://sb' })!
+    const frame = resolveSlideMedia(media({ story: 'c--p', lightbox: true }), { storybook: 'https://sb' })!
     expect(frame.hasLightbox).toBe(true)
     expect(frame.interactive).toBe(false)
     expect(frame.previewLink).toBe(frame.src)
-    const img = resolveSlideMedia({ src: '/images/y.png', type: 'image', lightbox: 'true' })!
+    const img = resolveSlideMedia(media({ src: '/images/y.png', type: 'image', lightbox: 'true' }))!
     expect(img.previewImage).toBe('/images/y.png')
   })
 
   it('shows a page as a frame and an image file as an image when no type is given', () => {
-    expect(resolveSlideMedia({ src: '/slides/demo' })!.type).toBe('iframe')
-    expect(resolveSlideMedia({ src: '/images/x.svg?v=2' })!.type).toBe('image')
+    expect(resolveSlideMedia(media({ src: '/slides/demo' }))!.type).toBe('iframe')
+    expect(resolveSlideMedia(media({ src: '/images/x.svg?v=2' }))!.type).toBe('image')
     expect(inferMediaType('/images/x.png', 'iframe')).toBe('iframe')
-  })
-
-  it('getMediaFit defaults to cover', () => {
-    expect(getMediaFit()).toBe('cover')
-    expect(getMediaFit({ fit: 'contain' })).toBe('contain')
   })
 })
 
 describe('resolveSlideBackground (precedence preserved)', () => {
-  it('slide override wins over everything', () => {
+  it('slide override wins over the theme', () => {
     expect(resolveSlideBackground({ backgroundImage: '/o.png', headingLevel: 'h1' }, 'brand')).toBe('/o.png')
+  })
+
+  it('a media behind the text wins over the slide override', () => {
+    const layout = readLayout({ media: 'behind', src: '/images/behind.png', veil: '40%' }).layout
+    expect(resolveSlideBackground({ backgroundImage: '/o.png', headingLevel: 'h3', layout }, 'brand')).toBe('/images/behind.png')
+    expect(behindMedia({ layout })?.veil).toBe(0.4)
   })
 
   it('frontmatter custom backgrounds win over theme tokens', () => {
@@ -100,12 +101,12 @@ describe('resolveSlideBackground (precedence preserved)', () => {
 
 describe('collectAssets + pipeline', () => {
   const slides: Slide[] = [
-    { body: {}, headingLevel: 'h1', layout: 'media-right', layoutProps: { story: 'c--p' } },
+    { body: {}, headingLevel: 'h1', layout: readLayout({ story: 'c--p' }).layout },
     {
       body: {},
       headingLevel: 'h2',
       verticalSlides: [
-        { body: {}, layout: 'media-left', layoutProps: { src: '/images/z.png', type: 'image' } },
+        { body: {}, layout: readLayout({ media: 'left', src: '/images/z.png', type: 'image' }).layout },
       ],
     },
   ]

@@ -8,7 +8,7 @@
       "insertTooltip": "Insérer dans le texte",
       "insert": "Insérer {name}",
       "annotationsHeading": "Annotations de diapositive",
-      "layoutsIntro": "Mises en page disponibles pour {annotation} :",
+      "layoutsIntro": "Réglages de {annotation} et leurs valeurs :",
       "frontmatterHeading": "En-tête de la présentation",
       "shortcutsHeading": "Raccourcis",
       "completionTriggers": "L'autocomplétion se déclenche sur {components}, {annotations} et dans l'en-tête.",
@@ -50,7 +50,7 @@
       },
       "mediaText": {
         "label": "Média + texte",
-        "description": "Texte à gauche, image à droite (mise en page media-right)"
+        "description": "Texte à gauche, image à droite, chacun sur la moitié de la diapositive"
       },
       "quote": {
         "label": "Citation",
@@ -58,7 +58,7 @@
       },
       "fullScreenImage": {
         "label": "Image plein écran",
-        "description": "Image qui occupe toute la diapositive"
+        "description": "Image derrière le titre, sous un voile sombre"
       },
       "storybookGallery": {
         "label": "Galerie Storybook",
@@ -111,7 +111,6 @@
         "margin": "Marge autour de la diapositive, en fraction de sa taille",
         "slideNumber": "Numéro de diapositive : c/t (courante/total), h.v, c, ou false",
         "transition": "Transition entre diapositives",
-        "center": "Centre verticalement le contenu des diapositives",
         "controls": "Flèches de navigation à l'écran",
         "progress": "Barre de progression en bas",
         "fragments": "Affiche les fragments un par un",

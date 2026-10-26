@@ -2,9 +2,9 @@ import type { MDCElement, MDCNode, MDCRoot } from '@nuxtjs/mdc'
 import type { Slide } from '../types/presentation.ts'
 import htmlTags from '@nuxtjs/mdc/runtime/parser/utils/html-tags-list'
 import { buildComponentMap, componentKey, deckAttributes, surfaceLevel } from '@vignettes/core/deck'
-import { getMediaFit, resolveSlideBackground } from '@vignettes/core/render'
+import { resolveSlideBackground } from '@vignettes/core/render'
 
-export { getMediaFit, resolveSlideBackground }
+export { resolveSlideBackground }
 
 // Elements in which an unknown component keeps its content inline.
 const INLINE_PARENTS = new Set(['p', 'span', 'a', 'strong', 'em', 'b', 'i', 'small', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
@@ -176,14 +176,24 @@ export function quicklinkParts(text: string): { prefix: string, label: string } 
   return { prefix: text.slice(0, idx + 2), label: text.slice(idx + 3) }
 }
 
-export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'section' | 'layout' | 'headingVisibility'>): string[] {
+export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'section' | 'layout' | 'fullSlide'>): string[] {
   const classes: string[] = []
   const surface = surfaceLevel(slide)
   if (surface)
     classes.push(`slide-${surface}`)
-  if (slide.layout)
-    classes.push(`layout-${slide.layout}`)
-  if (slide.headingVisibility)
-    classes.push(`heading-${slide.headingVisibility}`)
+  if (slide.fullSlide)
+    classes.push('layout-full')
+  const media = slide.layout?.media
+  if (media) {
+    classes.push('layout-media', `layout-media-${media.placement}`)
+    if (media.size)
+      classes.push(`media-size-${media.size.replace('/', '-')}`)
+    if (media.placement === 'behind')
+      classes.push(media.veil === undefined ? 'media-card' : 'media-veil')
+  }
+  if (slide.layout?.heading)
+    classes.push(`heading-${slide.layout.heading}`)
+  if (slide.layout?.align)
+    classes.push(`align-${slide.layout.align}`)
   return classes
 }

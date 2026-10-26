@@ -118,9 +118,15 @@ Un titre.
 
 ### Média à droite
 
-:layout{name="media-right" src="/images/placeholder.svg" type="image" fit="contain"}
+:layout{media="right" size="2/3" src="/images/placeholder.svg" type="image" fit="contain"}
 
-Le texte occupe la colonne de gauche.
+Le texte occupe le tiers de gauche.
+
+### Image derrière le texte
+
+:layout{media="behind" src="/images/placeholder-dark.svg" alt="Image de démonstration" veil="40%"}
+
+Le texte est en couleur claire sur un voile sombre.
 
 ### Cadres
 

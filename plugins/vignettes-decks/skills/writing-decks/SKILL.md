@@ -54,9 +54,9 @@ Follow the writing rules of the project and of its author for the text itself.
 
 Declare one Storybook root in the frontmatter (`storybook: https://…`) and name each story by its id, `<componentId>--<storyName>`, as the Storybook manager shows it after `/story/` in its address. The components build the iframe address from these two; a Storybook address pasted in a slide breaks the frozen copy of the deck.
 
-- One story beside the text: `:layout{name="media-right-wide" story="…"}`.
+- One story beside the text: `:layout{media="right" size="2/3" story="…"}`.
 - Several side by side: `::Screens` holding `::StoryFrame` blocks.
-- `previewWidth` sets the width the story renders at before it is scaled to its frame: raise it to show more of the page, lower it to zoom in. Galleries of three columns or more read better with a lower value or `ratio="portrait"`.
+- `viewport` sets the width the story renders at before it is scaled to its frame: raise it to show more of the page, lower it to zoom in. Galleries of three columns or more read better with a lower value or `ratio="portrait"`.
 - A local Storybook that is stopped leaves empty frames; a deployed one must allow being framed by the instance. Freezing the deck (`references/storybook.md`, section on frozen decks) serves the stories from the deck itself.
 
 ## Checking the deck

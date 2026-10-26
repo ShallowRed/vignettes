@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inferMediaType } from '@vignettes/core/render'
+import { DEFAULT_MEDIA_VIEWPORT, inferMediaType } from '@vignettes/core/deck'
 import { useDeckMessages } from '@vignettes/nuxt/deck-messages'
 import { useFrameAttributes } from '@vignettes/nuxt/frame-attributes'
 import { STORYBOOK_BASE } from '@vignettes/nuxt/injection-keys'
@@ -7,7 +7,7 @@ import { computed, inject } from 'vue'
 import { buildStoryUrl, resolveAspectRatio } from '../storybook.ts'
 
 // Embeds a Storybook story (by id, resolved against the deck's `storybook` root) or an
-// arbitrary iframe/image. Iframes render at a logical width (`previewWidth`) and scale down
+// arbitrary iframe/image. Iframes render at a logical width (`viewport`) and scale down
 // to fit, so the whole page is visible rather than the top-left corner at 1:1.
 interface Props {
   /** Storybook story id (`<componentId>--<storyName>`). */
@@ -19,6 +19,8 @@ interface Props {
   /** Named (`desktop`, `wide`, `mobile`…) or raw `16/9`. */
   ratio?: string
   /** Logical width (px) the iframe renders at before scaling; higher = more of the page visible. */
+  viewport?: string | number
+  /** The name of `viewport` in the earlier format. */
   previewWidth?: string | number
   /** Render the iframe at native size (1:1), no scaling. */
   raw?: boolean
@@ -34,7 +36,6 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   fit: 'cover',
-  previewWidth: 1440,
   raw: false,
   lightbox: false,
   grow: false,
@@ -59,15 +60,14 @@ const missing = computed(() => !resolvedSrc.value)
 
 // Width exposed as `--preview-width`; scaled-frame.js reads it to size the iframe
 // (cross-browser, unlike CSS cqh in Firefox — see _media-layouts.scss).
-const previewWidthNum = computed(() => {
-  const n = typeof props.previewWidth === 'string'
-    ? Number.parseInt(props.previewWidth, 10)
-    : props.previewWidth
-  return n && Number.isFinite(n) && n > 0 ? n : 1440
+const viewportWidth = computed(() => {
+  const width = props.viewport ?? props.previewWidth
+  const n = typeof width === 'string' ? Number.parseInt(width, 10) : width
+  return n && Number.isFinite(n) && n > 0 ? n : DEFAULT_MEDIA_VIEWPORT
 })
 const scalingEnabled = computed(() => isIframe.value && !props.raw)
 const scaledFrameStyle = computed(() =>
-  scalingEnabled.value ? { '--preview-width': `${previewWidthNum.value}px` } : undefined)
+  scalingEnabled.value ? { '--preview-width': `${viewportWidth.value}px` } : undefined)
 </script>
 
 <template>

@@ -1,4 +1,4 @@
-import { deckAttributes, isDeckUrl, isRefusedEmbed, isRefusedEmbedUrl, parseDeckMeta, readAttribute, urlKindOf } from '@vignettes/core/deck'
+import { deckAttributes, isDeckUrl, isRefusedEmbed, isRefusedEmbedUrl, parseDeckMeta, readAttribute, readLayout, urlKindOf } from '@vignettes/core/deck'
 import { buildStoryUrl, EMBED_SANDBOX, embedSandbox, resolveSlideMedia } from '@vignettes/core/render'
 import { describe, expect, it } from 'vitest'
 
@@ -137,9 +137,10 @@ describe('story and media addresses', () => {
   })
 
   it('gives no media for a story of a refused base or a refused source', () => {
-    expect(resolveSlideMedia({ name: 'media-right', story: 'a--b' }, { storybook: 'javascript:alert(1)' })).toBeNull()
-    expect(resolveSlideMedia({ name: 'media-right', src: 'data:text/html,<script>alert(1)</script>' })).toBeNull()
-    expect(resolveSlideMedia({ name: 'media-right', src: '/a.png' })?.src).toBe('/a.png')
+    const media = (attributes: Record<string, unknown>) => readLayout({ media: 'right', ...attributes }).layout.media
+    expect(resolveSlideMedia(media({ story: 'a--b' }), { storybook: 'javascript:alert(1)' })).toBeNull()
+    expect(resolveSlideMedia(media({ src: 'data:text/html,<script>alert(1)</script>' }))).toBeNull()
+    expect(resolveSlideMedia(media({ src: '/a.png' }))?.src).toBe('/a.png')
   })
 })
 

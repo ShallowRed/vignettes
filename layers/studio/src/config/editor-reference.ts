@@ -1,7 +1,7 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import type { DeckComponent, LocalizedText } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { DECK_ANNOTATIONS, DECK_LAYOUTS, deckComponents } from '@vignettes/core/deck'
+import { DECK_ANNOTATIONS, deckComponents, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
@@ -59,7 +59,6 @@ const REVEAL_KEYS: readonly FrontmatterKey[] = [
   { key: 'margin', descriptionKey: 'reference.frontmatter.reveal.margin', default: '0.1', snippet: 'margin: ${0.04}' },
   { key: 'slideNumber', descriptionKey: 'reference.frontmatter.reveal.slideNumber', values: ['"c/t"', '"h.v"', '"c"', 'true', 'false'], default: '"c/t"', snippet: 'slideNumber: ${false}' },
   { key: 'transition', descriptionKey: 'reference.frontmatter.reveal.transition', values: ['slide', 'fade', 'none', 'convex', 'concave', 'zoom'], default: 'slide', snippet: 'transition: ${fade}' },
-  { key: 'center', descriptionKey: 'reference.frontmatter.reveal.center', values: BOOLEAN, default: 'false', snippet: 'center: ${true}' },
   { key: 'controls', descriptionKey: 'reference.frontmatter.reveal.controls', values: BOOLEAN, default: 'true', snippet: 'controls: ${false}' },
   { key: 'progress', descriptionKey: 'reference.frontmatter.reveal.progress', values: BOOLEAN, default: 'true', snippet: 'progress: ${false}' },
   { key: 'fragments', descriptionKey: 'reference.frontmatter.reveal.fragments', values: BOOLEAN, default: 'true', snippet: 'fragments: ${false}' },
@@ -213,8 +212,8 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     labelKey: 'reference.templates.mediaText.label',
     descriptionKey: 'reference.templates.mediaText.description',
     snippet: {
-      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{name="media-right" src="${/images/placeholder.svg}" alt="${Description de l\'image}"}\n\n${Le parcours d\'inscription passe de six à trois écrans.}',
-      en: '---\n\n## ${Slide title}\n\n:layout{name="media-right" src="${/images/placeholder.svg}" alt="${Image description}"}\n\n${The sign-up journey goes from six screens to three.}',
+      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="${right}" size="${1/2}" src="${/images/placeholder.svg}" alt="${Description de l\'image}"}\n\n${Le parcours d\'inscription passe de six à trois écrans.}',
+      en: '---\n\n## ${Slide title}\n\n:layout{media="${right}" size="${1/2}" src="${/images/placeholder.svg}" alt="${Image description}"}\n\n${The sign-up journey goes from six screens to three.}',
     },
   },
   {
@@ -229,8 +228,8 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     labelKey: 'reference.templates.fullScreenImage.label',
     descriptionKey: 'reference.templates.fullScreenImage.description',
     snippet: {
-      fr: '---\n\n::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
-      en: '---\n\n::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::',
+      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${40%}"}',
+      en: '---\n\n## ${Slide title}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${40%}"}',
     },
   },
   {
@@ -243,7 +242,18 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   },
 ] as const
 
-export const LAYOUT_NAMES: readonly string[] = DECK_LAYOUTS.map(layout => layout.name)
+/** An attribute of `:layout`, with its description in the interface language. */
+export interface LayoutAttributeEntry {
+  name: string
+  values?: readonly string[]
+  default?: string
+  flag?: boolean
+  description: string
+}
+
+export function layoutAttributeEntries(lang: string): LayoutAttributeEntry[] {
+  return LAYOUT_ATTRIBUTES.map(attribute => ({ ...attribute, description: inLanguage(attribute.description, lang) }))
+}
 
 export interface ShortcutEntry {
   keys: string[]

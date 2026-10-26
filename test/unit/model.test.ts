@@ -7,7 +7,7 @@ describe('deckModel IR serialization (audit §5.8)', () => {
     meta: { theme: 'brand', reveal: { margin: 0.2 } },
     slides: [
       { body: { type: 'root', children: [] }, headingLevel: 'h1' },
-      { body: { type: 'root', children: [] }, layout: 'media-right', layoutProps: { src: '/a.png' } },
+      { body: { type: 'root', children: [] }, layout: { media: { placement: 'right', size: '1/2', src: '/a.png', fit: 'cover', position: 'center', alt: '', lightbox: false, viewport: 1440 } } },
     ],
     assets: [{ kind: 'storybook', url: 'https://sb.example/iframe.html?id=x' }],
     provenance: { parser: 'separator', source: 'codimd' },

@@ -3,10 +3,9 @@ import type { MDCRoot } from '@nuxtjs/mdc'
 import type { PresentationMetadata, Slide } from '../types/presentation.ts'
 import MDCRenderer from '@nuxtjs/mdc/runtime/components/MDCRenderer.vue'
 import { isDeckUrl } from '@vignettes/core/deck'
-import { resolveSlideMedia } from '@vignettes/core/render'
+import { behindMedia, resolveSlideMedia } from '@vignettes/core/render'
 import { computed } from 'vue'
 import { useFrameAttributes } from '../composables/useFrameAttributes.ts'
-import { getLayoutStrategy } from '../config/layouts.ts'
 import { keepKnownComponents, quicklinkParts } from '../utils/slide-rendering.ts'
 
 const props = defineProps<{
@@ -16,8 +15,6 @@ const props = defineProps<{
 }>()
 
 const frameAttributes = useFrameAttributes()
-
-const layoutStrategy = computed(() => getLayoutStrategy(props.slide.layout))
 
 // The deck model carries the parsed trees as `unknown`, so it stays free of the
 // renderer's types. This component is the renderer side, and names them once.
@@ -34,9 +31,13 @@ const renderData = computed(() => Object.fromEntries(
   Object.entries(props.metadata ?? {}).filter(([key]) => key !== 'component' && key !== 'mdc'),
 ))
 
-// null when the slide has no media.
+// Reveal draws an image behind the text as the slide background, which has no
+// text alternative: the slide carries its description.
+const behindDescription = computed(() => behindMedia(props.slide)?.alt)
+
+// null when the slide has no media pane.
 const mediaParts = computed(() =>
-  resolveSlideMedia(props.slide.layoutProps, { storybook: props.metadata?.storybook }))
+  resolveSlideMedia(props.slide.layout?.media, { storybook: props.metadata?.storybook }))
 
 const parsedQuicklink = computed(() => {
   if (!props.slide.quicklink || !isDeckUrl(props.slide.quicklink.href))
@@ -49,7 +50,7 @@ const parsedQuicklink = computed(() => {
 </script>
 
 <template>
-  <template v-if="layoutStrategy === 'full'">
+  <template v-if="slide.fullSlide">
     <MDCRenderer
       :body="body"
       :data="renderData"
@@ -58,6 +59,13 @@ const parsedQuicklink = computed(() => {
   </template>
 
   <template v-else>
+    <div
+      v-if="behindDescription"
+      role="img"
+      class="slide-media-description"
+      :aria-label="behindDescription"
+    />
+
     <div class="slide-content-pane">
       <hgroup v-if="header?.children?.length && (pretitle || subtitle)">
         <div
@@ -118,16 +126,17 @@ const parsedQuicklink = computed(() => {
       class="slide-media-pane"
       :class="[
         `fit-${mediaParts.fit}`,
+        `position-${mediaParts.position}`,
         { 'has-lightbox': mediaParts.hasLightbox, 'is-scaled': mediaParts.scaled, 'is-interactive': mediaParts.interactive },
       ]"
-      :style="mediaParts.scaled ? { '--preview-width': `${mediaParts.previewWidth}px` } : undefined"
+      :style="mediaParts.scaled ? { '--preview-width': `${mediaParts.viewport}px` } : undefined"
       :data-preview-link="mediaParts.previewLink"
       :data-preview-image="mediaParts.previewImage"
     >
       <iframe
         v-if="mediaParts.type === 'iframe'"
         v-bind="frameAttributes(mediaParts.src)"
-        :title="mediaParts.title"
+        :title="mediaParts.alt"
         frameborder="0"
         allowfullscreen
       />

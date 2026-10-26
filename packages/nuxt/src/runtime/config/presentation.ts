@@ -7,7 +7,6 @@ export function defaultMetadata(): PresentationMetadata {
   return {
     theme: getDefaultTheme(),
     transition: 'slide',
-    center: true,
   }
 }
 

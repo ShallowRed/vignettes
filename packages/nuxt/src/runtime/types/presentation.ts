@@ -18,7 +18,6 @@ export interface PresentationMetadata extends PresentationMeta {
   reveal?: RevealConfig
   // Deprecated flat Reveal.js options.
   transition?: string
-  center?: boolean
   // Hashed password for semi-private presentations.
   accessPassword?: string
   [key: string]: any

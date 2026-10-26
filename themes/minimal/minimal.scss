@@ -418,20 +418,18 @@ body {
 }
 
 /* ============================================
-   SLIDE VERTICAL CENTERING (like DSFR)
+   SLIDE RHYTHM
    ============================================ */
 
-// Title slides and sections (h1, h2): the flex skeleton is in packages/theme-kit/_slide-structure.scss
+// The kit places the content of a slide (packages/theme-kit/_slide-structure.scss);
+// the theme sets its sizes.
+.reveal {
+  --slide-heading-min-height: 6rem;
+  --slide-body-padding-y: 1.5rem;
+}
 
-// Content slides (h3): the flex skeleton is in packages/theme-kit/_slide-structure.scss
 .reveal section.slide-h3 {
-  header {
-    height: 6rem;
-  }
-
   hgroup {
-    height: 6rem;
-
     .slide-pretitle p {
       margin: 0 0 0.35em 0;
       font-size: 0.75rem;
@@ -448,11 +446,6 @@ body {
       font-style: italic;
       color: $grey;
     }
-  }
-
-  article {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
   }
 }
 

@@ -2,14 +2,15 @@ import type { Completion, CompletionContext, CompletionResult } from '@codemirro
 import type { Extension } from '@codemirror/state'
 import type { ReferenceEntry, Translate } from '../config/editor-reference'
 import { autocompletion, snippetCompletion } from '@codemirror/autocomplete'
-import { annotationEntries, componentEntries, LAYOUT_NAMES } from '../config/editor-reference'
+import { annotationEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
 import { frontmatterGuide } from './editor-frontmatter'
 
 /**
  * Writer autocompletion, driven by the declarative authoring reference:
  * frontmatter keys and their closed values inside the leading `---` block,
- * `::` components and `:` annotations in the body, layout names inside
- * `:layout{name="…"}`. Everything is data from editor-reference.ts.
+ * `::` components and `:` annotations in the body, the attributes of
+ * `:layout{…}` and their closed values. Everything is data from
+ * editor-reference.ts.
  */
 
 export interface CompletionOptions {
@@ -49,12 +50,26 @@ function bodySource(lang: string) {
     const line = context.state.doc.lineAt(context.pos)
     const before = line.text.slice(0, context.pos - line.from)
 
-    // Layout names inside `:layout{name="…`.
-    const layoutMatch = before.match(/:layout\{name="([\w-]*)$/)
-    if (layoutMatch) {
+    // The closed values of a `:layout` attribute, inside `:layout{… media="…`.
+    const valueMatch = before.match(/:layout\{[^}]*?\b([\w-]+)="([^"]*)$/)
+    if (valueMatch) {
+      const values = layoutAttributeEntries(lang).find(entry => entry.name === valueMatch[1])?.values
+      return values
+        ? { from: context.pos - valueMatch[2]!.length, options: values.map(value => ({ label: value, type: 'enum' })) }
+        : null
+    }
+
+    // The attributes of `:layout`, after its brace or a space inside it.
+    const inside = before.match(/:layout\{((?:[^}"]|"[^"]*")*)$/)?.[1]
+    const attributeMatch = inside?.match(/(?:^|\s)([\w-]*)$/)
+    if (attributeMatch) {
       return {
-        from: context.pos - layoutMatch[1]!.length,
-        options: LAYOUT_NAMES.map(name => ({ label: name, type: 'enum' })),
+        from: context.pos - attributeMatch[1]!.length,
+        options: layoutAttributeEntries(lang).map(entry => snippetCompletion(
+          entry.flag ? entry.name : `${entry.name}="\${${entry.default ?? ''}}"`,
+          { label: entry.name, info: entry.description, type: 'property' },
+        )),
+        validFor: /^[\w-]*$/,
       }
     }
 

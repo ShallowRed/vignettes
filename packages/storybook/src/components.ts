@@ -6,12 +6,12 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'StoryFrame',
     snippet: {
-      fr: '::StoryFrame{story="${id-de-la-story}" ratio="${16/9}" previewWidth="${760}" label="${Libellé}" lightbox}\n::',
-      en: '::StoryFrame{story="${story-id}" ratio="${16/9}" previewWidth="${760}" label="${Label}" lightbox}\n::',
+      fr: '::StoryFrame{story="${id-de-la-story}" ratio="${16/9}" viewport="${760}" label="${Libellé}" lightbox}\n::',
+      en: '::StoryFrame{story="${story-id}" ratio="${16/9}" viewport="${760}" label="${Label}" lightbox}\n::',
     },
     description: {
-      fr: 'Écran Storybook vivant. story prend l\'identifiant de la story, composant--story, visible dans l\'adresse du Storybook après ?path=/story/ (attributs ratio, previewWidth, lightbox)',
-      en: 'Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (attributes ratio, previewWidth, lightbox)',
+      fr: 'Écran Storybook vivant. story prend l\'identifiant de la story, composant--story, visible dans l\'adresse du Storybook après ?path=/story/ (attributs ratio, viewport, lightbox)',
+      en: 'Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (attributes ratio, viewport, lightbox)',
     },
   },
   {

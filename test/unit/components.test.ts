@@ -31,18 +31,15 @@ describe('buildComponentMap', () => {
     expect(map.i).toBe('IconInline')
     expect(map.TwoColumns).toBe('Columns')
     expect(map.ThreeColumns).toBe('Columns')
-    expect(map['full-screen-image']).toBe('FullScreenImage')
     expect(map.notes).toBe('Notes')
     expect(map.fragments).toBe('Fragments')
     expect(map['deck-image']).toBe('Image')
   })
 
-  it('carries the column and the split slide, with their lowercase forms', () => {
+  it('carries the column, with its lowercase form', () => {
     const map = buildComponentMap()
     expect(map.Column).toBe('Column')
     expect(map.column).toBe('Column')
-    expect(map.SplitSlide).toBe('SplitSlide')
-    expect(map['split-slide']).toBe('SplitSlide')
   })
 
   it('leaves slide-background out: it is an annotation', () => {
@@ -60,7 +57,7 @@ describe('registerDeckComponents', () => {
   })
 
   it('declares a component that takes the whole slide', () => {
-    expect(fullSlideComponentNames()).toEqual(['FullScreenImage', 'full-screen-image'])
+    expect(fullSlideComponentNames()).toEqual([])
     registerDeckComponents([{ name: 'Cover', aliases: ['cover'], fullSlide: true }])
     expect(fullSlideComponentNames()).toContain('Cover')
     expect(fullSlideComponentNames()).toContain('cover')

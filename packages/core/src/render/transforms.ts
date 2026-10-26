@@ -1,5 +1,7 @@
+import type { MediaLayout, MediaPosition } from '../deck/layout.ts'
 import type { AssetRef, DeckModel, Slide } from '../deck/model.ts'
 import type { DeckMeta, ThemeBackgrounds } from '../deck/schema.ts'
+import { inferMediaType } from '../deck/layout.ts'
 import { surfaceLevel } from '../deck/model.ts'
 import { isDeckUrl } from '../deck/urls.ts'
 import { getThemeTokens } from '../theme/tokens.ts'
@@ -11,88 +13,76 @@ import { buildStoryUrl } from './storybook.ts'
 export interface SlideMedia {
   src: string
   type: 'iframe' | 'image'
-  title: string
   alt: string
   fit: 'cover' | 'contain'
+  position: MediaPosition
   scaled: boolean
   interactive: boolean
-  previewWidth: number
+  viewport: number
   hasLightbox: boolean
   hint?: string
   previewLink?: string
   previewImage?: string
 }
 
-const IMAGE_EXTENSION = /\.(?:png|jpe?g|gif|svg|webp|avif)(?:[?#]|$)/i
+/** The address a media pane loads: the story in the deck's Storybook, or `src`. */
+function mediaSource(media: MediaLayout, storybook?: string): string | undefined {
+  return media.story ? buildStoryUrl(storybook, media.story) : media.src
+}
 
 /**
- * Whether a media source is shown as a page or an image. An explicit `type` or a
- * story decides; otherwise a URL ending with an image extension is an image, and
- * any other URL a page.
+ * The media pane of a slide. Returns null when the slide has no pane (no media,
+ * or a media behind the text), or when its address is outside `isDeckUrl`.
  */
-export function inferMediaType(src: string, type?: string, story?: boolean): 'iframe' | 'image' {
-  if (type === 'iframe' || type === 'image')
-    return type
-  if (story)
-    return 'iframe'
-  return IMAGE_EXTENSION.test(src) ? 'image' : 'iframe'
-}
-
-/** `contain` only when explicitly asked, else `cover`. */
-export function getMediaFit(layoutProps?: Record<string, string>): 'cover' | 'contain' {
-  return layoutProps?.fit === 'contain' ? 'contain' : 'cover'
-}
-
-/** Returns null when the slide has no media, or when its address is outside `isDeckUrl`. */
 export function resolveSlideMedia(
-  layoutProps: Record<string, string> | undefined,
+  media: MediaLayout | undefined,
   opts: { storybook?: string } = {},
 ): SlideMedia | null {
-  const lp = layoutProps
-  if (!lp)
+  if (!media || media.placement === 'behind')
     return null
-
-  const storySrc = lp.story ? buildStoryUrl(opts.storybook, lp.story) : undefined
-  const src = storySrc ?? lp.src
+  const src = mediaSource(media, opts.storybook)
   if (!src)
     return null
 
-  const type = inferMediaType(src, lp.type, Boolean(storySrc))
+  const type = inferMediaType(src, media.type, Boolean(media.story))
   if (!isDeckUrl(src, type === 'image' ? 'image' : 'page'))
     return null
-  const fit = getMediaFit(lp)
-  // MDC kebab-cases camelCase attribute keys, so `previewWidth="1600"` arrives as
-  // `preview-width` — check that first, with camel/lower forms as fallbacks.
-  const previewWidthRaw = lp['preview-width'] ?? lp.previewWidth ?? lp.previewwidth
-  const parsed = previewWidthRaw ? Number.parseInt(previewWidthRaw, 10) : 1440
-  const previewWidth = Number.isFinite(parsed) && parsed > 0 ? parsed : 1440
-  const scaled = type === 'iframe' && lp.raw == null && fit !== 'contain'
-  const hasLightbox = Boolean(lp.lightbox)
+  const scaled = type === 'iframe' && media.fit !== 'contain'
 
   return {
     src,
     type,
-    title: lp.title || '',
-    alt: lp.alt || '',
-    fit,
+    alt: media.alt,
+    fit: media.fit,
+    position: media.position,
     scaled,
     // Without a lightbox, a scaled story embed is interactive in place.
-    interactive: scaled && !hasLightbox,
-    previewWidth,
-    hasLightbox,
-    hint: lp.hint || undefined,
-    previewLink: (lp.lightbox && type === 'iframe') ? src : undefined,
-    previewImage: (lp.lightbox && type !== 'iframe') ? src : undefined,
+    interactive: scaled && !media.lightbox,
+    viewport: media.viewport,
+    hasLightbox: media.lightbox,
+    hint: media.hint,
+    previewLink: (media.lightbox && type === 'iframe') ? src : undefined,
+    previewImage: (media.lightbox && type !== 'iframe') ? src : undefined,
   }
 }
 
-// Precedence: slide-level backgroundImage override → deck frontmatter
-// backgrounds map → theme tokens' background for the slide's `surfaceLevel`.
+/** The image a slide lays behind its text with `:layout{media="behind"}`, when its address is an image address. */
+export function behindMedia(slide: Pick<Slide, 'layout'>): MediaLayout | undefined {
+  const media = slide.layout?.media
+  return media?.placement === 'behind' && isDeckUrl(media.src, 'image') ? media : undefined
+}
+
+// Precedence: media behind the text → slide-level backgroundImage override →
+// deck frontmatter backgrounds map → theme tokens' background for the slide's
+// `surfaceLevel`.
 export function resolveSlideBackground(
-  slide: Pick<Slide, 'headingLevel' | 'section' | 'backgroundImage'>,
+  slide: Pick<Slide, 'headingLevel' | 'section' | 'backgroundImage' | 'layout'>,
   theme?: string,
   customBackgrounds?: ThemeBackgrounds,
 ): string | undefined {
+  const behind = behindMedia(slide)
+  if (behind)
+    return behind.src
   if (slide.backgroundImage)
     return slide.backgroundImage
   const backgrounds = customBackgrounds ?? getThemeTokens(theme)?.backgrounds
@@ -118,10 +108,10 @@ export function collectAssets(slides: Slide[], meta: Pick<DeckMeta, 'storybook' 
   }
 
   const visit = (slide: Slide, origin: string) => {
-    const media = resolveSlideMedia(slide.layoutProps, { storybook: meta.storybook })
+    const media = resolveSlideMedia(slide.layout?.media, { storybook: meta.storybook })
     if (media) {
       if (media.type === 'iframe')
-        push(slide.layoutProps?.story ? 'storybook' : 'iframe', media.src, origin)
+        push(slide.layout?.media?.story ? 'storybook' : 'iframe', media.src, origin)
       else
         push('image', media.src, origin)
     }

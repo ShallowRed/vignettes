@@ -39,8 +39,8 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   },
   {
     tag: 'layout',
-    snippet: { fr: ':layout{name="${media-right}"}', en: ':layout{name="${media-right}"}' },
-    description: { fr: 'Mise en page de la diapositive (attributs name, src, type, fit, lightbox)', en: 'Layout of the slide (attributes name, src, type, fit, lightbox)' },
+    snippet: { fr: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}', en: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}' },
+    description: { fr: 'Mise en page de la diapositive : un média à côté, au-dessus, au-dessous ou derrière le texte (attributs media, size, src, story, fit, position, heading…)', en: 'Layout of the slide: a media beside, above, below or behind the text (attributes media, size, src, story, fit, position, heading…)' },
   },
   {
     tag: 'quicklink',
@@ -91,14 +91,6 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     description: { fr: 'Citation avec auteur, rôle et avatar optionnels', en: 'Quote with optional author, role and avatar' },
   },
   {
-    name: 'FullScreenImage',
-    aliases: ['full-screen-image'],
-    fullSlide: true,
-    images: ['src'],
-    snippet: { fr: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::FullScreenImage{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
-    description: { fr: 'Image plein écran (attributs overlay, heading)', en: 'Full-screen image (attributes overlay, heading)' },
-  },
-  {
     name: 'Iframe',
     snippet: { fr: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::', en: '::Iframe{src="${https://example.com}" title="${Title}"}\n::' },
     description: { fr: 'Page web intégrée (attributs lightbox, fullwidth)', en: 'Embedded web page (attributes lightbox, fullwidth)' },
@@ -129,12 +121,6 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   { name: 'Column', aliases: ['column'] },
   {
-    name: 'SplitSlide',
-    aliases: ['split-slide'],
-    snippet: { fr: '::SplitSlide{src="${/images/placeholder.svg}" type="${image}" ratio="${1:2}"}\n${Le texte à côté du média.}\n::', en: '::SplitSlide{src="${/images/placeholder.svg}" type="${image}" ratio="${1:2}"}\n${The text beside the media.}\n::' },
-    description: { fr: 'Texte et média côte à côte dans un bloc de la diapositive (attributs src, type, ratio, reverse, fit)', en: 'Text beside a media pane in one block of the slide (attributes src, type, ratio, reverse, fit)' },
-  },
-  {
     name: 'Highlight',
     snippet: { fr: '::Highlight{size="${sm}"}\n${Message clé.}\n::', en: '::Highlight{size="${sm}"}\n${Key message.}\n::' },
     description: { fr: 'Encadré de mise en avant (attributs size sm ou md, variant)', en: 'Highlight box (attributes size sm or md, variant)' },
@@ -153,28 +139,6 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
 ] as const
 /* eslint-enable no-template-curly-in-string */
-
-/** A slide layout, named by `:layout{name="…"}`. */
-export interface DeckLayout {
-  name: string
-  /** Renders the whole slide as one block, with no header and body split. */
-  fullSlide?: boolean
-}
-
-/** The layouts the render layer ships; their geometry lives in `@vignettes/theme-kit`. */
-export const DECK_LAYOUTS: readonly DeckLayout[] = [
-  { name: 'full', fullSlide: true },
-  { name: 'media-right' },
-  { name: 'media-left' },
-  { name: 'media-right-wide' },
-  { name: 'media-left-wide' },
-  { name: 'media-right-xwide' },
-  { name: 'media-left-xwide' },
-  { name: 'media-below' },
-  { name: 'media-above' },
-  { name: 'media-cover' },
-  { name: 'grid-compact' },
-] as const
 
 /**
  * Component names the HTML pass of the MDC parser rewrites, mapped to the tag the

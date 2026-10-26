@@ -12,6 +12,8 @@ export const DEFAULT_REVEAL_CONFIG: RevealConfig = {
   margin: 0.1,
   minScale: 0.2,
   maxScale: 2.0,
+  // The theme kit places the content of a slide (`:layout{align}`); a deck
+  // cannot set `center`, which would move the slide itself.
   center: false,
   controls: true,
   progress: true,

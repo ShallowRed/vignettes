@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationData, Slide } from '../types/presentation.ts'
 import { buildComponentMap } from '@vignettes/core/deck'
+import { behindMedia } from '@vignettes/core/render'
 import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
 import { useSlideIds } from '../composables/useSlideIds.ts'
@@ -25,17 +26,20 @@ const mdcComponents: Record<string, any> = Object.fromEntries(
   knownComponentNames().map(name => [name, componentMap[name] ? resolveComponent(componentMap[name]) : name]),
 )
 
-// Reveal draws the background from these attributes. An overlay is black under
-// the image, made that much transparent.
-function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgroundImage' | 'backgroundOverlay'>) {
+// Reveal draws the background from these attributes. A media behind the text
+// keeps its framing, and its veil is black under the image, made that much
+// transparent.
+function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgroundImage' | 'layout'>) {
+  const behind = behindMedia(slide)
   return {
     'data-background-image': resolveSlideBackground(
       slide,
       props.presentationData.metadata.theme || getDefaultTheme(),
       props.presentationData.metadata.backgrounds,
     ),
-    ...(slide.backgroundOverlay
-      ? { 'data-background-color': '#000', 'data-background-opacity': String(1 - slide.backgroundOverlay) }
+    ...(behind ? { 'data-background-size': behind.fit, 'data-background-position': behind.position } : {}),
+    ...(behind?.veil
+      ? { 'data-background-color': '#000', 'data-background-opacity': String(1 - behind.veil) }
       : {}),
   }
 }

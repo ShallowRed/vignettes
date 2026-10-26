@@ -46,7 +46,6 @@ theme: dsfr # a compiled theme name, or one of its aliases
 lang: fr # French orthotypography applies when lang is absent or starts with fr
 parser: separator # separator (default) or heading
 transition: slide # Reveal transition
-center: true # vertical centering
 storybook: https://sb.example # root for live story embeds
 ---
 ```
@@ -64,24 +63,30 @@ An annotation is a `:tag{...}` directive the parser reads and removes from the b
 - `:pretitle{text="…"}` writes a text above the heading.
 - `:subtitle{text="…"}` writes a text below the heading.
 - `:slide-background{image="…"}` sets the background of this slide, over the theme's.
-- `:layout{name="…" …}` sets the slide layout and passes it its props.
+- `:layout{media="…" …}` places a media beside, above, below or behind the text, and sets the heading.
 - `:quicklink{text="…" href="…"}` pins a link at the bottom of the slide.
 
-`:layout` names one of the layouts below and passes it `src`, `type` (`iframe` or `image`), `fit` (`cover` or `contain`) and `lightbox`. Without `type`, a `src` ending with an image extension is an image and any other a page. All but `full` and `grid-compact` split the slide into a content pane and a media pane; the media pane extends to the edge of the slide and the text keeps its margins.
+`:layout` takes these attributes, defined once in `packages/core/src/deck/layout.ts`:
 
-- `media-right` and `media-left` set the content and the media side by side, the media pane one and a half times as wide as the content.
-- `media-right-wide` and `media-left-wide` give the media pane more of the width, and the content text shrinks.
-- `media-right-xwide` and `media-left-xwide` reduce the content to a narrow column of captions beside the media pane.
-- `media-below` and `media-above` stack a compact heading row and a full-width media row.
-- `media-cover` fills the slide with the media and draws the heading and the intro over it on a translucent card.
-- `grid-compact` shrinks the title row to one line and gives the remaining height to the body, for a tall gallery.
-- `full` makes the whole slide the body, rendered as one block.
+- `media`: `right`, `left`, `top`, `bottom` or `behind`. A `src` or a `story` without `media` goes to the right.
+- `size`: `1/3`, `1/2`, `2/3` or `3/4`, the share of the slide the media takes, of its width on a side and of its height at the top or the bottom. A side media takes `1/2` by default; at the top or the bottom, the media takes the height the text leaves. At `2/3` and `3/4` on a side, the text shrinks to fit its column.
+- `src`, or `story` for a story of the deck's Storybook, and `type` (`image` or `iframe`). Without `type`, a `src` ending with an image extension is an image and any other a page.
+- `fit` (`cover` by default, `contain`) and `position` (`center` by default, `top`, `bottom`, `left`, `right`) frame the media.
+- `alt` describes the media, `lightbox` opens it full screen on a click, `hint` writes a text with an arrow towards it at the bottom of the text column.
+- `viewport`, `1440` by default, is the width in pixels a page or a story is laid out at before it shrinks to its pane.
+- `veil`, behind the text only, lays a dark veil over the image, as a percentage, and writes the text in light colors; without a veil, the text sits on a card.
+- `heading`: `compact` keeps the heading to one line, for a tall gallery; `hidden` hides it; `print` hides it on screen only.
+- `align`: `top`, `center` or `bottom`, the vertical alignment of the content: of the heading and the text on a title or a section slide, of the body under the heading on a content slide, of the text in its column beside a media, of the text card over an image. By default, the content is centered; a caption column at `3/4` and a text above or below a media start at the top; the card over an image sits at the bottom.
+
+The media pane extends to the edge of the slide and the text keeps its margins. A media behind the text is the slide background, over the whole screen and the printed page. The phone's scroll view stacks the text and the media.
+
+The parser also reads the attributes of decks written before `media` and `size`: `name="media-right"`, `-wide`, `-xwide`, `media-below`, `media-above`, `media-cover` and `grid-compact`, `previewWidth`, and the `FullScreenImage` and `SplitSlide` components.
 
 ## Components
 
 MDC uses colons, and the count says what the component wraps: `:::Name` a container of other components, `::Name` a leaf wrapping text, `:name{…}` an inline. A parent container always takes more colons than its children.
 
-The module ships the generic set: `Quote`, `Image`, `FullScreenImage`, `Iframe`, `Mermaid`, `IconInline` (aliased `:i`), `Columns` (aliased `TwoColumns` and `ThreeColumns`), `Column`, `SplitSlide`, `Highlight`, `Notes` and `Fragments`.
+The module ships the generic set: `Quote`, `Image`, `Iframe`, `Mermaid`, `IconInline` (aliased `:i`), `Columns` (aliased `TwoColumns` and `ThreeColumns`), `Column`, `Highlight`, `Notes` and `Fragments`.
 
 ```markdown
 ::Image{src="/diagram.png" alt="Architecture" width="80%" :preview="true"}
@@ -110,8 +115,6 @@ Perfection is reached when there is nothing left to take away.
   ::
 :::
 ```
-
-`SplitSlide` puts its own text beside a media pane inside the body, where a `:layout` splits the whole slide: use it for one block among others on a slide that keeps its normal structure. It takes `src`, `type` (`iframe` or `image`), `ratio` (`1:1`, `1:2`, `2:1`, `1:3`, `3:1`), `reverse` to put the media first, `fit` and `lightbox`.
 
 `Mermaid` draws a diagram in the colors and the font of the theme, and reduces it, without enlarging it, to fit the width of its column and the height the other blocks of the slide leave; the diagrams of one slide take the same reduction. For sequence diagrams it sets `mirrorActors: false`, `width: 180`, `actorMargin: 30`, `messageMargin: 14`, `boxMargin: 4`, `noteMargin: 6`, `diagramMarginY: 4` and `wrap: true`. A `%%{init: …}%%` block at the top of the diagram overrides these values.
 

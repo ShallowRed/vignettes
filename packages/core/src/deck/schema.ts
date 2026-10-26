@@ -16,7 +16,6 @@ import { DECK_URL_MESSAGE, isDeckUrl } from './urls.ts'
 export const RevealConfigSchema = z
   .object({
     hash: z.boolean().optional(),
-    center: z.boolean().optional(),
     transition: z.string().optional(),
     backgroundTransition: z.string().optional(),
     slideNumber: z.union([z.string(), z.boolean()]).optional(),

@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, DECK_LAYOUTS, DeckMetaSchema } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, DeckMetaSchema, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 
@@ -73,9 +73,9 @@ function formatReference(): string {
     '',
     '## Layouts',
     '',
-    'Named by `:layout{name="…"}`.',
+    'Set by the attributes of `:layout{…}`, read by `readLayout` of `@vignettes/core/deck`. A source without `media` goes to the right. The parser also reads the attributes of decks written before `media` and `size` (`name="media-right-wide"`, `previewWidth`).',
     '',
-    ...DECK_LAYOUTS.map(l => `- \`${l.name}\`${l.fullSlide ? ': the whole slide in one block, without a header and body split' : ''}`),
+    ...LAYOUT_ATTRIBUTES.map(a => `- \`${a.name}\`${a.values ? ` (${a.values.map(v => `\`${v}\``).join(', ')})` : ''}${a.default ? `, \`${a.default}\` by default` : ''}: ${a.description.en}`),
     '',
     '## Components',
     '',

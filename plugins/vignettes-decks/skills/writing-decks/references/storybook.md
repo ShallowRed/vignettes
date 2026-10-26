@@ -30,12 +30,12 @@ A `story` on the `:layout` annotation resolves to `<storybook>/iframe.html?id=<s
 ```markdown
 ### My component, live
 
-:layout{name="media-right-wide" story="home-scenario-a--page" lightbox="true"}
+:layout{media="right" size="2/3" story="home-scenario-a--page" lightbox}
 
 What we are testing, next to the live story.
 ```
 
-The value is the Storybook story id, `<componentId>--<storyName>`. `lightbox="true"` lets a click open the story full-screen.
+The value is the Storybook story id, `<componentId>--<storyName>`. `lightbox` lets a click open the story full-screen.
 
 ## Several screens side by side
 
@@ -55,7 +55,7 @@ The value is the Storybook story id, `<componentId>--<storyName>`. `lightbox="tr
 - `type` is `iframe` or `image`. Without it, a story or a URL renders as a page, and a URL ending with an image extension as an image.
 - `ratio` is a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a raw ratio such as `16/9`.
 - `fit` is `cover`, the default, or `contain`.
-- `previewWidth` is the logical iframe width before scaling, `1440` by default; raise it to show more of the page.
+- `viewport` is the logical iframe width before scaling, `1440` by default; raise it to show more of the page.
 - `raw` renders the frame at native size, without scaling.
 - `label` is the caption under the frame; the default slot takes a caption too.
 - `lightbox` opens the screen full-screen on click.

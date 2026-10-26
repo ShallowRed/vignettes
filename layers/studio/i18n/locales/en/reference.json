@@ -8,7 +8,7 @@
       "insertTooltip": "Insert into the text",
       "insert": "Insert {name}",
       "annotationsHeading": "Slide annotations",
-      "layoutsIntro": "Layouts available for {annotation}:",
+      "layoutsIntro": "Settings of {annotation} and their values:",
       "frontmatterHeading": "Front matter",
       "shortcutsHeading": "Shortcuts",
       "completionTriggers": "The autocompletion triggers on {components}, {annotations} and in the front matter.",
@@ -50,7 +50,7 @@
       },
       "mediaText": {
         "label": "Media + text",
-        "description": "Text on the left, image on the right (media-right layout)"
+        "description": "Text on the left, image on the right, each on half of the slide"
       },
       "quote": {
         "label": "Quote",
@@ -58,7 +58,7 @@
       },
       "fullScreenImage": {
         "label": "Full-screen image",
-        "description": "Image that fills the whole slide"
+        "description": "Image behind the heading, under a dark veil"
       },
       "storybookGallery": {
         "label": "Storybook gallery",
@@ -111,7 +111,6 @@
         "margin": "Margin around the slide, as a fraction of its size",
         "slideNumber": "Slide number: c/t (current/total), h.v, c, or false",
         "transition": "Transition between slides",
-        "center": "Centers the slide content vertically",
         "controls": "On-screen navigation arrows",
         "progress": "Progress bar at the bottom",
         "fragments": "Shows fragments one at a time",

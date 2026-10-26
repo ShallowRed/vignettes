@@ -4,7 +4,7 @@ import {
   componentEntries,
   EDITOR_SHORTCUTS,
   FRONTMATTER_KEYS,
-  LAYOUT_NAMES,
+  layoutAttributeEntries,
   STRUCTURE_HELP,
 } from '../config/editor-reference'
 
@@ -28,6 +28,7 @@ const { t, locale } = useI18n()
 
 const components = computed(() => componentEntries(locale.value))
 const annotations = computed(() => annotationEntries(locale.value))
+const layoutChoices = computed(() => layoutAttributeEntries(locale.value).filter(entry => entry.values))
 
 const structure = computed(() => STRUCTURE_HELP[props.parser])
 const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : 'heading'))
@@ -151,17 +152,28 @@ const shortcuts = computed(() => props.autosave ? EDITOR_SHORTCUTS.filter(entry 
               <code class="font-mono">:layout</code>
             </template>
           </i18n-t>
-          <div class="flex flex-wrap gap-1.5 mt-1.5">
-            <UBadge
-              v-for="name in LAYOUT_NAMES"
-              :key="name"
-              color="neutral"
-              variant="subtle"
-              size="sm"
-              class="font-mono"
-              :label="name"
-            />
-          </div>
+          <dl class="mt-1.5 space-y-1.5">
+            <div
+              v-for="entry in layoutChoices"
+              :key="entry.name"
+              class="flex flex-wrap items-center gap-1.5"
+            >
+              <dt class="font-mono text-xs text-highlighted w-16">
+                {{ entry.name }}
+              </dt>
+              <dd class="flex flex-wrap gap-1.5">
+                <UBadge
+                  v-for="value in entry.values"
+                  :key="value"
+                  color="neutral"
+                  variant="subtle"
+                  size="sm"
+                  class="font-mono"
+                  :label="value"
+                />
+              </dd>
+            </div>
+          </dl>
         </section>
 
         <USeparator />

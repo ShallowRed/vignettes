@@ -14,13 +14,11 @@ describe('componentEntries', () => {
     const labels = componentEntries('fr').map(entry => entry.label)
     expect(labels).toEqual([
       '::Quote',
-      '::FullScreenImage',
       '::Iframe',
       '::Image',
       '::Mermaid',
       ':i',
       ':::Columns',
-      '::SplitSlide',
       '::Highlight',
       '::Notes',
       '::Fragments',

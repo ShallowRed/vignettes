@@ -45,9 +45,9 @@ Un bloc `Column` contient du texte, une liste, une image ou un autre composant.
 
 ## Un texte et une image
 
-:layout{name="media-right" src="/images/placeholder.svg"}
+:layout{media="right" src="/images/placeholder.svg"}
 
-Avec `:layout{name="media-right" src="…"}`, le texte occupe la partie gauche de la diapositive et l'image la partie droite. Quand vous déposez une image dans l'éditeur, l'éditeur la téléverse et insère à l'endroit du dépôt un bloc `::Image` qui contient son adresse. Pour placer l'image à droite, copiez cette adresse dans `src`.
+Avec `:layout{media="right" src="…"}`, le texte occupe la moitié gauche de la diapositive et l'image la moitié droite. `size="2/3"` donne les deux tiers à l'image, et `media` la place à gauche, en haut, en bas ou derrière le texte. Quand vous déposez une image dans l'éditeur, l'éditeur la téléverse et insère à l'endroit du dépôt un bloc `::Image` qui contient son adresse. Pour placer l'image à droite, copiez cette adresse dans `src`.
 
 ## Révéler point par point
 

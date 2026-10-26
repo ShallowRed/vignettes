@@ -1,3 +1,4 @@
+import type { SlideLayout } from './layout.ts'
 import type { DeckMeta } from './schema.ts'
 
 /**
@@ -19,14 +20,12 @@ export interface Slide {
   headingLevel?: string
   /** A `##` slide made of its heading and at most one short paragraph (see `isSectionSlide`). */
   section?: boolean
+  /** The image of `:slide-background`. */
   backgroundImage?: string
-  /** Share of black laid over the background image, from 0 to 1. */
-  backgroundOverlay?: number
-  /** Hides the slide heading everywhere, or on screen only (`print`). */
-  headingVisibility?: 'hidden' | 'print'
-  layout?: string
-  /** Extra props for the layout (e.g. media src/type). */
-  layoutProps?: Record<string, string>
+  /** The settings of `:layout` (see `readLayout`). */
+  layout?: SlideLayout
+  /** A component of the slide takes the whole slide, so the slide has no header and body split. */
+  fullSlide?: boolean
   quicklink?: { text: string, href: string }
 }
 

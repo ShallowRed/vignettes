@@ -66,15 +66,33 @@ La colonne de droite.
 
 ### Une image à droite
 
-:layout{name="media-right" src="/images/placeholder.svg"}
+:layout{media="right" src="/images/placeholder.svg"}
 
-Le texte occupe la partie gauche de la diapositive.
+Le texte occupe la moitié gauche de la diapositive.
 
 ### Une image large à gauche
 
-:layout{name="media-left-wide" src="/images/placeholder.svg" fit="contain"}
+:layout{media="left" size="2/3" src="/images/placeholder.svg" fit="contain"}
 
-Le texte occupe la partie droite de la diapositive.
+Le texte occupe le tiers droit de la diapositive.
+
+### Une image sous le texte
+
+:layout{media="bottom" src="/images/placeholder.svg"}
+
+L'image prend la hauteur que le texte laisse.
+
+### Une image derrière le texte, avec un cadre
+
+:layout{media="behind" src="/images/placeholder.svg" alt="Image d'exemple"}
+
+Le cadre prend la couleur de surface du thème.
+
+### Une image derrière le texte, sous un voile
+
+:layout{media="behind" src="/images/placeholder.svg" alt="Image d'exemple" veil="50%"}
+
+Le texte est en couleur claire sur le voile.
 
 ### Un diagramme Mermaid
 

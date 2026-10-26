@@ -30,24 +30,27 @@ Written `:tag{…}` on a line of the slide. The parser reads them and removes th
 - `:slide-background`: Background image of this slide (attribute image)
 - `:pretitle`: Text above the title (attribute text)
 - `:subtitle`: Text below the title (attribute text)
-- `:layout`: Layout of the slide (attributes name, src, type, fit, lightbox)
+- `:layout`: Layout of the slide: a media beside, above, below or behind the text (attributes media, size, src, story, fit, position, heading…)
 - `:quicklink`: Link pinned to the bottom of the slide (attributes text, href)
 
 ## Layouts
 
-Named by `:layout{name="…"}`.
+Set by the attributes of `:layout{…}`, read by `readLayout` of `@vignettes/core/deck`. A source without `media` goes to the right. The parser also reads the attributes of decks written before `media` and `size` (`name="media-right-wide"`, `previewWidth`).
 
-- `full`: the whole slide in one block, without a header and body split
-- `media-right`
-- `media-left`
-- `media-right-wide`
-- `media-left-wide`
-- `media-right-xwide`
-- `media-left-xwide`
-- `media-below`
-- `media-above`
-- `media-cover`
-- `grid-compact`
+- `media` (`right`, `left`, `top`, `bottom`, `behind`), `right` by default: Place of the media: right, left, top, bottom or behind the text
+- `size` (`1/3`, `1/2`, `2/3`, `3/4`): Share of the slide the media takes: of its width on a side, 1/2 by default; of its height at the top or the bottom, where the media takes by default the height the text leaves
+- `src`: Address of the image or the web page
+- `story`: Id of a story of the deck's Storybook, shown in the media pane
+- `type` (`image`, `iframe`): Image or web page, for an address without an image extension
+- `fit` (`cover`, `contain`), `cover` by default: cover fills the pane and may crop the edges, contain shows the whole media
+- `position` (`center`, `top`, `bottom`, `left`, `right`), `center` by default: Part of the media kept when cover crops it
+- `alt`: Description of the media for people who cannot see it
+- `lightbox`: The media opens full screen on a click
+- `hint`: Text at the bottom of the text column, with an arrow towards the media
+- `viewport`, `1440` by default: Width in pixels the page or the story is laid out at before it is shrunk to the pane
+- `veil`: Behind the text: dark veil over the image, as a percentage, with the text in a light color; without a veil, the text sits on a card
+- `align` (`top`, `center`, `bottom`): Vertical alignment of the content: of the heading and the text on a title or a section slide, of the body under the heading on a content slide, of the text in its column beside a media, of the text card over an image. By default: centered; at the top for a caption column at 3/4 and for a text above or below a media; at the bottom for the card over an image
+- `heading` (`compact`, `hidden`, `print`): Heading on one line (compact), hidden, or hidden on screen only (print)
 
 ## Components
 
@@ -56,14 +59,12 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 `@vignettes/nuxt`, shipped with every deck:
 
 - `Quote`: Quote with optional author, role and avatar
-- `FullScreenImage`: Full-screen image (attributes overlay, heading), also written `full-screen-image`; takes the whole slide
 - `Iframe`: Embedded web page (attributes lightbox, fullwidth)
 - `Image`: Image with framing (attributes fit, position, rounded, shadow), also written `deck-image`
 - `Mermaid`: Mermaid diagram (flowchart, sequence…)
 - `IconInline`: Inline icon (Remix / Iconify), also written `i`
 - `Columns`: Side-by-side columns (::column, attribute span for the widths), also written `TwoColumns`, `ThreeColumns`
 - `Column`, also written `column`
-- `SplitSlide`: Text beside a media pane in one block of the slide (attributes src, type, ratio, reverse, fit), also written `split-slide`
 - `Highlight`: Highlight box (attributes size sm or md, variant)
 - `Notes`: Speaker notes, shown in the speaker view (S key), also written `notes`
 - `Fragments`: List whose items appear one at a time (attributes effect, dim), also written `fragments`
@@ -81,5 +82,5 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 
 `@vignettes/storybook`, live story embeds:
 
-- `StoryFrame`: Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (attributes ratio, previewWidth, lightbox)
+- `StoryFrame`: Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (attributes ratio, viewport, lightbox)
 - `Screens`: Gallery of Storybook screens (attributes cols, gap, align)

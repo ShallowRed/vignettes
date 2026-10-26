@@ -1,194 +1,188 @@
 /**
- * Media layout: two-column grid.
+ * Media layouts: the grid of `:layout{media=…}` (see `readLayout` in
+ * `@vignettes/core/deck`).
  *
- * Activated when a slide carries any `layout-media*` class (left/right and
- * narrow/wide variants). Promoted from `RevealSlides.vue` global <style> block
- * because these selectors form a contract between the slide engine and any
- * theme: themes only paint, the layout grid is invariant.
+ * A slide with a media carries `layout-media`, `layout-media-<placement>`
+ * (`right`, `left`, `top`, `bottom`, `behind`) and, when the media has a share
+ * of the slide, `media-size-<p>-<q>`. These selectors form a contract between
+ * the slide engine and any theme: themes only paint, the layout grid is
+ * invariant.
  */
 
 .reveal .slides {
-  section[class*="layout-media"] {
+  // The shares of the text and of the media in the grid. A narrow text column
+  // shrinks its text by `--media-text-scale`. `:where` keeps the specificity of
+  // this rule low, so the size classes override it.
+  section:where(.layout-media) {
+    --media-text-share: 1fr;
+    --media-share: 1fr;
+    --media-text-scale: 1;
+  }
+
+  section.layout-media:not(.layout-media-behind) {
     display: grid !important;
-    grid-template-columns: 1fr 1.5fr;
-    // A row of bounded height lets `max-height: 100%` limit a tall image to the
-    // height of the slide.
-    grid-template-rows: minmax(0, 1fr);
     gap: 2.5rem;
     align-items: stretch;
   }
 
+  section.media-size-1-3 {
+    --media-text-share: 2fr;
+    --media-share: 1fr;
+  }
+
+  section.media-size-1-2 {
+    --media-text-share: 1fr;
+    --media-share: 1fr;
+  }
+
+  section.media-size-2-3 {
+    --media-text-share: 1fr;
+    --media-share: 2fr;
+    --media-text-scale: 0.8;
+  }
+
+  section.media-size-3-4 {
+    --media-text-share: 1fr;
+    --media-share: 3fr;
+    --media-text-scale: 0.68;
+  }
+
+  // A row of bounded height lets `max-height: 100%` limit a tall image to the
+  // height of the slide.
+  section.layout-media-right {
+    grid-template-columns: minmax(0, var(--media-text-share)) minmax(0, var(--media-share));
+    grid-template-rows: minmax(0, 1fr);
+  }
+
   section.layout-media-left {
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: minmax(0, var(--media-share)) minmax(0, var(--media-text-share));
+    grid-template-rows: minmax(0, 1fr);
   }
 
-  section.layout-media-right-wide {
-    grid-template-columns: 1fr 1.7fr;
-  }
+  // Above or below, the text row keeps its height and the media takes the rest,
+  // unless the media has a share of the height.
+  section.layout-media-top,
+  section.layout-media-bottom {
+    --media-text-scale: 1;
 
-  section.layout-media-left-wide {
-    grid-template-columns: 1.7fr 0.8fr;
-  }
-
-  // Maximal-media variants: content shrinks to a caption rail, media dominates.
-  section.layout-media-right-xwide {
-    grid-template-columns: 0.62fr 2.4fr;
-    gap: 2rem;
-  }
-
-  section.layout-media-left-xwide {
-    grid-template-columns: 2.4fr 0.62fr;
-    gap: 2rem;
-  }
-
-  // Stacked variants: compact heading/intro row + full-width media row.
-  section.layout-media-below,
-  section.layout-media-above {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;
   }
 
-  section.layout-media-above {
+  section.layout-media-top {
     grid-template-rows: minmax(0, 1fr) auto;
   }
 
-  // Reorder panes when media is on the left
-  section[class*="layout-media-left"] > .slide-content-pane {
-    order: 2;
+  section.layout-media-bottom {
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
-  section[class*="layout-media-left"] > .slide-media-pane {
+  section.layout-media-top[class*="media-size-"] {
+    grid-template-rows: minmax(0, var(--media-share)) minmax(0, var(--media-text-share));
+  }
+
+  section.layout-media-bottom[class*="media-size-"] {
+    grid-template-rows: minmax(0, var(--media-text-share)) minmax(0, var(--media-share));
+  }
+
+  section:is(.layout-media-left, .layout-media-top) > .slide-media-pane {
     order: 1;
   }
 
-  // Stacked ordering
-  section.layout-media-below > .slide-content-pane {
-    order: 1;
-  }
-
-  section.layout-media-below > .slide-media-pane {
-    order: 2;
-  }
-
-  section.layout-media-above > .slide-media-pane {
-    order: 1;
-  }
-
-  section.layout-media-above > .slide-content-pane {
+  section:is(.layout-media-left, .layout-media-top) > .slide-content-pane {
     order: 2;
   }
 
   // Media bleed: the slide keeps its text inset (`--slide-padding-x`), but the
   // media pane pulls back out to the slide edge so wide screens stay wide.
-  section[class*="layout-media-right"] > .slide-media-pane {
+  section.layout-media-right > .slide-media-pane {
     margin-right: calc(-1 * var(--slide-padding-x, 4rem));
   }
 
-  section[class*="layout-media-left"] > .slide-media-pane {
+  section.layout-media-left > .slide-media-pane {
     margin-left: calc(-1 * var(--slide-padding-x, 4rem));
   }
 
-  // Stacked variants: media row bleeds on both sides.
-  section.layout-media-below > .slide-media-pane,
-  section.layout-media-above > .slide-media-pane {
+  section:is(.layout-media-top, .layout-media-bottom) > .slide-media-pane {
     margin-left: calc(-1 * var(--slide-padding-x, 4rem));
     margin-right: calc(-1 * var(--slide-padding-x, 4rem));
   }
 
-  // Content pane: vertical column layout
-  section[class*="layout-media"] > .slide-content-pane {
+  // Content pane: a column aligned vertically by `--slide-align`
+  // (`_slide-structure.scss`).
+  section.layout-media > .slide-content-pane {
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: var(--slide-align);
     text-align: left;
     min-width: 0;
+    min-height: 0;
+    font-size: calc(var(--media-text-scale, 1) * 1em);
   }
 
-  // Wide variants: shrink content text to compensate for the narrower column
-  section[class*="layout-media"][class*="-wide"] > .slide-content-pane {
-    font-size: 0.75em;
+  section.layout-media > .slide-content-pane > :is(header, hgroup) {
+    height: auto;
+    flex-shrink: 0;
   }
 
-  section[class*="layout-media"][class*="-wide"] > .slide-content-pane > header :is(h1, h2, h3, h4, h5, h6),
-  section[class*="layout-media"][class*="-wide"] > .slide-content-pane > hgroup .slide-heading :is(h1, h2, h3, h4, h5, h6) {
-    font-size: 1.75em;
+  section.layout-media:not(.media-veil) > .slide-content-pane > article {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
-  // X-wide: the content column is a caption rail — shrink it further still.
-  section[class*="layout-media"][class*="-xwide"] > .slide-content-pane {
-    font-size: 0.62em;
-    justify-content: flex-start;
+  // A shrunk text column keeps a heading that stands above its text.
+  section.layout-media.media-size-2-3:is(.layout-media-right, .layout-media-left) > .slide-content-pane > :is(header, hgroup) :is(h1, h2, h3, h4, h5, h6) {
+    font-size: 1.6em;
+  }
+
+  // At three quarters, the text column is a caption rail, which starts at the
+  // top (`_slide-structure.scss`): a tight heading, and a lead paragraph a touch
+  // larger than the list under it.
+  section.layout-media.media-size-3-4:is(.layout-media-right, .layout-media-left) > .slide-content-pane {
     padding-top: 0.5rem;
   }
 
-  section[class*="layout-media"][class*="-xwide"] > .slide-content-pane > header :is(h1, h2, h3, h4, h5, h6),
-  section[class*="layout-media"][class*="-xwide"] > .slide-content-pane > hgroup .slide-heading :is(h1, h2, h3, h4, h5, h6) {
+  section.layout-media.media-size-3-4:is(.layout-media-right, .layout-media-left) > .slide-content-pane > :is(header, hgroup) :is(h1, h2, h3, h4, h5, h6) {
     font-size: 1.9em;
-    line-height: 1.08; // tight leading for the display title in a narrow rail
+    line-height: 1.08;
     margin-bottom: 0.7em;
   }
 
-  // Lead paragraph of a caption rail: a touch larger + airier than the bullets,
-  // so the one-line summary reads as the intro and the list as supporting detail.
-  section[class*="layout-media"][class*="-xwide"] > .slide-content-pane > article > p:first-child {
+  section.layout-media.media-size-3-4:is(.layout-media-right, .layout-media-left) > .slide-content-pane > article > p:first-child {
     font-size: 1.08em;
     line-height: 1.45;
     margin-top: 0;
   }
 
-  // Stacked variants: heading row stays compact, media row fills the rest.
-  section.layout-media-below > .slide-content-pane,
-  section.layout-media-above > .slide-content-pane {
-    justify-content: flex-start;
-  }
-
-  section.layout-media-below > .slide-content-pane > article,
-  section.layout-media-above > .slide-content-pane > article {
-    justify-content: flex-start;
-  }
-
-  // Heading area sticks to the top, article fills the rest
-  section[class*="layout-media"] > .slide-content-pane > header,
-  section[class*="layout-media"] > .slide-content-pane > hgroup {
-    height: auto;
-    flex-shrink: 0;
-  }
-
-  section[class*="layout-media"] > .slide-content-pane > article {
-    // flex: 1;
-    flex: none; // those should be attribute options
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
   // Media pane: centered, no decoration by default
-  section[class*="layout-media"] > .slide-media-pane {
+  section.layout-media > .slide-media-pane {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     min-width: 0;
+    min-height: 0;
     border: none;
     background: transparent;
     box-shadow: none;
   }
 
   // Default (cover) variant gets a frame
-  section[class*="layout-media"] > .slide-media-pane:not(.fit-contain) {
+  section.layout-media > .slide-media-pane:not(.fit-contain) {
     border: 1px solid var(--border);
     box-shadow: var(--shadow);
   }
 
-  section[class*="layout-media"] > .slide-media-pane.fit-contain {
+  section.layout-media > .slide-media-pane.fit-contain {
     overflow: visible;
     background: transparent;
   }
 
-  section[class*="layout-media"] > .slide-media-pane iframe {
+  section.layout-media > .slide-media-pane iframe {
     width: 100%;
     height: 100%;
     border: none;
@@ -198,23 +192,25 @@
   // Interactive embed (no lightbox): let clicks reach the iframe so internal
   // links browse *within* the embed. The iframe is sandboxed (no top-nav), so
   // it can never navigate the slides window away.
-  section[class*="layout-media"] > .slide-media-pane.is-interactive iframe {
+  section.layout-media > .slide-media-pane.is-interactive iframe {
     pointer-events: auto;
   }
 
   // Scaled story iframes (`:layout{story}`): rendered at a logical desktop width
-  // (`--preview-width`) and shrunk to fit. The size+transform are set by
-  // scaled-frame.js, not CSS — the exact fit needs the pane height, and CSS `cqh`
-  // is unreliable in Firefox on grid items. This block only sets the clip box.
-  section[class*="layout-media"] > .slide-media-pane.is-scaled {
+  // (`--preview-width`, from `viewport`) and shrunk to fit. The size+transform
+  // are set by scaled-frame.js: the exact fit needs the pane height,
+  // and CSS `cqh` is unreliable in Firefox on grid items. This block only sets
+  // the clip box.
+  section.layout-media > .slide-media-pane.is-scaled {
     --preview-width: 1440px;
+
     align-items: flex-start;
     justify-content: flex-start;
     position: relative;
     overflow: hidden;
   }
 
-  section[class*="layout-media"] > .slide-media-pane.is-scaled iframe {
+  section.layout-media > .slide-media-pane.is-scaled iframe {
     position: absolute;
     top: 0;
     left: 0;
@@ -225,17 +221,21 @@
     transform-origin: top left;
   }
 
-  section[class*="layout-media"] > .slide-media-pane img {
+  // A theme's rules for the images of a slide (margins, a maximum height) stop
+  // at the media pane, which sizes its image.
+  section.layout-media > .slide-media-pane img {
     width: 100%;
     height: 100%;
+    max-height: none;
+    margin: 0;
     background: transparent;
   }
 
-  section[class*="layout-media"] > .slide-media-pane img.fit-cover {
+  section.layout-media > .slide-media-pane img.fit-cover {
     object-fit: cover;
   }
 
-  section[class*="layout-media"] > .slide-media-pane img.fit-contain {
+  section.layout-media > .slide-media-pane img.fit-contain {
     display: block;
     width: auto;
     object-fit: contain;
@@ -246,7 +246,24 @@
     box-shadow: var(--shadow);
   }
 
-  // Interaction hint: pinned to the bottom of the content column.
+  section.layout-media > .slide-media-pane.position-top img {
+    object-position: top;
+  }
+
+  section.layout-media > .slide-media-pane.position-bottom img {
+    object-position: bottom;
+  }
+
+  section.layout-media > .slide-media-pane.position-left img {
+    object-position: left;
+  }
+
+  section.layout-media > .slide-media-pane.position-right img {
+    object-position: right;
+  }
+
+  // Interaction hint: pinned to the bottom of the content column, with an
+  // arrow towards the media.
   .slide-content-pane .slide-media-hint {
     position: absolute;
     bottom: 0;
@@ -257,90 +274,138 @@
     pointer-events: none;
   }
 
-  // Media on the right → arrow points right →
-  section[class*="layout-media-right"] > .slide-content-pane .slide-media-hint {
+  section.layout-media-right > .slide-content-pane .slide-media-hint {
     text-align: right;
     right: 0;
   }
 
-  section[class*="layout-media-right"] > .slide-content-pane .slide-media-hint::after {
+  section.layout-media-right > .slide-content-pane .slide-media-hint::after {
     content: ' →';
     opacity: 0.7;
   }
 
-  // Media on the left → arrow points left ←
-  section[class*="layout-media-left"] > .slide-content-pane .slide-media-hint {
+  section.layout-media-left > .slide-content-pane .slide-media-hint {
     text-align: left;
     left: 0;
   }
 
-  section[class*="layout-media-left"] > .slide-content-pane .slide-media-hint::before {
+  section.layout-media-left > .slide-content-pane .slide-media-hint::before {
     content: '← ';
     opacity: 0.7;
   }
 
-  // Stacked → arrow points down ↓
-  section.layout-media-below > .slide-content-pane .slide-media-hint,
-  section.layout-media-above > .slide-content-pane .slide-media-hint {
+  section:is(.layout-media-top, .layout-media-bottom) > .slide-content-pane .slide-media-hint {
+    position: static;
     text-align: center;
   }
 
-  section.layout-media-below > .slide-content-pane .slide-media-hint::after,
-  section.layout-media-above > .slide-content-pane .slide-media-hint::after {
+  section.layout-media-top > .slide-content-pane .slide-media-hint::after {
+    content: ' ↑';
+    opacity: 0.7;
+  }
+
+  section.layout-media-bottom > .slide-content-pane .slide-media-hint::after {
     content: ' ↓';
     opacity: 0.7;
   }
 
   // Lightbox: enable click-through and show pointer cursor
-  section[class*="layout-media"] > .slide-media-pane.has-lightbox {
+  section.layout-media > .slide-media-pane.has-lightbox {
     cursor: pointer;
   }
 
-  section[class*="layout-media"] > .slide-media-pane.has-lightbox iframe {
+  section.layout-media > .slide-media-pane.has-lightbox iframe {
     pointer-events: none;
   }
 
   // -------------------------------------------------------------------------
-  // media-cover: one big screen full-bleed, with a floating caption overlay.
-  // The heading/intro sit on a translucent card over the media.
+  // behind: Reveal draws the image as the slide background, over the whole
+  // screen. The text sits on a translucent card at the bottom left, or, with
+  // a veil, directly on the darkened image in light colors.
   // -------------------------------------------------------------------------
-  section.layout-media-cover {
-    display: block !important;
-    position: relative;
-    padding: 0;
-    overflow: hidden;
+  section.layout-media-behind.media-card {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: var(--slide-align);
+    align-items: flex-start;
   }
 
-  section.layout-media-cover > .slide-media-pane {
-    position: absolute;
-    inset: 0;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  section.layout-media-cover > .slide-media-pane:not(.fit-contain) {
-    border: none;
-    box-shadow: none;
-  }
-
-  section.layout-media-cover > .slide-content-pane {
-    position: absolute;
-    left: 2.5rem;
-    bottom: 2.5rem;
-    z-index: 2;
-    max-width: min(46%, 38rem);
+  section.layout-media-behind.media-card > .slide-content-pane {
+    max-width: min(50%, 38rem);
     padding: 1.25rem 1.5rem;
     border-radius: var(--radius);
     background: color-mix(in srgb, var(--surface, #fff) 88%, transparent);
     backdrop-filter: blur(6px);
-    box-shadow: 0 1rem 2.5rem rgba(0, 0, 18, 0.18);
-    font-size: 0.7em;
+    box-shadow: 0 1rem 2.5rem rgb(0 0 18 / 18%);
+    font-size: 0.85em;
+  }
+
+  // Under a veil, the slide lays out its heading and its body as a slide
+  // without a media does.
+  section.layout-media-behind.media-veil > .slide-content-pane {
+    display: contents;
+  }
+
+  // A theme may color its headings and its text without the tokens: the veil
+  // sets the color of the text elements too.
+  section.layout-media-behind.media-veil {
+    --text-title: var(--on-contrast, #fff);
+    --text-default: var(--on-contrast, #fff);
+    --text-mention: var(--on-contrast, #fff);
+
+    color: var(--on-contrast, #fff);
+    text-shadow: 0 2px 8px rgb(0 0 0 / 50%);
+
+    :is(h1, h2, h3, h4, h5, h6, p, li, blockquote, strong, em, figcaption) {
+      color: var(--on-contrast, #fff);
+    }
   }
 }
 
 // Reveal's print stylesheet sets every slide to `display: block !important`; a
-// media slide keeps its grid on the printed page. The cover variant is a block.
-html.reveal-print .reveal .slides section[class*="layout-media"]:not(.layout-media-cover) {
+// media slide keeps its grid on the printed page.
+html.reveal-print .reveal .slides section.layout-media:not(.layout-media-behind) {
   display: grid !important;
+}
+
+html.reveal-print .reveal .slides section.layout-media-behind {
+  display: flex !important;
+}
+
+// The scroll view of a phone, under 435 pixels wide, stacks the panes of a
+// slide in reading order: the text, then the media; above the text when the
+// media is at the top. The media stays inside the screen, the text keeps its
+// reading size, and `contain` shows the whole image.
+.reveal-scroll .scroll-page section.layout-media:not(.layout-media-behind) {
+  --media-text-scale: 1;
+
+  display: flex !important;
+  flex-direction: column;
+  gap: 1rem;
+
+  > .slide-content-pane {
+    order: 1;
+    flex: none;
+  }
+
+  > .slide-media-pane {
+    order: 2;
+    flex: 1 1 auto;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.reveal-scroll .scroll-page section.layout-media-top:not(.layout-media-behind) {
+  > .slide-media-pane {
+    order: 1;
+  }
+
+  > .slide-content-pane {
+    order: 2;
+  }
+}
+
+.reveal-scroll .scroll-page section.layout-media-behind.media-card > .slide-content-pane {
+  max-width: 100%;
 }
