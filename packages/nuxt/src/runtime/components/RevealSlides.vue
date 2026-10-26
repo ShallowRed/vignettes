@@ -6,6 +6,7 @@ import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
 import { useSlideIds } from '../composables/useSlideIds.ts'
 import { STORYBOOK_BASE } from '../config/injection-keys.ts'
+import { proseComponents } from '../utils/prose-components.ts'
 import { getSlideClasses, knownComponentNames, resolveSlideBackground } from '../utils/slide-rendering.ts'
 
 const props = defineProps<{ presentationData: PresentationData }>()
@@ -22,9 +23,12 @@ provide(
 
 // A name outside the component map is a heading, rendered as a plain element.
 const componentMap = buildComponentMap()
-const mdcComponents: Record<string, any> = Object.fromEntries(
-  knownComponentNames().map(name => [name, componentMap[name] ? resolveComponent(componentMap[name]) : name]),
-)
+const mdcComponents: Record<string, any> = {
+  ...proseComponents,
+  ...Object.fromEntries(
+    knownComponentNames().map(name => [name, componentMap[name] ? resolveComponent(componentMap[name]) : name]),
+  ),
+}
 
 // Reveal draws the background from these attributes. A media behind the text
 // keeps its framing, and its veil is black under the image, made that much
