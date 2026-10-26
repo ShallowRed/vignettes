@@ -1,7 +1,7 @@
 {
   "catalog": {
     "fields": {
-      "status": "Status",
+      "status": "Visibility",
       "project": "Folder",
       "theme": "Theme"
     },
@@ -57,7 +57,7 @@
     },
     "toolbar": {
       "searchPlaceholder": "Search…",
-      "statusFilterActive": "Status · {count}",
+      "statusFilterActive": "Visibility · {count}",
       "projectFilterActive": "Folder · {count}",
       "clearFilters": "Clear",
       "sortBy": "Sort by",

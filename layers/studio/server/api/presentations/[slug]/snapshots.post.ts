@@ -5,7 +5,8 @@ import { currentDraftText, recordDraftSnapshot, useDraftStore } from '../../../u
 const BodySchema = z.object({ label: z.string().trim().min(1).max(80).optional() })
 
 /**
- * Keep the draft as it is now, with a label. A labelled snapshot is never pruned.
+ * Keep the draft as it is now, with a label. A labelled snapshot is kept out of
+ * the hourly and daily pruning, up to MAX_LABELLED_SNAPSHOTS per deck.
  * POST /api/presentations/:slug/snapshots   body: { label? }
  */
 export default defineEventHandler(async (event) => {

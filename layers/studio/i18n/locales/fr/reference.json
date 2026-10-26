@@ -78,7 +78,7 @@
         "backgrounds": "Images de fond par rôle de diapositive",
         "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
         "reveal": "Réglages d'affichage de Reveal.js, le moteur des présentations : format, numérotation, transitions…",
-        "accessPassword": "Mot de passe du statut semi-private ; pour une présentation créée dans le studio, saisissez-le dans Réglages et partage",
+        "accessPassword": "Mot de passe de la visibilité semi-private ; pour une présentation créée dans le studio, saisissez-le dans Réglages et partage",
         "titleDefault": "l'identifiant"
       },
       "backgrounds": {
@@ -124,7 +124,8 @@
       }
     },
     "shortcuts": {
-      "saveDraft": "Enregistrer le brouillon",
+      "saveDraft": "Enregistrer le brouillon et capturer un instantané",
+      "captureSnapshot": "Capturer un instantané du brouillon",
       "bold": "Gras",
       "italic": "Italique",
       "undo": "Annuler",

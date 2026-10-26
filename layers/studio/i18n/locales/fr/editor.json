@@ -6,7 +6,7 @@
       "peerEditing": "{name} édite en ce moment",
       "anonymousPeer": "anonyme",
       "history": "Historique",
-      "historyTooltip": "Versions publiées : comparer, restaurer",
+      "historyTooltip": "Versions publiées et instantanés : comparer, restaurer",
       "settings": "Réglages et partage",
       "settingsTooltip": "Titre, accès, partage, dossier, thème, variantes et alias",
       "settingsTooltipSharing": "Qui peut ouvrir la présentation, et ses accès individuels",
@@ -31,7 +31,7 @@
     "collab": {
       "offline": "Hors ligne",
       "connecting": "Connexion…",
-      "synced": "Brouillon synchronisé",
+      "synced": "Enregistré",
       "saving": "Enregistrement…",
       "hint": "Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.",
       "switchToSolo": "Passer en solo",
@@ -50,12 +50,12 @@
       "failed": "Échec de la publication",
       "neverPublished": "Jamais publié",
       "unpublishedChanges": "Modifications non publiées",
-      "upToDate": "Publié à jour",
+      "upToDate": "En ligne",
       "hintNeverPublished": "Les visiteurs ne voient encore rien : publiez le brouillon.",
       "hintUnpublished": "Les visiteurs voient la version publiée. Publiez pour la mettre à jour.",
       "hintUnpublishedSince": "Les visiteurs voient la version publiée le {date}. Publiez pour la mettre à jour.",
-      "hintUpToDate": "Le brouillon est identique à la version publiée.",
-      "hintUpToDateSince": "Le brouillon est identique à la version publiée le {date}."
+      "hintUpToDate": "Les visiteurs voient ce brouillon.",
+      "hintUpToDateSince": "Les visiteurs voient ce brouillon depuis le {date}."
     },
     "preview": {
       "pane": "Aperçu",

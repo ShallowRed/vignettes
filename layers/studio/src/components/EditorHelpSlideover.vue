@@ -32,7 +32,10 @@ const layoutChoices = computed(() => layoutAttributeEntries(locale.value).filter
 
 const structure = computed(() => STRUCTURE_HELP[props.parser])
 const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : 'heading'))
-const shortcuts = computed(() => props.autosave ? EDITOR_SHORTCUTS.filter(entry => !entry.soloOnly) : EDITOR_SHORTCUTS)
+const shortcuts = computed(() => EDITOR_SHORTCUTS.map(entry => ({
+  keys: entry.keys,
+  descriptionKey: props.autosave ? entry.sharedDescriptionKey ?? entry.descriptionKey : entry.descriptionKey,
+})))
 </script>
 
 <template>

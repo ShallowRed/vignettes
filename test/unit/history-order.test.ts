@@ -1,9 +1,6 @@
-import type { HistoryEntry } from '../../layers/studio/shared/presentations/history'
 import { describe, expect, it } from 'vitest'
 import { compareHistoryEntries } from '../../layers/studio/shared/presentations/history'
-
-const version = (id: number, at: number): HistoryEntry => ({ kind: 'version', id, at, bytes: 1, publishedBy: 'ed', current: false })
-const snapshot = (id: number, at: number): HistoryEntry => ({ kind: 'snapshot', id, at, bytes: 1, authors: [], label: null })
+import { historySnapshot as snapshot, historyVersion as version } from './helpers/fixtures'
 
 describe('compareHistoryEntries', () => {
   it('orders newest first, the snapshot before the version of the same second, then by id', () => {

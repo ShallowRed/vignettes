@@ -1,3 +1,4 @@
+import type { HistoryEntry } from '../../../layers/studio/shared/presentations/history'
 import type { PresentationListItem } from '../../../layers/studio/shared/presentations/list-item'
 import type { Project } from '../../../layers/studio/shared/projects/schema'
 
@@ -29,3 +30,13 @@ export const ESCAPING_PATHS = [
   'bundle/.',
   '%E0%A4%A',
 ]
+
+/** A published version of a deck's history, published at `at`. */
+export function historyVersion(id: number, at = id): HistoryEntry {
+  return { kind: 'version', id, at, bytes: 1, publishedBy: 'ed', current: false }
+}
+
+/** A snapshot of a deck's draft, taken at `at`. */
+export function historySnapshot(id: number, at = id, label: string | null = null): HistoryEntry {
+  return { kind: 'snapshot', id, at, bytes: 1, authors: [], label }
+}

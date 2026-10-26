@@ -90,7 +90,7 @@
       },
       "collab": {
         "sharedFolder": "Publique, Mot de passe, Brouillon et English deck ont un crayon. Le bouton Nouvelle présentation est présent.",
-        "sync": "La barre du haut de l'éditeur indique Brouillon synchronisé. Un texte tapé dans un second onglet apparaît avec l'initiale du pair.",
+        "sync": "La barre du haut de l'éditeur indique Enregistré. Un texte tapé dans un second onglet apparaît avec l'initiale du pair.",
         "pasteImage": "Une image collée s'insère dans le texte.",
         "unpublished": "Après une modification, la barre du haut de l'éditeur et la carte indiquent Modifications non publiées. Publier retire cette mention.",
         "password": "La présentation s'ouvre sans mot de passe.",

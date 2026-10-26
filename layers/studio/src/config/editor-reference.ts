@@ -258,12 +258,12 @@ export function layoutAttributeEntries(lang: string): LayoutAttributeEntry[] {
 export interface ShortcutEntry {
   keys: string[]
   descriptionKey: string
-  /** The shortcut acts in solo mode only. */
-  soloOnly?: boolean
+  /** What the shortcut does in the shared editor, when it differs from solo mode. */
+  sharedDescriptionKey?: string
 }
 
 export const EDITOR_SHORTCUTS: readonly ShortcutEntry[] = [
-  { keys: ['meta', 'S'], descriptionKey: 'reference.shortcuts.saveDraft', soloOnly: true },
+  { keys: ['meta', 'S'], descriptionKey: 'reference.shortcuts.saveDraft', sharedDescriptionKey: 'reference.shortcuts.captureSnapshot' },
   { keys: ['meta', 'B'], descriptionKey: 'reference.shortcuts.bold' },
   { keys: ['meta', 'I'], descriptionKey: 'reference.shortcuts.italic' },
   { keys: ['meta', 'Z'], descriptionKey: 'reference.shortcuts.undo' },

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import type { HistoryEntry } from '#shared/presentations'
 import type { HistoryRef } from '../api'
-import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+import { useMutation, useQuery } from '@pinia/colada'
 import { historyApi } from '../api'
-import { deckKeys, historyEntryQuery, historyQuery } from '../queries'
+import { useSnapshotCapture } from '../composables/useSnapshotCapture'
+import { historyEntryQuery, historyQuery } from '../queries'
 import { diffStructure } from '../utils/diff-skeleton'
+import { historyRows } from '../utils/history-rows'
 import { requestErrorMessage } from '../utils/request-error'
 
 /**
  * The history of a deck: the draft, then the published versions and the
- * snapshots of the draft. Each entry shows what it changed: the draft against
- * the version the visitors see, any other entry against the one before it.
+ * snapshots of the draft, the unnamed snapshots folded between them. Each entry
+ * shows what it changed: the draft against the version the visitors see, any
+ * other entry against the one before it.
  * Restoring copies an entry into the draft, whose previous text stays in the
  * history; the visitors keep the current version until the next publish.
  */
@@ -26,7 +29,6 @@ const open = defineModel<boolean>('open', { required: true })
 
 const { t, locale } = useI18n()
 const toast = useToast()
-const queryCache = useQueryCache()
 
 const listQ = useQuery({ ...historyQuery($fetch, props.slug), enabled: () => open.value })
 const entries = computed(() => listQ.data.value ?? [])
@@ -36,7 +38,8 @@ type Selection = 'draft' | HistoryRef
 const selected = ref<Selection | null>(null)
 const confirming = ref(false)
 const naming = ref(false)
-const label = ref('')
+// The runs of unnamed snapshots unfolded since the panel opened.
+const unfolded = ref(new Set<string>())
 // The shape of each diff seen since the panel opened (see `structure`), with
 // the texts it was computed from: the draft may still be syncing when the
 // panel opens.
@@ -48,13 +51,43 @@ watch(open, (now) => {
   selected.value = now ? 'draft' : null
   confirming.value = false
   naming.value = false
+  unfolded.value = new Set()
 })
 watch(selected, () => {
   confirming.value = false
 })
+// The form captures the draft, shown selected above it.
+watch(naming, (now) => {
+  if (now) {
+    selected.value = 'draft'
+    confirming.value = false
+  }
+})
 
 const same = (a: HistoryRef, b: HistoryRef) => a.kind === b.kind && a.id === b.id
 const isSelected = (entry: HistoryEntry) => selected.value !== null && selected.value !== 'draft' && same(selected.value, entry)
+
+// The list as drawn: each entry, and each run of unnamed snapshots as one
+// toggle, unfolded on demand or when it holds the selected entry.
+type ListItem
+  = | { kind: 'entry', key: string, entry: HistoryEntry, nested: boolean }
+    | { kind: 'fold', key: string, count: number, open: boolean }
+const listItems = computed<ListItem[]>(() => historyRows(entries.value).flatMap((row): ListItem[] => {
+  if (row.kind === 'entry')
+    return [{ kind: 'entry', key: `${row.entry.kind}-${row.entry.id}`, entry: row.entry, nested: false }]
+  const open = unfolded.value.has(row.key) || row.entries.some(e => isSelected(e))
+  return [
+    { kind: 'fold', key: row.key, count: row.entries.length, open },
+    ...(open ? row.entries.map(entry => ({ kind: 'entry' as const, key: `${entry.kind}-${entry.id}`, entry, nested: true })) : []),
+  ]
+}))
+function toggle(key: string) {
+  const next = new Set(unfolded.value)
+  if (!next.delete(key))
+    next.add(key)
+  unfolded.value = next
+}
+
 const selectedEntry = computed(() => selected.value && selected.value !== 'draft' ? entries.value.find(e => same(e, selected.value as HistoryRef)) ?? null : null)
 
 // The two texts of the diff: what the entry changed (`to`) against what came
@@ -120,12 +153,22 @@ function kilobytes(bytes: number): number {
   return Math.max(1, Math.round(bytes / 1024))
 }
 function title(entry: HistoryEntry): string {
-  return entry.kind === 'snapshot' && entry.label ? entry.label : when(entry.at)
+  if (entry.kind === 'version')
+    return entry.current ? t('deck.history.versionOnline') : t('deck.history.versionPublished', { when: when(entry.at) })
+  return entry.label ? entry.label : when(entry.at)
+}
+function icon(entry: HistoryEntry): string {
+  if (entry.kind === 'version')
+    return 'i-lucide-send'
+  return entry.label ? 'i-lucide-bookmark' : 'i-lucide-camera'
 }
 function detail(entry: HistoryEntry): string {
   const named = { kilobytes: kilobytes(entry.bytes) }
-  if (entry.kind === 'version')
-    return t('deck.history.detailVersion', { ...named, author: entry.publishedBy })
+  if (entry.kind === 'version') {
+    return entry.current
+      ? t('deck.history.detailCurrentVersion', { ...named, author: entry.publishedBy, when: when(entry.at) })
+      : t('deck.history.detailVersion', { ...named, author: entry.publishedBy })
+  }
   const authors = entry.authors.join(', ')
   if (entry.label) {
     return authors
@@ -224,17 +267,8 @@ const { mutateAsync: restore, isLoading: restoring } = useMutation({
   },
 })
 
-const { mutateAsync: keep, isLoading: keeping } = useMutation({
-  mutation: (name: string) => historyApi.snapshot($fetch, props.slug, name.trim() || undefined),
-  onSuccess() {
-    toast.add({ title: t('deck.history.snapshotKept'), icon: 'i-lucide-check', color: 'success' })
-    naming.value = false
-    label.value = ''
-  },
-  onError(error: any) {
-    toast.add({ title: requestErrorMessage(error, t('deck.history.snapshotFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
-  },
-  onSettled: () => queryCache.invalidateQueries({ key: deckKeys.history(props.slug) }),
+const { capture, capturing } = useSnapshotCapture(props.slug, () => {
+  naming.value = false
 })
 </script>
 
@@ -245,6 +279,18 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
     :description="t('deck.history.description', { slug })"
     :ui="{ content: 'max-w-5xl', body: 'p-0 sm:p-0' }"
   >
+    <template #actions>
+      <UButton
+        v-if="!naming"
+        :label="t('deck.history.captureSnapshot')"
+        icon="i-lucide-camera"
+        color="neutral"
+        variant="outline"
+        size="sm"
+        class="ms-auto me-10"
+        @click="() => { naming = true }"
+      />
+    </template>
     <template #body>
       <div class="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] md:grid-rows-1 md:grid-cols-[18rem_minmax(0,1fr)]">
         <!-- The draft, then the entries, newest first. The served version is marked. -->
@@ -285,33 +331,42 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
           </p>
           <ul v-else>
             <li
-              v-for="entry in entries"
-              :key="`${entry.kind}-${entry.id}`"
+              v-for="item in listItems"
+              :key="item.key"
             >
               <button
+                v-if="item.kind === 'fold'"
                 type="button"
-                class="flex w-full flex-col gap-0.5 border-b border-default px-4 py-3 text-left hover:bg-elevated"
-                :class="isSelected(entry) ? 'bg-elevated' : ''"
-                :aria-current="isSelected(entry) ? 'true' : undefined"
-                @click="selected = { kind: entry.kind, id: entry.id }"
+                class="flex w-full items-center gap-1.5 border-b border-default px-4 py-2 text-left text-xs text-muted hover:bg-elevated"
+                :aria-expanded="item.open"
+                @click="toggle(item.key)"
               >
-                <span class="flex items-center justify-between gap-2">
-                  <span class="flex min-w-0 items-center gap-1.5 text-sm font-medium text-highlighted">
-                    <UIcon
-                      :name="entry.kind === 'version' ? 'i-lucide-send' : 'i-lucide-camera'"
-                      class="size-3.5 shrink-0 text-muted"
-                    />
-                    <span class="truncate">{{ title(entry) }}</span>
-                  </span>
-                  <UBadge
-                    v-if="entry.kind === 'version'"
-                    :label="entry.current ? t('deck.history.badgeCurrent') : t('deck.history.badgePublished')"
-                    :color="entry.current ? 'primary' : 'neutral'"
-                    variant="subtle"
-                    size="sm"
+                <UIcon
+                  :name="item.open ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                  class="size-3.5 shrink-0"
+                />
+                {{ t('deck.history.unnamedSnapshots', item.count) }}
+              </button>
+              <button
+                v-else
+                type="button"
+                class="flex w-full flex-col gap-0.5 border-b border-default py-3 pr-4 text-left hover:bg-elevated"
+                :class="[isSelected(item.entry) ? 'bg-elevated' : '', item.nested ? 'pl-9' : 'pl-4']"
+                :aria-current="isSelected(item.entry) ? 'true' : undefined"
+                @click="selected = { kind: item.entry.kind, id: item.entry.id }"
+              >
+                <span
+                  class="flex min-w-0 items-center gap-1.5 text-sm text-highlighted"
+                  :class="item.entry.kind === 'snapshot' && item.entry.label ? 'font-semibold' : 'font-medium'"
+                >
+                  <UIcon
+                    :name="icon(item.entry)"
+                    class="size-3.5 shrink-0"
+                    :class="item.entry.kind === 'version' && item.entry.current ? 'text-primary' : 'text-muted'"
                   />
+                  <span class="truncate">{{ title(item.entry) }}</span>
                 </span>
-                <span class="text-xs text-muted">{{ detail(entry) }}</span>
+                <span class="text-xs text-muted">{{ detail(item.entry) }}</span>
               </button>
             </li>
           </ul>
@@ -342,15 +397,6 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
               </p>
             </div>
             <UButton
-              v-if="selected === 'draft' && !naming && !confirming"
-              :label="t('deck.history.keepSnapshot')"
-              icon="i-lucide-camera"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              @click="() => { naming = true }"
-            />
-            <UButton
               v-if="!confirming && !naming"
               :label="restoreLabel"
               icon="i-lucide-history"
@@ -363,34 +409,14 @@ const { mutateAsync: keep, isLoading: keeping } = useMutation({
           </div>
 
           <!-- A named snapshot of the draft, kept out of the pruning. -->
-          <form
+          <SnapshotNameForm
             v-if="naming"
-            class="flex flex-wrap items-center gap-2 border-b border-default px-4 py-3"
-            @submit.prevent="keep(label)"
-          >
-            <UInput
-              v-model="label"
-              :placeholder="t('deck.history.snapshotNamePlaceholder')"
-              class="w-72"
-              size="sm"
-              maxlength="80"
-              autofocus
-              :aria-label="t('deck.history.snapshotName')"
-            />
-            <UButton
-              type="submit"
-              :label="t('deck.history.keep')"
-              size="sm"
-              :loading="keeping"
-            />
-            <UButton
-              :label="t('common.actions.cancel')"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              @click="() => { naming = false }"
-            />
-          </form>
+            class="border-b border-default px-4 py-3"
+            :loading="capturing"
+            cancelable
+            @capture="capture"
+            @cancel="() => { naming = false }"
+          />
 
           <ActionNotice
             v-if="confirming && restoreRef !== null"

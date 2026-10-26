@@ -6,7 +6,7 @@
       "peerEditing": "{name} is editing right now",
       "anonymousPeer": "anonymous",
       "history": "History",
-      "historyTooltip": "Published versions: compare, restore",
+      "historyTooltip": "Published versions and snapshots: compare, restore",
       "settings": "Settings and sharing",
       "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
       "settingsTooltipSharing": "Who can open the presentation, and its individual grants",
@@ -31,7 +31,7 @@
     "collab": {
       "offline": "Offline",
       "connecting": "Connecting…",
-      "synced": "Draft synced",
+      "synced": "Saved",
       "saving": "Saving…",
       "hint": "Draft shared in real time: every change is saved automatically and visible to the other editors.",
       "switchToSolo": "Switch to solo",
@@ -50,12 +50,12 @@
       "failed": "Publishing failed",
       "neverPublished": "Never published",
       "unpublishedChanges": "Unpublished changes",
-      "upToDate": "Published and up to date",
+      "upToDate": "Live",
       "hintNeverPublished": "Visitors do not see anything yet: publish the draft.",
       "hintUnpublished": "Visitors see the published version. Publish to update it.",
       "hintUnpublishedSince": "Visitors see the version published on {date}. Publish to update it.",
-      "hintUpToDate": "The draft is identical to the published version.",
-      "hintUpToDateSince": "The draft is identical to the version published on {date}."
+      "hintUpToDate": "Visitors see this draft.",
+      "hintUpToDateSince": "Visitors have seen this draft since {date}."
     },
     "preview": {
       "pane": "Preview",

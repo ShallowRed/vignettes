@@ -131,8 +131,6 @@ const publishedAtLabel = computed(() =>
   publishedAt.value ? new Date(publishedAt.value).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' }) : null)
 const publicationLabel = computed(() =>
   neverPublished.value ? t('editor.publication.neverPublished') : unpublished.value ? t('editor.publication.unpublishedChanges') : t('editor.publication.upToDate'))
-const publishLabel = computed(() =>
-  unpublished.value === false ? t('editor.publication.published') : t('editor.publication.publish'))
 const publicationHint = computed(() => {
   if (neverPublished.value)
     return t('editor.publication.hintNeverPublished')
@@ -163,12 +161,12 @@ watch(synced, (value) => {
 })
 const syncIndicator = computed(() => {
   if (collabStatus.value === 'disconnected')
-    return { icon: 'i-lucide-cloud-off', class: 'text-error', label: collabLabel.value }
+    return { icon: 'i-lucide-cloud-off', class: 'text-error', labelClass: 'text-error', label: collabLabel.value }
   if (collabStatus.value !== 'connected' || !docSynced.value)
-    return { icon: 'i-lucide-loader-circle', class: 'text-dimmed animate-spin', label: collabLabel.value }
+    return { icon: 'i-lucide-loader-circle', class: 'text-dimmed animate-spin', labelClass: 'text-muted', label: collabLabel.value }
   if (savingShown.value)
-    return { icon: 'i-lucide-cloud-upload', class: 'text-warning', label: t('editor.collab.saving') }
-  return { icon: 'i-lucide-cloud-check', class: 'text-muted', label: t('editor.collab.synced') }
+    return { icon: 'i-lucide-cloud-upload', class: 'text-warning', labelClass: 'text-muted', label: t('editor.collab.saving') }
+  return { icon: 'i-lucide-cloud-check', class: 'text-muted', labelClass: 'text-muted', label: t('editor.collab.synced') }
 })
 
 /** Re-read the published state after someone (maybe this client) published. */
@@ -216,6 +214,8 @@ const { data: viewer } = useFetch<{ canEdit: boolean, project?: string | null }>
 // ── CodeMirror setup ────────────────────────────────────────────────────────
 
 const cm = useTemplateRef<{ view?: EditorView }>('cm')
+// ⌘S captures a snapshot of the shared draft through the header's indicator.
+const snapshotPopover = useTemplateRef<{ capture: () => void }>('snapshotPopover')
 const editorView = computed(() => cm.value?.view)
 
 // ── Follow-the-cursor preview ────────────────────────────────────────────────
@@ -348,7 +348,9 @@ const shortcutKeymap = keymap.of([
   {
     key: 'Mod-s',
     run: () => {
-      if (!collabEnabled.value)
+      if (collabEnabled.value)
+        snapshotPopover.value?.capture()
+      else
         save()
       return true
     },
@@ -915,31 +917,25 @@ async function onMetaSaved() {
         </UButton>
       </UTooltip>
 
-      <!-- The draft state is an icon of fixed size; only a lost connection,
-           which needs an action, adds text. -->
-      <UTooltip
-        v-if="collabEnabled"
-        :text="`${syncIndicator.label}. ${t('editor.collab.hint')}`"
-      >
-        <span class="flex items-center gap-1.5 text-xs">
-          <UIcon
-            :name="syncIndicator.icon"
-            class="size-4.5 shrink-0"
-            :class="syncIndicator.class"
-          />
-          <template v-if="collabStatus === 'disconnected'">
-            <span class="text-error">{{ t('editor.collab.offline') }}</span>
-            <UButton
-              :label="t('editor.collab.switchToSolo')"
-              color="neutral"
-              variant="link"
-              size="xs"
-              :to="`/edit/${slug}?solo`"
-              external
-            />
-          </template>
-        </span>
-      </UTooltip>
+      <!-- The draft state opens the capture of a snapshot; a lost connection
+           adds a link to the solo editor. -->
+      <template v-if="collabEnabled">
+        <EditorSnapshotPopover
+          ref="snapshotPopover"
+          :slug="slug"
+          :indicator="syncIndicator"
+          :offline="collabStatus !== 'connected'"
+        />
+        <UButton
+          v-if="collabStatus === 'disconnected'"
+          :label="t('editor.collab.switchToSolo')"
+          color="neutral"
+          variant="link"
+          size="xs"
+          :to="`/edit/${slug}?solo`"
+          external
+        />
+      </template>
       <template v-else-if="writable">
         <UTooltip :text="t('editor.collab.soloTooltip')">
           <UButton
@@ -973,24 +969,35 @@ async function onMetaSaved() {
         </UChip>
       </template>
 
-      <!-- The publication state lives on its button: a dot while the draft
-           differs from what visitors see, « Publié » once they are the same. -->
+      <!-- The publication state: the button, with a dot while the draft differs
+           from what visitors see, then « En ligne » once they are the same. -->
       <UTooltip :text="`${publicationLabel}. ${publicationHint}`">
+        <!-- The padding, text and icon of the publish button it replaces. -->
+        <UBadge
+          v-if="writable && unpublished === false"
+          :label="t('editor.publication.upToDate')"
+          :aria-label="t('editor.publication.upToDate')"
+          icon="i-lucide-check"
+          color="success"
+          variant="subtle"
+          tabindex="0"
+          class="sm:w-28 justify-center"
+          :ui="{ base: 'px-2.5 py-1.5 text-sm gap-1.5 max-sm:px-1.5', label: HEADER_LABEL, leadingIcon: 'size-5' }"
+        />
         <UChip
+          v-else
           :show="writable && unpublished === true"
           color="warning"
           size="lg"
         >
           <UButton
-            :label="publishLabel"
-            :aria-label="publishLabel"
+            :label="t('editor.publication.publish')"
+            :aria-label="t('editor.publication.publish')"
             :ui="HEADER_BUTTON_UI"
-            :icon="unpublished === false ? 'i-lucide-check' : 'i-lucide-send'"
-            :color="unpublished === false ? 'neutral' : 'primary'"
-            :variant="unpublished === false ? 'outline' : 'solid'"
+            icon="i-lucide-send"
             class="sm:w-28 justify-center"
             :loading="publishState === 'publishing'"
-            :disabled="!writable || unpublished === false"
+            :disabled="!writable"
             @click="publish"
           />
         </UChip>
