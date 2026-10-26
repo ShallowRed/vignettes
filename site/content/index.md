@@ -1,50 +1,100 @@
 ---
 seo:
   title: Vignettes
-  description: Écrivez une présentation en Markdown dans le navigateur, publiez-la et partagez son lien.
+  description: Des présentations écrites en Markdown, aux couleurs de votre équipe, qui affichent en direct les composants de votre Storybook.
 ---
 
 ::u-page-hero
 
 #title
 
-Vignettes
+Des présentations en Markdown, avec les écrans réels de votre produit
 
 #description
 
-{{ $doc.seo.description }}
+Des titres, des listes, et quelques blocs pour les colonnes, les schémas et les stories de votre Storybook. Votre équipe écrit à plusieurs dans son studio, publie par versions et présente avec ses notes.
 
 #links
 
-:::u-button{size="xl" to="/demarrer/rejoindre-le-studio" trailing-icon="i-lucide-arrow-right"}
+:::u-button{size="xl" to="/demarrer/premiere-presentation" trailing-icon="i-lucide-arrow-right"}
 
-Démarrer
+Écrire une première présentation
 
 :::
 
 :::u-button{size="xl" to="/ecrire/syntaxe" color="neutral" variant="outline"}
 
-Écrire une présentation
-
-:::
-
-:::u-button{size="xl" to="/ecrire/ecrire-avec-un-agent" color="neutral" variant="outline"}
-
-Écrire avec un agent
-
-:::
-
-:::u-button{size="xl" to="/studio/problemes-frequents" color="neutral" variant="outline"}
-
-Problèmes fréquents
+La syntaxe
 
 :::
 
 ::
 
-::u-container{class="max-w-5xl pb-24"}
+::u-container{class="max-w-5xl"}
 
 :::deck-example{example="vignettes-demo"}
+
+:::
+
+::
+
+::u-container{class="max-w-5xl pt-12 pb-24"}
+
+:::u-page-grid
+
+::::u-page-card
+---
+icon: i-lucide-file-text
+title: Un texte lisible
+description: La source d'une présentation est un fichier Markdown. Vous le versionnez avec votre projet et vous le relisez dans une revue de code.
+to: /demarrer/le-markdown
+---
+::::
+
+::::u-page-card
+---
+icon: i-lucide-layout-panel-left
+title: Des mises en page par blocs
+description: Colonnes, citations, étapes illustrées, diagrammes Mermaid, image à côté du texte. Chaque bloc a un nom et quelques réglages.
+to: /ecrire/composants
+---
+::::
+
+::::u-page-card
+---
+icon: i-lucide-monitor-smartphone
+title: Les écrans réels du produit
+description: Une diapositive affiche une story de votre Storybook, publiée pour la branche principale ou pour une branche en cours. Le composant montré est celui du code.
+to: /ecrire/story-storybook
+---
+::::
+
+::::u-page-card
+---
+icon: i-lucide-users
+title: Un brouillon partagé
+description: Plusieurs personnes modifient la même présentation en même temps. Les visiteurs voient la dernière version publiée, et l'historique garde les précédentes.
+to: /studio/versions-et-brouillon
+---
+::::
+
+::::u-page-card
+---
+icon: i-lucide-bot
+title: Écrire avec un agent
+description: Le plugin vignettes-decks donne à Claude Code les règles du format. Vous demandez la présentation depuis le dépôt de votre produit, puis vous importez le fichier.
+to: /ecrire/ecrire-avec-un-agent
+---
+::::
+
+::::u-page-card
+---
+icon: i-lucide-palette
+title: Le thème de votre équipe
+description: Le thème DSFR, ou un thème écrit avec les couleurs et la police de votre équipe, appliqué par une ligne de l'en-tête.
+to: /themes/theme-de-votre-equipe
+---
+::::
 
 :::
 
