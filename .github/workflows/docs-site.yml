@@ -35,6 +35,8 @@ concurrency:
 jobs:
   checks:
     uses: ./.github/workflows/checks.yml
+    with:
+      skip-test-for-docs: true
 
   publish:
     needs: checks

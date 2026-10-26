@@ -6,6 +6,11 @@ name: Checks
 on:
   pull_request:
   workflow_call:
+    inputs:
+      skip-test-for-docs:
+        description: Skip the test job when the push changes the documentation only.
+        type: boolean
+        default: false
 
 concurrency:
   # A new push on a pull request cancels the previous run. Runs called by a
@@ -79,7 +84,40 @@ jobs:
           path: site/.output/public
           retention-days: 1
 
+  # The test job checks the application and the packages. A pull request, or a
+  # caller that sets `skip-test-for-docs`, skips it when the change touches the
+  # documentation only: the site, `docs/` and the Markdown files at the root.
+  # `docs/theme-system.md` counts as code, since the deck plugin test reads it.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - name: Checkout
+        if: github.event_name == 'pull_request' || inputs.skip-test-for-docs
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: List the changed files
+        id: diff
+        env:
+          FILTER: ${{ github.event_name == 'pull_request' || inputs.skip-test-for-docs }}
+          RANGE: ${{ github.event_name == 'pull_request' && format('{0}...{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || format('{0}..{1}', github.event.before, github.sha) }}
+        run: |
+          code=true
+          if [ "$FILTER" = true ] && [ "${RANGE%%.*}" != 0000000000000000000000000000000000000000 ] && files=$(git diff --name-only --no-renames "$RANGE") && [ -n "$files" ]; then
+            if ! printf '%s\n' "$files" | grep -vE '^(site/|docs/|[^/]+\.md$)' | grep -q . && ! printf '%s\n' "$files" | grep -qx docs/theme-system.md; then
+              code=false
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
   test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
