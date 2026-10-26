@@ -1,6 +1,9 @@
+import type { CodeTheme } from '@vignettes/core/render'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { CODE_ROLES, CODE_THEMES, codeRolesTransformer, codeThemeStyle, resolveCodeTheme, ROLES_THEME, ROLES_THEME_KEY } from '@vignettes/core/render'
 import { builtInThemeRegistry } from '@vignettes/core/theme'
+import * as sass from 'sass'
 import { codeToHtml } from 'shiki'
 import { describe, expect, it } from 'vitest'
 
@@ -109,7 +112,8 @@ describe('the code theme a theme names', () => {
   })
 })
 
-describe('the light code theme', () => {
+describe('the code themes under a theme', () => {
+  const root = fileURLToPath(new URL('../..', import.meta.url))
   const hex = (h: string) => [1, 3, 5].map(i => Number.parseInt(h.slice(i, i + 2), 16) / 255)
   const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
   const luminance = (h: string) => {
@@ -121,9 +125,62 @@ describe('the light code theme', () => {
     return (high + 0.05) / (low + 0.05)
   }
 
-  it('reads at AA against its own block', () => {
-    const theme = CODE_THEMES.clair!
+  // The custom properties a stylesheet declares on :root, the last declaration winning.
+  const rootTokens = (entry: string) => {
+    const { css } = sass.compileString(`@use '${entry}';`, { loadPaths: [root], importers: [new sass.NodePackageImporter()] })
+    const tokens = new Map<string, string>()
+    for (const [, body] of css.matchAll(/^:root\s*\{([^}]*)\}/gm)) {
+      for (const [, name, value] of body!.matchAll(/(--[\w-]+):\s*([^\s;][^;]*);/g))
+        tokens.set(name!, value!.trim())
+    }
+    return tokens
+  }
+
+  // A value with its var() replaced, and a color as a #rrggbb value through color-mix(in srgb, …).
+  const resolve = (value: string, tokens: Map<string, string>): string => {
+    const resolved = value.replace(/var\((--[\w-]+)\)/g, (_, name: string) => resolve(tokens.get(name)!, tokens))
+    const mix = /^color-mix\(in srgb, (.+) (\d+)%, (.+)\)$/.exec(resolved)
+    if (mix) {
+      const [a, b] = [resolve(mix[1]!, tokens), resolve(mix[3]!, tokens)].map(hex) as [number[], number[]]
+      const share = Number(mix[2]) / 100
+      return `#${a.map((c, i) => Math.round((c * share + b[i]! * (1 - share)) * 255).toString(16).padStart(2, '0')).join('')}`
+    }
+    const short = /^#([\da-f])([\da-f])([\da-f])$/i.exec(resolved)
+    return short ? `#${short.slice(1).map(c => c + c).join('')}` : resolved.toLowerCase()
+  }
+  const resolveTheme = (theme: CodeTheme, tokens: Map<string, string>) =>
+    Object.fromEntries(Object.entries(theme).map(([property, value]) => [property, typeof value === 'string' ? resolve(value, tokens) : value]))
+
+  it('reads clair at AA against its own block under the kit defaults', () => {
+    const theme = resolveTheme(CODE_THEMES.clair!, rootTokens('pkg:@vignettes/theme-kit'))
     for (const role of [...CODE_ROLES, 'text' as const])
-      expect(contrast(theme[role] as string, theme.background!)).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(theme[role] as string, theme.background as string)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('reads the text of nuit at AA under a dark theme', () => {
+    const theme = resolveTheme(CODE_THEMES.nuit!, rootTokens('examples/themes/exemple-sombre/exemple-sombre'))
+    expect(contrast(theme.text as string, theme.background as string)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('keeps the DSFR tones under the dsfr theme', () => {
+    const tokens = rootTokens('pkg:@vignettes/theme-dsfr')
+    expect(resolveTheme(CODE_THEMES.clair!, tokens)).toEqual({
+      background: '#f6f6f6',
+      border: '1px solid #dddddd',
+      text: '#161616',
+      key: '#000091',
+      string: '#297254',
+      literal: '#6e445a',
+      keyword: '#c9191e',
+      function: '#3558a2',
+      comment: '#666666',
+      punctuation: '#3a3a3a',
+      keyWeight: 700,
+      size: 13,
+      dim: 0.7,
+      activeBackground: '#e3e3fd',
+      activeBar: '#000091',
+    })
+    expect(resolveTheme(CODE_THEMES.nuit!, tokens)).toMatchObject({ background: '#1b1b35', activeBar: '#8585f6' })
   })
 })

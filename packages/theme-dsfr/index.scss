@@ -24,6 +24,8 @@
   --dsfr-blue-france-925: #{$dsfr-blue-france-925};
   --dsfr-blue-france-950: #{$dsfr-blue-france-950};
   --dsfr-blue-france-975: #{$dsfr-blue-france-975};
+  --dsfr-blue-france-625: #{$dsfr-blue-france-625};
+  --dsfr-blue-france-75: #{$dsfr-blue-france-75};
 
   // Secondary colors - Rouge Marianne
   --dsfr-red-marianne-main-472: #{$dsfr-red-marianne-main-472};
@@ -61,6 +63,7 @@
   --accent-soft: var(--dsfr-blue-france-850);
   --accent-bg: var(--dsfr-blue-france-950);
   --accent-strong: var(--dsfr-blue-france-sun-113);
+  --accent-on-contrast: var(--dsfr-blue-france-625);
   --surface: var(--dsfr-background-default);
   --surface-contrast: var(--dsfr-background-contrast);
   --on-contrast: var(--dsfr-grey-1000);
@@ -72,4 +75,7 @@
   --border: var(--dsfr-border-default);
   --radius: 0.375rem;
   --shadow: 0 1px 3px rgba(0, 0, 18, 0.16);
+  // Code blocks: grey for the code theme `clair`, night blue for `nuit`.
+  --code-surface: var(--dsfr-background-alt);
+  --code-surface-dark: var(--dsfr-blue-france-75);
 }

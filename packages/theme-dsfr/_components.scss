@@ -115,7 +115,7 @@
   font-weight: 500;
   line-height: 1.55;
   word-wrap: break-word;
-  background: var(--code-background, #1b1b35); // bleu nuit DSFR, repris par shiki si thème inline absent
+  background: var(--code-background, var(--code-surface-dark));
   color: var(--code-text, #f5f5fe);
   border: var(--code-border, none);
   border-radius: var(--radius);
@@ -123,10 +123,10 @@
   box-shadow: var(--shadow);
 }
 
-// shiki pose sa couleur de fond en style inline sur <pre> ; on l'aligne sur le bleu nuit.
+// shiki sets its background inline on <pre>; this rule gives it the background of the code blocks.
 .reveal pre.shiki {
   box-sizing: border-box;
-  background: var(--code-background, #1b1b35) !important;
+  background: var(--code-background, var(--code-surface-dark)) !important;
 }
 
 .reveal code {

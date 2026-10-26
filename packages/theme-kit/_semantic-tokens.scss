@@ -18,6 +18,9 @@
  *   --accent-line
  *       the accent mixed with the surface, for the outlines of a diagram: the
  *       cards, the subject regions and the edge labels; derived from --accent unless the theme sets it.
+ *   --accent-on-contrast
+ *       the accent mixed with white, for a mark set on --surface-contrast or
+ *       on a dark code block; derived from --accent unless the theme sets it.
  *   --surface / --surface-contrast / --on-contrast
  *       background colors and the matching text color on dark backgrounds.
  *   --text-default / --text-title / --text-mention
@@ -27,6 +30,9 @@
  *       component (card, quote, frame, code block).
  *   --code-min-size
  *       the smallest size of a code block, in slide units; `0px` by default.
+ *   --code-surface / --code-surface-dark
+ *       the backgrounds of the light code theme `clair` and of the dark code
+ *       theme `nuit`, by default the backgrounds of GitHub's light and dark code.
  *   --on-surface-title / --on-surface-default / --on-surface-mention
  *       the text intensities as the page root sets them, for the text of a
  *       surface a component paints. Derived here: a theme does not set them.
@@ -39,6 +45,7 @@
   --accent-bg: #f4f6fd;
   --accent-strong: color-mix(in srgb, var(--accent) 70%, var(--text-title));
   --accent-line: color-mix(in srgb, var(--accent) 35%, var(--surface));
+  --accent-on-contrast: color-mix(in srgb, var(--accent) 55%, #ffffff);
 
   // Surfaces
   --surface: #ffffff;
@@ -57,6 +64,8 @@
 
   // Code
   --code-min-size: 0px;
+  --code-surface: #f6f8fa;
+  --code-surface-dark: #24292e;
 
   // Resolved at the root, so a slide that sets its own text colors, such as a
   // dark section divider, leaves the light surfaces of the components dark text.

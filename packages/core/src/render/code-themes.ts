@@ -39,9 +39,9 @@ export interface CodeTheme {
 }
 
 export const CODE_THEMES: Record<string, CodeTheme> = {
-  // The colors of shiki's github-dark on the DSFR night blue, as rendered without a code theme.
+  // The colors of shiki's github-dark on the dark code block of the theme.
   nuit: {
-    background: '#1b1b35',
+    background: 'var(--code-surface-dark)',
     text: '#E1E4E8',
     key: '#79B8FF',
     string: '#9ECBFF',
@@ -53,7 +53,7 @@ export const CODE_THEMES: Record<string, CodeTheme> = {
     keyWeight: 500,
     dim: 0.4,
     activeBackground: 'rgb(255 255 255 / 8%)',
-    activeBar: '#8585f6',
+    activeBar: 'var(--accent-on-contrast)',
   },
   // Neutral dark background and one hue per kind of value, readable in a shared screen.
   sombre: {
@@ -70,26 +70,27 @@ export const CODE_THEMES: Record<string, CodeTheme> = {
     size: 13,
     dim: 0.72,
     activeBackground: 'rgb(255 255 255 / 12%)',
-    activeBar: '#8585f6',
+    activeBar: 'var(--accent-on-contrast)',
   },
-  // Light grey block in the colors of the DSFR page. Each role is a DSFR
-  // illustrative tone with a contrast of 5:1 or more against the block.
+  // Light block in the colors of the theme: its text intensities, its accent
+  // and the text tones of its card palette. Keywords keep a red, which the
+  // palette lacks.
   clair: {
-    background: '#F6F6F6',
-    border: '1px solid #DDDDDD',
-    text: '#161616',
-    key: '#000091',
-    string: '#297254',
-    literal: '#6E445A',
+    background: 'var(--code-surface)',
+    border: '1px solid var(--border)',
+    text: 'var(--on-surface-title)',
+    key: 'var(--accent-strong)',
+    string: 'var(--palette-green-text)',
+    literal: 'var(--palette-purple-text)',
     keyword: '#C9191E',
-    function: '#3558A2',
-    comment: '#666666',
-    punctuation: '#3A3A3A',
+    function: 'var(--palette-blue-text)',
+    comment: 'var(--on-surface-mention)',
+    punctuation: 'var(--on-surface-default)',
     keyWeight: 700,
     size: 13,
     dim: 0.7,
-    activeBackground: '#E3E3FD',
-    activeBar: '#000091',
+    activeBackground: 'var(--accent-soft)',
+    activeBar: 'var(--accent-strong)',
   },
 }
 

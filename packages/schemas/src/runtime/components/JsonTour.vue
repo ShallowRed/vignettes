@@ -427,6 +427,14 @@ onBeforeUnmount(() => {
   margin-top: 1em;
 }
 
+/* The panel scrolls itself and stacks one line per row, whatever a theme sets
+   on the code of a block. */
+.json-tour :deep(pre code) {
+  max-height: none;
+  overflow: visible;
+  white-space: pre-wrap;
+}
+
 .json-tour :deep(pre .line) {
   display: inline-block;
   width: 100%;
@@ -441,7 +449,7 @@ onBeforeUnmount(() => {
 }
 
 .json-tour :deep(pre .json-tour__line--on) {
-  border-left-color: var(--code-active-bar, #8585f6);
+  border-left-color: var(--code-active-bar, var(--accent-on-contrast));
   background: var(--code-active-background, rgb(255 255 255 / 8%));
   opacity: 1;
 }

@@ -54,12 +54,14 @@ Code that works under any theme reads these custom properties only. A theme sets
 - `--accent-bg` is a very light tint, for callout backgrounds.
 - `--accent-strong` is the accent mixed with the title color, for text on `--accent-soft` or `--accent-bg`, derived from `--accent` by default.
 - `--accent-line` is the accent mixed with the surface, for the outlines of a diagram: the cards, the subject regions and the edge labels, derived from `--accent` by default.
+- `--accent-on-contrast` is the accent mixed with white, for a mark on `--surface-contrast` or on a dark code block, derived from `--accent` by default.
 - `--surface` is the page background.
 - `--surface-contrast` is the inverse surface, for dark blocks and code panels.
 - `--on-contrast` is the text color on `--surface-contrast`.
 - `--text-default` colors the body text, `--text-title` the headings and strong text, `--text-mention` the muted text (captions, small print).
 - `--border`, `--radius` and `--shadow` give the outline, the corners and the elevation of a box drawn by a component.
 - `--code-min-size` is the smallest size of a code block, in slide units, `0px` by default.
+- `--code-surface` and `--code-surface-dark` are the backgrounds of the code themes `clair` and `nuit`. By default they are the light and dark backgrounds of GitHub's code, `#f6f8fa` and `#24292e`, whatever the surface of the theme.
 
 The kit derives three more tokens from the text intensities, at the root of the page: `--on-surface-title`, `--on-surface-default` and `--on-surface-mention`. A component that paints its own surface, such as a diagram card or a story frame, sets the text of that surface from them. A slide that changes its text colors, such as a dark section divider, leaves that surface with its dark text.
 
