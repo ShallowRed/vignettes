@@ -48,6 +48,15 @@ const names = files
   text-align: center;
 }
 
+/* The DSFR artwork is drawn for a light surface: in the dark mode of the
+   site, each pictogram keeps a white tile. */
+html.dark .pictogram-list img {
+  box-sizing: content-box;
+  padding: 0.5rem;
+  border-radius: var(--ui-radius);
+  background: #fff;
+}
+
 .pictogram-list code {
   overflow-wrap: break-word;
 }

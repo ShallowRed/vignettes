@@ -82,7 +82,7 @@ to: /studio/versions-et-brouillon
 ---
 icon: i-lucide-bot
 title: Écrire avec un agent
-description: Le plugin vignettes-decks donne à Claude Code les règles du format. Vous demandez la présentation depuis le dépôt de votre produit, puis vous importez le fichier.
+description: Une skill donne à votre agent de code les règles du format. Vous demandez la présentation depuis le dépôt de votre produit, puis vous importez le fichier.
 to: /ecrire/ecrire-avec-un-agent
 ---
 ::::
@@ -90,9 +90,9 @@ to: /ecrire/ecrire-avec-un-agent
 ::::u-page-card
 ---
 icon: i-lucide-palette
-title: Le thème de votre équipe
-description: Le thème DSFR, ou un thème écrit avec les couleurs et la police de votre équipe, appliqué par une ligne de l'en-tête.
-to: /themes/theme-de-votre-equipe
+title: Le thème DSFR ou le vôtre
+description: Le thème DSFR, ou un thème écrit avec les couleurs et la police de votre équipe, choisi par une ligne de l'en-tête.
+to: /themes/theme-dsfr
 ---
 ::::
 
