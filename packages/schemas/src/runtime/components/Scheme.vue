@@ -5,15 +5,30 @@ import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '../injection-keys
 // A row of `::Step` cards linked by arrows, each step a Reveal fragment by
 // default so the diagram builds up as the speaker talks.
 interface Props {
-  /** Reveals each step as a fragment; `:fragments="false"` shows the whole row at once. */
+  /**
+   * Reveals each step as a fragment; `:fragments="false"` shows the whole row at once.
+   * @fr Montre les étapes une à une ; `:fragments="false"` montre toute la rangée d'un coup.
+   */
   fragments?: boolean
-  /** Dims the steps already shown once a later one is current. */
+  /**
+   * Dims the steps already shown once a later one is current.
+   * @fr Atténue les étapes déjà montrées quand une étape suivante apparaît.
+   */
   dim?: boolean
-  /** Links the steps with arrows; `:arrows="false"` gives a plain row of cards. */
+  /**
+   * Links the steps with arrows; `:arrows="false"` gives a plain row of cards.
+   * @fr Relie les étapes par des flèches ; `:arrows="false"` donne une rangée de cartes sans flèches.
+   */
   arrows?: boolean
-  /** Scale of the pictograms. */
+  /**
+   * Scale of the pictograms.
+   * @fr Taille des pictogrammes.
+   */
   size?: 'sm' | 'md' | 'lg'
-  /** Card shape for every `::Step`: pictogram above the text, or beside it. */
+  /**
+   * Card shape for every `::Step`: pictogram above the text, or beside it.
+   * @fr Forme des cartes de chaque `::Step` : pictogramme au-dessus du texte, ou à côté.
+   */
   tiles?: 'column' | 'row'
 }
 

@@ -1,4 +1,4 @@
-import { attributeMentions, blockEndAround, componentMentions, directiveMentions, isSectionSlide, malformedAttributeMentions, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
+import { attributeMentions, blockEndAround, componentAttributeIssues, componentMentions, directiveMentions, isSectionSlide, malformedAttributeMentions, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
@@ -123,6 +123,24 @@ describe('attributeMentions', () => {
   it('leaves out the frontmatter and fenced code', () => {
     const raw = '---\nstorybook: javascript:x\n---\n\n```md\n::Iframe{src="javascript:x"}\n```\n'
     expect(attributeMentions(raw)).toEqual([])
+  })
+})
+
+describe('componentAttributeIssues', () => {
+  it('places an unknown attribute and "false" written as a text', () => {
+    const raw = [
+      '# Title',
+      '::Fragments{dim="false" efect="grow" collapse .big class="x" data-id="a"}',
+      '::Fragments{:dim="false" effect="fade-up"}',
+      ':::Columns{size="lg"}',
+      '::Foo{bar="1"}',
+      ':layout{zz="1"}',
+    ].join('\n')
+    const found = componentAttributeIssues(raw).map(({ kind, component, line, column, length }) => [kind, component, line, raw.split('\n')[line - 1]!.slice(column, column + length)])
+    expect(found).toEqual([
+      ['false-text', 'Fragments', 2, 'dim="false"'],
+      ['unknown', 'Fragments', 2, 'efect="grow"'],
+    ])
   })
 })
 

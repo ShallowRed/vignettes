@@ -5,25 +5,55 @@ import { JSON_TOUR } from '../injection-keys.ts'
 // One described area of a `:::JsonTour`: a card whose fragment highlights the
 // lines it names in the file beside it.
 interface Props {
-  /** Line range in the file, `12` or `12-24`. */
+  /**
+   * Line range in the file, `12` or `12-24`.
+   * @fr Lignes du fichier, `12` ou `12-24`.
+   */
   lines?: string
-  /** Area to highlight on the tour's image, `x,y,w,h` in percent. */
+  /**
+   * Area to highlight on the tour's image, `x,y,w,h` in percent.
+   * @fr Zone à mettre en évidence sur l'image de la visite, `x,y,l,h` en pourcentages.
+   */
   spot?: string
-  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
+  /**
+   * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
+   */
   picto?: string
-  /** Remix icon (`ri:shield-check-line`), sharper than a pictogram at the xs and sm sizes. */
+  /**
+   * Remix icon (`ri:shield-check-line`), sharper than a pictogram at the xs and sm sizes.
+   * @fr Icône Remix (`ri:shield-check-line`), plus nette qu'un pictogramme aux tailles xs et sm.
+   */
   icon?: string
-  /** Title of the zone card. */
+  /**
+   * Title of the zone card.
+   * @fr Titre de la carte de la zone.
+   */
   title?: string
-  /** Number in a badge. */
+  /**
+   * Number in a badge.
+   * @fr Numéro affiché dans une pastille.
+   */
   n?: string | number
-  /** Fragment step; defaults to the writing order. */
+  /**
+   * Fragment step; defaults to the writing order.
+   * @fr Étape d'apparition ; par défaut, l'ordre d'écriture.
+   */
   step?: string | number
-  /** The step this slide is on, for a tour whose steps a deck spreads over several slides. */
+  /**
+   * The step this slide is on, for a tour whose steps a deck spreads over several slides.
+   * @fr L'étape où en est cette diapositive, pour une visite dont les étapes sont réparties sur plusieurs diapositives.
+   */
   current?: boolean
-  /** Words of its lines to paint while the zone is current, separated by `|`. */
+  /**
+   * Words of its lines to paint while the zone is current, separated by `|`.
+   * @fr Mots de ses lignes à surligner pendant que la zone est en cours, séparés par `|`.
+   */
   mark?: string
-  /** Words of its lines to underline while the zone is current, separated by `|`. */
+  /**
+   * Words of its lines to underline while the zone is current, separated by `|`.
+   * @fr Mots de ses lignes à souligner pendant que la zone est en cours, séparés par `|`.
+   */
   underline?: string
 }
 

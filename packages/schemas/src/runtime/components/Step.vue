@@ -4,13 +4,25 @@ import { SCHEME_ARROWS, SCHEME_FRAGMENTS, SCHEME_TILES } from '../injection-keys
 
 // One card of a `:::Scheme`, preceded by an arrow after the first one.
 interface Props {
-  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
+  /**
+   * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
+   */
   picto?: string
-  /** Remix icon, `ri:server-line`, lighter than a pictogram. */
+  /**
+   * Remix icon, `ri:server-line`, lighter than a pictogram.
+   * @fr Icône Remix, `ri:server-line`, plus légère qu'un pictogramme.
+   */
   icon?: string
-  /** Title of the step. */
+  /**
+   * Title of the step.
+   * @fr Titre de l'étape.
+   */
   title?: string
-  /** Step number shown in a badge. */
+  /**
+   * Step number shown in a badge.
+   * @fr Numéro de l'étape, affiché dans une pastille.
+   */
   n?: string | number
 }
 

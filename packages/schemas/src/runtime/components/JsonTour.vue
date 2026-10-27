@@ -7,25 +7,55 @@ import { JSON_TOUR } from '../injection-keys.ts'
 // are Reveal fragments; the current one highlights its line range in the code
 // block of the default slot and scrolls the panel to it.
 interface Props {
-  /** File name shown above the code panel. */
+  /**
+   * File name shown above the code panel.
+   * @fr Nom de fichier affiché au-dessus du code.
+   */
   file?: string
-  /** Maximum height of the code panel, in slide pixels (the deck is 1280x720). */
+  /**
+   * Maximum height of the code panel, in slide pixels (the deck is 1280x720).
+   * @fr Hauteur maximale du panneau de code, en pixels de diapositive (la présentation mesure 1280x720).
+   */
   height?: string
-  /** Width of the code panel, any CSS length. */
+  /**
+   * Width of the code panel, any CSS length.
+   * @fr Largeur du panneau de code, en longueur CSS.
+   */
   panel?: string
-  /** Scale of the zone cards. */
+  /**
+   * Scale of the zone cards.
+   * @fr Taille des cartes des zones.
+   */
   size?: 'xs' | 'sm' | 'md'
-  /** Shows the zones one at a time. */
+  /**
+   * Shows the zones one at a time.
+   * @fr Montre les zones une à une.
+   */
   fragments?: boolean
-  /** Puts the code panel under the zones, at full width, for a narrow column beside a media pane. */
+  /**
+   * Puts the code panel under the zones, at full width, for a narrow column beside a media pane.
+   * @fr Place le panneau de code sous les zones, sur toute la largeur, pour une colonne étroite à côté d'un média.
+   */
   stack?: boolean
-  /** Screenshot shown beside the tour; the current zone's `spot` is highlighted on it. */
+  /**
+   * Screenshot shown beside the tour; the current zone's `spot` is highlighted on it.
+   * @fr Capture d'écran affichée à côté de la visite ; le `spot` de la zone en cours y est mis en évidence.
+   */
   image?: string
-  /** Text alternative of `image`. */
+  /**
+   * Text alternative of `image`.
+   * @fr Texte de remplacement de `image`.
+   */
   alt?: string
-  /** Words of the file to paint, separated by `|`; a word matches whole. */
+  /**
+   * Words of the file to paint, separated by `|`; a word matches whole.
+   * @fr Mots du fichier à surligner, séparés par `|` ; un mot correspond en entier.
+   */
   mark?: string
-  /** Words of the file to underline, separated by `|`; a word matches whole. */
+  /**
+   * Words of the file to underline, separated by `|`; a word matches whole.
+   * @fr Mots du fichier à souligner, séparés par `|` ; un mot correspond en entier.
+   */
   underline?: string
 }
 

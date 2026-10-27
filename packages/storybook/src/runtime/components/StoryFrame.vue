@@ -10,31 +10,70 @@ import { buildStoryUrl, resolveAspectRatio } from '../storybook.ts'
 // arbitrary iframe/image. Iframes render at a logical width (`viewport`) and scale down
 // to fit, so the whole page is visible rather than the top-left corner at 1:1.
 interface Props {
-  /** Storybook story id (`<componentId>--<storyName>`). */
+  /**
+   * Storybook story id (`<componentId>--<storyName>`).
+   * @fr Identifiant de la story Storybook (`<componentId>--<storyName>`).
+   */
   story?: string
-  /** Explicit URL, used when `story` is absent. */
+  /**
+   * Explicit URL, used when `story` is absent.
+   * @fr Adresse à afficher quand `story` est absent.
+   */
   src?: string
-  /** Kind of media; without it, a story or an address is a page, and an address that ends with an image extension an image. */
+  /**
+   * Kind of media; without it, a story or an address is a page, and an address that ends with an image extension an image.
+   * @fr Nature du média ; sans lui, une story ou une adresse est une page, et une adresse qui finit par une extension d'image est une image.
+   */
   type?: 'iframe' | 'image'
-  /** CSS `object-fit` of an image in the frame. */
+  /**
+   * CSS `object-fit` of an image in the frame.
+   * @fr `object-fit` CSS d'une image dans le cadre.
+   */
   fit?: 'cover' | 'contain'
-  /** Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, `wide` outside a gallery. */
+  /**
+   * Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, `wide` outside a gallery.
+   * @fr Proportions : un nom (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) ou un rapport comme `16/9`. Sans lui, `wide` hors d'une galerie.
+   */
   ratio?: string
-  /** Logical width (px) the iframe renders at before scaling; higher = more of the page visible. */
+  /**
+   * Logical width (px) the iframe renders at before scaling; higher = more of the page visible.
+   * @fr Largeur en px à laquelle la page est affichée avant d'être réduite ; plus elle est grande, plus on voit de la page.
+   */
   viewport?: string | number
-  /** The name of `viewport` in the earlier format. */
+  /**
+   * The name of `viewport` in the earlier format.
+   * @fr Ancien nom de `viewport`.
+   */
   previewWidth?: string | number
-  /** Renders the frame at its native size, without scaling. */
+  /**
+   * Renders the frame at its native size, without scaling.
+   * @fr Affiche le cadre à sa taille réelle, sans le réduire.
+   */
   raw?: boolean
-  /** Caption under the frame; overrides the default slot. */
+  /**
+   * Caption under the frame; overrides the default slot.
+   * @fr Légende sous le cadre ; remplace le contenu du bloc.
+   */
   label?: string
-  /** Opens the screen full-screen on click. */
+  /**
+   * Opens the screen full-screen on click.
+   * @fr Ouvre l'écran en plein écran au clic.
+   */
   lightbox?: boolean
-  /** Accessible title of the frame, or the text alternative of an image. */
+  /**
+   * Accessible title of the frame, or the text alternative of an image.
+   * @fr Titre du cadre lu par les lecteurs d'écran, ou texte de remplacement d'une image.
+   */
   title?: string
-  /** Lets the frame grow to fill the available height, in a gallery. */
+  /**
+   * Lets the frame grow to fill the available height, in a gallery.
+   * @fr Laisse le cadre prendre toute la hauteur disponible, dans une galerie.
+   */
   grow?: boolean
-  /** Incentive text shown beside the frame to invite interaction. */
+  /**
+   * Incentive text shown beside the frame to invite interaction.
+   * @fr Texte affiché à côté du cadre pour inviter à l'utiliser.
+   */
   hint?: string
 }
 

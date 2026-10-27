@@ -12,6 +12,10 @@ export interface ReferenceCard {
   label?: string
   description?: string
   values?: readonly string[]
+  /** The value an attribute takes when it is absent. */
+  default?: string
+  /** The attributes of a component. */
+  attributes?: readonly string[]
   /** Address of its documentation section. */
   docs?: string
 }
@@ -53,6 +57,18 @@ export function referenceCard(card: ReferenceCard, t: Translate): HTMLElement {
     values.className = 'cm-source-tooltip__values'
     values.textContent = card.values.join(' · ')
     dom.append(values)
+  }
+  if (card.default !== undefined) {
+    const fallback = document.createElement('p')
+    fallback.className = 'cm-source-tooltip__values'
+    fallback.textContent = t('editor.attributeDefault', { value: card.default })
+    dom.append(fallback)
+  }
+  if (card.attributes?.length) {
+    const attributes = document.createElement('p')
+    attributes.className = 'cm-source-tooltip__values'
+    attributes.textContent = t('editor.componentAttributes', { names: card.attributes.join(' · ') })
+    dom.append(attributes)
   }
   if (card.docs)
     dom.append(docsLink(card.docs, t('editor.docsLink')))

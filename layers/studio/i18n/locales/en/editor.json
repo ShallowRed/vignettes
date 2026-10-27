@@ -176,6 +176,10 @@
       "malformedAttributesShort": "Line {line}: attributes of “{name}” to fix",
       "unclosedBlock": "Block {colons}{name} open to the end of the text: add a {colons} line after its content. Without it, the slides that follow go into this block.",
       "unclosedBlockShort": "Line {line}: block {colons}{name} to close",
+      "attributeUnknown": "Unknown attribute of {component}: “{name}”. Hover the name of the component to see its attributes.",
+      "attributeUnknownShort": "Line {line}: unknown attribute “{name}”",
+      "attributeFalseText": "{name}=\"false\" is read as a text, so as true: write :{name}=\"false\".",
+      "attributeFalseTextShort": "Line {line}: “{name}” is true",
       "layoutUnknownAttribute": "Unknown :layout setting: “{name}”. Pick a setting from the help.",
       "layoutUnknownAttributeShort": "Line {line}: unknown setting “{name}”",
       "layoutInvalidValue": "Unknown value for “{name}”. Pick a value from the help.",
@@ -240,6 +244,8 @@
       "missingSource": "Enter the address of an image or a page, or the id of a story.",
       "outside": "Place the cursor in a slide to set its layout."
     },
-    "docsLink": "Documentation"
+    "docsLink": "Documentation",
+    "attributeDefault": "Default: {value}",
+    "componentAttributes": "Attributes: {names}"
   }
 }

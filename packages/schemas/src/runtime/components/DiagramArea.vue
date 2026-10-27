@@ -7,21 +7,45 @@ import { paletteVars } from '../palette.ts'
 // cards inside it run on. Drawn behind the cards, so edges crossing it read as
 // data leaving one machine for another.
 interface Props {
-  /** Grid cell the region starts at, `col,row` (1-based). */
+  /**
+   * Grid cell the region starts at, `col,row` (1-based).
+   * @fr Case de la grille où commence la zone, `colonne,rangée` en partant de 1.
+   */
   at?: string
-  /** Cells spanned as `cols,rows`. */
+  /**
+   * Cells spanned as `cols,rows`.
+   * @fr Cases occupées, `colonnes,rangées`.
+   */
   span?: string
-  /** Name of the region. */
+  /**
+   * Name of the region.
+   * @fr Nom de la zone.
+   */
   title?: string
-  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
+  /**
+   * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
+   */
   picto?: string
-  /** Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram. */
+  /**
+   * Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram.
+   * @fr Icône Remix (`ri:server-line`), plus légère qu'un pictogramme dans un diagramme chargé.
+   */
   icon?: string
-  /** `subject` tints the region that the story follows; `neutral` is the default. */
+  /**
+   * `subject` tints the region that the story follows; `neutral` is the default.
+   * @fr `subject` teinte la zone que suit le récit ; `neutral` par défaut.
+   */
   tone?: 'neutral' | 'subject'
-  /** Color of the title, the surface and the outline of the region: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`. */
+  /**
+   * Color of the title, the surface and the outline of the region: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
+   * @fr Couleur du titre, du fond et du contour de la zone : un nom de la palette du thème, comme `green`, ou une couleur hexadécimale ou une fonction de couleur, comme `#2a7f62`.
+   */
   color?: string
-  /** Where the title sits: on the top border like a legend, or as a header band inside. */
+  /**
+   * Where the title sits: on the top border like a legend, or as a header band inside.
+   * @fr Place du titre : sur la bordure du haut comme une légende, ou dans un bandeau en tête de la zone.
+   */
   label?: 'legend' | 'header'
 }
 

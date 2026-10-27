@@ -1,6 +1,9 @@
 <script setup lang="ts">
 interface Props {
-  /** Text size of the message, a step of the type scale above the body text; without it, the message keeps the size of the body text. */
+  /**
+   * Text size of the message, a step of the type scale above the body text; without it, the message keeps the size of the body text.
+   * @fr Taille du texte du message, un cran de l'échelle typographique au-dessus du texte courant ; sans elle, le message garde la taille du texte courant.
+   */
   size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 

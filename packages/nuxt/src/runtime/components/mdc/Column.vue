@@ -2,9 +2,15 @@
 import { computed } from 'vue'
 
 interface Props {
-  /** Weight of the column in the row: `span="2"` beside `span="1"` gives two thirds and one third. */
+  /**
+   * Weight of the column in the row: `span="2"` beside `span="1"` gives two thirds and one third.
+   * @fr Poids de la colonne dans la rangée : `span="2"` à côté de `span="1"` donne deux tiers et un tiers.
+   */
   span?: number | string
-  /** Width of the column as a fraction of the row: `2/3`, `1/4`. */
+  /**
+   * Width of the column as a fraction of the row: `2/3`, `1/4`.
+   * @fr Largeur de la colonne en fraction de la rangée : `2/3`, `1/4`.
+   */
   ratio?: string
 }
 

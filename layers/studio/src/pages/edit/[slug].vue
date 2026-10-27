@@ -15,7 +15,7 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
-import type { AttributeMention, ComponentMention, LayoutIssueKind, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
+import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutIssueKind, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { Peer } from '../../utils/editor-peers'
@@ -25,7 +25,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { attributeMentions, componentMentions, deckRevealOptions, layoutMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks, valueMentions } from '@vignettes/core/deck'
+import { attributeMentions, componentAttributeIssues, componentMentions, deckRevealOptions, layoutMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks, valueMentions } from '@vignettes/core/deck'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
@@ -551,6 +551,7 @@ const refusedMentions = ref<AttributeMention[]>([])
 const layoutIssues = ref<LayoutMention[]>([])
 const unclosedIssues = ref<OpenBlock[]>([])
 const malformedIssues = ref<MalformedAttributes[]>([])
+const componentAttributeProblems = ref<ComponentAttributeIssue[]>([])
 const parseFailed = ref(false)
 let parsedText = ''
 // From a change of the text to the render of its preview, a bar runs along the
@@ -561,6 +562,11 @@ const ATTRIBUTE_MESSAGES: Record<AttributeMention['reason'], { short: string, me
   url: { short: 'editor.diagnostics.refusedUrlShort', message: 'editor.diagnostics.refusedUrl' },
   binding: { short: 'editor.diagnostics.refusedBindingShort', message: 'editor.diagnostics.refusedBinding' },
   http: { short: 'editor.diagnostics.refusedEmbedShort', message: 'editor.diagnostics.refusedEmbed' },
+}
+
+const COMPONENT_ATTRIBUTE_MESSAGES: Record<ComponentAttributeIssue['kind'], string> = {
+  'unknown': 'attributeUnknown',
+  'false-text': 'attributeFalseText',
 }
 
 const LAYOUT_MESSAGES: Record<LayoutIssueKind, string> = {
@@ -597,6 +603,12 @@ const previewIssues = computed(() => [
     ...mention,
     short: t('editor.diagnostics.malformedAttributesShort', { line: mention.line, name: mention.name }),
     message: t(`editor.diagnostics.malformedAttributes.${mention.reason}`, { name: mention.name }),
+    marked: false,
+  })),
+  ...componentAttributeProblems.value.map(issue => ({
+    ...issue,
+    short: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}Short`, { line: issue.line, name: issue.name }),
+    message: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}`, { name: issue.name, component: issue.component }),
     marked: false,
   })),
   ...unclosedIssues.value.map(block => ({
@@ -642,6 +654,7 @@ async function reparse() {
     layoutIssues.value = layoutMentions(text)
     unclosedIssues.value = unclosedBlocks(text)
     malformedIssues.value = malformedAttributeMentions(text)
+    componentAttributeProblems.value = componentAttributeIssues(text)
     frontmatterIssues.value = listedFrontmatterProblems(text, t, themeVersionGaps.value)
     parseFailed.value = false
     parsedText = text

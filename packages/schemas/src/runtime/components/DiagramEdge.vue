@@ -5,21 +5,45 @@ import { DIAGRAM } from '../injection-keys.ts'
 
 // An arrow between two `::Node` ids; drawn by the enclosing `:::Diagram`.
 interface Props {
-  /** `id` of the node the arrow leaves. */
+  /**
+   * `id` of the node the arrow leaves.
+   * @fr `id` du nœud d'où part la flèche.
+   */
   from: string
-  /** `id` of the node the arrow reaches. */
+  /**
+   * `id` of the node the arrow reaches.
+   * @fr `id` du nœud où arrive la flèche.
+   */
   to: string
-  /** Text on the arrow. */
+  /**
+   * Text on the arrow.
+   * @fr Texte sur la flèche.
+   */
   label?: string
-  /** Draws a dashed arrow. */
+  /**
+   * Draws a dashed arrow.
+   * @fr Dessine une flèche en pointillés.
+   */
   dashed?: boolean
-  /** `false` leaves the arrowhead off, for the leg that reaches a flow box. */
+  /**
+   * `false` leaves the arrowhead off, for the leg that reaches a flow box.
+   * @fr `false` retire la pointe de la flèche, pour le tronçon qui arrive sur une pastille `flow`.
+   */
   arrow?: boolean
-  /** Fragment step; defaults to the later of the two nodes. */
+  /**
+   * Fragment step; defaults to the later of the two nodes.
+   * @fr Étape d'apparition ; par défaut, celle du dernier des deux nœuds.
+   */
   step?: string | number
-  /** Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); geometry decides when absent. */
+  /**
+   * Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); geometry decides when absent.
+   * @fr Côtés de départ et d'arrivée, `from,to` (`top` | `right` | `bottom` | `left`) ; sans lui, la position des cartes décide.
+   */
   anchors?: string
-  /** Route of this arrow, over the `route` of the diagram. */
+  /**
+   * Route of this arrow, over the `route` of the diagram.
+   * @fr Tracé de cette flèche, qui remplace le `route` du diagramme.
+   */
   route?: 'curve' | 'orthogonal'
 }
 

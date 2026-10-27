@@ -3,21 +3,45 @@ import { useDeckMessages } from '../../composables/useDeckMessages.ts'
 import { useFrameAttributes } from '../../composables/useFrameAttributes.ts'
 
 interface Props {
-  /** Address of the page. */
+  /**
+   * Address of the page.
+   * @fr Adresse de la page.
+   */
   src: string
-  /** Accessible title of the frame. */
+  /**
+   * Accessible title of the frame.
+   * @fr Titre du cadre, lu par les lecteurs d'écran.
+   */
   title?: string
-  /** CSS width of the frame. */
+  /**
+   * CSS width of the frame.
+   * @fr Largeur CSS du cadre.
+   */
   width?: string
-  /** CSS height of the frame. */
+  /**
+   * CSS height of the frame.
+   * @fr Hauteur CSS du cadre.
+   */
   height?: string
-  /** Permissions policy of the frame, its `allow` attribute. */
+  /**
+   * Permissions policy of the frame, its `allow` attribute.
+   * @fr Permissions accordées à la page du cadre, son attribut `allow`.
+   */
   allow?: string
-  /** The `frameborder` attribute of the frame. */
+  /**
+   * The `frameborder` attribute of the frame.
+   * @fr L'attribut `frameborder` du cadre.
+   */
   frameborder?: string
-  /** Stretches the frame to the width of its column. */
+  /**
+   * Stretches the frame to the width of its column.
+   * @fr Étend le cadre à la largeur de sa colonne.
+   */
   fullwidth?: boolean
-  /** Opens the page full-screen on click. */
+  /**
+   * Opens the page full-screen on click.
+   * @fr Ouvre la page en plein écran au clic.
+   */
   lightbox?: boolean
 }
 

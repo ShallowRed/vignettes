@@ -1,7 +1,8 @@
+import type { ComponentAttribute, DeckComponent } from './components.ts'
 import type { LayoutIssueKind } from './layout.ts'
 import type { ParserId } from './parser.ts'
 import { isRefusedEmbed, readAttribute } from './attributes.ts'
-import { ANNOTATION_TAGS, componentKey, NOTES_COMPONENT } from './components.ts'
+import { ANNOTATION_TAGS, componentKey, deckComponents, NOTES_COMPONENT } from './components.ts'
 import { readLayout } from './layout.ts'
 
 /**
@@ -520,6 +521,84 @@ export function malformedAttributeMentions(raw: string): MalformedAttributes[] {
     }
   }
   return mentions
+}
+
+/** An attribute written in the `{…}` block of a component, placed in the source. */
+export interface ComponentAttributeMention {
+  /** The component as written: `Scheme`. */
+  tag: string
+  /** The attribute as written: `:arrows`, `size`. */
+  name: string
+  /** Undefined for an attribute written alone. */
+  value?: string
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of the attribute, and length of its text. */
+  column: number
+  length: number
+}
+
+/** The attributes written in the `{…}` blocks of the directives, outside the frontmatter, fenced code and inline code. */
+export function componentAttributeMentions(raw: string): ComponentAttributeMention[] {
+  const mentions: ComponentAttributeMention[] = []
+  for (const { line, prose } of proseLines(raw)) {
+    for (const match of prose.matchAll(DIRECTIVE_ATTRIBUTES_RE)) {
+      const open = match.index + match[0].length
+      const end = attributesEnd(prose, open)
+      const content = prose.slice(open, typeof end === 'number' ? end : prose.length)
+      for (const attribute of blockAttributes(content, open))
+        mentions.push({ tag: match[3]!, line, ...attribute })
+    }
+  }
+  return mentions
+}
+
+/** The registered component a deck names `tag`, by its name or an alias. */
+export function deckComponentNamed(tag: string): DeckComponent | undefined {
+  const key = componentKey(tag)
+  return deckComponents().find(component => [component.name, ...(component.aliases ?? [])].some(name => componentKey(name) === key))
+}
+
+// Attributes every element takes: MDC's `.class` and `#id` shorthands, and the HTML ones.
+const PASSTHROUGH_ATTRIBUTE_RE = /^(?:[.#]|(?:class|id|style)$|(?:data|aria)-)/
+
+/** The declared attribute a written name reaches: Vue reads `node-width` as `nodeWidth`. */
+export function componentAttributeNamed(component: DeckComponent, name: string): ComponentAttribute | undefined {
+  const key = componentKey(name.replace(/^:/, ''))
+  return component.attributes?.find(attribute => componentKey(attribute.name) === key)
+}
+
+/**
+ * An attribute that its component leaves unused: a name it does not declare
+ * (`unknown`), or `"false"` written to a `true`/`false` attribute without the
+ * colon (`false-text`), which the component reads as a text, so as true.
+ */
+export interface ComponentAttributeIssue {
+  kind: 'unknown' | 'false-text'
+  /** The component, by its declared name. */
+  component: string
+  /** The attribute as written. */
+  name: string
+  line: number
+  column: number
+  length: number
+}
+
+/** The attributes of the components of a deck that the component leaves unused, for the components that declare their attributes. */
+export function componentAttributeIssues(raw: string): ComponentAttributeIssue[] {
+  const issues: ComponentAttributeIssue[] = []
+  for (const mention of componentAttributeMentions(raw)) {
+    const component = deckComponentNamed(mention.tag)
+    if (!component?.attributes || PASSTHROUGH_ATTRIBUTE_RE.test(mention.name) || /^(?:v-|@)/.test(mention.name))
+      continue
+    const attribute = componentAttributeNamed(component, mention.name)
+    const kind = !attribute
+      ? 'unknown'
+      : attribute.boolean && !mention.name.startsWith(':') && mention.value === 'false' ? 'false-text' : undefined
+    if (kind)
+      issues.push({ kind, component: component.name, name: mention.name, line: mention.line, column: mention.column, length: mention.length })
+  }
+  return issues
 }
 
 /** The `:layout` annotations of a deck, outside the frontmatter, fenced code and inline code. */

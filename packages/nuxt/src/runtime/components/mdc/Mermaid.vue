@@ -5,9 +5,15 @@ import { useDeckMessages } from '../../composables/useDeckMessages.ts'
 import { sharedFitScale } from '../../utils/diagram-fit.ts'
 
 const props = defineProps<{
-  /** A Mermaid theme; without it, the diagram takes the colors and the font of the deck theme. */
+  /**
+   * A Mermaid theme; without it, the diagram takes the colors and the font of the deck theme.
+   * @fr Thème Mermaid ; sans lui, le diagramme prend les couleurs et la police du thème de la présentation.
+   */
   theme?: 'default' | 'dark' | 'forest' | 'neutral'
-  /** Reveal steps as node-id groups: `A,B|C|D` shows A and B, then C, then D; edges follow their later node. */
+  /**
+   * Reveal steps as node-id groups: `A,B|C|D` shows A and B, then C, then D; edges follow their later node.
+   * @fr Étapes d'apparition, en groupes d'identifiants de nœuds : `A,B|C|D` montre A et B, puis C, puis D ; un lien apparaît avec le dernier de ses deux nœuds.
+   */
   steps?: string
 }>()
 

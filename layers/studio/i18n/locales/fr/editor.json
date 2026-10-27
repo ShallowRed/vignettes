@@ -176,6 +176,10 @@
       "malformedAttributesShort": "Ligne {line} : attributs de « {name} » à corriger",
       "unclosedBlock": "Bloc {colons}{name} ouvert jusqu'à la fin du texte : ajoutez une ligne {colons} après son contenu. Sans elle, les diapositives suivantes entrent dans ce bloc.",
       "unclosedBlockShort": "Ligne {line} : bloc {colons}{name} à fermer",
+      "attributeUnknown": "Attribut inconnu de {component} : « {name} ». Survolez le nom du composant pour voir ses attributs.",
+      "attributeUnknownShort": "Ligne {line} : attribut « {name} » inconnu",
+      "attributeFalseText": "{name}=\"false\" est lu comme un texte, donc comme vrai : écrivez :{name}=\"false\".",
+      "attributeFalseTextShort": "Ligne {line} : « {name} » vaut vrai",
       "layoutUnknownAttribute": "Réglage inconnu de :layout : « {name} ». Choisissez un réglage dans l'aide.",
       "layoutUnknownAttributeShort": "Ligne {line} : réglage « {name} » inconnu",
       "layoutInvalidValue": "Valeur inconnue pour « {name} ». Choisissez une valeur dans l'aide.",
@@ -240,6 +244,8 @@
       "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story.",
       "outside": "Placez le curseur dans une diapositive pour régler sa mise en page."
     },
-    "docsLink": "Documentation"
+    "docsLink": "Documentation",
+    "attributeDefault": "Par défaut : {value}",
+    "componentAttributes": "Attributs : {names}"
   }
 }

@@ -2,23 +2,50 @@
 import { computed } from 'vue'
 
 interface Props {
-  /** Address of the image. */
+  /**
+   * Address of the image.
+   * @fr Adresse de l'image.
+   */
   src: string
-  /** Text alternative of the image. */
+  /**
+   * Text alternative of the image.
+   * @fr Texte de remplacement de l'image.
+   */
   alt?: string
-  /** CSS width of the image. */
+  /**
+   * CSS width of the image.
+   * @fr Largeur CSS de l'image.
+   */
   width?: string
-  /** CSS height of the image. */
+  /**
+   * CSS height of the image.
+   * @fr Hauteur CSS de l'image.
+   */
   height?: string
-  /** CSS `object-fit` of the image in its box. */
+  /**
+   * CSS `object-fit` of the image in its box.
+   * @fr `object-fit` CSS de l'image dans son cadre.
+   */
   fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
-  /** CSS `object-position` of the image in its box. */
+  /**
+   * CSS `object-position` of the image in its box.
+   * @fr `object-position` CSS de l'image dans son cadre.
+   */
   position?: string
-  /** Rounds the corners. */
+  /**
+   * Rounds the corners.
+   * @fr Arrondit les coins.
+   */
   rounded?: boolean
-  /** Draws a shadow under the image. */
+  /**
+   * Draws a shadow under the image.
+   * @fr Dessine une ombre sous l'image.
+   */
   shadow?: boolean
-  /** Opens the image full-screen on click: `true` shows `src`, an address shows another image. */
+  /**
+   * Opens the image full-screen on click: `true` shows `src`, an address shows another image.
+   * @fr Ouvre l'image en plein écran au clic : `true` montre `src`, une adresse montre une autre image.
+   */
   preview?: boolean | string
 }
 

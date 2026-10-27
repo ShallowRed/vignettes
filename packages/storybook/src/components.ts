@@ -1,8 +1,10 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the snippet placeholder syntax */
 import type { DeckComponent } from '@vignettes/core/deck'
+import { withAttributes } from '@vignettes/core/deck'
+import { STORYBOOK_ATTRIBUTES } from './component-attributes.ts'
 
 /** The live story embeds, as the deck dialect names them. */
-export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
+export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = withAttributes([
   {
     name: 'StoryFrame',
     icon: 'i-lucide-app-window',
@@ -33,4 +35,4 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
     },
     docs: '/reference/storybook#screens',
   },
-]
+], STORYBOOK_ATTRIBUTES)

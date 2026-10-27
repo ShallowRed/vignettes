@@ -4,11 +4,20 @@ import { inject, onMounted, ref } from 'vue'
 // Turns each direct child (each item of a direct list) into a Reveal fragment,
 // revealed one step at a time with the arrow keys.
 interface Props {
-  /** Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`… */
+  /**
+   * Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…
+   * @fr Effet d'apparition de Reveal : `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…
+   */
   effect?: string
-  /** Dims the items already shown once a later one is current. */
+  /**
+   * Dims the items already shown once a later one is current.
+   * @fr Atténue les éléments déjà montrés quand un élément suivant apparaît.
+   */
   dim?: boolean
-  /** With an effect that shows an item at its step, the items still hidden take no space: the slide lays out its content again at each step, and an item appears with a fade. */
+  /**
+   * With an effect that shows an item at its step, the items still hidden take no space: the slide lays out its content again at each step, and an item appears with a fade.
+   * @fr Avec un effet qui montre un élément à son étape, les éléments encore cachés ne prennent pas de place : la diapositive se recompose à chaque étape, et l'élément apparaît en fondu.
+   */
   collapse?: boolean
 }
 

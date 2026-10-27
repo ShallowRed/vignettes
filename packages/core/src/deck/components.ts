@@ -2,6 +2,8 @@
  * The component and annotation contract of the deck dialect, as data.
  */
 
+import { BUILT_IN_ATTRIBUTES } from './component-attributes.ts'
+
 /** A text in each interface language, by language code (`fr`, `en`). */
 export type LocalizedText = Readonly<Record<string, string>>
 
@@ -84,6 +86,18 @@ export const STRIPPED_ANNOTATION_TAGS: readonly string[] = ANNOTATION_TAGS.filte
 export const DECK_COMPONENT_GROUPS = ['text', 'media', 'diagram', 'storybook', 'slide'] as const
 export type DeckComponentGroup = typeof DECK_COMPONENT_GROUPS[number]
 
+/** An attribute of a component, as the props of its Vue file declare it. */
+export interface ComponentAttribute {
+  name: string
+  /** The values it takes, when they form a closed set. */
+  values?: readonly string[]
+  /** Takes `true` or `false` only: written alone for `true`, as `:name="false"` for `false`. */
+  boolean?: boolean
+  /** The value its absence gives. */
+  default?: string
+  description: LocalizedText
+}
+
 /** An MDC component authored as `::Name` / `:name`. */
 export interface DeckComponent {
   name: string
@@ -110,13 +124,20 @@ export interface DeckComponent {
   description?: LocalizedText
   /** The props that take the address of an image, which may be a `data:image` URL (see `isDeckUrl`). */
   images?: readonly string[]
+  /** Its attributes, which `scripts/component-reference.ts` reads from its Vue file. */
+  attributes?: readonly ComponentAttribute[]
+}
+
+/** The components with the attributes that `scripts/component-reference.ts` wrote for them. */
+export function withAttributes(components: readonly DeckComponent[], attributes: Readonly<Record<string, readonly ComponentAttribute[]>>): readonly DeckComponent[] {
+  return components.map(component => attributes[component.name] ? { ...component, attributes: attributes[component.name] } : component)
 }
 
 /** The speaker notes, which the audience never sees. */
 export const NOTES_COMPONENT = 'Notes'
 
 /** The components the render layer ships. */
-export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
+export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
   {
     name: 'Quote',
     icon: 'i-lucide-quote',
@@ -206,7 +227,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     description: { fr: 'Liste dont les éléments apparaissent un par un', en: 'List whose items appear one at a time' },
     docs: '/reference/nuxt#fragments',
   },
-] as const
+], BUILT_IN_ATTRIBUTES)
 /* eslint-enable no-template-curly-in-string */
 
 /**

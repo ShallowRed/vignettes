@@ -2,7 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 
 interface Props {
-  /** Text scale of the columns. */
+  /**
+   * Text scale of the columns.
+   * @fr Taille du texte des colonnes.
+   */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }
 

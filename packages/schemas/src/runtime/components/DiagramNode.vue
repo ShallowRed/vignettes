@@ -4,35 +4,72 @@ import { DIAGRAM } from '../injection-keys.ts'
 
 // One card of a `:::Diagram`, addressed by `id` from the `::Edge` children.
 interface Props {
-  /** Name the `::Edge` blocks use to reach the node. */
+  /**
+   * Name the `::Edge` blocks use to reach the node.
+   * @fr Nom par lequel les blocs `::Edge` désignent le nœud.
+   */
   id: string
-  /** Grid cell as `col,row` (1-based), for `layout="grid"`. */
+  /**
+   * Grid cell as `col,row` (1-based), for `layout="grid"`.
+   * @fr Case de la grille, `colonne,rangée` en partant de 1, pour `layout="grid"`.
+   */
   at?: string
-  /** Cells spanned as `cols,rows`. */
+  /**
+   * Cells spanned as `cols,rows`.
+   * @fr Cases occupées, `colonnes,rangées`.
+   */
   span?: string
-  /** Pictogram, as its path under `/pictograms` without the extension: `digital/coding`. */
+  /**
+   * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
+   */
   picto?: string
-  /** Remix icon, `ri:server-line`, lighter than a pictogram. */
+  /**
+   * Remix icon, `ri:server-line`, lighter than a pictogram.
+   * @fr Icône Remix, `ri:server-line`, plus légère qu'un pictogramme.
+   */
   icon?: string
-  /** Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`. */
+  /**
+   * Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
+   * @fr Couleur de l'icône et du titre : un nom de la palette du thème, comme `green`, ou une couleur hexadécimale ou une fonction de couleur, comme `#2a7f62`.
+   */
   color?: string
-  /** Title of the card. */
+  /**
+   * Title of the card.
+   * @fr Titre de la carte.
+   */
   title?: string
-  /** Number in a badge. */
+  /**
+   * Number in a badge.
+   * @fr Numéro affiché dans une pastille.
+   */
   n?: string | number
-  /** Draws a dashed frame, for a target state. */
+  /**
+   * Draws a dashed frame, for a target state.
+   * @fr Dessine un cadre en pointillés, pour un état visé.
+   */
   planned?: boolean
-  /** Fragment step; defaults to the writing order. */
+  /**
+   * Fragment step; defaults to the writing order.
+   * @fr Étape d'apparition ; par défaut, l'ordre d'écriture.
+   */
   step?: string | number
   /**
    * `entity`: left-aligned box whose caption lists attributes, one per list item.
    * `flow`: a pill for the data that travels between two machines.
    * `plain`: title and caption without a card, for a row or column heading.
+   * @fr `entity` : boîte alignée à gauche dont la légende liste des attributs, un par élément de liste. `flow` : une pastille pour les données qui circulent entre deux machines. `plain` : titre et légende sans carte, pour un en-tête de rangée ou de colonne.
    */
   variant?: 'card' | 'entity' | 'flow' | 'plain'
-  /** Fills the card with the accent: the one node the screen is about. */
+  /**
+   * Fills the card with the accent: the one node the screen is about.
+   * @fr Remplit la carte de la couleur d'accent : le nœud dont parle l'écran.
+   */
   emphasis?: boolean
-  /** Pictogram above the text or beside it; defaults to the diagram's `tiles`. */
+  /**
+   * Pictogram above the text or beside it; defaults to the diagram's `tiles`.
+   * @fr Pictogramme au-dessus du texte ou à côté ; par défaut, le `tiles` du diagramme.
+   */
   orientation?: 'column' | 'row'
 }
 

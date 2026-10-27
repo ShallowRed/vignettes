@@ -1,10 +1,19 @@
 <script setup lang="ts">
 interface Props {
-  /** Name of the person quoted. */
+  /**
+   * Name of the person quoted.
+   * @fr Nom de la personne citée.
+   */
   author?: string
-  /** Role of the person quoted, under the name. */
+  /**
+   * Role of the person quoted, under the name.
+   * @fr Fonction de la personne citée, sous son nom.
+   */
   role?: string
-  /** Address of a portrait beside the name. */
+  /**
+   * Address of a portrait beside the name.
+   * @fr Adresse d'un portrait affiché à côté du nom.
+   */
   avatar?: string
 }
 

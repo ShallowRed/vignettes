@@ -1,8 +1,10 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the snippet placeholder syntax */
 import type { DeckComponent } from '@vignettes/core/deck'
+import { withAttributes } from '@vignettes/core/deck'
+import { SCHEMA_ATTRIBUTES } from './component-attributes.ts'
 
 /** The explanation kit's authoring components, as the deck dialect names them. */
-export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
+export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
   {
     name: 'Scheme',
     icon: 'i-lucide-route',
@@ -57,4 +59,4 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
     docs: '/reference/schemas#jsontour',
   },
   { name: 'Zone', component: 'JsonZone', aliases: ['zone'], docs: '/reference/schemas#zone' },
-]
+], SCHEMA_ATTRIBUTES)

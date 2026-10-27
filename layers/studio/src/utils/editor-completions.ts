@@ -1,8 +1,9 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
 import type { Extension } from '@codemirror/state'
-import type { ReferenceEntry, Translate } from '../config/editor-reference'
-import { autocompletion, snippetCompletion } from '@codemirror/autocomplete'
-import { annotationEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
+import type { ComponentAttributeEntry, ReferenceEntry, Translate } from '../config/editor-reference'
+import { autocompletion, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
+import { componentKey, deckComponentNamed } from '@vignettes/core/deck'
+import { annotationEntries, componentAttributeEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
 import { frontmatterGuide } from './editor-frontmatter'
 import { referenceCard } from './editor-tooltip'
 
@@ -10,8 +11,8 @@ import { referenceCard } from './editor-tooltip'
  * Writer autocompletion, driven by the declarative authoring reference:
  * frontmatter keys and their closed values inside the leading `---` block,
  * `::` components and `:` annotations in the body, the attributes of
- * `:layout{…}` and their closed values. Everything is data from
- * editor-reference.ts.
+ * `:layout{…}` and of the components, and their closed values. Everything is
+ * data from editor-reference.ts.
  */
 
 export interface CompletionOptions {
@@ -30,6 +31,31 @@ function entryInfo(entry: ReferenceEntry, options: CompletionOptions, t: Transla
   return () => referenceCard({ syntax: entry.syntax, label: entry.label, description: entry.description, docs: options.docsUrl(entry.docs) }, t)
 }
 
+/**
+ * The completion of a component attribute. A `true`/`false` attribute goes in
+ * as the form that changes it: alone when it is false by default, as
+ * `:name="false"` when it is true by default. An attribute with closed values
+ * goes in with empty quotes and opens the list of its values.
+ */
+function attributeCompletion(attribute: ComponentAttributeEntry, bound: boolean, docs: string | undefined, t: Translate): Completion {
+  const prefix = bound ? ':' : ''
+  const text = attribute.boolean
+    ? attribute.default === 'true' ? `:${attribute.name}="false"` : `${prefix}${attribute.name}${bound ? '="true"' : ''}`
+    : `${prefix}${attribute.name}="\${${attribute.values ? '' : attribute.default ?? ''}}"`
+  const insert = snippet(text)
+  return {
+    label: `${prefix}${attribute.name}`,
+    detail: attribute.default === undefined ? undefined : t('editor.attributeDefault', { value: attribute.default }),
+    info: () => referenceCard({ syntax: attribute.name, description: attribute.description, values: attribute.values, default: attribute.default, docs }, t),
+    type: 'property',
+    apply: (view, completion, from, to) => {
+      insert(view, completion, from, to)
+      if (attribute.values)
+        startCompletion(view)
+    },
+  }
+}
+
 /** The position sits inside the leading frontmatter block. */
 function inFrontmatter(context: CompletionContext): boolean {
   const doc = context.state.doc
@@ -45,8 +71,8 @@ function inFrontmatter(context: CompletionContext): boolean {
 
 // Completions are built on each query so they follow a locale change and the
 // components registered since the editor opened.
-function bodySource(options: CompletionOptions, t: Translate) {
-  const { lang } = options
+export function bodySource(options: CompletionOptions, t: Translate) {
+  const { lang, docsUrl } = options
   const build = (entries: readonly ReferenceEntry[], type: string): Completion[] =>
     entries.map(entry => snippetCompletion(entry.snippet, {
       label: entry.syntax,
@@ -82,6 +108,34 @@ function bodySource(options: CompletionOptions, t: Translate) {
           { label: entry.name, info: entry.description, type: 'property' },
         )),
         validFor: /^[\w-]*$/,
+      }
+    }
+
+    // The closed values of a component attribute, inside `::Name{… size="…`.
+    const valueOf = before.match(/(?:^|[\s([]):{1,3}([\w-]+)\{(?:(?:[^}"]|"[^"]*")*\s)?(:?[\w-]+)="([^"]*)$/)
+    if (valueOf) {
+      const [, tag = '', name = '', typed = ''] = valueOf
+      const attribute = componentAttributeEntries(tag, lang)?.find(entry => componentKey(entry.name) === componentKey(name.replace(/^:/, '')))
+      const values = attribute?.values ?? (attribute?.boolean && name.startsWith(':') ? ['true', 'false'] : undefined)
+      return attribute && values
+        ? { from: context.pos - typed.length, options: values.map((value, index) => ({ label: value, boost: -index, detail: value === attribute.default ? t('editor.attributeDefault', { value }) : undefined, type: 'enum' })) }
+        : null
+    }
+
+    // The attributes of a component, after its brace or a space inside it, but those written already.
+    const blockOf = before.match(/(?:^|[\s([]):{1,3}([\w-]+)\{((?:[^}"]|"[^"]*")*)$/)
+    const attributeWord = blockOf?.[2]!.match(/(?:^|\s)(:?[\w-]*)$/)?.[1]
+    const attributes = blockOf && componentAttributeEntries(blockOf[1]!, lang)
+    if (blockOf && attributeWord !== undefined && attributes) {
+      const written = new Set([...blockOf[2]!.replace(/"[^"]*"/g, '""').matchAll(/(?:^|\s):?([\w-]+)/g)].map(match => componentKey(match[1]!)))
+      const typed = componentKey(attributeWord.replace(/^:/, ''))
+      const docs = docsUrl(deckComponentNamed(blockOf[1]!)?.docs)
+      return {
+        from: context.pos - attributeWord.length,
+        options: attributes
+          .filter(attribute => !written.has(componentKey(attribute.name)) || componentKey(attribute.name) === typed)
+          .map((attribute, index) => ({ ...attributeCompletion(attribute, attributeWord.startsWith(':'), docs, t), boost: -index })),
+        validFor: /^:?[\w-]*$/,
       }
     }
 

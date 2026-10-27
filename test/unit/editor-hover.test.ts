@@ -24,13 +24,21 @@ describe('referenceAt', () => {
     expect(at('Quote')).toEqual({
       from: 0,
       to: 7,
-      card: { syntax: '::Quote', label: 'Citation', description: 'Citation, avec son auteur', docs: 'https://docs.example.com/reference/nuxt#quote' },
+      card: { syntax: '::Quote', label: 'Citation', description: 'Citation, avec son auteur', attributes: ['author', 'role', 'avatar'], docs: 'https://docs.example.com/reference/nuxt#quote' },
     })
   })
 
   it('describes an annotation and an attribute of :layout with its values', () => {
     expect(at('layout')?.card).toMatchObject({ syntax: ':layout', label: 'Mise en page' })
     expect(at('media')?.card).toMatchObject({ syntax: 'media', values: ['right', 'left', 'top', 'bottom', 'behind'], docs: 'https://docs.example.com/ecrire/syntaxe#les-mises-en-page' })
+  })
+
+  it('describes an attribute of a component in the interface language', () => {
+    expect(at('author')).toEqual({
+      from: 8,
+      to: 14,
+      card: { syntax: 'author', description: 'Nom de la personne citée.', docs: 'https://docs.example.com/reference/nuxt#quote' },
+    })
   })
 
   it('leaves out the words of a quoted value, a time and an unknown name', () => {

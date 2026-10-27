@@ -9,33 +9,75 @@ import { DIAGRAM } from '../injection-keys.ts'
 // them by rank. Nodes and edges are Reveal fragments in writing order unless
 // they carry a `step`.
 interface Props {
-  /** `grid` places each node at its `at` cell; `auto` ranks the nodes with dagre and ignores `at`. */
+  /**
+   * `grid` places each node at its `at` cell; `auto` ranks the nodes with dagre and ignores `at`.
+   * @fr `grid` place chaque nœud dans la case de son `at` ; `auto` range les nœuds avec dagre et ignore `at`.
+   */
   layout?: 'grid' | 'auto'
-  /** Number of grid columns. */
+  /**
+   * Number of grid columns.
+   * @fr Nombre de colonnes de la grille.
+   */
   cols?: string | number
-  /** Column tracks as a CSS `grid-template-columns` value; overrides `cols`. */
+  /**
+   * Column tracks as a CSS `grid-template-columns` value; overrides `cols`.
+   * @fr Colonnes de la grille, en valeur CSS de `grid-template-columns` ; remplace `cols`.
+   */
   columns?: string
-  /** Number of grid rows; the grid takes as many as its nodes need when absent. */
+  /**
+   * Number of grid rows; the grid takes as many as its nodes need when absent.
+   * @fr Nombre de rangées de la grille ; sans lui, la grille prend autant de rangées que ses nœuds en demandent.
+   */
   rows?: string | number
-  /** Rank direction for the automatic layout: left to right or top to bottom. */
+  /**
+   * Rank direction for the automatic layout: left to right or top to bottom.
+   * @fr Sens de la disposition automatique : de gauche à droite ou de haut en bas.
+   */
   direction?: 'LR' | 'TB'
-  /** Scale of the cards; `xs` leaves room for the arrows and their labels in a stack of cards. */
+  /**
+   * Scale of the cards; `xs` leaves room for the arrows and their labels in a stack of cards.
+   * @fr Taille des cartes ; `xs` laisse la place aux flèches et à leurs libellés dans une pile de cartes.
+   */
   size?: 'xs' | 'sm' | 'md' | 'lg'
-  /** Shows the nodes and the edges one at a time, in writing order; each edge appears with the later of its nodes. */
+  /**
+   * Shows the nodes and the edges one at a time, in writing order; each edge appears with the later of its nodes.
+   * @fr Montre les nœuds et les liens un à un, dans l'ordre d'écriture ; un lien apparaît avec le dernier de ses deux nœuds.
+   */
   fragments?: boolean
-  /** Dims the nodes already shown once a later one is current. */
+  /**
+   * Dims the nodes already shown once a later one is current.
+   * @fr Atténue les nœuds déjà montrés quand un nœud suivant apparaît.
+   */
   dim?: boolean
-  /** Card width in px for the automatic layout (grid cells size their own). */
+  /**
+   * Card width in px for the automatic layout (grid cells size their own).
+   * @fr Largeur des cartes en px pour la disposition automatique ; dans une grille, chaque case donne la sienne.
+   */
   nodeWidth?: string | number
-  /** Height budget in px for the automatic layout; a taller graph is scaled down. */
+  /**
+   * Height budget in px for the automatic layout; a taller graph is scaled down.
+   * @fr Hauteur disponible en px pour la disposition automatique ; un graphe plus haut est réduit.
+   */
   height?: string | number
-  /** Grid gaps as `row column` CSS lengths. */
+  /**
+   * Grid gaps as `row column` CSS lengths.
+   * @fr Espaces de la grille, en longueurs CSS `rangée colonne`.
+   */
   gap?: string
-  /** Default edge route: curved, or orthogonal elbows. */
+  /**
+   * Default edge route: curved, or orthogonal elbows.
+   * @fr Tracé des liens par défaut : courbe, ou coudes à angle droit.
+   */
   route?: 'curve' | 'orthogonal'
-  /** Card surface: `outlined`, a white card with a border, or `plain`. */
+  /**
+   * Card surface: `outlined`, a white card with a border, or `plain`.
+   * @fr Surface des cartes : `outlined`, une carte blanche avec bordure, ou `plain`.
+   */
   cards?: 'outlined' | 'plain'
-  /** Card shape for every `::Node`: pictogram above the text, or beside it. */
+  /**
+   * Card shape for every `::Node`: pictogram above the text, or beside it.
+   * @fr Forme des cartes de chaque `::Node` : pictogramme au-dessus du texte, ou à côté.
+   */
   tiles?: 'column' | 'row'
 }
 

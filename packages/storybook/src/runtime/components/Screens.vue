@@ -2,11 +2,20 @@
 import { computed } from 'vue'
 // Responsive gallery laying out child media frames (typically <StoryFrame>) in an even row.
 interface Props {
-  /** Column count; defaults to an even auto-fit row. */
+  /**
+   * Column count; defaults to an even auto-fit row.
+   * @fr Nombre de colonnes ; par défaut, une rangée de cadres de même largeur.
+   */
   cols?: string | number
-  /** CSS gap between the frames. */
+  /**
+   * CSS gap between the frames.
+   * @fr Espace CSS entre les cadres.
+   */
   gap?: string
-  /** Vertical alignment of the frames in their row. */
+  /**
+   * Vertical alignment of the frames in their row.
+   * @fr Alignement vertical des cadres dans leur rangée.
+   */
   align?: 'start' | 'center' | 'stretch'
 }
 
