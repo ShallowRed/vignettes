@@ -8,7 +8,7 @@
       "history": "History",
       "historyTooltip": "Published versions and snapshots: compare, restore",
       "settings": "Settings and sharing",
-      "settingsTooltip": "Title, access, sharing, folder, theme, variants and aliases",
+      "settingsTooltip": "Title, access, sharing, folder, theme and addresses of the deck",
       "settingsTooltipSharing": "Who can open the presentation, and its individual grants",
       "notFoundTitle": "Presentation not found",
       "openedOnSlide": "Opened on slide {slide} of {total}",
@@ -17,7 +17,7 @@
       "editorLoading": "Loading the editor…",
       "notFoundMessage": "The link may be out of date, or the presentation was renamed. If it was shared with another account, sign in with that one.",
       "readOnlyTitle": "Editing not available",
-      "readOnlyMessage": "You can open this presentation, but not change it.",
+      "readOnlyMessage": "You can open this presentation. To change it, ask a person who edits it for an “Edit” access.",
       "openDeck": "Open the presentation",
       "signInTitle": "Sign-in required",
       "signInMessage": "Sign in to edit this presentation.",
@@ -36,7 +36,7 @@
       "hint": "Draft shared in real time: every change is saved automatically and visible to the other editors.",
       "switchToSolo": "Switch to solo",
       "solo": "Solo",
-      "soloTooltip": "Solo mode: the draft is saved on demand, without overwriting a more recent version"
+      "soloTooltip": "Solo mode: you save the draft yourself, and the save is refused when a more recent version exists."
     },
     "save": {
       "saved": "Draft saved",
@@ -54,7 +54,7 @@
       "neverPublished": "Never published",
       "unpublishedChanges": "Unpublished changes",
       "upToDate": "Live",
-      "hintNeverPublished": "Visitors do not see anything yet: publish the draft.",
+      "hintNeverPublished": "Publish the draft to show it to visitors.",
       "hintUnpublished": "Visitors see the published version. Publish to update it.",
       "hintUnpublishedSince": "Visitors see the version published on {date}. Publish to update it.",
       "hintUpToDate": "Visitors see this draft.",
@@ -65,9 +65,9 @@
       "controls": "Preview controls",
       "present": "Present",
       "draftPreview": "Preview of the draft, as it will be published",
-      "placeholder": "The preview will appear here.",
-      "fragmentSteps": "Show fragments step by step",
-      "fragmentStepsActive": "Fragments step by step: the preview shows the fragment under the cursor",
+      "placeholder": "Write a title after a # to see the first slide.",
+      "fragmentSteps": "Show the items one by one",
+      "fragmentStepsActive": "Items one by one: the preview shows the items up to the one under the cursor",
       "followCursor": "Follow the slide under the cursor",
       "followCursorActive": "Following the slide under the cursor: on",
       "presentDraft": "Present the draft",
@@ -90,7 +90,7 @@
       "templates": "Templates",
       "insert": "Insert",
       "uploadImage": "Upload an image",
-      "formatJson": "Format the JSON block under the cursor, otherwise all of them"
+      "formatJson": "Indent the JSON block under the cursor, or every JSON block"
     },
     "placeholders": {
       "text": "text",
@@ -99,7 +99,7 @@
     },
     "statusBar": {
       "slidePosition": "Slide {slide} of {total}",
-      "foldOthers": "Fold the others",
+      "foldOthers": "Fold the other slides",
       "unfoldAll": "Unfold all",
       "wrapLines": "Line wrapping",
       "help": "Help"
@@ -131,11 +131,11 @@
       "quoteValueShort": "Line {line}: value to put between quotes",
       "unclosed": "Open header: add a --- line above this heading to close it.",
       "unclosedShort": "Line {line}: header to close with ---",
-      "unknownKey": "Unknown key: “{key}” has no effect.",
+      "unknownKey": "Unknown key: check the spelling of “{key}” with Ctrl + Space.",
       "expectedValue": "Expected value: {values}.",
       "completionHint": "Ctrl + Space: available settings",
       "invalidYamlShort": "Line {line}: unreadable front matter",
-      "invalidValue": "Value refused by the presentation format.",
+      "invalidValue": "Value refused: pick a value with Ctrl + Space.",
       "invalidValueShort": "Line {line}: value of “{key}” refused",
       "expected": {
         "number": "Value refused: this key takes a number, such as 1280.",
@@ -143,18 +143,18 @@
         "string": "Value refused: this key takes a text."
       },
       "expectedValueShort": "Line {line}: unknown value of “{key}”",
-      "unknownTheme": "Unknown theme: the preview and the presentation show without a theme. Available themes: {themes}.",
+      "unknownTheme": "Unknown theme: pick a theme among {themes}.",
       "unknownThemeShort": "Line {line}: unknown theme “{theme}”"
     },
     "diagnostics": {
-      "list": "Problems found by the preview",
-      "unknownComponent": "“{name}” is not a known component: the preview and the presentation show its content without formatting. The help lists the components.",
+      "list": "Problems in the text",
+      "unknownComponent": "Unknown component: check the name “{name}” in the help. The preview shows its content without formatting.",
       "unknownComponentShort": "Line {line}: unknown component “{name}”",
-      "parseFailed": "The text could not be parsed",
+      "parseFailed": "The preview shows the last readable version: undo your last change and redo it in small steps.",
       "more": "{n} more",
-      "refusedUrl": "Address refused: a deck takes an https:// or http:// address, or a path on this site.",
+      "refusedUrl": "Address refused: write an address that starts with https://, or a path of this site that starts with /.",
       "refusedUrlShort": "Line {line}: address refused",
-      "refusedBinding": "Attribute refused: an attribute written with “:” takes a JSON value, such as true, 2 or \"text\", and a deck ignores v-bind, v-on, {'@'} and v-model.",
+      "refusedBinding": "Attribute refused: after “:”, write true, false, a number or a text between quotes, and remove v-bind, v-on, {'@'} and v-model.",
       "refusedBindingShort": "Line {line}: attribute “{name}” refused",
       "refusedEmbed": "http:// address: the browser blocks this frame, image or video in the studio. Write the address with https://, or with http://localhost for a server on your computer.",
       "refusedEmbedShort": "Line {line}: http:// address blocked",
@@ -176,7 +176,7 @@
       "layoutLegacyShort": "Line {line}: :layout format to convert",
       "layoutMissingSource": "Media without an address: add the src or story attribute.",
       "layoutMissingSourceShort": "Line {line}: media without an address",
-      "layoutUnused": "“{name}” has no effect on this slide.",
+      "layoutUnused": "Remove “{name}”: this setting has no effect with this placement of the media.",
       "layoutUnusedShort": "Line {line}: “{name}” has no effect",
       "layoutBehindNeedsImage": "Behind the text, the media is an image: enter its address in src.",
       "layoutBehindNeedsImageShort": "Line {line}: image required behind the text"
@@ -202,7 +202,7 @@
         "cover": "Fill",
         "contain": "Whole"
       },
-      "position": "Part kept",
+      "position": "Visible part of the image",
       "positions": {
         "center": "Center",
         "top": "Top",

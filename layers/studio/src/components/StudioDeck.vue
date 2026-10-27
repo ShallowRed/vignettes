@@ -57,7 +57,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
 <template>
   <div
     v-if="draft"
-    class="tailwind-app fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-3 bg-warning text-white text-sm py-1.5 px-4"
+    class="tailwind-app fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-3 bg-warning text-white text-sm py-1.5 px-4 print:hidden"
   >
     <UIcon
       name="i-lucide-eye"

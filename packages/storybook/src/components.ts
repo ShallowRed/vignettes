@@ -10,7 +10,7 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
       en: '::StoryFrame{story="${story-id}" ratio="${16/9}" viewport="760" label="${Label}" lightbox}\n::',
     },
     description: {
-      fr: 'Écran Storybook vivant. story prend l\'identifiant de la story, composant--story, visible dans l\'adresse du Storybook après ?path=/story/ (attributs ratio, viewport, lightbox)',
+      fr: 'Écran d\'une story Storybook, à partir de son identifiant',
       en: 'Live Storybook screen. story takes the id of the story, component--story, shown in the Storybook address after ?path=/story/ (attributes ratio, viewport, lightbox)',
     },
   },
@@ -21,7 +21,7 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
       en: ':::Screens{cols="2"}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n:::',
     },
     description: {
-      fr: 'Galerie d\'écrans Storybook (attributs cols, gap, align)',
+      fr: 'Plusieurs écrans Storybook côte à côte',
       en: 'Gallery of Storybook screens (attributes cols, gap, align)',
     },
   },

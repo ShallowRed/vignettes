@@ -8,7 +8,7 @@
       "history": "Historique",
       "historyTooltip": "Versions publiées et instantanés : comparer, restaurer",
       "settings": "Réglages et partage",
-      "settingsTooltip": "Titre, accès, partage, dossier, thème, variantes et alias",
+      "settingsTooltip": "Titre, accès, partage, dossier, thème et adresses de la présentation",
       "settingsTooltipSharing": "Qui peut ouvrir la présentation, et ses accès individuels",
       "notFoundTitle": "Présentation introuvable",
       "openedOnSlide": "Ouvert sur la diapositive {slide} sur {total}",
@@ -17,7 +17,7 @@
       "editorLoading": "Chargement de l'éditeur…",
       "notFoundMessage": "Le lien est peut-être obsolète, ou la présentation a été renommée. Si elle a été partagée avec un autre compte, connectez-vous avec celui-là.",
       "readOnlyTitle": "Modification impossible",
-      "readOnlyMessage": "Vous pouvez ouvrir cette présentation, mais pas la modifier.",
+      "readOnlyMessage": "Vous pouvez ouvrir cette présentation. Pour la modifier, demandez un accès « Édition » à une personne qui l'édite.",
       "openDeck": "Ouvrir la présentation",
       "signInTitle": "Connexion requise",
       "signInMessage": "Connectez-vous pour modifier cette présentation.",
@@ -36,7 +36,7 @@
       "hint": "Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.",
       "switchToSolo": "Passer en solo",
       "solo": "Solo",
-      "soloTooltip": "Mode solo : le brouillon s'enregistre à la demande, sans écraser une version plus récente"
+      "soloTooltip": "Mode solo : vous enregistrez le brouillon vous-même, et l'enregistrement est refusé quand une version plus récente existe."
     },
     "save": {
       "saved": "Brouillon enregistré",
@@ -54,7 +54,7 @@
       "neverPublished": "Jamais publié",
       "unpublishedChanges": "Modifications non publiées",
       "upToDate": "En ligne",
-      "hintNeverPublished": "Les visiteurs ne voient encore rien : publiez le brouillon.",
+      "hintNeverPublished": "Publiez le brouillon pour le montrer aux visiteurs.",
       "hintUnpublished": "Les visiteurs voient la version publiée. Publiez pour la mettre à jour.",
       "hintUnpublishedSince": "Les visiteurs voient la version publiée le {date}. Publiez pour la mettre à jour.",
       "hintUpToDate": "Les visiteurs voient ce brouillon.",
@@ -65,9 +65,9 @@
       "controls": "Commandes de l'aperçu",
       "present": "Présenter",
       "draftPreview": "Aperçu du brouillon, tel qu'il sera publié",
-      "placeholder": "La prévisualisation s'affichera ici.",
-      "fragmentSteps": "Afficher les fragments pas à pas",
-      "fragmentStepsActive": "Fragments pas à pas : l'aperçu montre le fragment sous le curseur",
+      "placeholder": "Écrivez un titre précédé de # pour voir la première diapositive.",
+      "fragmentSteps": "Afficher les éléments un par un",
+      "fragmentStepsActive": "Éléments un par un : l'aperçu montre les éléments jusqu'à celui sous le curseur",
       "followCursor": "Suivre la diapositive au curseur",
       "followCursorActive": "Suivi de la diapositive au curseur : activé",
       "presentDraft": "Présenter le brouillon",
@@ -86,11 +86,11 @@
       "link": "Lien",
       "image": "Image par son adresse",
       "newSlide": "Nouvelle diapositive",
-      "newSlideShort": "Diapo",
+      "newSlideShort": "Diapositive",
       "templates": "Modèles",
       "insert": "Insérer",
       "uploadImage": "Téléverser une image",
-      "formatJson": "Mettre en forme le bloc JSON sous le curseur, sinon tous"
+      "formatJson": "Indenter le bloc JSON sous le curseur, ou tous les blocs JSON"
     },
     "placeholders": {
       "text": "texte",
@@ -99,7 +99,7 @@
     },
     "statusBar": {
       "slidePosition": "Diapositive {slide} sur {total}",
-      "foldOthers": "Replier les autres",
+      "foldOthers": "Replier les autres diapositives",
       "unfoldAll": "Tout déplier",
       "wrapLines": "Retour à la ligne",
       "help": "Aide"
@@ -131,11 +131,11 @@
       "quoteValueShort": "Ligne {line} : valeur à mettre entre guillemets",
       "unclosed": "En-tête ouvert : ajoutez une ligne --- au-dessus de ce titre pour le fermer.",
       "unclosedShort": "Ligne {line} : en-tête à fermer par ---",
-      "unknownKey": "Clé inconnue : « {key} » n'a aucun effet.",
+      "unknownKey": "Clé inconnue : vérifiez l'orthographe de « {key} » avec Ctrl + Espace.",
       "expectedValue": "Valeur attendue : {values}.",
       "completionHint": "Ctrl + Espace : réglages disponibles",
       "invalidYamlShort": "Ligne {line} : en-tête illisible",
-      "invalidValue": "Valeur refusée par le format de la présentation.",
+      "invalidValue": "Valeur refusée : choisissez une valeur avec Ctrl + Espace.",
       "invalidValueShort": "Ligne {line} : valeur de « {key} » refusée",
       "expected": {
         "number": "Valeur refusée : cette clé prend un nombre, comme 1280.",
@@ -143,18 +143,18 @@
         "string": "Valeur refusée : cette clé prend un texte."
       },
       "expectedValueShort": "Ligne {line} : valeur de « {key} » inconnue",
-      "unknownTheme": "Thème inconnu : l'aperçu et la présentation s'affichent sans thème. Thèmes disponibles : {themes}.",
+      "unknownTheme": "Thème inconnu : choisissez un thème parmi {themes}.",
       "unknownThemeShort": "Ligne {line} : thème « {theme} » inconnu"
     },
     "diagnostics": {
-      "list": "Problèmes trouvés par l'aperçu",
-      "unknownComponent": "« {name} » n'est pas un composant connu : l'aperçu et la présentation affichent son contenu sans mise en forme. L'aide liste les composants.",
+      "list": "Problèmes dans le texte",
+      "unknownComponent": "Composant inconnu : vérifiez le nom « {name} » dans l'aide. L'aperçu affiche son contenu sans mise en forme.",
       "unknownComponentShort": "Ligne {line} : composant « {name} » inconnu",
-      "parseFailed": "Le texte n'a pas pu être analysé",
+      "parseFailed": "L'aperçu montre la dernière version lisible : annulez votre dernière modification et reprenez-la par petites étapes.",
       "more": "{n} autre | {n} autre | {n} autres",
-      "refusedUrl": "Adresse refusée : une présentation accepte une adresse en https:// ou http://, ou un chemin de ce site.",
+      "refusedUrl": "Adresse refusée : écrivez une adresse qui commence par https://, ou un chemin de ce site qui commence par /.",
       "refusedUrlShort": "Ligne {line} : adresse refusée",
-      "refusedBinding": "Attribut refusé : un attribut précédé de « : » prend une valeur JSON, comme true, 2 ou \"texte\", et une présentation ignore v-bind, v-on, {'@'} et v-model.",
+      "refusedBinding": "Attribut refusé : après « : », écrivez true, false, un nombre ou un texte entre guillemets, et retirez v-bind, v-on, {'@'} et v-model.",
       "refusedBindingShort": "Ligne {line} : attribut « {name} » refusé",
       "refusedEmbed": "Adresse en http:// : le navigateur bloque ce cadre, cette image ou cette vidéo dans le studio. Écrivez l'adresse en https://, ou en http://localhost pour un serveur de votre ordinateur.",
       "refusedEmbedShort": "Ligne {line} : adresse en http:// bloquée",
@@ -176,7 +176,7 @@
       "layoutLegacyShort": "Ligne {line} : format de :layout à convertir",
       "layoutMissingSource": "Média sans adresse : ajoutez l'attribut src ou story.",
       "layoutMissingSourceShort": "Ligne {line} : média sans adresse",
-      "layoutUnused": "« {name} » est sans effet sur cette diapositive.",
+      "layoutUnused": "Retirez « {name} » : ce réglage est sans effet avec ce placement du média.",
       "layoutUnusedShort": "Ligne {line} : « {name} » sans effet",
       "layoutBehindNeedsImage": "Derrière le texte, le média est une image : indiquez son adresse dans src.",
       "layoutBehindNeedsImageShort": "Ligne {line} : image requise derrière le texte"
@@ -202,7 +202,7 @@
         "cover": "Remplir",
         "contain": "Entier"
       },
-      "position": "Partie gardée",
+      "position": "Partie visible de l'image",
       "positions": {
         "center": "Centre",
         "top": "Haut",
@@ -211,7 +211,7 @@
         "right": "Droite"
       },
       "veil": "Voile",
-      "veilNone": "Cadre",
+      "veilNone": "Encadré",
       "lightbox": "Agrandir au clic",
       "align": "Alignement vertical",
       "aligns": {

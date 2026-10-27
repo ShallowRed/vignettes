@@ -25,27 +25,27 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     tag: 'slide-background',
     images: ['image'],
     snippet: { fr: ':slide-background{image="${/backgrounds/exemple.svg}"}', en: ':slide-background{image="${/backgrounds/example.svg}"}' },
-    description: { fr: 'Image de fond propre à cette diapositive (attribut image)', en: 'Background image of this slide (attribute image)' },
+    description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide (attribute image)' },
   },
   {
     tag: 'pretitle',
     snippet: { fr: ':pretitle{text="${Contexte}"}', en: ':pretitle{text="${Context}"}' },
-    description: { fr: 'Texte au-dessus du titre (attribut text)', en: 'Text above the title (attribute text)' },
+    description: { fr: 'Texte au-dessus du titre', en: 'Text above the title (attribute text)' },
   },
   {
     tag: 'subtitle',
     snippet: { fr: ':subtitle{text="${Sous-titre}"}', en: ':subtitle{text="${Subtitle}"}' },
-    description: { fr: 'Texte sous le titre (attribut text)', en: 'Text below the title (attribute text)' },
+    description: { fr: 'Texte sous le titre', en: 'Text below the title (attribute text)' },
   },
   {
     tag: 'layout',
     snippet: { fr: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}', en: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}' },
-    description: { fr: 'Mise en page de la diapositive : un média à côté, au-dessus, au-dessous ou derrière le texte (attributs media, size, src, story, fit, position, heading…)', en: 'Layout of the slide: a media beside, above, below or behind the text (attributes media, size, src, story, fit, position, heading…)' },
+    description: { fr: 'Image, page ou story à côté, au-dessus, au-dessous ou derrière le texte, réglable avec le bouton « Mise en page »', en: 'Layout of the slide: a media beside, above, below or behind the text (attributes media, size, src, story, fit, position, heading…)' },
   },
   {
     tag: 'quicklink',
     snippet: { fr: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}', en: ':quicklink{text="${See the demo}" href="${https://example.com}"}' },
-    description: { fr: 'Lien épinglé en bas de la diapositive (attributs text, href)', en: 'Link pinned to the bottom of the slide (attributes text, href)' },
+    description: { fr: 'Lien affiché en bas de la diapositive', en: 'Link pinned to the bottom of the slide (attributes text, href)' },
   },
 ] as const
 
@@ -88,42 +88,42 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     name: 'Quote',
     images: ['avatar'],
     snippet: { fr: '::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation.}\n::', en: '::Quote{author="${Author}" role="${Role}"}\n${The quote.}\n::' },
-    description: { fr: 'Citation avec auteur, rôle et avatar optionnels', en: 'Quote with optional author, role and avatar' },
+    description: { fr: 'Citation, avec son auteur', en: 'Quote with optional author, role and avatar' },
   },
   {
     name: 'Iframe',
     snippet: { fr: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::', en: '::Iframe{src="${https://example.com}" title="${Title}"}\n::' },
-    description: { fr: 'Page web intégrée (attributs lightbox, fullwidth)', en: 'Embedded web page (attributes lightbox, fullwidth)' },
+    description: { fr: 'Page web affichée dans la diapositive', en: 'Embedded web page (attributes lightbox, fullwidth)' },
   },
   {
     name: 'Image',
     aliases: ['deck-image'],
     images: ['src'],
     snippet: { fr: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
-    description: { fr: 'Image avec cadrage (attributs fit, position, rounded, shadow)', en: 'Image with framing (attributes fit, position, rounded, shadow)' },
+    description: { fr: 'Image avec sa légende', en: 'Image with framing (attributes fit, position, rounded, shadow)' },
   },
   {
     name: 'Mermaid',
     snippet: { fr: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n```\n::', en: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Start}] --> B[${End}]\n```\n::' },
-    description: { fr: 'Diagramme Mermaid (flowchart, sequence…)', en: 'Mermaid diagram (flowchart, sequence…)' },
+    description: { fr: 'Schéma de boîtes et de flèches, décrit en texte', en: 'Mermaid diagram (flowchart, sequence…)' },
   },
   {
     name: 'IconInline',
     aliases: ['i'],
     snippet: { fr: ':i{name="${ri:home-line}"}', en: ':i{name="${ri:home-line}"}' },
-    description: { fr: 'Icône dans le texte (Remix / Iconify)', en: 'Inline icon (Remix / Iconify)' },
+    description: { fr: 'Icône dans une phrase', en: 'Inline icon (Remix / Iconify)' },
   },
   {
     name: 'Columns',
     aliases: ['TwoColumns', 'ThreeColumns'],
     snippet: { fr: ':::Columns\n::Column\n${Colonne 1}\n::\n::Column\n${Colonne 2}\n::\n:::', en: ':::Columns\n::Column\n${Column 1}\n::\n::Column\n${Column 2}\n::\n:::' },
-    description: { fr: 'Colonnes côte à côte (::Column, attribut span pour les largeurs)', en: 'Side-by-side columns (::Column, attribute span for the widths)' },
+    description: { fr: 'Blocs côte à côte', en: 'Side-by-side columns (::Column, attribute span for the widths)' },
   },
   { name: 'Column', aliases: ['column'] },
   {
     name: 'Highlight',
     snippet: { fr: '::Highlight{size="${sm}"}\n${Message clé.}\n::', en: '::Highlight{size="${sm}"}\n${Key message.}\n::' },
-    description: { fr: 'Encadré de mise en avant (attributs size sm ou md, variant)', en: 'Highlight box (attributes size sm or md, variant)' },
+    description: { fr: 'Encadré pour un message clé', en: 'Highlight box (attributes size sm or md, variant)' },
   },
   {
     name: NOTES_COMPONENT,
@@ -135,7 +135,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     name: 'Fragments',
     aliases: ['fragments'],
     snippet: { fr: '::Fragments\n- ${Premier point}\n- ${Deuxième point}\n::', en: '::Fragments\n- ${First point}\n- ${Second point}\n::' },
-    description: { fr: 'Liste dont les éléments apparaissent un par un (attributs effect, dim)', en: 'List whose items appear one at a time (attributes effect, dim)' },
+    description: { fr: 'Liste dont les éléments apparaissent un par un', en: 'List whose items appear one at a time (attributes effect, dim)' },
   },
 ] as const
 /* eslint-enable no-template-curly-in-string */

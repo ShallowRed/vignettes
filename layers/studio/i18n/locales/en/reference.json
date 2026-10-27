@@ -11,7 +11,7 @@
       "layoutsIntro": "Settings of {annotation} and their values:",
       "frontmatterHeading": "Front matter",
       "shortcutsHeading": "Shortcuts",
-      "completionTriggers": "The autocompletion triggers on {components}, {annotations} and in the front matter.",
+      "completionTriggers": "Type {components} or {annotations}, or press Ctrl + Space in the header, to see the suggestions.",
       "splitHeading": "Each ## heading starts a slide. To split at the --- lines, write {other} in the front matter.",
       "splitSeparator": "Each --- line starts a slide. To split at the ## headings, write {other} in the front matter."
     },

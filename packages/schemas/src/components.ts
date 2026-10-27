@@ -11,7 +11,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
       en: ':::Scheme\n::Step{n="1" picto="${buildings/city-hall}" title="${First step}"}\n${Caption}\n::\n::Step{n="2" picto="${digital/coding}" title="${Second step}"}\n::\n:::',
     },
     description: {
-      fr: 'Étapes illustrées reliées par des flèches, qui apparaissent une à une (::Step, attributs size, tiles, arrows)',
+      fr: 'Étapes illustrées reliées par des flèches, qui apparaissent une à une',
       en: 'Illustrated steps linked by arrows, which appear one at a time (::Step, attributes size, tiles, arrows)',
     },
   },
@@ -24,7 +24,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
       en: ':::Diagram{layout="grid" cols="2"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${feeds}"}\n::\n:::',
     },
     description: {
-      fr: 'Cartes placées sur une grille ou classées automatiquement, reliées par des flèches (::Node, ::Edge, ::Area)',
+      fr: 'Cartes reliées par des flèches, placées sur une grille',
       en: 'Cards placed on a grid or ranked automatically, linked by arrows (::Node, ::Edge, ::Area)',
     },
   },
@@ -40,7 +40,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
       en: ':::JsonTour{file="${example.json}"}\n::Zone{lines="${2-3}" title="${Identity}"}\n${What these lines hold.}\n::\n\n```json\n{\n  "name": "${example}",\n  "version": 1\n}\n```\n\n:::',
     },
     description: {
-      fr: 'Fichier affiché à côté de la description de ses parties, zone par zone (::Zone, attributs file, height, panel)',
+      fr: 'Fichier commenté zone par zone, à côté de ses explications',
       en: 'A file shown beside the description of its parts, zone by zone (::Zone, attributes file, height, panel)',
     },
   },

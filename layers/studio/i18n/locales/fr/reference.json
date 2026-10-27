@@ -11,7 +11,7 @@
       "layoutsIntro": "Réglages de {annotation} et leurs valeurs :",
       "frontmatterHeading": "En-tête de la présentation",
       "shortcutsHeading": "Raccourcis",
-      "completionTriggers": "L'autocomplétion se déclenche sur {components}, {annotations} et dans l'en-tête.",
+      "completionTriggers": "Tapez {components} ou {annotations}, ou appuyez sur Ctrl + Espace dans l'en-tête, pour voir les propositions.",
       "splitHeading": "Chaque titre ## commence une diapositive. Pour découper aux lignes ---, écrivez {other} dans l'en-tête.",
       "splitSeparator": "Chaque ligne --- commence une diapositive. Pour découper aux titres ##, écrivez {other} dans l'en-tête."
     },
