@@ -12,10 +12,10 @@ import { fileUnder, requestPathSegments } from '../../utils/request-path'
 
 /**
  * Tenant theme files: `/themes/<name>.css` and `/themes/<name>/assets/...`
- * streamed from the bucket, or read from the local `.themes/` directory on a
- * deployment with no bucket credentials. The application's own themes are
- * static files under `public/themes/`, served before this route; only names
- * absent there reach it.
+ * streamed from the themes folder of the instance in the bucket, or read from
+ * the local `.themes/` directory on a deployment with no bucket credentials.
+ * The application's own themes are static files under `public/themes/`, served
+ * before this route; only names absent there reach it.
  * Theme files are public by nature (a stylesheet loads without a session).
  */
 export default defineEventHandler(async (event) => {
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   if (isFrozenS3Configured(cfg)) {
     try {
       const res = await makeFrozenS3Client(cfg).send(
-        new GetObjectCommand({ Bucket: cfg.bucket, Key: themeObjectKey(...parts) }),
+        new GetObjectCommand({ Bucket: cfg.bucket, Key: themeObjectKey(cfg.themesPrefix, ...parts) }),
       )
       body = Buffer.from(await res.Body!.transformToByteArray())
       contentType = res.ContentType

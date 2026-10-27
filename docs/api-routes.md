@@ -13,6 +13,7 @@ Every route resolves the actor from the session cookie, and the routes listed un
 | `GET /api/presentations/:slug` | gate | The published version of a deck; `?draft` returns the draft to actors who may edit it |
 | `GET /api/presentations/:slug/markdown` | gate | The Markdown of the published version as a `<slug>.md` attachment; `?draft` returns the draft, the live text of an open collab room included, to actors who may edit the deck |
 | `GET /api/templates` | any | The ids of the templates a new deck starts from, the default one first |
+| `GET /api/themes/version-gaps` | signed in | The published themes compiled with other theme packages than the instance's, which the editor flags on a deck in one of them |
 | `GET /api/p/:alias` | gate | Resolve a directory alias: live decks return their published markdown, frozen ones the bundle URL |
 | `POST /api/presentations/:slug/unlock`, `POST /api/p/:alias/unlock` | gate | The password of a semi-private deck, in the body `{ password }`; the right one sets the `access_<slug>` cookie |
 
@@ -98,7 +99,7 @@ A session ends eight hours after the login, or after two hours without a `GET` r
 | `GET /frozen/<bundle>/...` | Asset of a frozen bundle, served after `gateDeckAccess` on the bundle's deck |
 | `GET /themes/<name>.css`, `GET /themes/<name>/assets/...` | Tenant theme files streamed from object storage; the application's own themes are static files served before this route |
 | `GET /images/...`, `GET /backgrounds/...`, `GET /pictograms/...` | Deck assets of the content space, from object storage on a deployment or from `presentations/assets/` in development; files the application ships under `public/` with the same prefix are static and served first |
-| `POST /api/admin/themes/reload` | Owner: re-read the published tenant themes now instead of waiting for the cache |
+| `POST /api/admin/themes/reload` | Owner: re-read the published tenant themes at once, and list the themes compiled with other theme packages than the instance's |
 
 ## Acceptance kit
 

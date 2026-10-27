@@ -56,7 +56,27 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 
 ## Tenant themes at runtime
 
-Themes of the content space reach a deployment through the bucket. `mise run theme:push -- <name>[,<name>] --apply` compiles them locally and uploads `themes/<name>.css`, `themes/<name>/assets/`, and `themes/<name>/tokens.json` to the bucket, then rebuilds `themes/index.json` from every published theme. On a deployment, `server/utils/themes.ts` reads that index (cached for a minute; `POST /api/admin/themes/reload` forces it), merges it with the themes found on disk in the content space (development), and applies the result with `setThemeRegistry`. The `theme-registry` server middleware hands the registry to page requests and the universal plugin `src/plugins/theme-registry.ts` seeds the client with it, so both sides resolve names, aliases and backgrounds identically. `/themes/**` (`server/routes/themes/[...path].ts`) streams the files from the bucket for names that have no static file under `public/themes/`.
+Themes of the content space reach a deployment through the bucket. `mise run theme:push -- <name>[,<name>] --apply` compiles them locally and uploads `themes/<name>.css`, `themes/<name>/assets/`, and `themes/<name>/tokens.json` to the bucket, then rebuilds `themes/index.json` from every published theme. An instance that shares the bucket with another one reads its themes under a folder of its own: `NUXT_FROZEN_S3_THEMES_PREFIX=staging` gives `staging/themes/…`, and `theme:push --staging` publishes there with the secrets of the Infisical environment `staging`. On a deployment, `server/utils/themes.ts` reads that index (cached for a minute; `POST /api/admin/themes/reload` forces it), merges it with the themes found on disk in the content space (development), and applies the result with `setThemeRegistry`. The `theme-registry` server middleware hands the registry to page requests and the universal plugin `src/plugins/theme-registry.ts` seeds the client with it, so both sides resolve names, aliases and backgrounds identically. `/themes/**` (`server/routes/themes/[...path].ts`) streams the files from the bucket for names that have no static file under `public/themes/`.
+
+### The theme packages a theme was compiled with
+
+A published theme holds the CSS of `@vignettes/theme-kit` and `@vignettes/theme-dsfr` that the machine running `theme:push` had installed. `theme:push` writes their versions in `tokens.json` and in the index, under `compiledWith`: the `version` of each package, then the start of a hash of its stylesheets (`0.1.0+6a73b97e14`), which changes with any change to a stylesheet. The build of an instance computes the same versions (`themePackageVersions` of `packages/nuxt/src/build/theme-build.ts`). When the two differ, or when a theme has no `compiledWith`, the server writes the theme and the two versions in its log as it loads the themes, and `POST /api/admin/themes/reload` returns them under `gaps`. Publishing the theme again from a checkout of the branch the instance runs clears the gap.
+
+### Testing a change of the theme packages
+
+A pull request that changes `packages/theme-kit` or `packages/theme-dsfr` changes the CSS of the published themes once they are compiled again. To test it on staging, push the branch to `staging`, then publish the themes the test decks use from that branch:
+
+```sh
+mise run theme:push -- <name>[,<name>] --staging --apply
+```
+
+Staging serves the themes published under its prefix: a deck whose theme was published without `--staging` renders there without its stylesheet.
+
+The themes of production stay as they were. After the merge into `main` and the deployment of production, publish the same themes from `main` without `--staging`:
+
+```sh
+mise run theme:push -- <name>[,<name>] --apply
+```
 
 ## Renaming a theme in a deployed instance
 

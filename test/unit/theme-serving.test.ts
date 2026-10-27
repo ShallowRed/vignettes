@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { frozenS3ConfigFromEnv } from '../../layers/studio/shared/storage/frozen-s3'
 import { themeLocalPath, themeObjectKey } from '../../layers/studio/shared/storage/themes-s3'
 
 vi.stubGlobal('defineEventHandler', (handler: any) => handler)
@@ -32,8 +33,13 @@ afterAll(() => {
 
 describe('themeLocalPath', () => {
   it('mirrors the object key under the local directory', () => {
-    expect(themeObjectKey('brand', 'assets/bg.png')).toBe('themes/brand/assets/bg.png')
+    expect(themeObjectKey('', 'brand', 'assets/bg.png')).toBe('themes/brand/assets/bg.png')
     expect(themeLocalPath('brand', 'assets/bg.png')).toBe('.themes/brand/assets/bg.png')
+  })
+
+  it('puts the themes of an instance with a prefix in its own folder', () => {
+    expect(themeObjectKey('staging', 'index.json')).toBe('staging/themes/index.json')
+    expect(frozenS3ConfigFromEnv({ NUXT_FROZEN_S3_THEMES_PREFIX: '/staging/' }).themesPrefix).toBe('staging')
   })
 })
 

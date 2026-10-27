@@ -145,7 +145,9 @@
       },
       "expectedValueShort": "Ligne {line} : valeur de « {key} » inconnue",
       "unknownTheme": "Thème inconnu : choisissez un thème parmi {themes}.",
-      "unknownThemeShort": "Ligne {line} : thème « {theme} » inconnu"
+      "unknownThemeShort": "Ligne {line} : thème « {theme} » inconnu",
+      "themeVersionGap": "Le thème « {theme} » a été publié avec une autre version du moteur de thèmes que celle de ce studio : l'aperçu et la présentation peuvent différer du rendu prévu. Demandez à un propriétaire de l'instance de le republier.",
+      "themeVersionGapShort": "Ligne {line} : thème « {theme} » à republier"
     },
     "diagnostics": {
       "list": "Problèmes dans le texte",

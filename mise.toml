@@ -198,13 +198,14 @@ flag "--staging"
 run = "INFISICAL_ENV=${usage_staging:+staging} INFISICAL_SECRETS=NUXT_CONTENT_TOKEN sh scripts/with-secrets.sh node scripts/content-pull.ts \"$usage_slugs\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
 
 [tasks."theme:push"]
-description = "Publish tenant themes (content space) to the bucket the deployed app serves them from (dry run; --apply uploads): mise run theme:push -- <name>[,<name>]"
+description = "Publish tenant themes (content space) to the bucket the deployed app serves them from (dry run; --apply uploads, --staging targets the staging instance): mise run theme:push -- <name>[,<name>]"
 depends = [ "install" ]
 usage = """
 arg "<names>"
 flag "--apply"
+flag "--staging"
 """
-run = "sh scripts/with-secrets.sh node scripts/theme-push.ts \"$usage_names\" ${usage_apply:+--apply}"
+run = "INFISICAL_ENV=${usage_staging:+staging} sh scripts/with-secrets.sh node scripts/theme-push.ts \"$usage_names\" ${usage_apply:+--apply} ${usage_staging:+--staging}"
 
 [tasks."theme:rename"]
 description = "Rename the theme the decks of a deployed instance declare, in their versions, drafts and snapshots (dry run; --apply writes, --staging targets staging): mise run theme:rename -- <from> <to>"

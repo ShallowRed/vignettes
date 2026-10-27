@@ -41,6 +41,12 @@ describe('frontmatterProblems', () => {
     expect(problems[2]!.message).toBe('editor.frontmatter.expected.number')
   })
 
+  it('marks a theme published with other theme packages than the studio', () => {
+    const state = EditorState.create({ doc: '---\ntitle: T\ntheme: dsfr\n---\n# T' })
+    const problems = frontmatterProblems(state, key => key, ['dsfr'])
+    expect(problems.map(({ from, to, short }) => [state.sliceDoc(from, to), short])).toEqual([['dsfr', 'editor.frontmatter.themeVersionGapShort']])
+  })
+
   it('asks to quote a value that holds a colon', () => {
     const state = EditorState.create({ doc: '---\ntitle: Revue de sprint : bilan\n---\n# T' })
     const problems = frontmatterProblems(state, (key: string, params?: unknown) => params ? `${key} ${JSON.stringify(params)}` : key)

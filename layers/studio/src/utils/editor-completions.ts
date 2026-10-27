@@ -18,6 +18,8 @@ export interface CompletionOptions {
   projects?: readonly string[]
   /** Interface language of the snippets and descriptions. */
   lang: string
+  /** Published themes compiled with other theme packages than the studio's, marked on `theme:`. */
+  staleThemes?: readonly string[]
 }
 
 /** The position sits inside the leading frontmatter block. */

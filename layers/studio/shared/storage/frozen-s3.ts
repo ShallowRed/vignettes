@@ -8,6 +8,12 @@ export interface FrozenS3Config {
   bucket: string
   accessKeyId: string
   secretAccessKey: string
+  /**
+   * The folder of the bucket that holds the published themes of this instance,
+   * empty for the root: two instances that share the bucket keep apart the
+   * themes each one serves.
+   */
+  themesPrefix: string
 }
 
 export function isFrozenS3Configured(c: Partial<FrozenS3Config> | undefined): c is FrozenS3Config {
@@ -33,5 +39,6 @@ export function frozenS3ConfigFromEnv(env: Record<string, string | undefined>): 
     bucket: env.NUXT_FROZEN_S3_BUCKET || '',
     accessKeyId: env.NUXT_FROZEN_S3_ACCESS_KEY_ID || '',
     secretAccessKey: env.NUXT_FROZEN_S3_SECRET_ACCESS_KEY || '',
+    themesPrefix: (env.NUXT_FROZEN_S3_THEMES_PREFIX ?? '').split('/').filter(Boolean).join('/'),
   }
 }

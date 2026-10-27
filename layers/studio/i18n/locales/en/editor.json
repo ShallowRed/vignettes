@@ -145,7 +145,9 @@
       },
       "expectedValueShort": "Line {line}: unknown value of “{key}”",
       "unknownTheme": "Unknown theme: pick a theme among {themes}.",
-      "unknownThemeShort": "Line {line}: unknown theme “{theme}”"
+      "unknownThemeShort": "Line {line}: unknown theme “{theme}”",
+      "themeVersionGap": "The theme “{theme}” was published with another version of the theme engine than this studio's: the preview and the presentation can differ from the intended rendering. Ask an owner of the instance to publish it again.",
+      "themeVersionGapShort": "Line {line}: theme “{theme}” to publish again"
     },
     "diagnostics": {
       "list": "Problems in the text",

@@ -7,7 +7,7 @@ import { snippetCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { Decoration, hoverTooltip, ViewPlugin, WidgetType } from '@codemirror/view'
 import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, isRefusedEmbedUrl, RevealConfigSchema } from '@vignettes/core/deck'
-import { isKnownTheme, knownThemes } from '@vignettes/core/theme'
+import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
 import { FRONTMATTER_KEYS, inLanguage, LEGACY_FRONTMATTER_KEYS } from '../config/editor-reference'
 import { problemMarks, problemMessage } from './editor-problems'
@@ -24,6 +24,8 @@ export interface FrontmatterOptions {
   projects?: readonly string[]
   /** Interface language of the snippets. */
   lang: string
+  /** Published themes compiled with other theme packages than the studio's, marked on `theme:`. */
+  staleThemes?: readonly string[]
   t: Translate
 }
 
@@ -153,7 +155,7 @@ const unquote = (value: string) => value.replace(/^(["'])(.*)\1$/, '$2')
  * keys carries a `short` text, which the editor lists with the problems the
  * preview finds.
  */
-export function frontmatterProblems(state: EditorState, t: Translate): Problem[] {
+export function frontmatterProblems(state: EditorState, t: Translate, staleThemes: readonly string[] = []): Problem[] {
   const end = frontmatterEnd(state)
   if (!end)
     return []
@@ -250,6 +252,10 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
       onValue('warning', t('editor.frontmatter.unknownTheme', { themes: knownThemes().join(', ') }), t('editor.frontmatter.unknownThemeShort', { line: n, theme: unquote(value) }))
       continue
     }
+    if (indent === 0 && field.key === 'theme' && value && staleThemes.includes(resolveThemeName(unquote(value)))) {
+      onValue('warning', t('editor.frontmatter.themeVersionGap', { theme: unquote(value) }), t('editor.frontmatter.themeVersionGapShort', { line: n, theme: unquote(value) }))
+      continue
+    }
     if (field.values && value && !OPEN_VALUES.has(field.key) && !field.values.map(unquote).includes(unquote(value)))
       onValue('warning', t('editor.frontmatter.expectedValue', { values: field.values.join(', ') }), t('editor.frontmatter.expectedValueShort', { line: n, key: path }))
   }
@@ -257,9 +263,9 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
 }
 
 /** The problems of the frontmatter of `text` that the editor lists, placed by line. */
-export function listedFrontmatterProblems(text: string, t: Translate): Array<LineProblem & { short: string }> {
+export function listedFrontmatterProblems(text: string, t: Translate, staleThemes: readonly string[] = []): Array<LineProblem & { short: string }> {
   const state = EditorState.create({ doc: text })
-  return frontmatterProblems(state, t).flatMap((problem) => {
+  return frontmatterProblems(state, t, staleThemes).flatMap((problem) => {
     if (!problem.short)
       return []
     const line = state.doc.lineAt(problem.from)
@@ -286,11 +292,11 @@ class HintWidget extends WidgetType {
   }
 }
 
-function checks(t: Translate): Extension {
+function checks(t: Translate, staleThemes: readonly string[]): Extension {
   const hint = Decoration.widget({ widget: new HintWidget(t('editor.frontmatter.completionHint')), side: 1 })
 
   function decorate(state: EditorState, focused: boolean): DecorationSet {
-    const ranges: Range<Decoration>[] = frontmatterProblems(state, t).map(problem => problemMarks[problem.severity].range(problem.from, problem.to))
+    const ranges: Range<Decoration>[] = frontmatterProblems(state, t, staleThemes).map(problem => problemMarks[problem.severity].range(problem.from, problem.to))
     const { head, empty } = state.selection.main
     const line = state.doc.lineAt(head)
     if (focused && empty && !line.text.trim() && inFrontmatter(state, line.number))
@@ -313,13 +319,13 @@ function checks(t: Translate): Extension {
 
 // ── Tooltip ─────────────────────────────────────────────────────────────────
 
-function tooltip(t: Translate): Extension {
+function tooltip(t: Translate, staleThemes: readonly string[]): Extension {
   return hoverTooltip((view, pos) => {
     const { state } = view
     const line = state.doc.lineAt(pos)
     if (!inFrontmatter(state, line.number))
       return null
-    const problem = frontmatterProblems(state, t).find(p => p.from <= pos && pos <= p.to)
+    const problem = frontmatterProblems(state, t, staleThemes).find(p => p.from <= pos && pos <= p.to)
     const match = KEY_LINE_RE.exec(line.text)
     const keyFrom = match ? line.from + match[1]!.length : 0
     const onKey = match && pos >= keyFrom && pos <= keyFrom + match[2]!.length
@@ -356,5 +362,5 @@ function tooltip(t: Translate): Extension {
 }
 
 export function frontmatterGuide(options: FrontmatterOptions): { source: ReturnType<typeof completionSource>, extension: Extension } {
-  return { source: completionSource(options), extension: [checks(options.t), tooltip(options.t)] }
+  return { source: completionSource(options), extension: [checks(options.t, options.staleThemes ?? []), tooltip(options.t, options.staleThemes ?? [])] }
 }

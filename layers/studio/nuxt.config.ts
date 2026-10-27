@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { themePackageVersions } from '@vignettes/nuxt/build/theme-build'
 import { SECURITY_HEADERS } from './server/utils/security-headers'
 
 /** One file per area of the interface, the same list for every locale. */
@@ -16,7 +17,13 @@ const messageFiles = (locale: string) => MESSAGE_FILES.map(area => `${locale}/${
  */
 
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/i18n'],
+  modules: [
+    '@nuxtjs/i18n',
+    (_options, nuxt) => {
+      if (!nuxt.options._prepare)
+        nuxt.options.runtimeConfig.themePackages = themePackageVersions(nuxt.options.rootDir)
+    },
+  ],
   srcDir: 'src/',
   i18n: {
     strategy: 'no_prefix',
@@ -28,6 +35,9 @@ export default defineNuxtConfig({
     detectBrowserLanguage: { useCookie: true, cookieKey: 'vignettes_locale', fallbackLocale: 'fr' },
   },
   runtimeConfig: {
+    // The versions of the theme packages this build compiles with, which
+    // `server/utils/themes.ts` compares with those of the published themes.
+    themePackages: {} as Record<string, string>,
     public: {
       // Links of an instance, in the header and the status bar of the editor,
       // hidden while empty; `NUXT_PUBLIC_HELP_URL` and `NUXT_PUBLIC_FEEDBACK_URL`

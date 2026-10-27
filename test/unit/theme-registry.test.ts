@@ -10,9 +10,10 @@ import {
   resolveThemeName,
   setThemeRegistry,
 } from '@vignettes/core/theme'
+import { themePackageVersions } from '@vignettes/nuxt/build/theme-build'
 import { discoverThemes, manifestTokens, registryOf, themeAliases } from '@vignettes/nuxt/build/theme-registry'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { indexOf } from '../../layers/studio/shared/storage/themes-s3'
+import { indexOf, themeVersionGaps } from '../../layers/studio/shared/storage/themes-s3'
 
 describe('runtime theme registry', () => {
   afterEach(() => setThemeRegistry(null))
@@ -100,5 +101,33 @@ describe('published index', () => {
     ])
     expect(Object.keys(index.tokens)).toEqual(['brand-a', 'brand-b'])
     expect(index.aliases).toEqual({ dsfr: 'brand-a' })
+  })
+
+  it('reports the themes compiled with other theme packages than the instance', () => {
+    const index = indexOf([
+      { tokens: { name: 'current' }, aliases: [], publishedAt: '2026-10-27', compiledWith: { '@vignettes/theme-kit': '0.1.0+new' } },
+      { tokens: { name: 'stale' }, aliases: [], publishedAt: '2026-10-27', compiledWith: { '@vignettes/theme-kit': '0.1.0+old' } },
+      { tokens: { name: 'unversioned' }, aliases: [], publishedAt: '2026-09-11' },
+    ])
+    expect(themeVersionGaps(index, { '@vignettes/theme-kit': '0.1.0+new' })).toEqual([
+      { theme: 'stale', package: '@vignettes/theme-kit', compiled: '0.1.0+old', instance: '0.1.0+new' },
+      { theme: 'unversioned', package: '@vignettes/theme-kit', compiled: null, instance: '0.1.0+new' },
+    ])
+  })
+})
+
+describe('themePackageVersions', () => {
+  it('changes with the stylesheets of a theme package while its version stays', () => {
+    const root = mkdtempSync(join(tmpdir(), 'theme-packages-'))
+    const pkg = join(root, 'node_modules/@vignettes/theme-kit')
+    mkdirSync(pkg, { recursive: true })
+    writeFileSync(join(pkg, 'package.json'), JSON.stringify({ version: '0.1.0' }))
+    writeFileSync(join(pkg, '_index.scss'), ':root { --accent: red; }')
+    const before = themePackageVersions(root)['@vignettes/theme-kit']
+    writeFileSync(join(pkg, '_index.scss'), ':root { --accent: blue; }')
+    const after = themePackageVersions(root)['@vignettes/theme-kit']
+    expect(before).toMatch(/^0\.1\.0\+[0-9a-f]{10}$/)
+    expect(after).not.toBe(before)
+    rmSync(root, { recursive: true, force: true })
   })
 })

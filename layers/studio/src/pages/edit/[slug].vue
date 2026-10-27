@@ -468,13 +468,17 @@ function toggleWrap() {
   wrapLines.value = !wrapLines.value
 }
 
+// A published theme compiled with other theme packages than this studio's
+// renders with another engine stylesheet; the frontmatter guide marks `theme:`.
+const { data: themeVersionGaps } = useFetch<string[]>('/api/themes/version-gaps', { default: () => [] })
+
 const extensions = computed<Extension[]>(() => [
   markdown({ codeLanguages: CODE_LANGUAGES }),
   ...(wrapLines.value ? [wrappedLines()] : []),
   highlightActiveLine(),
   ...deckStructure(t),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
-  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value }, t),
+  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value, staleThemes: themeVersionGaps.value }, t),
   previewProblemMarks(),
   cursorListener,
   shortcutKeymap,
@@ -593,7 +597,7 @@ async function reparse() {
     layoutIssues.value = layoutMentions(text)
     unclosedIssues.value = unclosedBlocks(text)
     malformedIssues.value = malformedAttributeMentions(text)
-    frontmatterIssues.value = listedFrontmatterProblems(text, t)
+    frontmatterIssues.value = listedFrontmatterProblems(text, t, themeVersionGaps.value)
     parseFailed.value = false
     parsedText = text
     // Let Reveal register added/removed slides, then re-align to the caret so a
@@ -626,7 +630,7 @@ function goToLine(line: number) {
 }
 
 const MENTIONS_SHOWN = 3
-watch(raw, () => {
+watch([raw, themeVersionGaps], () => {
   if (timer)
     clearTimeout(timer)
   timer = setTimeout(reparse, 300)

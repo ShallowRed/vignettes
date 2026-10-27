@@ -6,13 +6,48 @@
  * its own. The default output is `public/themes/`, what the application serves.
  */
 import type { DiscoveredTheme } from './theme-registry.ts'
-import { cpSync, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { createHash } from 'node:crypto'
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import * as sass from 'sass'
 import { PREVIEW_FONTS_FILE } from './theme-registry.ts'
 
 export function themesOutDir(root: string): string {
   return join(root, 'public/themes')
+}
+
+/** The packages whose stylesheets a theme compiles with. */
+const THEME_PACKAGES = ['@vignettes/theme-kit', '@vignettes/theme-dsfr']
+
+/**
+ * The version of each theme package installed at `root`: its `version`, then
+ * the start of a hash of its stylesheets, `0.1.0+3f2a9c41d0`. The hash tells
+ * two states of a package apart while its `version` stays the same.
+ */
+export function themePackageVersions(root: string): Record<string, string> {
+  const versions: Record<string, string> = {}
+  for (const name of THEME_PACKAGES) {
+    const dir = join(root, 'node_modules', name)
+    if (!existsSync(dir))
+      continue
+    const real = realpathSync(dir)
+    const hash = createHash('sha256')
+    for (const file of stylesheets(real)) {
+      hash.update(relative(real, file))
+      hash.update(readFileSync(file))
+    }
+    const { version } = JSON.parse(readFileSync(join(real, 'package.json'), 'utf8')) as { version: string }
+    versions[name] = `${version}+${hash.digest('hex').slice(0, 10)}`
+  }
+  return versions
+}
+
+function stylesheets(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true, recursive: true })
+    .filter(entry => entry.isFile() && entry.name.endsWith('.scss'))
+    .map(entry => join(entry.parentPath, entry.name))
+    .filter(file => !relative(dir, file).split('/').includes('node_modules'))
+    .sort()
 }
 
 export function compileTheme(root: string, theme: DiscoveredTheme, outDir = themesOutDir(root)): boolean {
