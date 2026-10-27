@@ -69,6 +69,7 @@
       "placeholder": "Écrivez un titre précédé de # pour voir la première diapositive.",
       "fragmentSteps": "Afficher les éléments un par un",
       "fragmentStepsActive": "Éléments un par un : l'aperçu montre les éléments jusqu'à celui sous le curseur",
+      "step": "Étape {shown} sur {total}",
       "followCursor": "Suivre la diapositive au curseur",
       "followCursorActive": "Suivi de la diapositive au curseur : activé",
       "presentDraft": "Présenter le brouillon",

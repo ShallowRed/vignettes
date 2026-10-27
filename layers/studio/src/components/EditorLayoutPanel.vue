@@ -86,31 +86,51 @@ const share = computed(() => {
   return p! / q!
 })
 
-interface Choice { label: string, value: string, active: boolean }
+interface Choice { label: string, value: string, active: boolean, icon?: string }
 
-function row(name: string, values: readonly string[], label: (choice: string) => string, active = value(name)): { name: string, choices: Choice[] } {
-  return { name, choices: values.map(choice => ({ value: choice, label: label(choice), active: choice === active })) }
+function row(name: string, values: readonly string[], label: (choice: string) => string, active = value(name), icons: Record<string, string> = {}): { name: string, choices: Choice[] } {
+  return { name, choices: values.map(choice => ({ value: choice, label: label(choice), active: choice === active, icon: icons[choice] })) }
+}
+
+const FIT_ICONS: Record<string, string> = { cover: 'i-lucide-expand', contain: 'i-lucide-shrink' }
+const POSITION_ICONS: Record<string, string> = {
+  center: 'i-lucide-circle-dot',
+  top: 'i-lucide-arrow-up-to-line',
+  bottom: 'i-lucide-arrow-down-to-line',
+  left: 'i-lucide-arrow-left-to-line',
+  right: 'i-lucide-arrow-right-to-line',
+}
+const ALIGN_ICONS: Record<string, string> = {
+  top: 'i-lucide-align-vertical-justify-start',
+  center: 'i-lucide-align-vertical-justify-center',
+  bottom: 'i-lucide-align-vertical-justify-end',
+}
+const HEADING_ICONS: Record<string, string> = {
+  '': 'i-lucide-heading',
+  'compact': 'i-lucide-fold-vertical',
+  'hidden': 'i-lucide-eye-off',
+  'print': 'i-lucide-printer',
 }
 
 const shownRows = computed(() => {
   const media = placement.value !== 'none'
   const behind = placement.value === 'behind'
   return [
-    ...(media && !behind ? [{ title: t('editor.layout.size'), row: row('size', side.value ? MEDIA_SIZES : ['', ...MEDIA_SIZES], choice => choice || t('editor.layout.sizeAuto'), size.value) }] : []),
-    ...(behind ? [{ title: t('editor.layout.veil'), row: row('veil', veils.value, choice => choice || t('editor.layout.veilNone'), (attributes.value.veil as string | undefined) ?? '') }] : []),
-    ...(media ? [{ title: t('editor.layout.fit'), row: row('fit', MEDIA_FITS, choice => t(`editor.layout.fits.${choice}`)) }] : []),
-    ...(media && value('fit') === 'cover' ? [{ title: t('editor.layout.position'), row: row('position', MEDIA_POSITIONS, choice => t(`editor.layout.positions.${choice}`)) }] : []),
-    { title: t('editor.layout.align'), row: row('align', ['', ...VERTICAL_ALIGNS], choice => t(`editor.layout.aligns.${choice || 'auto'}`)) },
-    { title: t('editor.layout.heading'), row: row('heading', ['', ...HEADING_MODES], choice => t(`editor.layout.headings.${choice || 'normal'}`)) },
+    ...(media && !behind ? [{ title: t('editor.layout.size'), icon: 'i-lucide-proportions', row: row('size', side.value ? MEDIA_SIZES : ['', ...MEDIA_SIZES], choice => choice || t('editor.layout.sizeAuto'), size.value) }] : []),
+    ...(behind ? [{ title: t('editor.layout.veil'), icon: 'i-lucide-blend', row: row('veil', veils.value, choice => choice || t('editor.layout.veilNone'), (attributes.value.veil as string | undefined) ?? '') }] : []),
+    ...(media ? [{ title: t('editor.layout.fit'), icon: 'i-lucide-crop', row: row('fit', MEDIA_FITS, choice => t(`editor.layout.fits.${choice}`), value('fit'), FIT_ICONS) }] : []),
+    ...(media && value('fit') === 'cover' ? [{ title: t('editor.layout.position'), icon: 'i-lucide-scan-eye', iconOnly: true, row: row('position', MEDIA_POSITIONS, choice => t(`editor.layout.positions.${choice}`), value('position'), POSITION_ICONS) }] : []),
+    { title: t('editor.layout.align'), icon: 'i-lucide-move-vertical', row: row('align', ['', ...VERTICAL_ALIGNS], choice => t(`editor.layout.aligns.${choice || 'auto'}`), value('align'), ALIGN_ICONS) },
+    { title: t('editor.layout.heading'), icon: 'i-lucide-heading', iconOnly: true, row: row('heading', ['', ...HEADING_MODES], choice => t(`editor.layout.headings.${choice || 'normal'}`), value('heading'), HEADING_ICONS) },
   ]
 })
 
 const fields = computed(() => placement.value === 'none'
   ? []
   : [
-      { name: 'src', label: t('editor.layout.src'), placeholder: '/images/…' },
-      ...(placement.value === 'behind' ? [] : [{ name: 'story', label: t('editor.layout.story'), placeholder: 'composant--story' }]),
-      { name: 'alt', label: t('editor.layout.alt'), placeholder: '' },
+      { name: 'src', label: t('editor.layout.src'), icon: 'i-lucide-link', placeholder: '/images/…' },
+      ...(placement.value === 'behind' ? [] : [{ name: 'story', label: t('editor.layout.story'), icon: 'i-lucide-book-open', placeholder: 'composant--story' }]),
+      { name: 'alt', label: t('editor.layout.alt'), icon: 'i-lucide-captions', placeholder: '' },
     ])
 </script>
 
@@ -157,7 +177,11 @@ const fields = computed(() => placement.value === 'none'
           </div>
 
           <section>
-            <h3 class="text-xs font-medium text-muted mb-1.5">
+            <h3 class="flex items-center gap-1.5 text-xs font-medium text-muted mb-1.5">
+              <UIcon
+                name="i-lucide-image"
+                class="size-3.5"
+              />
               {{ t('editor.layout.placement') }}
             </h3>
             <div class="grid grid-cols-3 gap-1">
@@ -189,6 +213,7 @@ const fields = computed(() => placement.value === 'none'
           >
             <UInput
               :model-value="(attributes[field.name] as string) ?? ''"
+              :icon="field.icon"
               class="w-full"
               :placeholder="field.placeholder"
               @update:model-value="set(field.name, $event)"
@@ -206,22 +231,33 @@ const fields = computed(() => placement.value === 'none'
             v-for="shown in shownRows"
             :key="shown.row.name"
           >
-            <h3 class="text-xs font-medium text-muted mb-1.5">
+            <h3 class="flex items-center gap-1.5 text-xs font-medium text-muted mb-1.5">
+              <UIcon
+                :name="shown.icon"
+                class="size-3.5"
+              />
               {{ shown.title }}
             </h3>
             <div class="flex gap-0.5 rounded-lg bg-elevated p-0.5">
-              <UButton
+              <UTooltip
                 v-for="choice in shown.row.choices"
                 :key="choice.value"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                class="flex-1 justify-center"
-                :class="choice.active ? btnActive : btnHover"
-                :aria-pressed="choice.active"
-                :label="choice.label"
-                @click="set(shown.row.name, choice.value)"
-              />
+                :text="choice.label"
+                :disabled="!shown.iconOnly"
+              >
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  class="flex-1 justify-center"
+                  :class="choice.active ? btnActive : btnHover"
+                  :aria-pressed="choice.active"
+                  :icon="choice.icon"
+                  :label="shown.iconOnly ? undefined : choice.label"
+                  :aria-label="shown.iconOnly ? choice.label : undefined"
+                  @click="set(shown.row.name, choice.value)"
+                />
+              </UTooltip>
             </div>
           </section>
 

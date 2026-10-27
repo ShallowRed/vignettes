@@ -272,7 +272,37 @@ const previewFragments = computed(() => fragmentSteps.value && preview.value?.me
 watch(previewFragments, (fragments) => {
   previewRef.value?.getInstance()?.configure({ fragments })
   syncPreviewToCursor()
+  readSteps()
 })
+
+// The steps of the slide on screen: the button shows on a slide that has some,
+// and the stepped preview gives the step reached. Fragments that share an index
+// are one step.
+const slideSteps = ref(0)
+const stepShown = ref(0)
+let stepsSource: RevealApi | null = null
+function readSteps() {
+  const reveal = previewRef.value?.getInstance()
+  const slide = reveal?.getCurrentSlide()
+  if (!reveal || !slide) {
+    slideSteps.value = 0
+    return
+  }
+  const fragments = [...slide.querySelectorAll<HTMLElement>('.fragment')]
+  slideSteps.value = new Set(fragments.map((fragment, at) => fragment.dataset.fragmentIndex ?? `#${at}`)).size
+  stepShown.value = (reveal.getIndices().f ?? -1) + 1
+}
+
+function onPreviewReady() {
+  const reveal = previewRef.value?.getInstance()
+  if (reveal && reveal !== stepsSource) {
+    for (const event of ['slidechanged', 'fragmentshown', 'fragmenthidden'])
+      reveal.on(event, readSteps)
+    stepsSource = reveal
+  }
+  syncPreviewToCursor()
+  readSteps()
+}
 
 function syncPreviewToCursor() {
   checkSlide()
@@ -523,6 +553,9 @@ const unclosedIssues = ref<OpenBlock[]>([])
 const malformedIssues = ref<MalformedAttributes[]>([])
 const parseFailed = ref(false)
 let parsedText = ''
+// From a change of the text to the render of its preview, a bar runs along the
+// top of the slide.
+const previewPending = ref(false)
 
 const ATTRIBUTE_MESSAGES: Record<AttributeMention['reason'], { short: string, message: string }> = {
   url: { short: 'editor.diagnostics.refusedUrlShort', message: 'editor.diagnostics.refusedUrl' },
@@ -617,10 +650,14 @@ async function reparse() {
     await nextTick()
     previewRef.value?.sync?.()
     syncPreviewToCursor()
+    readSteps()
   }
   catch {
     parseFailed.value = true
   }
+  // A text typed during the parse keeps the bar until its own render.
+  if (raw.value === text)
+    previewPending.value = false
 }
 
 // The marks go to the text that was parsed; a text typed since then gets its
@@ -643,6 +680,7 @@ function goToLine(line: number) {
 
 const MENTIONS_SHOWN = 3
 watch([raw, themeVersionGaps], () => {
+  previewPending.value = true
   if (timer)
     clearTimeout(timer)
   timer = setTimeout(reparse, 300)
@@ -1238,6 +1276,7 @@ async function onMetaSaved() {
             :aria-label="t('editor.preview.controls')"
           >
             <DeckControlButton
+              v-if="slideSteps > 0"
               :label="t('editor.preview.fragmentSteps')"
               :tip="fragmentSteps ? t('editor.preview.fragmentStepsActive') : undefined"
               :pressed="fragmentSteps"
@@ -1277,6 +1316,7 @@ async function onMetaSaved() {
           <div
             ref="previewFrame"
             class="editor-stage__frame"
+            :aria-busy="previewPending"
             tabindex="0"
             role="group"
             :aria-label="t('editor.preview.frame')"
@@ -1302,7 +1342,7 @@ async function onMetaSaved() {
                 :lang="preview.metadata.lang"
                 :code="preview.metadata.code"
                 :controls="false"
-                @ready="syncPreviewToCursor"
+                @ready="onPreviewReady"
               >
                 <RevealSlides :presentation-data="preview" />
               </RevealPresentation>
@@ -1318,6 +1358,21 @@ async function onMetaSaved() {
                 </div>
               </template>
             </ClientOnly>
+            <div
+              v-if="previewFragments && slideSteps > 0"
+              class="editor-stage__step"
+              role="status"
+              :aria-label="t('editor.preview.step', { shown: stepShown, total: slideSteps })"
+            >
+              <UIcon name="i-lucide-step-forward" />
+              {{ stepShown }}/{{ slideSteps }}
+            </div>
+            <Transition name="editor-stage-rendering">
+              <div
+                v-if="previewPending"
+                class="editor-stage__rendering"
+              />
+            </Transition>
           </div>
         </div>
       </section>
@@ -1461,6 +1516,64 @@ async function onMetaSaved() {
 
 .editor-stage__frame :deep(.reveal) {
   height: 100%;
+}
+
+.editor-stage__step {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.editor-stage__rendering {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 30;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.editor-stage__rendering::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  background: var(--ui-primary);
+  animation: editor-stage-rendering 0.9s ease-in-out infinite;
+}
+
+@keyframes editor-stage-rendering {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(340%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-stage__rendering::before {
+    width: 100%;
+    opacity: 0.6;
+    animation: none;
+  }
+}
+
+.editor-stage-rendering-enter-active,
+.editor-stage-rendering-leave-active {
+  transition: opacity 0.15s;
+}
+
+.editor-stage-rendering-enter-from,
+.editor-stage-rendering-leave-to {
+  opacity: 0;
 }
 
 /* Below the md width the panes stack: the stage comes first and is as tall as

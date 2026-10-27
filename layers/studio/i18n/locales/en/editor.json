@@ -69,6 +69,7 @@
       "placeholder": "Write a title after a # to see the first slide.",
       "fragmentSteps": "Show the items one by one",
       "fragmentStepsActive": "Items one by one: the preview shows the items up to the one under the cursor",
+      "step": "Step {shown} of {total}",
       "followCursor": "Follow the slide under the cursor",
       "followCursorActive": "Following the slide under the cursor: on",
       "presentDraft": "Present the draft",
