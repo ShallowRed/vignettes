@@ -20,6 +20,11 @@ export interface ReferenceCard {
   docs?: string
 }
 
+/** A description cut into its text and its `code` spans, which the descriptions write between backticks. */
+export function codeParts(text: string): { text: string, code: boolean }[] {
+  return text.split('`').map((part, index) => ({ text: part, code: index % 2 === 1 })).filter(part => part.text)
+}
+
 /** The link to a documentation section, opened in another tab. */
 export function docsLink(href: string, label: string): HTMLElement {
   const link = document.createElement('a')
@@ -49,7 +54,11 @@ export function referenceCard(card: ReferenceCard, t: Translate): HTMLElement {
   dom.append(heading)
   if (card.description) {
     const text = document.createElement('p')
-    text.textContent = card.description
+    for (const part of codeParts(card.description)) {
+      const node = document.createElement(part.code ? 'code' : 'span')
+      node.textContent = part.text
+      text.append(node)
+    }
     dom.append(text)
   }
   if (card.values?.length) {

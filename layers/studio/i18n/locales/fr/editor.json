@@ -192,6 +192,10 @@
       "layoutBehindNeedsImage": "Derrière le texte, le média est une image : indiquez son adresse dans src.",
       "layoutBehindNeedsImageShort": "Ligne {line} : image requise derrière le texte"
     },
+    "properties": {
+      "open": "Propriétés",
+      "none": "Placez le curseur dans un composant ou une annotation pour régler ses attributs."
+    },
     "layout": {
       "open": "Mise en page",
       "placement": "Média",
@@ -250,7 +254,8 @@
       "settings": "{keys} : réglages disponibles",
       "attributes": "{keys} : attributs disponibles",
       "values": "{keys} : valeurs possibles",
-      "insert": "Tapez :: pour insérer un composant"
+      "component": "composant",
+      "annotation": "annotation"
     },
     "keys": {
       "space": "Espace"

@@ -146,6 +146,7 @@ const fields = computed(() => placement.value === 'none'
       size="sm"
       :class="btnHover"
       :label="t('editor.layout.open')"
+      :ui="{ label: 'max-sm:sr-only' }"
       :disabled="disabled || !view"
     />
 

@@ -192,6 +192,10 @@
       "layoutBehindNeedsImage": "Behind the text, the media is an image: enter its address in src.",
       "layoutBehindNeedsImageShort": "Line {line}: image required behind the text"
     },
+    "properties": {
+      "open": "Properties",
+      "none": "Place the cursor in a component or an annotation to set its attributes."
+    },
     "layout": {
       "open": "Layout",
       "placement": "Media",
@@ -250,7 +254,8 @@
       "settings": "{keys}: available settings",
       "attributes": "{keys}: available attributes",
       "values": "{keys}: possible values",
-      "insert": "Type :: to insert a component"
+      "component": "component",
+      "annotation": "annotation"
     },
     "keys": {
       "space": "Space"

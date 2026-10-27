@@ -183,6 +183,11 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
         :disabled="disabled"
       />
 
+      <EditorPropertiesPanel
+        :view="view"
+        :disabled="disabled"
+      />
+
       <input
         ref="imageInput"
         type="file"

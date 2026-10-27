@@ -214,22 +214,28 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       }
     }
 
-    // `::` (and `:::`) opens the component list; a lone `:` offers annotations
-    // too. Inside a component that has its own (`:::Scheme` and its
-    // `::Step`), the list holds those only.
+    // `::` and `:::` open the block components; inside a component that has
+    // its own (`:::Scheme` and its `::Step`), those only. A lone `:` opens the
+    // annotations at the start of a line, and the components written in a
+    // sentence (`:i`) after a letter: in a sentence, a colon alone is punctuation.
     const directiveMatch = before.match(/(^|\s)(:{1,3})([\w-]*)$/)
     if (!directiveMatch)
       return null
-    const colons = directiveMatch[2]!
-    const word = directiveMatch[3]!
+    const [, lead = '', colons = '', word = ''] = directiveMatch
+    const lineStart = !before.slice(0, directiveMatch.index! + lead.length).trim()
+    if (colons.length === 1 && !lineStart && !word && !context.explicit)
+      return null
     const from = context.pos - word.length - colons.length
     const enclosing = blocksAround(context.state.doc.toString(), line.number).at(-1)
     const children = enclosing ? childEntries(enclosing.name, lang) : []
-    const components = build(children.length ? children : componentEntries(lang), 'class')
-    const options = colons.length >= 2 || children.length
-      ? components
-      : [...build(annotationEntries(lang), 'keyword'), ...components]
-    return { from, options, validFor: /^:{0,3}[\w-]*$/ }
+    const inline = componentEntries(lang).filter(entry => /^:[^:]/.test(entry.syntax))
+    const options = children.length
+      ? build(children, 'class')
+      : colons.length >= 2
+        ? build(componentEntries(lang).filter(entry => !inline.includes(entry)), 'class')
+        : [...(lineStart ? build(annotationEntries(lang), 'keyword') : []), ...build(inline, 'class')]
+    // Another colon asks the list again, for the components of that many colons.
+    return { from, options, validFor: new RegExp(`^${colons}[\\w-]*$`) }
   }
 }
 
@@ -250,6 +256,8 @@ export interface Hint {
   kind: HintKind
   /** The frontmatter key of a free value, whose description the hint shows. */
   key?: FrontmatterKey
+  /** On an empty line, the component around it whose own components the hint names. */
+  parent?: string
 }
 
 /** The completion sources the hint asks whether they have something to offer. */
@@ -285,39 +293,61 @@ export function hintAt(state: EditorState, sources: HintSources): Hint | null {
   }
   if (inFence(state, line.number))
     return null
-  if (!line.text.trim())
-    return { kind: 'insert' }
+  if (!line.text.trim()) {
+    const enclosing = blocksAround(state.doc.toString(), line.number).at(-1)
+    return enclosing ? { kind: 'insert', parent: enclosing.name } : { kind: 'insert' }
+  }
   const before = line.text.slice(0, head - line.from)
   const kind = /[{\s]$/.test(before) ? 'attributes' : before.endsWith('="') && line.text[head - line.from] === '"' ? 'values' : null
   return kind && offers(sources.body, state, head) ? { kind } : null
 }
 
+/** What a hint offers to type: `::` and the name of what it opens. */
+interface HintChoice { colons: string, label: string }
+
 class HintWidget extends WidgetType {
-  constructor(readonly text: string, readonly kind: HintKind) {
+  constructor(readonly text: string, readonly kind: HintKind, readonly choices: readonly HintChoice[] = []) {
     super()
   }
 
   override toDOM(view: EditorView) {
     const hint = document.createElement('span')
     hint.className = this.kind === 'free' ? 'cm-hint cm-hint--text' : 'cm-hint'
-    hint.textContent = this.text
-    if (this.kind === 'free')
+    if (this.kind === 'free') {
+      hint.textContent = this.text
       return hint
-    // A click opens what the shortcut opens; the component list needs its colons.
-    hint.addEventListener('mousedown', (event) => {
+    }
+    // A click opens what the shortcut opens; a choice writes its colons first.
+    const open = (event: MouseEvent, colons = '') => {
       event.preventDefault()
-      if (this.kind === 'insert') {
+      event.stopPropagation()
+      if (colons) {
         const at = view.state.selection.main.head
-        view.dispatch({ changes: { from: at, insert: '::' }, selection: { anchor: at + 2 } })
+        view.dispatch({ changes: { from: at, insert: colons }, selection: { anchor: at + colons.length } })
       }
       view.focus()
       startCompletion(view)
-    })
+    }
+    if (!this.choices.length) {
+      hint.textContent = this.text
+      hint.addEventListener('mousedown', event => open(event))
+      return hint
+    }
+    for (const choice of this.choices) {
+      const item = document.createElement('span')
+      item.className = 'cm-hint__choice'
+      const key = document.createElement('kbd')
+      key.className = 'cm-hint__key'
+      key.textContent = choice.colons
+      item.append(key, ` ${choice.label}`)
+      item.addEventListener('mousedown', event => open(event, choice.colons))
+      hint.append(item)
+    }
     return hint
   }
 
   override eq(other: HintWidget) {
-    return other.text === this.text && other.kind === this.kind
+    return other.text === this.text && other.kind === this.kind && JSON.stringify(other.choices) === JSON.stringify(this.choices)
   }
 }
 
@@ -325,12 +355,20 @@ class HintWidget extends WidgetType {
  * The hint at the end of the caret line. An empty value with closed values
  * opens its list as soon as the author reaches it or empties it.
  */
-function completionHint(sources: HintSources, t: Translate): Extension {
+function completionHint(sources: HintSources, t: Translate, lang: string): Extension {
+  // On an empty line: the components of the block around it, or the annotations and the components.
+  function choices(hint: Hint): HintChoice[] {
+    const children = hint.parent ? childEntries(hint.parent, lang) : []
+    return children.length
+      ? [{ colons: '::', label: children.map(entry => entry.label.toLowerCase()).join(' · ') }]
+      : [{ colons: ':', label: t('editor.hints.annotation') }, { colons: '::', label: t('editor.hints.component') }]
+  }
+
   function decorate(view: EditorView, hint: Hint | null): DecorationSet {
     if (!hint)
       return Decoration.none
-    const text = hint.kind === 'free' ? t(hint.key!.descriptionKey) : t(`editor.hints.${hint.kind}`)
-    const widget = new HintWidget(text, hint.kind)
+    const text = hint.kind === 'free' ? t(hint.key!.descriptionKey) : hint.kind === 'insert' ? '' : t(`editor.hints.${hint.kind}`)
+    const widget = new HintWidget(text, hint.kind, hint.kind === 'insert' ? choices(hint) : [])
     return Decoration.set([Decoration.widget({ widget, side: 1 }).range(view.state.doc.lineAt(view.state.selection.main.head).to)])
   }
 
@@ -362,6 +400,6 @@ export function deckCompletions(options: CompletionOptions, t: Translate): Exten
     // macOS keeps Ctrl-Space to switch the input source.
     keymap.of([{ key: 'Mod-Shift-Space', run: startCompletion }]),
     frontmatter.extension,
-    completionHint(sources, t),
+    completionHint(sources, t, options.lang),
   ]
 }

@@ -59,6 +59,12 @@ describe('component list', () => {
     expect(labels(':::Columns\n::')).toEqual(['::Column'])
   })
 
+  it('offers the annotations on a lone colon at the start of a line, and nothing on a colon in a sentence', () => {
+    expect(labels('# Slide\n\n:')).toEqual(expect.arrayContaining([':pretitle', ':layout', ':i']))
+    expect(labels('# Slide\n\n:')).not.toContain(':::Columns')
+    expect(source(new CompletionContext(EditorState.create({ doc: 'Le constat :' }), 12, false))).toBeNull()
+  })
+
   it('leaves the components written inside another out of the list elsewhere', () => {
     expect(labels('# Slide\n\n::')).not.toContain('::Column')
     expect(labels(':::Columns\n::Column\nText\n::\n:::\n\n::')).not.toContain('::Column')
