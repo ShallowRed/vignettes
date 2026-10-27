@@ -54,7 +54,7 @@ import { editorTheme } from '../../utils/editor-theme'
 import { wrappedLines } from '../../utils/editor-wrap'
 import { previewSourceReader } from '../../utils/preview-header'
 import { imageMention, missingImages } from '../../utils/preview-images'
-import { slideOverflow } from '../../utils/preview-overflow'
+import { slideOverflow, transitionsEnded } from '../../utils/preview-overflow'
 import { requestErrorMessage } from '../../utils/request-error'
 import { saveTextFile } from '../../utils/save-file'
 
@@ -338,6 +338,9 @@ function checkSlide() {
     if (!reveal)
       return
     const check = ++slideCheck
+    await transitionsEnded(reveal)
+    if (check !== slideCheck)
+      return
     const { h, v } = reveal.getIndices()
     const ranges = slideRanges(raw.value, parserId.value)
     const index = ranges.findIndex(range => range.h === h && range.v === (v ?? 0))
