@@ -2,7 +2,7 @@
 import type { EditorView } from '@codemirror/view'
 import type { MediaPlacement } from '@vignettes/core/deck'
 import { DEFAULT_SIDE_MEDIA_SIZE, HEADING_MODES, layoutDefault, layoutForPlacement, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, VERTICAL_ALIGNS } from '@vignettes/core/deck'
-import { slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
+import { EDITOR_TEXT, slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
 import { btnActive, btnHover } from '../utils/toolbar-buttons'
 
 // The layout of the slide under the cursor. Each choice rewrites its `:layout`
@@ -24,6 +24,14 @@ function read() {
 
 watch(open, (opened) => {
   if (opened)
+    read()
+})
+
+// Another author may change the `:layout` line while the panel is open: the
+// panel reads the slide again on each change of the text.
+const text = inject(EDITOR_TEXT, undefined)
+watch(() => text?.value, () => {
+  if (open.value)
     read()
 })
 

@@ -4,6 +4,7 @@
       "backHome": "Retour à l'accueil",
       "readOnly": "Lecture seule",
       "peerEditing": "{name} édite en ce moment",
+      "selfElsewhere": "Vous, dans une autre fenêtre ou sur un autre appareil",
       "anonymousPeer": "anonyme",
       "history": "Historique",
       "historyTooltip": "Versions publiées et instantanés : comparer, restaurer",

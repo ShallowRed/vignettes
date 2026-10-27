@@ -1,5 +1,6 @@
 import type { EditorState, TransactionSpec } from '@codemirror/state'
 import type { LayoutAnnotation } from '@vignettes/core/deck'
+import type { InjectionKey, Ref } from 'vue'
 import { layoutAnnotations, layoutAnnotationValues, layoutSource, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
 import { frontmatterEnd } from './editor-frontmatter'
 import { HEADING_RE, slideContentAt } from './editor-slides'
@@ -9,6 +10,9 @@ import { HEADING_RE, slideContentAt } from './editor-slides'
  * `:layout` line, for the layout panel of the toolbar. The text stays the one
  * source: a choice in the panel rewrites the annotation.
  */
+
+/** The text of the editor, which the editor page gives the layout panel. */
+export const EDITOR_TEXT: InjectionKey<Readonly<Ref<string>>> = Symbol('editorText')
 
 export interface SlideLayoutAtCursor {
   /** The annotation of the slide, when it has one. */

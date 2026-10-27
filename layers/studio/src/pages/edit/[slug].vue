@@ -18,6 +18,7 @@ import type { Extension } from '@codemirror/state'
 import type { AttributeMention, ComponentMention, LayoutIssueKind, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
+import type { Peer } from '../../utils/editor-peers'
 import type { LineProblem } from '../../utils/editor-problems'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
@@ -39,10 +40,13 @@ import { deckCompletions } from '../../utils/editor-completions'
 import { listedFrontmatterProblems } from '../../utils/editor-frontmatter'
 import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
+import { EDITOR_TEXT } from '../../utils/editor-layout'
+import { awarenessPeers } from '../../utils/editor-peers'
 import { placeProblems, previewProblemMarks, setPreviewProblems } from '../../utils/editor-problems'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 import { wrappedLines } from '../../utils/editor-wrap'
+import { previewSourceReader } from '../../utils/preview-header'
 import { imageMention, missingImages } from '../../utils/preview-images'
 import { slideOverflow } from '../../utils/preview-overflow'
 import { requestErrorMessage } from '../../utils/request-error'
@@ -64,6 +68,7 @@ const colorMode = useColorMode()
 const toast = useToast()
 
 const raw = ref('')
+provide(EDITOR_TEXT, raw)
 const lastSaved = ref('')
 const deckTitle = ref<string | undefined>(undefined)
 useHead({ title: () => t('editor.page.pageTitle', { title: deckTitle.value || slug }) })
@@ -96,7 +101,7 @@ const saveState = ref<'idle' | 'saving' | 'error'>('idle')
 // Collaboration state. `peers` lists the other connected people by name.
 const collabStatus = ref<'connecting' | 'connected' | 'disconnected'>('connecting')
 const peerCount = ref(0)
-const peers = ref<{ name: string, color: string }[]>([])
+const peers = ref<Peer[]>([])
 
 // Load the working draft (falls back to published version, then file).
 // useRequestFetch: the SSR pass must re-emit the session cookie — `?draft`
@@ -576,10 +581,12 @@ const previewIssues = computed(() => [
   })),
 ].sort((a, b) => a.line - b.line || a.column - b.column))
 
+const previewSource = previewSourceReader()
+
 async function reparse() {
   const text = raw.value
   try {
-    const data = await buildPresentationData(text)
+    const data = await buildPresentationData(previewSource(text))
     preview.value = data
     unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
     refusedMentions.value = attributeMentions(text)
@@ -690,16 +697,12 @@ async function startCollab() {
   provider.awareness?.setLocalStateField('user', {
     name: user.value?.name || login || t('editor.page.anonymousPeer'),
     color: palette[hue % palette.length],
+    login,
   })
   provider.awareness?.on('change', () => {
     const states = provider.awareness?.getStates()
     peerCount.value = states?.size ?? 0
-    peers.value = states
-      ? [...states.entries()]
-          .filter(([id]) => id !== provider.awareness?.clientID)
-          .map(([, state]) => state.user as { name: string, color: string })
-          .filter(Boolean)
-      : []
+    peers.value = states && provider.awareness ? awarenessPeers(states, provider.awareness.clientID, login) : []
   })
 
   // yCollab wires sync + local awareness; yRemoteSelectionsTheme is
@@ -943,10 +946,10 @@ async function onMetaSaved() {
       >
         <span
           v-for="peer in peers"
-          :key="peer.name + peer.color"
+          :key="peer.key"
           class="grid place-items-center size-6 rounded-full text-[10px] font-semibold text-white ring-2 ring-default"
           :style="{ backgroundColor: peer.color }"
-          :title="t('editor.page.peerEditing', { name: peer.name })"
+          :title="peer.self ? t('editor.page.selfElsewhere') : t('editor.page.peerEditing', { name: peer.name })"
         >{{ initials(peer.name) }}</span>
       </div>
 
