@@ -119,6 +119,13 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The Playwright image holds the browsers and the system packages they need.
+    # Its tag follows `@playwright/test` in the catalog of pnpm-workspace.yaml.
+    # https://playwright.dev/docs/ci#via-containers
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001
     permissions:
       contents: read
     steps:
@@ -142,9 +149,6 @@ jobs:
         env:
           NUXT_TELEMETRY_DISABLED: 1
         run: pnpm build:server
-
-      - name: Install browsers
-        run: pnpm exec playwright install --with-deps chromium firefox
 
       - name: End-to-end tests
         run: pnpm test:e2e
