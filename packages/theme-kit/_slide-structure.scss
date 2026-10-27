@@ -8,13 +8,20 @@
  * skeleton here is identical in every theme.
  *
  * What stays in this layer: positioning primitives (display: flex, ordering,
- * `width: 100%`, the vertical alignment of the content).
+ * `width: 100%`, the vertical alignment of the content), and the rhythm and
+ * the measure of the body of a content slide, from the tokens of
+ * `_semantic-tokens.scss`.
  * What belongs in a theme or a preset: sizes, as the tokens below, colors and
  * typography.
  *
  * Size tokens, set on `.reveal`:
  * - `--slide-heading-min-height`: the height a content slide keeps for its heading;
  * - `--slide-body-padding-y`: the space above and below the body of a content slide.
+ *
+ * The rhythm tokens of `_semantic-tokens.scss` (`--flow-space`, `--block-space`,
+ * `--heading-space-before`) set the vertical margins of
+ * the blocks of the body of a content slide, and `--measure` the maximum line
+ * length of its paragraphs and lists.
  */
 
 // The vertical alignment of the content, as a value of `justify-content`:
@@ -85,6 +92,64 @@
 
 .reveal section article {
   width: 100%;
+}
+
+// The body of a content slide spaces its blocks by the rhythm tokens, which set
+// the vertical margins of these blocks and override the margins a theme or a
+// component writes.
+// The article is a flex column, whose margins add up, and a column a block,
+// whose margins collapse: each block keeps a margin above it only, so both give
+// the same space. A heading of the body stands closer to the block it opens
+// than to the block before it.
+.reveal .slides section.slide-h3 :is(article > div, .column, .fragments) {
+  > * {
+    margin-block: var(--flow-space) 0;
+  }
+
+  // A block other than text (columns, a diagram, an image, a `::Quote`, a
+  // `::Highlight`, code) takes more space above and below it.
+  > :where(:not(p:not(:has(> img)), ul, ol, h4, h5, h6, blockquote:not(.quote), .fragments, .notes)),
+  > :where(:not(p:not(:has(> img)), ul, ol, h4, h5, h6, blockquote:not(.quote), .fragments, .notes)) + * {
+    margin-top: var(--block-space);
+  }
+
+  > :is(h4, h5, h6) {
+    margin-block: var(--heading-space-before) 0;
+  }
+
+  > :is(h4, h5, h6) + * {
+    margin-top: var(--flow-space);
+  }
+
+  > :is(p:not(:has(> img)), ul, ol) {
+    max-inline-size: var(--measure);
+  }
+
+  // The items of a list of the body, and a list inside an item, are spaced as
+  // the paragraphs of a group of text. The lists drawn by a component keep
+  // their own spacing.
+  > :is(ul, ol) {
+    &,
+    :is(ul, ol) {
+      row-gap: 0;
+
+      > li {
+        margin-block: 0;
+      }
+
+      > li + li {
+        margin-top: var(--flow-space);
+      }
+    }
+
+    li > :is(ul, ol) {
+      margin-block: var(--flow-space) 0;
+    }
+  }
+
+  > :first-child {
+    margin-top: 0;
+  }
 }
 
 /**

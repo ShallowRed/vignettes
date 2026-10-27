@@ -122,8 +122,8 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Column', aliases: ['column'] },
   {
     name: 'Highlight',
-    snippet: { fr: '::Highlight{size="${sm}"}\n${Message clé.}\n::', en: '::Highlight{size="${sm}"}\n${Key message.}\n::' },
-    description: { fr: 'Encadré pour un message clé', en: 'Highlight box (attributes size sm or md, variant)' },
+    snippet: { fr: '::Highlight\n${Message clé.}\n::', en: '::Highlight\n${Key message.}\n::' },
+    description: { fr: 'Message clé en gras, dans la couleur d\'accent, avec un liseré à gauche', en: 'Key message in bold, in the accent color, with a bar on its left (attribute size)' },
   },
   {
     name: NOTES_COMPONENT,
@@ -135,7 +135,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
     name: 'Fragments',
     aliases: ['fragments'],
     snippet: { fr: '::Fragments\n- ${Premier point}\n- ${Deuxième point}\n::', en: '::Fragments\n- ${First point}\n- ${Second point}\n::' },
-    description: { fr: 'Liste dont les éléments apparaissent un par un', en: 'List whose items appear one at a time (attributes effect, dim)' },
+    description: { fr: 'Liste dont les éléments apparaissent un par un', en: 'List whose items appear one at a time (attributes effect, dim, collapse)' },
   },
 ] as const
 /* eslint-enable no-template-curly-in-string */

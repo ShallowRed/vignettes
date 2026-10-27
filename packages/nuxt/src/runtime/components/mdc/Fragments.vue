@@ -8,11 +8,14 @@ interface Props {
   effect?: string
   /** Dims the items already shown once a later one is current. */
   dim?: boolean
+  /** With an effect that shows an item at its step, the items still hidden take no space: the slide lays out its content again at each step, and an item appears with a fade. */
+  collapse?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   effect: 'fade-in',
   dim: false,
+  collapse: false,
 })
 
 defineSlots<{
@@ -46,7 +49,7 @@ onMounted(() => {
   <div
     ref="root"
     class="fragments"
-    :class="{ 'fragments--dim': dim }"
+    :class="{ 'fragments--dim': dim, 'fragments--collapse': collapse }"
   >
     <slot />
   </div>
@@ -56,5 +59,16 @@ onMounted(() => {
 .fragments--dim:has(.current-fragment) :deep(.fragment.visible:not(.current-fragment)) {
   opacity: 0.4;
   transition: opacity 0.3s ease;
+}
+
+/* The effects that show an item before its step keep it in the layout. */
+.fragments--collapse :deep(.fragment:not(.visible, .grow, .shrink, .strike, .fade-out, .semi-fade-out, [class*='highlight-'])) {
+  display: none;
+}
+
+@starting-style {
+  .fragments--collapse :deep(.fragment.visible) {
+    opacity: 0;
+  }
 }
 </style>

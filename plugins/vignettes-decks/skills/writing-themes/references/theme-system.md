@@ -76,6 +76,8 @@ Code that works under any theme (the engine layer, MDC components such as `Highl
 - `--on-contrast` is the text color on `--surface-contrast`.
 - `--text-default` colors the body text, `--text-title` the headings and strong text, `--text-mention` the muted text (small print, captions).
 - `--border`, `--radius` and `--shadow` give the outline, the corners and the elevation of a box drawn by a component.
+- `--text-step-1` to `--text-step-4` are the type scale above the body text, in `em` of the text around: the headings inside the body and the sizes of `Highlight.vue` read them.
+- `--flow-space`, `--block-space` and `--heading-space-before` are the vertical rhythm of the body of a content slide: the space inside a group of text (between a heading and its paragraph, two paragraphs, a paragraph and its list, two list items), above and below a block other than text, and above a heading of the body. `--measure` is the maximum line length of a paragraph or a list of that body.
 
 `packages/theme-kit/_semantic-tokens.scss` gives each token a default value, which applies when a theme omits it. `packages/theme-kit/_palette.scss` defines the tints of the diagram cards, `--palette-<name>-bg`, `-main` and `-text`, under eight generic names a theme redefines.
 

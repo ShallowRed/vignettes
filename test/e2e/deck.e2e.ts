@@ -83,6 +83,14 @@ test('every authoring component renders its own markup', async ({ page, browserN
   await expect.soft(slides.locator('aside.notes'), 'Notes stay out of the slide').toBeHidden()
 })
 
+test('the items of a collapsed Fragments take no space before their step', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'The layout does not depend on the browser.')
+  await page.goto(DECK)
+  await expect(page.locator('.reveal')).toHaveClass(/\bready\b/)
+
+  await expect(page.locator('.reveal .fragments--collapse .fragment').first()).toHaveCSS('display', 'none')
+})
+
 test('the deck page sends the security headers', async ({ request, browserName }) => {
   test.skip(browserName !== 'chromium', 'The response does not depend on the browser.')
   const headers = (await request.get(DECK)).headers()

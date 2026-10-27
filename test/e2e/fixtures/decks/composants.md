@@ -39,7 +39,7 @@ Une phrase où :highlight[un fragment porte l'accent] et une icône :i{name="ri:
 
 ### Fragments
 
-::Fragments
+::Fragments{collapse}
 - Premier point
 - Deuxième point
 ::

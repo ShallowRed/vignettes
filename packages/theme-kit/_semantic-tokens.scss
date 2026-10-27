@@ -36,6 +36,19 @@
  *   --on-surface-title / --on-surface-default / --on-surface-mention
  *       the text intensities as the page root sets them, for the text of a
  *       surface a component paints. Derived here: a theme does not set them.
+ *   --text-step-1 … --text-step-4
+ *       the type scale above the body text, in `em` of the text around: a
+ *       heading inside the body and the sizes of a highlighted message. They
+ *       follow a column that shrinks its text.
+ *   --flow-space / --block-space / --heading-space-before
+ *       the vertical rhythm of the body of a content slide, in `em` of the element that
+ *       carries the margin: the space inside a group of text (between a heading
+ *       and its paragraph, two paragraphs, a paragraph and its list, two list
+ *       items), above and below a block other than text, and above a heading of
+ *       the body.
+ *   --measure
+ *       the maximum line length of a paragraph or a list of the body of a
+ *       content slide.
  */
 
 :root {
@@ -66,6 +79,18 @@
   --code-min-size: 0px;
   --code-surface: #f6f8fa;
   --code-surface-dark: #24292e;
+
+  // Type scale: a ratio of 1.2 between two steps.
+  --text-step-1: 1.2em;
+  --text-step-2: 1.44em;
+  --text-step-3: 1.728em;
+  --text-step-4: 2.074em;
+
+  // Vertical rhythm of the body
+  --flow-space: 0.6em;
+  --block-space: 2em;
+  --heading-space-before: 1.6em;
+  --measure: 60ch;
 
   // Resolved at the root, so a slide that sets its own text colors, such as a
   // dark section divider, leaves the light surfaces of the components dark text.

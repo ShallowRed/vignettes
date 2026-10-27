@@ -65,9 +65,9 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 - `IconInline`: Inline icon (Remix / Iconify), also written `i`
 - `Columns`: Side-by-side columns (::Column, attribute span for the widths), also written `TwoColumns`, `ThreeColumns`
 - `Column`, also written `column`
-- `Highlight`: Highlight box (attributes size sm or md, variant)
+- `Highlight`: Key message in bold, in the accent color, with a bar on its left (attribute size)
 - `Notes`: Speaker notes, shown in the speaker view (S key), also written `notes`
-- `Fragments`: List whose items appear one at a time (attributes effect, dim), also written `fragments`
+- `Fragments`: List whose items appear one at a time (attributes effect, dim, collapse), also written `fragments`
 
 `@vignettes/schemas`, the explanation kit:
 

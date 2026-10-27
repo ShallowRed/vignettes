@@ -115,16 +115,14 @@ Content: The quote, in markdown.
 <!-- component: Highlight -->
 
 ```markdown
-::Highlight{size="sm"}
+::Highlight
 Key message.
 ::
 ```
 
 Attributes:
 
-- `size` (`'sm' | 'md' | 'lg' | 'xl'`, default `'md'`): Text size of the message.
-- `variant` (`'default' | 'accent' | 'contrast'`, default `'default'`): `default` sets the text alone, `accent` adds a bar and a tint in the accent color, `contrast` puts it in a dark box.
-- `center` (`boolean`, default `false`): Centers the message, except with `variant="accent"`, which keeps it aligned left.
+- `size` (`'sm' | 'md' | 'lg' | 'xl'`): Text size of the message, a step of the type scale above the body text; without it, the message keeps the size of the body text.
 
 Content: The message, in markdown.
 
@@ -147,6 +145,7 @@ Attributes:
 
 - `effect` (`string`, default `'fade-in'`): Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…
 - `dim` (`boolean`, default `false`): Dims the items already shown once a later one is current.
+- `collapse` (`boolean`, default `false`): With an effect that shows an item at its step, the items still hidden take no space: the slide lays out its content again at each step, and an item appears with a fade.
 
 Content: A markdown list, whose items appear one at a time; each other block is one step.
 
