@@ -6,6 +6,7 @@ import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { h, resolveComponent } from 'vue'
 import { useDeckDownload } from '../composables/useDeckDownload'
+import { useDeckLinks } from '../composables/useDeckLinks'
 import { saveTextFile } from '../utils/save-file'
 
 // Table view of the catalog: column sorting, client pagination, row selection
@@ -29,6 +30,7 @@ const UButton = resolveComponent('UButton')
 const UCheckbox = resolveComponent('UCheckbox')
 
 const toast = useToast()
+const { copyLinks, deckUrl } = useDeckLinks()
 const { downloadItems } = useDeckDownload()
 
 /**
@@ -216,16 +218,6 @@ const shownRange = computed(() => {
   return { from: pageIndex * pageSize + 1, to: Math.min((pageIndex + 1) * pageSize, total), total }
 })
 
-async function copyLinks(items: PresentationListItem[]) {
-  const urls = items.map(i => new URL(deckPath(i), window.location.origin).href)
-  await navigator.clipboard.writeText(urls.join('\n'))
-  toast.add({
-    title: t('catalog.table.linksCopied', urls.length),
-    icon: 'i-lucide-clipboard-check',
-    color: 'success',
-  })
-}
-
 function csvEscape(value: string) {
   return /[",\n;]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value
 }
@@ -237,7 +229,7 @@ function exportCsv(items: PresentationListItem[]) {
     i.status,
     i.project ?? '',
     i.theme,
-    new URL(deckPath(i), window.location.origin).href,
+    deckUrl(i),
   ].map(csvEscape).join(','))
   saveTextFile('presentations.csv', [header.join(','), ...lines].join('\n'), 'text/csv;charset=utf-8')
   toast.add({ title: t('catalog.table.exported', { n: items.length }), icon: 'i-lucide-file-down', color: 'success' })

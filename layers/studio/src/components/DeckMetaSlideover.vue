@@ -10,6 +10,7 @@ import { slugify } from '@vignettes/core/slugify'
 import { deckApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
 import { useCatalog, useCatalogCache } from '../composables/useCatalog'
+import { useDeckLinks } from '../composables/useDeckLinks'
 import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
 import { countAudience } from '../utils/audience'
@@ -42,6 +43,7 @@ const open = defineModel<boolean>('open', { required: true })
 const { role, privileged, user } = useAppSession()
 const isOwner = computed(() => role.value === 'owner')
 const canShare = computed(() => props.item.canShare === true)
+const { deckUrl, copyLinks } = useDeckLinks()
 const toast = useToast()
 const { invalidatePresentations } = useCatalogCache()
 
@@ -347,6 +349,29 @@ const audience = computed(() => {
               :title="t('deck.meta.audienceTitle')"
               :description="audience"
             />
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  {{ t('deck.meta.link') }}
+                </p>
+              </div>
+              <UFieldGroup class="w-full">
+                <UInput
+                  :model-value="deckUrl(item)"
+                  readonly
+                  class="w-full"
+                  :aria-label="t('deck.meta.link')"
+                  @focus="($event.target as HTMLInputElement).select()"
+                />
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-copy"
+                  :label="t('catalog.table.copyLink')"
+                  @click="copyLinks([item])"
+                />
+              </UFieldGroup>
+            </div>
             <div
               v-if="privileged"
               class="settings__row"

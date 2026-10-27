@@ -30,6 +30,7 @@ import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '../../composables/useAppSession'
+import { useDeckLinks } from '../../composables/useDeckLinks'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
@@ -718,12 +719,32 @@ async function publish() {
     publishedRaw.value = raw.value
     publishedAt.value = Date.now()
     publishState.value = 'idle'
-    toast.add({ title: t('editor.publication.published'), description: t('editor.publication.publishedDescription'), icon: 'i-lucide-check', color: 'success' })
+    await notifyPublished()
   }
   catch (e: any) {
     publishState.value = 'error'
     toast.add({ title: requestErrorMessage(e, e?.message || t('editor.publication.failed')), icon: 'i-lucide-triangle-alert', color: 'error' })
   }
+}
+
+// The notice names who sees the version just published, and offers the next
+// step: the link to send, or the sharing tab of a private deck.
+const { copyLinks } = useDeckLinks()
+async function notifyPublished() {
+  const open = deckStatus.value === 'public' || deckStatus.value === 'semi-private'
+  // Read before the click, which writes to the clipboard at once.
+  const item = open ? await deckItem().catch(() => null) : null
+  toast.add({
+    title: t('editor.publication.published'),
+    description: t(deckStatus.value === 'public'
+      ? 'editor.publication.publishedDescription'
+      : deckStatus.value === 'semi-private' ? 'editor.publication.publishedDescriptionPassword' : 'editor.publication.publishedDescriptionPrivate'),
+    icon: 'i-lucide-check',
+    color: 'success',
+    actions: [item
+      ? { label: t('catalog.table.copyLink'), icon: 'i-lucide-link', color: 'neutral', variant: 'outline', onClick: () => copyLinks([item]) }
+      : { label: t('editor.publication.share'), icon: 'i-lucide-share-2', color: 'neutral', variant: 'outline', onClick: () => openMeta('sharing') }],
+  })
 }
 
 // ── Help panel ──────────────────────────────────────────────────────────────
@@ -766,11 +787,18 @@ const downloadItems = computed(() => [
 
 const metaOpen = ref(false)
 const metaItem = ref<PresentationListItem | null>(null)
+const metaFocus = ref<'sharing' | undefined>()
 
-async function openMeta() {
+// The catalog entry of the deck, with its alias and its accesses.
+async function deckItem(): Promise<PresentationListItem | null> {
+  const list = await $fetch<PresentationListItem[]>('/api/presentations')
+  return list.find(p => p.slug === slug) ?? null
+}
+
+async function openMeta(focus?: 'sharing') {
+  metaFocus.value = focus
   try {
-    const list = await $fetch<PresentationListItem[]>('/api/presentations')
-    metaItem.value = list.find(p => p.slug === slug) ?? null
+    metaItem.value = await deckItem()
     if (metaItem.value)
       metaOpen.value = true
   }
@@ -899,7 +927,7 @@ async function onMetaSaved() {
           class="shrink-0 gap-2 max-sm:px-1.5"
           :aria-label="`${t('editor.page.settings')}, ${t(statusDisplay.labelKey)}`"
           :disabled="!privileged && !viewer.canEdit"
-          @click="openMeta"
+          @click="openMeta()"
         >
           <UIcon
             name="i-lucide-settings-2"
@@ -1220,6 +1248,7 @@ async function onMetaSaved() {
       v-if="metaItem"
       v-model:open="metaOpen"
       :item="metaItem"
+      :focus="metaFocus"
       :projects="projects"
       @saved="onMetaSaved"
     />
