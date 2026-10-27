@@ -19,7 +19,7 @@ import type { AttributeMention, ComponentAttributeIssue, ComponentMention, Layou
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { Peer } from '../../utils/editor-peers'
-import type { LineProblem } from '../../utils/editor-problems'
+import type { LineProblem, Severity } from '../../utils/editor-problems'
 import { STATUS_CONFIG } from '#shared/presentations'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
@@ -578,8 +578,27 @@ const LAYOUT_MESSAGES: Record<LayoutIssueKind, string> = {
   'behind-needs-image': 'editor.diagnostics.layoutBehindNeedsImage',
 }
 
+// An error breaks or drops content, a warning changes what the author probably
+// meant, an info asks for a cleanup without effect on the slide.
+const LAYOUT_SEVERITIES: Record<LayoutIssueKind, Severity> = {
+  'unknown-attribute': 'warning',
+  'invalid-value': 'warning',
+  'legacy': 'info',
+  'missing-source': 'error',
+  'unused': 'info',
+  'behind-needs-image': 'error',
+}
+
+const SEVERITY_RANK: Record<Severity, number> = { error: 0, warning: 1, info: 2 }
+
+const SEVERITY_ICONS: Record<Severity, { icon: string, color: string }> = {
+  error: { icon: 'i-lucide-circle-alert', color: 'text-error' },
+  warning: { icon: 'i-lucide-triangle-alert', color: 'text-warning' },
+  info: { icon: 'i-lucide-info', color: 'text-dimmed' },
+}
+
 // The frontmatter guide marks its own problems in the source pane; the list
-// shows them with the others.
+// shows them with the others, the most severe first.
 const previewIssues = computed(() => [
   ...(overflow.value
     ? [{
@@ -588,6 +607,7 @@ const previewIssues = computed(() => [
         length: raw.value.split('\n')[overflow.value.line - 1]?.length ?? 0,
         short: t('editor.diagnostics.overflowShort', { slide: overflow.value.slide }),
         message: t('editor.diagnostics.overflow', { slide: overflow.value.slide }),
+        severity: 'warning' as const,
         marked: false,
       }]
     : []),
@@ -597,12 +617,21 @@ const previewIssues = computed(() => [
     length: image.length,
     short: t('editor.diagnostics.imageMissingShort', { line: image.line }),
     message: t('editor.diagnostics.imageMissing', { src: image.src }),
+    severity: 'error' as const,
     marked: false,
   })),
   ...malformedIssues.value.map(mention => ({
     ...mention,
     short: t('editor.diagnostics.malformedAttributesShort', { line: mention.line, name: mention.name }),
     message: t(`editor.diagnostics.malformedAttributes.${mention.reason}`, { name: mention.name }),
+    severity: 'error' as const,
+    marked: false,
+  })),
+  ...componentAttributeProblems.value.map(issue => ({
+    ...issue,
+    short: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}Short`, { line: issue.line, name: issue.name }),
+    message: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}`, { name: issue.name, component: issue.component }),
+    severity: 'warning' as const,
     marked: false,
   })),
   ...componentAttributeProblems.value.map(issue => ({
@@ -615,6 +644,7 @@ const previewIssues = computed(() => [
     ...block,
     short: t('editor.diagnostics.unclosedBlockShort', { line: block.line, name: block.name, colons: block.colons }),
     message: t('editor.diagnostics.unclosedBlock', { name: block.name, colons: block.colons }),
+    severity: 'error' as const,
     marked: false,
   })),
   ...frontmatterIssues.value.map(problem => ({ ...problem, marked: true })),
@@ -624,6 +654,7 @@ const previewIssues = computed(() => [
     short: t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name }),
     message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
     docs: docsUrl(DOCS_SECTIONS.unknownComponent),
+    severity: 'error' as const,
     marked: false,
   })),
   ...refusedMentions.value.map(mention => ({
@@ -631,6 +662,7 @@ const previewIssues = computed(() => [
     short: t(ATTRIBUTE_MESSAGES[mention.reason].short, { line: mention.line, name: mention.name }),
     message: t(ATTRIBUTE_MESSAGES[mention.reason].message),
     docs: docsUrl(DOCS_SECTIONS.refusedAttribute),
+    severity: 'error' as const,
     marked: false,
   })),
   ...layoutIssues.value.map(mention => ({
@@ -638,9 +670,10 @@ const previewIssues = computed(() => [
     short: t(`${LAYOUT_MESSAGES[mention.kind]}Short`, { line: mention.line, name: mention.attribute }),
     message: t(LAYOUT_MESSAGES[mention.kind], { name: mention.attribute }),
     docs: docsUrl(DOCS_SECTIONS.layout),
+    severity: LAYOUT_SEVERITIES[mention.kind],
     marked: false,
   })),
-].sort((a, b) => a.line - b.line || a.column - b.column))
+].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.line - b.line || a.column - b.column))
 
 const previewSource = previewSourceReader()
 
@@ -678,7 +711,7 @@ async function reparse() {
 watch([previewIssues, editorView], ([issues, view]) => {
   if (!view || view.state.doc.toString() !== parsedText)
     return
-  const problems = issues.filter(issue => !issue.marked).map(issue => ({ ...issue, severity: 'warning' as const }))
+  const problems = issues.filter(issue => !issue.marked)
   view.dispatch({ effects: setPreviewProblems.of(placeProblems(view.state, problems)) })
 })
 
@@ -1265,12 +1298,12 @@ async function onMetaSaved() {
               <UTooltip :text="issue.message">
                 <UButton
                   :label="issue.short"
-                  icon="i-lucide-triangle-alert"
+                  :icon="SEVERITY_ICONS[issue.severity].icon"
                   color="neutral"
                   variant="outline"
                   size="sm"
                   class="max-w-full"
-                  :ui="{ label: 'truncate', leadingIcon: 'text-warning' }"
+                  :ui="{ label: 'truncate', leadingIcon: SEVERITY_ICONS[issue.severity].color }"
                   @click="goToLine(issue.line)"
                 />
               </UTooltip>
