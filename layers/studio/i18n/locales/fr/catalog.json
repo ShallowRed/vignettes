@@ -99,7 +99,7 @@
         "defaultTheme": "{theme}, le thème par défaut",
         "titleMissing": "L'en-tête du fichier ne donne pas de titre : ajoutez la clé title.",
         "keysInvalid": "L'en-tête du fichier a une valeur refusée pour la clé {keys}. | L'en-tête du fichier a une valeur refusée pour la clé {keys}. | L'en-tête du fichier a des valeurs refusées pour les clés {keys}.",
-        "yamlInvalid": "L'en-tête du fichier n'est pas du YAML valide : {message}"
+        "yamlInvalid": "L'en-tête du fichier est illisible : écrivez une clé par ligne, sous la forme clé: valeur, et mettez entre guillemets une valeur qui contient « : »."
       }
     },
     "form": {

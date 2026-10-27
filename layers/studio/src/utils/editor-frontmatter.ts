@@ -166,12 +166,38 @@ export function frontmatterProblems(state: EditorState, t: Translate): Problem[]
   catch (error) {
     if (error instanceof YAMLException) {
       const line = state.doc.line(Math.min(end - 1, Math.max(2, (error.mark?.line ?? 0) + 2)))
+      // A value with a colon in it, such as a title, is the most frequent case.
+      const colon = /^(\s*[\w-]+):\s+([^"'\s].*:\s.*)$/.exec(line.text)
       problems.push({
         from: line.from,
         to: Math.max(line.to, line.from + 1),
         severity: 'error',
-        message: t('editor.frontmatter.invalidYaml', { reason: error.reason }),
-        short: t('editor.frontmatter.invalidYamlShort', { line: line.number }),
+        message: colon
+          ? t('editor.frontmatter.quoteValue', { line: `${colon[1]}: "${colon[2]!.trim()}"` })
+          : t('editor.frontmatter.invalidYaml'),
+        short: t(colon ? 'editor.frontmatter.quoteValueShort' : 'editor.frontmatter.invalidYamlShort', { line: line.number }),
+      })
+      return problems
+    }
+  }
+  // A heading inside the block: its closing line is missing, and the block runs
+  // to the first slide break. `#` lines with a key right under them read as a
+  // YAML comment.
+  const hash = (n: number) => /^#{1,6}\s/.test(state.doc.line(n).text)
+  for (let n = 2; n < end; n++) {
+    if (!hash(n))
+      continue
+    let next = n + 1
+    while (next < end && hash(next))
+      next++
+    if (!(next < end && KEY_LINE_RE.test(state.doc.line(next).text))) {
+      const line = state.doc.line(n)
+      problems.push({
+        from: line.from,
+        to: line.to,
+        severity: 'error',
+        message: t('editor.frontmatter.unclosed'),
+        short: t('editor.frontmatter.unclosedShort', { line: n }),
       })
       return problems
     }

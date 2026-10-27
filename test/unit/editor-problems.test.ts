@@ -40,4 +40,25 @@ describe('frontmatterProblems', () => {
     ])
     expect(problems[2]!.message).toBe('editor.frontmatter.expected.number')
   })
+
+  it('asks to quote a value that holds a colon', () => {
+    const state = EditorState.create({ doc: '---\ntitle: Revue de sprint : bilan\n---\n# T' })
+    const problems = frontmatterProblems(state, (key: string, params?: unknown) => params ? `${key} ${JSON.stringify(params)}` : key)
+    expect(problems.map(({ message, short }) => [message, short])).toEqual([
+      ['editor.frontmatter.quoteValue {"line":"title: \\"Revue de sprint : bilan\\""}', 'editor.frontmatter.quoteValueShort {"line":2}'],
+    ])
+  })
+
+  it('marks a heading inside a header whose closing line is missing', () => {
+    for (const doc of ['---\ntitle: T\ntheme: dsfr\n\n# Titre\n\n---\n## Section', '---\ntitle: T\n\n# Titre\n\nObjectif : réduire les délais\n\n---\n## Section']) {
+      const state = EditorState.create({ doc })
+      const problems = frontmatterProblems(state, key => key)
+      expect(problems.map(({ from, to, message }) => [state.sliceDoc(from, to), message])).toEqual([['# Titre', 'editor.frontmatter.unclosed']])
+    }
+  })
+
+  it('reads a # line followed by keys as a comment', () => {
+    const state = EditorState.create({ doc: '---\n# Réglages\n# de la présentation\ntitle: T\n---\n# Titre' })
+    expect(frontmatterProblems(state, key => key)).toEqual([])
+  })
 })

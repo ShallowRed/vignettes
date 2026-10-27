@@ -93,7 +93,7 @@ watch(file, async (chosen) => {
 function issuesMessage(issues: DeckFileIssue[]): string {
   const yaml = issues.find(issue => issue.key === '')
   if (yaml)
-    return t('catalog.deckCreate.import.yamlInvalid', { message: yaml.message })
+    return t('catalog.deckCreate.import.yamlInvalid')
   const keys = issues.map(issue => issue.key)
   if (keys.includes('title') && keys.length === 1)
     return t('catalog.deckCreate.import.titleMissing')

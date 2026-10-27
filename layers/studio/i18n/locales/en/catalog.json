@@ -99,7 +99,7 @@
         "defaultTheme": "{theme}, the default theme",
         "titleMissing": "The file's front matter gives no title: add the title key.",
         "keysInvalid": "The file's front matter has a refused value for the key {keys}. | The file's front matter has a refused value for the key {keys}. | The file's front matter has refused values for the keys {keys}.",
-        "yamlInvalid": "The file's front matter is not valid YAML: {message}"
+        "yamlInvalid": "The header of the file is unreadable: write one key per line, as key: value, and put a value that holds “:” between quotes."
       }
     },
     "form": {
