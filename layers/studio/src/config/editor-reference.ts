@@ -1,7 +1,7 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
-import type { DeckComponent, LocalizedText } from '@vignettes/core/deck'
+import type { DeckComponent, DeckComponentGroup, LocalizedText } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { DECK_ANNOTATIONS, deckComponents, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
+import { componentKey, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponents, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
@@ -22,10 +22,20 @@ export interface Translate {
   (key: string, named: Record<string, unknown>): string
 }
 
-/** An insertable entry with its texts in the interface language. */
-export interface ReferenceEntry {
+/** A component or an annotation, with its texts in the interface language. */
+export interface DirectiveEntry {
+  /** The deck syntax that opens it: `::Quote`, `:::Columns`, `:pretitle`. */
+  syntax: string
+  /** Its name in the interface. */
   label: string
   description: string
+  group?: DeckComponentGroup
+  /** Its section on the documentation site, read by `docsAddress`. */
+  docs?: string
+}
+
+/** An insertable component or annotation. */
+export interface ReferenceEntry extends DirectiveEntry {
   snippet: string
 }
 
@@ -134,6 +144,17 @@ function directiveOf(snippet: string): string {
   return /^:+[\w-]+/.exec(snippet)?.[0] ?? snippet
 }
 
+/** A component with its texts in the interface language, written with `syntax`; its name stands for a missing label. */
+function componentEntry(component: DeckComponent, syntax: string, lang: string): DirectiveEntry {
+  return {
+    syntax,
+    label: inLanguage(component.label, lang) || component.name,
+    description: inLanguage(component.description, lang),
+    group: component.group,
+    docs: component.docs,
+  }
+}
+
 /**
  * The components a deck can use, read from the registry the renderer reads, so
  * a component an extension package or the application registers is offered
@@ -144,17 +165,66 @@ export function componentEntries(lang: string): ReferenceEntry[] {
     .filter((component): component is DeckComponent & { snippet: LocalizedText } => Boolean(component.snippet))
     .map((component) => {
       const snippet = inLanguage(component.snippet, lang)
-      return { label: directiveOf(snippet), description: inLanguage(component.description, lang), snippet }
+      return { ...componentEntry(component, directiveOf(snippet), lang), snippet }
     })
 }
 
 /** The `:tag{…}` annotations the parser lifts out of the slide body. */
 export function annotationEntries(lang: string): ReferenceEntry[] {
   return DECK_ANNOTATIONS.map(annotation => ({
-    label: `:${annotation.tag}`,
+    syntax: `:${annotation.tag}`,
+    label: inLanguage(annotation.label, lang),
     description: inLanguage(annotation.description, lang),
+    group: 'slide',
+    docs: annotation.docs,
     snippet: inLanguage(annotation.snippet, lang),
   }))
+}
+
+/** The groups of an editor's menus, the components outside every group last. */
+export function groupedEntries(lang: string): { group: DeckComponentGroup | 'other', entries: ReferenceEntry[] }[] {
+  const entries = [...componentEntries(lang), ...annotationEntries(lang)]
+  return [...DECK_COMPONENT_GROUPS, 'other' as const]
+    .map(group => ({ group, entries: entries.filter(entry => (entry.group ?? 'other') === group) }))
+    .filter(({ entries }) => entries.length)
+}
+
+/**
+ * The component or the annotation a directive opens, aliases included: a
+ * component written inside another (`::Column`) comes with its name and its
+ * documentation.
+ */
+export function directiveEntry(colons: string, name: string, lang: string): DirectiveEntry | undefined {
+  if (colons === ':' && DECK_ANNOTATIONS.some(annotation => annotation.tag === name))
+    return annotationEntries(lang).find(entry => entry.syntax === `:${name}`)
+  const key = componentKey(name)
+  const component = deckComponents().find(entry => [entry.name, ...(entry.aliases ?? [])].some(alias => componentKey(alias) === key))
+  return component && componentEntry(component, `${colons}${name}`, lang)
+}
+
+/** Sections of the documentation site the editor points to, read by `docsAddress`. */
+export const DOCS_SECTIONS = {
+  home: '/',
+  frontmatter: '/ecrire/syntaxe#len-tête',
+  layout: '/ecrire/syntaxe#les-mises-en-page',
+  components: '/ecrire/composants',
+  unknownComponent: '/studio/problemes-frequents#un-composant-est-souligné-en-orange',
+  refusedAttribute: '/studio/problemes-frequents#adresse-refusée-ou-attribut-refusé',
+} as const
+
+/**
+ * The address of a documentation section: a path of the documentation site
+ * under `helpUrl`, the help address of the instance, or a full address. An
+ * instance without a help address shows no link to a path.
+ */
+export function docsAddress(docs: string | undefined, helpUrl: string): string | undefined {
+  if (!docs)
+    return undefined
+  if (/^https?:\/\//.test(docs))
+    return docs
+  if (!helpUrl)
+    return undefined
+  return new URL(docs.replace(/^\//, ''), helpUrl.endsWith('/') ? helpUrl : `${helpUrl}/`).href
 }
 
 /**

@@ -1,4 +1,4 @@
-import { attributeMentions, blockEndAround, componentMentions, isSectionSlide, malformedAttributeMentions, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
+import { attributeMentions, blockEndAround, componentMentions, directiveMentions, isSectionSlide, malformedAttributeMentions, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
@@ -81,6 +81,16 @@ describe('componentMentions', () => {
   it('leaves out the frontmatter, fenced code and inline code', () => {
     const raw = '---\ntitle: ":Callout"\n---\n\n```md\n::Callout\n```\n\nWrite `::Callout` to\n\n::Callout\n::'
     expect(componentMentions(raw, ['Callout']).map(mention => mention.line)).toEqual([11])
+  })
+})
+
+describe('directiveMentions', () => {
+  it('places every directive with its colons, outside the frontmatter and code, and after no letter', () => {
+    const raw = '---\ntitle: ":pretitle"\n---\n\n::::Columns\n:pretitle{text="a"} `::Quote` été:subtitle{text="b"}\n```\n::Quote\n```'
+    expect(directiveMentions(raw)).toEqual([
+      { name: 'Columns', colons: '::::', line: 5, column: 0, length: 11 },
+      { name: 'pretitle', colons: ':', line: 6, column: 0, length: 9 },
+    ])
   })
 })
 

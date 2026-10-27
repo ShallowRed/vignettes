@@ -140,6 +140,8 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
     '.cm-source-tooltip': { maxWidth: '320px', padding: '8px 10px', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12.5px', lineHeight: '1.45' },
     '.cm-source-tooltip p': { margin: '2px 0 0' },
     '.cm-source-tooltip__key': { color: palette.accent, fontWeight: '600' },
+    '.cm-source-tooltip__label': { color: palette.heading, fontWeight: '600' },
+    '.cm-source-tooltip__link': { display: 'inline-block', marginTop: '4px', color: palette.accent, textDecoration: 'underline', textUnderlineOffset: '2px' },
     '.cm-source-tooltip__values': { color: palette.dimmed, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '11.5px' },
     '.cm-source-tooltip__problem--error': { color: palette.error },
     '.cm-source-tooltip__problem--warning': { color: palette.warning },

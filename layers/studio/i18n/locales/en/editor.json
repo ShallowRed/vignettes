@@ -91,7 +91,9 @@
       "templates": "Templates",
       "insert": "Insert",
       "uploadImage": "Upload an image",
-      "formatJson": "Indent the JSON block under the cursor, or every JSON block"
+      "formatJson": "Indent the JSON block under the cursor, or every JSON block",
+      "help": "Help",
+      "componentsDocs": "Documentation of the components"
     },
     "placeholders": {
       "text": "text",
@@ -102,8 +104,7 @@
       "slidePosition": "Slide {slide} of {total}",
       "foldOthers": "Fold the other slides",
       "unfoldAll": "Unfold all",
-      "wrapLines": "Line wrapping",
-      "help": "Help"
+      "wrapLines": "Line wrapping"
     },
     "imageUpload": {
       "failed": "The image “{name}” was not uploaded",
@@ -236,6 +237,7 @@
       "modernize": "Convert",
       "missingSource": "Enter the address of an image or a page, or the id of a story.",
       "outside": "Place the cursor in a slide to set its layout."
-    }
+    },
+    "docsLink": "Documentation"
   }
 }

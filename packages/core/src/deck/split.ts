@@ -324,6 +324,23 @@ export function blockEndAround(raw: string, line: number): number | undefined {
   return outer ? lines.length : undefined
 }
 
+/** A directive as written in the source, with its colons: `::Quote`, `:::Columns`, `:pretitle`. */
+export interface DirectiveMention extends ComponentMention {
+  colons: string
+}
+
+/** The directives written in a deck, outside the frontmatter, fenced code and inline code. */
+export function directiveMentions(raw: string): DirectiveMention[] {
+  const mentions: DirectiveMention[] = []
+  for (const { line, prose } of proseLines(raw)) {
+    for (const match of prose.matchAll(DIRECTIVE_RE)) {
+      const [, before, colons, name] = match
+      mentions.push({ name: name!, colons: colons!, line, column: match.index + before!.length, length: colons!.length + name!.length })
+    }
+  }
+  return mentions
+}
+
 /**
  * The places where the components named in `names` are written, outside the
  * frontmatter, fenced code and inline code. Names compare as `componentKey`
@@ -331,17 +348,9 @@ export function blockEndAround(raw: string, line: number): number | undefined {
  */
 export function componentMentions(raw: string, names: Iterable<string>): ComponentMention[] {
   const wanted = new Set([...names].map(componentKey))
-  if (!wanted.size)
-    return []
-  const mentions: ComponentMention[] = []
-  for (const { line, prose } of proseLines(raw)) {
-    for (const match of prose.matchAll(DIRECTIVE_RE)) {
-      const [, before, colons, name] = match
-      if (wanted.has(componentKey(name!)))
-        mentions.push({ name: name!, line, column: match.index + before!.length, length: colons!.length + name!.length })
-    }
-  }
-  return mentions
+  return directiveMentions(raw)
+    .filter(mention => wanted.has(componentKey(mention.name)))
+    .map(({ name, line, column, length }) => ({ name, line, column, length }))
 }
 
 /**

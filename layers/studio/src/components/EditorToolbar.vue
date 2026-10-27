@@ -2,10 +2,11 @@
 import type { EditorView } from '@codemirror/view'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
-import { annotationEntries, componentEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
+import { useDocsAddress } from '../composables/useDocsAddress'
+import { DOCS_SECTIONS, groupedEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, slideTemplateFor, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 import { formatJson, jsonFormatNotice } from '../utils/editor-json'
-import { btnHover } from '../utils/toolbar-buttons'
+import { btnHover, menuUi } from '../utils/toolbar-buttons'
 
 // The markdown pane's formatting and insertion bar; every action targets the
 // live EditorView.
@@ -14,9 +15,11 @@ const props = defineProps<{
   disabled?: boolean
   /** How the deck splits its slides, which the slide templates follow. */
   parser?: 'heading' | 'separator'
+  /** The help panel is open. */
+  helpOpen?: boolean
 }>()
 
-const emit = defineEmits<{ uploadImages: [files: File[]] }>()
+const emit = defineEmits<{ uploadImages: [files: File[]], help: [] }>()
 
 function run(action: (view: EditorView) => void) {
   if (props.view)
@@ -60,22 +63,27 @@ function onImagesChosen() {
   input.value = ''
 }
 
+const docsUrl = useDocsAddress()
+
 // Discoverability menu: an image from a file, then every engine
-// component/annotation, inserted as a tabbable snippet from the same reference
-// the autocompletion uses.
-const insertItems = computed<DropdownMenuItem[][]>(() => [
-  [{ label: t('editor.toolbar.uploadImage'), icon: 'i-lucide-image-up', onSelect: () => imageInput.value?.click() }],
-  componentEntries(locale.value).map(entry => ({
-    label: entry.label,
-    description: entry.description,
-    onSelect: () => writeFromMenu(view => insertSnippet(view, entry.snippet)),
-  })),
-  annotationEntries(locale.value).map(entry => ({
-    label: entry.label,
-    description: entry.description,
-    onSelect: () => writeFromMenu(view => insertSnippet(view, entry.snippet)),
-  })),
-])
+// component/annotation by group, inserted as a tabbable snippet from the same
+// reference the autocompletion uses, and the documentation of the components.
+const insertItems = computed<DropdownMenuItem[][]>(() => {
+  const docs = docsUrl(DOCS_SECTIONS.components)
+  return [
+    [{ label: t('editor.toolbar.uploadImage'), icon: 'i-lucide-image-up', onSelect: () => imageInput.value?.click() }],
+    ...groupedEntries(locale.value).map(({ group, entries }) => [
+      { type: 'label' as const, label: t(`reference.groups.${group}`) },
+      ...entries.map(entry => ({
+        label: entry.label,
+        description: entry.description,
+        syntax: entry.syntax,
+        onSelect: () => writeFromMenu(view => insertSnippet(view, entry.snippet)),
+      })),
+    ]),
+    ...(docs ? [[{ label: t('editor.toolbar.componentsDocs'), icon: 'i-lucide-book-open', to: docs, target: '_blank' }]] : []),
+  ]
+})
 
 const templateItems = computed<DropdownMenuItem[]>(() =>
   SLIDE_TEMPLATES.map(entry => ({
@@ -169,7 +177,7 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
       <UDropdownMenu
         :items="templateItems"
         :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
-        :ui="{ content: 'w-80 max-h-96 overflow-y-auto', itemDescription: 'whitespace-normal' }"
+        :ui="menuUi"
       >
         <UButton
           icon="i-lucide-layout-template"
@@ -199,8 +207,14 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
       <UDropdownMenu
         :items="insertItems"
         :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
-        :ui="{ content: 'w-80 max-h-96 overflow-y-auto', itemDescription: 'whitespace-normal' }"
+        :ui="menuUi"
       >
+        <template #item-trailing="{ item }">
+          <code
+            v-if="item.syntax"
+            class="font-mono text-xs text-dimmed"
+          >{{ item.syntax }}</code>
+        </template>
         <UButton
           icon="i-lucide-shapes"
           color="neutral"
@@ -229,6 +243,17 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
         />
       </UTooltip>
     </div>
+
+    <UButton
+      icon="i-lucide-circle-help"
+      color="neutral"
+      :variant="helpOpen ? 'soft' : 'ghost'"
+      size="sm"
+      :class="helpOpen ? 'text-primary' : ''"
+      :label="t('editor.toolbar.help')"
+      :aria-pressed="helpOpen"
+      @click="emit('help')"
+    />
 
     <div
       v-if="$slots.end"

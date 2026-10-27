@@ -4,16 +4,18 @@
       "title": "Aide à la rédaction",
       "description": "Syntaxe, composants et réglages d'une présentation.",
       "structureHeading": "Découpage en diapositives",
-      "componentsHeading": "Composants",
+      "componentsHeading": "Composants et annotations",
       "insertTooltip": "Insérer dans le texte",
       "insert": "Insérer {name}",
-      "annotationsHeading": "Annotations de diapositive",
-      "layoutsIntro": "Réglages de {annotation} et leurs valeurs :",
+      "layoutsIntro": "Réglages de {annotation} et leurs valeurs, que le bouton « Mise en page » de la barre d'outils écrit aussi :",
       "frontmatterHeading": "En-tête de la présentation",
       "shortcutsHeading": "Raccourcis",
       "completionTriggers": "Tapez {components} ou {annotations}, ou appuyez sur Ctrl + Espace dans l'en-tête, pour voir les propositions.",
       "splitHeading": "Chaque titre ## commence une diapositive. Pour découper aux lignes ---, écrivez {other} dans l'en-tête.",
-      "splitSeparator": "Chaque ligne --- commence une diapositive. Pour découper aux titres ##, écrivez {other} dans l'en-tête."
+      "splitSeparator": "Chaque ligne --- commence une diapositive. Pour découper aux titres ##, écrivez {other} dans l'en-tête.",
+      "docsTooltip": "Ouvrir la documentation",
+      "docs": "Documentation de {name}",
+      "docsHome": "Toute la documentation"
     },
     "structure": {
       "headingTitle": "# Titre : première diapositive, titre de la présentation",
@@ -141,6 +143,14 @@
       "blankLineBelow": "Ligne vide en dessous (Maj : au-dessus)",
       "lineWrap": "Retour à la ligne automatique",
       "formatJson": "Mettre en forme le bloc JSON sous le curseur (sinon tous)"
+    },
+    "groups": {
+      "text": "Texte",
+      "media": "Médias",
+      "diagram": "Schémas",
+      "storybook": "Storybook",
+      "slide": "Diapositive",
+      "other": "Autres"
     }
   }
 }

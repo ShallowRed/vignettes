@@ -4,15 +4,13 @@ import { useInstanceLinks } from '../composables/useInstanceLinks'
 import { foldOtherSlides, unfoldAll } from '../utils/editor-slides'
 
 // The foot of the markdown pane: where the caret is in the deck, how the source
-// is shown (folds, line wrapping), the help and the links of the instance.
+// is shown (folds, line wrapping) and the links of the instance.
 const props = defineProps<{
   view?: EditorView
   /** 1-based position of the slide under the caret. */
   slide: number
   slideCount: number
 }>()
-
-const emit = defineEmits<{ help: [] }>()
 
 const wrap = defineModel<boolean>('wrap', { default: false })
 
@@ -104,21 +102,6 @@ function run(action: (view: EditorView) => unknown) {
         size="xs"
         :aria-pressed="wrap"
         @click="() => { wrap = !wrap }"
-      />
-    </UTooltip>
-    <UTooltip
-      :text="t('editor.statusBar.help')"
-      :disabled="!compact"
-    >
-      <UButton
-        icon="i-lucide-circle-help"
-        :label="t('editor.statusBar.help')"
-        :aria-label="t('editor.statusBar.help')"
-        :ui="BUTTON_UI"
-        color="neutral"
-        variant="ghost"
-        size="xs"
-        @click="emit('help')"
       />
     </UTooltip>
     <!-- The links of the instance keep their icon at every width. -->

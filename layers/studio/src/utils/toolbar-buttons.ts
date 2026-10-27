@@ -7,3 +7,6 @@ export const btnHover = 'hover:bg-accented'
 // The active choice of a segmented row on the same rail takes the surface of
 // the page, with an outline, while it is hovered and pressed too.
 export const btnActive = 'bg-default text-highlighted shadow-xs ring ring-default hover:bg-default active:bg-default'
+
+// The menus of the toolbar whose entries carry a description.
+export const menuUi = { content: 'w-80 max-h-[min(32rem,70vh)] overflow-y-auto', itemDescription: 'whitespace-normal' }

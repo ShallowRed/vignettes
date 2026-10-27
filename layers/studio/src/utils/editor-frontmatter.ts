@@ -9,8 +9,9 @@ import { Decoration, hoverTooltip, ViewPlugin, WidgetType } from '@codemirror/vi
 import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, isRefusedEmbedUrl, RevealConfigSchema } from '@vignettes/core/deck'
 import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
-import { FRONTMATTER_KEYS, inLanguage, LEGACY_FRONTMATTER_KEYS } from '../config/editor-reference'
+import { DOCS_SECTIONS, FRONTMATTER_KEYS, inLanguage, LEGACY_FRONTMATTER_KEYS } from '../config/editor-reference'
 import { problemMarks, problemMessage } from './editor-problems'
+import { docsLink, referenceCard } from './editor-tooltip'
 
 /**
  * The guide to a deck's frontmatter in the source pane: completion of keys,
@@ -27,6 +28,8 @@ export interface FrontmatterOptions {
   /** Published themes compiled with other theme packages than the studio's, marked on `theme:`. */
   staleThemes?: readonly string[]
   t: Translate
+  /** The address of a documentation section, none when the instance has no documentation. */
+  docsUrl: (docs?: string) => string | undefined
 }
 
 /** Last line of the frontmatter block (1-based), or 0 without a closed block. */
@@ -319,7 +322,7 @@ function checks(t: Translate, staleThemes: readonly string[]): Extension {
 
 // ── Tooltip ─────────────────────────────────────────────────────────────────
 
-function tooltip(t: Translate, staleThemes: readonly string[]): Extension {
+function tooltip(t: Translate, staleThemes: readonly string[], docsUrl: FrontmatterOptions['docsUrl']): Extension {
   return hoverTooltip((view, pos) => {
     const { state } = view
     const line = state.doc.lineAt(pos)
@@ -332,29 +335,20 @@ function tooltip(t: Translate, staleThemes: readonly string[]): Extension {
     const field = onKey ? fieldAt(state, line.number) : undefined
     if (!problem && !field)
       return null
+    const docs = docsUrl(DOCS_SECTIONS.frontmatter)
     return {
       pos: problem?.from ?? keyFrom,
       end: problem?.to ?? keyFrom + match![2]!.length,
       above: true,
       create: () => {
-        const dom = document.createElement('div')
+        const dom = field
+          ? referenceCard({ syntax: field.key, description: describe(field, t), values: field.values }, t)
+          : document.createElement('div')
         dom.className = 'cm-source-tooltip'
-        if (field) {
-          const title = document.createElement('code')
-          title.className = 'cm-source-tooltip__key'
-          title.textContent = field.key
-          const text = document.createElement('p')
-          text.textContent = describe(field, t)
-          dom.append(title, text)
-          if (field.values) {
-            const values = document.createElement('p')
-            values.className = 'cm-source-tooltip__values'
-            values.textContent = field.values.join(' · ')
-            dom.append(values)
-          }
-        }
         if (problem)
-          dom.append(problemMessage(problem))
+          dom.append(...problemMessage(problem, t))
+        if (docs)
+          dom.append(docsLink(docs, t('editor.docsLink')))
         return { dom }
       },
     }
@@ -362,5 +356,5 @@ function tooltip(t: Translate, staleThemes: readonly string[]): Extension {
 }
 
 export function frontmatterGuide(options: FrontmatterOptions): { source: ReturnType<typeof completionSource>, extension: Extension } {
-  return { source: completionSource(options), extension: [checks(options.t, options.staleThemes ?? []), tooltip(options.t, options.staleThemes ?? [])] }
+  return { source: completionSource(options), extension: [checks(options.t, options.staleThemes ?? []), tooltip(options.t, options.staleThemes ?? [], options.docsUrl)] }
 }

@@ -32,12 +32,15 @@ import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/n
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '../../composables/useAppSession'
 import { useDeckLinks } from '../../composables/useDeckLinks'
+import { useDocsAddress } from '../../composables/useDocsAddress'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
+import { DOCS_SECTIONS } from '../../config/editor-reference'
 import { projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
 import { listedFrontmatterProblems } from '../../utils/editor-frontmatter'
+import { deckHover } from '../../utils/editor-hover'
 import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
 import { EDITOR_TEXT } from '../../utils/editor-layout'
@@ -53,6 +56,7 @@ import { requestErrorMessage } from '../../utils/request-error'
 import { saveTextFile } from '../../utils/save-file'
 
 const { t, locale } = useI18n()
+const docsUrl = useDocsAddress()
 
 definePageMeta({ layout: false })
 
@@ -478,8 +482,9 @@ const extensions = computed<Extension[]>(() => [
   highlightActiveLine(),
   ...deckStructure(t),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
-  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value, staleThemes: themeVersionGaps.value }, t),
-  previewProblemMarks(),
+  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value, staleThemes: themeVersionGaps.value, docsUrl }, t),
+  deckHover({ lang: locale.value, t, docsUrl }),
+  previewProblemMarks(t),
   cursorListener,
   shortcutKeymap,
   imageUploadHandlers,
@@ -569,18 +574,21 @@ const previewIssues = computed(() => [
     ...mention,
     short: t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name }),
     message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
+    docs: docsUrl(DOCS_SECTIONS.unknownComponent),
     marked: false,
   })),
   ...refusedMentions.value.map(mention => ({
     ...mention,
     short: t(ATTRIBUTE_MESSAGES[mention.reason].short, { line: mention.line, name: mention.name }),
     message: t(ATTRIBUTE_MESSAGES[mention.reason].message),
+    docs: docsUrl(DOCS_SECTIONS.refusedAttribute),
     marked: false,
   })),
   ...layoutIssues.value.map(mention => ({
     ...mention,
     short: t(`${LAYOUT_MESSAGES[mention.kind]}Short`, { line: mention.line, name: mention.attribute }),
     message: t(LAYOUT_MESSAGES[mention.kind], { name: mention.attribute }),
+    docs: docsUrl(DOCS_SECTIONS.layout),
     marked: false,
   })),
 ].sort((a, b) => a.line - b.line || a.column - b.column))
@@ -1130,7 +1138,9 @@ async function onMetaSaved() {
           :view="editorView"
           :parser="activeParser"
           :disabled="!writable"
+          :help-open="helpOpen"
           @upload-images="uploadChosenImages"
+          @help="helpOpen = !helpOpen"
         >
           <template #end>
             <UTooltip :text="fragmentSteps ? t('editor.preview.fragmentStepsActive') : t('editor.preview.fragmentSteps')">
@@ -1189,7 +1199,6 @@ async function onMetaSaved() {
           :view="editorView"
           :slide="cursorSlideNumber"
           :slide-count="slideCount"
-          @help="helpOpen = true"
         />
       </UDashboardPanel>
 

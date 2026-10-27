@@ -14,8 +14,12 @@ export type LocalizedText = Readonly<Record<string, string>>
  */
 export interface DeckAnnotation {
   tag: string
+  /** The name an editor shows for it. */
+  label: LocalizedText
   snippet: LocalizedText
   description: LocalizedText
+  /** Its section on the documentation site, as a path (`/ecrire/syntaxe#les-annotations`) or a full address. */
+  docs?: string
   /** The attributes that take the address of an image, which may be a `data:image` URL (see `isDeckUrl`). */
   images?: readonly string[]
 }
@@ -23,29 +27,39 @@ export interface DeckAnnotation {
 export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   {
     tag: 'slide-background',
+    label: { fr: 'Image de fond', en: 'Background image' },
     images: ['image'],
     snippet: { fr: ':slide-background{image="${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
-    description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide (attribute image)' },
+    description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide' },
+    docs: '/ecrire/syntaxe#les-annotations',
   },
   {
     tag: 'pretitle',
+    label: { fr: 'Surtitre', en: 'Pretitle' },
     snippet: { fr: ':pretitle{text="${Contexte}"}', en: ':pretitle{text="${Context}"}' },
-    description: { fr: 'Texte au-dessus du titre', en: 'Text above the title (attribute text)' },
+    description: { fr: 'Texte au-dessus du titre', en: 'Text above the title' },
+    docs: '/ecrire/syntaxe#les-annotations',
   },
   {
     tag: 'subtitle',
+    label: { fr: 'Sous-titre', en: 'Subtitle' },
     snippet: { fr: ':subtitle{text="${Sous-titre}"}', en: ':subtitle{text="${Subtitle}"}' },
-    description: { fr: 'Texte sous le titre', en: 'Text below the title (attribute text)' },
+    description: { fr: 'Texte sous le titre', en: 'Text below the title' },
+    docs: '/ecrire/syntaxe#les-annotations',
   },
   {
     tag: 'layout',
+    label: { fr: 'Mise en page', en: 'Layout' },
     snippet: { fr: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}', en: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}' },
-    description: { fr: 'Image, page ou story à côté, au-dessus, au-dessous ou derrière le texte, réglable avec le bouton « Mise en page »', en: 'Layout of the slide: a media beside, above, below or behind the text (attributes media, size, src, story, fit, position, heading…)' },
+    description: { fr: 'Image, page ou story à côté, au-dessus, au-dessous ou derrière le texte', en: 'Image, page or story beside, above, below or behind the text' },
+    docs: '/ecrire/syntaxe#les-mises-en-page',
   },
   {
     tag: 'quicklink',
+    label: { fr: 'Lien en bas', en: 'Bottom link' },
     snippet: { fr: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}', en: ':quicklink{text="${See the demo}" href="${https://example.com}"}' },
-    description: { fr: 'Lien affiché en bas de la diapositive', en: 'Link pinned to the bottom of the slide (attributes text, href)' },
+    description: { fr: 'Lien affiché en bas de la diapositive', en: 'Link shown at the bottom of the slide' },
+    docs: '/ecrire/syntaxe#les-annotations',
   },
 ] as const
 
@@ -59,9 +73,19 @@ export const STRIPPED_ANNOTATION_TAGS: readonly string[] = ANNOTATION_TAGS.filte
   t => t !== BACKGROUND_ANNOTATION_TAG,
 )
 
+/** The groups of components in an editor's menus, in the order they appear. */
+export const DECK_COMPONENT_GROUPS = ['text', 'media', 'diagram', 'storybook', 'slide'] as const
+export type DeckComponentGroup = typeof DECK_COMPONENT_GROUPS[number]
+
 /** An MDC component authored as `::Name` / `:name`. */
 export interface DeckComponent {
   name: string
+  /** The name an editor shows for it. */
+  label?: LocalizedText
+  /** The group an editor lists it under. */
+  group?: DeckComponentGroup
+  /** Its section on the documentation site, as a path (`/reference/nuxt#quote`) or a full address. */
+  docs?: string
   /** Vue component this resolves to, when it differs from the authoring name. */
   component?: string
   /** Other authoring names for the same component. */
@@ -86,56 +110,83 @@ export const NOTES_COMPONENT = 'Notes'
 export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Quote',
+    label: { fr: 'Citation', en: 'Quote' },
+    group: 'text',
     images: ['avatar'],
     snippet: { fr: '::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation.}\n::', en: '::Quote{author="${Author}" role="${Role}"}\n${The quote.}\n::' },
-    description: { fr: 'Citation, avec son auteur', en: 'Quote with optional author, role and avatar' },
+    description: { fr: 'Citation, avec son auteur', en: 'Quote, with its author' },
+    docs: '/reference/nuxt#quote',
   },
   {
     name: 'Iframe',
+    label: { fr: 'Page web', en: 'Web page' },
+    group: 'media',
     snippet: { fr: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::', en: '::Iframe{src="${https://example.com}" title="${Title}"}\n::' },
-    description: { fr: 'Page web affichée dans la diapositive', en: 'Embedded web page (attributes lightbox, fullwidth)' },
+    description: { fr: 'Page web affichée dans la diapositive', en: 'Web page shown in the slide' },
+    docs: '/reference/nuxt#iframe',
   },
   {
     name: 'Image',
+    label: { fr: 'Image', en: 'Image' },
+    group: 'media',
     aliases: ['deck-image'],
     images: ['src'],
     snippet: { fr: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
-    description: { fr: 'Image avec sa légende', en: 'Image with framing (attributes fit, position, rounded, shadow)' },
+    description: { fr: 'Image avec sa légende', en: 'Image with its caption' },
+    docs: '/reference/nuxt#image',
   },
   {
     name: 'Mermaid',
+    label: { fr: 'Schéma Mermaid', en: 'Mermaid diagram' },
+    group: 'diagram',
     snippet: { fr: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n```\n::', en: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Start}] --> B[${End}]\n```\n::' },
-    description: { fr: 'Schéma de boîtes et de flèches, décrit en texte', en: 'Mermaid diagram (flowchart, sequence…)' },
+    description: { fr: 'Schéma de boîtes et de flèches, décrit en texte', en: 'Diagram of boxes and arrows, written as text' },
+    docs: '/reference/nuxt#mermaid',
   },
   {
     name: 'IconInline',
+    label: { fr: 'Icône', en: 'Icon' },
+    group: 'text',
     aliases: ['i'],
     snippet: { fr: ':i{name="${ri:home-line}"}', en: ':i{name="${ri:home-line}"}' },
-    description: { fr: 'Icône dans une phrase', en: 'Inline icon (Remix / Iconify)' },
+    description: { fr: 'Icône dans une phrase', en: 'Icon in a sentence' },
+    docs: '/reference/nuxt#iconinline',
   },
   {
     name: 'Columns',
+    label: { fr: 'Colonnes', en: 'Columns' },
+    group: 'text',
     aliases: ['TwoColumns', 'ThreeColumns'],
     snippet: { fr: ':::Columns\n::Column\n${Colonne 1}\n::\n::Column\n${Colonne 2}\n::\n:::', en: ':::Columns\n::Column\n${Column 1}\n::\n::Column\n${Column 2}\n::\n:::' },
-    description: { fr: 'Blocs côte à côte', en: 'Side-by-side columns (::Column, attribute span for the widths)' },
+    description: { fr: 'Blocs côte à côte', en: 'Blocks side by side' },
+    docs: '/reference/nuxt#columns',
   },
-  { name: 'Column', aliases: ['column'] },
+  { name: 'Column', aliases: ['column'], docs: '/reference/nuxt#column' },
   {
     name: 'Highlight',
+    label: { fr: 'Message clé', en: 'Key message' },
+    group: 'text',
     snippet: { fr: '::Highlight\n${Message clé.}\n::', en: '::Highlight\n${Key message.}\n::' },
-    description: { fr: 'Message clé en gras, dans la couleur d\'accent, avec un liseré à gauche', en: 'Key message in bold, in the accent color, with a bar on its left (attribute size)' },
+    description: { fr: 'Message clé en gras, dans la couleur d\'accent, avec un liseré à gauche', en: 'Key message in bold, in the accent color, with a bar on its left' },
+    docs: '/reference/nuxt#highlight',
   },
   {
     name: NOTES_COMPONENT,
+    label: { fr: 'Notes de l\'orateur', en: 'Speaker notes' },
+    group: 'slide',
     aliases: ['notes'],
     snippet: { fr: '::Notes\n${Ce que dit l\'orateur.}\n::', en: '::Notes\n${What the speaker says.}\n::' },
     description: { fr: 'Notes de l\'orateur, visibles dans la vue conférencier (touche S)', en: 'Speaker notes, shown in the speaker view (S key)' },
+    docs: '/reference/nuxt#notes',
   },
   {
     name: 'Fragments',
+    label: { fr: 'Points un par un', en: 'Points one by one' },
+    group: 'text',
     aliases: ['fragments'],
     snippet: { fr: '::Fragments\n- ${Premier point}\n- ${Deuxième point}\n::', en: '::Fragments\n- ${First point}\n- ${Second point}\n::' },
-    description: { fr: 'Liste dont les éléments apparaissent un par un', en: 'List whose items appear one at a time (attributes effect, dim, collapse)' },
+    description: { fr: 'Liste dont les éléments apparaissent un par un', en: 'List whose items appear one at a time' },
+    docs: '/reference/nuxt#fragments',
   },
 ] as const
 /* eslint-enable no-template-curly-in-string */

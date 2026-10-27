@@ -4,6 +4,7 @@ import type { ReferenceEntry, Translate } from '../config/editor-reference'
 import { autocompletion, snippetCompletion } from '@codemirror/autocomplete'
 import { annotationEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
 import { frontmatterGuide } from './editor-frontmatter'
+import { referenceCard } from './editor-tooltip'
 
 /**
  * Writer autocompletion, driven by the declarative authoring reference:
@@ -20,6 +21,13 @@ export interface CompletionOptions {
   lang: string
   /** Published themes compiled with other theme packages than the studio's, marked on `theme:`. */
   staleThemes?: readonly string[]
+  /** The address of a documentation section, none when the instance has no documentation. */
+  docsUrl: (docs?: string) => string | undefined
+}
+
+/** The tooltip beside a completion: its name, its description and its documentation. */
+function entryInfo(entry: ReferenceEntry, options: CompletionOptions, t: Translate) {
+  return () => referenceCard({ syntax: entry.syntax, label: entry.label, description: entry.description, docs: options.docsUrl(entry.docs) }, t)
 }
 
 /** The position sits inside the leading frontmatter block. */
@@ -37,11 +45,13 @@ function inFrontmatter(context: CompletionContext): boolean {
 
 // Completions are built on each query so they follow a locale change and the
 // components registered since the editor opened.
-function bodySource(lang: string) {
+function bodySource(options: CompletionOptions, t: Translate) {
+  const { lang } = options
   const build = (entries: readonly ReferenceEntry[], type: string): Completion[] =>
     entries.map(entry => snippetCompletion(entry.snippet, {
-      label: entry.label,
-      info: entry.description,
+      label: entry.syntax,
+      detail: entry.label,
+      info: entryInfo(entry, options, t),
       type,
     }))
 
@@ -95,13 +105,14 @@ function bodySource(lang: string) {
  * name (`/quote`, `/columns`, `/layout`) and inserts the exact snippet. It gives
  * newcomers one discoverable entry point without knowing the `::`/`:` syntax.
  */
-function slashSource(lang: string) {
+function slashSource(options: CompletionOptions, t: Translate) {
+  const { lang } = options
   const name = (label: string) => label.replace(/^:+/, '').toLowerCase()
   const build = (entries: readonly ReferenceEntry[], type: string): Completion[] =>
     entries.map(entry => snippetCompletion(entry.snippet, {
-      label: `/${name(entry.label)}`,
+      label: `/${name(entry.syntax)}`,
       detail: entry.label,
-      info: entry.description,
+      info: entryInfo(entry, options, t),
       type,
     }))
 
@@ -129,7 +140,7 @@ export function deckCompletions(options: CompletionOptions, t: Translate): Exten
   const frontmatter = frontmatterGuide({ ...options, t })
   return [
     autocompletion({
-      override: [frontmatter.source, slashSource(options.lang), bodySource(options.lang)],
+      override: [frontmatter.source, slashSource(options, t), bodySource(options, t)],
       icons: false,
     }),
     frontmatter.extension,

@@ -5,6 +5,8 @@ import type { DeckComponent } from '@vignettes/core/deck'
 export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Scheme',
+    label: { fr: 'Étapes illustrées', en: 'Illustrated steps' },
+    group: 'diagram',
     aliases: ['scheme'],
     snippet: {
       fr: ':::Scheme\n::Step{n="1" picto="${buildings/city-hall}" title="${Première étape}"}\n${Légende}\n::\n::Step{n="2" picto="${digital/coding}" title="${Deuxième étape}"}\n::\n:::',
@@ -12,12 +14,15 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
     },
     description: {
       fr: 'Étapes illustrées reliées par des flèches, qui apparaissent une à une',
-      en: 'Illustrated steps linked by arrows, which appear one at a time (::Step, attributes size, tiles, arrows)',
+      en: 'Illustrated steps linked by arrows, which appear one at a time',
     },
+    docs: '/reference/schemas#scheme',
   },
-  { name: 'Step', aliases: ['step'] },
+  { name: 'Step', aliases: ['step'], docs: '/reference/schemas#step' },
   {
     name: 'Diagram',
+    label: { fr: 'Schéma de cartes', en: 'Card diagram' },
+    group: 'diagram',
     aliases: ['diagram'],
     snippet: {
       fr: ':::Diagram{layout="grid" cols="2"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${alimente}"}\n::\n:::',
@@ -25,14 +30,17 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
     },
     description: {
       fr: 'Cartes reliées par des flèches, placées sur une grille',
-      en: 'Cards placed on a grid or ranked automatically, linked by arrows (::Node, ::Edge, ::Area)',
+      en: 'Cards linked by arrows, placed on a grid',
     },
+    docs: '/reference/schemas#diagram',
   },
-  { name: 'Node', component: 'DiagramNode', aliases: ['node'] },
-  { name: 'Edge', component: 'DiagramEdge', aliases: ['edge'] },
-  { name: 'Area', component: 'DiagramArea', aliases: ['area'] },
+  { name: 'Node', component: 'DiagramNode', aliases: ['node'], docs: '/reference/schemas#node' },
+  { name: 'Edge', component: 'DiagramEdge', aliases: ['edge'], docs: '/reference/schemas#edge' },
+  { name: 'Area', component: 'DiagramArea', aliases: ['area'], docs: '/reference/schemas#area' },
   {
     name: 'JsonTour',
+    label: { fr: 'Fichier commenté', en: 'Annotated file' },
+    group: 'diagram',
     aliases: ['json-tour'],
     images: ['image'],
     snippet: {
@@ -41,8 +49,9 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
     },
     description: {
       fr: 'Fichier commenté zone par zone, à côté de ses explications',
-      en: 'A file shown beside the description of its parts, zone by zone (::Zone, attributes file, height, panel)',
+      en: 'File explained zone by zone, beside its explanations',
     },
+    docs: '/reference/schemas#jsontour',
   },
-  { name: 'Zone', component: 'JsonZone', aliases: ['zone'] },
+  { name: 'Zone', component: 'JsonZone', aliases: ['zone'], docs: '/reference/schemas#zone' },
 ]

@@ -91,7 +91,9 @@
       "templates": "Modèles",
       "insert": "Insérer",
       "uploadImage": "Téléverser une image",
-      "formatJson": "Indenter le bloc JSON sous le curseur, ou tous les blocs JSON"
+      "formatJson": "Indenter le bloc JSON sous le curseur, ou tous les blocs JSON",
+      "help": "Aide",
+      "componentsDocs": "Documentation des composants"
     },
     "placeholders": {
       "text": "texte",
@@ -102,8 +104,7 @@
       "slidePosition": "Diapositive {slide} sur {total}",
       "foldOthers": "Replier les autres diapositives",
       "unfoldAll": "Tout déplier",
-      "wrapLines": "Retour à la ligne",
-      "help": "Aide"
+      "wrapLines": "Retour à la ligne"
     },
     "imageUpload": {
       "failed": "L'image « {name} » n'a pas été téléversée",
@@ -236,6 +237,7 @@
       "modernize": "Convertir",
       "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story.",
       "outside": "Placez le curseur dans une diapositive pour régler sa mise en page."
-    }
+    },
+    "docsLink": "Documentation"
   }
 }

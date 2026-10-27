@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { useDocsAddress } from '../composables/useDocsAddress'
 import {
-  annotationEntries,
-  componentEntries,
+  DOCS_SECTIONS,
   EDITOR_SHORTCUTS,
   FRONTMATTER_KEYS,
+  groupedEntries,
   layoutAttributeEntries,
   STRUCTURE_HELP,
 } from '../config/editor-reference'
@@ -26,8 +27,9 @@ const open = defineModel<boolean>('open', { required: true })
 
 const { t, locale } = useI18n()
 
-const components = computed(() => componentEntries(locale.value))
-const annotations = computed(() => annotationEntries(locale.value))
+const docsUrl = useDocsAddress()
+const docsHome = docsUrl(DOCS_SECTIONS.home)
+const groups = computed(() => groupedEntries(locale.value))
 const layoutChoices = computed(() => layoutAttributeEntries(locale.value).filter(entry => entry.values))
 
 const structure = computed(() => STRUCTURE_HELP[props.parser])
@@ -48,6 +50,18 @@ const shortcuts = computed(() => EDITOR_SHORTCUTS.map(entry => ({
   >
     <template #body>
       <div class="flex flex-col gap-6">
+        <ULink
+          v-if="docsHome"
+          :to="docsHome"
+          target="_blank"
+          class="text-sm text-primary inline-flex items-center gap-1.5 self-start"
+        >
+          <UIcon
+            name="i-lucide-book-open"
+            class="size-4"
+          />
+          {{ t('reference.help.docsHome') }}
+        </ULink>
         <section>
           <h3 class="font-semibold text-highlighted mb-2 flex items-center gap-2">
             <UIcon
@@ -87,98 +101,89 @@ const shortcuts = computed(() => EDITOR_SHORTCUTS.map(entry => ({
             />
             {{ t('reference.help.componentsHeading') }}
           </h3>
-          <ul class="flex flex-col gap-2">
-            <li
-              v-for="entry in components"
-              :key="entry.label"
-              class="flex items-start gap-2 rounded-lg bg-elevated px-3 py-2"
-            >
-              <div class="flex-1 min-w-0">
-                <code class="text-sm font-mono text-highlighted">{{ entry.label }}</code>
-                <p class="text-xs text-muted mt-0.5">
-                  {{ entry.description }}
-                </p>
-              </div>
-              <UTooltip :text="t('reference.help.insertTooltip')">
-                <UButton
-                  icon="i-lucide-corner-down-left"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  :aria-label="t('reference.help.insert', { name: entry.label })"
-                  @click="emit('insert', entry.snippet)"
-                />
-              </UTooltip>
-            </li>
-          </ul>
-        </section>
-
-        <USeparator />
-
-        <section>
-          <h3 class="font-semibold text-highlighted mb-2 flex items-center gap-2">
-            <UIcon
-              name="i-lucide-at-sign"
-              class="size-4"
-            />
-            {{ t('reference.help.annotationsHeading') }}
-          </h3>
-          <ul class="flex flex-col gap-2">
-            <li
-              v-for="entry in annotations"
-              :key="entry.label"
-              class="flex items-start gap-2 rounded-lg bg-elevated px-3 py-2"
-            >
-              <div class="flex-1 min-w-0">
-                <code class="text-sm font-mono text-highlighted">{{ entry.label }}</code>
-                <p class="text-xs text-muted mt-0.5">
-                  {{ entry.description }}
-                </p>
-              </div>
-              <UTooltip :text="t('reference.help.insertTooltip')">
-                <UButton
-                  icon="i-lucide-corner-down-left"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  :aria-label="t('reference.help.insert', { name: entry.label })"
-                  @click="emit('insert', entry.snippet)"
-                />
-              </UTooltip>
-            </li>
-          </ul>
-          <i18n-t
-            keypath="reference.help.layoutsIntro"
-            tag="p"
-            scope="global"
-            class="text-xs text-muted mt-2"
+          <template
+            v-for="{ group, entries } in groups"
+            :key="group"
           >
-            <template #annotation>
-              <code class="font-mono">:layout</code>
+            <h4 class="text-xs font-medium text-muted mt-4 first-of-type:mt-0 mb-1.5">
+              {{ t(`reference.groups.${group}`) }}
+            </h4>
+            <ul class="flex flex-col gap-2">
+              <li
+                v-for="entry in entries"
+                :key="entry.syntax"
+                class="flex items-start gap-2 rounded-lg bg-elevated px-3 py-2"
+              >
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm">
+                    <span class="text-highlighted">{{ entry.label }}</span>
+                    <code class="ms-1.5 font-mono text-xs text-dimmed">{{ entry.syntax }}</code>
+                  </p>
+                  <p class="text-xs text-muted mt-0.5">
+                    {{ entry.description }}
+                  </p>
+                </div>
+                <UTooltip
+                  v-if="docsUrl(entry.docs)"
+                  :text="t('reference.help.docsTooltip')"
+                >
+                  <UButton
+                    icon="i-lucide-book-open"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    :to="docsUrl(entry.docs)"
+                    target="_blank"
+                    :aria-label="t('reference.help.docs', { name: entry.label })"
+                  />
+                </UTooltip>
+                <UTooltip :text="t('reference.help.insertTooltip')">
+                  <UButton
+                    icon="i-lucide-corner-down-left"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    :aria-label="t('reference.help.insert', { name: entry.label })"
+                    @click="emit('insert', entry.snippet)"
+                  />
+                </UTooltip>
+              </li>
+            </ul>
+            <template v-if="group === 'slide'">
+              <i18n-t
+                keypath="reference.help.layoutsIntro"
+                tag="p"
+                scope="global"
+                class="text-xs text-muted mt-2"
+              >
+                <template #annotation>
+                  <code class="font-mono">:layout</code>
+                </template>
+              </i18n-t>
+              <dl class="mt-1.5 space-y-1.5">
+                <div
+                  v-for="entry in layoutChoices"
+                  :key="entry.name"
+                  class="flex flex-wrap items-center gap-1.5"
+                >
+                  <dt class="font-mono text-xs text-highlighted w-16">
+                    {{ entry.name }}
+                  </dt>
+                  <dd class="flex flex-wrap gap-1.5">
+                    <UBadge
+                      v-for="value in entry.values"
+                      :key="value"
+                      color="neutral"
+                      variant="subtle"
+                      size="sm"
+                      class="font-mono"
+                      :label="value"
+                    />
+                  </dd>
+                </div>
+              </dl>
             </template>
-          </i18n-t>
-          <dl class="mt-1.5 space-y-1.5">
-            <div
-              v-for="entry in layoutChoices"
-              :key="entry.name"
-              class="flex flex-wrap items-center gap-1.5"
-            >
-              <dt class="font-mono text-xs text-highlighted w-16">
-                {{ entry.name }}
-              </dt>
-              <dd class="flex flex-wrap gap-1.5">
-                <UBadge
-                  v-for="value in entry.values"
-                  :key="value"
-                  color="neutral"
-                  variant="subtle"
-                  size="sm"
-                  class="font-mono"
-                  :label="value"
-                />
-              </dd>
-            </div>
-          </dl>
+          </template>
         </section>
 
         <USeparator />
