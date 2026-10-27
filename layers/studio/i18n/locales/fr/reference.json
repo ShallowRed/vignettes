@@ -142,7 +142,7 @@
       "findReplace": "Rechercher et remplacer",
       "blankLineBelow": "Ligne vide en dessous (Maj : au-dessus)",
       "lineWrap": "Retour à la ligne automatique",
-      "formatJson": "Mettre en forme le bloc JSON sous le curseur (sinon tous)"
+      "formatJson": "Indenter le bloc JSON sous le curseur, ou tous les blocs JSON"
     },
     "groups": {
       "text": "Texte",

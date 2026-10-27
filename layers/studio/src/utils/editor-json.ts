@@ -63,14 +63,18 @@ export interface JsonFormatResult {
   tours: number
 }
 
+/** The `json` block whose content holds the offset `at`. */
+export function jsonBlockAt(text: string, at: number): JsonBlock | undefined {
+  return jsonBlocks(text).find(block => at >= block.from && at <= block.to)
+}
+
 /**
  * Indents the `json` code blocks with two spaces. With `at`, only the block
  * containing that offset is formatted when there is one; otherwise every block.
  */
 export function formatJsonBlocks(text: string, at?: number): JsonFormatResult {
-  const all = jsonBlocks(text)
-  const around = at === undefined ? undefined : all.find(block => at >= block.from && at <= block.to)
-  const targets = around ? [around] : all
+  const around = at === undefined ? undefined : jsonBlockAt(text, at)
+  const targets = around ? [around] : jsonBlocks(text)
   const changes: JsonFormatResult['changes'] = []
   let invalid = 0
   let tours = 0

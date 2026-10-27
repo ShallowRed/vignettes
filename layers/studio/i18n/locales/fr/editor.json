@@ -86,12 +86,11 @@
       "quote": "Citation",
       "link": "Lien",
       "image": "Image par son adresse",
-      "newSlide": "Nouvelle diapositive",
-      "newSlideShort": "Diapositive",
+      "slide": "Diapositive",
+      "emptySlide": "Diapositive vide",
       "templates": "Modèles",
       "insert": "Insérer",
       "uploadImage": "Téléverser une image",
-      "formatJson": "Indenter le bloc JSON sous le curseur, ou tous les blocs JSON",
       "help": "Aide",
       "componentsDocs": "Documentation des composants"
     },
@@ -104,7 +103,9 @@
       "slidePosition": "Diapositive {slide} sur {total}",
       "foldOthers": "Replier les autres diapositives",
       "unfoldAll": "Tout déplier",
-      "wrapLines": "Retour à la ligne"
+      "wrapLines": "Retour à la ligne",
+      "formatJson": "Indenter le JSON",
+      "formatJsonTooltip": "Indenter le bloc JSON sous le curseur"
     },
     "imageUpload": {
       "failed": "L'image « {name} » n'a pas été téléversée",

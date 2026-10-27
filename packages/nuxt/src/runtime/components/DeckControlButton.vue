@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // One command of the deck controls bar: an icon, or an icon and a label for the
 // command the bar puts forward, with a tooltip naming the command and its key.
-defineProps<{
+// `pressed` stays undefined on a command that is no toggle, so the button has no `aria-pressed`.
+withDefaults(defineProps<{
   label: string
   shortcut?: string
   /** A link instead of a button. */
@@ -10,7 +11,11 @@ defineProps<{
   primary?: boolean
   /** Draws a dot on the icon, for a state worth noticing. */
   badge?: boolean
-}>()
+  /** A command that turns a setting on and off, shown pressed while it is on. */
+  pressed?: boolean
+  /** The text of the tooltip when it says more than the label, such as the state of a toggle. */
+  tip?: string
+}>(), { pressed: undefined })
 
 defineEmits<{ click: [event: MouseEvent] }>()
 </script>
@@ -21,8 +26,9 @@ defineEmits<{ click: [event: MouseEvent] }>()
     :href="to"
     :type="to ? undefined : 'button'"
     class="deck-control"
-    :class="{ 'deck-control--primary': primary }"
+    :class="{ 'deck-control--primary': primary, 'deck-control--pressed': pressed }"
     :aria-label="label"
+    :aria-pressed="pressed"
     @click="$emit('click', $event)"
   >
     <slot />
@@ -37,7 +43,7 @@ defineEmits<{ click: [event: MouseEvent] }>()
     <span
       class="deck-control__tip"
       role="tooltip"
-    >{{ label }}<kbd v-if="shortcut">{{ shortcut }}</kbd></span>
+    >{{ tip ?? label }}<kbd v-if="shortcut">{{ shortcut }}</kbd></span>
   </component>
 </template>
 
@@ -75,6 +81,17 @@ defineEmits<{ click: [event: MouseEvent] }>()
   flex: none;
 }
 
+.deck-control--pressed {
+  color: #8fb8ff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.deck-control--pressed:hover,
+.deck-control--pressed:focus-visible {
+  color: #8fb8ff;
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .deck-control--primary {
   padding: 0 12px 0 10px;
   color: #16161a;
@@ -108,7 +125,9 @@ defineEmits<{ click: [event: MouseEvent] }>()
   padding: 6px 9px;
   font-size: 13px;
   font-weight: 500;
-  white-space: nowrap;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 32px));
+  white-space: normal;
   color: #fff;
   pointer-events: none;
   background: #16161a;

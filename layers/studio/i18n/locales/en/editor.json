@@ -86,12 +86,11 @@
       "quote": "Quote",
       "link": "Link",
       "image": "Image from an address",
-      "newSlide": "New slide",
-      "newSlideShort": "Slide",
+      "slide": "Slide",
+      "emptySlide": "Empty slide",
       "templates": "Templates",
       "insert": "Insert",
       "uploadImage": "Upload an image",
-      "formatJson": "Indent the JSON block under the cursor, or every JSON block",
       "help": "Help",
       "componentsDocs": "Documentation of the components"
     },
@@ -104,7 +103,9 @@
       "slidePosition": "Slide {slide} of {total}",
       "foldOthers": "Fold the other slides",
       "unfoldAll": "Unfold all",
-      "wrapLines": "Line wrapping"
+      "wrapLines": "Line wrapping",
+      "formatJson": "Indent the JSON",
+      "formatJsonTooltip": "Indent the JSON block under the cursor"
     },
     "imageUpload": {
       "failed": "The image “{name}” was not uploaded",

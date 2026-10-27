@@ -1,20 +1,31 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import { useInstanceLinks } from '../composables/useInstanceLinks'
+import { formatJson, jsonFormatNotice } from '../utils/editor-json'
 import { foldOtherSlides, unfoldAll } from '../utils/editor-slides'
 
 // The foot of the markdown pane: where the caret is in the deck, how the source
-// is shown (folds, line wrapping) and the links of the instance.
+// is shown (folds, line wrapping), the indentation of the JSON block under the
+// caret and the links of the instance.
 const props = defineProps<{
   view?: EditorView
   /** 1-based position of the slide under the caret. */
   slide: number
   slideCount: number
+  /** The caret is in a `json` code block. */
+  inJson?: boolean
 }>()
 
 const wrap = defineModel<boolean>('wrap', { default: false })
 
 const { t } = useI18n()
+const toast = useToast()
+
+function indentJson(view: EditorView) {
+  const notice = jsonFormatNotice(formatJson(view), t)
+  if (notice)
+    toast.add({ ...notice, icon: 'i-lucide-braces' })
+}
 
 const links = useInstanceLinks()
 
@@ -52,6 +63,28 @@ function run(action: (view: EditorView) => unknown) {
   >
     <span class="px-1 tabular-nums whitespace-nowrap">{{ t('editor.statusBar.slidePosition', { slide, total: slideCount }) }}</span>
     <div class="flex-1" />
+    <template v-if="inJson">
+      <UTooltip
+        :text="t('editor.statusBar.formatJsonTooltip')"
+        :kbds="['meta', 'alt', 'L']"
+      >
+        <UButton
+          icon="i-lucide-braces"
+          :label="t('editor.statusBar.formatJson')"
+          :aria-label="t('editor.statusBar.formatJson')"
+          :ui="BUTTON_UI"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          :disabled="!view"
+          @click="run(indentJson)"
+        />
+      </UTooltip>
+      <USeparator
+        orientation="vertical"
+        class="h-4 mx-1"
+      />
+    </template>
     <UTooltip
       :text="t('editor.statusBar.foldOthers')"
       :disabled="!compact"

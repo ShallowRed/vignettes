@@ -41,7 +41,7 @@ import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
 import { listedFrontmatterProblems } from '../../utils/editor-frontmatter'
 import { deckHover } from '../../utils/editor-hover'
-import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
+import { formatJson, jsonBlockAt, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
 import { EDITOR_TEXT } from '../../utils/editor-layout'
 import { awarenessPeers } from '../../utils/editor-peers'
@@ -243,6 +243,7 @@ const previewHasFocus = () => previewFrame.value?.matches(':focus-within') ?? fa
 const previewRef = useTemplateRef<{ slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => RevealApi | null }>('previewInstance')
 const followCursor = ref(true)
 const cursorLine = ref(1)
+const cursorPos = ref(0)
 const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser }))
 
 // Fragments in the preview: the slide in its final state (every fragment shown),
@@ -321,6 +322,7 @@ function checkSlide() {
 const cursorListener = EditorView.updateListener.of((update) => {
   if (!update.selectionSet && !update.docChanged)
     return
+  cursorPos.value = update.state.selection.main.head
   const line = update.state.doc.lineAt(update.state.selection.main.head).number
   const moved = line !== cursorLine.value
   cursorLine.value = line
@@ -337,6 +339,8 @@ watch(followCursor, (on) => {
 const cursorSlide = computed(() => slideAtLine(slideRanges(raw.value, parserId.value), cursorLine.value))
 const cursorSlideHash = computed(() => `#/${cursorSlide.value.h}/${cursorSlide.value.v}`)
 const slideCount = computed(() => slideRanges(raw.value, parserId.value).length)
+// Whether the caret is in a `json` block, where the status bar shows the indent button.
+const cursorInJson = computed(() => Boolean(jsonBlockAt(raw.value, cursorPos.value)))
 const cursorSlideNumber = computed(() =>
   slideRanges(raw.value, parserId.value).findIndex(range => range.h === cursorSlide.value.h && range.v === cursorSlide.value.v) + 1)
 
@@ -1141,34 +1145,7 @@ async function onMetaSaved() {
           :help-open="helpOpen"
           @upload-images="uploadChosenImages"
           @help="helpOpen = !helpOpen"
-        >
-          <template #end>
-            <UTooltip :text="fragmentSteps ? t('editor.preview.fragmentStepsActive') : t('editor.preview.fragmentSteps')">
-              <UButton
-                icon="i-lucide-step-forward"
-                color="neutral"
-                :variant="fragmentSteps ? 'soft' : 'ghost'"
-                size="sm"
-                :class="fragmentSteps ? 'text-primary' : ''"
-                :aria-pressed="fragmentSteps"
-                :aria-label="t('editor.preview.fragmentSteps')"
-                @click="toggleFragmentSteps"
-              />
-            </UTooltip>
-            <UTooltip :text="followCursor ? t('editor.preview.followCursorActive') : t('editor.preview.followCursor')">
-              <UButton
-                icon="i-lucide-crosshair"
-                color="neutral"
-                :variant="followCursor ? 'soft' : 'ghost'"
-                size="sm"
-                :class="followCursor ? 'text-primary' : ''"
-                :aria-pressed="followCursor"
-                :aria-label="t('editor.preview.followCursor')"
-                @click="toggleFollow"
-              />
-            </UTooltip>
-          </template>
-        </EditorToolbar>
+        />
         <ClientOnly>
           <!-- Collab mode: the Y.Text owns the document (no v-model — it would fight
                Yjs); the yCollab extension syncs the editor and we mirror into `raw`. -->
@@ -1199,6 +1176,7 @@ async function onMetaSaved() {
           :view="editorView"
           :slide="cursorSlideNumber"
           :slide-count="slideCount"
+          :in-json="cursorInJson"
         />
       </UDashboardPanel>
 
@@ -1259,6 +1237,22 @@ async function onMetaSaved() {
             role="toolbar"
             :aria-label="t('editor.preview.controls')"
           >
+            <DeckControlButton
+              :label="t('editor.preview.fragmentSteps')"
+              :tip="fragmentSteps ? t('editor.preview.fragmentStepsActive') : undefined"
+              :pressed="fragmentSteps"
+              @click="toggleFragmentSteps"
+            >
+              <UIcon name="i-lucide-step-forward" />
+            </DeckControlButton>
+            <DeckControlButton
+              :label="t('editor.preview.followCursor')"
+              :tip="followCursor ? t('editor.preview.followCursorActive') : undefined"
+              :pressed="followCursor"
+              @click="toggleFollow"
+            >
+              <UIcon name="i-lucide-crosshair" />
+            </DeckControlButton>
             <DeckControlButton
               :label="neverPublished ? t('editor.preview.presentDraft') : t('editor.preview.present')"
               primary
@@ -1412,6 +1406,13 @@ async function onMetaSaved() {
 .editor-stage__controls > :deep(.deck-control:nth-last-child(-n + 3) .deck-control__tip) {
   right: 0;
   left: auto;
+  transform: none;
+}
+
+/* The tooltips of the two toggles start at their left edge, so they stay inside the pane on a narrow screen. */
+.editor-stage__controls > :deep(.deck-control:nth-child(-n + 2) .deck-control__tip) {
+  right: auto;
+  left: 0;
   transform: none;
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatJsonBlocks, jsonBlocks } from '../../layers/studio/src/utils/editor-json'
+import { formatJsonBlocks, jsonBlockAt, jsonBlocks } from '../../layers/studio/src/utils/editor-json'
 
 function apply(text: string, at?: number) {
   const { changes } = formatJsonBlocks(text, at)
@@ -14,6 +14,15 @@ describe('jsonBlocks', () => {
 
   it('ignores jsonc and json5', () => {
     expect(jsonBlocks('```jsonc\n{}\n```\n```json5\n{}\n```')).toEqual([])
+  })
+})
+
+describe('jsonBlockAt', () => {
+  it('finds the block whose content holds the offset, and none on its fences', () => {
+    const text = 'a\n```json\n{"a":1}\n```\nb'
+    expect(jsonBlockAt(text, text.indexOf('"a"'))).toMatchObject({ from: text.indexOf('{') })
+    expect(jsonBlockAt(text, text.indexOf('json'))).toBeUndefined()
+    expect(jsonBlockAt(text, text.lastIndexOf('b'))).toBeUndefined()
   })
 })
 

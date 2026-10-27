@@ -5,11 +5,11 @@ import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
 import { useDocsAddress } from '../composables/useDocsAddress'
 import { DOCS_SECTIONS, groupedEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, slideTemplateFor, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
-import { formatJson, jsonFormatNotice } from '../utils/editor-json'
 import { btnHover, menuUi } from '../utils/toolbar-buttons'
 
-// The markdown pane's formatting and insertion bar; every action targets the
-// live EditorView.
+// The markdown pane's bar: the commands that build the deck first (a slide, its
+// layout, a component), then the formatting of the text; every action targets
+// the live EditorView.
 const props = defineProps<{
   view?: EditorView
   disabled?: boolean
@@ -43,14 +43,7 @@ function keepEditorFocus(event: Event) {
   props.view?.focus()
 }
 
-const toast = useToast()
 const { t, locale } = useI18n()
-
-function beautifyJson(view: EditorView) {
-  const notice = jsonFormatNotice(formatJson(view), t)
-  if (notice)
-    toast.add({ ...notice, icon: 'i-lucide-braces' })
-}
 
 const imageInput = useTemplateRef<HTMLInputElement>('imageInput')
 
@@ -85,12 +78,18 @@ const insertItems = computed<DropdownMenuItem[][]>(() => {
   ]
 })
 
-const templateItems = computed<DropdownMenuItem[]>(() =>
-  SLIDE_TEMPLATES.map(entry => ({
-    label: t(entry.labelKey),
-    description: t(entry.descriptionKey),
-    onSelect: () => writeFromMenu(view => insertSlideTemplate(view, slideTemplateFor(inLanguage(entry.snippet, locale.value), props.parser ?? 'separator', entry.section))),
-  })))
+// A slide: empty, or from a template that fits the parser of the deck.
+const slideItems = computed<DropdownMenuItem[][]>(() => [
+  [{ label: t('editor.toolbar.emptySlide'), icon: 'i-lucide-between-horizontal-start', onSelect: () => writeFromMenu(insertSlideBreak) }],
+  [
+    { type: 'label' as const, label: t('editor.toolbar.templates') },
+    ...SLIDE_TEMPLATES.map(entry => ({
+      label: t(entry.labelKey),
+      description: t(entry.descriptionKey),
+      onSelect: () => writeFromMenu(view => insertSlideTemplate(view, slideTemplateFor(inLanguage(entry.snippet, locale.value), props.parser ?? 'separator', entry.section))),
+    })),
+  ],
+])
 
 const headingItems = computed<DropdownMenuItem[]>(() => [1, 2, 3].map(level => ({
   label: t('editor.toolbar.heading', { level }),
@@ -118,78 +117,29 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-default">
-    <UDropdownMenu
-      :items="headingItems"
-      :content="{ onCloseAutoFocus: keepEditorFocus }"
-    >
-      <UButton
-        icon="i-lucide-heading"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        :class="btnHover"
-        trailing-icon="i-lucide-chevron-down"
-        :disabled="disabled || !view"
-        :aria-label="t('editor.toolbar.headingMenu')"
-      />
-    </UDropdownMenu>
-
-    <!-- Formatting actions grouped into segmented clusters on a soft rail. -->
-    <div
-      v-for="(group, index) in groups"
-      :key="index"
-      class="flex items-center gap-0.5 rounded-lg bg-elevated p-0.5"
-    >
-      <UTooltip
-        v-for="button in group"
-        :key="button.icon"
-        :text="button.tooltip"
-        :kbds="button.kbds"
-      >
-        <UButton
-          :icon="button.icon"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          :class="btnHover"
-          :disabled="disabled || !view"
-          :aria-label="button.tooltip"
-          @click="run(button.action)"
-        />
-      </UTooltip>
-    </div>
-
+  <div class="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1.5 px-2 py-1.5 border-b border-default">
     <div class="flex items-center gap-0.5 rounded-lg bg-elevated p-0.5">
-      <UTooltip :text="t('editor.toolbar.newSlide')">
-        <UButton
-          icon="i-lucide-between-horizontal-start"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          :class="btnHover"
-          :label="t('editor.toolbar.newSlideShort')"
-          :disabled="disabled || !view"
-          @click="run(insertSlideBreak)"
-        />
-      </UTooltip>
-
       <UDropdownMenu
-        :items="templateItems"
+        :items="slideItems"
         :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
         :ui="menuUi"
       >
         <UButton
-          icon="i-lucide-layout-template"
+          icon="i-lucide-plus"
           color="neutral"
           variant="ghost"
           size="sm"
           :class="btnHover"
-          :label="t('editor.toolbar.templates')"
+          :label="t('editor.toolbar.slide')"
           trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
         />
       </UDropdownMenu>
+
+      <EditorLayoutPanel
+        :view="view"
+        :disabled="disabled"
+      />
 
       <input
         ref="imageInput"
@@ -199,11 +149,6 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
         hidden
         @change="onImagesChosen"
       >
-      <EditorLayoutPanel
-        :view="view"
-        :disabled="disabled"
-      />
-
       <UDropdownMenu
         :items="insertItems"
         :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
@@ -226,40 +171,61 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
           :disabled="disabled || !view"
         />
       </UDropdownMenu>
+    </div>
 
-      <UTooltip
-        :text="t('editor.toolbar.formatJson')"
-        :kbds="['meta', 'alt', 'L']"
+    <UTooltip :text="t('reference.help.title')">
+      <UButton
+        icon="i-lucide-circle-help"
+        color="neutral"
+        :variant="helpOpen ? 'soft' : 'ghost'"
+        size="sm"
+        class="ms-auto max-sm:order-last"
+        :class="helpOpen ? 'text-primary' : ''"
+        :label="t('editor.toolbar.help')"
+        :aria-label="t('editor.toolbar.help')"
+        :ui="{ label: 'max-sm:hidden' }"
+        :aria-pressed="helpOpen"
+        @click="emit('help')"
+      />
+    </UTooltip>
+
+    <div class="sm:basis-full flex flex-wrap items-center gap-x-1 sm:gap-x-2">
+      <UDropdownMenu
+        :items="headingItems"
+        :content="{ onCloseAutoFocus: keepEditorFocus }"
       >
         <UButton
-          icon="i-lucide-braces"
+          icon="i-lucide-heading"
           color="neutral"
           variant="ghost"
           size="sm"
-          :class="btnHover"
-          label="JSON"
+          trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
-          @click="run(beautifyJson)"
+          :aria-label="t('editor.toolbar.headingMenu')"
         />
-      </UTooltip>
-    </div>
-
-    <UButton
-      icon="i-lucide-circle-help"
-      color="neutral"
-      :variant="helpOpen ? 'soft' : 'ghost'"
-      size="sm"
-      :class="helpOpen ? 'text-primary' : ''"
-      :label="t('editor.toolbar.help')"
-      :aria-pressed="helpOpen"
-      @click="emit('help')"
-    />
-
-    <div
-      v-if="$slots.end"
-      class="flex items-center gap-0.5 ms-auto"
-    >
-      <slot name="end" />
+      </UDropdownMenu>
+      <div
+        v-for="(group, index) in groups"
+        :key="index"
+        class="flex items-center gap-0.5"
+      >
+        <UTooltip
+          v-for="button in group"
+          :key="button.icon"
+          :text="button.tooltip"
+          :kbds="button.kbds"
+        >
+          <UButton
+            :icon="button.icon"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            :disabled="disabled || !view"
+            :aria-label="button.tooltip"
+            @click="run(button.action)"
+          />
+        </UTooltip>
+      </div>
     </div>
   </div>
 </template>
