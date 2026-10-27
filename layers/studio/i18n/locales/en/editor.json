@@ -250,7 +250,7 @@
       "settings": "{keys}: available settings",
       "attributes": "{keys}: available attributes",
       "values": "{keys}: possible values",
-      "insert": "Type / to insert a block"
+      "insert": "Type :: to insert a component"
     },
     "keys": {
       "space": "Space"

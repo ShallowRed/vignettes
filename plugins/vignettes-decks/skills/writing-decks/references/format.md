@@ -64,7 +64,7 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 - `Mermaid`: Diagram of boxes and arrows, written as text
 - `IconInline`: Icon in a sentence, also written `i`
 - `Columns`: Blocks side by side, also written `TwoColumns`, `ThreeColumns`
-- `Column`, also written `column`
+- `Column`: One column of the block, also written `column`
 - `Highlight`: Key message in bold, in the accent color, with a bar on its left
 - `Notes`: Speaker notes, shown in the speaker view (S key), also written `notes`
 - `Fragments`: List whose items appear one at a time, also written `fragments`
@@ -72,13 +72,13 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 `@vignettes/schemas`, the explanation kit:
 
 - `Scheme`: Illustrated steps linked by arrows, which appear one at a time, also written `scheme`
-- `Step`, also written `step`
+- `Step`: One illustrated step, also written `step`
 - `Diagram`: Cards linked by arrows, placed on a grid, also written `diagram`
-- `Node`, also written `node`
-- `Edge`, also written `edge`
-- `Area`, also written `area`
+- `Node`: One card of the diagram, placed on the grid, also written `node`
+- `Edge`: An arrow between two cards, also written `edge`
+- `Area`: A region that groups cards, also written `area`
 - `JsonTour`: File explained zone by zone, beside its explanations, also written `json-tour`
-- `Zone`, also written `zone`
+- `Zone`: Lines of the file, explained, also written `zone`
 
 `@vignettes/storybook`, live story embeds:
 

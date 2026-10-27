@@ -4,8 +4,8 @@ import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
 import type { ComponentAttributeEntry, FrontmatterKey, ReferenceEntry, Translate } from '../config/editor-reference'
 import { autocompletion, CompletionContext, completionStatus, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
 import { Decoration, keymap, ViewPlugin, WidgetType } from '@codemirror/view'
-import { attributedDirective, componentKey } from '@vignettes/core/deck'
-import { annotationEntries, componentAttributeEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
+import { attributedDirective, blocksAround, componentKey } from '@vignettes/core/deck'
+import { annotationEntries, childEntries, componentAttributeEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
 import { emptyValueKey, frontmatterGuide, inFrontmatter as inFrontmatterLine } from './editor-frontmatter'
 import { referenceCard } from './editor-tooltip'
 
@@ -214,53 +214,22 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       }
     }
 
-    // `::` (and `:::`) opens the component list; a lone `:` offers annotations too.
+    // `::` (and `:::`) opens the component list; a lone `:` offers annotations
+    // too. Inside a component that has its own (`:::Scheme` and its
+    // `::Step`), the list holds those only.
     const directiveMatch = before.match(/(^|\s)(:{1,3})([\w-]*)$/)
     if (!directiveMatch)
       return null
     const colons = directiveMatch[2]!
     const word = directiveMatch[3]!
     const from = context.pos - word.length - colons.length
-    const components = build(componentEntries(lang), 'class')
-    const options = colons.length >= 2
+    const enclosing = blocksAround(context.state.doc.toString(), line.number).at(-1)
+    const children = enclosing ? childEntries(enclosing.name, lang) : []
+    const components = build(children.length ? children : componentEntries(lang), 'class')
+    const options = colons.length >= 2 || children.length
       ? components
       : [...build(annotationEntries(lang), 'keyword'), ...components]
     return { from, options, validFor: /^:{0,3}[\w-]*$/ }
-  }
-}
-
-/**
- * Slash menu: typing `/` at the start of a line offers every block by a plain
- * name (`/quote`, `/columns`, `/layout`) and inserts the exact snippet. It gives
- * newcomers one discoverable entry point without knowing the `::`/`:` syntax.
- */
-function slashSource(options: CompletionOptions, t: Translate) {
-  const { lang } = options
-  const name = (label: string) => label.replace(/^:+/, '').toLowerCase()
-  const build = (entries: readonly ReferenceEntry[], type: string): Completion[] =>
-    entries.map(entry => snippetCompletion(entry.snippet, {
-      label: `/${name(entry.syntax)}`,
-      detail: entry.label,
-      info: entryInfo(entry, options, t),
-      type,
-    }))
-
-  return (context: CompletionContext): CompletionResult | null => {
-    if (inFrontmatter(context))
-      return null
-    const line = context.state.doc.lineAt(context.pos)
-    const before = line.text.slice(0, context.pos - line.from)
-    const match = before.match(/^\s*\/([\w-]*)$/)
-    if (!match)
-      return null
-    return {
-      from: context.pos - match[1]!.length - 1,
-      options: [
-        ...build(componentEntries(lang), 'class'),
-        ...build(annotationEntries(lang), 'keyword'),
-      ],
-      validFor: /^\/[\w-]*$/,
-    }
   }
 }
 
@@ -274,7 +243,7 @@ function inFence(state: EditorState, line: number): boolean {
   return fenced
 }
 
-/** Where the caret line shows a hint: suggestions the shortcut opens, the slash menu, or what a free value takes. */
+/** Where the caret line shows a hint: suggestions the shortcut opens, the component list, or what a free value takes. */
 export type HintKind = 'settings' | 'attributes' | 'values' | 'insert' | 'free'
 
 export interface Hint {
@@ -334,12 +303,12 @@ class HintWidget extends WidgetType {
     hint.textContent = this.text
     if (this.kind === 'free')
       return hint
-    // A click opens what the shortcut opens; the slash menu needs its slash.
+    // A click opens what the shortcut opens; the component list needs its colons.
     hint.addEventListener('mousedown', (event) => {
       event.preventDefault()
       if (this.kind === 'insert') {
         const at = view.state.selection.main.head
-        view.dispatch({ changes: { from: at, insert: '/' }, selection: { anchor: at + 1 } })
+        view.dispatch({ changes: { from: at, insert: '::' }, selection: { anchor: at + 2 } })
       }
       view.focus()
       startCompletion(view)
@@ -387,7 +356,7 @@ export function deckCompletions(options: CompletionOptions, t: Translate): Exten
   const sources = { frontmatter: frontmatter.source, body: bodySource(options, t) }
   return [
     autocompletion({
-      override: [sources.frontmatter, slashSource(options, t), sources.body],
+      override: [sources.frontmatter, sources.body],
       icons: false,
     }),
     // macOS keeps Ctrl-Space to switch the input source.

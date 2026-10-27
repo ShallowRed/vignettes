@@ -54,6 +54,12 @@ Content: The `::Step` blocks of the row.
 
 Also written `step`.
 
+```markdown
+::Step{picto="digital/coding" title="Step"}
+Caption
+::
+```
+
 Attributes:
 
 - `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
@@ -111,6 +117,11 @@ Content: The `::Node`, `::Edge` and `::Area` blocks.
 
 Also written `node`.
 
+```markdown
+::Node{id="id" at="1,1" title="Title"}
+::
+```
+
 Attributes:
 
 - `id` (`string`, required): Name the `::Edge` blocks use to reach the node.
@@ -137,6 +148,11 @@ Content: The caption, in markdown; with `variant="entity"`, a list of attributes
 
 Also written `edge`.
 
+```markdown
+::Edge{from="a" to="b" label="label"}
+::
+```
+
 Attributes:
 
 - `from` (`string`, required): `id` of the node the arrow leaves.
@@ -157,6 +173,11 @@ Attributes:
 <!-- component: Area -->
 
 Also written `area`.
+
+```markdown
+::Area{at="1,1" span="2,1" title="Area"}
+::
+```
 
 Attributes:
 
@@ -219,6 +240,12 @@ Content: The `::Zone` blocks, then a fenced code block: the file shown in the pa
 <!-- component: Zone -->
 
 Also written `zone`.
+
+```markdown
+::Zone{lines="1-4" title="Title"}
+What these lines hold
+::
+```
 
 Attributes:
 

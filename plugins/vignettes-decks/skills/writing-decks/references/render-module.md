@@ -201,6 +201,12 @@ Content: `::Column` blocks, or markdown that splits in two at its first horizont
 
 Also written `column`.
 
+```markdown
+::Column
+Column content
+::
+```
+
 Attributes:
 
 - `span` (`number | string`): Weight of the column in the row: `span="2"` beside `span="1"` gives two thirds and one third.

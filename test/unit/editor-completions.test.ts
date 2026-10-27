@@ -52,6 +52,19 @@ describe('attribute completion cases', () => {
   })
 })
 
+describe('component list', () => {
+  const labels = (doc: string) => source(new CompletionContext(EditorState.create({ doc }), doc.length, true))?.options.map(option => option.label) ?? []
+
+  it('offers inside a component the components written in it, and those only', () => {
+    expect(labels(':::Columns\n::')).toEqual(['::Column'])
+  })
+
+  it('leaves the components written inside another out of the list elsewhere', () => {
+    expect(labels('# Slide\n\n::')).not.toContain('::Column')
+    expect(labels(':::Columns\n::Column\nText\n::\n:::\n\n::')).not.toContain('::Column')
+  })
+})
+
 describe('completion hint', () => {
   const sources = { frontmatter: frontmatterGuide({ lang: 'fr', t, docsUrl: () => undefined }).source, body: source }
 

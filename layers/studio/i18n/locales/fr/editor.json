@@ -250,7 +250,7 @@
       "settings": "{keys} : réglages disponibles",
       "attributes": "{keys} : attributs disponibles",
       "values": "{keys} : valeurs possibles",
-      "insert": "Tapez / pour insérer un bloc"
+      "insert": "Tapez :: pour insérer un composant"
     },
     "keys": {
       "space": "Espace"

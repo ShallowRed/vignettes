@@ -137,6 +137,8 @@ export interface DeckComponent {
   images?: readonly string[]
   /** Its attributes, which `scripts/component-reference.ts` reads from its Vue file. */
   attributes?: readonly ComponentAttribute[]
+  /** The component it is written in: an editor offers it inside that one, in place of the others, and nowhere else. */
+  parent?: string
 }
 
 /** The components with the attributes that `scripts/component-reference.ts` wrote for them. */
@@ -208,7 +210,15 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     description: { fr: 'Blocs côte à côte', en: 'Blocks side by side' },
     docs: '/reference/nuxt#columns',
   },
-  { name: 'Column', aliases: ['column'], docs: '/reference/nuxt#column' },
+  {
+    name: 'Column',
+    aliases: ['column'],
+    parent: 'Columns',
+    label: { fr: 'Colonne', en: 'Column' },
+    snippet: { fr: '::Column\n${Contenu de la colonne}\n::', en: '::Column\n${Column content}\n::' },
+    description: { fr: 'Une colonne du bloc', en: 'One column of the block' },
+    docs: '/reference/nuxt#column',
+  },
   {
     name: 'Highlight',
     icon: 'i-lucide-highlighter',

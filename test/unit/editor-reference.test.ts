@@ -66,7 +66,7 @@ describe('groupedEntries', () => {
 describe('directiveEntry', () => {
   it('finds a component by an alias in any case, and a component written inside another', () => {
     expect(directiveEntry(':::', 'columns', 'fr')).toMatchObject({ syntax: ':::columns', label: 'Colonnes', docs: '/reference/nuxt#columns' })
-    expect(directiveEntry('::', 'Column', 'fr')).toMatchObject({ label: 'Column', docs: '/reference/nuxt#column' })
+    expect(directiveEntry('::', 'Column', 'fr')).toMatchObject({ label: 'Colonne', docs: '/reference/nuxt#column' })
   })
 
   it('finds an annotation written with one colon only', () => {

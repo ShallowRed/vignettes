@@ -333,6 +333,17 @@ export function blockEndAround(raw: string, line: number): number | undefined {
   return outer ? lines.length : undefined
 }
 
+/** The blocks open around the 1-based `line`, outermost first: those the lines above it opened and did not close. */
+export function blocksAround(raw: string, line: number): OpenBlock[] {
+  let around: OpenBlock[] = []
+  for (const walked of walk(raw.split('\n'), frontmatterLineCount(raw))) {
+    if (walked.index + 1 >= line)
+      break
+    around = [...walked.open]
+  }
+  return around
+}
+
 /** A directive as written in the source, with its colons: `::Quote`, `:::Columns`, `:pretitle`. */
 export interface DirectiveMention extends ComponentMention {
   colons: string

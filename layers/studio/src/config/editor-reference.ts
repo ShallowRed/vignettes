@@ -206,7 +206,17 @@ export function componentAttributeEntries(tag: string, lang: string): ComponentA
  * with its own snippet and description.
  */
 export function componentEntries(lang: string): ReferenceEntry[] {
-  return deckComponents()
+  return insertable(deckComponents().filter(component => !component.parent), lang)
+}
+
+/** The components written inside the component a deck names `parent`, none when it has none. */
+export function childEntries(parent: string, lang: string): ReferenceEntry[] {
+  const name = deckComponentNamed(parent)?.name
+  return name ? insertable(deckComponents().filter(component => component.parent === name), lang) : []
+}
+
+function insertable(components: readonly DeckComponent[], lang: string): ReferenceEntry[] {
+  return components
     .filter((component): component is DeckComponent & { snippet: LocalizedText } => Boolean(component.snippet))
     .map((component) => {
       const snippet = inLanguage(component.snippet, lang)
