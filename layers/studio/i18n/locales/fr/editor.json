@@ -160,6 +160,8 @@
       "refusedEmbedShort": "Ligne {line} : adresse en http:// bloquée",
       "overflow": "Le contenu dépasse le bas de la diapositive {slide}, et la présentation comme le PDF le coupent : raccourcissez-la, coupez-la en deux avec ---, ou réduisez la part du média.",
       "overflowShort": "Diapositive {slide} : contenu coupé en bas",
+      "imageMissing": "Image introuvable à l'adresse {src} : vérifiez l'adresse, ou collez l'image dans le texte pour l'envoyer au studio.",
+      "imageMissingShort": "Ligne {line} : image introuvable",
       "malformedAttributes": {
         "brace": "Ajoutez l'accolade {'}'} qui ferme les attributs de « {name} ».",
         "quote": "Ajoutez le guillemet \" qui ferme une valeur de « {name} ».",

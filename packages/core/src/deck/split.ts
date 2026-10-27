@@ -389,35 +389,53 @@ const BLOCK_TAG_RE = /:+([a-z][\w-]*)(?:\[[^\]]*\])?$/i
 // The destination of a markdown link keeps one level of balanced parentheses.
 const MARKDOWN_LINK_RE = /(!?)\[[^\]]*\]\(\s*<?((?:[^\s()<>]|\([^\s()]*\))+)/g
 
+/** A value written in the source: an attribute's, or the address of a markdown link or image. */
+export interface ValueMention {
+  /** The element the value goes to: the directive's name, `img` or `a`. */
+  tag: string
+  name: string
+  value: string
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of the attribute or the address, and length of its text. */
+  column: number
+  length: number
+}
+
 /**
- * The attributes of the source that the deck refuses, or whose address the
- * page refuses to load: in the `{…}` block of a component, an annotation or a
- * span, and the address of an inline markdown link or image. Outside the
- * frontmatter, fenced code and inline code.
+ * The values written in the `{…}` block of a component, an annotation or a
+ * span, and the addresses of the inline markdown links and images. Outside
+ * the frontmatter, fenced code and inline code.
  */
-export function attributeMentions(raw: string): AttributeMention[] {
-  const mentions: AttributeMention[] = []
-  const check = (tag: string, name: string, value: string, line: number, column: number, length: number) => {
-    const reading = readAttribute(tag, name, value)
-    if ('refused' in reading)
-      mentions.push({ name, reason: reading.refused, line, column, length })
-    else if (isRefusedEmbed(tag, reading.name, reading.value))
-      mentions.push({ name, reason: 'http', line, column, length })
-  }
+export function valueMentions(raw: string): ValueMention[] {
+  const mentions: ValueMention[] = []
   for (const { line, prose } of proseLines(raw)) {
     for (const block of prose.matchAll(ATTRIBUTE_BLOCK_RE)) {
       const before = prose.slice(0, block.index)
       const tag = BLOCK_TAG_RE.exec(before)?.[1] ?? (before.endsWith(')') ? 'a' : 'span')
       for (const { name, value, column, length } of blockAttributes(block[1]!, block.index + 1)) {
         if (value !== undefined)
-          check(tag, name, value, line, column, length)
+          mentions.push({ tag, name, value, line, column, length })
       }
     }
     for (const link of prose.matchAll(MARKDOWN_LINK_RE)) {
       const [text, bang, url] = link
       const image = bang === '!'
-      check(image ? 'img' : 'a', image ? 'src' : 'href', url!, line, link.index + text.length - url!.length, url!.length)
+      mentions.push({ tag: image ? 'img' : 'a', name: image ? 'src' : 'href', value: url!, line, column: link.index + text.length - url!.length, length: url!.length })
     }
+  }
+  return mentions
+}
+
+/** The written values that the deck refuses, or whose address the page refuses to load. */
+export function attributeMentions(raw: string): AttributeMention[] {
+  const mentions: AttributeMention[] = []
+  for (const { tag, name, value, line, column, length } of valueMentions(raw)) {
+    const reading = readAttribute(tag, name, value)
+    if ('refused' in reading)
+      mentions.push({ name, reason: reading.refused, line, column, length })
+    else if (isRefusedEmbed(tag, reading.name, reading.value))
+      mentions.push({ name, reason: 'http', line, column, length })
   }
   return mentions
 }

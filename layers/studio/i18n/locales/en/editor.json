@@ -160,6 +160,8 @@
       "refusedEmbedShort": "Line {line}: http:// address blocked",
       "overflow": "The content reaches below slide {slide}, and the presentation and the PDF cut it: shorten it, split it in two with ---, or give the media a smaller share.",
       "overflowShort": "Slide {slide}: content cut at the bottom",
+      "imageMissing": "Image not found at {src}: check the address, or paste the image into the text to upload it to the studio.",
+      "imageMissingShort": "Line {line}: image not found",
       "malformedAttributes": {
         "brace": "Add the {'}'} brace that closes the attributes of “{name}”.",
         "quote": "Add the \" quote that closes a value of “{name}”.",

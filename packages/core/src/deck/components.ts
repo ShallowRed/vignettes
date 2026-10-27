@@ -24,7 +24,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   {
     tag: 'slide-background',
     images: ['image'],
-    snippet: { fr: ':slide-background{image="${/backgrounds/exemple.svg}"}', en: ':slide-background{image="${/backgrounds/example.svg}"}' },
+    snippet: { fr: ':slide-background{image="${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
     description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide (attribute image)' },
   },
   {

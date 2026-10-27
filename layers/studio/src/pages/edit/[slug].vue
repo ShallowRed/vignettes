@@ -24,7 +24,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { attributeMentions, componentMentions, deckRevealOptions, layoutMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks } from '@vignettes/core/deck'
+import { attributeMentions, componentMentions, deckRevealOptions, layoutMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks, valueMentions } from '@vignettes/core/deck'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
@@ -43,6 +43,7 @@ import { placeProblems, previewProblemMarks, setPreviewProblems } from '../../ut
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 import { wrappedLines } from '../../utils/editor-wrap'
+import { imageMention, missingImages } from '../../utils/preview-images'
 import { slideOverflow } from '../../utils/preview-overflow'
 import { requestErrorMessage } from '../../utils/request-error'
 import { saveTextFile } from '../../utils/save-file'
@@ -264,7 +265,7 @@ watch(previewFragments, (fragments) => {
 })
 
 function syncPreviewToCursor() {
-  checkOverflow()
+  checkSlide()
   if (!followCursor.value || !previewRef.value)
     return
   const ranges = slideRanges(raw.value, parserId.value)
@@ -276,20 +277,33 @@ function syncPreviewToCursor() {
     previewRef.value.slide(h, v)
 }
 
-// The slide on screen whose content reaches below the slide, by its first line:
-// the presentation and the PDF cut it there. Measured once the preview settles.
+// The slide on screen, measured once the preview settles: its content that
+// reaches below the slide, by its first line, since the presentation and the
+// PDF cut it there; and its images that fail to load, by their written address.
 const overflow = ref<{ line: number, slide: number } | null>(null)
-let overflowTimer: ReturnType<typeof setTimeout> | undefined
-function checkOverflow() {
-  clearTimeout(overflowTimer)
-  overflowTimer = setTimeout(() => {
+const brokenImages = ref<{ src: string, line: number, column: number, length: number }[]>([])
+let slideTimer: ReturnType<typeof setTimeout> | undefined
+let slideCheck = 0
+function checkSlide() {
+  clearTimeout(slideTimer)
+  slideTimer = setTimeout(async () => {
     const reveal = previewRef.value?.getInstance()
     if (!reveal)
       return
+    const check = ++slideCheck
     const { h, v } = reveal.getIndices()
     const ranges = slideRanges(raw.value, parserId.value)
     const index = ranges.findIndex(range => range.h === h && range.v === (v ?? 0))
-    overflow.value = index !== -1 && slideOverflow(reveal) > 4 ? { line: ranges[index]!.startLine, slide: index + 1 } : null
+    const startLine = ranges[index]?.startLine
+    overflow.value = startLine && slideOverflow(reveal) > 4 ? { line: startLine, slide: index + 1 } : null
+    const missing = startLine ? await missingImages(reveal) : []
+    if (check !== slideCheck)
+      return
+    const mentions = valueMentions(raw.value)
+    brokenImages.value = missing.flatMap((src) => {
+      const mention = imageMention(mentions, src, startLine!)
+      return mention ? [{ src, line: mention.line, column: mention.column, length: mention.length }] : []
+    })
   }, 400)
 }
 
@@ -520,6 +534,14 @@ const previewIssues = computed(() => [
         marked: false,
       }]
     : []),
+  ...brokenImages.value.map(image => ({
+    line: image.line,
+    column: image.column,
+    length: image.length,
+    short: t('editor.diagnostics.imageMissingShort', { line: image.line }),
+    message: t('editor.diagnostics.imageMissing', { src: image.src }),
+    marked: false,
+  })),
   ...malformedIssues.value.map(mention => ({
     ...mention,
     short: t('editor.diagnostics.malformedAttributesShort', { line: mention.line, name: mention.name }),
