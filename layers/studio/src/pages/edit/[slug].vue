@@ -43,6 +43,7 @@ import { placeProblems, previewProblemMarks, setPreviewProblems } from '../../ut
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 import { wrappedLines } from '../../utils/editor-wrap'
+import { slideOverflow } from '../../utils/preview-overflow'
 import { requestErrorMessage } from '../../utils/request-error'
 import { saveTextFile } from '../../utils/save-file'
 
@@ -263,6 +264,7 @@ watch(previewFragments, (fragments) => {
 })
 
 function syncPreviewToCursor() {
+  checkOverflow()
   if (!followCursor.value || !previewRef.value)
     return
   const ranges = slideRanges(raw.value, parserId.value)
@@ -272,6 +274,23 @@ function syncPreviewToCursor() {
     previewRef.value.slide(h, v, fragmentAtLine(raw.value, ranges, cursorLine.value))
   else
     previewRef.value.slide(h, v)
+}
+
+// The slide on screen whose content reaches below the slide, by its first line:
+// the presentation and the PDF cut it there. Measured once the preview settles.
+const overflow = ref<{ line: number, slide: number } | null>(null)
+let overflowTimer: ReturnType<typeof setTimeout> | undefined
+function checkOverflow() {
+  clearTimeout(overflowTimer)
+  overflowTimer = setTimeout(() => {
+    const reveal = previewRef.value?.getInstance()
+    if (!reveal)
+      return
+    const { h, v } = reveal.getIndices()
+    const ranges = slideRanges(raw.value, parserId.value)
+    const index = ranges.findIndex(range => range.h === h && range.v === (v ?? 0))
+    overflow.value = index !== -1 && slideOverflow(reveal) > 4 ? { line: ranges[index]!.startLine, slide: index + 1 } : null
+  }, 400)
 }
 
 // Track the caret line; re-sync only when it crosses into another line (typing
@@ -491,6 +510,16 @@ const LAYOUT_MESSAGES: Record<LayoutIssueKind, string> = {
 // The frontmatter guide marks its own problems in the source pane; the list
 // shows them with the others.
 const previewIssues = computed(() => [
+  ...(overflow.value
+    ? [{
+        line: overflow.value.line,
+        column: 0,
+        length: raw.value.split('\n')[overflow.value.line - 1]?.length ?? 0,
+        short: t('editor.diagnostics.overflowShort', { slide: overflow.value.slide }),
+        message: t('editor.diagnostics.overflow', { slide: overflow.value.slide }),
+        marked: false,
+      }]
+    : []),
   ...malformedIssues.value.map(mention => ({
     ...mention,
     short: t('editor.diagnostics.malformedAttributesShort', { line: mention.line, name: mention.name }),

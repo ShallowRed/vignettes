@@ -158,6 +158,8 @@
       "refusedBindingShort": "Line {line}: attribute “{name}” refused",
       "refusedEmbed": "http:// address: the browser blocks this frame, image or video in the studio. Write the address with https://, or with http://localhost for a server on your computer.",
       "refusedEmbedShort": "Line {line}: http:// address blocked",
+      "overflow": "The content reaches below slide {slide}, and the presentation and the PDF cut it: shorten it, split it in two with ---, or give the media a smaller share.",
+      "overflowShort": "Slide {slide}: content cut at the bottom",
       "malformedAttributes": {
         "brace": "Add the {'}'} brace that closes the attributes of “{name}”.",
         "quote": "Add the \" quote that closes a value of “{name}”.",

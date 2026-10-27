@@ -158,6 +158,8 @@
       "refusedBindingShort": "Ligne {line} : attribut « {name} » refusé",
       "refusedEmbed": "Adresse en http:// : le navigateur bloque ce cadre, cette image ou cette vidéo dans le studio. Écrivez l'adresse en https://, ou en http://localhost pour un serveur de votre ordinateur.",
       "refusedEmbedShort": "Ligne {line} : adresse en http:// bloquée",
+      "overflow": "Le contenu dépasse le bas de la diapositive {slide}, et la présentation comme le PDF le coupent : raccourcissez-la, coupez-la en deux avec ---, ou réduisez la part du média.",
+      "overflowShort": "Diapositive {slide} : contenu coupé en bas",
       "malformedAttributes": {
         "brace": "Ajoutez l'accolade {'}'} qui ferme les attributs de « {name} ».",
         "quote": "Ajoutez le guillemet \" qui ferme une valeur de « {name} ».",
