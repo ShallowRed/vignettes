@@ -135,11 +135,10 @@
       "quoteValueShort": "Line {line}: value to put between quotes",
       "unclosed": "Open header: add a --- line above this heading to close it.",
       "unclosedShort": "Line {line}: header to close with ---",
-      "unknownKey": "Unknown key: check the spelling of “{key}” with Ctrl + Space.",
+      "unknownKey": "Unknown key: check the spelling of “{key}” in the suggestions ({keys}).",
       "expectedValue": "Expected value: {values}.",
-      "completionHint": "Ctrl + Space: available settings",
       "invalidYamlShort": "Line {line}: unreadable front matter",
-      "invalidValue": "Value refused: pick a value with Ctrl + Space.",
+      "invalidValue": "Value refused: pick a value in the suggestions ({keys}).",
       "invalidValueShort": "Line {line}: value of “{key}” refused",
       "expected": {
         "number": "Value refused: this key takes a number, such as 1280.",
@@ -246,6 +245,15 @@
     },
     "docsLink": "Documentation",
     "attributeDefault": "Default: {value}",
-    "componentAttributes": "Attributes: {names}"
+    "componentAttributes": "Attributes: {names}",
+    "hints": {
+      "settings": "{keys}: available settings",
+      "attributes": "{keys}: available attributes",
+      "values": "{keys}: possible values",
+      "insert": "Type / to insert a block"
+    },
+    "keys": {
+      "space": "Space"
+    }
   }
 }

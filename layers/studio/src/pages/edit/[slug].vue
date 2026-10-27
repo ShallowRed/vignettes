@@ -18,6 +18,7 @@ import type { Extension } from '@codemirror/state'
 import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutIssueKind, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
+import type { Translate } from '../../config/editor-reference'
 import type { Peer } from '../../utils/editor-peers'
 import type { LineProblem, Severity } from '../../utils/editor-problems'
 import { STATUS_CONFIG } from '#shared/presentations'
@@ -31,6 +32,7 @@ import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
 import Codemirror from 'vue-codemirror6'
 import { useAppSession } from '../../composables/useAppSession'
+import { useCompletionKeys } from '../../composables/useCompletionKeys'
 import { useDeckLinks } from '../../composables/useDeckLinks'
 import { useDocsAddress } from '../../composables/useDocsAddress'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
@@ -56,6 +58,10 @@ import { requestErrorMessage } from '../../utils/request-error'
 import { saveTextFile } from '../../utils/save-file'
 
 const { t, locale } = useI18n()
+const completionKeys = useCompletionKeys()
+// The messages of the source pane that name the shortcut of the suggestions read it from `keys`.
+const tWithKeys = ((key: string, named?: number | Record<string, unknown>) =>
+  typeof named === 'number' ? t(key, named) : t(key, { keys: completionKeys.value, ...named })) as Translate
 const docsUrl = useDocsAddress()
 
 definePageMeta({ layout: false })
@@ -516,7 +522,7 @@ const extensions = computed<Extension[]>(() => [
   highlightActiveLine(),
   ...deckStructure(t),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
-  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value, staleThemes: themeVersionGaps.value, docsUrl }, t),
+  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value, staleThemes: themeVersionGaps.value, docsUrl }, tWithKeys),
   deckHover({ lang: locale.value, t, docsUrl }),
   previewProblemMarks(t),
   cursorListener,
@@ -634,12 +640,6 @@ const previewIssues = computed(() => [
     severity: 'warning' as const,
     marked: false,
   })),
-  ...componentAttributeProblems.value.map(issue => ({
-    ...issue,
-    short: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}Short`, { line: issue.line, name: issue.name }),
-    message: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}`, { name: issue.name, component: issue.component }),
-    marked: false,
-  })),
   ...unclosedIssues.value.map(block => ({
     ...block,
     short: t('editor.diagnostics.unclosedBlockShort', { line: block.line, name: block.name, colons: block.colons }),
@@ -688,7 +688,7 @@ async function reparse() {
     unclosedIssues.value = unclosedBlocks(text)
     malformedIssues.value = malformedAttributeMentions(text)
     componentAttributeProblems.value = componentAttributeIssues(text)
-    frontmatterIssues.value = listedFrontmatterProblems(text, t, themeVersionGaps.value)
+    frontmatterIssues.value = listedFrontmatterProblems(text, tWithKeys, themeVersionGaps.value)
     parseFailed.value = false
     parsedText = text
     // Let Reveal register added/removed slides, then re-align to the caret so a

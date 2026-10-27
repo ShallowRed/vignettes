@@ -135,11 +135,10 @@
       "quoteValueShort": "Ligne {line} : valeur à mettre entre guillemets",
       "unclosed": "En-tête ouvert : ajoutez une ligne --- au-dessus de ce titre pour le fermer.",
       "unclosedShort": "Ligne {line} : en-tête à fermer par ---",
-      "unknownKey": "Clé inconnue : vérifiez l'orthographe de « {key} » avec Ctrl + Espace.",
+      "unknownKey": "Clé inconnue : vérifiez l'orthographe de « {key} » dans les propositions ({keys}).",
       "expectedValue": "Valeur attendue : {values}.",
-      "completionHint": "Ctrl + Espace : réglages disponibles",
       "invalidYamlShort": "Ligne {line} : en-tête illisible",
-      "invalidValue": "Valeur refusée : choisissez une valeur avec Ctrl + Espace.",
+      "invalidValue": "Valeur refusée : choisissez une valeur dans les propositions ({keys}).",
       "invalidValueShort": "Ligne {line} : valeur de « {key} » refusée",
       "expected": {
         "number": "Valeur refusée : cette clé prend un nombre, comme 1280.",
@@ -246,6 +245,15 @@
     },
     "docsLink": "Documentation",
     "attributeDefault": "Par défaut : {value}",
-    "componentAttributes": "Attributs : {names}"
+    "componentAttributes": "Attributs : {names}",
+    "hints": {
+      "settings": "{keys} : réglages disponibles",
+      "attributes": "{keys} : attributs disponibles",
+      "values": "{keys} : valeurs possibles",
+      "insert": "Tapez / pour insérer un bloc"
+    },
+    "keys": {
+      "space": "Espace"
+    }
   }
 }

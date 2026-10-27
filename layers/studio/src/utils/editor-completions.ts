@@ -1,10 +1,12 @@
-import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
-import type { Extension } from '@codemirror/state'
-import type { ComponentAttributeEntry, ReferenceEntry, Translate } from '../config/editor-reference'
-import { autocompletion, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
+import type { Completion, CompletionResult, CompletionSource } from '@codemirror/autocomplete'
+import type { EditorState, Extension } from '@codemirror/state'
+import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
+import type { ComponentAttributeEntry, FrontmatterKey, ReferenceEntry, Translate } from '../config/editor-reference'
+import { autocompletion, CompletionContext, completionStatus, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
+import { Decoration, keymap, ViewPlugin, WidgetType } from '@codemirror/view'
 import { componentKey, deckComponentNamed } from '@vignettes/core/deck'
 import { annotationEntries, componentAttributeEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
-import { frontmatterGuide } from './editor-frontmatter'
+import { emptyValueKey, frontmatterGuide, inFrontmatter as inFrontmatterLine } from './editor-frontmatter'
 import { referenceCard } from './editor-tooltip'
 
 /**
@@ -189,14 +191,135 @@ function slashSource(options: CompletionOptions, t: Translate) {
   }
 }
 
-/** The full autocompletion extension for the writer. */
+/** The 1-based line sits inside fenced code. */
+function inFence(state: EditorState, line: number): boolean {
+  let fenced = false
+  for (let n = 1; n < line; n++) {
+    if (/^\s*(?:```|~~~)/.test(state.doc.line(n).text))
+      fenced = !fenced
+  }
+  return fenced
+}
+
+/** Where the caret line shows a hint: suggestions the shortcut opens, the slash menu, or what a free value takes. */
+export type HintKind = 'settings' | 'attributes' | 'values' | 'insert' | 'free'
+
+export interface Hint {
+  kind: HintKind
+  /** The frontmatter key of a free value, whose description the hint shows. */
+  key?: FrontmatterKey
+}
+
+/** The completion sources the hint asks whether they have something to offer. */
+export interface HintSources {
+  frontmatter: CompletionSource
+  body: CompletionSource
+}
+
+function offers(source: CompletionSource, state: EditorState, pos: number) {
+  const result = source(new CompletionContext(state, pos, true))
+  return Boolean(result && !(result instanceof Promise) && result.options.length)
+}
+
+/**
+ * The hint of the caret: on an empty line of the frontmatter, after the colon
+ * of a key without a value, after the brace or a space in the attributes of a
+ * component or of `:layout`, between the empty quotes of an attribute with
+ * closed values, and on an empty line of the body outside code. Nothing while
+ * the suggestions are open.
+ */
+export function hintAt(state: EditorState, sources: HintSources): Hint | null {
+  const { head, empty } = state.selection.main
+  if (!empty || completionStatus(state))
+    return null
+  const line = state.doc.lineAt(head)
+  if (inFrontmatterLine(state, line.number)) {
+    if (!line.text.trim())
+      return { kind: 'settings' }
+    const key = emptyValueKey(state, head)
+    if (!key || (key.children && !key.values))
+      return null
+    return offers(sources.frontmatter, state, head) ? { kind: 'values' } : { kind: 'free', key }
+  }
+  if (inFence(state, line.number))
+    return null
+  if (!line.text.trim())
+    return { kind: 'insert' }
+  const before = line.text.slice(0, head - line.from)
+  const kind = /[{\s]$/.test(before) ? 'attributes' : before.endsWith('="') && line.text[head - line.from] === '"' ? 'values' : null
+  return kind && offers(sources.body, state, head) ? { kind } : null
+}
+
+class HintWidget extends WidgetType {
+  constructor(readonly text: string, readonly kind: HintKind) {
+    super()
+  }
+
+  override toDOM(view: EditorView) {
+    const hint = document.createElement('span')
+    hint.className = this.kind === 'free' ? 'cm-hint cm-hint--text' : 'cm-hint'
+    hint.textContent = this.text
+    if (this.kind === 'free')
+      return hint
+    // A click opens what the shortcut opens; the slash menu needs its slash.
+    hint.addEventListener('mousedown', (event) => {
+      event.preventDefault()
+      if (this.kind === 'insert') {
+        const at = view.state.selection.main.head
+        view.dispatch({ changes: { from: at, insert: '/' }, selection: { anchor: at + 1 } })
+      }
+      view.focus()
+      startCompletion(view)
+    })
+    return hint
+  }
+
+  override eq(other: HintWidget) {
+    return other.text === this.text && other.kind === this.kind
+  }
+}
+
+/**
+ * The hint at the end of the caret line. An empty value with closed values
+ * opens its list as soon as the author reaches it or empties it.
+ */
+function completionHint(sources: HintSources, t: Translate): Extension {
+  function decorate(view: EditorView, hint: Hint | null): DecorationSet {
+    if (!hint)
+      return Decoration.none
+    const text = hint.kind === 'free' ? t(hint.key!.descriptionKey) : t(`editor.hints.${hint.kind}`)
+    const widget = new HintWidget(text, hint.kind)
+    return Decoration.set([Decoration.widget({ widget, side: 1 }).range(view.state.doc.lineAt(view.state.selection.main.head).to)])
+  }
+
+  return ViewPlugin.fromClass(class {
+    decorations: DecorationSet
+    constructor(view: EditorView) {
+      this.decorations = decorate(view, view.hasFocus ? hintAt(view.state, sources) : null)
+    }
+
+    update(update: ViewUpdate) {
+      const hint = update.view.hasFocus ? hintAt(update.state, sources) : null
+      this.decorations = decorate(update.view, hint)
+      const moved = update.selectionSet || update.transactions.some(tr => tr.isUserEvent('input') || tr.isUserEvent('delete'))
+      if (hint?.kind === 'values' && moved)
+        setTimeout(() => startCompletion(update.view))
+    }
+  }, { decorations: plugin => plugin.decorations })
+}
+
+/** The full autocompletion extension for the writer, its shortcut and its hint. */
 export function deckCompletions(options: CompletionOptions, t: Translate): Extension {
   const frontmatter = frontmatterGuide({ ...options, t })
+  const sources = { frontmatter: frontmatter.source, body: bodySource(options, t) }
   return [
     autocompletion({
-      override: [frontmatter.source, slashSource(options, t), bodySource(options, t)],
+      override: [sources.frontmatter, slashSource(options, t), sources.body],
       icons: false,
     }),
+    // macOS keeps Ctrl-Space to switch the input source.
+    keymap.of([{ key: 'Mod-Shift-Space', run: startCompletion }]),
     frontmatter.extension,
+    completionHint(sources, t),
   ]
 }

@@ -402,7 +402,7 @@ export const EDITOR_SHORTCUTS: readonly ShortcutEntry[] = [
   { keys: ['meta', 'B'], descriptionKey: 'reference.shortcuts.bold' },
   { keys: ['meta', 'I'], descriptionKey: 'reference.shortcuts.italic' },
   { keys: ['meta', 'Z'], descriptionKey: 'reference.shortcuts.undo' },
-  { keys: ['ctrl', 'space'], descriptionKey: 'reference.shortcuts.openCompletion' },
+  { keys: ['meta', 'shift', 'space'], descriptionKey: 'reference.shortcuts.openCompletion' },
   { keys: ['tab'], descriptionKey: 'reference.shortcuts.indent' },
   { keys: ['alt', 'arrowup'], descriptionKey: 'reference.shortcuts.moveLine' },
   { keys: ['meta', 'shift', 'K'], descriptionKey: 'reference.shortcuts.deleteLine' },

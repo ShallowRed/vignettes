@@ -5,7 +5,7 @@ import type { FrontmatterKey, Translate } from '../config/editor-reference'
 import type { LineProblem, Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
-import { Decoration, hoverTooltip, ViewPlugin, WidgetType } from '@codemirror/view'
+import { Decoration, hoverTooltip, ViewPlugin } from '@codemirror/view'
 import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, isRefusedEmbedUrl, RevealConfigSchema } from '@vignettes/core/deck'
 import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
@@ -16,8 +16,8 @@ import { docsLink, referenceCard } from './editor-tooltip'
 /**
  * The guide to a deck's frontmatter in the source pane: completion of keys,
  * nested keys and closed values, a tooltip describing the key under the
- * pointer, marks on invalid YAML, unknown keys, values outside their set and
- * addresses the deck refuses, and a hint on an empty line of the block.
+ * pointer, and marks on invalid YAML, unknown keys, values outside their set
+ * and addresses the deck refuses.
  */
 
 export interface FrontmatterOptions {
@@ -45,7 +45,7 @@ export function frontmatterEnd(state: EditorState): number {
 }
 
 /** A block still being typed, with no closing fence yet, counts until the end. */
-function inFrontmatter(state: EditorState, line: number): boolean {
+export function inFrontmatter(state: EditorState, line: number): boolean {
   if (state.doc.line(1).text.trim() !== '---')
     return false
   const end = frontmatterEnd(state)
@@ -93,6 +93,15 @@ function siblingKeys(state: EditorState, line: number, indent: number): Set<stri
   return keys
 }
 
+/** The key whose value is empty at `pos`, the caret after its colon: `storybook:`, `theme: `. */
+export function emptyValueKey(state: EditorState, pos: number): FrontmatterKey | undefined {
+  const line = state.doc.lineAt(pos)
+  const match = KEY_LINE_RE.exec(line.text)
+  if (!match || match[3]!.trim() || pos < line.from + line.text.indexOf(':') + 1 || !inFrontmatter(state, line.number))
+    return undefined
+  return fieldsAt(state, line.number, match[1]!.length)?.fields.find(field => field.key === match[2])
+}
+
 function describe(field: FrontmatterKey, t: Translate): string {
   const description = t(field.descriptionKey)
   const value = field.defaultKey ? t(field.defaultKey) : field.default
@@ -110,15 +119,17 @@ function completionSource(options: FrontmatterOptions) {
       return null
     const before = line.text.slice(0, context.pos - line.from)
 
-    const valueMatch = /^(\s*)([\w.-]+):\s+(\S*)$/.exec(before)
+    // A value written right after the colon gets the space YAML needs.
+    const valueMatch = /^(\s*)([\w.-]+):(\s*)(\S*)$/.exec(before)
     if (valueMatch) {
-      const field = fieldsAt(state, line.number, valueMatch[1]!.length)?.fields.find(f => f.key === valueMatch[2])
-      const values = field?.key === 'project' && valueMatch[1] === '' ? options.projects : field?.values
+      const [, indent = '', key, space, typed = ''] = valueMatch
+      const field = fieldsAt(state, line.number, indent.length)?.fields.find(f => f.key === key)
+      const values = field?.key === 'project' && indent === '' ? options.projects : field?.values
       if (!values?.length)
         return null
       return {
-        from: context.pos - valueMatch[3]!.length,
-        options: values.map(value => ({ label: value, type: 'enum', detail: value === field?.default ? defaultLabel : undefined })),
+        from: context.pos - typed.length,
+        options: values.map(value => ({ label: value, apply: space ? value : ` ${value}`, type: 'enum', detail: value === field?.default ? defaultLabel : undefined })),
         validFor: /^\S*$/,
       }
     }
@@ -276,46 +287,23 @@ export function listedFrontmatterProblems(text: string, t: Translate, staleTheme
   })
 }
 
-// ── Hint ────────────────────────────────────────────────────────────────────
-
-class HintWidget extends WidgetType {
-  constructor(readonly text: string) {
-    super()
-  }
-
-  override toDOM() {
-    const hint = document.createElement('span')
-    hint.className = 'cm-fm-hint'
-    hint.textContent = this.text
-    return hint
-  }
-
-  override eq(other: HintWidget) {
-    return other.text === this.text
-  }
-}
+// ── Marks ───────────────────────────────────────────────────────────────────
 
 function checks(t: Translate, staleThemes: readonly string[]): Extension {
-  const hint = Decoration.widget({ widget: new HintWidget(t('editor.frontmatter.completionHint')), side: 1 })
-
-  function decorate(state: EditorState, focused: boolean): DecorationSet {
+  function decorate(state: EditorState): DecorationSet {
     const ranges: Range<Decoration>[] = frontmatterProblems(state, t, staleThemes).map(problem => problemMarks[problem.severity].range(problem.from, problem.to))
-    const { head, empty } = state.selection.main
-    const line = state.doc.lineAt(head)
-    if (focused && empty && !line.text.trim() && inFrontmatter(state, line.number))
-      ranges.push(hint.range(line.to))
     return Decoration.set(ranges, true)
   }
 
   return ViewPlugin.fromClass(class {
     decorations: DecorationSet
     constructor(view: EditorView) {
-      this.decorations = decorate(view.state, view.hasFocus)
+      this.decorations = decorate(view.state)
     }
 
     update(update: ViewUpdate) {
-      if (update.docChanged || update.selectionSet || update.focusChanged)
-        this.decorations = decorate(update.state, update.view.hasFocus)
+      if (update.docChanged)
+        this.decorations = decorate(update.state)
     }
   }, { decorations: plugin => plugin.decorations })
 }

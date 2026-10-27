@@ -10,7 +10,7 @@
       "layoutsIntro": "Réglages de {annotation} et leurs valeurs, que le bouton « Mise en page » de la barre d'outils écrit aussi :",
       "frontmatterHeading": "En-tête de la présentation",
       "shortcutsHeading": "Raccourcis",
-      "completionTriggers": "Tapez {components} ou {annotations}, ou appuyez sur Ctrl + Espace dans l'en-tête, pour voir les propositions.",
+      "completionTriggers": "Tapez {components} ou {annotations}, ou appuyez sur {keys}, pour voir les propositions.",
       "splitHeading": "Chaque titre ## commence une diapositive. Pour découper aux lignes ---, écrivez {other} dans l'en-tête.",
       "splitSeparator": "Chaque ligne --- commence une diapositive. Pour découper aux titres ##, écrivez {other} dans l'en-tête.",
       "docsTooltip": "Ouvrir la documentation",

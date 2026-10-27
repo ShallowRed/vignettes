@@ -1,7 +1,8 @@
 import { CompletionContext } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { describe, expect, it } from 'vitest'
-import { bodySource } from '../../layers/studio/src/utils/editor-completions'
+import { bodySource, hintAt } from '../../layers/studio/src/utils/editor-completions'
+import { frontmatterGuide } from '../../layers/studio/src/utils/editor-frontmatter'
 
 const t = ((key: string, named?: Record<string, unknown>) => named ? `${key} ${JSON.stringify(named)}` : key) as Parameters<typeof bodySource>[1]
 const source = bodySource({ lang: 'fr', docsUrl: () => undefined }, t)
@@ -23,5 +24,43 @@ describe('component attribute completion', () => {
     expect(complete(':::Columns{size="')?.options.map(option => option.label)).toEqual(['xs', 'sm', 'md', 'lg', 'xl'])
     expect(complete('::Fragments{:dim="')?.options.map(option => option.label)).toEqual(['true', 'false'])
     expect(complete('::Fragments{effect="')).toBeNull()
+  })
+})
+
+describe('completion hint', () => {
+  const sources = { frontmatter: frontmatterGuide({ lang: 'fr', t, docsUrl: () => undefined }).source, body: source }
+
+  // The hint with the caret at `|` in `doc`.
+  function hint(doc: string) {
+    const at = doc.indexOf('|')
+    return hintAt(EditorState.create({ doc: doc.replace('|', ''), selection: { anchor: at } }), sources)
+  }
+
+  it('shows where the suggestions or the slash menu have something to offer', () => {
+    expect(hint('---\ntitle: Deck\n|\n---\n')).toEqual({ kind: 'settings' })
+    expect(hint('---\nparser:|\n---\n')).toEqual({ kind: 'values' })
+    expect(hint('# Slide\n\n:::Columns{|}')).toEqual({ kind: 'attributes' })
+    expect(hint('# Slide\n\n:::Columns{size="|"}')).toEqual({ kind: 'values' })
+    expect(hint('# Slide\n\n|')).toEqual({ kind: 'insert' })
+  })
+
+  it('describes a free value of the frontmatter', () => {
+    expect(hint('---\nstorybook: |\n---\n')).toMatchObject({ kind: 'free', key: { key: 'storybook' } })
+    expect(hint('---\nreveal:|\n---\n')).toBeNull()
+  })
+
+  it('stays quiet in a word, in code and where nothing is offered', () => {
+    expect(hint(':::Columns{si|')).toBeNull()
+    expect(hint('::Fragments{effect="|"}')).toBeNull()
+    expect(hint('```md\n|\n```')).toBeNull()
+    expect(hint('Some text|')).toBeNull()
+  })
+})
+
+describe('frontmatter value completion', () => {
+  it('offers the values of an empty key, with the space YAML needs after the colon', () => {
+    const doc = '---\nparser:'
+    const result = frontmatterGuide({ lang: 'fr', t, docsUrl: () => undefined }).source(new CompletionContext(EditorState.create({ doc }), doc.length, true))
+    expect(result?.options.map(option => [option.label, option.apply])).toEqual([['separator', ' separator'], ['heading', ' heading']])
   })
 })

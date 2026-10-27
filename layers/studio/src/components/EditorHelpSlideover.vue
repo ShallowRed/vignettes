@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCompletionKeys } from '../composables/useCompletionKeys'
 import { useDocsAddress } from '../composables/useDocsAddress'
 import {
   DOCS_SECTIONS,
@@ -26,6 +27,7 @@ const emit = defineEmits<{ insert: [snippet: string] }>()
 const open = defineModel<boolean>('open', { required: true })
 
 const { t, locale } = useI18n()
+const completionKeys = useCompletionKeys()
 
 const docsUrl = useDocsAddress()
 const docsHome = docsUrl(DOCS_SECTIONS.home)
@@ -233,7 +235,7 @@ const shortcuts = computed(() => EDITOR_SHORTCUTS.map(entry => ({
               <UKbd
                 v-for="key in entry.keys"
                 :key="key"
-                :value="key"
+                :value="key === 'space' ? t('editor.keys.space') : key"
               />
               <span class="text-muted">{{ t(entry.descriptionKey) }}</span>
             </li>
@@ -249,6 +251,9 @@ const shortcuts = computed(() => EDITOR_SHORTCUTS.map(entry => ({
             </template>
             <template #annotations>
               <code class="font-mono">:</code>
+            </template>
+            <template #keys>
+              {{ completionKeys }}
             </template>
           </i18n-t>
         </section>
