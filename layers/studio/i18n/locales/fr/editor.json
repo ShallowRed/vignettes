@@ -229,7 +229,8 @@
       },
       "legacy": "Format de :layout à convertir en attributs.",
       "modernize": "Convertir",
-      "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story."
+      "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story.",
+      "outside": "Placez le curseur dans une diapositive pour régler sa mise en page."
     }
   }
 }

@@ -1,9 +1,10 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the snippet placeholder syntax */
-import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, registerDeckComponents, resetDeckComponents, RevealConfigSchema } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, registerDeckComponents, resetDeckComponents, RevealConfigSchema, unclosedBlocks } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, describe, expect, it } from 'vitest'
 import { annotationEntries, componentEntries, FRONTMATTER_KEYS, SLIDE_TEMPLATES } from '../../layers/studio/src/config/editor-reference'
+import { slideTemplateFor } from '../../layers/studio/src/utils/editor-commands'
 
 afterEach(() => resetDeckComponents())
 
@@ -68,5 +69,37 @@ describe('authoring texts of the packages', () => {
       expect(Object.keys(entry.snippet ?? {}).sort(), JSON.stringify(entry.snippet)).toEqual(['en', 'fr'])
       expect(Object.keys(entry.description ?? {}).sort(), JSON.stringify(entry.description)).toEqual(['en', 'fr'])
     }
+  })
+})
+
+describe('snippets', () => {
+  it('write numbers as text: a numeric `${…}` is an empty tab stop', () => {
+    registerDeckComponents(SCHEMA_COMPONENTS)
+    registerDeckComponents(STORYBOOK_COMPONENTS)
+    const snippets = [
+      ...componentEntries('fr'),
+      ...annotationEntries('fr'),
+      ...SLIDE_TEMPLATES.map(template => ({ label: template.labelKey, snippet: template.snippet.fr! })),
+      ...FRONTMATTER_KEYS.filter(key => key.snippet).map(key => ({ label: key.key, snippet: typeof key.snippet === 'string' ? key.snippet : key.snippet.fr! })),
+    ]
+    expect(snippets.filter(entry => /\$\{\d+\}/.test(entry.snippet)).map(entry => entry.label)).toEqual([])
+  })
+
+  it('close each block a slide template opens', () => {
+    for (const template of SLIDE_TEMPLATES)
+      expect(unclosedBlocks(template.snippet.fr!), template.labelKey).toEqual([])
+  })
+})
+
+describe('slideTemplateFor', () => {
+  const template = '---\n\n## ${Titre}\n\nTexte.'
+
+  it('drops the leading break when headings split the deck', () => {
+    expect(slideTemplateFor(template, 'heading')).toBe('## ${Titre}\n\nTexte.')
+  })
+
+  it('writes a content slide with ### when breaks split the deck, and keeps a section', () => {
+    expect(slideTemplateFor(template, 'separator')).toBe('---\n\n### ${Titre}\n\nTexte.')
+    expect(slideTemplateFor(template, 'separator', true)).toBe(template)
   })
 })

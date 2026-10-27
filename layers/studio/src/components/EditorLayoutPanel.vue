@@ -45,8 +45,10 @@ function write(next: (attributes: Record<string, unknown>) => Record<string, unk
   const view = props.view
   if (!view)
     return
-  const fresh = slideLayoutAt(view.state).attributes
-  view.dispatch(slideLayoutChange(view.state, next(fresh)))
+  const at = slideLayoutAt(view.state)
+  if (at.outside)
+    return
+  view.dispatch(slideLayoutChange(view.state, next(at.attributes)))
   read()
 }
 
@@ -146,131 +148,139 @@ const fields = computed(() => placement.value === 'none'
         v-if="current"
         class="w-88 max-w-[calc(100vw-1rem)] max-h-(--reka-popover-content-available-height) overflow-y-auto p-3 space-y-3 text-sm"
       >
-        <div
-          v-if="current.legacy"
-          class="flex items-center gap-2 rounded-md bg-elevated p-2 text-xs text-muted"
-        >
-          <span class="flex-1">{{ t('editor.layout.legacy') }}</span>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="outline"
-            :label="t('editor.layout.modernize')"
-            @click="write(fresh => fresh)"
-          />
-        </div>
-
-        <section>
-          <h3 class="text-xs font-medium text-muted mb-1.5">
-            {{ t('editor.layout.placement') }}
-          </h3>
-          <div class="grid grid-cols-3 gap-1">
-            <UButton
-              v-for="at in PLACEMENTS"
-              :key="at"
-              color="neutral"
-              :variant="placement === at ? 'soft' : 'ghost'"
-              size="xs"
-              class="flex-col gap-1"
-              :class="placement === at ? 'text-highlighted' : btnHover"
-              :aria-pressed="placement === at"
-              @click="write(fresh => layoutForPlacement(fresh, at))"
-            >
-              <svg
-                viewBox="0 0 48 32"
-                class="w-12 h-8"
-                aria-hidden="true"
-              >
-                <rect
-                  x="0.5"
-                  y="0.5"
-                  width="47"
-                  height="31"
-                  rx="2"
-                  class="fill-(--ui-bg) stroke-(--ui-border-accented)"
-                />
-                <rect
-                  v-if="zones(at).media"
-                  v-bind="zones(at).media"
-                  rx="1.5"
-                  class="fill-primary/30"
-                />
-                <rect
-                  v-if="at === 'behind'"
-                  :x="zones(at).text.x - 2"
-                  :y="zones(at).text.y - 3"
-                  :width="zones(at).text.width + 4"
-                  height="11"
-                  rx="1.5"
-                  class="fill-(--ui-bg)"
-                />
-                <rect
-                  v-for="line in 3"
-                  :key="line"
-                  :x="zones(at).text.x"
-                  :y="zones(at).text.y + (line - 1) * 3"
-                  :width="line === 1 ? zones(at).text.width * 0.7 : zones(at).text.width"
-                  height="1.6"
-                  rx="0.8"
-                  class="fill-(--ui-text-muted)"
-                />
-              </svg>
-              <span>{{ t(`editor.layout.placements.${at}`) }}</span>
-            </UButton>
-          </div>
-        </section>
-
-        <UFormField
-          v-for="field in fields"
-          :key="field.name"
-          :label="field.label"
-          size="sm"
-        >
-          <UInput
-            :model-value="(attributes[field.name] as string) ?? ''"
-            class="w-full"
-            :placeholder="field.placeholder"
-            @update:model-value="set(field.name, $event)"
-          />
-        </UFormField>
-
         <p
-          v-if="placement !== 'none' && !attributes.src && !attributes.story"
-          class="text-xs text-warning"
+          v-if="current.outside"
+          class="text-muted"
         >
-          {{ t('editor.layout.missingSource') }}
+          {{ t('editor.layout.outside') }}
         </p>
-
-        <section
-          v-for="shown in shownRows"
-          :key="shown.row.name"
-        >
-          <h3 class="text-xs font-medium text-muted mb-1.5">
-            {{ shown.title }}
-          </h3>
-          <div class="flex gap-0.5 rounded-lg bg-elevated p-0.5">
+        <template v-else>
+          <div
+            v-if="current.legacy"
+            class="flex items-center gap-2 rounded-md bg-elevated p-2 text-xs text-muted"
+          >
+            <span class="flex-1">{{ t('editor.layout.legacy') }}</span>
             <UButton
-              v-for="choice in shown.row.choices"
-              :key="choice.value"
-              color="neutral"
-              variant="ghost"
               size="xs"
-              class="flex-1 justify-center"
-              :class="choice.active ? btnActive : btnHover"
-              :aria-pressed="choice.active"
-              :label="choice.label"
-              @click="set(shown.row.name, choice.value)"
+              color="neutral"
+              variant="outline"
+              :label="t('editor.layout.modernize')"
+              @click="write(fresh => fresh)"
             />
           </div>
-        </section>
 
-        <UCheckbox
-          v-if="placement !== 'none' && placement !== 'behind'"
-          :model-value="Boolean(attributes.lightbox)"
-          :label="t('editor.layout.lightbox')"
-          size="sm"
-          @update:model-value="set('lightbox', $event === true)"
-        />
+          <section>
+            <h3 class="text-xs font-medium text-muted mb-1.5">
+              {{ t('editor.layout.placement') }}
+            </h3>
+            <div class="grid grid-cols-3 gap-1">
+              <UButton
+                v-for="at in PLACEMENTS"
+                :key="at"
+                color="neutral"
+                :variant="placement === at ? 'soft' : 'ghost'"
+                size="xs"
+                class="flex-col gap-1"
+                :class="placement === at ? 'text-highlighted' : btnHover"
+                :aria-pressed="placement === at"
+                @click="write(fresh => layoutForPlacement(fresh, at))"
+              >
+                <svg
+                  viewBox="0 0 48 32"
+                  class="w-12 h-8"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="0.5"
+                    y="0.5"
+                    width="47"
+                    height="31"
+                    rx="2"
+                    class="fill-(--ui-bg) stroke-(--ui-border-accented)"
+                  />
+                  <rect
+                    v-if="zones(at).media"
+                    v-bind="zones(at).media"
+                    rx="1.5"
+                    class="fill-primary/30"
+                  />
+                  <rect
+                    v-if="at === 'behind'"
+                    :x="zones(at).text.x - 2"
+                    :y="zones(at).text.y - 3"
+                    :width="zones(at).text.width + 4"
+                    height="11"
+                    rx="1.5"
+                    class="fill-(--ui-bg)"
+                  />
+                  <rect
+                    v-for="line in 3"
+                    :key="line"
+                    :x="zones(at).text.x"
+                    :y="zones(at).text.y + (line - 1) * 3"
+                    :width="line === 1 ? zones(at).text.width * 0.7 : zones(at).text.width"
+                    height="1.6"
+                    rx="0.8"
+                    class="fill-(--ui-text-muted)"
+                  />
+                </svg>
+                <span>{{ t(`editor.layout.placements.${at}`) }}</span>
+              </UButton>
+            </div>
+          </section>
+
+          <UFormField
+            v-for="field in fields"
+            :key="field.name"
+            :label="field.label"
+            size="sm"
+          >
+            <UInput
+              :model-value="(attributes[field.name] as string) ?? ''"
+              class="w-full"
+              :placeholder="field.placeholder"
+              @update:model-value="set(field.name, $event)"
+            />
+          </UFormField>
+
+          <p
+            v-if="placement !== 'none' && !attributes.src && !attributes.story"
+            class="text-xs text-warning"
+          >
+            {{ t('editor.layout.missingSource') }}
+          </p>
+
+          <section
+            v-for="shown in shownRows"
+            :key="shown.row.name"
+          >
+            <h3 class="text-xs font-medium text-muted mb-1.5">
+              {{ shown.title }}
+            </h3>
+            <div class="flex gap-0.5 rounded-lg bg-elevated p-0.5">
+              <UButton
+                v-for="choice in shown.row.choices"
+                :key="choice.value"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                class="flex-1 justify-center"
+                :class="choice.active ? btnActive : btnHover"
+                :aria-pressed="choice.active"
+                :label="choice.label"
+                @click="set(shown.row.name, choice.value)"
+              />
+            </div>
+          </section>
+
+          <UCheckbox
+            v-if="placement !== 'none' && placement !== 'behind'"
+            :model-value="Boolean(attributes.lightbox)"
+            :label="t('editor.layout.lightbox')"
+            size="sm"
+            @update:model-value="set('lightbox', $event === true)"
+          />
+        </template>
       </div>
     </template>
   </UPopover>

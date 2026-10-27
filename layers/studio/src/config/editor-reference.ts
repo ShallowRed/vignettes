@@ -33,6 +33,8 @@ export interface SlideTemplate {
   labelKey: string
   descriptionKey: string
   snippet: LocalizedText
+  /** A section slide, whose `##` heading stays in both parsers. */
+  section?: boolean
 }
 
 export interface FrontmatterKey {
@@ -54,8 +56,8 @@ const BOOLEAN = ['true', 'false'] as const
 
 /** Reveal.js options a deck commonly sets, nested under `reveal:`. */
 const REVEAL_KEYS: readonly FrontmatterKey[] = [
-  { key: 'width', descriptionKey: 'reference.frontmatter.reveal.width', default: '960', snippet: 'width: ${1280}' },
-  { key: 'height', descriptionKey: 'reference.frontmatter.reveal.height', default: '700', snippet: 'height: ${720}' },
+  { key: 'width', descriptionKey: 'reference.frontmatter.reveal.width', default: '960', snippet: 'width: 1280' },
+  { key: 'height', descriptionKey: 'reference.frontmatter.reveal.height', default: '700', snippet: 'height: 720' },
   { key: 'margin', descriptionKey: 'reference.frontmatter.reveal.margin', default: '0.1', snippet: 'margin: ${0.04}' },
   { key: 'slideNumber', descriptionKey: 'reference.frontmatter.reveal.slideNumber', values: ['"c/t"', '"h.v"', '"c"', 'true', 'false'], default: '"c/t"', snippet: 'slideNumber: ${false}' },
   { key: 'transition', descriptionKey: 'reference.frontmatter.reveal.transition', values: ['slide', 'fade', 'none', 'convex', 'concave', 'zoom'], default: 'slide', snippet: 'transition: ${fade}' },
@@ -65,9 +67,9 @@ const REVEAL_KEYS: readonly FrontmatterKey[] = [
   { key: 'fragmentInURL', descriptionKey: 'reference.frontmatter.reveal.fragmentInURL', values: BOOLEAN, default: 'false', snippet: 'fragmentInURL: ${true}' },
   { key: 'loop', descriptionKey: 'reference.frontmatter.reveal.loop', values: BOOLEAN, default: 'false', snippet: 'loop: ${true}' },
   { key: 'navigationMode', descriptionKey: 'reference.frontmatter.reveal.navigationMode', values: ['default', 'linear', 'grid'], default: 'default', snippet: 'navigationMode: ${linear}' },
-  { key: 'autoSlide', descriptionKey: 'reference.frontmatter.reveal.autoSlide', default: '0', snippet: 'autoSlide: ${5000}' },
+  { key: 'autoSlide', descriptionKey: 'reference.frontmatter.reveal.autoSlide', default: '0', snippet: 'autoSlide: 5000' },
   { key: 'showNotes', descriptionKey: 'reference.frontmatter.reveal.showNotes', values: BOOLEAN, default: 'false', snippet: 'showNotes: ${true}' },
-  { key: 'pdfMaxPagesPerSlide', descriptionKey: 'reference.frontmatter.reveal.pdfMaxPagesPerSlide', snippet: 'pdfMaxPagesPerSlide: ${1}' },
+  { key: 'pdfMaxPagesPerSlide', descriptionKey: 'reference.frontmatter.reveal.pdfMaxPagesPerSlide', snippet: 'pdfMaxPagesPerSlide: 1' },
   { key: 'pdfSeparateFragments', descriptionKey: 'reference.frontmatter.reveal.pdfSeparateFragments', values: BOOLEAN, default: 'true', snippet: 'pdfSeparateFragments: ${false}' },
 ]
 
@@ -92,8 +94,8 @@ const CODE_KEYS: readonly FrontmatterKey[] = [
   { key: 'function', descriptionKey: 'reference.frontmatter.code.function', snippet: 'function: "${#A1A1F8}"' },
   { key: 'comment', descriptionKey: 'reference.frontmatter.code.comment', snippet: 'comment: "${#A6A6A6}"' },
   { key: 'punctuation', descriptionKey: 'reference.frontmatter.code.punctuation', snippet: 'punctuation: "${#C1C1C1}"' },
-  { key: 'keyWeight', descriptionKey: 'reference.frontmatter.code.keyWeight', values: ['400', '500', '600', '700'], snippet: 'keyWeight: ${700}' },
-  { key: 'size', descriptionKey: 'reference.frontmatter.code.size', snippet: 'size: ${13}' },
+  { key: 'keyWeight', descriptionKey: 'reference.frontmatter.code.keyWeight', values: ['400', '500', '600', '700'], snippet: 'keyWeight: 700' },
+  { key: 'size', descriptionKey: 'reference.frontmatter.code.size', snippet: 'size: 13' },
   { key: 'dim', descriptionKey: 'reference.frontmatter.code.dim', default: '0.4', snippet: 'dim: ${0.72}' },
   { key: 'activeBackground', descriptionKey: 'reference.frontmatter.code.activeBackground', snippet: 'activeBackground: "${#E3E3FD}"' },
   { key: 'activeBar', descriptionKey: 'reference.frontmatter.code.activeBar', snippet: 'activeBar: "${#000091}"' },
@@ -110,7 +112,7 @@ export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'storybook', descriptionKey: 'reference.frontmatter.root.storybook', snippet: 'storybook: ${https://storybook.example.com}' },
   { key: 'backgrounds', descriptionKey: 'reference.frontmatter.root.backgrounds', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
   { key: 'code', descriptionKey: 'reference.frontmatter.root.code', values: Object.keys(CODE_THEMES), snippet: 'code: ${sombre}', children: CODE_KEYS },
-  { key: 'reveal', descriptionKey: 'reference.frontmatter.root.reveal', snippet: 'reveal:\n  width: ${1280}\n  height: ${720}', children: REVEAL_KEYS },
+  { key: 'reveal', descriptionKey: 'reference.frontmatter.root.reveal', snippet: 'reveal:\n  width: 1280\n  height: 720', children: REVEAL_KEYS },
   { key: 'accessPassword', descriptionKey: 'reference.frontmatter.root.accessPassword', snippet: { fr: 'accessPassword: ${motdepasse}', en: 'accessPassword: ${password}' } },
 ]
 
@@ -157,23 +159,24 @@ export function annotationEntries(lang: string): ReferenceEntry[] {
 
 /**
  * Whole-slide starters with example texts, inserted from the toolbar
- * "Modèles" menu. Each leads with `---`, which opens a slide in both parsers.
+ * "Modèles" menu. Each leads with `---` and a `##` heading, which
+ * `slideTemplateFor` fits to the parser of the deck.
  */
 export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.twoColumns.label',
     descriptionKey: 'reference.templates.twoColumns.description',
     snippet: {
-      fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Ce qui change}\n${Les démarches se font en ligne, sans pièce justificative.}\n::\n::column\n### ${Ce qui reste}\n${Le guichet reçoit toujours sur rendez-vous.}\n::\n:::',
-      en: '---\n\n## ${Slide title}\n\n:::Columns\n::column\n### ${What changes}\n${The procedures move online, with no supporting document.}\n::\n::column\n### ${What stays}\n${The front desk still sees people by appointment.}\n::\n:::',
+      fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::Column\n#### ${Ce qui change}\n${Les démarches se font en ligne, sans pièce justificative.}\n::\n::Column\n#### ${Ce qui reste}\n${Le guichet reçoit toujours sur rendez-vous.}\n::\n:::',
+      en: '---\n\n## ${Slide title}\n\n:::Columns\n::Column\n#### ${What changes}\n${The procedures move online, with no supporting document.}\n::\n::Column\n#### ${What stays}\n${The front desk still sees people by appointment.}\n::\n:::',
     },
   },
   {
     labelKey: 'reference.templates.threeColumns.label',
     descriptionKey: 'reference.templates.threeColumns.description',
     snippet: {
-      fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::column\n### ${Découvrir}\n${Un premier rendez-vous pour comprendre le besoin.}\n::\n::column\n### ${Concevoir}\n${Des maquettes testées avec les usagers.}\n::\n::column\n### ${Livrer}\n${Une mise en ligne par étapes.}\n::\n:::',
-      en: '---\n\n## ${Slide title}\n\n:::Columns\n::column\n### ${Discover}\n${A first meeting to understand the need.}\n::\n::column\n### ${Design}\n${Mockups tested with users.}\n::\n::column\n### ${Deliver}\n${A release in stages.}\n::\n:::',
+      fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::Column\n#### ${Découvrir}\n${Un premier rendez-vous pour comprendre le besoin.}\n::\n::Column\n#### ${Concevoir}\n${Des maquettes testées avec les usagers.}\n::\n::Column\n#### ${Livrer}\n${Une mise en ligne par étapes.}\n::\n:::',
+      en: '---\n\n## ${Slide title}\n\n:::Columns\n::Column\n#### ${Discover}\n${A first meeting to understand the need.}\n::\n::Column\n#### ${Design}\n${Mockups tested with users.}\n::\n::Column\n#### ${Deliver}\n${A release in stages.}\n::\n:::',
     },
   },
   {
@@ -186,6 +189,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   },
   {
     labelKey: 'reference.templates.section.label',
+    section: true,
     descriptionKey: 'reference.templates.section.description',
     snippet: {
       fr: '---\n\n## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
@@ -204,8 +208,8 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     labelKey: 'reference.templates.comparison.label',
     descriptionKey: 'reference.templates.comparison.description',
     snippet: {
-      fr: '---\n\n## ${Titre de la comparaison}\n\n:::Columns\n::column\n### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::column\n### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
-      en: '---\n\n## ${Comparison title}\n\n:::Columns\n::column\n### ${Before}\n- ${Point one}\n- ${Point two}\n::\n::column\n### ${After}\n- ${Point one}\n- ${Point two}\n::\n:::',
+      fr: '---\n\n## ${Titre de la comparaison}\n\n:::Columns\n::Column\n#### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::Column\n#### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
+      en: '---\n\n## ${Comparison title}\n\n:::Columns\n::Column\n#### ${Before}\n- ${Point one}\n- ${Point two}\n::\n::Column\n#### ${After}\n- ${Point one}\n- ${Point two}\n::\n:::',
     },
   },
   {
@@ -228,16 +232,16 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     labelKey: 'reference.templates.fullScreenImage.label',
     descriptionKey: 'reference.templates.fullScreenImage.description',
     snippet: {
-      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${40%}"}',
-      en: '---\n\n## ${Slide title}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${40%}"}',
+      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${50%}"}',
+      en: '---\n\n## ${Slide title}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${50%}"}',
     },
   },
   {
     labelKey: 'reference.templates.storybookGallery.label',
     descriptionKey: 'reference.templates.storybookGallery.description',
     snippet: {
-      fr: '---\n\n## ${Titre de la démo}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n:::',
-      en: '---\n\n## ${Demo title}\n\n:::Screens{cols="${2}"}\n::StoryFrame{story="${story-id}" label="${Screen 1}" lightbox}\n::StoryFrame{story="${story-id}" label="${Screen 2}" lightbox}\n:::',
+      fr: '---\n\n## ${Titre de la démo}\n\n:::Screens{cols="2"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n::\n:::',
+      en: '---\n\n## ${Demo title}\n\n:::Screens{cols="2"}\n::StoryFrame{story="${story-id}" label="${Screen 1}" lightbox}\n::\n::StoryFrame{story="${story-id}" label="${Screen 2}" lightbox}\n::\n:::',
     },
   },
 ] as const

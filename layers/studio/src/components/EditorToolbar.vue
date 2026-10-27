@@ -3,7 +3,7 @@ import type { EditorView } from '@codemirror/view'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
 import { annotationEntries, componentEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
-import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
+import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, slideTemplateFor, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 import { formatJson, jsonFormatNotice } from '../utils/editor-json'
 import { btnHover } from '../utils/toolbar-buttons'
 
@@ -12,6 +12,8 @@ import { btnHover } from '../utils/toolbar-buttons'
 const props = defineProps<{
   view?: EditorView
   disabled?: boolean
+  /** How the deck splits its slides, which the slide templates follow. */
+  parser?: 'heading' | 'separator'
 }>()
 
 const emit = defineEmits<{ uploadImages: [files: File[]] }>()
@@ -19,6 +21,23 @@ const emit = defineEmits<{ uploadImages: [files: File[]] }>()
 function run(action: (view: EditorView) => void) {
   if (props.view)
     action(props.view)
+}
+
+// A menu gives the focus back to its button when it closes; after an item
+// that writes into the text, the editor takes it back, so the author types at once.
+let wroteFromMenu = false
+function writeFromMenu(action: (view: EditorView) => void) {
+  if (!props.view)
+    return
+  action(props.view)
+  wroteFromMenu = true
+}
+function keepEditorFocus(event: Event) {
+  if (!wroteFromMenu)
+    return
+  wroteFromMenu = false
+  event.preventDefault()
+  props.view?.focus()
 }
 
 const toast = useToast()
@@ -49,12 +68,12 @@ const insertItems = computed<DropdownMenuItem[][]>(() => [
   componentEntries(locale.value).map(entry => ({
     label: entry.label,
     description: entry.description,
-    onSelect: () => run(view => insertSnippet(view, entry.snippet)),
+    onSelect: () => writeFromMenu(view => insertSnippet(view, entry.snippet)),
   })),
   annotationEntries(locale.value).map(entry => ({
     label: entry.label,
     description: entry.description,
-    onSelect: () => run(view => insertSnippet(view, entry.snippet)),
+    onSelect: () => writeFromMenu(view => insertSnippet(view, entry.snippet)),
   })),
 ])
 
@@ -62,13 +81,13 @@ const templateItems = computed<DropdownMenuItem[]>(() =>
   SLIDE_TEMPLATES.map(entry => ({
     label: t(entry.labelKey),
     description: t(entry.descriptionKey),
-    onSelect: () => run(view => insertSlideTemplate(view, inLanguage(entry.snippet, locale.value))),
+    onSelect: () => writeFromMenu(view => insertSlideTemplate(view, slideTemplateFor(inLanguage(entry.snippet, locale.value), props.parser ?? 'separator', entry.section))),
   })))
 
 const headingItems = computed<DropdownMenuItem[]>(() => [1, 2, 3].map(level => ({
   label: t('editor.toolbar.heading', { level }),
   icon: `i-lucide-heading-${level}`,
-  onSelect: () => run(view => setHeading(view, level)),
+  onSelect: () => writeFromMenu(view => setHeading(view, level)),
 })))
 
 const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action: (view: EditorView) => void }[][]>(() => [
@@ -92,7 +111,10 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
 
 <template>
   <div class="flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-default">
-    <UDropdownMenu :items="headingItems">
+    <UDropdownMenu
+      :items="headingItems"
+      :content="{ onCloseAutoFocus: keepEditorFocus }"
+    >
       <UButton
         icon="i-lucide-heading"
         color="neutral"
@@ -146,7 +168,7 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
 
       <UDropdownMenu
         :items="templateItems"
-        :content="{ align: 'start' }"
+        :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
         :ui="{ content: 'w-80 max-h-96 overflow-y-auto', itemDescription: 'whitespace-normal' }"
       >
         <UButton
@@ -176,7 +198,7 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
 
       <UDropdownMenu
         :items="insertItems"
-        :content="{ align: 'start' }"
+        :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
         :ui="{ content: 'w-80 max-h-96 overflow-y-auto', itemDescription: 'whitespace-normal' }"
       >
         <UButton

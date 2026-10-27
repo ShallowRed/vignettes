@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 defineSlots<{
-  /** `::column` blocks, or markdown that splits in two at its first horizontal rule, or else before each `###` or `####` heading. */
+  /** `::Column` blocks, or markdown that splits in two at its first horizontal rule, or else before each `###` or `####` heading. */
   default?: () => unknown
 }>()
 

@@ -1,6 +1,7 @@
 import type { EditorState, TransactionSpec } from '@codemirror/state'
 import type { LayoutAnnotation } from '@vignettes/core/deck'
 import { layoutAnnotations, layoutAnnotationValues, layoutSource, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
+import { frontmatterEnd } from './editor-frontmatter'
 import { HEADING_RE, slideContentAt } from './editor-slides'
 
 /**
@@ -19,11 +20,14 @@ export interface SlideLayoutAtCursor {
   /** 1-based lines of the slide. */
   startLine: number
   endLine: number
+  /** The cursor sits in the frontmatter, out of any slide. */
+  outside: boolean
 }
 
 /** Reads the slide under the cursor; the state carries `deckStructure` of `editor-slides`. */
 export function slideLayoutAt(state: EditorState): SlideLayoutAtCursor {
-  const block = slideContentAt(state, state.doc.lineAt(state.selection.main.head).number)
+  const line = state.doc.lineAt(state.selection.main.head).number
+  const block = slideContentAt(state, line)
   const startLine = block?.from ?? 1
   const endLine = block?.to ?? state.doc.lines
   const annotation = layoutAnnotations(state.doc.toString()).find(found => found.line >= startLine && found.line <= endLine)
@@ -34,6 +38,7 @@ export function slideLayoutAt(state: EditorState): SlideLayoutAtCursor {
     legacy: readLayout(written).issues.some(issue => issue.kind === 'legacy'),
     startLine,
     endLine,
+    outside: line <= frontmatterEnd(state),
   }
 }
 

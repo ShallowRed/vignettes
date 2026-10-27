@@ -229,7 +229,8 @@
       },
       "legacy": ":layout format to convert into attributes.",
       "modernize": "Convert",
-      "missingSource": "Enter the address of an image or a page, or the id of a story."
+      "missingSource": "Enter the address of an image or a page, or the id of a story.",
+      "outside": "Place the cursor in a slide to set its layout."
     }
   }
 }

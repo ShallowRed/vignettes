@@ -799,8 +799,8 @@ const helpOpen = ref(false)
 const activeParser = computed<'heading' | 'separator'>(() =>
   preview.value?.metadata?.parser === 'heading' ? 'heading' : 'separator')
 
+// The help stays open beside the text, for the next insertion.
 function insertFromHelp(snippet: string) {
-  helpOpen.value = false
   if (editorView.value)
     insertSnippet(editorView.value, snippet)
 }
@@ -1099,6 +1099,7 @@ async function onMetaSaved() {
       >
         <EditorToolbar
           :view="editorView"
+          :parser="activeParser"
           :disabled="!writable"
           @upload-images="uploadChosenImages"
         >

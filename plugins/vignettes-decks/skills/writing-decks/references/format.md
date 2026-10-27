@@ -63,7 +63,7 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 - `Image`: Image with framing (attributes fit, position, rounded, shadow), also written `deck-image`
 - `Mermaid`: Mermaid diagram (flowchart, sequence…)
 - `IconInline`: Inline icon (Remix / Iconify), also written `i`
-- `Columns`: Side-by-side columns (::column, attribute span for the widths), also written `TwoColumns`, `ThreeColumns`
+- `Columns`: Side-by-side columns (::Column, attribute span for the widths), also written `TwoColumns`, `ThreeColumns`
 - `Column`, also written `column`
 - `Highlight`: Highlight box (attributes size sm or md, variant)
 - `Notes`: Speaker notes, shown in the speaker view (S key), also written `notes`

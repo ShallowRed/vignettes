@@ -41,6 +41,8 @@ const shortcuts = computed(() => EDITOR_SHORTCUTS.map(entry => ({
 <template>
   <USlideover
     v-model:open="open"
+    :modal="false"
+    :overlay="false"
     :title="t('reference.help.title')"
     :description="t('reference.help.description')"
   >

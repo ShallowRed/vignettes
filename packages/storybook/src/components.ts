@@ -6,8 +6,8 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'StoryFrame',
     snippet: {
-      fr: '::StoryFrame{story="${id-de-la-story}" ratio="${16/9}" viewport="${760}" label="${Libellé}" lightbox}\n::',
-      en: '::StoryFrame{story="${story-id}" ratio="${16/9}" viewport="${760}" label="${Label}" lightbox}\n::',
+      fr: '::StoryFrame{story="${id-de-la-story}" ratio="${16/9}" viewport="760" label="${Libellé}" lightbox}\n::',
+      en: '::StoryFrame{story="${story-id}" ratio="${16/9}" viewport="760" label="${Label}" lightbox}\n::',
     },
     description: {
       fr: 'Écran Storybook vivant. story prend l\'identifiant de la story, composant--story, visible dans l\'adresse du Storybook après ?path=/story/ (attributs ratio, viewport, lightbox)',
@@ -17,8 +17,8 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Screens',
     snippet: {
-      fr: ':::Screens{cols="${2}"}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::\n:::',
-      en: ':::Screens{cols="${2}"}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n:::',
+      fr: ':::Screens{cols="2"}\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::\n::StoryFrame{story="${id-de-la-story}" label="${Libellé}" lightbox}\n::\n:::',
+      en: ':::Screens{cols="2"}\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n::StoryFrame{story="${story-id}" label="${Label}" lightbox}\n::\n:::',
     },
     description: {
       fr: 'Galerie d\'écrans Storybook (attributs cols, gap, align)',

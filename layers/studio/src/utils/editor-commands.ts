@@ -39,15 +39,19 @@ export function toggleLinePrefix(view: EditorView, prefix: string): void {
   view.focus()
 }
 
-/** Turn the selection into a link, leaving the url placeholder selected; no selection inserts `placeholder` as its text. */
+// The address of a link or an image starts with the scheme a deck takes; the
+// caret goes after it.
+const URL_START = 'https://'
+
+/** Turn the selection into a link, the caret in its address; no selection inserts `placeholder` as its text. */
 export function insertLink(view: EditorView, placeholder: string): void {
   const { from, to } = view.state.selection.main
   const text = view.state.sliceDoc(from, to) || placeholder
-  const insert = `[${text}](url)`
+  const insert = `[${text}](${URL_START})`
   const urlStart = from + text.length + 3
   view.dispatch({
     changes: { from, to, insert },
-    selection: { anchor: urlStart, head: urlStart + 3 },
+    selection: { anchor: urlStart + URL_START.length },
   })
   view.focus()
 }
@@ -98,6 +102,17 @@ function slideInsertPos(state: EditorState): number {
   return safeInsertPos(doc, end ? doc.line(end).to : line.to)
 }
 
+/**
+ * A slide template fitted to the parser of the deck: split by headings, the
+ * heading opens the slide and the leading `---` would add an empty one; split
+ * by `---`, a content slide takes `###`, since a short `##` slide is a section.
+ */
+export function slideTemplateFor(template: string, parser: 'heading' | 'separator', section = false): string {
+  if (parser === 'heading')
+    return template.replace(/^---\n\n(?=#)/, '')
+  return section ? template : template.replace(/^---\n\n## /, '---\n\n### ')
+}
+
 /** Insert a whole-slide template on its own paragraph after the current line, out of any block. */
 export function insertSlideTemplate(view: EditorView, template: string): void {
   const pos = slideInsertPos(view.state)
@@ -105,15 +120,15 @@ export function insertSlideTemplate(view: EditorView, template: string): void {
   view.focus()
 }
 
-/** Insert an image directive, url placeholder selected; no selection inserts `placeholder` as its alternative text. */
+/** Insert a Markdown image, the caret in its address; no selection inserts `placeholder` as its alternative text. */
 export function insertImage(view: EditorView, placeholder: string): void {
   const { from, to } = view.state.selection.main
   const alt = view.state.sliceDoc(from, to) || placeholder
-  const insert = `![${alt}](url)`
+  const insert = `![${alt}](${URL_START})`
   const urlStart = from + alt.length + 4
   view.dispatch({
     changes: { from, to, insert },
-    selection: { anchor: urlStart, head: urlStart + 3 },
+    selection: { anchor: urlStart + URL_START.length },
   })
   view.focus()
 }

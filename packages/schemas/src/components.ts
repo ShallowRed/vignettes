@@ -20,8 +20,8 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
     name: 'Diagram',
     aliases: ['diagram'],
     snippet: {
-      fr: ':::Diagram{layout="grid" cols="${2}"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${alimente}"}\n::\n:::',
-      en: ':::Diagram{layout="grid" cols="${2}"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${feeds}"}\n::\n:::',
+      fr: ':::Diagram{layout="grid" cols="2"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${alimente}"}\n::\n:::',
+      en: ':::Diagram{layout="grid" cols="2"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${feeds}"}\n::\n:::',
     },
     description: {
       fr: 'Cartes placées sur une grille ou classées automatiquement, reliées par des flèches (::Node, ::Edge, ::Area)',

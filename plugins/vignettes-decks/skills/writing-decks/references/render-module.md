@@ -179,10 +179,10 @@ Also written `TwoColumns`, `ThreeColumns`.
 
 ```markdown
 :::Columns
-::column
+::Column
 Column 1
 ::
-::column
+::Column
 Column 2
 ::
 :::
@@ -192,7 +192,7 @@ Attributes:
 
 - `size` (`'xs' | 'sm' | 'md' | 'lg' | 'xl'`, default `'md'`): Text scale of the columns.
 
-Content: `::column` blocks, or markdown that splits in two at its first horizontal rule, or else before each `###` or `####` heading.
+Content: `::Column` blocks, or markdown that splits in two at its first horizontal rule, or else before each `###` or `####` heading.
 
 <!-- /component -->
 

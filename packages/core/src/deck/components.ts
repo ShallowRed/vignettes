@@ -116,8 +116,8 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Columns',
     aliases: ['TwoColumns', 'ThreeColumns'],
-    snippet: { fr: ':::Columns\n::column\n${Colonne 1}\n::\n::column\n${Colonne 2}\n::\n:::', en: ':::Columns\n::column\n${Column 1}\n::\n::column\n${Column 2}\n::\n:::' },
-    description: { fr: 'Colonnes côte à côte (::column, attribut span pour les largeurs)', en: 'Side-by-side columns (::column, attribute span for the widths)' },
+    snippet: { fr: ':::Columns\n::Column\n${Colonne 1}\n::\n::Column\n${Colonne 2}\n::\n:::', en: ':::Columns\n::Column\n${Column 1}\n::\n::Column\n${Column 2}\n::\n:::' },
+    description: { fr: 'Colonnes côte à côte (::Column, attribut span pour les largeurs)', en: 'Side-by-side columns (::Column, attribute span for the widths)' },
   },
   { name: 'Column', aliases: ['column'] },
   {

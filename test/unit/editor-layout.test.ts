@@ -20,6 +20,11 @@ describe('slideLayoutAt', () => {
     expect(slideLayoutAt(at(DECK, 15)).annotation).toBeUndefined()
   })
 
+  it('reads no slide with the cursor in the frontmatter', () => {
+    expect(slideLayoutAt(at(DECK, 2))).toMatchObject({ outside: true, attributes: {} })
+    expect(slideLayoutAt(at(DECK, 9)).outside).toBe(false)
+  })
+
   it('reads an annotation of the decks written before media and size in its current form', () => {
     const doc = '## Un\n\n:layout{name="media-right-xwide" story="a--b" previewWidth="1600"}\n'
     expect(slideLayoutAt(at(doc, 1))).toMatchObject({ attributes: { media: 'right', size: '3/4', story: 'a--b', viewport: '1600' }, legacy: true })
