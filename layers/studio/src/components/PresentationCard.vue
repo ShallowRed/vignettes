@@ -114,6 +114,7 @@ const hasActions = computed(() => canEdit.value || hasMenu.value)
 <template>
   <UPageCard
     :to="to"
+    :aria-label="deck.title"
     variant="outline"
     :ui="{
       root: `group overflow-hidden ${replacedBy ? 'opacity-70 hover:opacity-100 ' : ''}ring-0 border-0 shadow-sm hover:shadow-md hover:bg-accented transition-all duration-200`,

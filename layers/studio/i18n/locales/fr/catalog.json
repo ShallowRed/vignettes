@@ -6,7 +6,7 @@
       "theme": "Thème"
     },
     "project": {
-      "ungroupedTitle": "Divers",
+      "ungroupedTitle": "Sans dossier",
       "none": "Sans dossier"
     },
     "deck": {
@@ -23,6 +23,7 @@
       "delete": "Mettre à la corbeille…",
       "downloadPublished": "Télécharger la version publiée (.md)",
       "downloadDraft": "Télécharger le brouillon (.md)",
+      "draftFileName": "{slug}-brouillon.md",
       "downloadFailed": "Le téléchargement a échoué",
       "actionsLabel": "Actions de « {title} »"
     },

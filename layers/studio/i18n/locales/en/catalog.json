@@ -6,7 +6,7 @@
       "theme": "Theme"
     },
     "project": {
-      "ungroupedTitle": "Miscellaneous",
+      "ungroupedTitle": "No folder",
       "none": "No folder"
     },
     "deck": {
@@ -23,6 +23,7 @@
       "delete": "Move to trash…",
       "downloadPublished": "Download the published version (.md)",
       "downloadDraft": "Download the draft (.md)",
+      "draftFileName": "{slug}-draft.md",
       "downloadFailed": "The download failed",
       "actionsLabel": "Actions for “{title}”"
     },

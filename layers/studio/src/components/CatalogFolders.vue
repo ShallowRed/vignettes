@@ -60,6 +60,7 @@ function folderActions(project: Project) {
       v-for="folder in folders"
       :key="folder.routeSlug"
       :to="`/projects/${folder.routeSlug}`"
+      :aria-label="folder.ungrouped ? t('catalog.project.ungroupedTitle') : folder.title"
       variant="outline"
       :ui="{
         root: 'ring-0 border-0 shadow-sm hover:shadow-md hover:bg-accented transition-all duration-200',

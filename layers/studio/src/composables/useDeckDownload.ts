@@ -15,7 +15,7 @@ export function useDeckDownload() {
 
   async function download(slug: string, version: 'published' | 'draft') {
     try {
-      saveTextFile(`${slug}.md`, await catalogApi.deckMarkdown($fetch, slug, version), 'text/markdown')
+      saveTextFile(version === 'draft' ? t('catalog.deck.draftFileName', { slug }) : `${slug}.md`, await catalogApi.deckMarkdown($fetch, slug, version), 'text/markdown')
     }
     catch (e) {
       toast.add({ title: requestErrorMessage(e, t('catalog.deck.downloadFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })

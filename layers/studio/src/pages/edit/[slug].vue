@@ -787,7 +787,7 @@ async function onRestored(stamp: number | null) {
 // The draft is the text in the editor, saved or not; the published version is
 // the one the page loaded.
 const downloadItems = computed(() => [
-  { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(`${slug}.md`, raw.value, 'text/markdown') },
+  { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(t('catalog.deck.draftFileName', { slug }), raw.value, 'text/markdown') },
   { label: t('editor.page.downloadPublished'), icon: 'i-lucide-file-down', disabled: neverPublished.value, onSelect: () => saveTextFile(`${slug}.md`, publishedRaw.value ?? '', 'text/markdown') },
 ])
 
