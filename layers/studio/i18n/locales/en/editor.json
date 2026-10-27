@@ -88,8 +88,8 @@
       "image": "Image from an address",
       "slide": "Slide",
       "emptySlide": "Empty slide",
-      "templates": "Templates",
       "insert": "Insert",
+      "insertSearch": "Search for a block",
       "uploadImage": "Upload an image",
       "help": "Help",
       "componentsDocs": "Documentation of the components"

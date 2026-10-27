@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
-import type { DropdownMenuItem } from '@nuxt/ui'
+import type { CommandPaletteGroup, CommandPaletteItem, DropdownMenuItem } from '@nuxt/ui'
+import type { SketchShape } from '../config/editor-reference'
 import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
 import { useDocsAddress } from '../composables/useDocsAddress'
 import { DOCS_SECTIONS, groupedEntries, inLanguage, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, slideTemplateFor, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
-import { btnHover, menuUi } from '../utils/toolbar-buttons'
+import { btnHover, menuWidth } from '../utils/toolbar-buttons'
 
 // The markdown pane's bar: the commands that build the deck first (a slide, its
 // layout, a component), then the formatting of the text; every action targets
@@ -58,38 +59,52 @@ function onImagesChosen() {
 
 const docsUrl = useDocsAddress()
 
-// Discoverability menu: an image from a file, then every engine
-// component/annotation by group, inserted as a tabbable snippet from the same
-// reference the autocompletion uses, and the documentation of the components.
-const insertItems = computed<DropdownMenuItem[][]>(() => {
+// The two menus that write into the text close before the editor takes the focus back.
+const open = reactive({ slide: false, insert: false })
+function chooseImages() {
+  open.insert = false
+  imageInput.value?.click()
+}
+function writeFromPopover(menu: keyof typeof open, action: (view: EditorView) => void) {
+  open[menu] = false
+  writeFromMenu(action)
+}
+
+// A slide: empty, or from a template that fits the parser of the deck, each
+// drawn as a sketch.
+const slideChoices = computed<{ key: string, label: string, description?: string, sketch: readonly SketchShape[], action: (view: EditorView) => void }[]>(() => [
+  { key: 'empty', label: t('editor.toolbar.emptySlide'), sketch: [], action: insertSlideBreak },
+  ...SLIDE_TEMPLATES.map(entry => ({
+    key: entry.labelKey,
+    label: t(entry.labelKey),
+    description: t(entry.descriptionKey),
+    sketch: entry.sketch,
+    action: (view: EditorView) => insertSlideTemplate(view, slideTemplateFor(inLanguage(entry.snippet, locale.value), props.parser ?? 'separator', entry.section)),
+  })),
+])
+
+// Discoverability menu, searched by name, description and syntax: an image from
+// a file, then every engine component/annotation by group, inserted as a
+// tabbable snippet from the same reference the autocompletion uses, and the
+// documentation of the components.
+const insertGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => {
   const docs = docsUrl(DOCS_SECTIONS.components)
   return [
-    [{ label: t('editor.toolbar.uploadImage'), icon: 'i-lucide-image-up', onSelect: () => imageInput.value?.click() }],
-    ...groupedEntries(locale.value).map(({ group, entries }) => [
-      { type: 'label' as const, label: t(`reference.groups.${group}`) },
-      ...entries.map(entry => ({
+    { id: 'upload', items: [{ label: t('editor.toolbar.uploadImage'), icon: 'i-lucide-image-up', onSelect: () => chooseImages() }] },
+    ...groupedEntries(locale.value).map(({ group, entries }) => ({
+      id: group,
+      label: t(`reference.groups.${group}`),
+      items: entries.map(entry => ({
         label: entry.label,
         description: entry.description,
-        syntax: entry.syntax,
-        onSelect: () => writeFromMenu(view => insertSnippet(view, entry.snippet)),
+        suffix: entry.syntax,
+        icon: entry.icon,
+        onSelect: () => writeFromPopover('insert', view => insertSnippet(view, entry.snippet)),
       })),
-    ]),
-    ...(docs ? [[{ label: t('editor.toolbar.componentsDocs'), icon: 'i-lucide-book-open', to: docs, target: '_blank' }]] : []),
+    })),
+    ...(docs ? [{ id: 'docs', ignoreFilter: true, items: [{ label: t('editor.toolbar.componentsDocs'), icon: 'i-lucide-book-open', to: docs, target: '_blank' }] }] : []),
   ]
 })
-
-// A slide: empty, or from a template that fits the parser of the deck.
-const slideItems = computed<DropdownMenuItem[][]>(() => [
-  [{ label: t('editor.toolbar.emptySlide'), icon: 'i-lucide-between-horizontal-start', onSelect: () => writeFromMenu(insertSlideBreak) }],
-  [
-    { type: 'label' as const, label: t('editor.toolbar.templates') },
-    ...SLIDE_TEMPLATES.map(entry => ({
-      label: t(entry.labelKey),
-      description: t(entry.descriptionKey),
-      onSelect: () => writeFromMenu(view => insertSlideTemplate(view, slideTemplateFor(inLanguage(entry.snippet, locale.value), props.parser ?? 'separator', entry.section))),
-    })),
-  ],
-])
 
 const headingItems = computed<DropdownMenuItem[]>(() => [1, 2, 3].map(level => ({
   label: t('editor.toolbar.heading', { level }),
@@ -119,10 +134,9 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
 <template>
   <div class="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1.5 px-2 py-1.5 border-b border-default">
     <div class="flex items-center gap-0.5 rounded-lg bg-elevated p-0.5">
-      <UDropdownMenu
-        :items="slideItems"
+      <UPopover
+        v-model:open="open.slide"
         :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
-        :ui="menuUi"
       >
         <UButton
           icon="i-lucide-plus"
@@ -134,7 +148,35 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
           trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
         />
-      </UDropdownMenu>
+        <template #content>
+          <div
+            class="grid grid-cols-3 gap-1 p-3"
+            :class="menuWidth"
+          >
+            <UTooltip
+              v-for="choice in slideChoices"
+              :key="choice.key"
+              :text="choice.description"
+              :disabled="!choice.description"
+            >
+              <UButton
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                class="flex-col items-stretch gap-1.5 px-1 py-1.5 text-center"
+                :class="btnHover"
+                @click="writeFromPopover('slide', choice.action)"
+              >
+                <SlideSketch
+                  :shapes="choice.sketch"
+                  class="w-full aspect-video"
+                />
+                <span class="text-xs text-toned">{{ choice.label }}</span>
+              </UButton>
+            </UTooltip>
+          </div>
+        </template>
+      </UPopover>
 
       <EditorLayoutPanel
         :view="view"
@@ -149,17 +191,10 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
         hidden
         @change="onImagesChosen"
       >
-      <UDropdownMenu
-        :items="insertItems"
+      <UPopover
+        v-model:open="open.insert"
         :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
-        :ui="menuUi"
       >
-        <template #item-trailing="{ item }">
-          <code
-            v-if="item.syntax"
-            class="font-mono text-xs text-dimmed"
-          >{{ item.syntax }}</code>
-        </template>
         <UButton
           icon="i-lucide-shapes"
           color="neutral"
@@ -170,7 +205,17 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
           trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
         />
-      </UDropdownMenu>
+        <template #content>
+          <UCommandPalette
+            :groups="insertGroups"
+            :placeholder="t('editor.toolbar.insertSearch')"
+            :close="false"
+            class="max-h-[min(32rem,70vh)]"
+            :class="menuWidth"
+            :ui="{ itemDescription: 'whitespace-normal', itemLabelSuffix: 'font-mono text-xs' }"
+          />
+        </template>
+      </UPopover>
     </div>
 
     <UTooltip :text="t('reference.help.title')">

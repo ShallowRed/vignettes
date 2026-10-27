@@ -88,8 +88,8 @@
       "image": "Image par son adresse",
       "slide": "Diapositive",
       "emptySlide": "Diapositive vide",
-      "templates": "Modèles",
       "insert": "Insérer",
+      "insertSearch": "Rechercher un bloc",
       "uploadImage": "Téléverser une image",
       "help": "Aide",
       "componentsDocs": "Documentation des composants"

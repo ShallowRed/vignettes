@@ -5,6 +5,7 @@ import type { DeckComponent } from '@vignettes/core/deck'
 export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'StoryFrame',
+    icon: 'i-lucide-app-window',
     label: { fr: 'Écran Storybook', en: 'Storybook screen' },
     group: 'storybook',
     snippet: {
@@ -19,6 +20,7 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'Screens',
+    icon: 'i-lucide-layout-grid',
     label: { fr: 'Galerie d\'écrans', en: 'Screen gallery' },
     group: 'storybook',
     snippet: {

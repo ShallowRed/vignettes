@@ -7,7 +7,7 @@ import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, registerDeckComponents, resetDec
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, describe, expect, it } from 'vitest'
-import { annotationEntries, componentEntries, directiveEntry, DOCS_SECTIONS, docsAddress, FRONTMATTER_KEYS, groupedEntries, SLIDE_TEMPLATES } from '../../layers/studio/src/config/editor-reference'
+import { annotationEntries, componentEntries, directiveEntry, DOCS_SECTIONS, docsAddress, FRONTMATTER_KEYS, groupedEntries, SKETCH_FRAME, SLIDE_TEMPLATES } from '../../layers/studio/src/config/editor-reference'
 import { slideTemplateFor } from '../../layers/studio/src/utils/editor-commands'
 import { references } from '../../site/references'
 
@@ -38,12 +38,12 @@ describe('componentEntries', () => {
 
   it('offers a component the application registers, with its texts in the interface language', () => {
     registerDeckComponents([{ name: 'Cover', snippet: { fr: '::Cover\n${Titre}\n::', en: '::Cover\n${Title}\n::' }, description: { fr: 'Couverture', en: 'Cover' } }])
-    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Cover', snippet: '::Cover\n${Title}\n::' })
+    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Cover', icon: 'i-lucide-shapes', snippet: '::Cover\n${Title}\n::' })
   })
 
   it('falls back to French for a language a component lacks', () => {
     registerDeckComponents([{ name: 'Cover', snippet: { fr: '::Cover\n::' }, description: { fr: 'Couverture' } }])
-    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Couverture', snippet: '::Cover\n::' })
+    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Couverture', icon: 'i-lucide-shapes', snippet: '::Cover\n::' })
   })
 })
 
@@ -156,6 +156,13 @@ describe('frontmatter keys', () => {
 })
 
 describe('slide templates', () => {
+  it('draw their sketch inside the frame of the slide', () => {
+    for (const template of SLIDE_TEMPLATES) {
+      for (const shape of template.sketch)
+        expect(shape.x >= 0 && shape.y >= 0 && shape.x + shape.width <= SKETCH_FRAME.width && shape.y + shape.height <= SKETCH_FRAME.height, template.labelKey).toBe(true)
+    }
+  })
+
   it('carry their snippet in French and in English', () => {
     for (const template of SLIDE_TEMPLATES)
       expect(Object.keys(template.snippet).sort(), template.labelKey).toEqual(['en', 'fr'])

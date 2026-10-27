@@ -2,8 +2,8 @@
 import type { EditorView } from '@codemirror/view'
 import type { MediaPlacement } from '@vignettes/core/deck'
 import { DEFAULT_SIDE_MEDIA_SIZE, HEADING_MODES, layoutDefault, layoutForPlacement, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, VERTICAL_ALIGNS } from '@vignettes/core/deck'
-import { EDITOR_TEXT, slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
-import { btnActive, btnHover } from '../utils/toolbar-buttons'
+import { EDITOR_TEXT, placementSketch, slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
+import { btnActive, btnHover, menuWidth } from '../utils/toolbar-buttons'
 
 // The layout of the slide under the cursor. Each choice rewrites its `:layout`
 // line, so the preview, which follows the cursor, shows it at once.
@@ -86,28 +86,6 @@ const share = computed(() => {
   return p! / q!
 })
 
-/** The media and text zones of a placement thumbnail, in a 48 × 32 box. */
-function zones(at: MediaPlacement | 'none') {
-  const s = share.value
-  const media = {
-    none: undefined,
-    right: { x: 46 - 44 * s, y: 2, width: 44 * s, height: 28 },
-    left: { x: 2, y: 2, width: 44 * s, height: 28 },
-    top: { x: 2, y: 2, width: 44, height: 16 },
-    bottom: { x: 2, y: 14, width: 44, height: 16 },
-    behind: { x: 0, y: 0, width: 48, height: 32 },
-  }[at]
-  const text = {
-    none: { x: 5, y: 6, width: 30 },
-    right: { x: 5, y: 8, width: 40 - 44 * s },
-    left: { x: 44 * s + 6, y: 8, width: 40 - 44 * s },
-    top: { x: 5, y: 22, width: 30 },
-    bottom: { x: 5, y: 5, width: 30 },
-    behind: { x: 6, y: 18, width: 14 },
-  }[at]
-  return { media, text }
-}
-
 interface Choice { label: string, value: string, active: boolean }
 
 function row(name: string, values: readonly string[], label: (choice: string) => string, active = value(name)): { name: string, choices: Choice[] } {
@@ -154,7 +132,8 @@ const fields = computed(() => placement.value === 'none'
     <template #content>
       <div
         v-if="current"
-        class="w-88 max-w-[calc(100vw-1rem)] max-h-(--reka-popover-content-available-height) overflow-y-auto p-3 space-y-3 text-sm"
+        class="max-h-(--reka-popover-content-available-height) overflow-y-auto p-3 space-y-3 text-sm"
+        :class="menuWidth"
       >
         <p
           v-if="current.outside"
@@ -193,45 +172,10 @@ const fields = computed(() => placement.value === 'none'
                 :aria-pressed="placement === at"
                 @click="write(fresh => layoutForPlacement(fresh, at))"
               >
-                <svg
-                  viewBox="0 0 48 32"
-                  class="w-12 h-8"
-                  aria-hidden="true"
-                >
-                  <rect
-                    x="0.5"
-                    y="0.5"
-                    width="47"
-                    height="31"
-                    rx="2"
-                    class="fill-(--ui-bg) stroke-(--ui-border-accented)"
-                  />
-                  <rect
-                    v-if="zones(at).media"
-                    v-bind="zones(at).media"
-                    rx="1.5"
-                    class="fill-primary/30"
-                  />
-                  <rect
-                    v-if="at === 'behind'"
-                    :x="zones(at).text.x - 2"
-                    :y="zones(at).text.y - 3"
-                    :width="zones(at).text.width + 4"
-                    height="11"
-                    rx="1.5"
-                    class="fill-(--ui-bg)"
-                  />
-                  <rect
-                    v-for="line in 3"
-                    :key="line"
-                    :x="zones(at).text.x"
-                    :y="zones(at).text.y + (line - 1) * 3"
-                    :width="line === 1 ? zones(at).text.width * 0.7 : zones(at).text.width"
-                    height="1.6"
-                    rx="0.8"
-                    class="fill-(--ui-text-muted)"
-                  />
-                </svg>
+                <SlideSketch
+                  :shapes="placementSketch(at, share)"
+                  class="w-16 aspect-video"
+                />
                 <span>{{ t(`editor.layout.placements.${at}`) }}</span>
               </UButton>
             </div>

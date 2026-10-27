@@ -30,8 +30,20 @@ export interface DirectiveEntry {
   label: string
   description: string
   group?: DeckComponentGroup
+  /** Its icon, or the icon of its group. */
+  icon: string
   /** Its section on the documentation site, read by `docsAddress`. */
   docs?: string
+}
+
+/** The icon of an entry that declares none. */
+const GROUP_ICONS: Record<DeckComponentGroup | 'other', string> = {
+  text: 'i-lucide-type',
+  media: 'i-lucide-image',
+  diagram: 'i-lucide-network',
+  storybook: 'i-lucide-app-window',
+  slide: 'i-lucide-presentation',
+  other: 'i-lucide-shapes',
 }
 
 /** An insertable component or annotation. */
@@ -39,9 +51,24 @@ export interface ReferenceEntry extends DirectiveEntry {
   snippet: string
 }
 
+/** The frame of the sketch of a slide, in the 16:9 ratio of the slides. */
+export const SKETCH_FRAME = { width: 96, height: 54 } as const
+
+/** A rectangle of the sketch of a slide, in `SKETCH_FRAME`. */
+export interface SketchShape {
+  x: number
+  y: number
+  width: number
+  height: number
+  /** A title or a text line, a media, a background over the whole slide, or a card of the slide's color. */
+  kind: 'title' | 'text' | 'media' | 'band' | 'card'
+}
+
 export interface SlideTemplate {
   labelKey: string
   descriptionKey: string
+  /** The shapes of its sketch in the slide menu. */
+  sketch: readonly SketchShape[]
   snippet: LocalizedText
   /** A section slide, whose `##` heading stays in both parsers. */
   section?: boolean
@@ -151,6 +178,7 @@ function componentEntry(component: DeckComponent, syntax: string, lang: string):
     label: inLanguage(component.label, lang) || component.name,
     description: inLanguage(component.description, lang),
     group: component.group,
+    icon: component.icon ?? GROUP_ICONS[component.group ?? 'other'],
     docs: component.docs,
   }
 }
@@ -176,6 +204,7 @@ export function annotationEntries(lang: string): ReferenceEntry[] {
     label: inLanguage(annotation.label, lang),
     description: inLanguage(annotation.description, lang),
     group: 'slide',
+    icon: annotation.icon ?? GROUP_ICONS.slide,
     docs: annotation.docs,
     snippet: inLanguage(annotation.snippet, lang),
   }))
@@ -227,15 +256,22 @@ export function docsAddress(docs: string | undefined, helpUrl: string): string |
   return new URL(docs.replace(/^\//, ''), helpUrl.endsWith('/') ? helpUrl : `${helpUrl}/`).href
 }
 
+export const title = (x: number, y: number, width: number, height = 5): SketchShape => ({ x, y, width, height, kind: 'title' })
+export const text = (x: number, y: number, width: number): SketchShape => ({ x, y, width, height: 2.5, kind: 'text' })
+const media = (x: number, y: number, width: number, height: number): SketchShape => ({ x, y, width, height, kind: 'media' })
+const band: SketchShape = { x: 1, y: 1, width: 94, height: 52, kind: 'band' }
+const column = (x: number, width: number, y = 20): SketchShape[] => [text(x, y, width), text(x, y + 6, width * 0.8), text(x, y + 12, width * 0.9)]
+
 /**
- * Whole-slide starters with example texts, inserted from the toolbar
- * "Modèles" menu. Each leads with `---` and a `##` heading, which
+ * Whole-slide starters with example texts, inserted from the slide menu of the
+ * toolbar, drawn as their sketch. Each leads with `---` and a `##` heading, which
  * `slideTemplateFor` fits to the parser of the deck.
  */
 export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.twoColumns.label',
     descriptionKey: 'reference.templates.twoColumns.description',
+    sketch: [title(10, 8, 40), ...column(10, 32), ...column(54, 32)],
     snippet: {
       fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::Column\n#### ${Ce qui change}\n${Les démarches se font en ligne, sans pièce justificative.}\n::\n::Column\n#### ${Ce qui reste}\n${Le guichet reçoit toujours sur rendez-vous.}\n::\n:::',
       en: '---\n\n## ${Slide title}\n\n:::Columns\n::Column\n#### ${What changes}\n${The procedures move online, with no supporting document.}\n::\n::Column\n#### ${What stays}\n${The front desk still sees people by appointment.}\n::\n:::',
@@ -244,6 +280,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.threeColumns.label',
     descriptionKey: 'reference.templates.threeColumns.description',
+    sketch: [title(10, 8, 40), ...column(10, 22), ...column(37, 22), ...column(64, 22)],
     snippet: {
       fr: '---\n\n## ${Titre de la diapo}\n\n:::Columns\n::Column\n#### ${Découvrir}\n${Un premier rendez-vous pour comprendre le besoin.}\n::\n::Column\n#### ${Concevoir}\n${Des maquettes testées avec les usagers.}\n::\n::Column\n#### ${Livrer}\n${Une mise en ligne par étapes.}\n::\n:::',
       en: '---\n\n## ${Slide title}\n\n:::Columns\n::Column\n#### ${Discover}\n${A first meeting to understand the need.}\n::\n::Column\n#### ${Design}\n${Mockups tested with users.}\n::\n::Column\n#### ${Deliver}\n${A release in stages.}\n::\n:::',
@@ -252,6 +289,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.cover.label',
     descriptionKey: 'reference.templates.cover.description',
+    sketch: [title(18, 20, 60, 7), text(30, 32, 36)],
     snippet: {
       fr: '---\n\n# ${Titre de la présentation}\n\n:subtitle{text="${Sous-titre ou accroche}"}',
       en: '---\n\n# ${Presentation title}\n\n:subtitle{text="${Subtitle or tagline}"}',
@@ -261,6 +299,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     labelKey: 'reference.templates.section.label',
     section: true,
     descriptionKey: 'reference.templates.section.description',
+    sketch: [band, text(12, 18, 22), title(12, 25, 50, 7)],
     snippet: {
       fr: '---\n\n## ${Titre de la section}\n\n:pretitle{text="${Partie 1}"}',
       en: '---\n\n## ${Section title}\n\n:pretitle{text="${Part 1}"}',
@@ -269,6 +308,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.keyPoints.label',
     descriptionKey: 'reference.templates.keyPoints.description',
+    sketch: [title(10, 8, 40), text(12, 20, 50), text(12, 26, 44), text(12, 32, 48)],
     snippet: {
       fr: '---\n\n## ${Titre de la diapo}\n\n- ${Premier point clé}\n- ${Deuxième point clé}\n- ${Troisième point clé}',
       en: '---\n\n## ${Slide title}\n\n- ${First key point}\n- ${Second key point}\n- ${Third key point}',
@@ -277,6 +317,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.comparison.label',
     descriptionKey: 'reference.templates.comparison.description',
+    sketch: [title(10, 8, 44), title(10, 19, 16, 3), ...column(10, 32, 26), title(54, 19, 16, 3), ...column(54, 32, 26)],
     snippet: {
       fr: '---\n\n## ${Titre de la comparaison}\n\n:::Columns\n::Column\n#### ${Avant}\n- ${Point un}\n- ${Point deux}\n::\n::Column\n#### ${Après}\n- ${Point un}\n- ${Point deux}\n::\n:::',
       en: '---\n\n## ${Comparison title}\n\n:::Columns\n::Column\n#### ${Before}\n- ${Point one}\n- ${Point two}\n::\n::Column\n#### ${After}\n- ${Point one}\n- ${Point two}\n::\n:::',
@@ -285,6 +326,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.mediaText.label',
     descriptionKey: 'reference.templates.mediaText.description',
+    sketch: [title(8, 10, 34), text(8, 22, 34), text(8, 28, 28), media(48, 1, 47, 52)],
     snippet: {
       fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="${right}" size="${1/2}" src="${/images/placeholder.svg}" alt="${Description de l\'image}"}\n\n${Le parcours d\'inscription passe de six à trois écrans.}',
       en: '---\n\n## ${Slide title}\n\n:layout{media="${right}" size="${1/2}" src="${/images/placeholder.svg}" alt="${Image description}"}\n\n${The sign-up journey goes from six screens to three.}',
@@ -293,6 +335,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.quote.label',
     descriptionKey: 'reference.templates.quote.description',
+    sketch: [title(14, 18, 2.5, 12), text(20, 19, 56), text(20, 25, 50), text(20, 34, 20)],
     snippet: {
       fr: '---\n\n::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation qui marque les esprits.}\n::',
       en: '---\n\n::Quote{author="${Author}" role="${Role}"}\n${The quote people remember.}\n::',
@@ -301,6 +344,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.fullScreenImage.label',
     descriptionKey: 'reference.templates.fullScreenImage.description',
+    sketch: [media(1, 1, 94, 52), title(10, 38, 44)],
     snippet: {
       fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${50%}"}',
       en: '---\n\n## ${Slide title}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${50%}"}',
@@ -309,6 +353,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
     labelKey: 'reference.templates.storybookGallery.label',
     descriptionKey: 'reference.templates.storybookGallery.description',
+    sketch: [title(10, 8, 40), media(10, 19, 36, 26), media(50, 19, 36, 26)],
     snippet: {
       fr: '---\n\n## ${Titre de la démo}\n\n:::Screens{cols="2"}\n::StoryFrame{story="${id-de-la-story}" label="${Écran 1}" lightbox}\n::\n::StoryFrame{story="${id-de-la-story}" label="${Écran 2}" lightbox}\n::\n:::',
       en: '---\n\n## ${Demo title}\n\n:::Screens{cols="2"}\n::StoryFrame{story="${story-id}" label="${Screen 1}" lightbox}\n::\n::StoryFrame{story="${story-id}" label="${Screen 2}" lightbox}\n::\n:::',

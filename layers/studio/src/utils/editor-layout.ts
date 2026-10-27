@@ -1,7 +1,9 @@
 import type { EditorState, TransactionSpec } from '@codemirror/state'
-import type { LayoutAnnotation } from '@vignettes/core/deck'
+import type { LayoutAnnotation, MediaPlacement } from '@vignettes/core/deck'
 import type { InjectionKey, Ref } from 'vue'
+import type { SketchShape } from '../config/editor-reference'
 import { layoutAnnotations, layoutAnnotationValues, layoutSource, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
+import { SKETCH_FRAME, text as sketchText, title } from '../config/editor-reference'
 import { frontmatterEnd } from './editor-frontmatter'
 import { HEADING_RE, slideContentAt } from './editor-slides'
 
@@ -83,4 +85,35 @@ export function slideLayoutChange(state: EditorState, attributes: Record<string,
   while (first < Math.min(at.endLine, state.doc.lines) && !state.doc.line(first).text.trim())
     first++
   return { changes: { from: state.doc.line(first).from, insert: `${source}\n\n` } }
+}
+
+/**
+ * The sketch of a placement in the layout panel: the media, at `share` of the
+ * width on a side, and three lines of text, on a card over a media behind.
+ */
+export function placementSketch(at: MediaPlacement | 'none', share: number): SketchShape[] {
+  const { width: W, height: H } = SKETCH_FRAME
+  const side = (W - 2) * share
+  const media: Record<MediaPlacement, Omit<SketchShape, 'kind'>> = {
+    right: { x: W - 1 - side, y: 1, width: side, height: H - 2 },
+    left: { x: 1, y: 1, width: side, height: H - 2 },
+    top: { x: 1, y: 1, width: W - 2, height: 28 },
+    bottom: { x: 1, y: H - 29, width: W - 2, height: 28 },
+    behind: { x: 1, y: 1, width: W - 2, height: H - 2 },
+  }
+  const lines = {
+    none: { x: 10, y: 16, width: 60 },
+    right: { x: 8, y: 17, width: W - side - 16 },
+    left: { x: side + 8, y: 17, width: W - side - 16 },
+    top: { x: 10, y: 35, width: 50 },
+    bottom: { x: 10, y: 8, width: 50 },
+    behind: { x: 12, y: 33, width: 26 },
+  }[at]
+  return [
+    ...(at === 'none' ? [] : [{ ...media[at], kind: 'media' as const }]),
+    ...(at === 'behind' ? [{ x: lines.x - 4, y: lines.y - 4, width: lines.width + 8, height: 17, kind: 'card' as const }] : []),
+    title(lines.x, lines.y, lines.width * 0.7, 3),
+    sketchText(lines.x, lines.y + 6, lines.width),
+    sketchText(lines.x, lines.y + 11, lines.width * 0.85),
+  ]
 }

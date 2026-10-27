@@ -5,6 +5,7 @@ import type { DeckComponent } from '@vignettes/core/deck'
 export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Scheme',
+    icon: 'i-lucide-route',
     label: { fr: 'Étapes illustrées', en: 'Illustrated steps' },
     group: 'diagram',
     aliases: ['scheme'],
@@ -21,6 +22,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Step', aliases: ['step'], docs: '/reference/schemas#step' },
   {
     name: 'Diagram',
+    icon: 'i-lucide-network',
     label: { fr: 'Schéma de cartes', en: 'Card diagram' },
     group: 'diagram',
     aliases: ['diagram'],
@@ -39,6 +41,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Area', component: 'DiagramArea', aliases: ['area'], docs: '/reference/schemas#area' },
   {
     name: 'JsonTour',
+    icon: 'i-lucide-file-json',
     label: { fr: 'Fichier commenté', en: 'Annotated file' },
     group: 'diagram',
     aliases: ['json-tour'],

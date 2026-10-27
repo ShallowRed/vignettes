@@ -16,6 +16,8 @@ export interface DeckAnnotation {
   tag: string
   /** The name an editor shows for it. */
   label: LocalizedText
+  /** The icon an editor shows beside its name, as an Iconify name (`i-lucide-quote`). */
+  icon?: string
   snippet: LocalizedText
   description: LocalizedText
   /** Its section on the documentation site, as a path (`/ecrire/syntaxe#les-annotations`) or a full address. */
@@ -27,6 +29,7 @@ export interface DeckAnnotation {
 export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   {
     tag: 'slide-background',
+    icon: 'i-lucide-wallpaper',
     label: { fr: 'Image de fond', en: 'Background image' },
     images: ['image'],
     snippet: { fr: ':slide-background{image="${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
@@ -35,6 +38,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   },
   {
     tag: 'pretitle',
+    icon: 'i-lucide-arrow-up-to-line',
     label: { fr: 'Surtitre', en: 'Pretitle' },
     snippet: { fr: ':pretitle{text="${Contexte}"}', en: ':pretitle{text="${Context}"}' },
     description: { fr: 'Texte au-dessus du titre', en: 'Text above the title' },
@@ -42,6 +46,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   },
   {
     tag: 'subtitle',
+    icon: 'i-lucide-arrow-down-to-line',
     label: { fr: 'Sous-titre', en: 'Subtitle' },
     snippet: { fr: ':subtitle{text="${Sous-titre}"}', en: ':subtitle{text="${Subtitle}"}' },
     description: { fr: 'Texte sous le titre', en: 'Text below the title' },
@@ -49,6 +54,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   },
   {
     tag: 'layout',
+    icon: 'i-lucide-layout-panel-left',
     label: { fr: 'Mise en page', en: 'Layout' },
     snippet: { fr: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}', en: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}' },
     description: { fr: 'Image, page ou story à côté, au-dessus, au-dessous ou derrière le texte', en: 'Image, page or story beside, above, below or behind the text' },
@@ -56,6 +62,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   },
   {
     tag: 'quicklink',
+    icon: 'i-lucide-link',
     label: { fr: 'Lien en bas', en: 'Bottom link' },
     snippet: { fr: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}', en: ':quicklink{text="${See the demo}" href="${https://example.com}"}' },
     description: { fr: 'Lien affiché en bas de la diapositive', en: 'Link shown at the bottom of the slide' },
@@ -84,6 +91,8 @@ export interface DeckComponent {
   label?: LocalizedText
   /** The group an editor lists it under. */
   group?: DeckComponentGroup
+  /** The icon an editor shows beside its name, as an Iconify name (`i-lucide-quote`). */
+  icon?: string
   /** Its section on the documentation site, as a path (`/reference/nuxt#quote`) or a full address. */
   docs?: string
   /** Vue component this resolves to, when it differs from the authoring name. */
@@ -110,6 +119,7 @@ export const NOTES_COMPONENT = 'Notes'
 export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   {
     name: 'Quote',
+    icon: 'i-lucide-quote',
     label: { fr: 'Citation', en: 'Quote' },
     group: 'text',
     images: ['avatar'],
@@ -119,6 +129,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'Iframe',
+    icon: 'i-lucide-globe',
     label: { fr: 'Page web', en: 'Web page' },
     group: 'media',
     snippet: { fr: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::', en: '::Iframe{src="${https://example.com}" title="${Title}"}\n::' },
@@ -127,6 +138,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'Image',
+    icon: 'i-lucide-image',
     label: { fr: 'Image', en: 'Image' },
     group: 'media',
     aliases: ['deck-image'],
@@ -137,6 +149,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'Mermaid',
+    icon: 'i-lucide-workflow',
     label: { fr: 'Schéma Mermaid', en: 'Mermaid diagram' },
     group: 'diagram',
     snippet: { fr: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n```\n::', en: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Start}] --> B[${End}]\n```\n::' },
@@ -145,6 +158,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'IconInline',
+    icon: 'i-lucide-smile',
     label: { fr: 'Icône', en: 'Icon' },
     group: 'text',
     aliases: ['i'],
@@ -154,6 +168,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'Columns',
+    icon: 'i-lucide-columns-2',
     label: { fr: 'Colonnes', en: 'Columns' },
     group: 'text',
     aliases: ['TwoColumns', 'ThreeColumns'],
@@ -164,6 +179,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   { name: 'Column', aliases: ['column'], docs: '/reference/nuxt#column' },
   {
     name: 'Highlight',
+    icon: 'i-lucide-highlighter',
     label: { fr: 'Message clé', en: 'Key message' },
     group: 'text',
     snippet: { fr: '::Highlight\n${Message clé.}\n::', en: '::Highlight\n${Key message.}\n::' },
@@ -172,6 +188,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: NOTES_COMPONENT,
+    icon: 'i-lucide-notebook-pen',
     label: { fr: 'Notes de l\'orateur', en: 'Speaker notes' },
     group: 'slide',
     aliases: ['notes'],
@@ -181,6 +198,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = [
   },
   {
     name: 'Fragments',
+    icon: 'i-lucide-list-start',
     label: { fr: 'Points un par un', en: 'Points one by one' },
     group: 'text',
     aliases: ['fragments'],
