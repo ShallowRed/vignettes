@@ -2,6 +2,7 @@
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import { deckPath } from '#shared/presentations'
+import { inSpeakerViewFrame } from '@vignettes/core/render'
 
 // A deck as the studio shows it: the Reveal presentation with the other
 // variants of its family the visitor may open, the commands of whoever may edit
@@ -14,6 +15,10 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+// The speaker view shows the deck in frames and sends its keys to them, so these
+// frames get neither the draft banner nor the E key of the editor.
+const speakerViewFrame = inSpeakerViewFrame(useRequestURL().search)
+const draftBanner = computed(() => props.draft && !speakerViewFrame)
 
 useHead({ title: () => `${props.presentationData.metadata.title || props.slug || ''} · Vignettes` })
 
@@ -49,14 +54,14 @@ const draftHref = computed(() => `/slides/${props.slug}${props.draft ? '' : '?dr
 const folderHref = computed(() => viewer.value.project ? `/projects/${viewer.value.project}` : '/')
 
 watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
-  if (instance && canEdit)
+  if (instance && canEdit && !speakerViewFrame)
     instance.addKeyBinding({ keyCode: 69, key: 'E', description: t('auth.viewer.editSlideShortcut') }, () => navigateTo(editHref.value))
 })
 </script>
 
 <template>
   <div
-    v-if="draft"
+    v-if="draftBanner"
     class="tailwind-app fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-3 bg-warning text-white text-sm py-1.5 px-4 print:hidden"
   >
     <UIcon
@@ -72,7 +77,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
     </NuxtLink>
   </div>
   <RevealPresentation
-    :class="{ 'has-draft-banner': draft }"
+    :class="{ 'has-draft-banner': draftBanner }"
     :theme="presentationData.metadata.theme"
     :config="presentationData.metadata.reveal"
     :lang="presentationData.metadata.lang"

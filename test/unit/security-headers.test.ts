@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { runInNewContext } from 'node:vm'
+import { DECK_MESSAGES, speakerViewPage } from '@vignettes/core/render'
 import { createEvent, getRequestProtocol, getResponseHeader, setResponseHeader } from 'h3'
 import { describe, expect, it, vi } from 'vitest'
+import { installedSpeakerView } from './helpers/fixtures'
 
 vi.stubGlobal('defineNitroPlugin', (plugin: unknown) => plugin)
 vi.stubGlobal('getRequestProtocol', getRequestProtocol)
@@ -60,13 +59,12 @@ describe('the security headers plugin', () => {
     expect(response.headers).toEqual({ 'content-type': 'text/html' })
   })
 
-  it('lets the inline script of the installed reveal.js speaker view run', async () => {
-    const { SPEAKER_VIEW_SCRIPT_HASH } = await import('../../layers/studio/server/utils/security-headers')
-    // `useReveal.ts` imports this module, which holds the speaker view page as a string literal.
-    const module = readFileSync(createRequire(import.meta.url).resolve('reveal.js/plugin/notes/notes.esm.js'), 'utf8')
-    const literal = /"(?:[^"\\]|\\.)*<\/html>"/.exec(module)![0]
-    const page = runInNewContext(literal) as string
-    const script = /<script>([\s\S]*?)<\/script>/.exec(page)![1]!
-    expect(SPEAKER_VIEW_SCRIPT_HASH).toBe(`sha256-${createHash('sha256').update(script).digest('base64')}`)
+  it('lets the inline script of the installed reveal.js speaker view run, in each deck language', async () => {
+    const { SPEAKER_VIEW_SCRIPT_HASHES } = await import('../../layers/studio/server/utils/security-headers')
+    const hashes = Object.fromEntries(Object.entries(DECK_MESSAGES).map(([lang, messages]) => {
+      const script = /<script>([\s\S]*?)<\/script>/.exec(speakerViewPage(installedSpeakerView(), messages))![1]!
+      return [lang, `sha256-${createHash('sha256').update(script).digest('base64')}`]
+    }))
+    expect(SPEAKER_VIEW_SCRIPT_HASHES).toEqual(hashes)
   })
 })

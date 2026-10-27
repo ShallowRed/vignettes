@@ -27,10 +27,14 @@ export const STRICT_TRANSPORT_SECURITY = 'max-age=31536000'
 
 /**
  * Reveal's speaker view writes its page, and its one inline script, into a
- * blank window that takes the policy of the deck. The hash follows the speaker
- * view page held in `reveal.js/plugin/notes/notes.esm.js`, which a test reads.
+ * blank window that takes the policy of the deck. Each hash follows the speaker
+ * view page held in `reveal.js/plugin/notes/notes.esm.js`, translated into a
+ * language of the deck messages by `speakerViewPage`, which a test reads.
  */
-export const SPEAKER_VIEW_SCRIPT_HASH = 'sha256-wfrJpa7dmlxqHmakgJIolYIQ+LOJmVS3HKfvdaO3GDE='
+export const SPEAKER_VIEW_SCRIPT_HASHES: Record<string, string> = {
+  fr: 'sha256-OV40SV6RKT5PMWcQ59hRFAJGM7bEe3YS1PL8QfBjvTk=',
+  en: 'sha256-wfIuK29EeypgjqUn8q7eyMEpORwdgRkQMBVLzsJIzBY=',
+}
 
 /**
  * A deck may embed a page, an image or a video served on the presenter's
@@ -53,7 +57,7 @@ const LOCAL = LOCAL_HTTP_HOSTS.map(host => `http://${host}:*`).join(' ')
 export function pagePolicy(nonce: string): string {
   return [
     'default-src \'self\'',
-    `script-src 'self' 'nonce-${nonce}' '${SPEAKER_VIEW_SCRIPT_HASH}' 'unsafe-eval'`,
+    `script-src 'self' 'nonce-${nonce}' ${Object.values(SPEAKER_VIEW_SCRIPT_HASHES).map(hash => `'${hash}'`).join(' ')} 'unsafe-eval'`,
     'style-src \'self\' \'unsafe-inline\'',
     `img-src 'self' data: blob: https: ${LOCAL}`,
     'font-src \'self\' data:',

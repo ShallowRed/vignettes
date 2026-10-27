@@ -1,6 +1,6 @@
 /**
  * The texts of the deck chrome (controls, loading veil, print overlay, enlarge
- * hints, an embed without a source). They follow the language of the deck,
+ * hints, an embed without a source, speaker view). They follow the language of the deck,
  * not the language of the host interface, and ship with the renderer so a
  * frozen bundle has them.
  */
@@ -30,6 +30,22 @@ export interface DeckMessages {
   zoomReset: string
   close: string
   storyMissing: string
+  speakerViewLoading: string
+  speakerUpcoming: string
+  speakerTime: string
+  speakerTimeReset: string
+  speakerPacing: string
+  speakerNotes: string
+  /** The label of the layout menu, before the name of the layout. */
+  speakerLayout: string
+  speakerLayoutDefault: string
+  speakerLayoutWide: string
+  speakerLayoutTall: string
+  speakerLayoutNotesOnly: string
+  speakerOtherOrigin: string
+  speakerNoConnection: string
+  /** The locale of the clock of the speaker view. */
+  timeLocale: string
 }
 
 const FR: DeckMessages = {
@@ -58,6 +74,20 @@ const FR: DeckMessages = {
   zoomReset: 'Réinitialiser',
   close: 'Fermer',
   storyMissing: 'Indiquez une story, avec la clé storybook dans l\'en-tête de la présentation, ou une adresse dans src.',
+  speakerViewLoading: 'Chargement de la vue conférencier…',
+  speakerUpcoming: 'Diapositive suivante',
+  speakerTime: 'Temps',
+  speakerTimeReset: 'Cliquer pour remettre à zéro',
+  speakerPacing: 'Temps restant pour cette diapositive',
+  speakerNotes: 'Notes',
+  speakerLayout: 'Disposition\u00A0:',
+  speakerLayoutDefault: 'Par défaut',
+  speakerLayoutWide: 'Large',
+  speakerLayoutTall: 'En hauteur',
+  speakerLayoutNotesOnly: 'Notes seules',
+  speakerOtherOrigin: 'Ouvrez la vue conférencier depuis la présentation, avec la touche S.',
+  speakerNoConnection: 'La vue conférencier n’arrive pas à se connecter à la présentation. Fermez cette fenêtre, puis rouvrez la vue conférencier.',
+  timeLocale: 'fr-FR',
 }
 
 const EN: DeckMessages = {
@@ -86,6 +116,20 @@ const EN: DeckMessages = {
   zoomReset: 'Reset',
   close: 'Close',
   storyMissing: 'Set a story, with the storybook key in the deck header, or an address in src.',
+  speakerViewLoading: 'Loading the speaker view…',
+  speakerUpcoming: 'Next slide',
+  speakerTime: 'Time',
+  speakerTimeReset: 'Click to reset',
+  speakerPacing: 'Time left for this slide',
+  speakerNotes: 'Notes',
+  speakerLayout: 'Layout:',
+  speakerLayoutDefault: 'Default',
+  speakerLayoutWide: 'Wide',
+  speakerLayoutTall: 'Tall',
+  speakerLayoutNotesOnly: 'Notes only',
+  speakerOtherOrigin: 'Open the speaker view from the presentation, with the S key.',
+  speakerNoConnection: 'The presentation cannot be reached. Close this window, then reopen the speaker view.',
+  timeLocale: 'en-US',
 }
 
 export const DECK_MESSAGES: Record<string, DeckMessages> = { fr: FR, en: EN }

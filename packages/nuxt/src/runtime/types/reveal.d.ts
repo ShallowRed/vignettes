@@ -28,6 +28,8 @@ declare module 'reveal.js' {
 }
 
 declare module 'reveal.js/plugin/notes/notes.esm.js' {
-  const RevealNotes: () => { id: string }
+  import type { NotesPlugin } from '@vignettes/core/render'
+
+  const RevealNotes: () => NotesPlugin
   export default RevealNotes
 }

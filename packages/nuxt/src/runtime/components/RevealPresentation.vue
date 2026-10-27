@@ -2,7 +2,7 @@
 import type { RevealApi } from 'reveal.js'
 import type { RevealConfig } from '../types/presentation.ts'
 import { useRequestURL } from '#imports'
-import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
+import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, inSpeakerViewFrame, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useReveal } from '../composables/useReveal.ts'
@@ -68,6 +68,8 @@ const frenchTypography = computed(() => !props.lang || props.lang.toLowerCase().
 // print config (full-page layout, one slide per page) applies from the start.
 const requestUrl = useRequestURL()
 const isPrintMode = new RegExp(PRINT_PDF_QUERY, 'i').test(requestUrl.search)
+// The speaker view sends its keys to the deck in its frames, so the deck shows no commands there.
+const speakerViewFrame = inSpeakerViewFrame(requestUrl.search)
 
 const effectiveConfig = isPrintMode
   ? buildPrintView({ meta: { reveal: props.config }, slides: [], assets: [] }, {
@@ -115,7 +117,7 @@ const VEIL_MAX_MS = 4000
 // has no Vue runtime, shows no inert button.
 const mounted = ref(false)
 
-const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, effectiveConfig)
+const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, effectiveConfig, messages.value)
 
 // Let MDC components trigger a Reveal sync after dynamic content changes.
 provide('revealSync', sync)
@@ -333,7 +335,7 @@ onUnmounted(() => {
       </a>
     </div>
     <DeckControls
-      v-if="mounted && controls && !isPrintMode"
+      v-if="mounted && controls && !isPrintMode && !speakerViewFrame"
       :get-instance="getInstance"
       @print="openPrintView"
     >

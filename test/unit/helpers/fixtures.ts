@@ -1,6 +1,9 @@
 import type { HistoryEntry } from '../../../layers/studio/shared/presentations/history'
 import type { PresentationListItem } from '../../../layers/studio/shared/presentations/list-item'
 import type { Project } from '../../../layers/studio/shared/projects/schema'
+import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { runInNewContext } from 'node:vm'
 
 /** A catalog entry with the required fields filled from the slug. */
 export function listItem(partial: Partial<PresentationListItem> & { slug: string }): PresentationListItem {
@@ -39,4 +42,10 @@ export function historyVersion(id: number, at = id): HistoryEntry {
 /** A snapshot of a deck's draft, taken at `at`. */
 export function historySnapshot(id: number, at = id, label: string | null = null): HistoryEntry {
   return { kind: 'snapshot', id, at, bytes: 1, authors: [], label }
+}
+
+/** The speaker view page of the installed reveal.js, held as a string literal in the module `useReveal.ts` imports. */
+export function installedSpeakerView(): string {
+  const module = readFileSync(createRequire(import.meta.url).resolve('reveal.js/plugin/notes/notes.esm.js'), 'utf8')
+  return runInNewContext(/"(?:[^"\\]|\\.)*<\/html>"/.exec(module)![0]) as string
 }

@@ -1,12 +1,14 @@
+import type { DeckMessages } from '@vignettes/core/render'
 import type { RevealApi } from 'reveal.js'
 import type { Ref } from 'vue'
 import type { RevealConfig } from '../types/presentation.ts'
 import { isDeckUrl } from '@vignettes/core/deck'
-import { EMBED_REFERRER_POLICY, embedSandbox, mergeRevealConfig, scrollViewFrames, scrollViewLinks } from '@vignettes/core/render'
+import { deckMessages, EMBED_REFERRER_POLICY, embedSandbox, localizedNotes, mergeRevealConfig, scrollViewFrames, scrollViewLinks } from '@vignettes/core/render'
 
 export function useReveal(
   container: Ref<HTMLElement | null>,
   config: Partial<RevealConfig> = {},
+  messages: DeckMessages = deckMessages(),
 ) {
   let revealInstance: RevealApi | null = null
   let overlayObserver: MutationObserver | null = null
@@ -70,7 +72,7 @@ export function useReveal(
 
     // Dynamic import to avoid SSR issues.
     const { default: Reveal } = await import('reveal.js')
-    // Speaker view (key S): reads each slide's `aside.notes`.
+    // Speaker view (key S): reads each slide's `aside.notes`, in the language of the deck.
     const { default: RevealNotes } = await import('reveal.js/plugin/notes/notes.esm.js')
 
     // The import above yields to the event loop; a fast route change can unmount
@@ -82,7 +84,7 @@ export function useReveal(
 
     const mergedConfig = mergeRevealConfig(config)
 
-    revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [RevealNotes, scrollViewLinks, scrollViewFrames] })
+    revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [localizedNotes(RevealNotes(), messages), scrollViewLinks, scrollViewFrames] })
     await revealInstance.initialize()
 
     // Sync to pick up Vue-rendered content (lightbox, previews, fragments won't
