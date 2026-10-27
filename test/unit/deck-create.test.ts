@@ -52,7 +52,7 @@ describe('creating a deck from a template (POST /api/presentations)', () => {
   it('starts from the named template', async () => {
     await createDeck(owner({ body: { slug: 'exemple', title: 'Mon exemple', template: 'example' } }))
     const draft = await currentDraftText('exemple')
-    expect(draft).toMatch(/^---\ntitle: Mon exemple\ntheme: dsfr\nparser: heading\n---/)
+    expect(draft).toMatch(/^---\ntitle: Mon exemple\ntheme: dsfr\n---/)
     expect(draft).toContain('# Mon exemple\n')
     expect(draft).toContain(':::Columns')
   })
