@@ -158,6 +158,12 @@
       "refusedBindingShort": "Line {line}: attribute “{name}” refused",
       "refusedEmbed": "http:// address: the browser blocks this frame, image or video in the studio. Write the address with https://, or with http://localhost for a server on your computer.",
       "refusedEmbedShort": "Line {line}: http:// address blocked",
+      "malformedAttributes": {
+        "brace": "Add the {'}'} brace that closes the attributes of “{name}”.",
+        "quote": "Add the \" quote that closes a value of “{name}”.",
+        "typographic": "Replace the « » or “ ” quotes in the attributes of “{name}” with straight quotes \"."
+      },
+      "malformedAttributesShort": "Line {line}: attributes of “{name}” to fix",
       "unclosedBlock": "Block {colons}{name} open to the end of the text: add a {colons} line after its content. Without it, the slides that follow go into this block.",
       "unclosedBlockShort": "Line {line}: block {colons}{name} to close",
       "layoutUnknownAttribute": "Unknown :layout setting: “{name}”. Pick a setting from the help.",

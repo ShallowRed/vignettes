@@ -15,7 +15,7 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
-import type { AttributeMention, ComponentMention, LayoutIssueKind, LayoutMention, OpenBlock } from '@vignettes/core/deck'
+import type { AttributeMention, ComponentMention, LayoutIssueKind, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { LineProblem } from '../../utils/editor-problems'
@@ -24,7 +24,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery } from '@pinia/colada'
-import { attributeMentions, componentMentions, deckRevealOptions, layoutMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks } from '@vignettes/core/deck'
+import { attributeMentions, componentMentions, deckRevealOptions, layoutMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks } from '@vignettes/core/deck'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
@@ -469,6 +469,7 @@ const unknownMentions = ref<ComponentMention[]>([])
 const refusedMentions = ref<AttributeMention[]>([])
 const layoutIssues = ref<LayoutMention[]>([])
 const unclosedIssues = ref<OpenBlock[]>([])
+const malformedIssues = ref<MalformedAttributes[]>([])
 const parseFailed = ref(false)
 let parsedText = ''
 
@@ -490,6 +491,12 @@ const LAYOUT_MESSAGES: Record<LayoutIssueKind, string> = {
 // The frontmatter guide marks its own problems in the source pane; the list
 // shows them with the others.
 const previewIssues = computed(() => [
+  ...malformedIssues.value.map(mention => ({
+    ...mention,
+    short: t('editor.diagnostics.malformedAttributesShort', { line: mention.line, name: mention.name }),
+    message: t(`editor.diagnostics.malformedAttributes.${mention.reason}`, { name: mention.name }),
+    marked: false,
+  })),
   ...unclosedIssues.value.map(block => ({
     ...block,
     short: t('editor.diagnostics.unclosedBlockShort', { line: block.line, name: block.name, colons: block.colons }),
@@ -497,7 +504,8 @@ const previewIssues = computed(() => [
     marked: false,
   })),
   ...frontmatterIssues.value.map(problem => ({ ...problem, marked: true })),
-  ...unknownMentions.value.map(mention => ({
+  // A directive whose attributes cannot be read shows as unknown too: one message is enough.
+  ...unknownMentions.value.filter(mention => !malformedIssues.value.some(bad => bad.line === mention.line && bad.name === mention.name)).map(mention => ({
     ...mention,
     short: t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name }),
     message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
@@ -526,6 +534,7 @@ async function reparse() {
     refusedMentions.value = attributeMentions(text)
     layoutIssues.value = layoutMentions(text)
     unclosedIssues.value = unclosedBlocks(text)
+    malformedIssues.value = malformedAttributeMentions(text)
     frontmatterIssues.value = listedFrontmatterProblems(text, t)
     parseFailed.value = false
     parsedText = text

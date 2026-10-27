@@ -158,6 +158,12 @@
       "refusedBindingShort": "Ligne {line} : attribut « {name} » refusé",
       "refusedEmbed": "Adresse en http:// : le navigateur bloque ce cadre, cette image ou cette vidéo dans le studio. Écrivez l'adresse en https://, ou en http://localhost pour un serveur de votre ordinateur.",
       "refusedEmbedShort": "Ligne {line} : adresse en http:// bloquée",
+      "malformedAttributes": {
+        "brace": "Ajoutez l'accolade {'}'} qui ferme les attributs de « {name} ».",
+        "quote": "Ajoutez le guillemet \" qui ferme une valeur de « {name} ».",
+        "typographic": "Remplacez les guillemets « » ou “ ” des attributs de « {name} » par des guillemets droits \"."
+      },
+      "malformedAttributesShort": "Ligne {line} : attributs de « {name} » à corriger",
       "unclosedBlock": "Bloc {colons}{name} ouvert jusqu'à la fin du texte : ajoutez une ligne {colons} après son contenu. Sans elle, les diapositives suivantes entrent dans ce bloc.",
       "unclosedBlockShort": "Ligne {line} : bloc {colons}{name} à fermer",
       "layoutUnknownAttribute": "Réglage inconnu de :layout : « {name} ». Choisissez un réglage dans l'aide.",

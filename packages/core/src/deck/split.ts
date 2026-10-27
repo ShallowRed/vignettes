@@ -443,6 +443,58 @@ export interface LayoutAnnotation {
 
 const LAYOUT_ANNOTATION_RE = /:layout\{([^{}]*)\}/g
 
+/**
+ * A `{…}` of attributes written so that MDC cannot read it as written: a
+ * closing brace or quote missing, which shows the directive as text, or a
+ * value between typographic quotes, which MDC cuts at its first space.
+ */
+export interface MalformedAttributes {
+  /** The name of the directive. */
+  name: string
+  reason: 'brace' | 'quote' | 'typographic'
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of the directive, and length of what it covers on its line. */
+  column: number
+  length: number
+}
+
+const DIRECTIVE_ATTRIBUTES_RE = /(^|[\s([])(:+)([a-z][\w-]*)\{/gi
+const TYPOGRAPHIC_QUOTE_RE = /[«»“”„]/
+const QUOTED_VALUE_RE = /"(?:[^"\\]|\\.)*"/g
+
+/** The index of the brace that closes the attributes opened at `open`, outside the quoted values; else what is missing. */
+function attributesEnd(prose: string, open: number): number | 'brace' | 'quote' {
+  let quoted = false
+  for (let index = open; index < prose.length; index++) {
+    if (prose[index] === '\\')
+      index++
+    else if (prose[index] === '"')
+      quoted = !quoted
+    else if (prose[index] === '}' && !quoted)
+      return index
+  }
+  return quoted ? 'quote' : 'brace'
+}
+
+/** The directives whose attributes MDC cannot read, outside frontmatter and code. */
+export function malformedAttributeMentions(raw: string): MalformedAttributes[] {
+  const mentions: MalformedAttributes[] = []
+  for (const { line, prose } of proseLines(raw)) {
+    for (const match of prose.matchAll(DIRECTIVE_ATTRIBUTES_RE)) {
+      const column = match.index + match[1]!.length
+      const open = match.index + match[0].length
+      const end = attributesEnd(prose, open)
+      const reason = typeof end === 'number'
+        ? TYPOGRAPHIC_QUOTE_RE.test(prose.slice(open, end).replace(QUOTED_VALUE_RE, '')) ? 'typographic' : undefined
+        : end
+      if (reason)
+        mentions.push({ name: match[3]!, reason, line, column, length: (typeof end === 'number' ? end + 1 : prose.length) - column })
+    }
+  }
+  return mentions
+}
+
 /** The `:layout` annotations of a deck, outside the frontmatter, fenced code and inline code. */
 export function layoutAnnotations(raw: string): LayoutAnnotation[] {
   const annotations: LayoutAnnotation[] = []

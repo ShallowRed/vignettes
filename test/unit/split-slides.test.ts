@@ -1,4 +1,4 @@
-import { attributeMentions, blockEndAround, componentMentions, isSectionSlide, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
+import { attributeMentions, blockEndAround, componentMentions, isSectionSlide, malformedAttributeMentions, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
@@ -196,5 +196,21 @@ describe('blockEndAround', () => {
   it('gives nothing outside a block, and the last line in a block left open', () => {
     expect(blockEndAround(raw, 1)).toBeUndefined()
     expect(blockEndAround('::Notes\nA\nB', 2)).toBe(3)
+  })
+})
+
+describe('malformedAttributeMentions', () => {
+  it('marks a missing brace, a missing quote and a value between typographic quotes', () => {
+    const raw = ':subtitle{text="Sous-titre"\n\n::Quote{author="Jean}\n::\n\n::Quote{author=«Une usagère»}\n::\n'
+    expect(malformedAttributeMentions(raw).map(({ name, reason, line }) => [name, reason, line])).toEqual([
+      ['subtitle', 'brace', 1],
+      ['Quote', 'quote', 3],
+      ['Quote', 'typographic', 6],
+    ])
+  })
+
+  it('leaves well-written attributes, flags, unquoted values and quoted braces or typographic quotes', () => {
+    const raw = ':::Screens{cols=3 lightbox}\n::StoryFrame{story="a--b" lightbox}\n::\n:::\n:i{name="ri:home-line"}\n:pretitle{text="Le « dossier » unique"}\n:quicklink{text="a}b" href="https://example.com"}'
+    expect(malformedAttributeMentions(raw)).toEqual([])
   })
 })
