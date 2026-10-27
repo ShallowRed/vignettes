@@ -22,6 +22,7 @@ import type { Translate } from '../../config/editor-reference'
 import type { Peer } from '../../utils/editor-peers'
 import type { LineProblem, Severity } from '../../utils/editor-problems'
 import { STATUS_CONFIG } from '#shared/presentations'
+import { completionStatus } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
@@ -725,11 +726,23 @@ function goToLine(line: number) {
 }
 
 const MENTIONS_SHOWN = 3
-watch([raw, themeVersionGaps], () => {
-  previewPending.value = true
+// The preview renders again once the typing pauses, and waits while the list of
+// suggestions is open, so that the list answers the keys at once.
+function scheduleReparse() {
   if (timer)
     clearTimeout(timer)
-  timer = setTimeout(reparse, 300)
+  timer = setTimeout(() => {
+    const view = editorView.value
+    if (view && completionStatus(view.state) === 'active')
+      scheduleReparse()
+    else
+      reparse()
+  }, 300)
+}
+
+watch([raw, themeVersionGaps], () => {
+  previewPending.value = true
+  scheduleReparse()
 }, { immediate: true })
 
 // ── Real-time collaboration (Yjs + Hocuspocus) ──────────────────────────────

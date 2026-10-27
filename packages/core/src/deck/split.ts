@@ -263,13 +263,21 @@ function separatorSlides(lines: string[], scanned: ScannedLine[], from: number):
   return slides
 }
 
-export function splitSlides(raw: string, parser: ParserId): SlideSource[] {
+// The editor reads the slides of the same text several times per keystroke:
+// the last cut is kept.
+let lastCut: { raw: string, parser: ParserId, slides: readonly SlideSource[] } | undefined
+
+export function splitSlides(raw: string, parser: ParserId): readonly SlideSource[] {
+  if (lastCut?.raw === raw && lastCut.parser === parser)
+    return lastCut.slides
   const lines = raw.split('\n')
   const from = frontmatterLineCount(raw)
   const scanned = scan(lines, from)
-  return parser === 'separator'
+  const slides = parser === 'separator'
     ? separatorSlides(lines, scanned, from)
     : headingSlides(lines, scanned)
+  lastCut = { raw, parser, slides }
+  return slides
 }
 
 /** A component name as written in the source: `::Name`, `:::Name`, `:name{…}`. */

@@ -6,6 +6,8 @@ import { getThemeTokens } from '@vignettes/core/theme'
 import { defaultMetadata } from '../config/presentation.ts'
 import { PARSERS } from '../utils/slide-ast.ts'
 
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/
+
 /**
  * Parse raw deck markdown into `PresentationData`: the single client-side parse
  * path, shared by `usePresentation` (server-fetched) and the integrated editor
@@ -15,7 +17,10 @@ import { PARSERS } from '../utils/slide-ast.ts'
 export async function buildPresentationData(
   raw: string,
 ): Promise<PresentationData> {
-  const ast = await parseMarkdown(raw)
+  // MDC reads the metadata from the frontmatter alone, and takes the title from
+  // the first heading of the body when the frontmatter names none.
+  const frontmatter = FRONTMATTER_RE.exec(raw)?.[0]
+  const ast = await parseMarkdown(frontmatter && /^title:/m.test(frontmatter) ? frontmatter : raw)
   const metadata = {
     ...defaultMetadata(),
     ...(ast.data || {}),

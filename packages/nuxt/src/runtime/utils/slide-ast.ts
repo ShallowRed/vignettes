@@ -214,18 +214,48 @@ function linkDefinitions(raw: string): string {
 }
 
 /** The slides of one horizontal position, as `splitSlides` cut them. */
-function groupByPosition(sources: SlideSource[]): SlideSource[][] {
+function groupByPosition(sources: readonly SlideSource[]): SlideSource[][] {
   const groups: SlideSource[][] = []
   for (const source of sources)
     (groups[source.h] ??= []).push(source)
   return groups
 }
 
+/** FNV-1a hash of a text, in base 36. */
+function fingerprint(text: string): string {
+  let hash = 0x811C9DC5
+  for (let index = 0; index < text.length; index++)
+    hash = Math.imul(hash ^ text.charCodeAt(index), 0x01000193)
+  return (hash >>> 0).toString(36)
+}
+
 // The slide of one source, marked when it is a section.
-async function sourceSlide(source: SlideSource, definitions?: string): Promise<{ children: any[], slide: Slide }> {
-  const children = await parseChunk(source.text, definitions)
-  const slide = createSlide(children)
-  return { children, slide: isSectionSlide(source.text) ? { ...slide, section: true } : slide }
+async function parseSourceSlide(text: string, definitions?: string): Promise<{ children: any[], slide: Slide }> {
+  const children = await parseChunk(text, definitions)
+  const slide = { ...createSlide(children), key: fingerprint(text) }
+  return { children, slide: isSectionSlide(text) ? { ...slide, section: true } : slide }
+}
+
+// The editor parses the deck again at each pause of the typing: a slide whose
+// text is unchanged comes from this cache as the same object, which the
+// renderer leaves as it is. The least recently used slide leaves the cache first.
+const SLIDE_CACHE_SIZE = 500
+const parsedSlides = new Map<string, Promise<{ children: any[], slide: Slide }>>()
+
+function sourceSlide(source: SlideSource, definitions = ''): Promise<{ children: any[], slide: Slide }> {
+  const key = `${source.text}\u0000${definitions}`
+  const cached = parsedSlides.get(key)
+  if (cached) {
+    parsedSlides.delete(key)
+    parsedSlides.set(key, cached)
+    return cached
+  }
+  const parsed = parseSourceSlide(source.text, definitions)
+  parsed.catch(() => parsedSlides.delete(key))
+  parsedSlides.set(key, parsed)
+  if (parsedSlides.size > SLIDE_CACHE_SIZE)
+    parsedSlides.delete(parsedSlides.keys().next().value!)
+  return parsed
 }
 
 // Heading decks: a stack carries its vertical slides only.
@@ -237,6 +267,7 @@ async function headingSlide(group: SlideSource[], definitions: string): Promise<
     body: { type: 'root', children: [] },
     verticalSlides: parts.map(part => part.slide),
     headingLevel: getHeadingLevel(parts.flatMap(part => part.children)),
+    key: fingerprint(group.map(source => source.text).join('\n')),
   }
 }
 
@@ -250,6 +281,7 @@ async function separatorSlide(group: SlideSource[]): Promise<Slide> {
     body: { type: 'root', children: [] },
     verticalSlides,
     headingLevel: verticalSlides[0]?.headingLevel,
+    key: fingerprint(group.map(source => source.text).join('\n')),
   }
 }
 

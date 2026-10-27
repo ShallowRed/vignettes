@@ -27,6 +27,8 @@ export interface Slide {
   /** A component of the slide takes the whole slide, so the slide has no header and body split. */
   fullSlide?: boolean
   quicklink?: { text: string, href: string }
+  /** A fingerprint of the source text: the renderer keys the slide by it, so a slide keeps its components while its text stays the same. */
+  key?: string
 }
 
 /**
