@@ -155,7 +155,7 @@
       "capture": "Capturer",
       "snapshotCaptured": "Instantané capturé",
       "snapshotCapturedAt": "Instantané capturé à {time}",
-      "snapshotUnchanged": "Le dernier instantané contient déjà ce brouillon",
+      "snapshotUnchanged": "Brouillon enregistré : le dernier instantané le contient déjà",
       "snapshotOffline": "La connexion au serveur est perdue : attendez son retour ou passez en solo pour capturer un instantané.",
       "lastSnapshot": "Dernier instantané : {when}",
       "noSnapshot": "Aucun instantané",

@@ -155,7 +155,7 @@
       "capture": "Capture",
       "snapshotCaptured": "Snapshot captured",
       "snapshotCapturedAt": "Snapshot captured at {time}",
-      "snapshotUnchanged": "The last snapshot already holds this draft",
+      "snapshotUnchanged": "Draft saved: the last snapshot already holds it",
       "snapshotOffline": "The connection to the server is lost: wait for it to come back or switch to solo to capture a snapshot.",
       "lastSnapshot": "Last snapshot: {when}",
       "noSnapshot": "No snapshot",
