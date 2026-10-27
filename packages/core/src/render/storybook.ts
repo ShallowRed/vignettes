@@ -17,7 +17,9 @@ export function buildStoryUrl(
 ): string | undefined {
   if (!base || !story || !isDeckUrl(base))
     return undefined
-  const clean = base.replace(/\/+$/, '')
+  // An address copied from the browser bar while a story is open carries the
+  // query of the Storybook UI and may end with its page: keep the folder.
+  const clean = base.split(/[?#]/)[0]!.replace(/\/(?:index|iframe)\.html$/, '').replace(/\/+$/, '')
   const path = options.full ? 'index.html?path=/story' : 'iframe.html?id'
   const sep = options.full ? '/' : '='
   const params = new URLSearchParams()

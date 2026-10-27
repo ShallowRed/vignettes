@@ -18,7 +18,7 @@ interface Props {
   type?: 'iframe' | 'image'
   /** CSS `object-fit` of an image in the frame. */
   fit?: 'cover' | 'contain'
-  /** Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. */
+  /** Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, `wide` outside a gallery. */
   ratio?: string
   /** Logical width (px) the iframe renders at before scaling; higher = more of the page visible. */
   viewport?: string | number
@@ -64,7 +64,8 @@ const resolvedSrc = computed(() => {
 const isIframe = computed(() =>
   inferMediaType(resolvedSrc.value ?? '', props.type, Boolean(props.story)) === 'iframe')
 
-const aspect = computed(() => resolveAspectRatio(props.ratio))
+// An iframe has no height of its own: outside a gallery, a frame needs a ratio.
+const aspect = computed(() => resolveAspectRatio(props.ratio) ?? (props.grow ? undefined : resolveAspectRatio('wide')))
 const missing = computed(() => !resolvedSrc.value)
 
 // Width exposed as `--preview-width`; scaled-frame.js reads it to size the iframe

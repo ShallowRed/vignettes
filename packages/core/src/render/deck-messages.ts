@@ -57,7 +57,7 @@ const FR: DeckMessages = {
   zoomIn: 'Zoom avant',
   zoomReset: 'Réinitialiser',
   close: 'Fermer',
-  storyMissing: 'Aucune source : indiquez une story, avec la clé storybook du frontmatter, ou un src.',
+  storyMissing: 'Indiquez une story, avec la clé storybook dans l\'en-tête de la présentation, ou une adresse dans src.',
 }
 
 const EN: DeckMessages = {
@@ -85,7 +85,7 @@ const EN: DeckMessages = {
   zoomIn: 'Zoom in',
   zoomReset: 'Reset',
   close: 'Close',
-  storyMissing: 'No source: set a story, with the storybook key of the frontmatter, or a src.',
+  storyMissing: 'Set a story, with the storybook key in the deck header, or an address in src.',
 }
 
 export const DECK_MESSAGES: Record<string, DeckMessages> = { fr: FR, en: EN }

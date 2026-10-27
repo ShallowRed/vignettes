@@ -136,6 +136,13 @@ describe('story and media addresses', () => {
     expect(buildStoryUrl('https://sb.example', 'a&b=c')).toBe('https://sb.example/iframe.html?id=a%26b%3Dc&viewMode=story')
   })
 
+  it('keeps the folder of a Storybook address copied from the browser bar', () => {
+    const story = 'https://sb.example/main/iframe.html?id=a--b&viewMode=story'
+    expect(buildStoryUrl('https://sb.example/main/?path=/story/c--d', 'a--b')).toBe(story)
+    expect(buildStoryUrl('https://sb.example/main/index.html?path=/story/c--d', 'a--b')).toBe(story)
+    expect(buildStoryUrl('https://sb.example/main/iframe.html', 'a--b')).toBe(story)
+  })
+
   it('gives no media for a story of a refused base or a refused source', () => {
     const media = (attributes: Record<string, unknown>) => readLayout({ media: 'right', ...attributes }).layout.media
     expect(resolveSlideMedia(media({ story: 'a--b' }), { storybook: 'javascript:alert(1)' })).toBeNull()

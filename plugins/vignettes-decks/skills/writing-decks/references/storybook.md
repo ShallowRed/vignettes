@@ -79,7 +79,7 @@ Attributes:
 - `src` (`string`): Explicit URL, used when `story` is absent.
 - `type` (`'iframe' | 'image'`): Kind of media; without it, a story or an address is a page, and an address that ends with an image extension an image.
 - `fit` (`'cover' | 'contain'`, default `'cover'`): CSS `object-fit` of an image in the frame.
-- `ratio` (`string`): Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`.
+- `ratio` (`string`): Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, `wide` outside a gallery.
 - `viewport` (`string | number`): Logical width (px) the iframe renders at before scaling; higher = more of the page visible.
 - `previewWidth` (`string | number`): The name of `viewport` in the earlier format.
 - `raw` (`boolean`, default `false`): Renders the frame at its native size, without scaling.
