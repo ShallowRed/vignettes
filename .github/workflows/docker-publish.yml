@@ -43,10 +43,13 @@ env:
 
 jobs:
   # Lint, tests unitaires et tests e2e, définis une seule fois dans
-  # `checks.yml`, qui tourne aussi sur chaque pull request. L'image n'est
-  # construite et déployée que s'ils passent.
+  # `checks.yml`, qui tourne aussi sur les pull requests vers `main`. Sur `main`
+  # et les tags, l'image n'est construite et déployée que s'ils passent ;
+  # `staging` reçoit des branches vérifiées en local et construit seulement.
   test:
     uses: ./.github/workflows/checks.yml
+    with:
+      scope: ${{ github.ref == 'refs/heads/staging' && 'build' || 'app' }}
 
   build:
     needs: test

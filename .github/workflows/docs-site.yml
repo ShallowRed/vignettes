@@ -3,11 +3,11 @@ name: Documentation site
 # Publishes the documentation site (site/, Docus) to the VPS, which serves it at
 # the address of the repository variable DOCS_SITE_URL.
 #
-# `checks.yml` runs the checks and generates the site; this workflow sends that
-# tested output. The upload goes over SSH with a dedicated key, which the VPS
-# accepts for one command only, the `vignettes/docs-deploy.sh` script of the
-# vps-infra repository: the key can replace the site, never redeploy the
-# application. The job reads that key, VPS_DOCS_SSH_KEY, from the `/docs` path of
+# `checks.yml` generates the site, which builds the render module and reads
+# the package READMEs; this workflow sends that output. The upload goes over
+# SSH with a dedicated key, which the VPS accepts for one command only, the
+# `vignettes/docs-deploy.sh` script of the vps-infra repository: the key can
+# replace the site, never redeploy the application. The job reads that key, VPS_DOCS_SSH_KEY, from the `/docs` path of
 # Infisical over OIDC, with the repository variables INFISICAL_* and VPS_*, as
 # `docker-publish.yml` does.
 
@@ -33,13 +33,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  checks:
+  # `docker-publish.yml` checks the application on the same push: this workflow
+  # generates the site only.
+  site:
     uses: ./.github/workflows/checks.yml
     with:
-      skip-test-for-docs: true
+      scope: site
 
   publish:
-    needs: checks
+    needs: site
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

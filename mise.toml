@@ -25,10 +25,11 @@ outputs = { auto = true }
 run = "pnpm install"
 
 [tasks.setup]
-description = "First launch: write .env with a generated session secret, install the dependencies, create the database"
+description = "First launch: write .env with a generated session secret, install the dependencies, create the database, run the checks before each push"
 depends = [ "install" ]
 run = """
 set -e
+mise generate git-pre-commit --hook pre-push --task check --write
 if [ -f .env ]; then
   echo "[setup] .env existe déjà, laissé tel quel."
 else

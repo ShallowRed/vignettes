@@ -167,7 +167,7 @@ A **parser** implements the `DeckParser` port of `@vignettes/core/deck` and join
 ## Deployment
 Production is SSR, not static hosting:
 - Nitro `node-server` preset (`NITRO_PRESET=node_server`), built into a multi-stage
-  `Dockerfile` (deps → build → `node:22-slim` runtime with `.output/` only). In CI the image takes the `.output/` the end-to-end tests ran on, passed as the named build context `output`.
+  `Dockerfile` (deps → build → `node:22-slim` runtime with `.output/` only). In CI the image takes the `.output/` of the checks, passed as the named build context `output`: on `main` the end-to-end tests ran on it, on `staging` the checks build it without testing it.
 - Content lives in the database; the image holds code only, so a content change never rebuilds it. With `NUXT_DATABASE_URL`, `run-app.sh` starts the app on that PostgreSQL server. Without it, `run-app.sh` sets `NUXT_DATABASE_DRIVER=sqlite`, restores the SQLite file from object storage on an empty volume and runs the app under Litestream replication.
 - `.github/workflows/docker-publish.yml` builds + pushes the image to GHCR and deploys it over SSH: push to `staging` deploys the staging instance, push to `main` the production one (infra lives in a separate `vps-infra` repo).
 - Runtime secrets are pulled from a self-hosted Infisical instance by `docker-entrypoint.sh` (`infisical run`); secrets never touch disk.

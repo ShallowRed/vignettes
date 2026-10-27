@@ -1,16 +1,21 @@
 name: Checks
 
 # Lint, types, unit tests, end-to-end tests on the production build and the
-# documentation site. Run on every pull request, and called by `docker-publish.yml`
-# and `docs-site.yml` before they publish, so all go through one definition.
+# documentation site, in one definition. A pull request into `main` runs what
+# its changes need; `docker-publish.yml` and `docs-site.yml` call it with the
+# part they publish.
 on:
   pull_request:
+    # A pull request higher in a stack is checked once it targets `main`, and a
+    # draft once it is ready for review.
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_call:
     inputs:
-      skip-test-for-docs:
-        description: Skip the test job when the push changes the documentation only.
-        type: boolean
-        default: false
+      scope:
+        description: '`app` checks and builds the application, `build` builds it without checking it (staging), `site` generates the documentation site.'
+        type: string
+        default: app
 
 concurrency:
   # A new push on a pull request cancels the previous run. Runs called by a
@@ -19,36 +24,52 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  lint:
+  # What to run: on a pull request, the test job when the change touches more
+  # than the documentation (the site, `docs/` and the Markdown files at the
+  # root; `docs/theme-system.md` counts as code, since the deck plugin test
+  # reads it), and the site job when it touches what the site reads, the paths
+  # of `docs-site.yml`. A call runs what its scope names.
+  changes:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+      site: ${{ steps.diff.outputs.site }}
     steps:
       - name: Checkout
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
-          cache: pnpm
+          fetch-depth: 0
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Audit
-        run: pnpm audit --prod --audit-level=high
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Types
-        run: pnpm exec nuxi typecheck
+      - name: List the changed files
+        id: diff
+        env:
+          SCOPE: ${{ inputs.scope }}
+          RANGE: ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then
+            if [ "$SCOPE" = site ]; then code=false site=true; else code=true site=false; fi
+          else
+            files=$(git diff --name-only --no-renames "$RANGE")
+            code=false site=false
+            if printf '%s\n' "$files" | grep -vE '^(site/|docs/|[^/]+\.md$)' | grep -q . || printf '%s\n' "$files" | grep -qx docs/theme-system.md; then
+              code=true
+            fi
+            if printf '%s\n' "$files" | grep -qE '^(site/|packages/|themes/|examples/|public/pictograms/|docs/theme-system\.md$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$)'; then
+              site=true
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "site=$site" >> "$GITHUB_OUTPUT"
 
   # The documentation site installs the render module and publishes the package
   # READMEs: generating it checks both. Same command as `mise run site:generate`.
   site:
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -84,37 +105,6 @@ jobs:
           path: site/.output/public
           retention-days: 1
 
-  # The test job checks the application and the packages. A pull request, or a
-  # caller that sets `skip-test-for-docs`, skips it when the change touches the
-  # documentation only: the site, `docs/` and the Markdown files at the root.
-  # `docs/theme-system.md` counts as code, since the deck plugin test reads it.
-  changes:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      code: ${{ steps.diff.outputs.code }}
-    steps:
-      - name: Checkout
-        if: github.event_name == 'pull_request' || inputs.skip-test-for-docs
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 0
-
-      - name: List the changed files
-        id: diff
-        env:
-          FILTER: ${{ github.event_name == 'pull_request' || inputs.skip-test-for-docs }}
-          RANGE: ${{ github.event_name == 'pull_request' && format('{0}...{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || format('{0}..{1}', github.event.before, github.sha) }}
-        run: |
-          code=true
-          if [ "$FILTER" = true ] && [ "${RANGE%%.*}" != 0000000000000000000000000000000000000000 ] && files=$(git diff --name-only --no-renames "$RANGE") && [ -n "$files" ]; then
-            if ! printf '%s\n' "$files" | grep -vE '^(site/|docs/|[^/]+\.md$)' | grep -q . && ! printf '%s\n' "$files" | grep -qx docs/theme-system.md; then
-              code=false
-            fi
-          fi
-          echo "code=$code" >> "$GITHUB_OUTPUT"
-
   test:
     needs: changes
     if: needs.changes.outputs.code == 'true'
@@ -142,7 +132,21 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Staging receives branches checked locally: it builds them only.
+      - name: Audit
+        if: inputs.scope != 'build'
+        run: pnpm audit --prod --audit-level=high
+
+      - name: Lint
+        if: inputs.scope != 'build'
+        run: pnpm lint
+
+      - name: Types
+        if: inputs.scope != 'build'
+        run: pnpm exec nuxi typecheck
+
       - name: Unit tests
+        if: inputs.scope != 'build'
         run: pnpm test
 
       - name: Build
@@ -150,8 +154,12 @@ jobs:
           NUXT_TELEMETRY_DISABLED: 1
         run: pnpm build:server
 
+      # A pull request runs Chromium; `main` runs Firefox too.
       - name: End-to-end tests
-        run: pnpm test:e2e
+        if: inputs.scope != 'build'
+        env:
+          PROJECTS: ${{ github.event_name == 'pull_request' && '--project=chromium' || '' }}
+        run: pnpm test:e2e ${PROJECTS:+"$PROJECTS"}
 
       # The publishing workflow builds its image from this tested build. The tar
       # keeps the links Nitro makes between its packages, which an artifact
