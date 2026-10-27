@@ -158,6 +158,8 @@
       "refusedBindingShort": "Line {line}: attribute “{name}” refused",
       "refusedEmbed": "http:// address: the browser blocks this frame, image or video in the studio. Write the address with https://, or with http://localhost for a server on your computer.",
       "refusedEmbedShort": "Line {line}: http:// address blocked",
+      "unclosedBlock": "Block {colons}{name} open to the end of the text: add a {colons} line after its content. Without it, the slides that follow go into this block.",
+      "unclosedBlockShort": "Line {line}: block {colons}{name} to close",
       "layoutUnknownAttribute": "Unknown :layout setting: “{name}”. Pick a setting from the help.",
       "layoutUnknownAttributeShort": "Line {line}: unknown setting “{name}”",
       "layoutInvalidValue": "Unknown value for “{name}”. Pick a value from the help.",

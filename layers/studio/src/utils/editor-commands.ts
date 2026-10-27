@@ -1,6 +1,7 @@
 import type { EditorState, Text, TransactionSpec } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { snippet } from '@codemirror/autocomplete'
+import { blockEndAround } from '@vignettes/core/deck'
 
 /**
  * Markdown insertion helpers for the writer toolbar. Each command edits the
@@ -86,10 +87,20 @@ export function imageDirectiveInsertion(state: EditorState, at: number, src: str
   return { changes: { from: pos, insert }, selection: { anchor: pos + insert.length } }
 }
 
-/** Insert a whole-slide template on its own paragraph after the current line. */
+/**
+ * The end of the line after which a new slide goes: the caret's line, or the
+ * line that closes the block around it, so the slide stays out of that block.
+ */
+function slideInsertPos(state: EditorState): number {
+  const { doc } = state
+  const line = doc.lineAt(state.selection.main.head)
+  const end = blockEndAround(doc.toString(), line.number)
+  return safeInsertPos(doc, end ? doc.line(end).to : line.to)
+}
+
+/** Insert a whole-slide template on its own paragraph after the current line, out of any block. */
 export function insertSlideTemplate(view: EditorView, template: string): void {
-  const { doc } = view.state
-  const pos = safeInsertPos(doc, doc.lineAt(view.state.selection.main.head).to)
+  const pos = slideInsertPos(view.state)
   snippet(`\n\n${template}`)(view, null, pos, pos)
   view.focus()
 }
@@ -107,13 +118,13 @@ export function insertImage(view: EditorView, placeholder: string): void {
   view.focus()
 }
 
-/** Start a new slide: a `---` separator on its own paragraph after the current line. */
+/** Start a new slide: a `---` separator on its own paragraph after the current line, out of any block. */
 export function insertSlideBreak(view: EditorView): void {
-  const line = view.state.doc.lineAt(view.state.selection.main.head)
+  const pos = slideInsertPos(view.state)
   const insert = '\n\n---\n\n'
   view.dispatch({
-    changes: { from: line.to, insert },
-    selection: { anchor: line.to + insert.length },
+    changes: { from: pos, insert },
+    selection: { anchor: pos + insert.length },
   })
   view.focus()
 }

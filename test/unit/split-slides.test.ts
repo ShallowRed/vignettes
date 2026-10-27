@@ -1,4 +1,4 @@
-import { attributeMentions, componentMentions, isSectionSlide, splitSlides } from '@vignettes/core/deck'
+import { attributeMentions, blockEndAround, componentMentions, isSectionSlide, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
@@ -171,5 +171,30 @@ describe('isSectionSlide', () => {
     const body = '## Part one\n\nOne line.\n\n### A point\n\nSome text.'
     expect(sections(`# Title\n\n${body}`, 'heading')).toEqual([false, true, false])
     expect(sections(`# Title\n\n---\n\n## Part one\n\nOne line.\n\n---\n\n## A list\n\n- One point`, 'separator')).toEqual([false, true, false])
+  })
+})
+
+describe('unclosedBlocks', () => {
+  it('lists the blocks no closing line ends, outside fenced code', () => {
+    const raw = '---\ntitle: T\n---\n### Citation\n\n::Quote{author="A"}\nTexte.\n\n---\n\n### Suite\n\n```md\n::Columns\n```\n'
+    expect(unclosedBlocks(raw)).toEqual([{ name: 'Quote', colons: '::', line: 6, column: 0, length: 7 }])
+  })
+
+  it('lists none when each block is closed, nested blocks included', () => {
+    expect(unclosedBlocks(':::Columns\n::Column\nA\n::\n::Column\nB\n::\n:::\n')).toEqual([])
+  })
+})
+
+describe('blockEndAround', () => {
+  const raw = '### Citation\n\n::Quote{author="A"}\nTexte.\n::\n\n### Colonnes\n\n:::Columns\n::Column\nA\n::\n:::\n'
+
+  it('gives the line that closes the outermost block around the caret', () => {
+    expect(blockEndAround(raw, 3)).toBe(5)
+    expect(blockEndAround(raw, 11)).toBe(13)
+  })
+
+  it('gives nothing outside a block, and the last line in a block left open', () => {
+    expect(blockEndAround(raw, 1)).toBeUndefined()
+    expect(blockEndAround('::Notes\nA\nB', 2)).toBe(3)
   })
 })

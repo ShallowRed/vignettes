@@ -32,7 +32,7 @@ export interface SlideSource {
 
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/
-const BLOCK_OPEN_RE = /^\s*(:{2,})[a-z]/i
+const BLOCK_OPEN_RE = /^(\s*)(:{2,})([a-z][\w-]*)/i
 const BLOCK_CLOSE_RE = /^\s*(:{2,})\s*$/
 const ATX_RE = /^ {0,3}(#{1,6})(?:[ \t]|$)/
 const THEMATIC_BREAK_RE = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/
@@ -69,48 +69,70 @@ function isFenceClose(line: string, fence: string): boolean {
   return Boolean(match && match[1]![0] === fence[0] && match[1]!.length >= fence.length && !line.slice(match[0].length).trim())
 }
 
+/** A block that a `::Name` line opens, placed by that line. */
+export interface OpenBlock {
+  name: string
+  /** The colons that open the block, which its closing line repeats. */
+  colons: string
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of `::Name`, and its length. */
+  column: number
+  length: number
+}
+
+interface WalkedLine {
+  /** 0-based index in the whole document. */
+  index: number
+  /** The line as written, without a trailing carriage return. */
+  text: string
+  /** The line belongs to fenced code, its fences included. */
+  code: boolean
+  /** The line belongs to fenced code or to an MDC block, its opening and closing lines included. */
+  nested: boolean
+  /** The blocks still open once the line is read, until the walk reads the next line. */
+  open: readonly OpenBlock[]
+}
+
+/** Reads the lines from `from` on, following fenced code and the MDC blocks. */
+function* walk(lines: string[], from: number): Generator<WalkedLine> {
+  const open: OpenBlock[] = []
+  let fence: string | undefined
+  for (let index = from; index < lines.length; index++) {
+    const text = lines[index]!.replace(/\r$/, '')
+    const fenceOpen = fence ? undefined : FENCE_RE.exec(text)
+    const close = fence || fenceOpen ? undefined : BLOCK_CLOSE_RE.exec(text)
+    const name = fence || fenceOpen || close ? undefined : BLOCK_OPEN_RE.exec(text)
+    const code = Boolean(fence || fenceOpen)
+    const nested = code || Boolean(name) || open.length > 0
+    if (fence && isFenceClose(text, fence)) {
+      fence = undefined
+    }
+    else if (fenceOpen) {
+      fence = fenceOpen[1]
+    }
+    else if (close && open.length) {
+      const at = open.map(block => block.colons.length).lastIndexOf(close[1]!.length)
+      if (at !== -1)
+        open.length = at
+    }
+    else if (name) {
+      open.push({ name: name[3]!, colons: name[2]!, line: index + 1, column: name[1]!.length, length: name[2]!.length + name[3]!.length })
+    }
+    yield { index, text, code, nested, open }
+  }
+}
+
 /** Classifies each line after the frontmatter; fenced code and MDC blocks are `nested`. */
 function scan(lines: string[], from: number): ScannedLine[] {
   const scanned: ScannedLine[] = []
-  let fence: string | undefined
-  const blocks: number[] = []
   let paragraph: number | undefined
 
-  for (let index = from; index < lines.length; index++) {
-    const text = lines[index]!.replace(/\r$/, '')
+  for (const { index, text, nested } of walk(lines, from)) {
     const push = (kind: Kind, extra?: Partial<ScannedLine>) => scanned.push({ index, kind, text, ...extra })
 
-    if (fence) {
-      if (isFenceClose(text, fence))
-        fence = undefined
-      push('nested')
-      continue
-    }
-    const fenceOpen = FENCE_RE.exec(text)
-    if (fenceOpen && !blocks.length) {
-      fence = fenceOpen[1]
+    if (nested) {
       paragraph = undefined
-      push('nested')
-      continue
-    }
-    const close = BLOCK_CLOSE_RE.exec(text)
-    if (close && blocks.length) {
-      const at = blocks.lastIndexOf(close[1]!.length)
-      if (at !== -1)
-        blocks.length = at
-      push('nested')
-      continue
-    }
-    const open = BLOCK_OPEN_RE.exec(text)
-    if (open) {
-      blocks.push(open[1]!.length)
-      paragraph = undefined
-      push('nested')
-      continue
-    }
-    if (blocks.length) {
-      if (fenceOpen)
-        fence = fenceOpen[1]
       push('nested')
       continue
     }
@@ -268,22 +290,38 @@ const INLINE_CODE_RE = /(`+)[^`]+\1/g
  * blanked so the columns stay those of the source.
  */
 function* proseLines(raw: string): Generator<{ line: number, prose: string }> {
-  const lines = raw.split('\n')
-  let fence: string | undefined
-  for (let index = frontmatterLineCount(raw); index < lines.length; index++) {
-    const text = lines[index]!.replace(/\r$/, '')
-    if (fence) {
-      if (isFenceClose(text, fence))
-        fence = undefined
-      continue
-    }
-    const fenceOpen = FENCE_RE.exec(text)
-    if (fenceOpen) {
-      fence = fenceOpen[1]
-      continue
-    }
-    yield { line: index + 1, prose: text.replace(INLINE_CODE_RE, code => ' '.repeat(code.length)) }
+  for (const { index, text, code } of walk(raw.split('\n'), frontmatterLineCount(raw))) {
+    if (!code)
+      yield { line: index + 1, prose: text.replace(INLINE_CODE_RE, inline => ' '.repeat(inline.length)) }
   }
+}
+
+/**
+ * The blocks that no closing line ends before the end of the text, which MDC
+ * closes at the end of the text, so they take in the slides that follow them.
+ */
+export function unclosedBlocks(raw: string): OpenBlock[] {
+  let open: readonly OpenBlock[] = []
+  for (const line of walk(raw.split('\n'), frontmatterLineCount(raw)))
+    open = line.open
+  return [...open]
+}
+
+/**
+ * The 1-based line after which a new slide goes, from the 1-based `line` of the
+ * caret: the line that closes the outermost block around it, or the last line
+ * when that block stays open. Undefined outside a block.
+ */
+export function blockEndAround(raw: string, line: number): number | undefined {
+  const lines = raw.split('\n')
+  let outer: OpenBlock | undefined
+  for (const { index, open } of walk(lines, frontmatterLineCount(raw))) {
+    if (index + 1 === line && open.length)
+      outer = open[0]
+    if (outer && index + 1 > line && !open.includes(outer))
+      return index + 1
+  }
+  return outer ? lines.length : undefined
 }
 
 /**
