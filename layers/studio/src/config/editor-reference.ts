@@ -1,7 +1,7 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import type { DeckComponent, DeckComponentGroup, LocalizedText } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
+import { attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
@@ -195,9 +195,9 @@ export interface ComponentAttributeEntry {
   description: string
 }
 
-/** The attributes of the component a deck names `tag`, none when it declares none. */
+/** The attributes of the component or the annotation a deck names `tag`, none when it declares none. */
 export function componentAttributeEntries(tag: string, lang: string): ComponentAttributeEntry[] | undefined {
-  return deckComponentNamed(tag)?.attributes?.map(attribute => ({ ...attribute, description: inLanguage(attribute.description, lang) }))
+  return attributedDirective(tag)?.attributes?.map(attribute => ({ ...attribute, description: inLanguage(attribute.description, lang) }))
 }
 
 /**

@@ -4,7 +4,7 @@ import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
 import type { ComponentAttributeEntry, FrontmatterKey, ReferenceEntry, Translate } from '../config/editor-reference'
 import { autocompletion, CompletionContext, completionStatus, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
 import { Decoration, keymap, ViewPlugin, WidgetType } from '@codemirror/view'
-import { componentKey, deckComponentNamed } from '@vignettes/core/deck'
+import { attributedDirective, componentKey } from '@vignettes/core/deck'
 import { annotationEntries, componentAttributeEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
 import { emptyValueKey, frontmatterGuide, inFrontmatter as inFrontmatterLine } from './editor-frontmatter'
 import { referenceCard } from './editor-tooltip'
@@ -56,6 +56,52 @@ function attributeCompletion(attribute: ComponentAttributeEntry, bound: boolean,
         startCompletion(view)
     },
   }
+}
+
+/** The closed values of an attribute, in their declared order, the default marked; `quote` surrounds each one. */
+function valueCompletions(values: readonly string[], fallback: string | undefined, quote: string, t: Translate): Completion[] {
+  return values.map((value, index) => ({
+    label: value,
+    apply: `${quote}${value}${quote}`,
+    boost: -index,
+    detail: value === fallback ? t('editor.attributeDefault', { value }) : undefined,
+    type: 'enum',
+  }))
+}
+
+/** The attribute names written in the text of a `{…}` block, as `componentKey` compares them. */
+function writtenAttributes(text: string): Set<string> {
+  return new Set([...text.replace(/"[^"]*"/g, '""').matchAll(/(?:^|\s):?([\w-]+)/g)].map(match => componentKey(match[1]!)))
+}
+
+/**
+ * The component whose YAML attributes the 1-based `line` sits in: the lines
+ * between a `---` right under the opening line of a component and the next `---`.
+ */
+function propsBlockTag(state: EditorState, line: number): string | undefined {
+  for (let n = line - 1; n > 1; n--) {
+    const text = state.doc.line(n).text
+    if (!text.trim())
+      return undefined
+    if (text.trim() === '---')
+      return /^\s*:{2,}([\w-]+)/.exec(state.doc.line(n - 1).text)?.[1]
+  }
+  return undefined
+}
+
+/** The keys written in the YAML attributes around the 1-based `line`. */
+function propsBlockKeys(state: EditorState, line: number): Set<string> {
+  const keys = new Set<string>()
+  const add = (text: string) => {
+    const key = /^\s*([\w-]+):/.exec(text)?.[1]
+    if (key)
+      keys.add(componentKey(key))
+  }
+  for (let n = line - 1; n > 1 && state.doc.line(n).text.trim() !== '---'; n--)
+    add(state.doc.line(n).text)
+  for (let n = line + 1; n <= state.doc.lines && state.doc.line(n).text.trim() !== '---'; n++)
+    add(state.doc.line(n).text)
+  return keys
 }
 
 /** The position sits inside the leading frontmatter block. */
@@ -113,31 +159,58 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       }
     }
 
-    // The closed values of a component attribute, inside `::Name{… size="…`.
-    const valueOf = before.match(/(?:^|[\s([]):{1,3}([\w-]+)\{(?:(?:[^}"]|"[^"]*")*\s)?(:?[\w-]+)="([^"]*)$/)
+    // The closed values of an attribute, inside `::Name{… size="…`, or after
+    // `size=` before its quotes, which the value then brings.
+    const valueOf = before.match(/(?:^|[\s([]):{1,3}([\w-]+)\{(?:(?:[^}"]|"[^"]*")*\s)?(:?[\w-]+)=("?)([^"\s}]*)$/)
     if (valueOf) {
-      const [, tag = '', name = '', typed = ''] = valueOf
+      const [, tag = '', name = '', quote, typed = ''] = valueOf
       const attribute = componentAttributeEntries(tag, lang)?.find(entry => componentKey(entry.name) === componentKey(name.replace(/^:/, '')))
       const values = attribute?.values ?? (attribute?.boolean && name.startsWith(':') ? ['true', 'false'] : undefined)
       return attribute && values
-        ? { from: context.pos - typed.length, options: values.map((value, index) => ({ label: value, boost: -index, detail: value === attribute.default ? t('editor.attributeDefault', { value }) : undefined, type: 'enum' })) }
+        ? { from: context.pos - typed.length, options: valueCompletions(values, attribute.default, quote ? '' : '"', t) }
         : null
     }
 
-    // The attributes of a component, after its brace or a space inside it, but those written already.
+    // The attributes of a component or an annotation, after its brace or a
+    // space inside it, but those written already on either side of the caret.
     const blockOf = before.match(/(?:^|[\s([]):{1,3}([\w-]+)\{((?:[^}"]|"[^"]*")*)$/)
     const attributeWord = blockOf?.[2]!.match(/(?:^|\s)(:?[\w-]*)$/)?.[1]
     const attributes = blockOf && componentAttributeEntries(blockOf[1]!, lang)
     if (blockOf && attributeWord !== undefined && attributes) {
-      const written = new Set([...blockOf[2]!.replace(/"[^"]*"/g, '""').matchAll(/(?:^|\s):?([\w-]+)/g)].map(match => componentKey(match[1]!)))
-      const typed = componentKey(attributeWord.replace(/^:/, ''))
-      const docs = docsUrl(deckComponentNamed(blockOf[1]!)?.docs)
+      const after = /^(?:[^}"]|"[^"]*")*/.exec(line.text.slice(context.pos - line.from))?.[0] ?? ''
+      const written = writtenAttributes(`${blockOf[2]!.slice(0, -attributeWord.length || undefined)} ${after}`)
+      const docs = docsUrl(attributedDirective(blockOf[1]!)?.docs)
       return {
         from: context.pos - attributeWord.length,
         options: attributes
-          .filter(attribute => !written.has(componentKey(attribute.name)) || componentKey(attribute.name) === typed)
+          .filter(attribute => !written.has(componentKey(attribute.name)))
           .map((attribute, index) => ({ ...attributeCompletion(attribute, attributeWord.startsWith(':'), docs, t), boost: -index })),
         validFor: /^:?[\w-]*$/,
+      }
+    }
+
+    // The attributes written as YAML between `---` lines under the opening line of a component.
+    const yamlTag = propsBlockTag(context.state, line.number)
+    const yamlAttributes = yamlTag ? componentAttributeEntries(yamlTag, lang) : undefined
+    if (yamlTag && yamlAttributes) {
+      const yamlValue = /^\s*([\w-]+):\s*(\S*)$/.exec(before)
+      if (yamlValue) {
+        const attribute = yamlAttributes.find(entry => componentKey(entry.name) === componentKey(yamlValue[1]!))
+        const values = attribute?.values ?? (attribute?.boolean ? ['true', 'false'] : undefined)
+        return attribute && values
+          ? { from: context.pos - yamlValue[2]!.length, options: valueCompletions(values, attribute.default, '', t), validFor: /^\S*$/ }
+          : null
+      }
+      const yamlKey = /^\s*([\w-]*)$/.exec(before)
+      if (!yamlKey)
+        return null
+      const written = propsBlockKeys(context.state, line.number)
+      return {
+        from: context.pos - yamlKey[1]!.length,
+        options: yamlAttributes
+          .filter(attribute => !written.has(componentKey(attribute.name)))
+          .map((attribute, index) => ({ label: attribute.name, apply: `${attribute.name}: `, detail: attribute.default === undefined ? undefined : t('editor.attributeDefault', { value: attribute.default }), type: 'property', boost: -index })),
+        validFor: /^[\w-]*$/,
       }
     }
 

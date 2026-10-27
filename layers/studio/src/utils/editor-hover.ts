@@ -2,7 +2,7 @@ import type { Extension } from '@codemirror/state'
 import type { Translate } from '../config/editor-reference'
 import type { ReferenceCard } from './editor-tooltip'
 import { hoverTooltip } from '@codemirror/view'
-import { componentAttributeMentions, componentAttributeNamed, deckComponentNamed, directiveMentions, layoutAnnotations } from '@vignettes/core/deck'
+import { attributedDirective, attributeNamed, componentAttributeMentions, directiveMentions, layoutAnnotations } from '@vignettes/core/deck'
 import { directiveEntry, DOCS_SECTIONS, inLanguage, layoutAttributeEntries } from '../config/editor-reference'
 import { referenceCard } from './editor-tooltip'
 
@@ -47,8 +47,8 @@ export function referenceAt(raw: string, line: number, column: number, options: 
   }
   const written = componentAttributeMentions(raw)
     .find(mention => mention.line === line && column >= mention.column && column <= mention.column + mention.name.length)
-  const component = written && deckComponentNamed(written.tag)
-  const declared = component && componentAttributeNamed(component, written.name)
+  const component = written && attributedDirective(written.tag)
+  const declared = component && attributeNamed(component, written.name)
   if (declared) {
     return {
       from: written.column,

@@ -2,7 +2,7 @@ import type { ComponentAttribute, DeckComponent } from './components.ts'
 import type { LayoutIssueKind } from './layout.ts'
 import type { ParserId } from './parser.ts'
 import { isRefusedEmbed, readAttribute } from './attributes.ts'
-import { ANNOTATION_TAGS, componentKey, deckComponents, NOTES_COMPONENT } from './components.ts'
+import { ANNOTATION_TAGS, componentKey, DECK_ANNOTATIONS, deckComponents, NOTES_COMPONENT } from './components.ts'
 import { readLayout } from './layout.ts'
 
 /**
@@ -570,10 +570,23 @@ export function deckComponentNamed(tag: string): DeckComponent | undefined {
 // Attributes every element takes: MDC's `.class` and `#id` shorthands, and the HTML ones.
 const PASSTHROUGH_ATTRIBUTE_RE = /^(?:[.#]|(?:class|id|style)$|(?:data|aria)-)/
 
+/** A directive that declares its attributes: a registered component, or an annotation but `:layout`. */
+export interface AttributedDirective {
+  name: string
+  attributes?: readonly ComponentAttribute[]
+  docs?: string
+}
+
+/** The component or the annotation a deck names `tag`. */
+export function attributedDirective(tag: string): AttributedDirective | undefined {
+  const annotation = DECK_ANNOTATIONS.find(candidate => candidate.tag === tag)
+  return annotation ? { name: annotation.tag, attributes: annotation.attributes, docs: annotation.docs } : deckComponentNamed(tag)
+}
+
 /** The declared attribute a written name reaches: Vue reads `node-width` as `nodeWidth`. */
-export function componentAttributeNamed(component: DeckComponent, name: string): ComponentAttribute | undefined {
+export function attributeNamed(directive: AttributedDirective, name: string): ComponentAttribute | undefined {
   const key = componentKey(name.replace(/^:/, ''))
-  return component.attributes?.find(attribute => componentKey(attribute.name) === key)
+  return directive.attributes?.find(attribute => componentKey(attribute.name) === key)
 }
 
 /**
@@ -596,10 +609,10 @@ export interface ComponentAttributeIssue {
 export function componentAttributeIssues(raw: string): ComponentAttributeIssue[] {
   const issues: ComponentAttributeIssue[] = []
   for (const mention of componentAttributeMentions(raw)) {
-    const component = deckComponentNamed(mention.tag)
+    const component = attributedDirective(mention.tag)
     if (!component?.attributes || PASSTHROUGH_ATTRIBUTE_RE.test(mention.name) || /^(?:v-|@)/.test(mention.name))
       continue
-    const attribute = componentAttributeNamed(component, mention.name)
+    const attribute = attributeNamed(component, mention.name)
     const kind = !attribute
       ? 'unknown'
       : attribute.boolean && !mention.name.startsWith(':') && mention.value === 'false' ? 'false-text' : undefined

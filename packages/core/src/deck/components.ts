@@ -26,7 +26,11 @@ export interface DeckAnnotation {
   docs?: string
   /** The attributes that take the address of an image, which may be a `data:image` URL (see `isDeckUrl`). */
   images?: readonly string[]
+  /** Its attributes; `:layout` declares its own in `LAYOUT_ATTRIBUTES`. */
+  attributes?: readonly ComponentAttribute[]
 }
+
+const TEXT_ATTRIBUTE = (fr: string, en: string): ComponentAttribute => ({ name: 'text', description: { fr, en } })
 
 export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   {
@@ -34,7 +38,8 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     icon: 'i-lucide-wallpaper',
     label: { fr: 'Image de fond', en: 'Background image' },
     images: ['image'],
-    snippet: { fr: ':slide-background{image="${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
+    attributes: [{ name: 'image', description: { fr: 'Adresse de l\'image de fond.', en: 'Address of the background image.' } }],
+    snippet: { fr: ':slide-background{image=""${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
     description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide' },
     docs: '/ecrire/syntaxe#les-annotations',
   },
@@ -42,6 +47,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     tag: 'pretitle',
     icon: 'i-lucide-arrow-up-to-line',
     label: { fr: 'Surtitre', en: 'Pretitle' },
+    attributes: [TEXT_ATTRIBUTE('Texte affiché au-dessus du titre.', 'Text shown above the title.')],
     snippet: { fr: ':pretitle{text="${Contexte}"}', en: ':pretitle{text="${Context}"}' },
     description: { fr: 'Texte au-dessus du titre', en: 'Text above the title' },
     docs: '/ecrire/syntaxe#les-annotations',
@@ -50,6 +56,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     tag: 'subtitle',
     icon: 'i-lucide-arrow-down-to-line',
     label: { fr: 'Sous-titre', en: 'Subtitle' },
+    attributes: [TEXT_ATTRIBUTE('Texte affiché sous le titre.', 'Text shown below the title.')],
     snippet: { fr: ':subtitle{text="${Sous-titre}"}', en: ':subtitle{text="${Subtitle}"}' },
     description: { fr: 'Texte sous le titre', en: 'Text below the title' },
     docs: '/ecrire/syntaxe#les-annotations',
@@ -66,6 +73,10 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     tag: 'quicklink',
     icon: 'i-lucide-link',
     label: { fr: 'Lien en bas', en: 'Bottom link' },
+    attributes: [
+      TEXT_ATTRIBUTE('Texte du lien.', 'Text of the link.'),
+      { name: 'href', description: { fr: 'Adresse que le lien ouvre.', en: 'Address the link opens.' } },
+    ],
     snippet: { fr: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}', en: ':quicklink{text="${See the demo}" href="${https://example.com}"}' },
     description: { fr: 'Lien affiché en bas de la diapositive', en: 'Link shown at the bottom of the slide' },
     docs: '/ecrire/syntaxe#les-annotations',
@@ -86,7 +97,7 @@ export const STRIPPED_ANNOTATION_TAGS: readonly string[] = ANNOTATION_TAGS.filte
 export const DECK_COMPONENT_GROUPS = ['text', 'media', 'diagram', 'storybook', 'slide'] as const
 export type DeckComponentGroup = typeof DECK_COMPONENT_GROUPS[number]
 
-/** An attribute of a component, as the props of its Vue file declare it. */
+/** An attribute of a component, as the props of its Vue file declare it, or of an annotation. */
 export interface ComponentAttribute {
   name: string
   /** The values it takes, when they form a closed set. */

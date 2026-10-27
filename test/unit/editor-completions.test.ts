@@ -27,6 +27,31 @@ describe('component attribute completion', () => {
   })
 })
 
+describe('attribute completion cases', () => {
+  // The completion with the caret at `|` in `doc`.
+  function at(doc: string) {
+    const pos = doc.indexOf('|')
+    return source(new CompletionContext(EditorState.create({ doc: doc.replace('|', '') }), pos, true))
+  }
+
+  it('leaves out an attribute written after the caret', () => {
+    expect(at('::Fragments{| dim}')?.options.map(option => option.label)).toEqual(['effect', 'collapse'])
+  })
+
+  it('brings the quotes of a value written after `=`', () => {
+    expect(at(':::Columns{size=|')?.options.slice(0, 2).map(option => option.apply)).toEqual(['"xs"', '"sm"'])
+  })
+
+  it('offers the attributes of an annotation', () => {
+    expect(at(':quicklink{text="Voir" |')?.options.map(option => option.label)).toEqual(['href'])
+  })
+
+  it('offers the attributes written as YAML under a component, and their values', () => {
+    expect(at(':::Columns\n---\n|\n---')?.options.map(option => option.apply)).toEqual(['size: '])
+    expect(at(':::Columns\n---\nsize: |\n---')?.options.map(option => option.label)).toEqual(['xs', 'sm', 'md', 'lg', 'xl'])
+  })
+})
+
 describe('completion hint', () => {
   const sources = { frontmatter: frontmatterGuide({ lang: 'fr', t, docsUrl: () => undefined }).source, body: source }
 
