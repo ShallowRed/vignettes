@@ -99,7 +99,16 @@ describe('importing a file at creation (POST /api/presentations)', () => {
     await expect(createDeck(owner({ body: { slug: 'revue', raw: file } }))).rejects.toMatchObject({ statusCode: 409 })
   })
 
-  it('refuses a title or a theme sent beside the file (400)', async () => {
+  it('writes the title typed in the form into a file without one', async () => {
+    await expect(createDeck(owner({ body: { slug: 'revue', raw: '# Revue\n', title: 'Revue de sprint' } }))).resolves.toMatchObject({ title: 'Revue de sprint' })
+    expect(await currentDraftText('revue')).toBe('---\ntitle: Revue de sprint\n---\n\n# Revue\n')
+  })
+
+  it('writes the title typed in the form over a blank title of the file', async () => {
+    await expect(createDeck(owner({ body: { slug: 'revue', raw: '---\ntitle: "  "\n---\n# Revue\n', title: 'Revue de sprint' } }))).resolves.toMatchObject({ title: 'Revue de sprint' })
+  })
+
+  it('refuses a title beside a file that has one, or a theme beside a file (400)', async () => {
     await expect(createDeck(owner({ body: { slug: 'revue', raw: file, title: 'Autre' } }))).rejects.toMatchObject({ statusCode: 400 })
     await expect(createDeck(owner({ body: { slug: 'revue', raw: file, theme: 'dsfr' } }))).rejects.toMatchObject({ statusCode: 400 })
   })

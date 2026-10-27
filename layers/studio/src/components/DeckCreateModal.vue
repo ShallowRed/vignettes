@@ -2,7 +2,7 @@
 import type { Project } from '#shared/projects'
 import type { DeckFileIssue } from '@vignettes/core/deck'
 import { useMutation, useQuery } from '@pinia/colada'
-import { isDeckSlug, readDeckFile } from '@vignettes/core/deck'
+import { isDeckSlug, onlyTitleMissing, readDeckFile } from '@vignettes/core/deck'
 import { slugify } from '@vignettes/core/slugify'
 import { getDefaultTheme, knownThemes } from '@vignettes/core/theme'
 import { deckApi } from '../api'
@@ -57,7 +57,9 @@ watch(templates, (ids) => {
 })
 
 const fromFile = computed(() => state.start === FILE)
-const title = computed(() => (fromFile.value ? fileTitle.value : state.title).trim())
+// A file whose frontmatter lacks the title alone takes the title typed here.
+const fileTitleMissing = computed(() => onlyTitleMissing(fileIssues.value))
+const title = computed(() => (fromFile.value && !fileTitleMissing.value ? fileTitle.value : state.title).trim())
 const { slug, fill: fillSlug } = useDerivedSlug(state, () => title.value, value => slugify(value, { lower: true, strict: true }))
 onReset(fillSlug)
 
@@ -94,13 +96,13 @@ function issuesMessage(issues: DeckFileIssue[]): string {
   const yaml = issues.find(issue => issue.key === '')
   if (yaml)
     return t('catalog.deckCreate.import.yamlInvalid')
-  const keys = issues.map(issue => issue.key)
-  if (keys.includes('title') && keys.length === 1)
+  if (onlyTitleMissing(issues))
     return t('catalog.deckCreate.import.titleMissing')
+  const keys = issues.map(issue => issue.key)
   return t('catalog.deckCreate.import.keysInvalid', { keys: keys.join(', ') }, keys.length)
 }
 
-const fileError = computed(() => fileIssues.value.length ? issuesMessage(fileIssues.value) : '')
+const fileError = computed(() => fileIssues.value.length && !fileTitleMissing.value ? issuesMessage(fileIssues.value) : '')
 
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 const slugError = computed(() => {
@@ -124,7 +126,7 @@ const project = computed(() => state.project !== NONE ? { project: state.project
 
 const { mutate: runCreate, isLoading: pending } = useMutation({
   mutation: () => deckApi.create($fetch, fromFile.value
-    ? { slug: state.slug, raw: fileRaw.value, ...project.value }
+    ? { slug: state.slug, raw: fileRaw.value, ...(fileTitleMissing.value ? { title: title.value } : {}), ...project.value }
     : { slug: state.slug, title: title.value, template: state.start, ...project.value, ...(state.theme ? { theme: state.theme } : {}) }),
   async onSuccess() {
     open.value = false
@@ -149,7 +151,7 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
 const blockedReason = computed(() => {
   if (fromFile.value && !fileRaw.value)
     return t('catalog.form.missing.file')
-  if (fromFile.value && fileIssues.value.length > 0)
+  if (fromFile.value && fileIssues.value.length > 0 && !fileTitleMissing.value)
     return t('catalog.form.missing.fileInvalid')
   if (!state.start)
     return t('catalog.form.missing.start')
@@ -208,11 +210,11 @@ function submit() {
 
         <UFormField
           :label="t('common.fields.title')"
-          :help="fromFile ? t('catalog.deckCreate.import.fromFile') : undefined"
+          :help="fromFile ? t(fileTitleMissing ? 'catalog.deckCreate.import.titleTyped' : 'catalog.deckCreate.import.fromFile') : undefined"
           required
         >
           <UInput
-            v-if="fromFile"
+            v-if="fromFile && !fileTitleMissing"
             :model-value="fileTitle"
             disabled
             class="w-full"

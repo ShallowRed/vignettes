@@ -1,5 +1,5 @@
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
-import { isDeckSlug, readDeckFile } from '@vignettes/core/deck'
+import { isDeckSlug, onlyTitleMissing, readDeckFile } from '@vignettes/core/deck'
 import { z } from 'zod'
 import { assertCanCreateInProject } from '../utils/access'
 import { useDraftStore } from '../utils/collab'
@@ -22,6 +22,8 @@ const CreateSchema = z.union([
     slug: z.string().min(1),
     project: z.string().min(1).optional(),
     raw: z.string().min(1),
+    // The title of a file whose frontmatter has none, typed in the form.
+    title: z.string().trim().min(1).optional(),
   }).strict(),
 ])
 
@@ -30,12 +32,19 @@ type CreateInput = z.infer<typeof CreateSchema>
 /** The deck's first draft and the title and theme its row takes. */
 async function startingDeck(input: CreateInput): Promise<{ raw: string, title: string, theme?: string }> {
   if ('raw' in input) {
-    const reading = readDeckFile(input.raw)
+    // A title typed in the form completes a file that lacks a valid title alone, as the form reads it.
+    if (input.title) {
+      const reading = readDeckFile(input.raw)
+      if (reading.valid || !onlyTitleMissing(reading.issues))
+        throw createError({ statusCode: 400, statusMessage: 'The title of an imported file comes from its frontmatter' })
+    }
+    const raw = input.title ? creationDraft(input.raw, { title: input.title }) : input.raw
+    const reading = readDeckFile(raw)
     if (!reading.valid) {
       const keys = reading.issues.map(issue => issue.key || 'frontmatter').join(', ')
       throw createError({ statusCode: 400, statusMessage: `Invalid frontmatter: ${keys}`, data: { issues: reading.issues } })
     }
-    return { raw: creationDraft(input.raw, { project: input.project }), title: reading.meta.title, theme: reading.meta.theme }
+    return { raw: creationDraft(raw, { project: input.project }), title: reading.meta.title, theme: reading.meta.theme }
   }
   const template = await loadTemplate(input.template ?? DEFAULT_TEMPLATE)
   if (template === null)
@@ -52,7 +61,7 @@ async function startingDeck(input: CreateInput): Promise<{ raw: string, title: s
 export default defineEventHandler(async (event) => {
   const parsed = CreateSchema.safeParse(await readBody(event))
   if (!parsed.success) {
-    throw createError({ statusCode: 400, statusMessage: 'Body must be { slug, title, project?, theme?, template? } or { slug, raw, project? }' })
+    throw createError({ statusCode: 400, statusMessage: 'Body must be { slug, title, project?, theme?, template? } or { slug, raw, title?, project? }' })
   }
   const { slug, project } = parsed.data
 

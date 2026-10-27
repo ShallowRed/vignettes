@@ -97,6 +97,7 @@
         "dropLabel": "Déposez un fichier .md",
         "dropDescription": "ou cliquez pour le choisir. Son en-tête donne le titre et le thème.",
         "fromFile": "Lu dans l'en-tête du fichier.",
+        "titleTyped": "Écrivez le titre : il sera ajouté à l'en-tête du fichier.",
         "defaultTheme": "{theme}, le thème par défaut",
         "titleMissing": "L'en-tête du fichier ne donne pas de titre : ajoutez la clé title.",
         "keysInvalid": "L'en-tête du fichier a une valeur refusée pour la clé {keys}. | L'en-tête du fichier a une valeur refusée pour la clé {keys}. | L'en-tête du fichier a des valeurs refusées pour les clés {keys}.",

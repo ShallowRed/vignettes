@@ -149,6 +149,11 @@ export type DeckFileReading
   = | { valid: true, meta: DeckMeta & { title: string } }
     | { valid: false, issues: DeckFileIssue[] }
 
+/** The issues of a file that lacks a valid title alone: a title typed at its import completes it. */
+export function onlyTitleMissing(issues: readonly DeckFileIssue[]): boolean {
+  return issues.length === 1 && issues[0]!.key === 'title'
+}
+
 /**
  * Read the frontmatter of a deck file before it becomes a deck: the YAML must
  * parse, the values must follow `DeckMetaSchema`, and the file must give its
