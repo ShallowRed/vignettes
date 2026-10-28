@@ -1,11 +1,11 @@
-import { RoleSchema } from '#shared/access'
+import { AccountRoleSchema } from '#shared/access'
 import { z } from 'zod'
 import { assertOwner } from '../../../utils/access'
 import { securityLog } from '../../../utils/security-log'
 import { useUserStore } from '../../../utils/users'
 
 const PatchSchema = z.object({
-  role: RoleSchema.exclude(['anonymous']),
+  role: AccountRoleSchema,
 }).strict()
 
 /**

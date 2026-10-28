@@ -1,14 +1,15 @@
 import type { DeckGrant, Role } from './roles'
 import type { Lifecycle, PublicationStatus } from './status'
 import { isPrivileged } from './roles'
+import { isFrozen } from './status'
 
 /**
  * Pure access decision — no I/O, crypto, or session lookup. The server adapter
  * (`server/utils/access.ts`) computes `passwordGranted` and `role`, then calls in.
  *
  * view matrix: public → allow all; semi-private → allow if password granted (deny
- * if no hash set); draft/private → privileged only. Lifecycle and `unlisted` only
- * affect listing (see canList), never view.
+ * if no hash set); draft/private → privileged only. Lifecycle and `unlisted`
+ * affect listing (see canList), never view; a frozen or archived deck refuses edit.
  */
 
 export type AccessAction = 'view' | 'list' | 'admin' | 'edit'
@@ -40,6 +41,8 @@ export function decideAccess(input: AccessInput): AccessDecision {
     return isPrivileged(role) ? { outcome: 'allow' } : denyFor(role)
 
   if (action === 'edit') {
+    if (isFrozen(input))
+      return { outcome: 'deny', reason: 'forbidden' }
     return isPrivileged(role) || grant === 'editor'
       ? { outcome: 'allow' }
       : denyFor(role)
@@ -99,11 +102,12 @@ export function canList(input: ListInput): boolean {
 
 /**
  * Whether the actor may write: a privileged role, or an `editor` grant on the
- * target (a deck, or the folder a new deck goes into). Every server-side edit
- * check and every edit affordance in the catalog goes through this one rule.
+ * target (a deck, or the folder a new deck goes into), on a deck that is not
+ * frozen. Every server-side edit check and every edit affordance in the catalog
+ * goes through this one rule.
  */
-export function mayEdit(role: Role, grant?: DeckGrant): boolean {
-  return decideAccess({ status: 'private', role, action: 'edit', grant, hasPassword: false, passwordGranted: false }).outcome === 'allow'
+export function mayEdit(role: Role, grant?: DeckGrant, lifecycle?: Lifecycle): boolean {
+  return decideAccess({ status: 'private', lifecycle, role, action: 'edit', grant, hasPassword: false, passwordGranted: false }).outcome === 'allow'
 }
 
 /**

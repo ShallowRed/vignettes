@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
+import { mayEdit } from '#shared/access'
 import { buildFolderContents, UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '../../composables/useAppSession'
 import { useCatalog } from '../../composables/useCatalog'
@@ -19,7 +20,7 @@ const routeSlug = computed(() => route.params.slug as string)
 const isUngrouped = computed(() => routeSlug.value === 'divers')
 const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeSlug.value)
 
-const { privileged, role, loggedIn } = useAppSession()
+const { privileged, role, loggedIn, owner: isOwner } = useAppSession()
 
 // Shared catalog state (decks + folders) on Pinia Colada, same cache the home
 // reads. Mutating a folder here invalidates those queries, so the home grid
@@ -53,8 +54,6 @@ const breadcrumb = computed(() => [
 
 useHead(() => ({ title: `${projectTitle.value} · Vignettes` }))
 
-const isOwner = computed(() => role.value === 'owner')
-
 // The owner's folder menu, as on the folder cards: edit the folder, manage its
 // access (a master-key grant over every deck in it), or trash it whole.
 const accessOpen = ref(false)
@@ -71,16 +70,15 @@ const folderActions = computed(() => projectActions({
   remove: () => { deleteProjectOpen.value = true },
 }))
 
-// Create a deck straight into this folder: privileged roles anywhere, and a
-// collaborator holding an `editor` grant on THIS folder (the server accepts
-// exactly that). Pre-selects the project.
+// Create a deck straight into this folder with the server's rule (`mayEdit` on
+// the folder grant); the ungrouped list has no grant. Pre-selects the project.
 const createOpen = ref(false)
 const defaultProject = computed(() => currentProject.value?.slug)
 const canCreateHere = computed(() =>
-  privileged.value || (!isUngrouped.value && currentProject.value?.myGrant === 'editor'))
+  isUngrouped.value ? privileged.value : mayEdit(role.value, currentProject.value?.myGrant))
 // A collaborator may only file a new deck under folders they can edit.
 const creatableProjects = computed(() =>
-  privileged.value ? projects.value : projects.value.filter(p => p.myGrant === 'editor'))
+  projects.value.filter(p => mayEdit(role.value, p.myGrant)))
 
 function onProjectSaved(project: Project) {
   // The edit mutation invalidated the folders query already; a slug change also

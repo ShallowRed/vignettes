@@ -142,11 +142,12 @@ export async function decideMediaAccess(event: H3Event, mediaName: string): Prom
 
 /**
  * Whether this actor may edit this deck: the shared `mayEdit` rule on their
- * effective grant. Used by the HTTP guard below and by the collab upgrade, which
- * maps the answer to a WebSocket response instead of an H3 error.
+ * effective grant and the deck's lifecycle. Used by the HTTP guard below and by
+ * the collab upgrade, which answers with a WebSocket response.
  */
 export async function canActorEditDeck(actor: Actor, slug: string): Promise<boolean> {
-  return mayEdit(actor.role, await resolveGrant(actor, slug))
+  const [grant, meta] = await Promise.all([resolveGrant(actor, slug), useDeckMeta().get(slug)])
+  return mayEdit(actor.role, grant, meta?.lifecycle)
 }
 
 /**

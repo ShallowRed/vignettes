@@ -23,6 +23,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
+import { isFrozen } from '@vignettes/core/status'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { dump as dumpYaml } from 'js-yaml'
 import { describeDatabase } from '../layers/studio/server/db/config.ts'
@@ -50,7 +51,7 @@ await database.close()
 
 /** Frozen/archived bodies live in `archived/`, mirroring the repo layout. */
 function pathFor(row: Row): string {
-  const archived = row.lifecycle === 'frozen' || row.lifecycle === 'archived'
+  const archived = isFrozen(row)
   return join(CONTENT_DIR, archived ? 'archived' : '', `${row.slug}.md`)
 }
 

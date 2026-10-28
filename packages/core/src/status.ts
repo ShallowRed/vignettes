@@ -13,3 +13,8 @@ export const PUBLICATION_STATUSES = PublicationStatusSchema.options
 /** Registry state: live decks vs frozen/archived static bundles. */
 export const LifecycleSchema = z.enum(['live', 'frozen', 'archived'])
 export type Lifecycle = z.infer<typeof LifecycleSchema>
+
+/** Frozen and archived decks serve a static bundle and are read-only. */
+export function isFrozen(item: { lifecycle?: string | null }): boolean {
+  return item.lifecycle === 'frozen' || item.lifecycle === 'archived'
+}

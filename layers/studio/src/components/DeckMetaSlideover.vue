@@ -40,8 +40,7 @@ const { t, locale } = useI18n()
 
 const open = defineModel<boolean>('open', { required: true })
 
-const { role, privileged, user } = useAppSession()
-const isOwner = computed(() => role.value === 'owner')
+const { role, privileged, user, owner: isOwner } = useAppSession()
 const canShare = computed(() => props.item.canShare === true)
 const { deckUrl, copyLinks } = useDeckLinks()
 const toast = useToast()

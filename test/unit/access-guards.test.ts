@@ -80,6 +80,14 @@ describe('assertCanEditDeck', () => {
     await useDeckMeta().softDelete('deck')
     await expect(assertCanEditDeck(asUser(1, 'boss'), 'deck')).rejects.toMatchObject({ statusCode: 404 })
   })
+
+  it('refuses a frozen or archived deck, even to an owner (403)', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    for (const lifecycle of ['frozen', 'archived'] as const) {
+      await useDeckMeta().update('deck', { lifecycle })
+      await expect(assertCanEditDeck(asUser(1, 'boss'), 'deck')).rejects.toMatchObject({ statusCode: 403 })
+    }
+  })
 })
 
 describe('gateDeckAccess', () => {

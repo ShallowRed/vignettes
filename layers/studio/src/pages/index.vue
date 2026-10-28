@@ -9,10 +9,9 @@ import { useModalTarget } from '../composables/useModalTarget'
 // Catalog home. Everyone lands on the project folders (the primary entry point);
 // privileged users can flip to the flat management console for cross-project work.
 const { t } = useI18n()
-const { privileged, loggedIn, role, user } = useAppSession()
+const { privileged, loggedIn, owner: isOwner, user } = useAppSession()
 const { welcome } = useRuntimeConfig().public
 useHead({ title: () => t('catalog.home.pageTitle') })
-const isOwner = computed(() => role.value === 'owner')
 
 // Shared, access-filtered catalog state (decks + folders) on Pinia Colada.
 // Mutations invalidate the cache, so create/delete reflect everywhere instantly.

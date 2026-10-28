@@ -7,6 +7,12 @@ import { z } from 'zod'
 export const RoleSchema = z.enum(['owner', 'editor', 'viewer', 'anonymous'])
 export type Role = z.infer<typeof RoleSchema>
 
+/** The roles an account holds; `anonymous` is the absence of one. */
+export const AccountRoleSchema = RoleSchema.exclude(['anonymous'])
+export type AccountRole = z.infer<typeof AccountRoleSchema>
+/** Weakest first, the order of the role pickers. */
+export const ACCOUNT_ROLES: readonly AccountRole[] = [...AccountRoleSchema.options].reverse()
+
 /** Roles allowed to see drafts/private decks, edit, and reach the admin area. */
 export function isPrivileged(role: Role): boolean {
   return role === 'owner' || role === 'editor'

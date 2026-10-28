@@ -31,6 +31,7 @@ export function useAppSession() {
   const role = computed<Role>(() => state.value?.role ?? 'anonymous')
   const user = computed(() => state.value?.user ?? null)
   const privileged = computed(() => isPrivileged(role.value))
+  const owner = computed(() => role.value === 'owner')
 
-  return { session: state, loggedIn, role, user, privileged, status, refresh }
+  return { session: state, loggedIn, role, user, privileged, owner, status, refresh }
 }

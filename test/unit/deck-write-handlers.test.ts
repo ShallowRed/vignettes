@@ -1,7 +1,8 @@
 import { Buffer } from 'node:buffer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useCollabServer } from '../../layers/studio/server/utils/collab'
 import { storeMedia } from '../../layers/studio/server/utils/media-store'
-import { useDbContent, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
+import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // Drive the write handlers directly: the h3 auto-imports read from the event
@@ -17,6 +18,7 @@ const { default: saveDraft } = await import('../../layers/studio/server/api/pres
 const { default: createDeck } = await import('../../layers/studio/server/api/presentations.post')
 const { default: uploadMedia } = await import('../../layers/studio/server/api/media.post')
 const { default: loadDeck } = await import('../../layers/studio/server/api/presentations/[slug].get')
+const { default: trashDeck } = await import('../../layers/studio/server/api/presentations/[slug].delete')
 
 const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
 const collab = (over: Record<string, unknown>) => asUser(10, 'collab', over)
@@ -150,5 +152,38 @@ describe('loading a deck for edit (GET /api/presentations/:slug?draft)', () => {
     await expect(loadDeck(editor({ params: { slug: 'deck' }, query: { draft: '' } })))
       .resolves
       .toMatchObject({ publishedRaw: null, publishedAt: null })
+  })
+})
+
+describe('moving a deck to the trash (DELETE /api/presentations/:slug)', () => {
+  const trash = (over: Record<string, unknown> = {}) => ({ params: { slug: 'deck' }, ...over })
+
+  beforeEach(async () => {
+    await useDeckMeta().update('deck', { title: 'Deck' })
+  })
+
+  it('requires a session (401) and a privileged role (403)', async () => {
+    await expect(trashDeck(anon(trash()))).rejects.toMatchObject({ statusCode: 401 })
+    await expect(trashDeck(collab(trash()))).rejects.toMatchObject({ statusCode: 403 })
+  })
+
+  it('lets a global editor trash a deck, as they may restore it', async () => {
+    await expect(trashDeck(editor(trash()))).resolves.toEqual({ ok: true })
+    expect(await useDeckMeta().isTrashed('deck')).toBe(true)
+  })
+
+  it('refuses while a collab session is open on the deck (409)', async () => {
+    const documents = useCollabServer().documents
+    documents.set('deck', {} as any)
+    try {
+      await expect(trashDeck(editor(trash()))).rejects.toMatchObject({ statusCode: 409 })
+    }
+    finally {
+      documents.delete('deck')
+    }
+  })
+
+  it('answers 404 for a slug with no deck', async () => {
+    await expect(trashDeck(editor({ params: { slug: 'nowhere' } }))).rejects.toMatchObject({ statusCode: 404 })
   })
 })

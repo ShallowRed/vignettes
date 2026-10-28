@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { IdentityProvider, Role, UserAccount } from '#shared/access'
-import { handleField, IDENTITY_PROVIDER_ITEMS, isProviderHandle } from '#shared/access'
+import type { AccountRole, IdentityProvider, UserAccount } from '#shared/access'
+import { ACCOUNT_ROLES, handleField, IDENTITY_PROVIDER_ITEMS, isProviderHandle } from '#shared/access'
 import { useMutation, useQueryCache } from '@pinia/colada'
 import { usersApi } from '../api'
 import { usersKeys } from '../queries/keys'
@@ -21,15 +21,11 @@ const queryCache = useQueryCache()
 
 const provider = ref<IdentityProvider>('google')
 const handle = ref('')
-const role = ref<Role>('viewer')
+const role = ref<AccountRole>('viewer')
 const field = computed(() => handleField(provider.value))
 const blockedReason = computed(() => isProviderHandle(provider.value, handle.value) ? undefined : t(field.value.missingKey))
 
-const roleItems = computed(() => [
-  { label: t('common.role.viewer'), value: 'viewer' },
-  { label: t('common.role.editor'), value: 'editor' },
-  { label: t('common.role.owner'), value: 'owner' },
-])
+const roleItems = computed(() => ACCOUNT_ROLES.map(value => ({ label: t(`common.role.${value}`), value })))
 
 watch(open, (isOpen) => {
   if (isOpen) {
@@ -43,7 +39,7 @@ const { mutate: submit, isLoading: busy } = useMutation({
     const account = await usersApi.invite(requestFetch, provider.value, handle.value.trim())
     // `invite` always creates a viewer; a stronger role is a second, explicit step.
     if (role.value !== 'viewer' && account.role !== role.value)
-      await usersApi.setRole(requestFetch, account.id, role.value as 'owner' | 'editor' | 'viewer')
+      await usersApi.setRole(requestFetch, account.id, role.value)
     return account
   },
   async onSuccess(account) {

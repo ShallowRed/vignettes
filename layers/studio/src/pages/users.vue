@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { AccountSummary, Role } from '#shared/access'
+import type { AccountRole, AccountSummary } from '#shared/access'
+import { ACCOUNT_ROLES } from '#shared/access'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { usersApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
@@ -16,8 +17,7 @@ definePageMeta({ layout: false })
  * per-deck/folder access stays in the sharing panels where its context lives.
  */
 const { t, locale } = useI18n()
-const { role, user } = useAppSession()
-const isOwner = computed(() => role.value === 'owner')
+const { owner: isOwner, user } = useAppSession()
 const toast = useToast()
 const queryCache = useQueryCache()
 const requestFetch = useRequestFetch()
@@ -31,11 +31,7 @@ const breadcrumb = computed(() => [
 ])
 useHead({ title: () => t('admin.users.pageTitle') })
 
-const roleItems = computed(() => [
-  { label: t('common.role.viewer'), value: 'viewer' },
-  { label: t('common.role.editor'), value: 'editor' },
-  { label: t('common.role.owner'), value: 'owner' },
-])
+const roleItems = computed(() => ACCOUNT_ROLES.map(value => ({ label: t(`common.role.${value}`), value })))
 
 function invalidate() {
   return queryCache.invalidateQueries({ key: usersKeys.all })
@@ -45,8 +41,8 @@ function onError(error: any, fallback: string) {
 }
 
 const { mutate: changeRole, isLoading: changingRole } = useMutation({
-  mutation: ({ id, to }: { id: number, to: Role }) =>
-    usersApi.setRole(requestFetch, id, to as 'owner' | 'editor' | 'viewer'),
+  mutation: ({ id, to }: { id: number, to: AccountRole }) =>
+    usersApi.setRole(requestFetch, id, to),
   onSuccess: () => toast.add({ title: t('admin.users.roleUpdated'), icon: 'i-lucide-check', color: 'success' }),
   onError: e => onError(e, t('admin.users.roleChangeFailed')),
   onSettled: invalidate,

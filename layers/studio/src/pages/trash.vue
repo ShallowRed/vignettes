@@ -7,8 +7,7 @@ definePageMeta({ layout: false })
 // The trash (corbeille): restore or permanently erase soft-deleted projects and
 // decks. Privileged users can restore; only the owner can permanently erase.
 const { t } = useI18n()
-const { role } = useAppSession()
-const isOwner = computed(() => role.value === 'owner')
+const { owner: isOwner } = useAppSession()
 
 // Query + restore/purge mutations (cross-invalidate the catalog on restore).
 const { projects, decks, isEmpty, status, error, refresh, canView, busy, restore, purge } = useTrash()

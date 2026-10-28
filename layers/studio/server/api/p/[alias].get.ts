@@ -1,3 +1,4 @@
+import { isFrozen } from '#shared/presentations'
 import { resolveDeck } from '@vignettes/core/deck'
 import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
 import { deckDirectory, publishedSource } from '../../utils/sources'
@@ -37,7 +38,7 @@ export default defineEventHandler(async (event) => {
   await gateDeckAccess(event, gate)
 
   // Frozen/archived: content is a static bundle; report the target to redirect to.
-  if (entry.lifecycle === 'frozen' || entry.lifecycle === 'archived') {
+  if (isFrozen(entry)) {
     const bundle = entry.frozenBundle ?? entry.slug
     return {
       lifecycle: entry.lifecycle,

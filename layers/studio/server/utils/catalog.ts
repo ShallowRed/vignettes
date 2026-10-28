@@ -1,6 +1,7 @@
 import type { PresentationListItem, TitleSlide } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
+import type { DeckMetaRecord } from '../db/ports'
 import { canList, canShare, isPrivileged, mayEdit } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { readTitleSlide, titleSlidePreview, UNGROUPED_PROJECT } from '#shared/presentations'
@@ -121,19 +122,19 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   const shared = privileged ? await useStores().catalog.deckGrantCounts() : undefined
   // The same rule as assertCanEditDeck, so the card's pencil matches what the
   // server accepts.
-  const canEdit = (slug: string) => mayEdit(actor.role, grants.get(slug))
+  const canEdit = (deck: DeckMetaRecord) => mayEdit(actor.role, grants.get(deck.slug), deck.lifecycle)
   const mayShare = (slug: string) => canShare(actor.role, grants.get(slug))
-  const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d.slug)).map(d => d.slug)))
+  const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d)).map(d => d.slug)))
   const stats = await deckStats()
   const drafts = useDraftStore()
   const unpublishedDrafts = new Map(await Promise.all(decks
-    .filter(d => !d.published && canEdit(d.slug))
+    .filter(d => !d.published && canEdit(d))
     .map(async d => [d.slug, await drafts.stamp(d.slug)] as const)))
 
   return decks
     // A deck with no published version has nothing to serve: only those who can
     // edit it should see it listed.
-    .filter(deck => deck.published || canEdit(deck.slug))
+    .filter(deck => deck.published || canEdit(deck))
     .map(deck => ({
       slug: deck.slug,
       title: deck.title,
@@ -147,9 +148,9 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       family: deck.family,
       variantLabel: deck.variantLabel,
       supersededBy: deck.supersededBy,
-      ...deckDates(stats.get(deck.slug), canEdit(deck.slug), unpublishedDrafts.get(deck.slug)),
+      ...deckDates(stats.get(deck.slug), canEdit(deck), unpublishedDrafts.get(deck.slug)),
       ...deckPreview(stats.get(deck.slug), deck.theme || fallbackTheme),
-      ...(canEdit(deck.slug) ? { canEdit: true } : {}),
+      ...(canEdit(deck) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),
       ...(mayShare(deck.slug) ? { canShare: true, hasPassword: Boolean(deck.accessPasswordHash) } : {}),
       ...(privileged

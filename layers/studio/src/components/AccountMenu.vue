@@ -8,7 +8,7 @@ import { postForm } from '../utils/post-form'
 // The occasional destinations and the preferences of the reader: the links of
 // the instance, the language, the color mode, then the account pages. A visitor
 // signs in beside it.
-const { loggedIn, role, user, privileged } = useAppSession()
+const { loggedIn, role, user, privileged, owner } = useAppSession()
 const { t, locale, locales, setLocale } = useI18n()
 const colorMode = useColorMode()
 const links = useInstanceLinks()
@@ -53,7 +53,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
     ? [
         [
           { label: t('common.header.tokens'), icon: 'i-lucide-key-round', to: '/tokens' },
-          ...(role.value === 'owner' ? [{ label: t('common.header.accounts'), icon: 'i-lucide-users', to: '/users' }] : []),
+          ...(owner.value ? [{ label: t('common.header.accounts'), icon: 'i-lucide-users', to: '/users' }] : []),
           ...(privileged.value ? [{ label: t('common.header.trash'), icon: 'i-lucide-trash-2', to: '/trash' }] : []),
         ],
         [{ label: t('common.actions.signOut'), icon: 'i-lucide-log-out', onSelect: () => postForm('/auth/logout') }],

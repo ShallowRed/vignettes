@@ -47,6 +47,12 @@ describe('collab room upgrade', () => {
     await expect(knock('deck')).rejects.toMatchObject({ status: 404 })
   })
 
+  it('refuses a frozen deck even to a global editor (401)', async () => {
+    actor.current = { id: 2, login: 'collab', role: 'editor' }
+    await useDeckMeta().update('deck', { lifecycle: 'frozen' })
+    await expect(knock('deck')).rejects.toMatchObject({ status: 401 })
+  })
+
   it('refuses a socket opened by a page of another origin (403)', async () => {
     await usePermissionStore().set('deck', 2, 'editor', 'boss')
     await expect(knock('deck', 'https://other.example')).rejects.toMatchObject({ status: 403 })

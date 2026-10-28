@@ -1,4 +1,4 @@
-import { isFrozen, variantsOf } from '#shared/presentations'
+import { variantsOf } from '#shared/presentations'
 import { canActorEditDeck } from '../../../utils/access'
 import { getActor } from '../../../utils/actor'
 import { listVisiblePresentations, unpublishedChanges } from '../../../utils/catalog'
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   const meta = await useDeckMeta().get(slug)
   const variants = meta?.family ? await familyVariants(event, slug) : []
   const actor = await getActor(event)
-  if (!meta || isFrozen(meta) || !await canActorEditDeck(actor, slug))
+  if (!meta || !await canActorEditDeck(actor, slug))
     return { canEdit: false as const, variants }
 
   return {

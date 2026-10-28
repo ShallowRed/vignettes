@@ -34,6 +34,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { isDeckSlug, splitFrontmatter } from '@vignettes/core/deck'
+import { isFrozen } from '@vignettes/core/status'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
 import { describeDatabase } from '../layers/studio/server/db/config.ts'
@@ -242,7 +243,7 @@ for (const stub of stubs) {
   // `presentations.get.ts` takes the registry title and forces `public`. Mirror
   // that here, or the import would silently re-title them and close their access.
   const lifecycle = reg?.lifecycle ?? 'live'
-  const registryDriven = lifecycle === 'frozen' || lifecycle === 'archived'
+  const registryDriven = isFrozen({ lifecycle })
 
   const p: DeckPlan = {
     slug: stub.slug,

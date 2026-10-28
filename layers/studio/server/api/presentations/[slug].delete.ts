@@ -1,15 +1,16 @@
 import { isDeckSlug } from '@vignettes/core/deck'
-import { assertOwner } from '../../utils/access'
+import { assertPrivileged } from '../../utils/access'
 import { useCollabServer } from '../../utils/collab'
 import { useDeckMeta } from '../../utils/sources'
 
 /**
  * DELETE /api/presentations/:slug — move the deck to the trash (soft-delete).
  * Reversible from the trash; the permanent erase is the trash purge endpoint.
- * Owner only, and refused while a collab session is open on the deck.
+ * Owner or editor role, as the restore from the trash, and refused while a
+ * collab session is open on the deck.
  */
 export default defineEventHandler(async (event) => {
-  await assertOwner(event)
+  await assertPrivileged(event)
 
   const slug = getRouterParam(event, 'slug')
   if (!slug || !isDeckSlug(slug)) {

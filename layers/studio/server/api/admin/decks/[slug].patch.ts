@@ -2,7 +2,7 @@ import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
 import { DeckSlugSchema, familyFolder, replacementLoops } from '#shared/presentations'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { z } from 'zod'
-import { getActor } from '../../../utils/actor'
+import { assertPrivileged } from '../../../utils/access'
 import { hashAccessPassword } from '../../../utils/password'
 import { securityLog } from '../../../utils/security-log'
 import { useDeckMeta, useProjectStore } from '../../../utils/sources'
@@ -31,13 +31,7 @@ const PatchSchema = z.object({
  * and the yaml registry entry for this deck.
  */
 export default defineEventHandler(async (event) => {
-  const { role, login } = await getActor(event)
-  if (role !== 'owner' && role !== 'editor') {
-    throw createError({
-      statusCode: role === 'anonymous' ? 401 : 403,
-      statusMessage: 'Owner or editor role required',
-    })
-  }
+  const { login } = await assertPrivileged(event)
 
   const slug = getRouterParam(event, 'slug')
   if (!slug || !isDeckSlug(slug)) {
