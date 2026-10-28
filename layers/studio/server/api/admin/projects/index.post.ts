@@ -1,6 +1,5 @@
-import { PROJECT_ICONS } from '#shared/projects'
+import { CreateProjectSchema } from '#shared/projects'
 import { isDeckSlug } from '@vignettes/core/deck'
-import { z } from 'zod'
 /**
  * POST /api/admin/projects — create a project (a first-class catalog folder).
  * The slug is derived from the title and disambiguated. Privileged only, like
@@ -10,18 +9,10 @@ import { assertPrivileged } from '../../../utils/access'
 
 import { useProjectStore } from '../../../utils/sources'
 
-const CreateSchema = z.object({
-  title: z.string().trim().min(1),
-  color: z.string().trim().min(1).nullable().optional(),
-  icon: z.enum(PROJECT_ICONS).nullable().optional(),
-  /** Optional explicit slug; derived from the title when absent. */
-  slug: z.string().optional(),
-}).strict()
-
 export default defineEventHandler(async (event) => {
   await assertPrivileged(event)
 
-  const parsed = CreateSchema.safeParse(await readBody(event))
+  const parsed = CreateProjectSchema.safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { title, color?, slug? }' })
   }

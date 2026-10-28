@@ -2,10 +2,10 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { TableColumn } from '@nuxt/ui'
-import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
+import { deckTarget, isFrozen, STATUS_CONFIG } from '#shared/presentations'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { h, resolveComponent } from 'vue'
-import { useDeckDownload } from '../composables/useDeckDownload'
+import { useDeckActions } from '../composables/useDeckActions'
 import { useDeckLinks } from '../composables/useDeckLinks'
 import { saveTextFile } from '../utils/save-file'
 
@@ -31,7 +31,7 @@ const UCheckbox = resolveComponent('UCheckbox')
 
 const toast = useToast()
 const { copyLinks, deckUrl } = useDeckLinks()
-const { downloadItems } = useDeckDownload()
+const { deckActions } = useDeckActions(emit)
 
 /**
  * What this component reads of the table instance. Naming it breaks the circular
@@ -80,12 +80,6 @@ watch(() => props.items, () => {
   table.value?.tableApi?.setPageIndex(0)
   rowSelection.value = {}
 })
-
-function defaultDeckTarget(item: PresentationListItem) {
-  if (props.admin && item.published === false && !isFrozen(item))
-    return `/edit/${item.slug}`
-  return deckPath(item)
-}
 
 const projectMeta = computed(() => new Map(
   (props.projects ?? []).map(p => [p.slug, { title: p.title ?? p.slug, color: p.color }]),
@@ -173,38 +167,18 @@ const columns = computed<TableColumn<PresentationListItem>[]>(() => [
 ])
 
 function rowActions(item: PresentationListItem) {
-  const defaultTarget = defaultDeckTarget(item)
+  const target = deckTarget(item)
+  const { manage, downloads, family, trash } = deckActions(item, props.admin === true)
   return [
     [
-      { label: t('catalog.table.open'), icon: 'i-lucide-arrow-up-right', to: defaultTarget },
-      { label: t('catalog.table.openInNewTab'), icon: 'i-lucide-external-link', to: defaultTarget, target: '_blank' },
+      { label: t('catalog.table.open'), icon: 'i-lucide-arrow-up-right', to: target },
+      { label: t('catalog.table.openInNewTab'), icon: 'i-lucide-external-link', to: target, target: '_blank' },
     ],
-    [
-      { label: t('catalog.table.copyLink'), icon: 'i-lucide-link', onSelect: () => copyLinks([item]) },
-      ...downloadItems(item, !isFrozen(item)),
-    ],
-    ...(props.admin && !isFrozen(item)
-      ? [
-          [
-            { label: t('common.actions.edit'), icon: 'i-lucide-pencil', to: `/edit/${item.slug}` },
-            { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', item) },
-            ...(item.canShare ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', item) }] : []),
-          ],
-          [
-            { label: t('catalog.deck.createVariant'), icon: 'i-lucide-languages', onSelect: () => emit('duplicate', item, 'variant') },
-            { label: t('catalog.deck.newEdition'), icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', item, 'edition') },
-          ],
-          [
-            {
-              label: t('catalog.deck.delete'),
-              icon: 'i-lucide-trash-2',
-              color: 'error' as const,
-              onSelect: () => emit('remove', item),
-            },
-          ],
-        ]
-      : []),
-  ]
+    [{ label: t('catalog.table.copyLink'), icon: 'i-lucide-link', onSelect: () => copyLinks([item]) }, ...downloads],
+    manage,
+    family,
+    trash,
+  ].filter(group => group.length > 0)
 }
 
 const selectedItems = computed<PresentationListItem[]>(() =>
@@ -314,7 +288,7 @@ function clearSelection() {
         >
           <UTooltip :text="t('catalog.table.view')">
             <UButton
-              :to="defaultDeckTarget(row.original)"
+              :to="deckTarget(row.original)"
               icon="i-lucide-eye"
               color="neutral"
               variant="ghost"

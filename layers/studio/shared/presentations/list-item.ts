@@ -64,4 +64,9 @@ export function deckPath(item: Pick<PresentationListItem, 'alias' | 'slug'>): st
   return item.alias ? `/p/${item.alias}` : `/slides/${item.slug}`
 }
 
+/** Where a click on a deck leads: the editor of a deck with nothing published, for whoever may edit it, and the deck otherwise. */
+export function deckTarget(item: Pick<PresentationListItem, 'alias' | 'slug' | 'canEdit' | 'published'>): string {
+  return item.canEdit && item.published === false ? `/edit/${item.slug}` : deckPath(item)
+}
+
 export { isFrozen } from '../access/status'

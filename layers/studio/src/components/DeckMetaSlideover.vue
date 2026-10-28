@@ -3,7 +3,7 @@ import type { GrantSummary, PublicationStatus } from '#shared/access'
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { isExpired, PUBLICATION_STATUSES, sharingLimit } from '#shared/access'
-import { STATUS_CONFIG } from '#shared/presentations'
+import { ACCESS_PASSWORD_MIN_LENGTH, STATUS_CONFIG } from '#shared/presentations'
 import { useMutation, useQuery } from '@pinia/colada'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { slugify } from '@vignettes/core/slugify'
@@ -82,7 +82,7 @@ watch(open, (now) => {
 // The server fail-closes a semi-private deck with no hash: block the save that
 // would put a deck in that state. A deck already in it keeps its other settings
 // editable, and the warning stays until a password is typed.
-const passwordReady = computed(() => state.password.trim().length >= 8)
+const passwordReady = computed(() => state.password.trim().length >= ACCESS_PASSWORD_MIN_LENGTH)
 const passwordMissing = computed(() =>
   state.status === 'semi-private' && !props.item.hasPassword && !passwordReady.value)
 const saveBlocked = computed(() => passwordMissing.value && props.item.status !== 'semi-private')

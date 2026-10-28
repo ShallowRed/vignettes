@@ -1,4 +1,4 @@
-import { readBundleConfig } from '@vignettes/freeze/bundle'
+import { serverConfig } from '../utils/config'
 import { deckDirectory } from '../utils/sources'
 
 /**
@@ -15,7 +15,7 @@ import { deckDirectory } from '../utils/sources'
 export default defineEventHandler(async (event) => {
   const path = event.path || ''
 
-  if (!path.startsWith('/slides/') || readBundleConfig().enabled)
+  if (!path.startsWith('/slides/') || serverConfig().bundle.enabled)
     return
   const query = getQuery(event)
   if ('draft' in query)

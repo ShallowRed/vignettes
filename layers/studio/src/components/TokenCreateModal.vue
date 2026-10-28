@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TokenScope } from '#shared/access'
-import { DEFAULT_TOKEN_DAYS, TOKEN_DURATIONS } from '#shared/access'
+import { DEFAULT_TOKEN_DAYS, TOKEN_DURATIONS, TOKEN_NAME_MAX_LENGTH } from '#shared/access'
 import { useMutation, useQueryCache } from '@pinia/colada'
 import { tokensApi } from '../api'
 import { useFormModal } from '../composables/useFormModal'
@@ -136,7 +136,7 @@ async function copy() {
           <UInput
             v-model="state.name"
             :placeholder="t('account.tokens.form.namePlaceholder')"
-            maxlength="100"
+            :maxlength="TOKEN_NAME_MAX_LENGTH"
             autofocus
             class="w-full"
           />

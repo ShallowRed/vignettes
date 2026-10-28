@@ -1,6 +1,7 @@
 import type { PresentationListItem } from '../../layers/studio/shared/presentations/list-item'
 import { describe, expect, it } from 'vitest'
 import { applyCatalogQuery, countByStatus, groupByProject, UNGROUPED_PROJECT } from '../../layers/studio/shared/presentations/catalog-view'
+import { deckTarget } from '../../layers/studio/shared/presentations/list-item'
 import { listItem as item } from './helpers/fixtures'
 
 const catalog: PresentationListItem[] = [
@@ -117,5 +118,13 @@ describe('groupByProject', () => {
     ]
     expect(groupByProject(items).find(g => g.project === 'p')!.items.map(i => i.slug))
       .toEqual(['b', 'a'])
+  })
+})
+
+describe('deckTarget', () => {
+  it('opens the editor of a deck with nothing published for whoever may edit it, and the deck otherwise', () => {
+    expect(deckTarget(item({ slug: 'new', published: false, canEdit: true }))).toBe('/edit/new')
+    expect(deckTarget(item({ slug: 'new', published: false }))).toBe('/slides/new')
+    expect(deckTarget(item({ slug: 'live', alias: 'talk', published: true, canEdit: true }))).toBe('/p/talk')
   })
 })

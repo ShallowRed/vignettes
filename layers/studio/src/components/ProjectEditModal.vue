@@ -22,7 +22,7 @@ const { state, errorMessage, runIfValid } = useFormModal(open, () => ({
   title: props.project.title,
   slug: props.project.slug,
   color: props.project.color ?? null,
-  icon: props.project.icon ?? null,
+  icon: PROJECT_ICONS.find(icon => icon === props.project.icon) ?? null,
 }))
 
 const slugValid = computed(() => isDeckSlug(state.slug))

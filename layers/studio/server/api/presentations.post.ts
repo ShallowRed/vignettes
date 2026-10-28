@@ -1,33 +1,13 @@
+import type { z } from 'zod'
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
+import { CreateDeckSchema } from '#shared/presentations'
 import { isDeckSlug, onlyTitleMissing, readDeckFile } from '@vignettes/core/deck'
-import { z } from 'zod'
 import { assertCanCreateInProject } from '../utils/access'
 import { useDraftStore } from '../utils/collab'
 import { useDeckMeta, useProjectStore } from '../utils/sources'
 import { creationDraft, deckFromTemplate, DEFAULT_TEMPLATE, loadTemplate } from '../utils/templates'
 
-/**
- * A deck starts from a template, with the title and the theme typed in the
- * dialog, or from an imported file, whose frontmatter gives them.
- */
-const CreateSchema = z.union([
-  z.object({
-    slug: z.string().min(1),
-    title: z.string().trim().min(1),
-    project: z.string().min(1).optional(),
-    theme: z.string().min(1).optional(),
-    template: z.string().min(1).optional(),
-  }).strict(),
-  z.object({
-    slug: z.string().min(1),
-    project: z.string().min(1).optional(),
-    raw: z.string().min(1),
-    // The title of a file whose frontmatter has none, typed in the form.
-    title: z.string().trim().min(1).optional(),
-  }).strict(),
-])
-
-type CreateInput = z.infer<typeof CreateSchema>
+type CreateInput = z.infer<typeof CreateDeckSchema>
 
 /** The deck's first draft and the title and theme its row takes. */
 async function startingDeck(input: CreateInput): Promise<{ raw: string, title: string, theme?: string }> {
@@ -59,7 +39,7 @@ async function startingDeck(input: CreateInput): Promise<{ raw: string, title: s
  * folder (`assertCanCreateInProject`).
  */
 export default defineEventHandler(async (event) => {
-  const parsed = CreateSchema.safeParse(await readBody(event))
+  const parsed = CreateDeckSchema.safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { slug, title, project?, theme?, template? } or { slug, raw, title?, project? }' })
   }

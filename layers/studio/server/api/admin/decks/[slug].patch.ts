@@ -1,29 +1,9 @@
-import { LifecycleSchema, PublicationStatusSchema } from '#shared/access'
-import { DeckSlugSchema, familyFolder, replacementLoops } from '#shared/presentations'
+import { DeckMetaPatchSchema, familyFolder, replacementLoops } from '#shared/presentations'
 import { isDeckSlug } from '@vignettes/core/deck'
-import { z } from 'zod'
 import { assertPrivileged } from '../../../utils/access'
 import { hashAccessPassword } from '../../../utils/password'
 import { securityLog } from '../../../utils/security-log'
 import { useDeckMeta, useProjectStore } from '../../../utils/sources'
-
-// The title and the theme are absent on purpose: each publication reads them
-// from the frontmatter, so a column written here would not outlive the next one.
-const PatchSchema = z.object({
-  status: PublicationStatusSchema.optional(),
-  lifecycle: LifecycleSchema.optional(),
-  project: z.string().nullable().optional(),
-  // Each names a path segment of `/p/` or `/frozen/`, and the bundle a directory of `.frozen/`.
-  alias: DeckSlugSchema.nullable().optional(),
-  frozenBundle: DeckSlugSchema.nullable().optional(),
-  unlisted: z.boolean().optional(),
-  family: z.string().trim().min(1).max(120).nullable().optional(),
-  variantLabel: z.string().trim().min(1).max(40).nullable().optional(),
-  supersededBy: DeckSlugSchema.nullable().optional(),
-  // Plain password, hashed server-side (null clears it). The UI sets it next to
-  // the semi-private status so the two can no longer drift apart.
-  accessPassword: z.string().min(8).max(200).nullable().optional(),
-}).strict()
 
 /**
  * PATCH /api/admin/decks/:slug — edit a deck's catalog/access metadata. Makes
@@ -44,7 +24,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }
 
-  const parsed = PatchSchema.safeParse(await readBody(event))
+  const parsed = DeckMetaPatchSchema.safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: `Invalid patch: ${parsed.error.issues.map(i => i.path.join('.') || i.message).join(', ')}` })
   }

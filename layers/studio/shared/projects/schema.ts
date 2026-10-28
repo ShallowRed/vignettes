@@ -34,6 +34,26 @@ export const PROJECT_ICONS = [
   'globe',
   'megaphone',
 ] as const
+export type ProjectIcon = typeof PROJECT_ICONS[number]
+
+/** What `POST /api/admin/projects` accepts. The server derives the slug from the title when it is absent. */
+export const CreateProjectSchema = z.object({
+  title: z.string().trim().min(1),
+  color: z.string().trim().min(1).nullable().optional(),
+  icon: z.enum(PROJECT_ICONS).nullable().optional(),
+  slug: z.string().optional(),
+}).strict()
+export type CreateProjectInput = z.input<typeof CreateProjectSchema>
+
+/** What `PATCH /api/admin/projects/:slug` accepts. A slug change cascades to the folder's decks. */
+export const ProjectPatchSchema = z.object({
+  slug: z.string().trim().min(1).optional(),
+  title: z.string().trim().min(1).optional(),
+  color: z.string().trim().min(1).nullable().optional(),
+  icon: z.enum(PROJECT_ICONS).nullable().optional(),
+  order: z.number().int().optional(),
+}).strict()
+export type ProjectPatch = z.input<typeof ProjectPatchSchema>
 
 export interface Project extends ProjectMeta {
   slug: string

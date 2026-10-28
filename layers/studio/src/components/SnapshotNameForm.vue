@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SNAPSHOT_LABEL_MAX_LENGTH } from '#shared/presentations'
+
 // The form that captures a snapshot of the draft, with an optional name.
 defineProps<{
   loading?: boolean
@@ -22,7 +24,7 @@ const name = ref('')
       :aria-label="t('deck.history.snapshotName')"
       class="min-w-48 flex-1"
       size="sm"
-      maxlength="80"
+      :maxlength="SNAPSHOT_LABEL_MAX_LENGTH"
       autofocus
     />
     <UButton

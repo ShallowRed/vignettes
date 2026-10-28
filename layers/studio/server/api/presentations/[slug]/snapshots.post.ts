@@ -1,8 +1,6 @@
-import { z } from 'zod'
+import { SnapshotRequestSchema } from '#shared/presentations'
 import { assertCanEditDeck } from '../../../utils/access'
 import { currentDraftText, recordDraftSnapshot, useDraftStore } from '../../../utils/collab'
-
-const BodySchema = z.object({ label: z.string().trim().min(1).max(80).optional() })
 
 /**
  * Keep the draft as it is now, with a label. A labelled snapshot is kept out of
@@ -18,7 +16,7 @@ export default defineEventHandler(async (event) => {
   if (!useDraftStore().isWritable()) {
     throw createError({ statusCode: 503, statusMessage: 'Draft storage is unavailable on this deployment' })
   }
-  const body = BodySchema.safeParse(await readBody(event))
+  const body = SnapshotRequestSchema.safeParse(await readBody(event))
   if (!body.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid body' })
   }

@@ -2,8 +2,8 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Fact } from './FactList.vue'
-import { deckPath, isFrozen, STATUS_CONFIG } from '#shared/presentations'
-import { useDeckDownload } from '../composables/useDeckDownload'
+import { deckTarget, isFrozen, STATUS_CONFIG } from '#shared/presentations'
+import { useDeckActions } from '../composables/useDeckActions'
 import { shortDate } from '../utils/short-date'
 
 // Catalog card. `admin` adds management details and the management entries of
@@ -36,21 +36,10 @@ const deck = computed(() => props.variants?.find(v => v.slug === selectedSlug.va
 
 const frozen = computed(() => isFrozen(deck.value))
 
-// A frozen deck is read-only whatever the role.
-const canEdit = computed(() => !frozen.value && (props.admin === true || deck.value.canEdit === true))
-const adminMenu = computed(() => props.admin === true && !frozen.value)
-// Whoever may share the deck gets the entry, a collaborator holding an `editor`
-// grant included (`canShare` in the catalog payload).
-const shareItems = computed<DropdownMenuItem[]>(() => deck.value.canShare && !frozen.value
-  ? [{ label: t('catalog.deck.share'), icon: 'i-lucide-users', onSelect: () => emit('share', deck.value) }]
-  : [])
+// The server's rule, which refuses a frozen deck whatever the role.
+const canEdit = computed(() => deck.value.canEdit === true)
 
-const to = computed(() => {
-  // Nothing to show yet: send whoever may edit it straight to the editor.
-  if (canEdit.value && deck.value.published === false)
-    return `/edit/${deck.value.slug}`
-  return deckPath(deck.value)
-})
+const to = computed(() => deckTarget(deck.value))
 
 const statusDisplay = computed(() => STATUS_CONFIG[deck.value.status])
 
@@ -80,33 +69,11 @@ const facts = computed<Fact[]>(() => {
   return list.filter((fact): fact is Fact => Boolean(fact))
 })
 
-const { downloadItems } = useDeckDownload()
-const actions = computed<DropdownMenuItem[][]>(() => [
-  ...(adminMenu.value
-    ? [[
-        { label: t('common.actions.edit'), icon: 'i-lucide-pencil', to: `/edit/${deck.value.slug}` },
-        { label: t('catalog.deck.metadata'), icon: 'i-lucide-settings-2', onSelect: () => emit('editMeta', deck.value) },
-        ...shareItems.value,
-      ]]
-    : [shareItems.value]),
-  downloadItems(deck.value, canEdit.value),
-  ...(adminMenu.value
-    ? [
-        [
-          { label: t('catalog.deck.createVariant'), icon: 'i-lucide-languages', onSelect: () => emit('duplicate', deck.value, 'variant') },
-          { label: t('catalog.deck.newEdition'), icon: 'i-lucide-copy-plus', onSelect: () => emit('duplicate', deck.value, 'edition') },
-        ],
-        [
-          {
-            label: t('catalog.deck.delete'),
-            icon: 'i-lucide-trash-2',
-            color: 'error' as const,
-            onSelect: () => emit('remove', deck.value),
-          },
-        ],
-      ]
-    : []),
-].filter(group => group.length > 0))
+const { deckActions } = useDeckActions(emit)
+const actions = computed<DropdownMenuItem[][]>(() => {
+  const { manage, downloads, family, trash } = deckActions(deck.value, props.admin === true)
+  return [manage, downloads, family, trash].filter(group => group.length > 0)
+})
 const hasMenu = computed(() => actions.value.length > 0)
 const hasActions = computed(() => canEdit.value || hasMenu.value)
 </script>

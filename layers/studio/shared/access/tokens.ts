@@ -16,9 +16,12 @@ export const MAX_TOKEN_DAYS = 365
 /** The durations the studio offers when it creates a token, in days. */
 export const TOKEN_DURATIONS = [30, DEFAULT_TOKEN_DAYS, MAX_TOKEN_DAYS]
 
+/** The longest name of a token. */
+export const TOKEN_NAME_MAX_LENGTH = 100
+
 /** What `POST /api/tokens` accepts. */
 export const TokenRequestSchema = z.object({
-  name: z.string().trim().min(1).max(100),
+  name: z.string().trim().min(1).max(TOKEN_NAME_MAX_LENGTH),
   scope: TokenScopeSchema,
   days: z.number().int().min(1).max(MAX_TOKEN_DAYS).default(DEFAULT_TOKEN_DAYS),
 })

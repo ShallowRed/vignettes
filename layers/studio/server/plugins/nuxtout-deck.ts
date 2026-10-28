@@ -6,7 +6,7 @@
  */
 
 import { DEFAULT_REVEAL_CONFIG, rebaseAssetUrls, scrollViewFrames, scrollViewLinks } from '@vignettes/core/render'
-import { readBundleConfig } from '@vignettes/freeze/bundle'
+import { serverConfig } from '../utils/config'
 
 // Iframe scaler, inlined after Reveal.initialize (a separate <script src> gets
 // detached by Reveal). Mirrors scaled-frame.js of @vignettes/storybook; reads client size rather
@@ -32,7 +32,7 @@ const LIFT_VEIL = `function liftVeil(){var v=document.querySelector('.deck-veil'
   + `if(v)v.classList.add('deck-veil--lifted');}setTimeout(liftVeil,4000);`
 
 export default defineNitroPlugin((nitroApp) => {
-  const bundle = readBundleConfig()
+  const bundle = serverConfig().bundle
   if (!bundle.enabled)
     return
 

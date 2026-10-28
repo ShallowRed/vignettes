@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Project } from '#shared/projects'
+import type { Project, ProjectIcon } from '#shared/projects'
 import { PROJECT_ICONS, slugifyProject } from '#shared/projects'
 import { useMutation } from '@pinia/colada'
 import { isDeckSlug } from '@vignettes/core/deck'
@@ -20,7 +20,7 @@ const { invalidateAll } = useCatalogCache()
 
 const { state, errorMessage, runIfValid, onReset } = useFormModal(
   open,
-  () => ({ title: '', slug: '', color: null as string | null, icon: null as string | null }),
+  () => ({ title: '', slug: '', color: null as string | null, icon: null as ProjectIcon | null }),
 )
 const { slug, fill: fillSlug } = useDerivedSlug(state, () => state.title, slugifyProject)
 onReset(fillSlug)

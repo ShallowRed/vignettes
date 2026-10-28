@@ -10,7 +10,8 @@ import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { checkThemeConsistency } from '@vignettes/core/theme'
-import { contentDir } from '@vignettes/nuxt/build/theme-registry'
+import { themeRoots } from '@vignettes/nuxt/build/theme-registry'
+import { serverConfig } from '../utils/config'
 import { loadTenantThemes, publishedThemeNames } from '../utils/themes'
 
 export default defineNitroPlugin(async () => {
@@ -38,12 +39,9 @@ export default defineNitroPlugin(async () => {
     ...publishedThemeNames(),
   ]
 
-  const themeRoots = [
-    join(cwd, 'themes'),
-    join(contentDir(cwd), 'themes'),
-  ].filter(dir => existsSync(dir))
-  const sourceDirs = themeRoots.length
-    ? themeRoots.flatMap(dir => safeReaddir(dir, { withFileTypes: true })
+  const roots = themeRoots(cwd, serverConfig().contentDir).map(root => root.dir).filter(dir => existsSync(dir))
+  const sourceDirs = roots.length
+    ? roots.flatMap(dir => safeReaddir(dir, { withFileTypes: true })
         .filter(e => e.isDirectory() && existsSync(join(dir, e.name, 'theme.json')))
         .map(e => e.name))
     : undefined

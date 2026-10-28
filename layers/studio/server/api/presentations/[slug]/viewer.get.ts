@@ -1,3 +1,4 @@
+import type { DeckVariant, DeckViewer } from '#shared/presentations'
 import { variantsOf } from '#shared/presentations'
 import { canActorEditDeck } from '../../../utils/access'
 import { getActor } from '../../../utils/actor'
@@ -12,7 +13,7 @@ import { useDeckMeta } from '../../../utils/sources'
  * not list.
  */
 /** The family members the visitor may open. A member with nothing published has no page. */
-async function familyVariants(event: Parameters<typeof listVisiblePresentations>[0], slug: string) {
+async function familyVariants(event: Parameters<typeof listVisiblePresentations>[0], slug: string): Promise<DeckVariant[]> {
   const [visible, rows] = await Promise.all([listVisiblePresentations(event), useDeckMeta().listManaged()])
   const published = new Set(rows.filter(d => d.published).map(d => d.slug))
   return variantsOf(slug, visible)
@@ -20,7 +21,7 @@ async function familyVariants(event: Parameters<typeof listVisiblePresentations>
     .map(d => ({ slug: d.slug, alias: d.alias ?? null, title: d.title, variantLabel: d.variantLabel ?? d.slug }))
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<DeckViewer> => {
   const slug = getRouterParam(event, 'slug')
   if (!slug)
     throw createError({ statusCode: 400, statusMessage: 'Slug parameter is required' })

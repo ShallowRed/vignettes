@@ -1,9 +1,11 @@
 import type { RoleMap } from '#shared/access'
 import type { FrozenS3Config } from '#shared/storage/frozen-s3'
+import type { BundleConfig } from '@vignettes/freeze/bundle'
 import type { DatabaseConfig } from '../db/config'
 import process from 'node:process'
 import { readRoleMap } from '#shared/access'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
+import { readBundleConfig } from '@vignettes/freeze/bundle'
 import { readDatabaseConfig } from '../db/config'
 
 /**
@@ -25,6 +27,8 @@ export interface ServerConfig {
   frozenS3: FrozenS3Config
   /** The number of proxies in front of the server that append to `X-Forwarded-For` (see `clientAddress`). */
   trustedProxyHops: number
+  /** The build of a frozen bundle, which serves one deck. */
+  bundle: BundleConfig
 }
 
 export function serverConfig(): ServerConfig {
@@ -40,6 +44,7 @@ export function serverConfig(): ServerConfig {
     roleMap: readRoleMap(env),
     frozenS3: frozenS3ConfigFromEnv(env),
     trustedProxyHops: /^\d+$/.test(env.NUXT_TRUSTED_PROXY_HOPS ?? '') ? Number(env.NUXT_TRUSTED_PROXY_HOPS) : 0,
+    bundle: readBundleConfig(env),
   }
 }
 

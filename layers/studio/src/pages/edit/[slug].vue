@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PresentationListItem } from '#shared/presentations'
+import type { DeckDraftSource, DeckViewer, PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 /**
  * Integrated Markdown editor.
@@ -120,7 +120,7 @@ const peers = ref<Peer[]>([])
 // requires edit rights, so an anonymous internal fetch would 401.
 const requestFetch = useRequestFetch()
 const { data, error } = await useAsyncData(`edit-${slug}`, () =>
-  requestFetch<{ content: string, status?: string, title?: string, from?: 'draft' | 'published' | 'file', writable?: boolean, stamp?: number | null, publishedRaw?: string | null, publishedAt?: number | null }>(
+  requestFetch<DeckDraftSource>(
     `/api/presentations/${slug}`,
     { query: { draft: '' } },
   ))
@@ -246,10 +246,10 @@ else if (data.value) {
 const statusDisplay = computed(() => STATUS_CONFIG[deckStatus.value as keyof typeof STATUS_CONFIG])
 
 // The folder of the deck, for the path back in the header.
-const { data: viewer } = useFetch<{ canEdit: boolean, project?: string | null }>(() => `/api/presentations/${slug}/viewer`, {
+const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${slug}/viewer`, {
   server: false,
   lazy: true,
-  default: () => ({ canEdit: false }),
+  default: () => ({ canEdit: false, variants: [] }),
 })
 
 // ── CodeMirror setup ────────────────────────────────────────────────────────

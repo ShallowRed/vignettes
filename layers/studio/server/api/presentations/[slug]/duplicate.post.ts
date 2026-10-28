@@ -1,20 +1,9 @@
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
-import { DeckSlugSchema } from '#shared/presentations'
+import { DuplicateDeckSchema } from '#shared/presentations'
 import { splitFrontmatter, stringifyDocument } from '@vignettes/core/deck'
-import { z } from 'zod'
 import { assertCanCreateInProject, assertCanEditDeck } from '../../../utils/access'
 import { currentDraftText, useDraftStore } from '../../../utils/collab'
 import { useDbContent, useDeckMeta } from '../../../utils/sources'
-
-const BodySchema = z.object({
-  slug: DeckSlugSchema,
-  title: z.string().trim().min(1).optional(),
-  /** `variant`: a version beside the source (a language, a format); `edition`: the deck that replaces it. */
-  mode: z.enum(['variant', 'edition']),
-  variantLabel: z.string().trim().min(1).max(40).optional(),
-  /** The label the source takes when it had none, so both show on the family card. */
-  sourceVariantLabel: z.string().trim().min(1).max(40).optional(),
-}).strict()
 
 /**
  * Copy a deck into a new one, as a draft: its published text, or its draft
@@ -28,7 +17,7 @@ export default defineEventHandler(async (event) => {
   if (!slug) {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
-  const parsed = BodySchema.safeParse(await readBody(event))
+  const parsed = DuplicateDeckSchema.safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { slug, mode, title?, variantLabel?, sourceVariantLabel? }' })
   }

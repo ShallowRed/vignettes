@@ -13,7 +13,10 @@ export function deckAssetKey(prefix: string, ...parts: string[]): string {
   return ['assets', prefix, ...parts.flatMap(p => p.split('/').filter(Boolean))].join('/')
 }
 
+/** The content space of an instance, relative to the project root, when `NUXT_CONTENT_DIR` names none. */
+export const DEFAULT_CONTENT_DIR = 'presentations'
+
 /** Path of the same asset in the content space, relative to the project root. */
 export function deckAssetLocalPath(contentDir: string | undefined, prefix: string, ...parts: string[]): string {
-  return [contentDir || 'presentations', 'assets', prefix, ...parts.flatMap(p => p.split('/').filter(Boolean))].join('/')
+  return [contentDir || DEFAULT_CONTENT_DIR, 'assets', prefix, ...parts.flatMap(p => p.split('/').filter(Boolean))].join('/')
 }

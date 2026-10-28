@@ -11,6 +11,7 @@ import type { ThemePreview, ThemeRegistry, ThemeTokens } from '@vignettes/core/t
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
+import { DEFAULT_CONTENT_DIR } from '@vignettes/core/deck-assets'
 
 export interface ThemeAssetCopy {
   /** Source directory, resolved from the project root (a node_modules path works). */
@@ -56,21 +57,25 @@ export interface DiscoveredTheme {
   source: 'app' | 'content'
 }
 
-export function contentDir(root: string): string {
-  const dir = process.env.NUXT_CONTENT_DIR || 'presentations'
+/**
+ * The absolute content space under `root`: `content`, which a server reads from
+ * its configuration, else `NUXT_CONTENT_DIR`, else `DEFAULT_CONTENT_DIR`.
+ */
+export function contentDir(root: string, content?: string): string {
+  const dir = content || process.env.NUXT_CONTENT_DIR || DEFAULT_CONTENT_DIR
   return isAbsolute(dir) ? dir : resolve(root, dir)
 }
 
-export function themeRoots(root: string): { dir: string, source: DiscoveredTheme['source'] }[] {
+export function themeRoots(root: string, content?: string): { dir: string, source: DiscoveredTheme['source'] }[] {
   return [
     { dir: join(root, 'themes'), source: 'app' },
-    { dir: join(contentDir(root), 'themes'), source: 'content' },
+    { dir: join(contentDir(root, content), 'themes'), source: 'content' },
   ]
 }
 
-export function discoverThemes(root: string): DiscoveredTheme[] {
+export function discoverThemes(root: string, content?: string): DiscoveredTheme[] {
   const found = new Map<string, DiscoveredTheme>()
-  for (const { dir, source } of themeRoots(root)) {
+  for (const { dir, source } of themeRoots(root, content)) {
     if (!existsSync(dir))
       continue
     for (const entry of readdirSync(dir, { withFileTypes: true })) {

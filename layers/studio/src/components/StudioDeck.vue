@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DeckVariant, DeckViewer } from '#shared/presentations'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import { deckPath } from '#shared/presentations'
@@ -23,8 +24,7 @@ const draftBanner = computed(() => props.draft && !speakerViewFrame)
 useHead({ title: () => `${props.presentationData.metadata.title || props.slug || ''} · Vignettes` })
 
 // The deck renders without this answer, so it loads after the page.
-interface Variant { slug: string, alias: string | null, title: string, variantLabel: string }
-const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], published?: boolean, unpublishedChanges?: boolean, project?: string | null }>(() => `/api/presentations/${props.slug}/viewer`, {
+const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${props.slug}/viewer`, {
   server: false,
   lazy: true,
   immediate: Boolean(props.slug),
@@ -32,7 +32,7 @@ const { data: viewer } = useFetch<{ canEdit: boolean, variants?: Variant[], publ
 })
 // The family shows only when there is somewhere else to go.
 const variants = computed(() => (viewer.value.variants?.length ?? 0) > 1 ? viewer.value.variants! : [])
-const variantHref = (variant: Variant) => `${deckPath({ slug: variant.slug, alias: variant.alias ?? undefined })}${props.draft ? '?draft' : ''}`
+const variantHref = (variant: DeckVariant) => `${deckPath({ slug: variant.slug, alias: variant.alias ?? undefined })}${props.draft ? '?draft' : ''}`
 
 const reveal = shallowRef<RevealApi | null>(null)
 const indices = ref({ h: 0, v: 0 })

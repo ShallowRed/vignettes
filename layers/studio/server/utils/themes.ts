@@ -61,7 +61,7 @@ export async function loadTenantThemes(): Promise<Partial<ThemeRegistry>> {
 async function resolveTenantThemes(): Promise<Partial<ThemeRegistry>> {
   const remote = await readPublishedIndex()
   publishedNames = Object.keys(remote.tokens ?? {})
-  const local = registryOf(discoverThemes(process.cwd()).filter(t => t.source === 'content'))
+  const local = registryOf(discoverThemes(process.cwd(), serverConfig().contentDir).filter(t => t.source === 'content'))
   // A theme of the content space on disk compiles with this build, and wins over the published one.
   versionGaps = themeVersionGaps(remote, useRuntimeConfig().themePackages ?? {}).filter(gap => !local.tokens[gap.theme])
   reportVersionGaps(versionGaps)

@@ -1,3 +1,4 @@
+import { ACCESS_PASSWORD_MIN_LENGTH, AccessPasswordSchema } from '#shared/presentations'
 import { assertPrivileged } from '../../utils/access'
 
 import { hashAccessPassword } from '../../utils/password'
@@ -15,10 +16,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (password.length < 8) {
+  if (!AccessPasswordSchema.safeParse(password).success) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Password must be at least 8 characters',
+      statusMessage: `Password must be at least ${ACCESS_PASSWORD_MIN_LENGTH} characters`,
     })
   }
 
