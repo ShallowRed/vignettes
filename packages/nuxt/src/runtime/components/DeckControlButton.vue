@@ -11,8 +11,10 @@ withDefaults(defineProps<{
   primary?: boolean
   /** Shows the label beside the icon, as the other commands. */
   labelled?: boolean
-  /** Draws a dot on the icon, for a state worth noticing. */
+  /** Draws a dot for a state worth noticing: on the icon, or on the corner of a command with a label. */
   badge?: boolean
+  /** A command that cannot run now; its tooltip says why. */
+  disabled?: boolean
   /** A command that turns a setting on and off, shown pressed while it is on. */
   pressed?: boolean
   /** The text of the tooltip when it says more than the label, such as the state of a toggle. */
@@ -24,9 +26,10 @@ defineEmits<{ click: [event: MouseEvent] }>()
 
 <template>
   <component
-    :is="to ? 'a' : 'button'"
-    :href="to"
-    :type="to ? undefined : 'button'"
+    :is="to && !disabled ? 'a' : 'button'"
+    :href="disabled ? undefined : to"
+    :type="to && !disabled ? undefined : 'button'"
+    :disabled="disabled"
     class="deck-control"
     :class="{ 'deck-control--primary': primary, 'deck-control--labelled': labelled, 'deck-control--pressed': pressed }"
     :aria-label="label"
@@ -83,6 +86,18 @@ defineEmits<{ click: [event: MouseEvent] }>()
   flex: none;
 }
 
+.deck-control:disabled {
+  cursor: default;
+  opacity: 0.45;
+  background: transparent;
+}
+
+.deck-control--primary:disabled,
+.deck-control--primary:disabled:hover {
+  color: #16161a;
+  background: #fff;
+}
+
 .deck-control--pressed {
   color: #8fb8ff;
   background: rgba(255, 255, 255, 0.14);
@@ -119,6 +134,14 @@ defineEmits<{ click: [event: MouseEvent] }>()
   background: #f5a524;
   border-radius: 50%;
   box-shadow: 0 0 0 2px rgba(22, 22, 26, 0.86);
+}
+
+.deck-control--labelled .deck-control__badge,
+.deck-control--primary .deck-control__badge {
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
 }
 
 .deck-control__tip {

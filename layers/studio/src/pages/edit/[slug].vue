@@ -32,6 +32,7 @@ import { useDeckPublication } from '../../composables/useDeckPublication'
 import { useDocsAddress } from '../../composables/useDocsAddress'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { useEditorPreview } from '../../composables/useEditorPreview'
+import { useSnapshotCapture } from '../../composables/useSnapshotCapture'
 import { presentationsQuery, projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
@@ -44,7 +45,6 @@ import { previewProblemMarks } from '../../utils/editor-problems'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 import { wrappedLines } from '../../utils/editor-wrap'
-import { saveTextFile } from '../../utils/save-file'
 
 const { t, locale } = useI18n()
 const completionKeys = useCompletionKeys()
@@ -114,7 +114,18 @@ const publication = useDeckPublication({
 })
 collab.onPublished(publication.refreshPublished)
 const { status: collabStatus, peers, indicator: syncIndicator } = collab
-const { dirty, unpublished, neverPublished, changes, versionNumber, publishLabel, publicationHint, saveState, publishState } = publication
+const { dirty, unpublished, neverPublished, publicationHint, saveState, publishState } = publication
+
+// ⌘S captures a snapshot of the shared draft. Until the connection is up, the
+// server may hold an older text than the editor, so nothing is captured.
+const { capture: sendSnapshot } = useSnapshotCapture(slug)
+function captureSnapshot() {
+  if (collabStatus.value !== 'connected') {
+    toast.add({ title: t('editor.collab.offline'), description: t('deck.history.snapshotOffline'), icon: 'i-lucide-cloud-off', color: 'error' })
+    return
+  }
+  sendSnapshot()
+}
 
 if (error.value) {
   // The status alone, never the message of the request: it names the route and
@@ -137,8 +148,6 @@ const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${slug}/
 // ── CodeMirror setup ────────────────────────────────────────────────────────
 
 const cm = useTemplateRef<{ view?: EditorView }>('cm')
-// ⌘S captures a snapshot of the shared draft through the header's indicator.
-const header = useTemplateRef<{ capture: () => void }>('header')
 const editorView = computed(() => cm.value?.view)
 
 // A published theme compiled with other theme packages than this studio's
@@ -234,7 +243,7 @@ const shortcutKeymap = keymap.of([
     key: 'Mod-s',
     run: () => {
       if (collabEnabled.value)
-        header.value?.capture()
+        captureSnapshot()
       else
         publication.save()
       return true
@@ -375,13 +384,6 @@ function insertFromHelp(snippet: string) {
     insertSnippet(editorView.value, snippet)
 }
 
-function download(version: 'draft' | 'published') {
-  if (version === 'draft')
-    saveTextFile(t('catalog.deck.draftFileName', { slug }), raw.value, 'text/markdown')
-  else
-    saveTextFile(`${slug}.md`, publication.publishedRaw.value ?? '', 'text/markdown')
-}
-
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
 
 const metaOpen = ref(false)
@@ -437,7 +439,6 @@ async function onMetaSaved() {
     class="tailwind-app h-screen flex flex-col overflow-hidden bg-muted"
   >
     <EditorHeader
-      ref="header"
       :breadcrumb="breadcrumb"
       :slug="slug"
       :writable="writable"
@@ -447,20 +448,10 @@ async function onMetaSaved() {
       :indicator="syncIndicator"
       :dirty="dirty"
       :saving="saveState === 'saving'"
-      :status="deckStatus"
       :can-edit="viewer.canEdit"
-      :unpublished="unpublished"
-      :never-published="neverPublished"
-      :publication-hint="publicationHint"
-      :publish-label="publishLabel"
-      :changes="changes"
-      :publishing="publishState === 'publishing'"
-      :version-number="versionNumber"
       @save="publication.save"
-      @publish="publication.publish"
       @settings="openMeta()"
-      @history="historyOpen = true"
-      @download="download"
+      @versions="historyOpen = true"
     />
 
     <!-- The source pane takes a share of the width set by dragging its edge, kept
@@ -601,12 +592,9 @@ async function onMetaSaved() {
             >
               <UIcon name="i-lucide-crosshair" />
             </DeckControlButton>
-            <span
-              v-if="(writable && unpublished !== false) || !neverPublished"
-              class="editor-stage__separator"
-            />
+            <span class="editor-stage__separator" />
             <DeckControlButton
-              v-if="writable && unpublished !== false"
+              v-if="writable"
               labelled
               :label="t('editor.preview.preview')"
               :tip="t('editor.preview.previewTip')"
@@ -616,15 +604,29 @@ async function onMetaSaved() {
               <UIcon name="i-lucide-eye" />
             </DeckControlButton>
             <DeckControlButton
-              v-if="!neverPublished"
               labelled
-              :label="unpublished && versionNumber ? t('editor.preview.presentVersion', { version: versionNumber }) : t('editor.preview.present')"
-              :tip="unpublished ? t('editor.preview.presentVersionTip') : undefined"
+              :label="t('editor.preview.present')"
+              :tip="neverPublished ? t('editor.preview.presentNeverPublished') : unpublished ? t('editor.preview.presentVersionTip') : undefined"
+              :disabled="neverPublished"
               :to="`/slides/${slug}${cursorSlideHash}`"
               target="_blank"
               rel="noopener"
             >
               <UIcon name="i-lucide-play" />
+            </DeckControlButton>
+            <!-- Publishing: the one filled command of the editor. A dot marks a
+                 draft the visitors do not see yet; once they see it, the
+                 command stays in place, disabled. -->
+            <DeckControlButton
+              v-if="writable"
+              primary
+              :label="t('editor.publication.publish')"
+              :tip="publicationHint"
+              :badge="unpublished === true"
+              :disabled="unpublished === false || publishState === 'publishing'"
+              @click="publication.publish"
+            >
+              <UIcon name="i-lucide-send" />
             </DeckControlButton>
           </div>
         </div>

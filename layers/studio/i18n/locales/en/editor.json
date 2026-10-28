@@ -5,9 +5,7 @@
       "peerEditing": "{name} is editing right now",
       "selfElsewhere": "You, in another window or on another device",
       "anonymousPeer": "anonymous",
-      "settings": "Settings and sharing",
-      "settingsTooltip": "Title, access, sharing, folder, theme and addresses of the presentation",
-      "settingsTooltipSharing": "Who can open the presentation, and its individual grants",
+      "settings": "Settings",
       "notFoundTitle": "Presentation not found",
       "openedOnSlide": "Opened on slide {slide} of {total}",
       "metaLoadFailed": "Unable to load the settings",
@@ -21,18 +19,14 @@
       "signInMessage": "Sign in to edit this presentation.",
       "failedTitle": "Loading failed",
       "failedMessage": "The presentation could not be loaded. Try again in a moment.",
-      "downloadDraft": "Draft (.md)",
-      "downloadPublished": "Published version (.md)",
       "pageTitle": "Edit “{title}” · Vignettes",
-      "download": "Download the Markdown",
-      "more": "More actions"
+      "versions": "Versions"
     },
     "collab": {
       "offline": "Offline",
       "connecting": "Connecting…",
       "synced": "Saved",
       "saving": "Saving…",
-      "hint": "Draft shared in real time: every change is saved automatically and visible to the other editors.",
       "switchToSolo": "Switch to solo",
       "solo": "Solo",
       "soloTooltip": "Solo mode: you save the draft yourself, and the save is refused when a more recent version exists."
@@ -50,19 +44,11 @@
       "publishedDescriptionPrivate": "The presentation is private: Editor and Owner accounts and the people with an individual access see this version.",
       "share": "Share",
       "failed": "Publishing failed",
-      "upToDate": "Up to date",
       "hintNeverPublished": "Publish the draft to show it to visitors.",
       "hintUnpublished": "Visitors see the published version. Publish to update it.",
       "hintUnpublishedSince": "Visitors see the version published on {date}. Publish to update it.",
       "hintUpToDate": "Visitors see this draft.",
       "hintUpToDateSince": "Visitors have seen this draft since {date}.",
-      "upToDateVersion": "Up to date · version {version}",
-      "menu": "Versions and history",
-      "changes": "See the changes",
-      "snapshot": "Capture a snapshot",
-      "history": "Version history",
-      "publishVersion": "Publish version {version}",
-      "publishChanges": "Publish version {version}: {n} changed line | Publish version {version}: {n} changed lines",
       "hintUnpublishedVersion": "Visitors see version {version}, published on {date}. Publish to update it.",
       "hintUpToDateVersion": "Visitors see this draft, published as version {version} on {date}."
     },
@@ -79,8 +65,8 @@
       "frame": "Preview slide: the arrow keys change the slide",
       "preview": "Preview",
       "previewTip": "The draft full screen, as it would be published",
-      "presentVersion": "Present version {version}",
-      "presentVersionTip": "The version the visitors see, without the changes of the draft"
+      "presentVersionTip": "The version the visitors see, without the changes of the draft",
+      "presentNeverPublished": "Publish the presentation to present it."
     },
     "toolbar": {
       "headingMenu": "Heading",

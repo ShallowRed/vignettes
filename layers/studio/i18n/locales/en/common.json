@@ -51,8 +51,8 @@
         "dark": "Dark",
         "system": "Same as the system"
       },
-      "preferences": "Preferences",
-      "backHome": "Back to home"
+      "backHome": "Back to home",
+      "menu": "Menu"
     },
     "loadError": {
       "title": "Loading failed",

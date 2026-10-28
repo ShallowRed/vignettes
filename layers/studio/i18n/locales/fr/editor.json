@@ -5,9 +5,7 @@
       "peerEditing": "{name} édite en ce moment",
       "selfElsewhere": "Vous, dans une autre fenêtre ou sur un autre appareil",
       "anonymousPeer": "anonyme",
-      "settings": "Réglages et partage",
-      "settingsTooltip": "Titre, accès, partage, dossier, thème et adresses de la présentation",
-      "settingsTooltipSharing": "Qui peut ouvrir la présentation, et ses accès individuels",
+      "settings": "Réglages",
       "notFoundTitle": "Présentation introuvable",
       "openedOnSlide": "Ouvert sur la diapositive {slide} sur {total}",
       "metaLoadFailed": "Impossible de charger les réglages",
@@ -21,18 +19,14 @@
       "signInMessage": "Connectez-vous pour modifier cette présentation.",
       "failedTitle": "Chargement impossible",
       "failedMessage": "La présentation n'a pas pu être chargée. Réessayez dans un instant.",
-      "downloadDraft": "Brouillon (.md)",
-      "downloadPublished": "Version publiée (.md)",
       "pageTitle": "Modifier « {title} » · Vignettes",
-      "download": "Télécharger le Markdown",
-      "more": "Autres actions"
+      "versions": "Versions"
     },
     "collab": {
       "offline": "Hors ligne",
       "connecting": "Connexion…",
       "synced": "Enregistré",
       "saving": "Enregistrement…",
-      "hint": "Brouillon partagé en temps réel : chaque modification est enregistrée automatiquement et visible par les autres éditeurs.",
       "switchToSolo": "Passer en solo",
       "solo": "Solo",
       "soloTooltip": "Mode solo : vous enregistrez le brouillon vous-même, et l'enregistrement est refusé quand une version plus récente existe."
@@ -50,19 +44,11 @@
       "publishedDescriptionPrivate": "La présentation est privée : les comptes Éditeur et Propriétaire et les personnes qui ont un accès individuel voient cette version.",
       "share": "Partager",
       "failed": "Échec de la publication",
-      "upToDate": "À jour",
       "hintNeverPublished": "Publiez le brouillon pour le montrer aux visiteurs.",
       "hintUnpublished": "Les visiteurs voient la version publiée. Publiez pour la mettre à jour.",
       "hintUnpublishedSince": "Les visiteurs voient la version publiée le {date}. Publiez pour la mettre à jour.",
       "hintUpToDate": "Les visiteurs voient ce brouillon.",
       "hintUpToDateSince": "Les visiteurs voient ce brouillon depuis le {date}.",
-      "upToDateVersion": "À jour · version {version}",
-      "menu": "Versions et historique",
-      "changes": "Voir les modifications",
-      "snapshot": "Capturer un instantané",
-      "history": "Historique des versions",
-      "publishVersion": "Publier la version {version}",
-      "publishChanges": "Publier la version {version} : {n} ligne modifiée | Publier la version {version} : {n} ligne modifiée | Publier la version {version} : {n} lignes modifiées",
       "hintUnpublishedVersion": "Les visiteurs voient la version {version}, publiée le {date}. Publiez pour la mettre à jour.",
       "hintUpToDateVersion": "Les visiteurs voient ce brouillon, publié comme version {version} le {date}."
     },
@@ -79,8 +65,8 @@
       "frame": "Diapositive de l'aperçu : les flèches changent de diapositive",
       "preview": "Prévisualiser",
       "previewTip": "Le brouillon en plein écran, tel qu'il serait publié",
-      "presentVersion": "Présenter la version {version}",
-      "presentVersionTip": "La version que voient les visiteurs, sans les modifications du brouillon"
+      "presentVersionTip": "La version que voient les visiteurs, sans les modifications du brouillon",
+      "presentNeverPublished": "Publiez la présentation pour la présenter."
     },
     "toolbar": {
       "headingMenu": "Titre",

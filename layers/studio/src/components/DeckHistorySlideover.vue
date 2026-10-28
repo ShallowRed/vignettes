@@ -5,9 +5,11 @@ import { useMutation, useQuery } from '@pinia/colada'
 import { historyApi } from '../api'
 import { useSnapshotCapture } from '../composables/useSnapshotCapture'
 import { historyEntryQuery, historyQuery } from '../queries'
+import { changedLines } from '../utils/changed-lines'
 import { diffStructure } from '../utils/diff-skeleton'
 import { historyRows } from '../utils/history-rows'
 import { requestErrorMessage } from '../utils/request-error'
+import { saveTextFile } from '../utils/save-file'
 
 /**
  * The history of a deck: the draft, then the published versions and the
@@ -108,6 +110,16 @@ function loaded(data: { kind: string, id: number, raw: string } | undefined, ref
 }
 const to = computed(() => selected.value === 'draft' ? props.draft : loaded(targetQ.data.value, targetRef.value))
 const from = computed(() => baseRef.value === null ? to.value : loaded(baseQ.data.value, baseRef.value))
+// The selected text as a Markdown file, named after the draft or the date of the entry.
+function download() {
+  if (to.value === null)
+    return
+  const entry = selectedEntry.value
+  const name = entry
+    ? `${props.slug}-${entry.kind === 'version' ? 'version' : 'snapshot'}-${new Date(entry.at).toISOString().slice(0, 10)}.md`
+    : t('catalog.deck.draftFileName', { slug: props.slug })
+  saveTextFile(name, to.value, 'text/markdown')
+}
 const firstEntry = computed(() => selected.value !== 'draft' && selected.value !== null && baseRef.value === null)
 
 // The shape of the diff, from the two texts, before the editor draws it: the
@@ -149,12 +161,16 @@ const loading = computed(() => selected.value !== null && structure.value === nu
 function when(at: number): string {
   return new Date(at).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
 }
-function kilobytes(bytes: number): number {
-  return Math.max(1, Math.round(bytes / 1024))
-}
+// The versions are numbered in the order of their publication; the list holds the newest first.
+const versionNumbers = computed(() => {
+  const versions = entries.value.filter(e => e.kind === 'version')
+  return new Map(versions.map((entry, index) => [entry.id, versions.length - index]))
+})
 function title(entry: HistoryEntry): string {
-  if (entry.kind === 'version')
-    return entry.current ? t('deck.history.versionOnline') : t('deck.history.versionPublished', { when: when(entry.at) })
+  if (entry.kind === 'version') {
+    const version = versionNumbers.value.get(entry.id)
+    return t(entry.current ? 'deck.history.versionOnline' : 'deck.history.version', { version })
+  }
   return entry.label ? entry.label : when(entry.at)
 }
 function icon(entry: HistoryEntry): string {
@@ -163,21 +179,12 @@ function icon(entry: HistoryEntry): string {
   return entry.label ? 'i-lucide-bookmark' : 'i-lucide-camera'
 }
 function detail(entry: HistoryEntry): string {
-  const named = { kilobytes: kilobytes(entry.bytes) }
-  if (entry.kind === 'version') {
-    return entry.current
-      ? t('deck.history.detailCurrentVersion', { ...named, author: entry.publishedBy, when: when(entry.at) })
-      : t('deck.history.detailVersion', { ...named, author: entry.publishedBy })
-  }
+  if (entry.kind === 'version')
+    return t('deck.history.detailVersion', { author: entry.publishedBy, when: when(entry.at) })
   const authors = entry.authors.join(', ')
-  if (entry.label) {
-    return authors
-      ? t('deck.history.detailLabeledSnapshotAuthors', { ...named, authors, when: when(entry.at) })
-      : t('deck.history.detailLabeledSnapshotAutomatic', { ...named, when: when(entry.at) })
-  }
-  return authors
-    ? t('deck.history.detailSnapshotAuthors', { ...named, authors })
-    : t('deck.history.detailSnapshotAutomatic', named)
+  if (entry.label)
+    return authors ? t('deck.history.detailLabeledSnapshotAuthors', { authors, when: when(entry.at) }) : when(entry.at)
+  return authors || t('deck.history.detailSnapshotAutomatic')
 }
 
 const heading = computed(() => {
@@ -187,7 +194,7 @@ const heading = computed(() => {
   if (!entry)
     return ''
   if (entry.kind === 'version')
-    return t(entry.current ? 'deck.history.headingCurrentVersion' : 'deck.history.headingVersion', { when: when(entry.at) })
+    return t(entry.current ? 'deck.history.headingCurrentVersion' : 'deck.history.headingVersion', { version: versionNumbers.value.get(entry.id), when: when(entry.at) })
   return entry.label
     ? t('deck.history.headingLabeledSnapshot', { label: entry.label, when: when(entry.at) })
     : t('deck.history.headingSnapshot', { when: when(entry.at) })
@@ -197,10 +204,11 @@ const summary = computed(() => {
     return t('deck.history.summaryNeverPublished')
   if (firstEntry.value)
     return t('deck.history.summaryFirstEntry')
-  if (chunks.value === null)
+  if (from.value === null || to.value === null)
     return ''
+  const lines = changedLines(from.value, to.value)
   const against = selected.value === 'draft' ? 'current' : selectedEntry.value?.kind === 'version' ? 'version' : 'entry'
-  if (chunks.value === 0) {
+  if (lines === 0) {
     return t({
       current: 'deck.history.summaryIdenticalToCurrent',
       version: 'deck.history.summaryIdenticalToPreviousVersion',
@@ -211,7 +219,7 @@ const summary = computed(() => {
     current: 'deck.history.summaryChangedSinceCurrent',
     version: 'deck.history.summaryChangedByPublication',
     entry: 'deck.history.summaryChangedSincePreviousEntry',
-  }[against], chunks.value)
+  }[against], lines)
 })
 // The legend keeps its line whatever the state, so the diff never moves.
 const baseEntry = computed(() => {
@@ -276,7 +284,7 @@ const { capture, capturing } = useSnapshotCapture(props.slug, () => {
   <USlideover
     v-model:open="open"
     :title="t('deck.history.title')"
-    :description="t('deck.history.description', { slug })"
+    :description="t('deck.history.description')"
     :ui="{ content: 'max-w-5xl', body: 'p-0 sm:p-0' }"
   >
     <template #actions>
@@ -379,9 +387,9 @@ const { capture, capturing } = useSnapshotCapture(props.slug, () => {
         >
           <div
             v-if="heading"
-            class="flex items-center gap-3 border-b border-default px-4 py-2"
+            class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-default px-4 py-2"
           >
-            <div class="min-w-0 flex-1">
+            <div class="min-w-0 flex-1 basis-full sm:basis-0">
               <p class="text-sm font-medium text-highlighted">
                 {{ heading }}
               </p>
@@ -396,6 +404,16 @@ const { capture, capturing } = useSnapshotCapture(props.slug, () => {
                 {{ summary }}
               </p>
             </div>
+            <UButton
+              v-if="!confirming && !naming"
+              :label="t('deck.history.download')"
+              icon="i-lucide-file-down"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              :disabled="to === null"
+              @click="download"
+            />
             <UButton
               v-if="!confirming && !naming"
               :label="restoreLabel"

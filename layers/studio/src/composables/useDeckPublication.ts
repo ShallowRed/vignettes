@@ -4,7 +4,7 @@ import type { Fetcher } from '../api'
 import { useQuery } from '@pinia/colada'
 import { deckApi } from '../api'
 import { historyQuery } from '../queries'
-import { draftChanges, draftUnpublished } from '../utils/draft-publication'
+import { draftUnpublished } from '../utils/draft-publication'
 import { requestErrorMessage } from '../utils/request-error'
 
 interface DeckPublicationOptions {
@@ -52,7 +52,6 @@ export function useDeckPublication(options: DeckPublicationOptions) {
   const draft = computed(() => collab.value && !docSynced.value ? null : raw.value)
   const neverPublished = computed(() => publishedRaw.value === null)
   const unpublished = computed(() => draftUnpublished(draft.value, publishedRaw.value))
-  const changes = computed(() => draftChanges(draft.value, publishedRaw.value))
 
   // The versions are numbered in the order of their publication; the history
   // lists the newest first.
@@ -61,13 +60,6 @@ export function useDeckPublication(options: DeckPublicationOptions) {
     const versions = (historyQ.data.value ?? []).filter(entry => entry.kind === 'version')
     const index = versions.findIndex(entry => entry.current)
     return index === -1 ? null : versions.length - index
-  })
-
-  const publishLabel = computed(() => {
-    const next = (versionNumber.value ?? 0) + 1
-    return changes.value
-      ? t('editor.publication.publishChanges', { version: next, n: changes.value }, changes.value)
-      : t('editor.publication.publishVersion', { version: next })
   })
 
   const publishedAtLabel = computed(() =>
@@ -163,9 +155,6 @@ export function useDeckPublication(options: DeckPublicationOptions) {
     dirty,
     neverPublished,
     unpublished,
-    changes,
-    versionNumber,
-    publishLabel,
     publicationHint,
     saveState,
     publishState,

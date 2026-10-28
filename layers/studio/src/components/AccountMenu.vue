@@ -6,8 +6,9 @@ import { useInstanceLinks } from '../composables/useInstanceLinks'
 import { postForm } from '../utils/post-form'
 
 // The occasional destinations and the preferences of the reader: the links of
-// the instance, the language, the color mode, then the account pages. A visitor
-// signs in beside it.
+// the instance, the language, the color mode, then the account pages. One menu
+// holds them, opened by the account once signed in and by a menu button for a
+// visitor, who signs in beside it.
 const { loggedIn, role, user, privileged, owner } = useAppSession()
 const { t, locale, locales, setLocale } = useI18n()
 const colorMode = useColorMode()
@@ -43,11 +44,14 @@ const preferences = computed<DropdownMenuItem[]>(() => [
   },
 ])
 
+// The links open in a new tab; their arrow takes the place of a submenu's chevron.
+const linkItems = computed<DropdownMenuItem[]>(() => links.value.map(link => ({ label: link.label, icon: link.icon, to: link.url, target: '_blank', slot: 'external' as const })))
+
 const items = computed<DropdownMenuItem[][]>(() => [
   ...(loggedIn.value
     ? [[{ type: 'label' as const, label: user.value?.login || user.value?.name || t('common.header.account'), description: t(ROLE_CONFIG[role.value].labelKey), avatar: user.value?.avatar ? { src: user.value.avatar } : undefined }]]
     : []),
-  ...(links.value.length ? [links.value.map(link => ({ label: link.label, icon: link.icon, to: link.url, target: '_blank' }))] : []),
+  ...(linkItems.value.length ? [linkItems.value] : []),
   preferences.value,
   ...(loggedIn.value
     ? [
@@ -77,13 +81,14 @@ const items = computed<DropdownMenuItem[][]>(() => [
     />
     <UDropdownMenu
       :items="items"
+      :external-icon="false"
       :content="{ align: 'end' }"
     >
       <UButton
         color="neutral"
         variant="ghost"
-        :aria-label="loggedIn ? (user?.login || t('common.header.account')) : t('common.header.preferences')"
-        :icon="loggedIn && user?.avatar ? undefined : 'i-lucide-circle-user-round'"
+        :aria-label="loggedIn ? (user?.login || t('common.header.account')) : t('common.header.menu')"
+        :icon="loggedIn ? (user?.avatar ? undefined : 'i-lucide-circle-user-round') : 'i-lucide-menu'"
         class="max-md:px-1.5"
       >
         <UAvatar
@@ -97,6 +102,12 @@ const items = computed<DropdownMenuItem[][]>(() => [
           class="max-md:sr-only"
         >{{ user?.login || user?.name }}</span>
       </UButton>
+      <template #external-trailing>
+        <UIcon
+          name="i-lucide-arrow-up-right"
+          class="size-4 shrink-0 text-dimmed"
+        />
+      </template>
     </UDropdownMenu>
   </div>
 </template>

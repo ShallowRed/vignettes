@@ -51,8 +51,8 @@
         "dark": "Sombre",
         "system": "Comme le système"
       },
-      "preferences": "Préférences",
-      "backHome": "Retour à l'accueil"
+      "backHome": "Retour à l'accueil",
+      "menu": "Menu"
     },
     "loadError": {
       "title": "Le chargement a échoué",

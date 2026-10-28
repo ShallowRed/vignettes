@@ -18,14 +18,12 @@ import { requestErrorMessage } from '../utils/request-error'
 import { shortDate } from '../utils/short-date'
 
 /**
- * Deck settings panel, in three tabs: the deck itself (folder, address), who can
- * open it (visibility, catalog, sharing grants) and its variants. Metadata saves
- * through the admin PATCH, for the global roles; grants apply as soon as they
- * are added, for whoever may share the deck (`item.canShare`). A collaborator
- * holding an `editor` grant reads the access tab alone: who can open the deck,
- * and its grants. Reused by the catalog and the editor. The title and the theme
- * are read here: they belong to the deck's frontmatter, which each publication
- * re-reads.
+ * Deck settings panel, in three tabs: who can open the deck (link, visibility,
+ * sharing grants), where it is found (folder, address, catalog) and its
+ * variants. Metadata saves through the admin PATCH, for the global roles; grants
+ * apply as soon as they are added, for whoever may share the deck
+ * (`item.canShare`). A collaborator holding an `editor` grant reads the sharing
+ * tab alone. Reused by the catalog and the editor.
  */
 const props = defineProps<{
   item: PresentationListItem
@@ -99,16 +97,16 @@ const statusItems = computed(() => PUBLICATION_STATUSES.map(status => ({
 })))
 
 type Tab = 'general' | 'access' | 'variants'
-const tab = ref<Tab>('general')
+const tab = ref<Tab>('access')
 watch(open, (now) => {
   if (now)
-    tab.value = props.focus === 'sharing' || !privileged.value ? 'access' : 'general'
+    tab.value = 'access'
 }, { immediate: true })
 const accessTab = computed(() => ({ label: t('deck.meta.tabAccess'), icon: passwordMissing.value ? 'i-lucide-triangle-alert' : STATUS_CONFIG[state.status].icon, value: 'access', slot: 'access' as const }))
 const tabs = computed(() => privileged.value
   ? [
-      { label: t('deck.meta.tabGeneral'), icon: 'i-lucide-file-text', value: 'general', slot: 'general' as const },
       accessTab.value,
+      { label: t('deck.meta.tabGeneral'), icon: 'i-lucide-folder', value: 'general', slot: 'general' as const },
       { label: t('deck.meta.tabVariants'), icon: 'i-lucide-layers', value: 'variants', slot: 'variants' as const },
     ]
   : [accessTab.value])
@@ -242,8 +240,8 @@ const audience = computed(() => {
 <template>
   <USlideover
     v-model:open="open"
-    :title="item.title"
-    :description="privileged ? t('deck.meta.description', { slug: item.slug }) : t('deck.meta.sharingDescription', { slug: item.slug })"
+    :title="privileged ? t('deck.meta.title') : t('deck.meta.sharingTitle')"
+    :description="item.title"
     :ui="{ content: 'max-w-2xl', body: 'p-0 sm:p-0' }"
   >
     <template #body>
@@ -260,26 +258,6 @@ const audience = computed(() => {
             <div class="settings__row">
               <div>
                 <p class="settings__label">
-                  {{ t('common.fields.title') }}
-                </p>
-                <i18n-t
-                  keypath="deck.meta.fromFrontmatter"
-                  tag="p"
-                  scope="global"
-                  class="settings__hint"
-                >
-                  <template #key>
-                    <code class="font-mono">title:</code>
-                  </template>
-                </i18n-t>
-              </div>
-              <p class="settings__value">
-                {{ item.title }}
-              </p>
-            </div>
-            <div class="settings__row">
-              <div>
-                <p class="settings__label">
                   {{ t('deck.meta.folder') }}
                 </p>
                 <p class="settings__hint">
@@ -292,26 +270,6 @@ const audience = computed(() => {
                 class="w-full"
                 :aria-label="t('deck.meta.folder')"
               />
-            </div>
-            <div class="settings__row">
-              <div>
-                <p class="settings__label">
-                  {{ t('deck.meta.theme') }}
-                </p>
-                <i18n-t
-                  keypath="deck.meta.fromFrontmatter"
-                  tag="p"
-                  scope="global"
-                  class="settings__hint"
-                >
-                  <template #key>
-                    <code class="font-mono">theme:</code>
-                  </template>
-                </i18n-t>
-              </div>
-              <p class="settings__value">
-                {{ item.theme }}
-              </p>
             </div>
             <div class="settings__row">
               <div>
@@ -335,12 +293,28 @@ const audience = computed(() => {
                 </template>
               </UInput>
             </div>
+            <div class="settings__row">
+              <div>
+                <p class="settings__label">
+                  {{ t('deck.meta.listed') }}
+                </p>
+                <p class="settings__hint">
+                  {{ t('deck.meta.listedHint') }}
+                </p>
+              </div>
+              <USwitch
+                :model-value="!state.unlisted"
+                :aria-label="t('deck.meta.listed')"
+                @update:model-value="state.unlisted = !$event"
+              />
+            </div>
           </div>
         </template>
 
         <template #access>
           <div class="settings">
             <UAlert
+              v-if="!privileged"
               class="mt-4"
               color="neutral"
               variant="subtle"
@@ -411,23 +385,6 @@ const audience = computed(() => {
                   />
                 </template>
               </div>
-            </div>
-            <div
-              v-if="privileged"
-              class="settings__row"
-            >
-              <div>
-                <p class="settings__label">
-                  {{ t('deck.meta.unlisted') }}
-                </p>
-                <p class="settings__hint">
-                  {{ t('deck.meta.unlistedHint') }}
-                </p>
-              </div>
-              <USwitch
-                v-model="state.unlisted"
-                :aria-label="t('deck.meta.unlisted')"
-              />
             </div>
 
             <div
