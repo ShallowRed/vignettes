@@ -16,6 +16,7 @@ declare module 'reveal.js' {
     addKeyBinding: (binding: { keyCode: number, key: string, description: string }, callback: () => void) => void
     slide: (h: number, v?: number, f?: number) => void
     getIndices: () => { h: number, v: number, f?: number }
+    getCurrentSlide: () => HTMLElement | undefined
     getConfig: () => Record<string, unknown>
     getComputedSlideSize: () => { width: number, height: number }
     getRevealElement: () => HTMLElement

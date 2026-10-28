@@ -22,3 +22,16 @@ export function awarenessPeers(states: Map<number, Record<string, unknown>>, cli
   }
   return [...peers.values()]
 }
+
+const PEER_COLORS = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#008080']
+
+/** The caret colour of an account, derived from its login so it stays the same across reloads. */
+export function peerColor(login?: string): string {
+  const hue = [...(login ?? '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
+  return PEER_COLORS[hue % PEER_COLORS.length]!
+}
+
+/** The initials of a name or a login, two letters at most. */
+export function peerInitials(name: string): string {
+  return name.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
+}

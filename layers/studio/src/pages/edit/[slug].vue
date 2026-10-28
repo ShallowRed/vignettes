@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeckDraftSource, DeckViewer, PresentationListItem } from '#shared/presentations'
+import type { DeckViewer, PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 /**
  * Integrated Markdown editor.
@@ -15,48 +15,35 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
-import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
-import type { PresentationData } from '@vignettes/nuxt/types'
-import type { RevealApi } from 'reveal.js'
+import type { PreviewInstance } from '../../composables/useEditorPreview'
 import type { Translate } from '../../config/editor-reference'
-import type { Peer } from '../../utils/editor-peers'
-import type { LineProblem, Severity } from '../../utils/editor-problems'
-import { STATUS_CONFIG } from '#shared/presentations'
-import { completionStatus } from '@codemirror/autocomplete'
+import type { Severity } from '../../utils/editor-problems'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
-import { useQuery } from '@pinia/colada'
-import { attributeMentions, componentAttributeIssues, componentMentions, deckRevealOptions, layoutMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks, valueMentions } from '@vignettes/core/deck'
-import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
-import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
-import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
+import { useQuery, useQueryCache } from '@pinia/colada'
+import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 import Codemirror from 'vue-codemirror6'
-import { useAppSession } from '../../composables/useAppSession'
+import { deckApi } from '../../api'
+import { useCollabDraft } from '../../composables/useCollabDraft'
 import { useCompletionKeys } from '../../composables/useCompletionKeys'
 import { useDeckLinks } from '../../composables/useDeckLinks'
+import { useDeckPublication } from '../../composables/useDeckPublication'
 import { useDocsAddress } from '../../composables/useDocsAddress'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
-import { historyQuery, projectsQuery } from '../../queries'
-import { changedLines } from '../../utils/changed-lines'
+import { useEditorPreview } from '../../composables/useEditorPreview'
+import { presentationsQuery, projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
-import { listedFrontmatterProblems } from '../../utils/editor-frontmatter'
 import { deckHover } from '../../utils/editor-hover'
-import { editorIssues } from '../../utils/editor-issues'
-import { formatJson, jsonBlockAt, jsonFormatNotice } from '../../utils/editor-json'
+import { formatJson, jsonFormatNotice } from '../../utils/editor-json'
 import { editorKeymap } from '../../utils/editor-keymap'
 import { EDITOR_TEXT } from '../../utils/editor-layout'
-import { awarenessPeers } from '../../utils/editor-peers'
-import { placeProblems, previewProblemMarks, setPreviewProblems } from '../../utils/editor-problems'
+import { previewProblemMarks } from '../../utils/editor-problems'
 import { deckStructure } from '../../utils/editor-slides'
 import { editorTheme } from '../../utils/editor-theme'
 import { wrappedLines } from '../../utils/editor-wrap'
-import { previewSourceReader } from '../../utils/preview-header'
-import { imageMention, missingImages } from '../../utils/preview-images'
-import { slideOverflow, transitionsEnded } from '../../utils/preview-overflow'
-import { requestErrorMessage } from '../../utils/request-error'
 import { saveTextFile } from '../../utils/save-file'
 
 const { t, locale } = useI18n()
@@ -75,18 +62,14 @@ const slug = route.params.slug as string
 // conflict-checked saves.
 const soloRequested = computed(() => 'solo' in route.query)
 
-const { privileged, user } = useAppSession()
 const colorMode = useColorMode()
 const toast = useToast()
 
 const raw = ref('')
 provide(EDITOR_TEXT, raw)
-const lastSaved = ref('')
 const deckTitle = ref<string | undefined>(undefined)
 useHead({ title: () => t('editor.page.pageTitle', { title: deckTitle.value || slug }) })
 const deckStatus = ref<string>('private')
-const loadedFrom = ref<'draft' | 'published' | 'file' | null>(null)
-const preview = ref<PresentationData | null>(null)
 const loadErrorStatus = ref<number | null>(null)
 const loadError = computed(() => loadErrorStatus.value !== null)
 
@@ -108,118 +91,30 @@ const refusal = computed(() => {
       return { icon: 'i-lucide-triangle-alert', title: t('editor.page.failedTitle'), description: t('editor.page.failedMessage') }
   }
 })
-const saveState = ref<'idle' | 'saving' | 'error'>('idle')
 
-// Collaboration state. `peers` lists the other connected people by name.
-const collabStatus = ref<'connecting' | 'connected' | 'disconnected'>('connecting')
-const peerCount = ref(0)
-const peers = ref<Peer[]>([])
-
-// Load the working draft (falls back to published version, then file).
+// Load the working draft (falls back to the published version).
 // useRequestFetch: the SSR pass must re-emit the session cookie — `?draft`
 // requires edit rights, so an anonymous internal fetch would 401.
 const requestFetch = useRequestFetch()
-const { data, error } = await useAsyncData(`edit-${slug}`, () =>
-  requestFetch<DeckDraftSource>(
-    `/api/presentations/${slug}`,
-    { query: { draft: '' } },
-  ))
+const { data, error } = await useAsyncData(`edit-${slug}`, () => deckApi.loadDraft(requestFetch, slug))
 
 const writable = computed(() => data.value?.writable !== false)
 const collabEnabled = computed(() => writable.value && !soloRequested.value)
-// In solo mode the draft is only "unsaved" when it differs from what the server has.
-const dirty = computed(() => !collabEnabled.value && raw.value !== lastSaved.value)
-// Solo concurrency token: the draft stamp we loaded, echoed on save so the
-// server refuses to overwrite someone else's newer draft (409).
-const draftStamp = ref<number | null | undefined>(undefined)
 
-// Publication state: the served text, to tell whether the draft holds changes
-// the visitors do not see yet. Unknown (null) until the collab document synced.
-const publishedRaw = ref<string | null>(null)
-const publishedAt = ref<number | null>(null)
-const docSynced = ref(false)
-const synced = ref(true)
-const neverPublished = computed(() => publishedRaw.value === null)
-const unpublished = computed<boolean | null>(() => {
-  if (collabEnabled.value && !docSynced.value)
-    return null
-  if (neverPublished.value)
-    return true
-  return raw.value !== publishedRaw.value
+const collab = useCollabDraft(slug, raw, collabEnabled)
+const publication = useDeckPublication({
+  slug,
+  raw,
+  source: error.value ? null : data.value,
+  writable,
+  collab: collabEnabled,
+  docSynced: collab.docSynced,
+  requestFetch,
+  onPublished: notifyPublished,
 })
-const publishedAtLabel = computed(() =>
-  publishedAt.value ? new Date(publishedAt.value).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' }) : null)
-// The versions are numbered in the order of their publication; the history
-// lists the newest first.
-const historyQ = useQuery({ ...historyQuery(requestFetch, slug), enabled: () => writable.value })
-const versionNumber = computed(() => {
-  const versions = (historyQ.data.value ?? []).filter(entry => entry.kind === 'version')
-  const index = versions.findIndex(entry => entry.current)
-  return index === -1 ? null : versions.length - index
-})
-// The lines the draft changed since the version the visitors see.
-const changes = computed(() => publishedRaw.value === null || !unpublished.value ? 0 : changedLines(publishedRaw.value, raw.value))
-const publishLabel = computed(() => {
-  const next = (versionNumber.value ?? 0) + 1
-  return changes.value
-    ? t('editor.publication.publishChanges', { version: next, n: changes.value }, changes.value)
-    : t('editor.publication.publishVersion', { version: next })
-})
-
-const publicationHint = computed(() => {
-  if (neverPublished.value)
-    return t('editor.publication.hintNeverPublished')
-  const date = publishedAtLabel.value
-  const version = versionNumber.value
-  if (unpublished.value) {
-    if (date && version)
-      return t('editor.publication.hintUnpublishedVersion', { date, version })
-    return date ? t('editor.publication.hintUnpublishedSince', { date }) : t('editor.publication.hintUnpublished')
-  }
-  if (date && version)
-    return t('editor.publication.hintUpToDateVersion', { date, version })
-  return date ? t('editor.publication.hintUpToDateSince', { date }) : t('editor.publication.hintUpToDate')
-})
-const collabLabel = computed(() => {
-  if (collabStatus.value === 'disconnected')
-    return t('editor.collab.offline')
-  if (collabStatus.value !== 'connected' || !docSynced.value)
-    return t('editor.collab.connecting')
-  return synced.value ? t('editor.collab.synced') : t('editor.collab.saving')
-})
-
-// The server acknowledges each keystroke within a moment; the indicator shows
-// the pending state only when it lasts, so it stays still while someone types.
-const SAVING_DELAY_MS = 1200
-const savingShown = ref(false)
-let savingTimer: ReturnType<typeof setTimeout> | undefined
-watch(synced, (value) => {
-  clearTimeout(savingTimer)
-  if (value)
-    savingShown.value = false
-  else
-    savingTimer = setTimeout(() => savingShown.value = true, SAVING_DELAY_MS)
-})
-const syncIndicator = computed(() => {
-  if (collabStatus.value === 'disconnected')
-    return { icon: 'i-lucide-cloud-off', class: 'text-error', labelClass: 'text-error', label: collabLabel.value }
-  if (collabStatus.value !== 'connected' || !docSynced.value)
-    return { icon: 'i-lucide-loader-circle', class: 'text-dimmed animate-spin', labelClass: 'text-muted', label: collabLabel.value }
-  if (savingShown.value)
-    return { icon: 'i-lucide-cloud-upload', class: 'text-warning', labelClass: 'text-muted', label: t('editor.collab.saving') }
-  return { icon: 'i-lucide-cloud-check', class: 'text-muted', labelClass: 'text-muted', label: t('editor.collab.synced') }
-})
-
-/** Re-read the published state after someone (maybe this client) published. */
-async function refreshPublished() {
-  const res = await $fetch<{ publishedRaw?: string | null, publishedAt?: number | null }>(`/api/presentations/${slug}`, { query: { draft: '' } })
-  publishedRaw.value = res.publishedRaw ?? null
-  publishedAt.value = res.publishedAt ?? null
-}
-
-function initials(name: string): string {
-  return name.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
-}
+collab.onPublished(publication.refreshPublished)
+const { status: collabStatus, peers, indicator: syncIndicator } = collab
+const { dirty, unpublished, neverPublished, changes, versionNumber, publishLabel, publicationHint, saveState, publishState } = publication
 
 if (error.value) {
   // The status alone, never the message of the request: it names the route and
@@ -230,20 +125,7 @@ if (error.value) {
 else if (data.value) {
   deckStatus.value = data.value.status ?? 'private'
   deckTitle.value = data.value.title
-  loadedFrom.value = data.value.from ?? null
-  // Solo mode seeds the editor from the fetched markdown. In collab mode the
-  // Y.Text is the ONLY source — seeded server-side — so we must NOT also push
-  // this content in, or yCollab would duplicate it (one deck → N).
-  if (!collabEnabled.value) {
-    raw.value = data.value.content
-    lastSaved.value = data.value.content
-  }
-  draftStamp.value = data.value.stamp ?? null
-  publishedRaw.value = data.value.publishedRaw ?? null
-  publishedAt.value = data.value.publishedAt ?? null
 }
-
-const statusDisplay = computed(() => STATUS_CONFIG[deckStatus.value as keyof typeof STATUS_CONFIG])
 
 // The folder of the deck, for the path back in the header.
 const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${slug}/viewer`, {
@@ -256,155 +138,49 @@ const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${slug}/
 
 const cm = useTemplateRef<{ view?: EditorView }>('cm')
 // ⌘S captures a snapshot of the shared draft through the header's indicator.
-const snapshotPopover = useTemplateRef<{ capture: () => void }>('snapshotPopover')
+const header = useTemplateRef<{ capture: () => void }>('header')
 const editorView = computed(() => cm.value?.view)
 
-// ── Follow-the-cursor preview ────────────────────────────────────────────────
-// The preview navigates to the slide the caret sits in: `slideRanges` of
-// `@vignettes/core` gives the boundaries the renderer uses, and Reveal's
-// slide(h, v) opens the slide under the caret.
-// Key must NOT be "preview": a `ref="preview"` would collide with the `preview`
-// data ref above, and Vue would overwrite it with the component instance on
-// mount — nuking `preview.value.slides`/`.metadata` and crashing every downstream
-// computed. Hence the distinct "previewInstance" key.
+// A published theme compiled with other theme packages than this studio's
+// renders with another engine stylesheet; the frontmatter guide marks `theme:`.
+const { data: themeVersionGaps } = useFetch<string[]>('/api/themes/version-gaps', { default: () => [] })
+
 const previewFrame = useTemplateRef<HTMLElement>('previewFrame')
-const previewHasFocus = () => previewFrame.value?.matches(':focus-within') ?? false
-const previewRef = useTemplateRef<{ slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => RevealApi | null }>('previewInstance')
-const followCursor = ref(true)
-const cursorLine = ref(1)
-const cursorPos = ref(0)
-const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser }))
-
-// Fragments in the preview: the slide in its final state (every fragment shown),
-// or opened at the fragment under the caret and stepped with the preview's arrows
-// as in the deck. The choice is kept per browser.
-const FRAGMENT_STEPS_KEY = 'vignettes:editor-fragment-steps'
-const fragmentSteps = ref(false)
-onMounted(() => {
-  try {
-    fragmentSteps.value = localStorage.getItem(FRAGMENT_STEPS_KEY) === '1'
-  }
-  catch {}
+// The key must not be "preview": a `ref="preview"` would collide with the
+// `preview` data below, and Vue would overwrite it with the component instance
+// on mount.
+const previewInstance = useTemplateRef<PreviewInstance>('previewInstance')
+const {
+  preview,
+  parserId,
+  previewHasFocus,
+  previewRatio,
+  previewPending,
+  previewIssues,
+  parseFailed,
+  previewFragments,
+  fragmentSteps,
+  toggleFragmentSteps,
+  slideSteps,
+  stepShown,
+  followCursor,
+  cursorListener,
+  cursorSlideHash,
+  cursorSlideNumber,
+  slideCount,
+  cursorInJson,
+  onPreviewReady,
+} = useEditorPreview({
+  previewFrame,
+  previewInstance,
+  raw,
+  loadedText: data.value?.content ?? '',
+  editorView,
+  staleThemes: themeVersionGaps,
+  docsUrl,
+  t,
+  tWithKeys,
 })
-
-function toggleFragmentSteps() {
-  fragmentSteps.value = !fragmentSteps.value
-  try {
-    localStorage.setItem(FRAGMENT_STEPS_KEY, fragmentSteps.value ? '1' : '0')
-  }
-  catch {}
-}
-
-// A deck whose frontmatter turns fragments off shows them all in both modes.
-const previewFragments = computed(() => fragmentSteps.value && preview.value?.metadata?.reveal?.fragments !== false)
-
-watch(previewFragments, (fragments) => {
-  previewRef.value?.getInstance()?.configure({ fragments })
-  syncPreviewToCursor()
-  readSteps()
-})
-
-// The steps of the slide on screen: the button shows on a slide that has some,
-// and the stepped preview gives the step reached. Fragments that share an index
-// are one step.
-const slideSteps = ref(0)
-const stepShown = ref(0)
-let stepsSource: RevealApi | null = null
-function readSteps() {
-  const reveal = previewRef.value?.getInstance()
-  const slide = reveal?.getCurrentSlide()
-  if (!reveal || !slide) {
-    slideSteps.value = 0
-    return
-  }
-  const fragments = [...slide.querySelectorAll<HTMLElement>('.fragment')]
-  slideSteps.value = new Set(fragments.map((fragment, at) => fragment.dataset.fragmentIndex ?? `#${at}`)).size
-  stepShown.value = (reveal.getIndices().f ?? -1) + 1
-}
-
-function onPreviewReady() {
-  const reveal = previewRef.value?.getInstance()
-  if (reveal && reveal !== stepsSource) {
-    for (const event of ['slidechanged', 'fragmentshown', 'fragmenthidden'])
-      reveal.on(event, readSteps)
-    stepsSource = reveal
-  }
-  syncPreviewToCursor()
-  readSteps()
-}
-
-function syncPreviewToCursor() {
-  checkSlide()
-  if (!followCursor.value || !previewRef.value)
-    return
-  const ranges = slideRanges(raw.value, parserId.value)
-  const { h, v } = slideAtLine(ranges, cursorLine.value)
-  // Stepped fragments open the slide at the fragment under the caret.
-  if (previewFragments.value)
-    previewRef.value.slide(h, v, fragmentAtLine(raw.value, ranges, cursorLine.value))
-  else
-    previewRef.value.slide(h, v)
-}
-
-// The slide on screen, measured once the preview settles: its content that
-// reaches below the slide, by its first line, since the presentation and the
-// PDF cut it there; and its images that fail to load, by their written address.
-const overflow = ref<{ line: number, slide: number } | null>(null)
-const brokenImages = ref<{ src: string, line: number, column: number, length: number }[]>([])
-let slideTimer: ReturnType<typeof setTimeout> | undefined
-let slideCheck = 0
-function checkSlide() {
-  clearTimeout(slideTimer)
-  slideTimer = setTimeout(async () => {
-    const reveal = previewRef.value?.getInstance()
-    if (!reveal)
-      return
-    const check = ++slideCheck
-    await transitionsEnded(reveal)
-    if (check !== slideCheck)
-      return
-    const { h, v } = reveal.getIndices()
-    const ranges = slideRanges(raw.value, parserId.value)
-    const index = ranges.findIndex(range => range.h === h && range.v === (v ?? 0))
-    const startLine = ranges[index]?.startLine
-    overflow.value = startLine && slideOverflow(reveal) > 4 ? { line: startLine, slide: index + 1 } : null
-    const missing = startLine ? await missingImages(reveal) : []
-    if (check !== slideCheck)
-      return
-    const mentions = valueMentions(raw.value)
-    brokenImages.value = missing.flatMap((src) => {
-      const mention = imageMention(mentions, src, startLine!)
-      return mention ? [{ src, line: mention.line, column: mention.column, length: mention.length }] : []
-    })
-  }, 400)
-}
-
-// Track the caret line; re-sync only when it crosses into another line (typing
-// within a line shouldn't re-navigate).
-const cursorListener = EditorView.updateListener.of((update) => {
-  if (!update.selectionSet && !update.docChanged)
-    return
-  cursorPos.value = update.state.selection.main.head
-  const line = update.state.doc.lineAt(update.state.selection.main.head).number
-  const moved = line !== cursorLine.value
-  cursorLine.value = line
-  if (moved)
-    syncPreviewToCursor()
-})
-
-watch(followCursor, (on) => {
-  if (on)
-    syncPreviewToCursor()
-})
-
-// The slide under the caret, where "Présenter" opens the deck.
-const cursorSlide = computed(() => slideAtLine(slideRanges(raw.value, parserId.value), cursorLine.value))
-const cursorSlideHash = computed(() => `#/${cursorSlide.value.h}/${cursorSlide.value.v}`)
-const slideCount = computed(() => slideRanges(raw.value, parserId.value).length)
-// Whether the caret is in a `json` block, where the status bar shows the indent button.
-const cursorInJson = computed(() => Boolean(jsonBlockAt(raw.value, cursorPos.value)))
-const cursorSlideNumber = computed(() =>
-  slideRanges(raw.value, parserId.value).findIndex(range => range.h === cursorSlide.value.h && range.v === cursorSlide.value.v) + 1)
 
 // `?slide=h/v`: the deck page's edit command opens the editor on the slide it
 // showed. The caret goes to the slide's first line once the text is loaded.
@@ -458,9 +234,9 @@ const shortcutKeymap = keymap.of([
     key: 'Mod-s',
     run: () => {
       if (collabEnabled.value)
-        snapshotPopover.value?.capture()
+        header.value?.capture()
       else
-        save()
+        publication.save()
       return true
     },
   },
@@ -480,19 +256,10 @@ function uploadChosenImages(files: File[]) {
     uploadImages(editorView.value, files)
 }
 
-// Appended by startCollab (yCollab + remote-caret styling + Yjs undo keymap).
-const collabExtensions = shallowRef<Extension[]>([])
-
 // Project slugs feed the frontmatter completion. Shares the catalog's `projects`
 // query cache (same key) so navigating from the catalog needs no extra fetch.
 const { data: projectsData } = useQuery(projectsQuery(requestFetch))
 const projects = computed<Project[]>(() => projectsData.value ?? [])
-
-// The header buttons show their label from the `sm` width; below it they keep
-// their icon, with the padding of an icon button, and their tooltip and
-// accessible name carry the label.
-const HEADER_LABEL = 'hidden sm:inline'
-const HEADER_BUTTON_UI = { base: 'max-sm:px-1.5', label: HEADER_LABEL }
 
 const breadcrumb = computed(() => {
   const project = projects.value.find(p => p.slug === viewer.value.project)
@@ -501,19 +268,6 @@ const breadcrumb = computed(() => {
     ...(project ? [{ label: project.title, to: `/projects/${project.slug}` }] : []),
     { label: deckTitle.value || slug },
   ]
-})
-
-// The slide proportions, so the preview frame matches the deck. Before the first
-// parse, the server render included, they come from the loaded text: its theme's
-// Reveal settings, then its own `reveal:`.
-const loadedReveal = computed(() => {
-  const meta = splitFrontmatter(data.value?.content ?? '').data
-  const theme = typeof meta.theme === 'string' ? meta.theme : getDefaultTheme()
-  return { ...getThemeTokens(theme)?.reveal, ...deckRevealOptions(meta.reveal) }
-})
-const previewRatio = computed(() => {
-  const reveal = (preview.value?.metadata?.reveal ?? loadedReveal.value) as { width?: number, height?: number }
-  return (reveal.width ?? 960) / (reveal.height ?? 700)
 })
 
 // On by default, so a paragraph stays in the pane; a wrapped line continues
@@ -538,10 +292,6 @@ function toggleWrap() {
   wrapLines.value = !wrapLines.value
 }
 
-// A published theme compiled with other theme packages than this studio's
-// renders with another engine stylesheet; the frontmatter guide marks `theme:`.
-const { data: themeVersionGaps } = useFetch<string[]>('/api/themes/version-gaps', { default: () => [] })
-
 const extensions = computed<Extension[]>(() => [
   markdown({ codeLanguages: CODE_LANGUAGES }),
   ...(wrapLines.value ? [wrappedLines()] : []),
@@ -555,7 +305,7 @@ const extensions = computed<Extension[]>(() => [
   shortcutKeymap,
   imageUploadHandlers,
   // Yjs owns undo in collab mode; the local history would fight it.
-  ...(collabEnabled.value ? collabExtensions.value : [history(), keymap.of(historyKeymap)]),
+  ...(collabEnabled.value ? collab.extensions.value : [history(), keymap.of(historyKeymap)]),
   editorKeymap(),
   keymap.of(defaultKeymap),
 ])
@@ -569,86 +319,12 @@ const cmModel = computed({
   },
 })
 
-// Reparse the preview, debounced, whenever the markdown changes. The same parse
-// path as the live routes guarantees fidelity.
-let timer: ReturnType<typeof setTimeout> | null = null
-
-// What the last parse found: the problems of the frontmatter, the components
-// no registered component answers to, which the deck draws as plain content,
-// the attributes the deck refuses or whose address the page does not load, or
-// a failure after which the preview keeps the last good render.
-const frontmatterIssues = ref<Array<LineProblem & { short: string }>>([])
-const unknownMentions = ref<ComponentMention[]>([])
-const refusedMentions = ref<AttributeMention[]>([])
-const layoutIssues = ref<LayoutMention[]>([])
-const unclosedIssues = ref<OpenBlock[]>([])
-const malformedIssues = ref<MalformedAttributes[]>([])
-const componentAttributeProblems = ref<ComponentAttributeIssue[]>([])
-const parseFailed = ref(false)
-let parsedText = ''
-// From a change of the text to the render of its preview, a bar runs along the
-// top of the slide.
-const previewPending = ref(false)
-
 const SEVERITY_ICONS: Record<Severity, { icon: string, color: string }> = {
   error: { icon: 'i-lucide-circle-alert', color: 'text-error' },
   warning: { icon: 'i-lucide-triangle-alert', color: 'text-warning' },
   info: { icon: 'i-lucide-info', color: 'text-dimmed' },
 }
-
-// The frontmatter guide marks its own problems in the source pane; the list
-// shows them with the others, the most severe first.
-const previewIssues = computed(() => editorIssues(raw.value, {
-  overflow: overflow.value,
-  brokenImages: brokenImages.value,
-  malformed: malformedIssues.value,
-  componentAttributes: componentAttributeProblems.value,
-  unclosed: unclosedIssues.value,
-  frontmatter: frontmatterIssues.value,
-  unknown: unknownMentions.value,
-  refused: refusedMentions.value,
-  layout: layoutIssues.value,
-}, t, docsUrl))
-
-const previewSource = previewSourceReader()
-
-async function reparse() {
-  const text = raw.value
-  try {
-    const data = await buildPresentationData(previewSource(text))
-    preview.value = data
-    unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
-    refusedMentions.value = attributeMentions(text)
-    layoutIssues.value = layoutMentions(text)
-    unclosedIssues.value = unclosedBlocks(text)
-    malformedIssues.value = malformedAttributeMentions(text)
-    componentAttributeProblems.value = componentAttributeIssues(text)
-    frontmatterIssues.value = listedFrontmatterProblems(text, tWithKeys, themeVersionGaps.value)
-    parseFailed.value = false
-    parsedText = text
-    // Let Reveal register added/removed slides, then re-align to the caret so a
-    // freshly-typed slide is reachable by the follow-cursor sync.
-    await nextTick()
-    previewRef.value?.sync?.()
-    syncPreviewToCursor()
-    readSteps()
-  }
-  catch {
-    parseFailed.value = true
-  }
-  // A text typed during the parse keeps the bar until its own render.
-  if (raw.value === text)
-    previewPending.value = false
-}
-
-// The marks go to the text that was parsed; a text typed since then gets its
-// own parse.
-watch([previewIssues, editorView], ([issues, view]) => {
-  if (!view || view.state.doc.toString() !== parsedText)
-    return
-  const problems = issues.filter(issue => !issue.marked)
-  view.dispatch({ effects: setPreviewProblems.of(placeProblems(view.state, problems)) })
-})
+const MENTIONS_SHOWN = 3
 
 function goToLine(line: number) {
   const view = editorView.value
@@ -659,195 +335,14 @@ function goToLine(line: number) {
   view.focus()
 }
 
-const MENTIONS_SHOWN = 3
-// The preview renders again once the typing pauses, and waits while the list of
-// suggestions is open, so that the list answers the keys at once.
-function scheduleReparse() {
-  if (timer)
-    clearTimeout(timer)
-  timer = setTimeout(() => {
-    const view = editorView.value
-    if (view && completionStatus(view.state) === 'active')
-      scheduleReparse()
-    else
-      reparse()
-  }, 300)
-}
-
-watch([raw, themeVersionGaps], () => {
-  previewPending.value = true
-  scheduleReparse()
-}, { immediate: true })
-
-// ── Real-time collaboration (Yjs + Hocuspocus) ──────────────────────────────
-// Dynamically imported (client-only) so SSR/solo mode never loads the collab
-// stack. The Y.Text is the live document; we mirror it into `raw` for the preview
-// and let y-codemirror.next drive the editor + remote cursors.
-let cleanupCollab: (() => void) | null = null
-
-async function startCollab() {
-  const [{ Doc }, { HocuspocusProvider }, { yCollab, yUndoManagerKeymap, yRemoteSelectionsTheme }] = await Promise.all([
-    import('yjs'),
-    import('@hocuspocus/provider'),
-    import('y-codemirror.next'),
-  ])
-
-  const ydoc = new Doc()
-  // Same-origin endpoint: the session cookie rides the upgrade request, so the
-  // server authorizes there — no token to share.
-  const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-  const provider = new HocuspocusProvider({
-    // The deck rides the query so the upgrade can authorize it (per-deck grant)
-    // before Hocuspocus reveals the document name.
-    url: `${wsProtocol}://${window.location.host}/collab?deck=${encodeURIComponent(slug)}`,
-    name: slug,
-    document: ydoc,
-  })
-
-  provider.on('status', (e: { status: string }) => {
-    collabStatus.value = e.status === 'connected' ? 'connected' : 'connecting'
-  })
-  provider.on('disconnect', () => {
-    collabStatus.value = 'disconnected'
-  })
-  provider.on('synced', () => {
-    docSynced.value = true
-  })
-  // Edits not yet acknowledged by the server: the header says so instead of
-  // claiming they are saved.
-  provider.on('unsyncedChanges', (e: { number: number }) => {
-    synced.value = e.number === 0
-  })
-  // The publish endpoint broadcasts to the room; every client refreshes its
-  // publication state instead of keeping the one it loaded.
-  provider.on('stateless', ({ payload }: { payload: string }) => {
-    try {
-      if (JSON.parse(payload)?.type === 'published')
-        void refreshPublished()
-    }
-    catch {}
-  })
-
-  const ytext = ydoc.getText('codemirror')
-  // Mirror the live Y.Text into `raw` so the preview reparses on every change
-  // (local or remote).
-  const syncRaw = () => {
-    raw.value = ytext.toString()
-  }
-  ytext.observe(syncRaw)
-
-  // Remote carets show the account name, with a colour derived from the login
-  // so it stays the same across reloads.
-  const palette = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#008080']
-  const login = user.value?.login
-  const hue = [...(login ?? '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
-  provider.awareness?.setLocalStateField('user', {
-    name: user.value?.name || login || t('editor.page.anonymousPeer'),
-    color: palette[hue % palette.length],
-    login,
-  })
-  provider.awareness?.on('change', () => {
-    const states = provider.awareness?.getStates()
-    peerCount.value = states?.size ?? 0
-    peers.value = states && provider.awareness ? awarenessPeers(states, provider.awareness.clientID, login) : []
-  })
-
-  // yCollab wires sync + local awareness; yRemoteSelectionsTheme is
-  // y-codemirror.next's own styling for remote carets/selections.
-  collabExtensions.value = [
-    yCollab(ytext, provider.awareness),
-    yRemoteSelectionsTheme,
-    keymap.of(yUndoManagerKeymap),
-  ]
-
-  cleanupCollab = () => {
-    ytext.unobserve(syncRaw)
-    provider.destroy()
-    ydoc.destroy()
-  }
-}
-
 // An unsaved solo draft deserves the browser's "leave the page?" guard.
 function beforeUnload(e: BeforeUnloadEvent) {
   if (dirty.value)
     e.preventDefault()
 }
 
-onMounted(() => {
-  window.addEventListener('beforeunload', beforeUnload)
-  if (collabEnabled.value)
-    startCollab()
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', beforeUnload)
-  cleanupCollab?.()
-  clearTimeout(slideTimer)
-  if (timer)
-    clearTimeout(timer)
-})
-
-// ── Actions ─────────────────────────────────────────────────────────────────
-
-async function save() {
-  // Guard re-entry: these use $fetch directly, without a mutation's own in-flight
-  // lock, so a double-click would fire two PUTs and race the save state.
-  if (saveState.value === 'saving')
-    return
-  saveState.value = 'saving'
-  try {
-    const saved = raw.value
-    const res = await $fetch<{ stamp?: number | null }>(`/api/presentations/${slug}`, {
-      method: 'PUT',
-      body: { raw: saved, stamp: draftStamp.value ?? null },
-    })
-    draftStamp.value = res.stamp ?? null
-    lastSaved.value = saved
-    loadedFrom.value = 'draft'
-    saveState.value = 'idle'
-    toast.add({ title: t('editor.save.saved'), icon: 'i-lucide-check', color: 'success' })
-  }
-  catch (e: any) {
-    saveState.value = 'error'
-    // A 409 means someone saved this draft after we loaded it.
-    toast.add({
-      title: e?.statusCode === 409 || e?.data?.data?.conflict || e?.data?.conflict
-        ? t('editor.save.conflict')
-        : requestErrorMessage(e, e?.message || t('editor.save.failed')),
-      icon: 'i-lucide-triangle-alert',
-      color: 'error',
-    })
-  }
-}
-
-const publishState = ref<'idle' | 'publishing' | 'error'>('idle')
-
-async function publish() {
-  if (publishState.value === 'publishing')
-    return
-  publishState.value = 'publishing'
-  try {
-    // Solo mode: make sure the draft carries the current text before deriving.
-    if (!collabEnabled.value) {
-      const res = await $fetch<{ stamp?: number | null }>(`/api/presentations/${slug}`, {
-        method: 'PUT',
-        body: { raw: raw.value, stamp: draftStamp.value ?? null },
-      })
-      draftStamp.value = res.stamp ?? null
-      lastSaved.value = raw.value
-    }
-    await $fetch(`/api/presentations/${slug}/publish`, { method: 'POST' })
-    publishedRaw.value = raw.value
-    publishedAt.value = Date.now()
-    publishState.value = 'idle'
-    historyQ.refetch()
-    await notifyPublished()
-  }
-  catch (e: any) {
-    publishState.value = 'error'
-    toast.add({ title: requestErrorMessage(e, e?.message || t('editor.publication.failed')), icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-}
+onMounted(() => window.addEventListener('beforeunload', beforeUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
 
 // The notice names who sees the version just published, and offers the next
 // step: the link to send, or the sharing tab of a private deck.
@@ -869,11 +364,10 @@ async function notifyPublished() {
   })
 }
 
-// ── Help panel ──────────────────────────────────────────────────────────────
+// ── Side panels ─────────────────────────────────────────────────────────────
 
 const helpOpen = ref(false)
-const activeParser = computed<'heading' | 'separator'>(() =>
-  preview.value?.metadata?.parser === 'heading' ? 'heading' : 'separator')
+const historyOpen = ref(false)
 
 // The help stays open beside the text, for the next insertion.
 function insertFromHelp(snippet: string) {
@@ -881,48 +375,12 @@ function insertFromHelp(snippet: string) {
     insertSnippet(editorView.value, snippet)
 }
 
-// ── History panel ───────────────────────────────────────────────────────────
-
-const historyOpen = ref(false)
-
-// A restored version reaches a collab room through Yjs; the solo editor
-// re-reads the draft it replaced.
-async function onRestored(stamp: number | null) {
-  if (collabEnabled.value)
-    return
-  const fresh = await $fetch<{ content: string }>(`/api/presentations/${slug}`, { query: { draft: '' } })
-  raw.value = fresh.content
-  lastSaved.value = fresh.content
-  draftStamp.value = stamp
+function download(version: 'draft' | 'published') {
+  if (version === 'draft')
+    saveTextFile(t('catalog.deck.draftFileName', { slug }), raw.value, 'text/markdown')
+  else
+    saveTextFile(`${slug}.md`, publication.publishedRaw.value ?? '', 'text/markdown')
 }
-
-// ── Markdown download ───────────────────────────────────────────────────────
-
-// The draft is the text in the editor, saved or not; the published version is
-// the one the page loaded.
-// The sentence that opens the menu wraps inside its width.
-const PUBLICATION_MENU_UI = { content: 'w-80', label: 'font-normal text-muted', itemLabel: 'whitespace-normal' }
-
-// The menu of the publication: what the visitors see, then the changes, the
-// snapshots and the history of the deck.
-const publicationItems = computed(() => [
-  [{ type: 'label' as const, label: publicationHint.value }],
-  [
-    ...(unpublished.value && !neverPublished.value ? [{ label: t('editor.publication.changes'), icon: 'i-lucide-git-compare', onSelect: () => { historyOpen.value = true } }] : []),
-    ...(collabEnabled.value ? [{ label: t('editor.publication.snapshot'), icon: 'i-lucide-camera', onSelect: () => snapshotPopover.value?.capture() }] : []),
-    { label: t('editor.publication.history'), icon: 'i-lucide-history', onSelect: () => { historyOpen.value = true } },
-  ],
-])
-
-// The occasional actions on the deck: its settings, its files.
-const deckMenuItems = computed(() => [
-  ...(statusDisplay.value ? [[{ label: t('editor.page.settings'), icon: 'i-lucide-settings-2', disabled: !privileged.value && !viewer.value.canEdit, onSelect: () => openMeta() }]] : []),
-  [
-    { type: 'label' as const, label: t('editor.page.download') },
-    { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(t('catalog.deck.draftFileName', { slug }), raw.value, 'text/markdown') },
-    { label: t('editor.page.downloadPublished'), icon: 'i-lucide-file-down', disabled: neverPublished.value, onSelect: () => saveTextFile(`${slug}.md`, publishedRaw.value ?? '', 'text/markdown') },
-  ],
-])
 
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
 
@@ -930,10 +388,12 @@ const metaOpen = ref(false)
 const metaItem = ref<PresentationListItem | null>(null)
 const metaFocus = ref<'sharing' | undefined>()
 
-// The catalog entry of the deck, with its alias and its accesses.
+// The catalog entry of the deck, with its alias and its accesses, read through
+// the cache the catalog pages and the settings drawer share.
+const queryCache = useQueryCache()
 async function deckItem(): Promise<PresentationListItem | null> {
-  const list = await $fetch<PresentationListItem[]>('/api/presentations')
-  return list.find(p => p.slug === slug) ?? null
+  const { data: list } = await queryCache.refresh(queryCache.ensure(presentationsQuery($fetch)))
+  return list?.find(p => p.slug === slug) ?? null
 }
 
 async function openMeta(focus?: 'sharing') {
@@ -949,10 +409,7 @@ async function openMeta(focus?: 'sharing') {
 }
 
 async function onMetaSaved() {
-  const fresh = await $fetch<{ status?: string, title?: string }>(
-    `/api/presentations/${slug}`,
-    { query: { draft: '' } },
-  ).catch(() => null)
+  const fresh = await deckApi.loadDraft($fetch, slug).catch(() => null)
   if (fresh) {
     deckStatus.value = fresh.status ?? deckStatus.value
     deckTitle.value = fresh.title ?? deckTitle.value
@@ -979,186 +436,32 @@ async function onMetaSaved() {
     v-else
     class="tailwind-app h-screen flex flex-col overflow-hidden bg-muted"
   >
-    <!-- The way back reads as on the catalog pages. On the right, in reading
-         order: the draft, who sees the deck, presenting it, its publication,
-         its occasional actions in one menu, then the account. -->
-    <header
-      class="flex items-center gap-2 sm:gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
-    >
-      <AppTitle :items="breadcrumb" />
-
-      <div class="flex-1" />
-
-      <span
-        v-if="!writable"
-        class="text-xs text-muted"
-      >{{ t('editor.page.readOnly') }}</span>
-
-      <div
-        v-if="collabEnabled"
-        class="flex items-center -space-x-1"
-      >
-        <span
-          v-for="peer in peers"
-          :key="peer.key"
-          class="grid place-items-center size-6 rounded-full text-[10px] font-semibold text-white ring-2 ring-default"
-          :style="{ backgroundColor: peer.color }"
-          :title="peer.self ? t('editor.page.selfElsewhere') : t('editor.page.peerEditing', { name: peer.name })"
-        >{{ initials(peer.name) }}</span>
-      </div>
-
-      <!-- The draft state opens the capture of a snapshot; a lost connection
-           adds a link to the solo editor. -->
-      <template v-if="collabEnabled">
-        <EditorSnapshotPopover
-          ref="snapshotPopover"
-          :slug="slug"
-          :indicator="syncIndicator"
-          :offline="collabStatus !== 'connected'"
-        />
-        <UButton
-          v-if="collabStatus === 'disconnected'"
-          :label="t('editor.collab.switchToSolo')"
-          color="neutral"
-          variant="link"
-          size="xs"
-          :to="`/edit/${slug}?solo`"
-          external
-        />
-      </template>
-      <template v-else-if="writable">
-        <UTooltip :text="t('editor.collab.soloTooltip')">
-          <UButton
-            :label="t('editor.collab.solo')"
-            :aria-label="t('editor.collab.solo')"
-            :ui="HEADER_BUTTON_UI"
-            icon="i-lucide-user"
-            color="neutral"
-            variant="link"
-            size="xs"
-            :to="`/edit/${slug}`"
-            external
-          />
-        </UTooltip>
-        <UChip
-          :show="dirty"
-          color="warning"
-          size="lg"
-        >
-          <UButton
-            :label="t('common.actions.save')"
-            :aria-label="t('common.actions.save')"
-            :ui="HEADER_BUTTON_UI"
-            icon="i-lucide-save"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            :loading="saveState === 'saving'"
-            :disabled="!dirty"
-            @click="save"
-          />
-        </UChip>
-      </template>
-
-      <!-- The visibility of the deck opens its settings drawer. Whoever may edit
-           the deck may share it (canShare), so a collaborator opens the drawer
-           on its sharing. On a phone, the menu of the deck opens the drawer. -->
-      <UTooltip
-        v-if="statusDisplay"
-        :text="privileged ? t('editor.page.settingsTooltip') : t('editor.page.settingsTooltipSharing')"
-      >
-        <UButton
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          class="shrink-0 gap-1.5 max-sm:hidden"
-          :aria-label="`${t('editor.page.settings')}, ${t(statusDisplay.labelKey)}`"
-          :disabled="!privileged && !viewer.canEdit"
-          @click="openMeta()"
-        >
-          <UIcon
-            :name="statusDisplay.icon"
-            class="size-4.5 shrink-0 text-muted"
-          />
-          <span class="text-xs text-muted">{{ t(statusDisplay.labelKey) }}</span>
-        </UButton>
-      </UTooltip>
-
-      <!-- Publishing: the one filled button of the page, with the number of
-           lines the draft changed since the version the visitors see. Once
-           the draft and that version are the same, it gives the version. Its
-           menu reaches the changes, the snapshots and the history. -->
-      <UFieldGroup
-        v-if="writable && unpublished !== false"
-        class="shrink-0"
-      >
-        <UTooltip :text="publicationHint">
-          <UButton
-            icon="i-lucide-send"
-            :label="t('editor.publication.publish')"
-            :aria-label="publishLabel"
-            :ui="HEADER_BUTTON_UI"
-            :loading="publishState === 'publishing'"
-            @click="publish"
-          >
-            <template
-              v-if="changes"
-              #trailing
-            >
-              <span class="grid place-items-center min-w-5 h-5 px-1.5 rounded-full bg-white/25 text-xs font-semibold tabular-nums">{{ changes }}</span>
-            </template>
-          </UButton>
-        </UTooltip>
-        <UDropdownMenu
-          :items="publicationItems"
-          :content="{ align: 'end' }"
-          :ui="PUBLICATION_MENU_UI"
-        >
-          <UButton
-            icon="i-lucide-chevron-down"
-            class="border-s border-inverted/20"
-            :aria-label="t('editor.publication.menu')"
-          />
-        </UDropdownMenu>
-      </UFieldGroup>
-      <UDropdownMenu
-        v-else-if="writable"
-        :items="publicationItems"
-        :content="{ align: 'end' }"
-        :ui="PUBLICATION_MENU_UI"
-      >
-        <UButton
-          icon="i-lucide-check"
-          trailing-icon="i-lucide-chevron-down"
-          :label="versionNumber ? t('editor.publication.upToDateVersion', { version: versionNumber }) : t('editor.publication.upToDate')"
-          :ui="HEADER_BUTTON_UI"
-          color="success"
-          variant="soft"
-          class="shrink-0"
-        />
-      </UDropdownMenu>
-
-      <UDropdownMenu
-        :items="deckMenuItems"
-        :content="{ align: 'end' }"
-      >
-        <UButton
-          icon="i-lucide-ellipsis-vertical"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          class="shrink-0"
-          :aria-label="t('editor.page.more')"
-        />
-      </UDropdownMenu>
-
-      <USeparator
-        orientation="vertical"
-        class="h-6"
-      />
-
-      <AccountMenu />
-    </header>
+    <EditorHeader
+      ref="header"
+      :breadcrumb="breadcrumb"
+      :slug="slug"
+      :writable="writable"
+      :collab="collabEnabled"
+      :collab-status="collabStatus"
+      :peers="peers"
+      :indicator="syncIndicator"
+      :dirty="dirty"
+      :saving="saveState === 'saving'"
+      :status="deckStatus"
+      :can-edit="viewer.canEdit"
+      :unpublished="unpublished"
+      :never-published="neverPublished"
+      :publication-hint="publicationHint"
+      :publish-label="publishLabel"
+      :changes="changes"
+      :publishing="publishState === 'publishing'"
+      :version-number="versionNumber"
+      @save="publication.save"
+      @publish="publication.publish"
+      @settings="openMeta()"
+      @history="historyOpen = true"
+      @download="download"
+    />
 
     <!-- The source pane takes a share of the width set by dragging its edge, kept
          in a cookie so the page renders at that share. Below the `md` width the
@@ -1181,7 +484,7 @@ async function onMetaSaved() {
       >
         <EditorToolbar
           :view="editorView"
-          :parser="activeParser"
+          :parser="parserId"
           :disabled="!writable"
           :help-open="helpOpen"
           @upload-images="uploadChosenImages"
@@ -1409,12 +712,12 @@ async function onMetaSaved() {
       :slug="slug"
       :draft="raw"
       :unpublished="unpublished"
-      @restored="onRestored"
+      @restored="publication.reloadDraft"
     />
 
     <EditorHelpSlideover
       v-model:open="helpOpen"
-      :parser="activeParser"
+      :parser="parserId"
       :autosave="collabEnabled"
       @insert="insertFromHelp"
     />

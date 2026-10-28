@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { awarenessPeers } from '../../layers/studio/src/utils/editor-peers'
+import { awarenessPeers, peerColor, peerInitials } from '../../layers/studio/src/utils/editor-peers'
 
 const user = (name: string, login?: string) => ({ user: { name, color: '#4363d8', login } })
 
@@ -15,5 +15,20 @@ describe('awarenessPeers', () => {
   it('counts each tab without an account as a person', () => {
     const states = new Map([[1, user('Anonyme')], [2, user('Anonyme')], [3, user('Anonyme')]])
     expect(awarenessPeers(states, 1).map(peer => [peer.key, peer.self])).toEqual([['client-2', false], ['client-3', false]])
+  })
+})
+
+describe('peerColor', () => {
+  it('derives the colour of an account from its login', () => {
+    expect(peerColor('lucas')).toBe('#f58231')
+    expect(peerColor('alice')).toBe('#3cb44b')
+  })
+})
+
+describe('peerInitials', () => {
+  it('takes the first letter of the first two words of a name or a login', () => {
+    expect(peerInitials('Lucas Poulain')).toBe('LP')
+    expect(peerInitials('jean-marc.dupont@example.org')).toBe('JM')
+    expect(peerInitials('alice')).toBe('A')
   })
 })
