@@ -8,15 +8,24 @@ name: Build and publish Docker image
 # instance, a push on `main` for production.
 #
 # The deploy SSH key is not a GitHub secret: the job reads it from Infisical
-# through OIDC (machine identity), with no static credential on GitHub.
+# through OIDC (machine identity), with no static credential on GitHub. Each
+# branch has its own identity and key: the identity of `main` trusts
+# `ref:refs/heads/main` and reads the `prod` environment of the vignettes
+# project; the one of `staging` trusts `ref:refs/heads/staging` and reads the
+# `staging` environment of a project that holds the staging key alone, since
+# the community edition of Infisical has no role limited to one environment.
+# On the VPS each key runs `deploy.sh` for its own environment only. A branch
+# pushed on `staging` that edits this workflow therefore cannot deploy
+# production.
 #
 # Requirements (Settings > Secrets and variables > Actions > Variables):
 #   INFISICAL_API_URL             : address of the Infisical instance (not versioned here)
-#   INFISICAL_MACHINE_IDENTITY_ID : UUID of the Infisical machine identity (OIDC)
-#   INFISICAL_PROJECT_SLUG        : slug of the Infisical project that holds the secrets
+#   INFISICAL_MACHINE_IDENTITY_ID : UUID of the OIDC machine identity of `main`
+#   INFISICAL_STAGING_IDENTITY_ID : UUID of the OIDC machine identity of `staging`
+#   INFISICAL_PROJECT_SLUG        : slug of the Infisical project of `main`
+#   INFISICAL_STAGING_PROJECT_SLUG: slug of the Infisical project of `staging`
 #   VPS_HOST, VPS_USER            : SSH host and user of the VPS (for the deploy job)
-# On Infisical: an OIDC machine identity that trusts the repository, with READ
-# access to the project and environment holding VPS_SSH_KEY (the deploy private key).
+#   VPS_SSH_KNOWN_HOSTS           : the host keys of the VPS, as `ssh-keyscan` prints them
 
 on:
   push:
@@ -122,17 +131,18 @@ jobs:
         uses: Infisical/secrets-action@77ab1f4ccd183a543cb5b42435fbd181189f4995 # v1.0.16
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
+          identity-id: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_MACHINE_IDENTITY_ID || vars.INFISICAL_STAGING_IDENTITY_ID }}
           domain: ${{ vars.INFISICAL_API_URL }}
           oidc-audience: infisical-vignettes
-          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
-          env-slug: prod
+          project-slug: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_PROJECT_SLUG || vars.INFISICAL_STAGING_PROJECT_SLUG }}
+          env-slug: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
           secret-path: /
 
       - name: Deploy to VPS over SSH
         env:
           VPS_HOST: ${{ vars.VPS_HOST }}
           VPS_USER: ${{ vars.VPS_USER }}
+          VPS_SSH_KNOWN_HOSTS: ${{ vars.VPS_SSH_KNOWN_HOSTS }}
           # The Infisical step above puts VPS_SSH_KEY in the environment of the job.
         run: |
           set -euo pipefail
@@ -142,9 +152,7 @@ jobs:
           echo "Deploying ${IMAGE_TAG} [${TARGET_ENV}] to ${VPS_HOST}"
           umask 077
           printf '%s\n' "${VPS_SSH_KEY}" > deploy_key
-          # Trust on first use: the host key is pinned at the first contact. A
-          # known_hosts filled in advance (VPS_SSH_KNOWN_HOSTS variable) would be stricter.
-          ssh-keyscan -H "${VPS_HOST}" > known_hosts 2>/dev/null
+          printf '%s\n' "${VPS_SSH_KNOWN_HOSTS}" > known_hosts
           # The forced command on the VPS reads `<env> <tag>` from $SSH_ORIGINAL_COMMAND.
           ssh -i deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts \
             "${VPS_USER}@${VPS_HOST}" "${TARGET_ENV} ${IMAGE_TAG}"
