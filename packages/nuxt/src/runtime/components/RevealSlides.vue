@@ -7,7 +7,7 @@ import { computed, provide, resolveComponent } from 'vue'
 import { useSlideIds } from '../composables/useSlideIds.ts'
 import { STORYBOOK_BASE } from '../config/injection-keys.ts'
 import { proseComponents } from '../utils/prose-components.ts'
-import { getSlideClasses, knownComponentNames, resolveSlideBackground } from '../utils/slide-rendering.ts'
+import { getSlideClasses, knownComponentNames, resolveSlideBackground, slideKeys } from '../utils/slide-rendering.ts'
 
 const props = defineProps<{ presentationData: PresentationData }>()
 
@@ -21,24 +21,7 @@ provide(
   computed(() => props.presentationData?.metadata?.storybook),
 )
 
-// A slide keeps its components while its source text stays the same; the
-// second slide with the same text takes the next key.
-const slideKeys = computed(() => {
-  const keys = new WeakMap<Slide, string>()
-  const seen = new Map<string, number>()
-  const add = (slide: Slide, fallback: string) => {
-    const base = slide.key ?? fallback
-    const count = seen.get(base) ?? 0
-    seen.set(base, count + 1)
-    keys.set(slide, count ? `${base}~${count}` : base)
-  }
-  ;(props.presentationData?.slides ?? []).forEach((section, index) => {
-    add(section, `h${index}`)
-    section.verticalSlides?.forEach((slide, vIndex) => add(slide, `h${index}v${vIndex}`))
-  })
-  return keys
-})
-const slideKey = (slide: Slide, index: number) => slideKeys.value.get(slide) ?? String(index)
+const keys = computed(() => slideKeys(props.presentationData?.slides ?? []))
 
 // A name outside the component map is a heading, rendered as a plain element.
 const componentMap = buildComponentMap()
@@ -71,7 +54,7 @@ function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgr
 <template>
   <template
     v-for="(section, index) in presentationData?.slides ?? []"
-    :key="slideKey(section, index)"
+    :key="keys.sections[index]"
   >
     <!-- Horizontal section with vertical slides. The wrapper is Reveal's stack,
          not a slide: it carries `stack-<level>` and no `slide-<role>` class, so a
@@ -86,7 +69,7 @@ function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgr
       <section
         v-for="(verticalSlide, vIndex) in section.verticalSlides"
         :id="getVerticalId(index, vIndex)"
-        :key="slideKey(verticalSlide, vIndex)"
+        :key="keys.vertical[index]?.[vIndex]"
         :data-markdown="false"
         :class="getSlideClasses(verticalSlide)"
         v-bind="backgroundAttrs(verticalSlide)"

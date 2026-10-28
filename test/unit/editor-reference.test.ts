@@ -3,7 +3,7 @@ import type { MDCNode } from '@nuxtjs/mdc'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
-import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, registerDeckComponents, resetDeckComponents, RevealConfigSchema, unclosedBlocks } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, componentAttributeIssues, DECK_ANNOTATIONS, malformedAttributeMentions, registerDeckComponents, resetDeckComponents, RevealConfigSchema, unclosedBlocks } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -191,6 +191,22 @@ describe('snippets', () => {
       ...FRONTMATTER_KEYS.filter(key => key.snippet).map(key => ({ label: key.key, snippet: typeof key.snippet === 'string' ? key.snippet : key.snippet.fr! })),
     ]
     expect(snippets.filter(entry => /\$\{\d+\}/.test(entry.snippet)).map(entry => entry.label)).toEqual([])
+  })
+
+  it('insert a text the editor reads without an issue, in both languages', () => {
+    registerDeckComponents(SCHEMA_COMPONENTS)
+    registerDeckComponents(STORYBOOK_COMPONENTS)
+    for (const lang of ['fr', 'en']) {
+      const snippets = [
+        ...componentEntries(lang),
+        ...annotationEntries(lang),
+        ...SLIDE_TEMPLATES.map(template => ({ label: template.labelKey, snippet: template.snippet[lang as 'fr']! })),
+      ]
+      for (const { label, snippet } of snippets) {
+        const text = snippet.replace(/\$\{(?:\d+:)?([^}]*)\}/g, '$1')
+        expect([...malformedAttributeMentions(text), ...unclosedBlocks(text), ...componentAttributeIssues(text)], `${lang} ${label}`).toEqual([])
+      }
+    }
   })
 
   it('close each block a slide template opens', () => {

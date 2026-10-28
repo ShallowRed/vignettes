@@ -197,3 +197,26 @@ export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'section' | 
     classes.push(`align-${slide.layout.align}`)
   return classes
 }
+
+function uniqueKeys(slides: readonly Slide[], fallback: (index: number) => string): string[] {
+  const seen = new Map<string, number>()
+  return slides.map((slide, index) => {
+    const base = slide.key ?? fallback(index)
+    const count = seen.get(base) ?? 0
+    seen.set(base, count + 1)
+    return count ? `${base}~${count}` : base
+  })
+}
+
+/**
+ * The keys of the sections and of their vertical slides: a slide keeps its
+ * components while its source text stays the same, and the second slide with
+ * the same text takes the next key. Two slides of the same text share one
+ * parsed object, so the keys go by position.
+ */
+export function slideKeys(sections: readonly Slide[]): { sections: string[], vertical: string[][] } {
+  return {
+    sections: uniqueKeys(sections, index => `h${index}`),
+    vertical: sections.map((section, index) => uniqueKeys(section.verticalSlides ?? [], vIndex => `h${index}v${vIndex}`)),
+  }
+}

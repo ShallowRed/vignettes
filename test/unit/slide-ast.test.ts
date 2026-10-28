@@ -1,6 +1,7 @@
+import type { Slide } from '../../packages/nuxt/src/runtime/types/presentation.ts'
 import { describe, expect, it } from 'vitest'
 import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
-import { getSlideClasses } from '../../packages/nuxt/src/runtime/utils/slide-rendering.ts'
+import { getSlideClasses, slideKeys } from '../../packages/nuxt/src/runtime/utils/slide-rendering.ts'
 
 async function bodyOf(raw: string) {
   const [slide] = await headingParser.parse(raw)
@@ -110,5 +111,12 @@ describe('section slides', () => {
   it('leaves the other heading levels', async () => {
     expect(await sectionOf('# Title')).toEqual([false])
     expect(await sectionOf('### Alone')).toEqual([false])
+  })
+})
+
+describe('slideKeys', () => {
+  it('keys apart two slides of the same text, which share one parsed object', () => {
+    const repeated = { key: 'questions' } as Slide
+    expect(slideKeys([repeated, { key: 'suite' } as Slide, repeated]).sections).toEqual(['questions', 'suite', 'questions~1'])
   })
 })

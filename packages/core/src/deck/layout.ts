@@ -1,5 +1,6 @@
 import type { LocalizedText } from './components.ts'
 import { z } from 'zod'
+import { attributeSource } from './attributes.ts'
 import { componentKey } from './components.ts'
 
 /**
@@ -395,11 +396,7 @@ export function layoutSource(attributes: Attributes): string {
       return []
     if (FLAGS.has(key))
       return value === false || value === 'false' ? [] : [key]
-    const text = String(value)
-    if (!text.includes('"'))
-      return [`${key}="${text}"`]
-    // MDC decodes the entities of an attribute value, and reads no backslash escape.
-    return [text.includes('\'') ? `${key}="${text.replaceAll('"', '&quot;')}"` : `${key}='${text}'`]
+    return [attributeSource(key, String(value))]
   })
   return parts.length ? `:layout{${parts.join(' ')}}` : ''
 }

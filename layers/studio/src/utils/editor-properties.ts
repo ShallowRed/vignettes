@@ -1,14 +1,12 @@
 import type { EditorState, TransactionSpec } from '@codemirror/state'
 import type { AttributedDirective, ComponentAttribute } from '@vignettes/core/deck'
-import { attributedDirective, attributeNamed, blocksAround, componentAttributeMentions } from '@vignettes/core/deck'
+import { attributedDirective, attributeNamed, attributeSource, blocksAround, componentAttributeMentions, directiveMentions } from '@vignettes/core/deck'
 
 /**
  * The attributes of the component under the cursor, read from and written to
  * its `{…}` block, for the properties panel of the toolbar. The text stays the
  * one source: a choice in the panel rewrites the block.
  */
-
-const DIRECTIVE_RE = /(^|[\s([])(:+)([a-z][\w-]*)/gi
 
 export interface ComponentAtCursor {
   directive: AttributedDirective
@@ -23,50 +21,33 @@ export interface ComponentAtCursor {
   written: { name: string, value?: string, text: string, attribute?: ComponentAttribute }[]
 }
 
-/** The index of the brace that closes the block opened at `open`, outside the quoted values. */
-function blockEnd(text: string, open: number): number {
-  let quoted = false
-  for (let index = open + 1; index < text.length; index++) {
-    if (text[index] === '\\')
-      index++
-    else if (text[index] === '"')
-      quoted = !quoted
-    else if (text[index] === '}' && !quoted)
-      return index
-  }
-  return text.length
-}
-
 /** The directive written on the 1-based `line` that declares attributes, the one under `column` first. */
 function directiveOn(state: EditorState, line: number, column?: number): ComponentAtCursor | undefined {
   const { text, from } = state.doc.line(line)
-  const found = [...text.matchAll(DIRECTIVE_RE)].flatMap((match) => {
-    const directive = attributedDirective(match[3]!)
-    if (!directive?.attributes)
-      return []
-    const start = match.index + match[1]!.length
-    const nameEnd = start + match[2]!.length + match[3]!.length
-    const block = text[nameEnd] === '{' ? { from: nameEnd, to: blockEnd(text, nameEnd) + 1 } : undefined
-    return [{ directive, start, end: block?.to ?? nameEnd, syntax: `${match[2]}${match[3]}`, nameEnd, block }]
+  const raw = state.doc.toString()
+  const found = directiveMentions(raw).flatMap((mention) => {
+    const directive = mention.line === line ? attributedDirective(mention.name) : undefined
+    return directive?.attributes ? [{ directive, mention }] : []
   })
-  const chosen = found.find(candidate => column !== undefined && column >= candidate.start && column <= candidate.end) ?? found[0]
+  const chosen = found.find(({ mention }) => column !== undefined && column >= mention.column && column <= (mention.attributes?.to ?? mention.column + mention.length)) ?? found[0]
   if (!chosen)
     return undefined
-  const raw = state.doc.toString()
+  const { directive, mention } = chosen
+  const block = mention.attributes
   const written = componentAttributeMentions(raw)
-    .filter(mention => mention.line === line && chosen.block && mention.column > chosen.block.from && mention.column < chosen.block.to)
-    .map(mention => ({
-      name: mention.name,
-      value: mention.value,
-      text: text.slice(mention.column, mention.column + mention.length),
-      attribute: attributeNamed(chosen.directive, mention.name),
+    .filter(attribute => attribute.line === line && block && attribute.column > block.from && attribute.column < block.to)
+    .map(attribute => ({
+      name: attribute.name,
+      value: attribute.value,
+      text: text.slice(attribute.column, attribute.column + attribute.length),
+      attribute: attributeNamed(directive, attribute.name),
     }))
   return {
-    directive: chosen.directive,
-    syntax: chosen.syntax,
+    directive,
+    syntax: `${mention.colons}${mention.name}`,
     line,
-    nameEnd: from + chosen.nameEnd,
-    block: chosen.block && { from: from + chosen.block.from, to: from + chosen.block.to },
+    nameEnd: from + mention.column + mention.length,
+    block: block && { from: from + block.from, to: from + block.to },
     written,
   }
 }
@@ -103,8 +84,7 @@ function attributeText(attribute: ComponentAttribute, value: string): string | u
     return undefined
   if (attribute.boolean)
     return value === 'true' ? attribute.name : `:${attribute.name}="false"`
-  // MDC decodes the entities of an attribute value, and reads no backslash escape.
-  return `${attribute.name}="${value.replaceAll('"', '&quot;')}"`
+  return attributeSource(attribute.name, value)
 }
 
 /** The change that sets `attribute` of the component under the cursor to `value`. */

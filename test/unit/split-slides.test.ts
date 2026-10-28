@@ -89,7 +89,7 @@ describe('directiveMentions', () => {
     const raw = '---\ntitle: ":pretitle"\n---\n\n::::Columns\n:pretitle{text="a"} `::Quote` été:subtitle{text="b"}\n```\n::Quote\n```'
     expect(directiveMentions(raw)).toEqual([
       { name: 'Columns', colons: '::::', line: 5, column: 0, length: 11 },
-      { name: 'pretitle', colons: ':', line: 6, column: 0, length: 9 },
+      { name: 'pretitle', colons: ':', line: 6, column: 0, length: 9, attributes: { from: 9, to: 19 } },
     ])
   })
 })

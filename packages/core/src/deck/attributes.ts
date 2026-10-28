@@ -105,3 +105,14 @@ export function deckAttributes(tag: string, props: Readonly<Record<string, unkno
   }
   return kept
 }
+
+/**
+ * The text of an attribute holding `value`, as MDC reads it back: between
+ * double quotes, or single quotes around a double quote. MDC reads no
+ * backslash escape and decodes `&quot;`, which a value holding both quotes takes.
+ */
+export function attributeSource(name: string, value: string): string {
+  if (!value.includes('"'))
+    return `${name}="${value}"`
+  return value.includes('\'') ? `${name}="${value.replaceAll('"', '&quot;')}"` : `${name}='${value}'`
+}

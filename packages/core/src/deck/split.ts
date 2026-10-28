@@ -347,6 +347,8 @@ export function blocksAround(raw: string, line: number): OpenBlock[] {
 /** A directive as written in the source, with its colons: `::Quote`, `:::Columns`, `:pretitle`. */
 export interface DirectiveMention extends ComponentMention {
   colons: string
+  /** 0-based columns of its `{…}` block when it has one, the closing brace included; to the end of the line when the block stays open. */
+  attributes?: { from: number, to: number }
 }
 
 /** The directives written in a deck, outside the frontmatter, fenced code and inline code. */
@@ -355,7 +357,11 @@ export function directiveMentions(raw: string): DirectiveMention[] {
   for (const { line, prose } of proseLines(raw)) {
     for (const match of prose.matchAll(DIRECTIVE_RE)) {
       const [, before, colons, name] = match
-      mentions.push({ name: name!, colons: colons!, line, column: match.index + before!.length, length: colons!.length + name!.length })
+      const column = match.index + before!.length
+      const length = colons!.length + name!.length
+      const close = prose[column + length] === '{' ? attributesEnd(prose, column + length + 1) : undefined
+      const attributes = close === undefined ? undefined : { from: column + length, to: typeof close === 'number' ? close + 1 : prose.length }
+      mentions.push({ name: name!, colons: colons!, line, column, length, ...(attributes && { attributes }) })
     }
   }
   return mentions
@@ -408,7 +414,8 @@ function* blockAttributes(content: string, offset: number): Generator<WrittenAtt
     const [text, space, name, ...values] = attribute
     yield {
       name: name!,
-      value: values.find(value => value !== undefined)?.replace(/\\(.)/g, '$1'),
+      // MDC decodes `&quot;`, which `attributeSource` writes in a value holding both quotes.
+      value: values.find(value => value !== undefined)?.replace(/\\(.)/g, '$1').replaceAll('&quot;', '"'),
       column: offset + attribute.index + space!.length,
       length: text.length - space!.length,
     }
@@ -638,9 +645,8 @@ export function layoutAnnotations(raw: string): LayoutAnnotation[] {
   const annotations: LayoutAnnotation[] = []
   for (const { line, prose } of proseLines(raw)) {
     for (const block of prose.matchAll(LAYOUT_ANNOTATION_RE)) {
-      // MDC decodes `&quot;`, which `layoutSource` writes in a value holding both quotes.
       const attributes = [...blockAttributes(block[1]!, block.index + ':layout{'.length)]
-        .map(({ value, ...attribute }) => ({ ...attribute, value: value === undefined ? true as const : value.replaceAll('&quot;', '"') }))
+        .map(({ value, ...attribute }) => ({ ...attribute, value: value ?? true as const }))
       annotations.push({ line, column: block.index, length: block[0].length, attributes })
     }
   }

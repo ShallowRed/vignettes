@@ -39,7 +39,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     label: { fr: 'Image de fond', en: 'Background image' },
     images: ['image'],
     attributes: [{ name: 'image', description: { fr: 'Adresse de l\'image de fond.', en: 'Address of the background image.' } }],
-    snippet: { fr: ':slide-background{image=""${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
+    snippet: { fr: ':slide-background{image="${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
     description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide' },
     docs: '/ecrire/syntaxe#les-annotations',
   },

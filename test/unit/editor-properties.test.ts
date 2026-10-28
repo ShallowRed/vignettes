@@ -22,6 +22,10 @@ describe('componentAt', () => {
     expect(componentAt(at(':layout{media="right"}|'))).toBeUndefined()
   })
 
+  it('leaves a component written in fenced code', () => {
+    expect(componentAt(at('```md\n::Fragments{dim}|\n::\n```'))).toBeUndefined()
+  })
+
   it('reads the values a component gets, its defaults included', () => {
     const component = componentAt(at('::Fragments{dim effect="grow"}|\n::'))!
     const value = (name: string) => attributeValue(component, component.directive.attributes!.find(attribute => attribute.name === name)!)
@@ -39,6 +43,13 @@ describe('attributeChange', () => {
   it('removes an attribute set back to its default, and the braces left empty', () => {
     expect(set('::Fragments{dim effect="grow"}|\n::', 'dim', 'false')).toBe('::Fragments{effect="grow"}\n::')
     expect(set('::Fragments{effect="grow"}|\n::', 'effect', 'fade-in')).toBe('::Fragments\n::')
+  })
+
+  it('writes a value holding quotes so that it reads back the same', () => {
+    for (const value of ['Dire "oui"', 'L\'avis "net"']) {
+      const component = componentAt(at(`${set(':quicklink|', 'text', value)}|`))!
+      expect(attributeValue(component, component.directive.attributes!.find(attribute => attribute.name === 'text')!)).toBe(value)
+    }
   })
 
   it('keeps the attributes the component does not declare', () => {
