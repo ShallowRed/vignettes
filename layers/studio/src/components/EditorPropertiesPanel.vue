@@ -5,7 +5,7 @@ import { useCursorReading } from '../composables/useCursorReading'
 import { directiveEntry, inLanguage } from '../config/editor-reference'
 import { attributeChange, attributeValue, componentAt } from '../utils/editor-properties'
 import { codeParts } from '../utils/editor-tooltip'
-import { btnHover, menuWidth } from '../utils/toolbar-buttons'
+import { menuWidth } from '../utils/toolbar-buttons'
 
 // The attributes of the component under the cursor. Each choice rewrites its
 // `{…}` block, so the preview shows it at once.
@@ -47,7 +47,6 @@ const value = (attribute: ComponentAttribute) => current.value ? attributeValue(
       color="neutral"
       variant="ghost"
       size="sm"
-      :class="btnHover"
       :label="t('editor.properties.open')"
       :ui="{ label: 'max-sm:sr-only' }"
       :disabled="disabled || !view"
@@ -99,7 +98,7 @@ const value = (attribute: ComponentAttribute) => current.value ? attributeValue(
                 </template>
               </template>
             </p>
-            <EditorChoiceRow
+            <ChoiceRow
               v-if="attribute.values"
               :choices="attribute.values.map(choice => ({ value: choice, label: choice, active: value(attribute) === choice }))"
               @choose="set(attribute, value(attribute) === $event && attribute.default === undefined ? '' : $event)"

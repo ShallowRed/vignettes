@@ -8,6 +8,8 @@ import { useModalTarget } from '../../composables/useModalTarget'
 import { useProjectActions } from '../../composables/useProjectActions'
 import { projectColorStyle } from '../../utils/project-colors'
 
+definePageMeta({ layout: false })
+
 // A project folder's contents: the decks grouped under one project, reached from
 // the folder grid via the stable /projects/<slug> route. `divers` is the
 // reserved slug for the no-project bucket.
@@ -97,157 +99,160 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <UBreadcrumb :items="breadcrumb" />
-
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <UIcon
-          :name="`i-lucide-${currentProject?.icon || 'folder'}`"
-          class="size-5 shrink-0 project-tint"
-          :style="projectColorStyle(currentProject?.color)"
-        />
-        <h1 class="text-xl font-semibold text-highlighted">
-          {{ projectTitle }}
-        </h1>
-        <span class="text-sm text-muted whitespace-nowrap">{{ t('catalog.deck.count', decks.length) }}</span>
+  <NuxtLayout
+    name="default"
+    :breadcrumb="breadcrumb"
+  >
+    <div class="flex flex-col gap-6">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <UIcon
+            :name="`i-lucide-${currentProject?.icon || 'folder'}`"
+            class="size-5 shrink-0 project-tint"
+            :style="projectColorStyle(currentProject?.color)"
+          />
+          <h1 class="text-xl font-semibold text-highlighted">
+            {{ projectTitle }}
+          </h1>
+          <span class="text-sm text-muted whitespace-nowrap">{{ t('catalog.deck.count', decks.length) }}</span>
+        </div>
+        <div class="flex items-center gap-3 ms-auto">
+          <UDropdownMenu
+            v-if="canManageProject"
+            :items="folderActions"
+            :content="{ align: 'end' }"
+          >
+            <UButton
+              icon="i-lucide-ellipsis-vertical"
+              color="neutral"
+              variant="ghost"
+              :aria-label="t('catalog.folders.actionsLabel', { name: projectTitle })"
+            />
+          </UDropdownMenu>
+          <UButton
+            v-if="canCreateHere"
+            icon="i-lucide-file-plus-2"
+            :label="t('common.actions.newDeck')"
+            class="shrink-0"
+            @click="createOpen = true"
+          />
+        </div>
       </div>
-      <div class="flex items-center gap-3 ms-auto">
-        <UDropdownMenu
-          v-if="canManageProject"
-          :items="folderActions"
-          :content="{ align: 'end' }"
+
+      <p
+        v-if="decks.length"
+        class="-mt-4 text-sm text-muted"
+      >
+        {{ t('catalog.folder.sorted') }}
+      </p>
+
+      <AsyncSection
+        :status="status"
+        :error="error"
+        :retry="refreshAll"
+        :empty="decks.length === 0"
+      >
+        <template #empty>
+          <UEmpty
+            icon="i-lucide-folder-open"
+            :title="loggedIn ? t('catalog.folder.emptyTitle') : t('catalog.folder.emptyTitleAnonymous')"
+            :description="loggedIn
+              ? t('catalog.folder.emptyDescription')
+              : t('catalog.folder.emptyDescriptionAnonymous')"
+            variant="naked"
+            :actions="canCreateHere
+              ? [{ label: t('common.actions.newDeck'), icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
+              : !loggedIn
+                ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=/projects/${routeSlug}` }]
+                : []"
+          />
+        </template>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <PresentationCard
+            v-for="entry in contents.entries"
+            :key="entry.family ?? entry.variants[0]!.slug"
+            :presentation="entry.variants[0]!"
+            :variants="entry.family ? entry.variants : undefined"
+            :admin="privileged"
+            @edit-meta="deck => openMeta(deck)"
+            @share="deck => openMeta(deck, 'sharing')"
+            @duplicate="(deck, mode) => openDuplicate(deck, mode)"
+            @remove="deck => openDelete(deck)"
+          />
+        </div>
+
+        <UCollapsible
+          v-if="contents.superseded.length"
+          class="mt-10"
         >
           <UButton
-            icon="i-lucide-ellipsis-vertical"
+            :label="t('catalog.folder.supersededEditions', { count: contents.superseded.length })"
             color="neutral"
             variant="ghost"
-            :aria-label="t('catalog.folders.actionsLabel', { name: projectTitle })"
+            trailing-icon="i-lucide-chevron-down"
+            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform' }"
+            class="group -ml-2.5"
           />
-        </UDropdownMenu>
-        <UButton
-          v-if="canCreateHere"
-          icon="i-lucide-file-plus-2"
-          :label="t('common.actions.newDeck')"
-          class="shrink-0"
-          @click="createOpen = true"
-        />
-      </div>
+          <template #content>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+              <PresentationCard
+                v-for="presentation in contents.superseded"
+                :key="presentation.slug"
+                :presentation="presentation"
+                :replaced-by="titleOf(presentation.supersededBy!)"
+                :admin="privileged"
+                @edit-meta="deck => openMeta(deck)"
+                @share="deck => openMeta(deck, 'sharing')"
+                @duplicate="(deck, mode) => openDuplicate(deck, mode)"
+                @remove="deck => openDelete(deck)"
+              />
+            </div>
+          </template>
+        </UCollapsible>
+      </AsyncSection>
+
+      <DeckMetaSlideover
+        v-if="target"
+        v-model:open="metaOpen"
+        :item="target"
+        :projects="projects"
+        :focus="metaFocus"
+      />
+      <DeckDeleteModal
+        v-if="target"
+        v-model:open="deleteOpen"
+        :item="target"
+      />
+      <DeckDuplicateModal
+        v-if="target"
+        v-model:open="duplicateOpen"
+        :item="target"
+        :mode="duplicateMode"
+      />
+      <ProjectAccessSlideover
+        v-if="canManageProject"
+        v-model:open="accessOpen"
+        :project="projectRef"
+      />
+      <ProjectEditModal
+        v-if="canManageProject"
+        v-model:open="editProjectOpen"
+        :project="projectRef"
+        @saved="onProjectSaved"
+      />
+      <ProjectDeleteModal
+        v-if="canManageProject"
+        v-model:open="deleteProjectOpen"
+        :project="projectRef"
+        :deck-count="decks.length"
+        @deleted="onProjectDeleted"
+      />
+      <DeckCreateModal
+        v-model:open="createOpen"
+        :projects="creatableProjects"
+        :default-project="defaultProject"
+      />
     </div>
-
-    <p
-      v-if="decks.length"
-      class="-mt-4 text-sm text-muted"
-    >
-      {{ t('catalog.folder.sorted') }}
-    </p>
-
-    <AsyncSection
-      :status="status"
-      :error="error"
-      :retry="refreshAll"
-      :empty="decks.length === 0"
-    >
-      <template #empty>
-        <UEmpty
-          icon="i-lucide-folder-open"
-          :title="loggedIn ? t('catalog.folder.emptyTitle') : t('catalog.folder.emptyTitleAnonymous')"
-          :description="loggedIn
-            ? t('catalog.folder.emptyDescription')
-            : t('catalog.folder.emptyDescriptionAnonymous')"
-          variant="naked"
-          :actions="canCreateHere
-            ? [{ label: t('common.actions.newDeck'), icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
-            : !loggedIn
-              ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=/projects/${routeSlug}` }]
-              : []"
-        />
-      </template>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <PresentationCard
-          v-for="entry in contents.entries"
-          :key="entry.family ?? entry.variants[0]!.slug"
-          :presentation="entry.variants[0]!"
-          :variants="entry.family ? entry.variants : undefined"
-          :admin="privileged"
-          @edit-meta="deck => openMeta(deck)"
-          @share="deck => openMeta(deck, 'sharing')"
-          @duplicate="(deck, mode) => openDuplicate(deck, mode)"
-          @remove="deck => openDelete(deck)"
-        />
-      </div>
-
-      <UCollapsible
-        v-if="contents.superseded.length"
-        class="mt-10"
-      >
-        <UButton
-          :label="t('catalog.folder.supersededEditions', { count: contents.superseded.length })"
-          color="neutral"
-          variant="ghost"
-          trailing-icon="i-lucide-chevron-down"
-          :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform' }"
-          class="group -ml-2.5"
-        />
-        <template #content>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-            <PresentationCard
-              v-for="presentation in contents.superseded"
-              :key="presentation.slug"
-              :presentation="presentation"
-              :replaced-by="titleOf(presentation.supersededBy!)"
-              :admin="privileged"
-              @edit-meta="deck => openMeta(deck)"
-              @share="deck => openMeta(deck, 'sharing')"
-              @duplicate="(deck, mode) => openDuplicate(deck, mode)"
-              @remove="deck => openDelete(deck)"
-            />
-          </div>
-        </template>
-      </UCollapsible>
-    </AsyncSection>
-
-    <DeckMetaSlideover
-      v-if="target"
-      v-model:open="metaOpen"
-      :item="target"
-      :projects="projects"
-      :focus="metaFocus"
-    />
-    <DeckDeleteModal
-      v-if="target"
-      v-model:open="deleteOpen"
-      :item="target"
-    />
-    <DeckDuplicateModal
-      v-if="target"
-      v-model:open="duplicateOpen"
-      :item="target"
-      :mode="duplicateMode"
-    />
-    <ProjectAccessSlideover
-      v-if="canManageProject"
-      v-model:open="accessOpen"
-      :project="projectRef"
-    />
-    <ProjectEditModal
-      v-if="canManageProject"
-      v-model:open="editProjectOpen"
-      :project="projectRef"
-      @saved="onProjectSaved"
-    />
-    <ProjectDeleteModal
-      v-if="canManageProject"
-      v-model:open="deleteProjectOpen"
-      :project="projectRef"
-      :deck-count="decks.length"
-      @deleted="onProjectDeleted"
-    />
-    <DeckCreateModal
-      v-model:open="createOpen"
-      :projects="creatableProjects"
-      :default-project="defaultProject"
-    />
-  </div>
+  </NuxtLayout>
 </template>

@@ -153,7 +153,7 @@ const hasActions = computed(() => canEdit.value || hasMenu.value)
             :content="{ align: 'end' }"
           >
             <UButton
-              icon="i-lucide-ellipsis"
+              icon="i-lucide-ellipsis-vertical"
               color="neutral"
               variant="outline"
               size="xs"

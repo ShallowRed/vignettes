@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { MediaPlacement, MediaSize } from '@vignettes/core/deck'
-import type { Choice } from './EditorChoiceRow.vue'
+import type { Choice } from './ChoiceRow.vue'
 import { DEFAULT_SIDE_MEDIA_SIZE, HEADING_MODES, layoutDefault, layoutForPlacement, layoutPlacement, layoutSize, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, VERTICAL_ALIGNS } from '@vignettes/core/deck'
 import { useCursorReading } from '../composables/useCursorReading'
 import { placementSketch, slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
@@ -119,7 +119,6 @@ const fields = computed(() => placement.value === 'none'
       color="neutral"
       variant="ghost"
       size="sm"
-      :class="btnHover"
       :label="t('editor.layout.open')"
       :ui="{ label: 'max-sm:sr-only' }"
       :disabled="disabled || !view"
@@ -214,7 +213,7 @@ const fields = computed(() => placement.value === 'none'
               />
               {{ shown.title }}
             </h3>
-            <EditorChoiceRow
+            <ChoiceRow
               :choices="shown.row.choices"
               :icon-only="shown.iconOnly"
               @choose="set(shown.row.name, $event)"

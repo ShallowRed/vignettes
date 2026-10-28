@@ -44,8 +44,15 @@
       "trash": "Corbeille",
       "language": "Langue",
       "feedback": "Envoyer un retour",
-      "support": "Documentation et retours",
-      "documentation": "Documentation"
+      "documentation": "Documentation",
+      "colorMode": "Apparence",
+      "colorModes": {
+        "light": "Claire",
+        "dark": "Sombre",
+        "system": "Comme le système"
+      },
+      "preferences": "Préférences",
+      "backHome": "Retour à l'accueil"
     },
     "loadError": {
       "title": "Le chargement a échoué",

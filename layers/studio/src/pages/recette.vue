@@ -4,6 +4,8 @@ import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PREFIX } from '#share
 import { postForm } from '../utils/post-form'
 import { requestErrorMessage } from '../utils/request-error'
 
+definePageMeta({ layout: false })
+
 /**
  * Staging acceptance kit (owner only, staging and dev): one block per account,
  * each with the pages to open as that account and what they must show. The
@@ -141,163 +143,166 @@ useHead({ title: () => t('recette.page.pageTitle') })
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <UBreadcrumb :items="breadcrumb" />
+  <NuxtLayout
+    name="default"
+    :breadcrumb="breadcrumb"
+  >
+    <div class="flex flex-col gap-6">
+      <div>
+        <h1 class="text-xl font-semibold text-highlighted">
+          {{ t('recette.page.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-muted">
+          {{ t('recette.page.intro') }}
+        </p>
+      </div>
 
-    <div>
-      <h1 class="text-xl font-semibold text-highlighted">
-        {{ t('recette.page.title') }}
-      </h1>
-      <p class="mt-1 text-sm text-muted">
-        {{ t('recette.page.intro') }}
-      </p>
-    </div>
+      <UAlert
+        v-if="statusCode === 404"
+        icon="i-lucide-eye-off"
+        color="neutral"
+        variant="subtle"
+        :title="t('recette.page.disabled')"
+      />
 
-    <UAlert
-      v-if="statusCode === 404"
-      icon="i-lucide-eye-off"
-      color="neutral"
-      variant="subtle"
-      :title="t('recette.page.disabled')"
-    />
+      <UAlert
+        v-else-if="statusCode === 403 || statusCode === 401"
+        icon="i-lucide-lock"
+        color="warning"
+        variant="subtle"
+        :title="t('recette.page.ownerRequired')"
+        :actions="[{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: '/login?redirect=/recette' }]"
+      />
 
-    <UAlert
-      v-else-if="statusCode === 403 || statusCode === 401"
-      icon="i-lucide-lock"
-      color="warning"
-      variant="subtle"
-      :title="t('recette.page.ownerRequired')"
-      :actions="[{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: '/login?redirect=/recette' }]"
-    />
-
-    <template v-else-if="data">
-      <UCard :ui="{ body: 'grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-default' }">
-        <div class="flex flex-col items-start gap-1">
-          <span class="text-xs text-muted">{{ t('recette.page.session') }}</span>
-          <span class="font-medium text-highlighted">
-            {{ data.current.login ?? t('recette.page.sessionNone') }}
-            <span
-              v-if="data.current.login"
-              class="font-normal text-muted"
-            >· {{ data.current.role }}</span>
-          </span>
-          <span class="text-sm text-muted">{{ t('recette.page.pass', { owner: data.owner }) }}</span>
-          <UButton
-            v-if="data.current.login !== data.owner"
-            :label="t('recette.page.backToMyAccount')"
-            icon="i-lucide-undo-2"
-            color="neutral"
-            variant="subtle"
-            size="sm"
-            class="mt-2"
-            @click="openAs('me', '/recette')"
-          />
-        </div>
-
-        <div class="flex flex-col items-start gap-1 sm:pl-6">
-          <span class="text-xs text-muted">{{ t('recette.dataset.title') }}</span>
-          <span class="font-medium text-highlighted">{{ data.seeded ? t('recette.dataset.seeded') : t('recette.dataset.missing') }}</span>
-          <i18n-t
-            keypath="recette.dataset.counts"
-            tag="span"
-            class="text-sm text-muted"
-            scope="global"
-          >
-            <template #folders>
-              {{ data.counts.folders }}
-            </template>
-            <template #decks>
-              {{ data.counts.decks }}
-            </template>
-            <template #accounts>
-              {{ data.counts.accounts }}
-            </template>
-            <template #prefix>
-              <code>{{ RECETTE_PREFIX }}</code>
-            </template>
-          </i18n-t>
-          <UButton
-            :label="data.seeded ? t('recette.dataset.reset') : t('recette.dataset.create')"
-            icon="i-lucide-refresh-cw"
-            color="neutral"
-            variant="subtle"
-            size="sm"
-            class="mt-2"
-            :loading="seeding"
-            @click="seed"
-          />
-        </div>
-      </UCard>
-
-      <UCard
-        v-for="block in blocks"
-        :key="block.key"
-        :ui="{ body: 'p-0 sm:p-0' }"
-      >
-        <template #header>
-          <div class="flex items-start gap-4">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <span class="font-medium text-highlighted">{{ block.label }}</span>
-                <UBadge
-                  v-if="block.role"
-                  :label="block.role"
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                />
-                <span class="text-xs text-muted tabular-nums">{{ t('recette.page.progress', { done: doneIn(block), total: block.steps.length }) }}</span>
-              </div>
-              <p class="text-sm text-muted">
-                {{ block.summary }}
-              </p>
-            </div>
-            <UBadge
-              v-if="isCurrent(block)"
-              :label="t('recette.page.currentSession')"
-              color="primary"
-              variant="subtle"
-            />
+      <template v-else-if="data">
+        <UCard :ui="{ body: 'grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-default' }">
+          <div class="flex flex-col items-start gap-1">
+            <span class="text-xs text-muted">{{ t('recette.page.session') }}</span>
+            <span class="font-medium text-highlighted">
+              {{ data.current.login ?? t('recette.page.sessionNone') }}
+              <span
+                v-if="data.current.login"
+                class="font-normal text-muted"
+              >· {{ data.current.role }}</span>
+            </span>
+            <span class="text-sm text-muted">{{ t('recette.page.pass', { owner: data.owner }) }}</span>
             <UButton
-              v-else
-              :label="t('recette.page.openSession')"
-              icon="i-lucide-log-in"
+              v-if="data.current.login !== data.owner"
+              :label="t('recette.page.backToMyAccount')"
+              icon="i-lucide-undo-2"
               color="neutral"
               variant="subtle"
               size="sm"
-              @click="openAs(block.key, '/recette')"
+              class="mt-2"
+              @click="openAs('me', '/recette')"
             />
           </div>
-        </template>
 
-        <ul class="divide-y divide-default text-sm">
-          <li
-            v-for="step in block.steps"
-            :key="step.id"
-            class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1 px-4 py-2.5 sm:grid-cols-[auto_13rem_minmax(0,1fr)] sm:px-6"
-          >
-            <UCheckbox
-              v-model="checked[`${block.key}.${step.id}`]"
-              :aria-label="t('recette.page.checkStep')"
-              class="mt-0.5"
-            />
-            <ULink
-              class="inline-flex items-center gap-1.5 font-medium text-highlighted hover:text-primary"
-              @click="step.to && openAs(block.key, step.to, '_blank')"
+          <div class="flex flex-col items-start gap-1 sm:pl-6">
+            <span class="text-xs text-muted">{{ t('recette.dataset.title') }}</span>
+            <span class="font-medium text-highlighted">{{ data.seeded ? t('recette.dataset.seeded') : t('recette.dataset.missing') }}</span>
+            <i18n-t
+              keypath="recette.dataset.counts"
+              tag="span"
+              class="text-sm text-muted"
+              scope="global"
             >
-              {{ step.target }}
-              <UIcon
-                name="i-lucide-arrow-up-right"
-                class="size-3.5 shrink-0 text-muted"
+              <template #folders>
+                {{ data.counts.folders }}
+              </template>
+              <template #decks>
+                {{ data.counts.decks }}
+              </template>
+              <template #accounts>
+                {{ data.counts.accounts }}
+              </template>
+              <template #prefix>
+                <code>{{ RECETTE_PREFIX }}</code>
+              </template>
+            </i18n-t>
+            <UButton
+              :label="data.seeded ? t('recette.dataset.reset') : t('recette.dataset.create')"
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="subtle"
+              size="sm"
+              class="mt-2"
+              :loading="seeding"
+              @click="seed"
+            />
+          </div>
+        </UCard>
+
+        <UCard
+          v-for="block in blocks"
+          :key="block.key"
+          :ui="{ body: 'p-0 sm:p-0' }"
+        >
+          <template #header>
+            <div class="flex items-start gap-4">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-highlighted">{{ block.label }}</span>
+                  <UBadge
+                    v-if="block.role"
+                    :label="block.role"
+                    color="neutral"
+                    variant="outline"
+                    size="sm"
+                  />
+                  <span class="text-xs text-muted tabular-nums">{{ t('recette.page.progress', { done: doneIn(block), total: block.steps.length }) }}</span>
+                </div>
+                <p class="text-sm text-muted">
+                  {{ block.summary }}
+                </p>
+              </div>
+              <UBadge
+                v-if="isCurrent(block)"
+                :label="t('recette.page.currentSession')"
+                color="primary"
+                variant="subtle"
               />
-            </ULink>
-            <span
-              class="col-start-2 text-muted sm:col-start-3"
-              :class="{ 'line-through opacity-60': checked[`${block.key}.${step.id}`] }"
-            >{{ step.expect }}</span>
-          </li>
-        </ul>
-      </UCard>
-    </template>
-  </div>
+              <UButton
+                v-else
+                :label="t('recette.page.openSession')"
+                icon="i-lucide-log-in"
+                color="neutral"
+                variant="subtle"
+                size="sm"
+                @click="openAs(block.key, '/recette')"
+              />
+            </div>
+          </template>
+
+          <ul class="divide-y divide-default text-sm">
+            <li
+              v-for="step in block.steps"
+              :key="step.id"
+              class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1 px-4 py-2.5 sm:grid-cols-[auto_13rem_minmax(0,1fr)] sm:px-6"
+            >
+              <UCheckbox
+                v-model="checked[`${block.key}.${step.id}`]"
+                :aria-label="t('recette.page.checkStep')"
+                class="mt-0.5"
+              />
+              <ULink
+                class="inline-flex items-center gap-1.5 font-medium text-highlighted hover:text-primary"
+                @click="step.to && openAs(block.key, step.to, '_blank')"
+              >
+                {{ step.target }}
+                <UIcon
+                  name="i-lucide-arrow-up-right"
+                  class="size-3.5 shrink-0 text-muted"
+                />
+              </ULink>
+              <span
+                class="col-start-2 text-muted sm:col-start-3"
+                :class="{ 'line-through opacity-60': checked[`${block.key}.${step.id}`] }"
+              >{{ step.expect }}</span>
+            </li>
+          </ul>
+        </UCard>
+      </template>
+    </div>
+  </NuxtLayout>
 </template>

@@ -5,10 +5,11 @@ import { btnActive, btnHover } from '../utils/toolbar-buttons'
 // shows its icon and its label in a tooltip.
 export interface Choice { label: string, value: string, active: boolean, icon?: string }
 
-defineProps<{
+withDefaults(defineProps<{
   choices: readonly Choice[]
   iconOnly?: boolean
-}>()
+  size?: 'xs' | 'sm'
+}>(), { size: 'xs' })
 
 const emit = defineEmits<{ choose: [value: string] }>()
 </script>
@@ -24,7 +25,7 @@ const emit = defineEmits<{ choose: [value: string] }>()
       <UButton
         color="neutral"
         variant="ghost"
-        size="xs"
+        :size="size"
         class="flex-1 justify-center"
         :class="choice.active ? btnActive : btnHover"
         :aria-pressed="choice.active"

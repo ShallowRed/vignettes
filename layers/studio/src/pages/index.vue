@@ -31,6 +31,10 @@ function onProjectCreated(project: Project) {
 
 // folders = browse by project (default); manage = flat table/grid (admin only).
 const mode = ref<'folders' | 'manage'>('folders')
+const modeChoices = computed(() => [
+  { value: 'folders', label: t('catalog.home.modeFolders'), icon: 'i-lucide-folder', active: mode.value === 'folders' },
+  { value: 'manage', label: t('catalog.home.modeManage'), icon: 'i-lucide-table-2', active: mode.value === 'manage' },
+])
 
 // Management console filter state (only used in `manage` mode).
 const { query, visible, hasActiveFilters, resetFilters } = useCatalogFilters(presentations)
@@ -73,9 +77,6 @@ const projectDeckCount = computed(() =>
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Same top rhythm as the folder/trash/users pages: no layout shift when
-         navigating between catalog spaces. -->
-    <UBreadcrumb :items="[{ label: t('common.home') }]" />
     <div
       v-if="!loggedIn"
       class="flex flex-col gap-1"
@@ -133,32 +134,12 @@ const projectDeckCount = computed(() =>
         v-if="privileged"
         class="flex flex-wrap items-center gap-3 mb-6"
       >
-        <div class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-elevated p-1 ring ring-default">
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
-            :class="mode === 'folders' ? 'bg-primary text-inverted shadow-sm' : 'text-muted hover:text-highlighted'"
-            @click="mode = 'folders'"
-          >
-            <UIcon
-              name="i-lucide-folder"
-              class="size-4"
-            />
-            {{ t('catalog.home.modeFolders') }}
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
-            :class="mode === 'manage' ? 'bg-primary text-inverted shadow-sm' : 'text-muted hover:text-highlighted'"
-            @click="mode = 'manage'"
-          >
-            <UIcon
-              name="i-lucide-table-2"
-              class="size-4"
-            />
-            {{ t('catalog.home.modeManage') }}
-          </button>
-        </div>
+        <ChoiceRow
+          size="sm"
+          class="shrink-0"
+          :choices="modeChoices"
+          @choose="mode = $event as 'folders' | 'manage'"
+        />
 
         <CatalogToolbar
           v-if="mode === 'manage'"
@@ -175,20 +156,24 @@ const projectDeckCount = computed(() =>
           class="flex-1"
         />
 
-        <UButton
-          icon="i-lucide-folder-plus"
-          :label="t('common.actions.newFolder')"
-          color="neutral"
-          variant="subtle"
-          class="shrink-0"
-          @click="createProjectOpen = true"
-        />
-        <UButton
-          icon="i-lucide-file-plus-2"
-          :label="t('common.actions.newDeck')"
-          class="shrink-0"
-          @click="createOpen = true"
-        />
+        <div class="flex items-center gap-2 ms-auto">
+          <UButton
+            icon="i-lucide-folder-plus"
+            :label="t('common.actions.newFolder')"
+            :aria-label="t('common.actions.newFolder')"
+            :ui="{ label: 'max-md:sr-only' }"
+            color="neutral"
+            variant="ghost"
+            class="shrink-0"
+            @click="createProjectOpen = true"
+          />
+          <UButton
+            icon="i-lucide-file-plus-2"
+            :label="t('common.actions.newDeck')"
+            class="shrink-0"
+            @click="createOpen = true"
+          />
+        </div>
       </div>
 
       <!-- Folders: the default entry point for everyone. -->

@@ -877,9 +877,17 @@ async function onRestored(stamp: number | null) {
 
 // The draft is the text in the editor, saved or not; the published version is
 // the one the page loaded.
-const downloadItems = computed(() => [
-  { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(t('catalog.deck.draftFileName', { slug }), raw.value, 'text/markdown') },
-  { label: t('editor.page.downloadPublished'), icon: 'i-lucide-file-down', disabled: neverPublished.value, onSelect: () => saveTextFile(`${slug}.md`, publishedRaw.value ?? '', 'text/markdown') },
+// The occasional actions on the deck: its history, its settings, its files.
+const deckMenuItems = computed(() => [
+  [
+    { label: t('editor.page.history'), icon: 'i-lucide-history', onSelect: () => { historyOpen.value = true } },
+    ...(statusDisplay.value ? [{ label: t('editor.page.settings'), icon: 'i-lucide-settings-2', disabled: !privileged.value && !viewer.value.canEdit, onSelect: () => openMeta() }] : []),
+  ],
+  [
+    { type: 'label' as const, label: t('editor.page.download') },
+    { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(t('catalog.deck.draftFileName', { slug }), raw.value, 'text/markdown') },
+    { label: t('editor.page.downloadPublished'), icon: 'i-lucide-file-down', disabled: neverPublished.value, onSelect: () => saveTextFile(`${slug}.md`, publishedRaw.value ?? '', 'text/markdown') },
+  ],
 ])
 
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
@@ -937,29 +945,13 @@ async function onMetaSaved() {
     v-else
     class="tailwind-app h-screen flex flex-col overflow-hidden bg-muted"
   >
-    <!-- The way back reads as on the catalog pages: the brand mark, then the
-         path from the home page through the folder to this deck. The deck's
-         own state and its publication sit on the right. -->
+    <!-- The way back reads as on the catalog pages. On the right, in reading
+         order: the draft, who sees the deck, its publication, its occasional
+         actions in one menu, then the account. -->
     <header
       class="flex items-center gap-2 sm:gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
     >
-      <UTooltip :text="t('editor.page.backHome')">
-        <NuxtLink
-          to="/"
-          :aria-label="t('editor.page.backHome')"
-          class="grid place-items-center size-8 shrink-0 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-        >
-          <VignettesMark class="w-5" />
-        </NuxtLink>
-      </UTooltip>
-
-      <!-- The title of the deck takes the width the other items leave. Below the
-           `lg` width the breadcrumb shows its last item only. -->
-      <UBreadcrumb
-        :items="breadcrumb"
-        class="min-w-0"
-        :ui="{ list: 'min-w-0', item: 'min-w-0 not-last:shrink-0 max-lg:not-last:hidden', separator: 'max-lg:hidden', link: 'min-w-0', linkLabel: 'truncate' }"
-      />
+      <AppTitle :items="breadcrumb" />
 
       <div class="flex-1" />
 
@@ -980,69 +972,6 @@ async function onMetaSaved() {
           :title="peer.self ? t('editor.page.selfElsewhere') : t('editor.page.peerEditing', { name: peer.name })"
         >{{ initials(peer.name) }}</span>
       </div>
-
-      <UTooltip :text="t('editor.page.historyTooltip')">
-        <UButton
-          :label="t('editor.page.history')"
-          :aria-label="t('editor.page.history')"
-          :ui="HEADER_BUTTON_UI"
-          icon="i-lucide-history"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          class="shrink-0"
-          @click="historyOpen = true"
-        />
-      </UTooltip>
-
-      <UDropdownMenu
-        :items="downloadItems"
-        :content="{ align: 'end' }"
-      >
-        <UTooltip :text="t('editor.page.download')">
-          <UButton
-            icon="i-lucide-download"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            class="shrink-0"
-            :aria-label="t('editor.page.download')"
-          />
-        </UTooltip>
-      </UDropdownMenu>
-
-      <!-- One entry to the deck's settings drawer, which names what it holds and
-           shows the current visibility, beside the other states of the deck.
-           Whoever may edit the deck may share it (canShare), so a collaborator
-           opens the drawer on its sharing. -->
-      <UTooltip
-        v-if="statusDisplay"
-        :text="privileged ? t('editor.page.settingsTooltip') : t('editor.page.settingsTooltipSharing')"
-      >
-        <UButton
-          color="neutral"
-          variant="outline"
-          size="sm"
-          class="shrink-0 gap-2 max-sm:px-1.5"
-          :aria-label="`${t('editor.page.settings')}, ${t(statusDisplay.labelKey)}`"
-          :disabled="!privileged && !viewer.canEdit"
-          @click="openMeta()"
-        >
-          <UIcon
-            name="i-lucide-settings-2"
-            class="size-4"
-          />
-          <span :class="HEADER_LABEL">{{ t('editor.page.settings') }}</span>
-          <span class="h-4 w-px bg-accented" />
-          <span class="flex items-center gap-1 text-muted">
-            <UIcon
-              :name="statusDisplay.icon"
-              class="size-3.5"
-            />
-            <span :class="HEADER_LABEL">{{ t(statusDisplay.labelKey) }}</span>
-          </span>
-        </UButton>
-      </UTooltip>
 
       <!-- The draft state opens the capture of a snapshot; a lost connection
            adds a link to the solo editor. -->
@@ -1088,7 +1017,8 @@ async function onMetaSaved() {
             :ui="HEADER_BUTTON_UI"
             icon="i-lucide-save"
             color="neutral"
-            variant="outline"
+            variant="ghost"
+            size="sm"
             :loading="saveState === 'saving'"
             :disabled="!dirty"
             @click="save"
@@ -1096,21 +1026,46 @@ async function onMetaSaved() {
         </UChip>
       </template>
 
+      <!-- The visibility of the deck opens its settings drawer. Whoever may edit
+           the deck may share it (canShare), so a collaborator opens the drawer
+           on its sharing. -->
+      <UTooltip
+        v-if="statusDisplay"
+        :text="privileged ? t('editor.page.settingsTooltip') : t('editor.page.settingsTooltipSharing')"
+      >
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          class="shrink-0 gap-1.5 max-sm:px-1.5"
+          :aria-label="`${t('editor.page.settings')}, ${t(statusDisplay.labelKey)}`"
+          :disabled="!privileged && !viewer.canEdit"
+          @click="openMeta()"
+        >
+          <UIcon
+            :name="statusDisplay.icon"
+            class="size-4.5 shrink-0 text-muted"
+          />
+          <span class="hidden sm:inline text-xs text-muted">{{ t(statusDisplay.labelKey) }}</span>
+        </UButton>
+      </UTooltip>
+
       <!-- The publication state: the button, with a dot while the draft differs
            from what visitors see, then « En ligne » once they are the same. -->
       <UTooltip :text="`${publicationLabel}. ${publicationHint}`">
-        <!-- The padding, text and icon of the publish button it replaces. -->
-        <UBadge
+        <!-- The width of the publish button it replaces. -->
+        <span
           v-if="writable && unpublished === false"
-          :label="t('editor.publication.upToDate')"
           :aria-label="t('editor.publication.upToDate')"
-          icon="i-lucide-check"
-          color="success"
-          variant="subtle"
           tabindex="0"
-          class="sm:w-28 justify-center"
-          :ui="{ base: 'px-2.5 py-1.5 text-sm gap-1.5 max-sm:px-1.5', label: HEADER_LABEL, leadingIcon: 'size-5' }"
-        />
+          class="inline-flex items-center justify-center gap-1.5 sm:w-28 px-1.5 text-sm font-medium text-success"
+        >
+          <UIcon
+            name="i-lucide-check"
+            class="size-5 shrink-0"
+          />
+          <span :class="HEADER_LABEL">{{ t('editor.publication.upToDate') }}</span>
+        </span>
         <UChip
           v-else
           :show="writable && unpublished === true"
@@ -1129,6 +1084,27 @@ async function onMetaSaved() {
           />
         </UChip>
       </UTooltip>
+
+      <UDropdownMenu
+        :items="deckMenuItems"
+        :content="{ align: 'end' }"
+      >
+        <UButton
+          icon="i-lucide-ellipsis-vertical"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          class="shrink-0"
+          :aria-label="t('editor.page.more')"
+        />
+      </UDropdownMenu>
+
+      <USeparator
+        orientation="vertical"
+        class="h-6"
+      />
+
+      <AccountMenu />
     </header>
 
     <!-- The source pane takes a share of the width set by dragging its edge, kept

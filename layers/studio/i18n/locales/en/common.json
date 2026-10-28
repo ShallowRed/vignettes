@@ -44,8 +44,15 @@
       "trash": "Trash",
       "language": "Language",
       "feedback": "Send feedback",
-      "support": "Documentation and feedback",
-      "documentation": "Documentation"
+      "documentation": "Documentation",
+      "colorMode": "Appearance",
+      "colorModes": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "Same as the system"
+      },
+      "preferences": "Preferences",
+      "backHome": "Back to home"
     },
     "loadError": {
       "title": "Loading failed",

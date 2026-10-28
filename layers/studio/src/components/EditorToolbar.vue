@@ -133,7 +133,7 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
 
 <template>
   <div class="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1.5 px-2 py-1.5 border-b border-default">
-    <div class="flex items-center gap-0.5 rounded-lg bg-elevated p-0.5">
+    <div class="flex items-center gap-0.5">
       <UPopover
         v-model:open="open.slide"
         :content="{ align: 'start', onCloseAutoFocus: keepEditorFocus }"
@@ -143,7 +143,6 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
           color="neutral"
           variant="ghost"
           size="sm"
-          :class="btnHover"
           :label="t('editor.toolbar.slide')"
           trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
@@ -205,7 +204,6 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
           color="neutral"
           variant="ghost"
           size="sm"
-          :class="btnHover"
           :label="t('editor.toolbar.insert')"
           trailing-icon="i-lucide-chevron-down"
           :disabled="disabled || !view"
@@ -259,6 +257,10 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
         :key="index"
         class="flex items-center gap-0.5"
       >
+        <USeparator
+          orientation="vertical"
+          class="h-5 me-0.5 sm:me-1.5"
+        />
         <UTooltip
           v-for="button in group"
           :key="button.icon"

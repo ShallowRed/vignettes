@@ -1,13 +1,11 @@
 {
   "editor": {
     "page": {
-      "backHome": "Retour à l'accueil",
       "readOnly": "Lecture seule",
       "peerEditing": "{name} édite en ce moment",
       "selfElsewhere": "Vous, dans une autre fenêtre ou sur un autre appareil",
       "anonymousPeer": "anonyme",
       "history": "Historique",
-      "historyTooltip": "Versions publiées et instantanés : comparer, restaurer",
       "settings": "Réglages et partage",
       "settingsTooltip": "Titre, accès, partage, dossier, thème et adresses de la présentation",
       "settingsTooltipSharing": "Qui peut ouvrir la présentation, et ses accès individuels",
@@ -24,10 +22,11 @@
       "signInMessage": "Connectez-vous pour modifier cette présentation.",
       "failedTitle": "Chargement impossible",
       "failedMessage": "La présentation n'a pas pu être chargée. Réessayez dans un instant.",
-      "download": "Télécharger le Markdown",
       "downloadDraft": "Brouillon (.md)",
       "downloadPublished": "Version publiée (.md)",
-      "pageTitle": "Modifier « {title} » · Vignettes"
+      "pageTitle": "Modifier « {title} » · Vignettes",
+      "download": "Télécharger le Markdown",
+      "more": "Autres actions"
     },
     "collab": {
       "offline": "Hors ligne",

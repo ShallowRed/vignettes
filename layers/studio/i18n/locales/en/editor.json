@@ -1,13 +1,11 @@
 {
   "editor": {
     "page": {
-      "backHome": "Back to home",
       "readOnly": "Read only",
       "peerEditing": "{name} is editing right now",
       "selfElsewhere": "You, in another window or on another device",
       "anonymousPeer": "anonymous",
       "history": "History",
-      "historyTooltip": "Published versions and snapshots: compare, restore",
       "settings": "Settings and sharing",
       "settingsTooltip": "Title, access, sharing, folder, theme and addresses of the presentation",
       "settingsTooltipSharing": "Who can open the presentation, and its individual grants",
@@ -24,10 +22,11 @@
       "signInMessage": "Sign in to edit this presentation.",
       "failedTitle": "Loading failed",
       "failedMessage": "The presentation could not be loaded. Try again in a moment.",
-      "download": "Download the Markdown",
       "downloadDraft": "Draft (.md)",
       "downloadPublished": "Published version (.md)",
-      "pageTitle": "Edit “{title}” · Vignettes"
+      "pageTitle": "Edit “{title}” · Vignettes",
+      "download": "Download the Markdown",
+      "more": "More actions"
     },
     "collab": {
       "offline": "Offline",
