@@ -86,18 +86,28 @@ export interface PreparedDeckWrite {
   raw: string
 }
 
+/** The longest text of a deck, in UTF-16 code units: twenty decks of 50 KB. */
+export const MAX_DECK_LENGTH = 1_000_000
+
+/** A write that `prepareDeckWrite` refuses; the message names the reason. */
+export class DeckWriteError extends Error {}
+
 /**
- * Validate a write request and derive its storage key. Throws when the slug
- * could escape the content directory, or when the markdown is empty.
+ * Validate a write request and derive its storage key. Throws a
+ * `DeckWriteError` when the slug could escape the content directory, or when
+ * the markdown is empty or longer than `MAX_DECK_LENGTH`.
  */
 export function prepareDeckWrite(input: DeckWriteInput): PreparedDeckWrite {
   const { slug, raw } = input
 
   if (!isDeckSlug(slug))
-    throw new Error(`Invalid slug "${slug}" — must match ${SLUG_RE} (single path segment, no slashes)`)
+    throw new DeckWriteError(`Invalid slug "${slug}" — must match ${SLUG_RE} (single path segment, no slashes)`)
 
   if (typeof raw !== 'string' || raw.length === 0)
-    throw new Error('Refusing to write empty markdown (a blank save would wipe the deck)')
+    throw new DeckWriteError('Refusing to write empty markdown (a blank save would wipe the deck)')
+
+  if (raw.length > MAX_DECK_LENGTH)
+    throw new DeckWriteError(`The deck holds more than ${MAX_DECK_LENGTH} characters`)
 
   return { slug, key: `${slug}.md`, raw }
 }

@@ -5,6 +5,17 @@ import type { RevealConfig } from '../types/presentation.ts'
 import { isDeckUrl } from '@vignettes/core/deck'
 import { deckMessages, EMBED_REFERRER_POLICY, embedSandbox, localizedNotes, mergeRevealConfig, scrollViewFrames, scrollViewLinks } from '@vignettes/core/render'
 
+/**
+ * Reveal calls its API for the message of any window, and its overlay writes the
+ * address that `setState` gives into its HTML. The speaker view drives its
+ * frames of the deck with these messages, from the origin of the deck: a message
+ * of another origin stops here, before the listener of Reveal.
+ */
+function refuseForeignMessage(event: MessageEvent) {
+  if (event.origin !== window.location.origin)
+    event.stopImmediatePropagation()
+}
+
 export function useReveal(
   container: Ref<HTMLElement | null>,
   config: Partial<RevealConfig> = {},
@@ -13,6 +24,8 @@ export function useReveal(
   let revealInstance: RevealApi | null = null
   let overlayObserver: MutationObserver | null = null
   let fragmentObserver: MutationObserver | null = null
+  // One listener per deck, so the teardown of one deck leaves the others theirs.
+  const refuseMessage = (event: MessageEvent) => refuseForeignMessage(event)
 
   // Reveal's preview overlay creates its own iframe that escapes the sandbox we
   // put on inline embeds; without this a link clicked inside the lightbox could
@@ -84,6 +97,8 @@ export function useReveal(
 
     const mergedConfig = mergeRevealConfig(config)
 
+    window.addEventListener('message', refuseMessage, { capture: true })
+
     revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [localizedNotes(RevealNotes(), messages), scrollViewLinks, scrollViewFrames] })
     await revealInstance.initialize()
 
@@ -123,6 +138,7 @@ export function useReveal(
       revealInstance.destroy()
       revealInstance = null
     }
+    window.removeEventListener('message', refuseMessage, { capture: true })
   }
 
   function getInstance() {

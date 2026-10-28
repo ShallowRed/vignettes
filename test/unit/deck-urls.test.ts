@@ -123,6 +123,18 @@ describe('readAttribute', () => {
       expect(readAttribute('a', name, 'x')).toEqual({ refused: 'binding' })
   })
 
+  it('refuses markup characters in an address of Reveal\'s overlay', () => {
+    expect(readAttribute('a', 'data-preview-link', 'https://example.com/"><b>')).toEqual({ refused: 'url' })
+    expect(readAttribute('a', 'data-preview-image', '/media/a<b.png')).toEqual({ refused: 'url' })
+    expect(readAttribute('a', 'data-preview-link', 'https://example.com/?q=a')).toEqual({ name: 'data-preview-link', value: 'https://example.com/?q=a' })
+  })
+
+  it('refuses an SVG animation of an address, and keeps the others', () => {
+    expect(readAttribute('animate', 'attributeName', 'href')).toEqual({ refused: 'url' })
+    expect(readAttribute('set', 'attributeName', 'xlink:href')).toEqual({ refused: 'url' })
+    expect(readAttribute('animate', 'attributeName', 'opacity')).toEqual({ name: 'attributeName', value: 'opacity' })
+  })
+
   it('keeps the attributes outside the rule and the slots', () => {
     expect(deckAttributes('template', { 'v-slot:title': '' })).toEqual({ 'v-slot:title': '' })
     expect(deckAttributes('a', { href: 'javascript:alert(1)', title: 't', dataPreviewLink: 'javascript:x' })).toEqual({ title: 't' })

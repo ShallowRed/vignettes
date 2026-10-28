@@ -1,4 +1,4 @@
-import { isDeckSlug, prepareDeckWrite } from '@vignettes/core/deck'
+import { DeckWriteError, isDeckSlug, MAX_DECK_LENGTH, prepareDeckWrite } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 
 describe('isDeckSlug', () => {
@@ -21,5 +21,10 @@ describe('prepareDeckWrite', () => {
   it('refuses an invalid slug and empty markdown (a blank save would wipe the deck)', () => {
     expect(() => prepareDeckWrite({ slug: 'a/b', raw: 'x' })).toThrow(/invalid slug/i)
     expect(() => prepareDeckWrite({ slug: 'd', raw: '' })).toThrow(/empty markdown/i)
+  })
+
+  it('refuses a deck longer than the limit', () => {
+    expect(() => prepareDeckWrite({ slug: 'd', raw: 'x'.repeat(MAX_DECK_LENGTH + 1) })).toThrow(DeckWriteError)
+    expect(prepareDeckWrite({ slug: 'd', raw: 'x'.repeat(MAX_DECK_LENGTH) }).raw).toHaveLength(MAX_DECK_LENGTH)
   })
 })

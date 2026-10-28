@@ -30,6 +30,14 @@ const URL_ATTRIBUTES: Readonly<Record<string, DeckUrlKind>> = {
 // The attributes whose address opens on a click; the others load theirs in the page.
 const LINK_ATTRIBUTES = new Set(['href', 'action', 'formaction', 'xlinkhref'])
 
+// Reveal's overlay writes the address of these attributes into its HTML as it is.
+const OVERLAY_ATTRIBUTES = new Set(['datapreviewlink', 'datapreviewimage', 'datapreviewvideo'])
+const MARKUP_RE = /["<>]/
+
+// The SVG elements that set the attribute `attributeName` names to a value of
+// theirs, which no address rule reads.
+const ANIMATION_TAGS = new Set(['animate', 'set'])
+
 const BOUND_RE = /^(?::|v-bind:)(.+)$/
 // Vue directives MDC applies: a whole object of attributes, a handler, a model.
 const DIRECTIVE_RE = /^(?:v-bind$|v-on:|@|v-model)/
@@ -71,8 +79,9 @@ export type AttributeReading
  * under its plain name, and is refused when its text is not JSON: it never
  * reads the page's data, and its JSON loses the keys `__proto__`,
  * `constructor` and `prototype`. A directive (`v-bind`, `v-on`, `@`,
- * `v-model`), one of these names, and an address outside `isDeckUrl` are
- * refused.
+ * `v-model`), one of these names, an address outside `isDeckUrl`, an
+ * address of Reveal's overlay holding markup characters, and an SVG animation
+ * of an address are refused.
  */
 export function readAttribute(tag: string, name: string, value: unknown): AttributeReading {
   if (DIRECTIVE_RE.test(name))
@@ -89,8 +98,13 @@ export function readAttribute(tag: string, name: string, value: unknown): Attrib
       return { refused: 'binding' }
     }
   }
+  const key = attributeKey(reading.name)
   const kind = urlKindOf(tag, reading.name)
   if (kind && !isDeckUrl(reading.value, kind))
+    return { refused: 'url' }
+  if (OVERLAY_ATTRIBUTES.has(key) && MARKUP_RE.test(String(reading.value)))
+    return { refused: 'url' }
+  if (ANIMATION_TAGS.has(componentKey(tag)) && key === 'attributename' && URL_ATTRIBUTES[attributeKey(String(reading.value))])
     return { refused: 'url' }
   return reading
 }

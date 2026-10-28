@@ -14,12 +14,17 @@ const BASE_DIRECTIVES = [
 /**
  * The headers of every response, set by the `/**` route rule. A rendered page
  * replaces this `Content-Security-Policy` with `pagePolicy`, and a route that
- * serves user files with a narrower one.
+ * serves user files with a narrower one. A page that another site opens gets no
+ * handle on its window (`Cross-Origin-Opener-Policy`), and neither the studio
+ * nor a frame of a deck may ask for the camera, the microphone, the location or
+ * a capture of the screen (`Permissions-Policy`).
  */
 export const SECURITY_HEADERS = {
   'Content-Security-Policy': BASE_DIRECTIVES.join('; '),
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), display-capture=()',
 }
 
 /** One year, the value the HSTS preload list asks for. */

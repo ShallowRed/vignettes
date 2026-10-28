@@ -18,6 +18,9 @@ function room(text: string) {
   doc.getText('codemirror').insert(0, text)
   return doc
 }
+function change(user: string) {
+  return hooks().onChange!({ documentName: 'deck', document: room(''), context: { deck: 'deck', user } } as any)
+}
 async function store(doc: Document, clientsCount: number) {
   await hooks().onStoreDocument!({ documentName: 'deck', document: doc as any, clientsCount, lastContext: { deck: 'deck' }, lastTransactionOrigin: null, instance: useCollabServer() })
 }
@@ -32,12 +35,12 @@ afterEach(() => {
 
 describe('snapshots while people edit', () => {
   it('keeps the first store, then waits the interval, with the logins that edited', async () => {
-    await hooks().onChange!({ documentName: 'deck', context: { deck: 'deck', user: 'ana' } } as any)
-    await hooks().onChange!({ documentName: 'deck', context: { deck: 'deck', user: 'bob' } } as any)
+    await change('ana')
+    await change('bob')
     await store(room('# one'), 2)
     expect(await useSnapshotStore().list('deck')).toMatchObject([{ authors: ['ana', 'bob'] }])
 
-    await hooks().onChange!({ documentName: 'deck', context: { deck: 'deck', user: 'ana' } } as any)
+    await change('ana')
     await store(room('# two'), 2)
     expect(await useSnapshotStore().list('deck')).toHaveLength(1)
 

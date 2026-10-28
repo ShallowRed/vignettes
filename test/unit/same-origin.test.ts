@@ -17,8 +17,8 @@ afterAll(() => {
 const { default: sameOrigin } = await import('../../layers/studio/server/middleware/same-origin')
 
 const INSTANCE = { 'host': 'studio.example', 'x-forwarded-proto': 'https' }
-function request(method: string, headers: Record<string, string>) {
-  const req = { method, url: '/api/admin/projects', headers: { ...INSTANCE, ...headers } }
+function request(method: string, headers: Record<string, string>, url = '/api/admin/projects') {
+  const req = { method, url, headers: { ...INSTANCE, ...headers } }
   return createEvent(req as any, {} as any)
 }
 
@@ -47,6 +47,15 @@ describe('the same-origin guard', () => {
   it('lets a request carrying the content token through, and every GET', async () => {
     await expect(sameOrigin(request('PUT', { authorization: 'Bearer content-token-of-the-test' }))).resolves.toBeUndefined()
     await expect(sameOrigin(request('GET', { origin: 'https://other.example' }))).resolves.toBeUndefined()
+  })
+
+  it('refuses the body of a form on a route of /api (415), except the image upload', async () => {
+    const page = { origin: 'https://studio.example' }
+    for (const type of ['application/x-www-form-urlencoded', 'multipart/form-data; boundary=x', 'text/plain'])
+      await expect(sameOrigin(request('POST', { ...page, 'content-type': type }))).rejects.toThrow(expect.objectContaining({ statusCode: 415 }))
+    await expect(sameOrigin(request('POST', { ...page, 'content-type': 'application/json' }))).resolves.toBeUndefined()
+    await expect(sameOrigin(request('POST', { ...page, 'content-type': 'multipart/form-data; boundary=x' }, '/api/media'))).resolves.toBeUndefined()
+    await expect(sameOrigin(request('POST', { ...page, 'content-type': 'application/x-www-form-urlencoded' }, '/auth/logout'))).resolves.toBeUndefined()
   })
 
   it('checks the origin of a request whose bearer is another token', async () => {

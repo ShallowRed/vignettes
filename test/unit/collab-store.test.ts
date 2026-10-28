@@ -1,3 +1,4 @@
+import { MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
 import { useCollabServer, useDraftStore } from '../../layers/studio/server/utils/collab'
@@ -41,5 +42,15 @@ describe('collab document hooks', () => {
   it('closes a socket that sends updates for a deck it was not authorized for', async () => {
     await expect(hooks().beforeHandleMessage!({ documentName: 'deck', context: { deck: 'another' } } as any)).rejects.toThrow(/not authorized/)
     await expect(hooks().beforeHandleMessage!({ documentName: 'deck', context: { deck: 'deck' } } as any)).resolves.toBeUndefined()
+  })
+
+  it('closes the connections of a room past the deck limit, and stores none of it', async () => {
+    const closed: string[] = []
+    const instance = { closeConnections: (name: string) => closed.push(name) }
+    const large = doc('x'.repeat(MAX_DECK_LENGTH + 1))
+    await hooks().onChange!({ documentName: 'big', document: large as any, context: { deck: 'big' }, instance } as any)
+    expect(closed).toEqual(['big'])
+    await hooks().onStoreDocument!({ documentName: 'big', document: large as any, lastContext: { deck: 'big' }, clientsCount: 0, lastTransactionOrigin: null, instance: server() })
+    expect(await useDraftStore().load('big')).toBeNull()
   })
 })

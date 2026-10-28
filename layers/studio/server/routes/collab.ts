@@ -1,4 +1,4 @@
-import { isDeckSlug } from '@vignettes/core/deck'
+import { isDeckSlug, MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'
@@ -9,11 +9,33 @@ import { useDeckMeta } from '../utils/sources'
 type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleConnection']>
 
 /**
- * The connection of each peer, as a promise: `open` resolves the actor before it
- * hands the socket to Hocuspocus, and the first messages of the client arrive
- * meanwhile, so they wait for the connection, in their order.
+ * What the route keeps of each peer. `open` resolves the actor before it hands
+ * the socket to Hocuspocus, and the first messages of the client arrive
+ * meanwhile: the messages, then the close, run one after the other on `queue`.
+ * A message after `AUTHORIZATION_TTL_MS` reads the edit right again, so a
+ * sign-out or a removed grant closes the socket.
  */
-const connections = new Map<string, Promise<CollabConnection | null>>()
+interface PeerState {
+  deck: string
+  connection: Promise<CollabConnection | null>
+  queue: Promise<void>
+  authorizedAt: number
+}
+
+const peers = new Map<string, PeerState>()
+const AUTHORIZATION_TTL_MS = 30_000
+
+/** A Yjs update of the longest deck, whose characters take up to 4 bytes. */
+const MAX_MESSAGE_BYTES = 4 * MAX_DECK_LENGTH
+
+async function stillAuthorized(peer: Peer, state: PeerState): Promise<boolean> {
+  if (Date.now() - state.authorizedAt < AUTHORIZATION_TTL_MS)
+    return true
+  if (!await canActorEditDeck(await getActorFromRequest(peer.request), state.deck))
+    return false
+  state.authorizedAt = Date.now()
+  return true
+}
 
 /** The peer this server's websocket handler hands to `open`, whatever crossws version h3 resolves. */
 type Peer = Parameters<NonNullable<Parameters<typeof defineWebSocketHandler>[0]['open']>>[0]
@@ -73,7 +95,7 @@ export default defineWebSocketHandler({
     // The deck the upgrade authorized, and who edits, become the connection
     // context that every Hocuspocus hook sees (`CollabContext`).
     const deck = new URL(peer.request.url).searchParams.get('deck') ?? ''
-    connections.set(peer.id, getActorFromRequest(peer.request).then((actor) => {
+    const connection = getActorFromRequest(peer.request).then((actor) => {
       // Hocuspocus reads the url and the headers of the request it is handed, and
       // the upgrade request carries both under a narrower type.
       const request = peer.request as unknown as Request
@@ -82,16 +104,37 @@ export default defineWebSocketHandler({
       console.warn(`[collab] could not open "${deck}": ${(error as Error).message}`)
       peer.close(1011, 'Unavailable')
       return null
-    }))
+    })
+    peers.set(peer.id, { deck, connection, queue: Promise.resolve(), authorizedAt: Date.now() })
   },
 
   message(peer, message) {
+    const state = peers.get(peer.id)
+    if (!state)
+      return
     const data = message.uint8Array()
-    void connections.get(peer.id)?.then(connection => connection?.handleMessage(data))
+    if (data.byteLength > MAX_MESSAGE_BYTES) {
+      peer.close(1009, 'Message too big')
+      return
+    }
+    state.queue = state.queue.then(async () => {
+      const connection = await state.connection
+      if (!connection)
+        return
+      if (!await stillAuthorized(peer, state)) {
+        peer.close(4403, 'Forbidden')
+        return
+      }
+      connection.handleMessage(data)
+    }).catch((error) => {
+      console.warn(`[collab] message refused on "${state.deck}": ${(error as Error).message}`)
+    })
   },
 
   close(peer) {
-    void connections.get(peer.id)?.then(connection => connection?.handleClose())
-    connections.delete(peer.id)
+    const state = peers.get(peer.id)
+    peers.delete(peer.id)
+    if (state)
+      state.queue = state.queue.then(async () => (await state.connection)?.handleClose())
   },
 })

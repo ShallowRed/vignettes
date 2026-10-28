@@ -1,7 +1,7 @@
 import type { DraftStore } from '@vignettes/core/deck'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { Hocuspocus } from '@hocuspocus/server'
-import { isDeckSlug } from '@vignettes/core/deck'
+import { isDeckSlug, MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import * as Y from 'yjs'
 import { useStores } from './db'
 import { publishedSource, useMediaIndex } from './sources'
@@ -182,12 +182,18 @@ export function useCollabServer(): Hocuspocus {
         throw new Error(`Socket not authorized for "${documentName}"`)
     },
 
-    async onChange({ documentName, context }) {
+    // A document past the limit closes its connections unstored: the editors
+    // reconnect to the draft last stored.
+    async onChange({ documentName, document, context, instance }) {
       noteContributor(documentName, (context as CollabContext | undefined)?.user)
+      if (document.getText(TEXT_FIELD).length > MAX_DECK_LENGTH) {
+        console.warn(`[collab] "${documentName}" holds more than ${MAX_DECK_LENGTH} characters: connections closed`)
+        instance.closeConnections(documentName)
+      }
     },
 
     async onStoreDocument({ documentName, document, clientsCount }) {
-      if (!isDeckSlug(documentName))
+      if (!isDeckSlug(documentName) || document.getText(TEXT_FIELD).length > MAX_DECK_LENGTH)
         return
       await useDraftStore().save(documentName, Y.encodeStateAsUpdate(document))
       // The last editor leaving closes the editing session: keep its final state.

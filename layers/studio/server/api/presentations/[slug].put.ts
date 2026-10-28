@@ -12,7 +12,7 @@
  */
 
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
-import { prepareDeckWrite } from '@vignettes/core/deck'
+import { DeckWriteError, prepareDeckWrite } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../../utils/access'
 import { recordDraftSnapshot, useCollabServer, useDraftStore } from '../../utils/collab'
 
@@ -66,9 +66,9 @@ export default defineEventHandler(async (event) => {
       stamp: await drafts.stamp(prepared.slug),
     }
   }
-  catch (error: any) {
-    const message = error?.message || 'Failed to save draft'
-    const isValidation = /invalid|empty markdown/i.test(message)
-    throw createError({ statusCode: isValidation ? 400 : 500, statusMessage: message })
+  catch (error) {
+    if (error instanceof DeckWriteError)
+      throw createError({ statusCode: 400, statusMessage: error.message })
+    throw error
   }
 })

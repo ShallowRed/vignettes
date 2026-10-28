@@ -229,3 +229,22 @@ test.describe('below 435px, where Reveal lays the deck out as a scrolling page',
     })
   }
 })
+
+test('Reveal answers the messages of the deck origin, and ignores a frame of another origin', async ({ page }) => {
+  await page.goto(DECK)
+  await expect(page.locator('.deck-veil')).toBeHidden()
+  const setState = JSON.stringify({ method: 'setState', args: [{ indexh: 1 }] })
+
+  await page.evaluate(() => {
+    const frame = document.createElement('iframe')
+    frame.setAttribute('sandbox', 'allow-scripts')
+    frame.name = 'foreign'
+    document.body.append(frame)
+  })
+  await page.frame('foreign')!.evaluate(message => parent.postMessage(message, '*'), setState)
+  await page.waitForTimeout(300)
+  expect(new URL(page.url()).hash).not.toBe('#/1')
+
+  await page.evaluate(message => window.postMessage(message, '*'), setState)
+  await expect(page).toHaveURL(/#\/1$/)
+})

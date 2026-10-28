@@ -1,3 +1,4 @@
+import { DeckWriteError } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../../../utils/access'
 import { currentDraftText, useCollabServer } from '../../../utils/collab'
 import { useDbContent } from '../../../utils/sources'
@@ -28,9 +29,9 @@ export default defineEventHandler(async (event) => {
     useCollabServer().documents.get(slug)?.broadcastStateless(JSON.stringify({ type: 'published', at: Date.now() }))
     return { ok: true, ...result }
   }
-  catch (error: any) {
-    const message = error?.message || 'Failed to publish deck'
-    const isValidation = /invalid|empty markdown/i.test(message)
-    throw createError({ statusCode: isValidation ? 400 : 500, statusMessage: message })
+  catch (error) {
+    if (error instanceof DeckWriteError)
+      throw createError({ statusCode: 400, statusMessage: error.message })
+    throw error
   }
 })
