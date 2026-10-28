@@ -300,6 +300,16 @@ const MEDIA_SETTINGS = ['size', 'type', 'fit', 'position', 'alt', 'lightbox', 'h
 const PANE_SETTINGS = ['size', 'lightbox', 'hint', 'viewport'] as const
 const BEHIND_SETTINGS = ['veil'] as const
 
+/** Where a `:layout` places its media: `media`, or on the right for a source written without it; none without either. */
+export function layoutPlacement(attributes: { media?: unknown, src?: unknown, story?: unknown }): MediaPlacement | undefined {
+  return (attributes.media as MediaPlacement | undefined) ?? (attributes.story || attributes.src ? 'right' : undefined)
+}
+
+/** The share a media at `placement` takes: `size`, or `DEFAULT_SIDE_MEDIA_SIZE` beside the text; none above, below or behind it. */
+export function layoutSize(placement: MediaPlacement | undefined, size: MediaSize | undefined): MediaSize | undefined {
+  return size ?? (placement === 'right' || placement === 'left' ? DEFAULT_SIDE_MEDIA_SIZE : undefined)
+}
+
 /**
  * Reads the attributes of a `:layout` annotation. A source without `media`
  * goes to the right; `media` without a source gives no media pane. The issues
@@ -316,7 +326,7 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
     layout.align = attrs.align
 
   const source = attrs.story || attrs.src
-  const placement = attrs.media ?? (source ? 'right' : undefined)
+  const placement = layoutPlacement(attrs)
   const unused = (names: (keyof LayoutAttributes)[]) => {
     for (const name of names) {
       if (attrs[name] !== undefined)
@@ -338,7 +348,6 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
     return { layout, issues }
   }
 
-  const side = placement === 'right' || placement === 'left'
   if (placement === 'behind')
     unused([...PANE_SETTINGS])
   else
@@ -347,7 +356,7 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
   const veil = attrs.veil ? Number(PERCENT_RE.exec(attrs.veil)![1]) / 100 : undefined
   layout.media = {
     placement,
-    ...(placement === 'behind' ? {} : { size: attrs.size ?? (side ? DEFAULT_SIDE_MEDIA_SIZE : undefined) }),
+    ...(placement === 'behind' ? {} : { size: layoutSize(placement, attrs.size) }),
     ...(attrs.story ? { story: attrs.story } : { src: attrs.src }),
     ...(attrs.type ? { type: attrs.type } : {}),
     fit: attrs.fit ?? 'cover',

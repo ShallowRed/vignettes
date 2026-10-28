@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { PublicationStatusSchema } from '../status.ts'
-import { splitFrontmatter } from './frontmatter.ts'
+import { splitFrontmatter, unclosedFrontmatterLine } from './frontmatter.ts'
 import { DECK_URL_MESSAGE, isDeckUrl } from './urls.ts'
 
 /**
@@ -155,11 +155,14 @@ export function onlyTitleMissing(issues: readonly DeckFileIssue[]): boolean {
 }
 
 /**
- * Read the frontmatter of a deck file before it becomes a deck: the YAML must
- * parse, the values must follow `DeckMetaSchema`, and the file must give its
- * title. The studio's import and its creation dialog both call it.
+ * Read the frontmatter of a deck file before it becomes a deck: the block must
+ * be closed, the YAML must parse, the values must follow `DeckMetaSchema`, and
+ * the file must give its title. The studio's import and its creation dialog both call it.
  */
 export function readDeckFile(raw: string): DeckFileReading {
+  const unclosed = unclosedFrontmatterLine(raw)
+  if (unclosed)
+    return { valid: false, issues: [{ key: '', message: `Line ${unclosed}: a heading inside the front matter, which lacks its closing --- line` }] }
   const { data, yamlError } = splitFrontmatter(raw)
   if (yamlError)
     return { valid: false, issues: [{ key: '', message: yamlError }] }

@@ -28,7 +28,10 @@ jobs:
   # than the documentation (the site, `docs/` and the Markdown files at the
   # root; `docs/theme-system.md` counts as code, since the deck plugin test
   # reads it), and the site job when it touches what the site reads, the paths
-  # of `docs-site.yml`. A call runs what its scope names.
+  # of `docs-site.yml`. A call runs what its scope names. GitHub applies the
+  # `paths` filter to a whole workflow, not to one of its jobs
+  # (https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore),
+  # so this job compares the files itself.
   changes:
     if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest

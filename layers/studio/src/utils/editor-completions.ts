@@ -346,6 +346,9 @@ function completionHint(sources: HintSources, t: Translate, lang: string): Exten
     }
 
     update(update: ViewUpdate) {
+      // A scroll leaves the state and the hint as they are.
+      if (!update.transactions.length && !update.focusChanged)
+        return
       const hint = update.view.hasFocus ? hintAt(update.state, sources) : null
       this.decorations = decorate(update.view, hint)
       const moved = update.selectionSet || update.transactions.some(tr => tr.isUserEvent('input') || tr.isUserEvent('delete'))

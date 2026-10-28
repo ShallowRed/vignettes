@@ -6,7 +6,7 @@ import type { LineProblem, Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { Decoration, hoverTooltip, ViewPlugin } from '@codemirror/view'
-import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, isRefusedEmbedUrl, RevealConfigSchema } from '@vignettes/core/deck'
+import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, isRefusedEmbedUrl, RevealConfigSchema, unclosedFrontmatterLine } from '@vignettes/core/deck'
 import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
 import { DOCS_SECTIONS, FRONTMATTER_KEYS, inLanguage, LEGACY_FRONTMATTER_KEYS } from '../config/editor-reference'
@@ -196,27 +196,17 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
       return problems
     }
   }
-  // A heading inside the block: its closing line is missing, and the block runs
-  // to the first slide break. `#` lines with a key right under them read as a
-  // YAML comment.
-  const hash = (n: number) => /^#{1,6}\s/.test(state.doc.line(n).text)
-  for (let n = 2; n < end; n++) {
-    if (!hash(n))
-      continue
-    let next = n + 1
-    while (next < end && hash(next))
-      next++
-    if (!(next < end && KEY_LINE_RE.test(state.doc.line(next).text))) {
-      const line = state.doc.line(n)
-      problems.push({
-        from: line.from,
-        to: line.to,
-        severity: 'error',
-        message: t('editor.frontmatter.unclosed'),
-        short: t('editor.frontmatter.unclosedShort', { line: n }),
-      })
-      return problems
-    }
+  const unclosed = unclosedFrontmatterLine(state.doc.toString())
+  if (unclosed) {
+    const line = state.doc.line(unclosed)
+    problems.push({
+      from: line.from,
+      to: line.to,
+      severity: 'error',
+      message: t('editor.frontmatter.unclosed'),
+      short: t('editor.frontmatter.unclosedShort', { line: unclosed }),
+    })
+    return problems
   }
   const parsed = DeckMetaSchema.safeParse(data ?? {})
   const schemaIssues = new Map(parsed.success ? [] : parsed.error.issues.map(issue => [issue.path.join('.'), issue]))

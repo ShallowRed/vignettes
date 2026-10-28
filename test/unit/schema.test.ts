@@ -37,6 +37,10 @@ describe('readDeckFile', () => {
   it('reports a block that is not YAML without a key', () => {
     expect(readDeckFile('---\ntitle: [Bilan\n---\n')).toMatchObject({ valid: false, issues: [{ key: '' }] })
   })
+
+  it('reports a front matter whose closing line is missing, by the heading it takes in', () => {
+    expect(readDeckFile('---\ntitle: Bilan\n\n# Bilan\n\n---\n## Suite\n')).toMatchObject({ valid: false, issues: [{ key: '', message: expect.stringMatching(/^Line 4:/) }] })
+  })
 })
 
 describe('deckRevealOptions', () => {

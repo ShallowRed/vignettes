@@ -21,6 +21,29 @@ export function frontmatterSource(markdown: string): string {
   return FRONTMATTER_RE.exec(markdown)?.[0] ?? ''
 }
 
+const KEY_LINE_RE = /^\s*[\w.-]+\s*:/
+const HEADING_RE = /^#{1,6}\s/
+
+/**
+ * The 1-based line of a heading inside the frontmatter block: the block then
+ * lacks its closing line and runs to the first slide break. `#` lines with a
+ * key right under them read as a YAML comment.
+ */
+export function unclosedFrontmatterLine(markdown: string): number | undefined {
+  const lines = frontmatterSource(markdown).replace(/\r?\n$/, '').split(/\r?\n/).slice(1, -1)
+  for (let index = 0; index < lines.length; index++) {
+    if (!HEADING_RE.test(lines[index]!))
+      continue
+    let next = index + 1
+    while (next < lines.length && HEADING_RE.test(lines[next]!))
+      next++
+    if (!(next < lines.length && KEY_LINE_RE.test(lines[next]!)))
+      return index + 2
+    index = next
+  }
+  return undefined
+}
+
 export function splitFrontmatter(markdown: string): SplitDocument {
   const match = markdown.match(FRONTMATTER_RE)
   if (!match)

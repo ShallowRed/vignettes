@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
-import type { MediaPlacement } from '@vignettes/core/deck'
+import type { MediaPlacement, MediaSize } from '@vignettes/core/deck'
 import type { Choice } from './EditorChoiceRow.vue'
-import { DEFAULT_SIDE_MEDIA_SIZE, HEADING_MODES, layoutDefault, layoutForPlacement, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, VERTICAL_ALIGNS } from '@vignettes/core/deck'
+import { DEFAULT_SIDE_MEDIA_SIZE, HEADING_MODES, layoutDefault, layoutForPlacement, layoutPlacement, layoutSize, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, VERTICAL_ALIGNS } from '@vignettes/core/deck'
 import { useCursorReading } from '../composables/useCursorReading'
 import { placementSketch, slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
 import { btnHover, menuWidth } from '../utils/toolbar-buttons'
@@ -20,15 +20,9 @@ const { open, current, refresh } = useCursorReading(() => props.view, slideLayou
 
 const attributes = computed(() => current.value?.attributes ?? {})
 const value = (name: string) => (attributes.value[name] as string | undefined) ?? layoutDefault(name) ?? ''
-// Without `media`, a source takes the default placement, and no source no media.
-function placementOf(written: Record<string, unknown>): string {
-  return (written.media as string | undefined) ?? (written.src || written.story ? layoutDefault('media')! : 'none')
-}
-const isSide = (at: string) => at === 'right' || at === 'left'
-
-const placement = computed(() => placementOf(attributes.value))
-const side = computed(() => isSide(placement.value))
-const size = computed(() => (attributes.value.size as string | undefined) ?? (side.value ? DEFAULT_SIDE_MEDIA_SIZE : ''))
+const placement = computed(() => layoutPlacement(attributes.value) ?? 'none')
+const side = computed(() => placement.value === 'right' || placement.value === 'left')
+const size = computed(() => layoutSize(layoutPlacement(attributes.value), attributes.value.size as MediaSize | undefined) ?? '')
 
 // Another author may have changed the line since the panel read it: each choice
 // starts from the text as it is.
@@ -46,7 +40,7 @@ function write(next: (attributes: Record<string, unknown>) => Record<string, unk
 /** Sets an attribute; the value its absence gives, or none, removes it. */
 function set(name: string, chosen: unknown) {
   write((fresh) => {
-    const absent = name === 'size' && isSide(placementOf(fresh)) ? DEFAULT_SIDE_MEDIA_SIZE : layoutDefault(name)
+    const absent = name === 'size' ? layoutSize(layoutPlacement(fresh), undefined) : layoutDefault(name)
     const next = { ...fresh }
     if (chosen === undefined || chosen === '' || chosen === false || chosen === absent)
       delete next[name]

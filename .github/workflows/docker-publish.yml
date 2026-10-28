@@ -1,29 +1,29 @@
 name: Build and publish Docker image
 
-# Construit l'image SSR et la pousse sur GHCR. L'image ne contient que le code :
-# le contenu vit dans la base de données de chaque instance.
+# Builds the SSR image and pushes it to GHCR. The image holds the code only:
+# the content is in the database of each instance.
 #
-# Après le build, le job `deploy` se connecte au VPS en SSH et met à jour le
-# conteneur sur le sha exact qui vient d'être construit : push sur `staging`
-# pour la préproduction, push sur `main` pour la production.
+# After the build, the `deploy` job connects to the VPS over SSH and updates the
+# container to the exact sha just built: a push on `staging` for the staging
+# instance, a push on `main` for production.
 #
-# La clé SSH de déploiement n'est pas un secret GitHub : le job la lit dans
-# Infisical via OIDC (machine identity), sans credential statique côté GitHub.
+# The deploy SSH key is not a GitHub secret: the job reads it from Infisical
+# through OIDC (machine identity), with no static credential on GitHub.
 #
-# Prérequis (Settings > Secrets and variables > Actions > Variables) :
-#   INFISICAL_API_URL             : URL de l'instance Infisical (non versionnée ici)
-#   INFISICAL_MACHINE_IDENTITY_ID : UUID de la machine identity Infisical (OIDC)
-#   INFISICAL_PROJECT_SLUG        : slug du projet Infisical hébergeant les secrets
-#   VPS_HOST, VPS_USER            : hôte + user SSH du VPS (pour le job deploy)
-# Côté Infisical : machine identity OIDC (trust du repo) avec accès LECTURE au
-# projet/env, hébergeant le secret VPS_SSH_KEY (clé privée de déploiement).
+# Requirements (Settings > Secrets and variables > Actions > Variables):
+#   INFISICAL_API_URL             : address of the Infisical instance (not versioned here)
+#   INFISICAL_MACHINE_IDENTITY_ID : UUID of the Infisical machine identity (OIDC)
+#   INFISICAL_PROJECT_SLUG        : slug of the Infisical project that holds the secrets
+#   VPS_HOST, VPS_USER            : SSH host and user of the VPS (for the deploy job)
+# On Infisical: an OIDC machine identity that trusts the repository, with READ
+# access to the project and environment holding VPS_SSH_KEY (the deploy private key).
 
 on:
   push:
     branches: [main, staging]
     tags: ['v*']
-    # Les docs ne sont pas dans l'image (.dockerignore) : un commit docs-only ne
-    # doit pas déclencher un build + auto-deploy inutile.
+    # The docs are not in the image (.dockerignore): a commit of docs only
+    # builds and deploys nothing.
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -42,10 +42,10 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Lint, tests unitaires et tests e2e, définis une seule fois dans
-  # `checks.yml`, qui tourne aussi sur les pull requests vers `main`. Sur `main`
-  # et les tags, l'image n'est construite et déployée que s'ils passent ;
-  # `staging` reçoit des branches vérifiées en local et construit seulement.
+  # Lint, unit tests and e2e tests, defined once in `checks.yml`, which also
+  # runs on the pull requests to `main`. On `main` and the tags, the image is
+  # built and deployed once they pass; `staging` receives branches checked
+  # locally and only builds.
   test:
     uses: ./.github/workflows/checks.yml
     with:
@@ -99,24 +99,24 @@ jobs:
           context: .
           # The `output` stage of the Dockerfile becomes the build the tests ran on.
           build-contexts: output=.output
-          platforms: linux/amd64 # le VPS est amd64 — évite tout build arm accidentel
+          platforms: linux/amd64 # the VPS is amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # CD : met à jour le conteneur sur le VPS sur le sha fraîchement construit.
-  # push staging -> env staging (staging.slides.…) ; push main -> env prod (slides.…).
-  # Même image, seul l'argument `<env>` envoyé au forced command (deploy.sh) change.
-  # La clé SSH est restreinte côté VPS par ce forced command (deploy.sh).
+  # Updates the container on the VPS to the sha just built.
+  # push staging -> staging env (staging.slides.…); push main -> prod env (slides.…).
+  # Same image: only the `<env>` argument sent to the forced command (deploy.sh) changes.
+  # On the VPS, that forced command restricts what the SSH key can run.
   deploy:
     needs: build
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # OIDC vers Infisical (récupère VPS_SSH_KEY)
+      id-token: write # OIDC to Infisical (reads VPS_SSH_KEY)
     steps:
       - name: Fetch deploy secrets from Infisical (OIDC)
         uses: Infisical/secrets-action@77ab1f4ccd183a543cb5b42435fbd181189f4995 # v1.0.16
@@ -133,19 +133,19 @@ jobs:
         env:
           VPS_HOST: ${{ vars.VPS_HOST }}
           VPS_USER: ${{ vars.VPS_USER }}
-          # VPS_SSH_KEY est injecté dans l'env du job par l'étape Infisical ci-dessus.
+          # The Infisical step above puts VPS_SSH_KEY in the environment of the job.
         run: |
           set -euo pipefail
-          # push staging -> staging ; push main -> prod. Même sha d'image.
+          # push staging -> staging; push main -> prod. Same image sha.
           if [ "${GITHUB_REF}" = "refs/heads/staging" ]; then TARGET_ENV=staging; else TARGET_ENV=prod; fi
           IMAGE_TAG="sha-$(echo "${GITHUB_SHA}" | cut -c1-7)"
-          echo "Déploiement [${TARGET_ENV}] de ${IMAGE_TAG} sur ${VPS_HOST}"
+          echo "Deploying ${IMAGE_TAG} [${TARGET_ENV}] to ${VPS_HOST}"
           umask 077
           printf '%s\n' "${VPS_SSH_KEY}" > deploy_key
-          # TOFU : on pin la clé d'hôte au premier contact. Pour durcir, remplacer
-          # par une known_hosts pré-remplie (variable VPS_SSH_KNOWN_HOSTS).
+          # Trust on first use: the host key is pinned at the first contact. A
+          # known_hosts filled in advance (VPS_SSH_KNOWN_HOSTS variable) would be stricter.
           ssh-keyscan -H "${VPS_HOST}" > known_hosts 2>/dev/null
-          # Le forced command côté VPS lit `<env> <tag>` dans $SSH_ORIGINAL_COMMAND.
+          # The forced command on the VPS reads `<env> <tag>` from $SSH_ORIGINAL_COMMAND.
           ssh -i deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts \
             "${VPS_USER}@${VPS_HOST}" "${TARGET_ENV} ${IMAGE_TAG}"
           rm -f deploy_key
