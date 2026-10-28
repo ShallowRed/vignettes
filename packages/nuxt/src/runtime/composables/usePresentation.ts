@@ -1,12 +1,10 @@
 import type { PresentationData } from '../types/presentation.ts'
 import { useAsyncData, useRequestFetch } from '#imports'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
-import { deckRevealOptions, parserIdFor } from '@vignettes/core/deck'
+import { deckRevealOptions, frontmatterSource, parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
 import { getThemeTokens } from '@vignettes/core/theme'
 import { defaultMetadata } from '../config/presentation.ts'
 import { PARSERS } from '../utils/slide-ast.ts'
-
-const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/
 
 /**
  * Parse raw deck markdown into `PresentationData`: the single client-side parse
@@ -19,8 +17,7 @@ export async function buildPresentationData(
 ): Promise<PresentationData> {
   // MDC reads the metadata from the frontmatter alone, and takes the title from
   // the first heading of the body when the frontmatter names none.
-  const frontmatter = FRONTMATTER_RE.exec(raw)?.[0]
-  const ast = await parseMarkdown(frontmatter && /^title:/m.test(frontmatter) ? frontmatter : raw)
+  const ast = await parseMarkdown(splitFrontmatter(raw).data.title ? frontmatterSource(raw) : raw)
   const metadata = {
     ...defaultMetadata(),
     ...(ast.data || {}),

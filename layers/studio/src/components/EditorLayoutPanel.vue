@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { MediaPlacement } from '@vignettes/core/deck'
+import type { Choice } from './EditorChoiceRow.vue'
 import { DEFAULT_SIDE_MEDIA_SIZE, HEADING_MODES, layoutDefault, layoutForPlacement, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, VERTICAL_ALIGNS } from '@vignettes/core/deck'
-import { EDITOR_TEXT, placementSketch, slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
-import { btnActive, btnHover, menuWidth } from '../utils/toolbar-buttons'
+import { useCursorReading } from '../composables/useCursorReading'
+import { placementSketch, slideLayoutAt, slideLayoutChange } from '../utils/editor-layout'
+import { btnHover, menuWidth } from '../utils/toolbar-buttons'
 
 // The layout of the slide under the cursor. Each choice rewrites its `:layout`
 // line, so the preview, which follows the cursor, shows it at once.
@@ -14,26 +16,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-const open = ref(false)
-const current = shallowRef(props.view ? slideLayoutAt(props.view.state) : undefined)
-
-function read() {
-  if (props.view)
-    current.value = slideLayoutAt(props.view.state)
-}
-
-watch(open, (opened) => {
-  if (opened)
-    read()
-})
-
-// Another author may change the `:layout` line while the panel is open: the
-// panel reads the slide again on each change of the text.
-const text = inject(EDITOR_TEXT, undefined)
-watch(() => text?.value, () => {
-  if (open.value)
-    read()
-})
+const { open, current, refresh } = useCursorReading(() => props.view, slideLayoutAt)
 
 const attributes = computed(() => current.value?.attributes ?? {})
 const value = (name: string) => (attributes.value[name] as string | undefined) ?? layoutDefault(name) ?? ''
@@ -57,7 +40,7 @@ function write(next: (attributes: Record<string, unknown>) => Record<string, unk
   if (at.outside)
     return
   view.dispatch(slideLayoutChange(view.state, next(at.attributes)))
-  read()
+  refresh()
 }
 
 /** Sets an attribute; the value its absence gives, or none, removes it. */
@@ -85,8 +68,6 @@ const share = computed(() => {
   const [p, q] = (size.value || DEFAULT_SIDE_MEDIA_SIZE).split('/').map(Number)
   return p! / q!
 })
-
-interface Choice { label: string, value: string, active: boolean, icon?: string }
 
 function row(name: string, values: readonly string[], label: (choice: string) => string, active = value(name), icons: Record<string, string> = {}): { name: string, choices: Choice[] } {
   return { name, choices: values.map(choice => ({ value: choice, label: label(choice), active: choice === active, icon: icons[choice] })) }
@@ -239,35 +220,19 @@ const fields = computed(() => placement.value === 'none'
               />
               {{ shown.title }}
             </h3>
-            <div class="flex gap-0.5 rounded-lg bg-elevated p-0.5">
-              <UTooltip
-                v-for="choice in shown.row.choices"
-                :key="choice.value"
-                :text="choice.label"
-                :disabled="!shown.iconOnly"
-              >
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  class="flex-1 justify-center"
-                  :class="choice.active ? btnActive : btnHover"
-                  :aria-pressed="choice.active"
-                  :icon="choice.icon"
-                  :label="shown.iconOnly ? undefined : choice.label"
-                  :aria-label="shown.iconOnly ? choice.label : undefined"
-                  @click="set(shown.row.name, choice.value)"
-                />
-              </UTooltip>
-            </div>
+            <EditorChoiceRow
+              :choices="shown.row.choices"
+              :icon-only="shown.iconOnly"
+              @choose="set(shown.row.name, $event)"
+            />
           </section>
 
-          <UCheckbox
+          <USwitch
             v-if="placement !== 'none' && placement !== 'behind'"
             :model-value="Boolean(attributes.lightbox)"
             :label="t('editor.layout.lightbox')"
             size="sm"
-            @update:model-value="set('lightbox', $event === true)"
+            @update:model-value="set('lightbox', $event)"
           />
         </template>
       </div>

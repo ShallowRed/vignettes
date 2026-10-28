@@ -1,6 +1,6 @@
 import type { ThemeBackgrounds } from '@vignettes/core/deck'
 import type { DeckPreview } from './list-item'
-import { isSectionSlide, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel } from '@vignettes/core/deck'
+import { codeLines, isSectionSlide, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel } from '@vignettes/core/deck'
 import { resolveSlideBackground } from '@vignettes/core/render'
 
 /** The first slide of a deck, read from its markdown for a catalog card. */
@@ -22,7 +22,6 @@ const HEADING_RE = /^(#{1,6}) (\S.*)$/
 // headings, lists, quotes, tables, images, html, code and slide separators.
 const NOT_PARAGRAPH_RE = /^(?:[:#>|<]|[-*+] |\d+\. |!\[|```|~~~|-{3}|\*{3}|_{3})/
 const LEAD_MAX_LENGTH = 160
-const FENCE_RE = /^\s*(?:```|~~~)/
 
 function annotation(lines: string[], tag: string, attribute: string): string | undefined {
   const pattern = new RegExp(`^:${tag}\\{[^}]*\\b${attribute}=(["'])(.*?)\\1`)
@@ -44,14 +43,8 @@ function plainText(markdown: string): string {
 }
 
 function headingIndex(lines: string[]): number {
-  let inFence = false
-  for (const [index, line] of lines.entries()) {
-    if (FENCE_RE.test(line))
-      inFence = !inFence
-    else if (!inFence && HEADING_RE.test(line))
-      return index
-  }
-  return -1
+  const code = codeLines(lines.join('\n'))
+  return lines.findIndex((line, index) => !code.has(index) && HEADING_RE.test(line))
 }
 
 /** The first plain paragraph after the heading, which reads as a subtitle. */

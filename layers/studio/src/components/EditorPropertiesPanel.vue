@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { ComponentAttribute } from '@vignettes/core/deck'
+import { useCursorReading } from '../composables/useCursorReading'
 import { directiveEntry, inLanguage } from '../config/editor-reference'
-import { EDITOR_TEXT } from '../utils/editor-layout'
 import { attributeChange, attributeValue, componentAt } from '../utils/editor-properties'
 import { codeParts } from '../utils/editor-tooltip'
-import { btnActive, btnHover, menuWidth } from '../utils/toolbar-buttons'
+import { btnHover, menuWidth } from '../utils/toolbar-buttons'
 
 // The attributes of the component under the cursor. Each choice rewrites its
 // `{…}` block, so the preview shows it at once.
@@ -16,26 +16,7 @@ const props = defineProps<{
 
 const { t, locale } = useI18n()
 
-const open = ref(false)
-const current = shallowRef(props.view ? componentAt(props.view.state) : undefined)
-
-function read() {
-  if (props.view)
-    current.value = componentAt(props.view.state)
-}
-
-watch(open, (opened) => {
-  if (opened)
-    read()
-})
-
-// Another author may change the block while the panel is open: the panel reads
-// the component again on each change of the text.
-const text = inject(EDITOR_TEXT, undefined)
-watch(() => text?.value, () => {
-  if (open.value)
-    read()
-})
+const { open, current, refresh } = useCursorReading(() => props.view, componentAt)
 
 const entry = computed(() => {
   const component = current.value
@@ -50,7 +31,7 @@ function set(attribute: ComponentAttribute, value: string) {
   if (!view)
     return
   view.dispatch(attributeChange(view.state, attribute, value))
-  read()
+  refresh()
 }
 
 const value = (attribute: ComponentAttribute) => current.value ? attributeValue(current.value, attribute) : ''
@@ -118,23 +99,11 @@ const value = (attribute: ComponentAttribute) => current.value ? attributeValue(
                 </template>
               </template>
             </p>
-            <div
+            <EditorChoiceRow
               v-if="attribute.values"
-              class="flex flex-wrap gap-0.5 rounded-lg bg-elevated p-0.5"
-            >
-              <UButton
-                v-for="choice in attribute.values"
-                :key="choice"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                class="flex-1 justify-center"
-                :class="value(attribute) === choice ? btnActive : btnHover"
-                :aria-pressed="value(attribute) === choice"
-                :label="choice"
-                @click="set(attribute, value(attribute) === choice && attribute.default === undefined ? '' : choice)"
-              />
-            </div>
+              :choices="attribute.values.map(choice => ({ value: choice, label: choice, active: value(attribute) === choice }))"
+              @choose="set(attribute, value(attribute) === $event && attribute.default === undefined ? '' : $event)"
+            />
             <UInput
               v-else-if="!attribute.boolean"
               size="sm"

@@ -2,14 +2,14 @@ import type { Extension } from '@codemirror/state'
 import type { Translate } from '../config/editor-reference'
 import type { ReferenceCard } from './editor-tooltip'
 import { hoverTooltip } from '@codemirror/view'
-import { attributedDirective, attributeNamed, componentAttributeMentions, directiveMentions, layoutAnnotations } from '@vignettes/core/deck'
-import { directiveEntry, DOCS_SECTIONS, inLanguage, layoutAttributeEntries } from '../config/editor-reference'
+import { attributedDirective, attributeNamed, componentAttributeMentions, directiveMentions } from '@vignettes/core/deck'
+import { directiveEntry, inLanguage } from '../config/editor-reference'
 import { referenceCard } from './editor-tooltip'
 
 /**
  * The tooltip under the pointer in the slide body: the name, the description
- * and the documentation of a component or an annotation, and of an attribute
- * of `:layout` or of a component. The frontmatter guide has its own tooltip.
+ * and the documentation of a component or an annotation, and of one of their
+ * attributes. The frontmatter guide has its own tooltip.
  */
 
 export interface HoverOptions {
@@ -31,20 +31,10 @@ type ReferenceOptions = Pick<HoverOptions, 'lang' | 'docsUrl'>
 
 /**
  * What the tooltip describes at `column` of the 1-based `line` of a deck: an
- * attribute of `:layout` or of a component, or the name of a component or an
+ * attribute of a component or an annotation, or the name of a component or an
  * annotation, as the deck core reads them.
  */
 export function referenceAt(raw: string, line: number, column: number, options: ReferenceOptions): LineReference | null {
-  const attribute = layoutAnnotations(raw)
-    .filter(annotation => annotation.line === line)
-    .flatMap(annotation => annotation.attributes)
-    .find(written => column >= written.column && column <= written.column + written.name.length)
-  if (attribute) {
-    const entry = layoutAttributeEntries(options.lang).find(candidate => candidate.name === attribute.name)
-    return entry
-      ? { from: attribute.column, to: attribute.column + attribute.name.length, card: { syntax: entry.name, description: entry.description, values: entry.values, default: entry.default, docs: options.docsUrl(DOCS_SECTIONS.layout) } }
-      : null
-  }
   const written = componentAttributeMentions(raw)
     .find(mention => mention.line === line && column >= mention.column && column <= mention.column + mention.name.length)
   const component = written && attributedDirective(written.tag)

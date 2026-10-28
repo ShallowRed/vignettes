@@ -17,12 +17,12 @@ export interface ComponentAtCursor {
   /** Positions in the document: the end of the name, and the `{…}` block when it has one. */
   nameEnd: number
   block?: { from: number, to: number }
-  /** The attributes written in the block, in their order. */
-  written: { name: string, value?: string, text: string, attribute?: ComponentAttribute }[]
+  /** The attributes written in the block, in their order, with their 0-based column on the line. */
+  written: { name: string, value?: string, text: string, column: number, attribute?: ComponentAttribute }[]
 }
 
 /** The directive written on the 1-based `line` that declares attributes, the one under `column` first. */
-function directiveOn(state: EditorState, line: number, column?: number): ComponentAtCursor | undefined {
+export function directiveAt(state: EditorState, line: number, column?: number): ComponentAtCursor | undefined {
   const { text, from } = state.doc.line(line)
   const raw = state.doc.toString()
   const found = directiveMentions(raw).flatMap((mention) => {
@@ -40,6 +40,7 @@ function directiveOn(state: EditorState, line: number, column?: number): Compone
       name: attribute.name,
       value: attribute.value,
       text: text.slice(attribute.column, attribute.column + attribute.length),
+      column: attribute.column,
       attribute: attributeNamed(directive, attribute.name),
     }))
   return {
@@ -52,16 +53,19 @@ function directiveOn(state: EditorState, line: number, column?: number): Compone
   }
 }
 
-/** The component under the cursor: written on its line, or the innermost block around it. */
+/**
+ * The component under the cursor: written on its line, or the innermost block
+ * around it. The layout panel sets the attributes of `:layout`.
+ */
 export function componentAt(state: EditorState): ComponentAtCursor | undefined {
   const head = state.selection.main.head
   const line = state.doc.lineAt(head)
-  const onLine = directiveOn(state, line.number, head - line.from)
-  if (onLine)
+  const onLine = directiveAt(state, line.number, head - line.from)
+  if (onLine && onLine.directive.name !== 'layout')
     return onLine
   const enclosing = blocksAround(state.doc.toString(), line.number)
   for (const block of enclosing.reverse()) {
-    const found = directiveOn(state, block.line, block.column)
+    const found = directiveAt(state, block.line, block.column)
     if (found)
       return found
   }

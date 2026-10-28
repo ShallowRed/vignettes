@@ -5,6 +5,7 @@ import type { DeckParser, Slide, SlideSource } from '@vignettes/core/deck'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import {
   BACKGROUND_ANNOTATION_TAG,
+  codeLines,
   fullSlideComponentNames,
   HTML_REWRITTEN_COMPONENT_TAGS,
   isSectionSlide,
@@ -194,7 +195,6 @@ async function parseChunk(text: string, definitions = ''): Promise<any[]> {
   return safeNodes(ast.body?.children ?? [])
 }
 
-const FENCE_RE = /^ {0,3}(?:`{3,}|~{3,})/
 const LINK_DEFINITION_RE = /^ {0,3}\[[^\]^][^\]]*\]:\s*\S/
 
 /**
@@ -202,14 +202,8 @@ const LINK_DEFINITION_RE = /^ {0,3}\[[^\]^][^\]]*\]:\s*\S/
  * heading deck so a `[text][ref]` resolves wherever its definition sits.
  */
 function linkDefinitions(raw: string): string {
-  const found: string[] = []
-  let inFence = false
-  for (const line of raw.split('\n')) {
-    if (FENCE_RE.test(line))
-      inFence = !inFence
-    else if (!inFence && LINK_DEFINITION_RE.test(line))
-      found.push(line.trim())
-  }
+  const code = codeLines(raw)
+  const found = raw.split('\n').filter((line, index) => !code.has(index) && LINK_DEFINITION_RE.test(line)).map(line => line.trim())
   return found.length ? `\n\n${found.join('\n')}` : ''
 }
 

@@ -2,11 +2,11 @@
 import { useCompletionKeys } from '../composables/useCompletionKeys'
 import { useDocsAddress } from '../composables/useDocsAddress'
 import {
+  componentAttributeEntries,
   DOCS_SECTIONS,
   EDITOR_SHORTCUTS,
   FRONTMATTER_KEYS,
   groupedEntries,
-  layoutAttributeEntries,
   STRUCTURE_HELP,
 } from '../config/editor-reference'
 
@@ -32,7 +32,7 @@ const completionKeys = useCompletionKeys()
 const docsUrl = useDocsAddress()
 const docsHome = docsUrl(DOCS_SECTIONS.home)
 const groups = computed(() => groupedEntries(locale.value))
-const layoutChoices = computed(() => layoutAttributeEntries(locale.value).filter(entry => entry.values))
+const layoutChoices = computed(() => componentAttributeEntries('layout', locale.value)?.filter(entry => entry.values) ?? [])
 
 const structure = computed(() => STRUCTURE_HELP[props.parser])
 const otherParser = computed(() => (props.parser === 'heading' ? 'separator' : 'heading'))

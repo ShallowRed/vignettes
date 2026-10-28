@@ -16,6 +16,11 @@ export interface SplitDocument {
   yamlError?: string
 }
 
+/** The leading frontmatter block as written, its `---` lines included; an empty string without one. */
+export function frontmatterSource(markdown: string): string {
+  return FRONTMATTER_RE.exec(markdown)?.[0] ?? ''
+}
+
 export function splitFrontmatter(markdown: string): SplitDocument {
   const match = markdown.match(FRONTMATTER_RE)
   if (!match)

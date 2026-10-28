@@ -4,16 +4,17 @@ import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
 import type { ComponentAttributeEntry, FrontmatterKey, ReferenceEntry, Translate } from '../config/editor-reference'
 import { autocompletion, CompletionContext, completionStatus, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
 import { Decoration, keymap, ViewPlugin, WidgetType } from '@codemirror/view'
-import { attributedDirective, blocksAround, componentKey } from '@vignettes/core/deck'
-import { annotationEntries, childEntries, componentAttributeEntries, componentEntries, layoutAttributeEntries } from '../config/editor-reference'
+import { attributedDirective, blocksAround, codeLines, componentKey } from '@vignettes/core/deck'
+import { annotationEntries, childEntries, componentAttributeEntries, componentEntries } from '../config/editor-reference'
 import { emptyValueKey, frontmatterGuide, inFrontmatter as inFrontmatterLine } from './editor-frontmatter'
+import { directiveAt } from './editor-properties'
 import { referenceCard } from './editor-tooltip'
 
 /**
  * Writer autocompletion, driven by the declarative authoring reference:
  * frontmatter keys and their closed values inside the leading `---` block,
- * `::` components and `:` annotations in the body, the attributes of
- * `:layout{…}` and of the components, and their closed values. Everything is
+ * `::` components and `:` annotations in the body, the attributes of the
+ * components and of the annotations, and their closed values. Everything is
  * data from editor-reference.ts.
  */
 
@@ -69,11 +70,6 @@ function valueCompletions(values: readonly string[], fallback: string | undefine
   }))
 }
 
-/** The attribute names written in the text of a `{…}` block, as `componentKey` compares them. */
-function writtenAttributes(text: string): Set<string> {
-  return new Set([...text.replace(/"[^"]*"/g, '""').matchAll(/(?:^|\s):?([\w-]+)/g)].map(match => componentKey(match[1]!)))
-}
-
 /**
  * The component whose YAML attributes the 1-based `line` sits in: the lines
  * between a `---` right under the opening line of a component and the next `---`.
@@ -83,8 +79,10 @@ function propsBlockTag(state: EditorState, line: number): string | undefined {
     const text = state.doc.line(n).text
     if (!text.trim())
       return undefined
-    if (text.trim() === '---')
-      return /^\s*:{2,}([\w-]+)/.exec(state.doc.line(n - 1).text)?.[1]
+    if (text.trim() === '---') {
+      const block = blocksAround(state.doc.toString(), n).at(-1)
+      return block?.line === n - 1 ? block.name : undefined
+    }
   }
   return undefined
 }
@@ -136,29 +134,6 @@ export function bodySource(options: CompletionOptions, t: Translate) {
     const line = context.state.doc.lineAt(context.pos)
     const before = line.text.slice(0, context.pos - line.from)
 
-    // The closed values of a `:layout` attribute, inside `:layout{… media="…`.
-    const valueMatch = before.match(/:layout\{[^}]*?\b([\w-]+)="([^"]*)$/)
-    if (valueMatch) {
-      const values = layoutAttributeEntries(lang).find(entry => entry.name === valueMatch[1])?.values
-      return values
-        ? { from: context.pos - valueMatch[2]!.length, options: values.map(value => ({ label: value, type: 'enum' })) }
-        : null
-    }
-
-    // The attributes of `:layout`, after its brace or a space inside it.
-    const inside = before.match(/:layout\{((?:[^}"]|"[^"]*")*)$/)?.[1]
-    const attributeMatch = inside?.match(/(?:^|\s)([\w-]*)$/)
-    if (attributeMatch) {
-      return {
-        from: context.pos - attributeMatch[1]!.length,
-        options: layoutAttributeEntries(lang).map(entry => snippetCompletion(
-          entry.flag ? entry.name : `${entry.name}="\${${entry.default ?? ''}}"`,
-          { label: entry.name, info: entry.description, type: 'property' },
-        )),
-        validFor: /^[\w-]*$/,
-      }
-    }
-
     // The closed values of an attribute, inside `::Name{… size="…`, or after
     // `size=` before its quotes, which the value then brings.
     const valueOf = before.match(/(?:^|[\s([]):{1,3}([\w-]+)\{(?:(?:[^}"]|"[^"]*")*\s)?(:?[\w-]+)=("?)([^"\s}]*)$/)
@@ -177,8 +152,9 @@ export function bodySource(options: CompletionOptions, t: Translate) {
     const attributeWord = blockOf?.[2]!.match(/(?:^|\s)(:?[\w-]*)$/)?.[1]
     const attributes = blockOf && componentAttributeEntries(blockOf[1]!, lang)
     if (blockOf && attributeWord !== undefined && attributes) {
-      const after = /^(?:[^}"]|"[^"]*")*/.exec(line.text.slice(context.pos - line.from))?.[0] ?? ''
-      const written = writtenAttributes(`${blockOf[2]!.slice(0, -attributeWord.length || undefined)} ${after}`)
+      // The attribute the caret is in is the one being typed.
+      const caret = context.pos - line.from
+      const written = new Set(directiveAt(context.state, line.number, caret)?.written.filter(entry => !(entry.column < caret && caret <= entry.column + entry.text.length)).map(entry => componentKey(entry.name.replace(/^:/, ''))))
       const docs = docsUrl(attributedDirective(blockOf[1]!)?.docs)
       return {
         from: context.pos - attributeWord.length,
@@ -239,16 +215,6 @@ export function bodySource(options: CompletionOptions, t: Translate) {
   }
 }
 
-/** The 1-based line sits inside fenced code. */
-function inFence(state: EditorState, line: number): boolean {
-  let fenced = false
-  for (let n = 1; n < line; n++) {
-    if (/^\s*(?:```|~~~)/.test(state.doc.line(n).text))
-      fenced = !fenced
-  }
-  return fenced
-}
-
 /** Where the caret line shows a hint: suggestions the shortcut opens, the component list, or what a free value takes. */
 export type HintKind = 'settings' | 'attributes' | 'values' | 'insert' | 'free'
 
@@ -291,10 +257,11 @@ export function hintAt(state: EditorState, sources: HintSources): Hint | null {
       return null
     return offers(sources.frontmatter, state, head) ? { kind: 'values' } : { kind: 'free', key }
   }
-  if (inFence(state, line.number))
+  const raw = state.doc.toString()
+  if (codeLines(raw).has(line.number - 1))
     return null
   if (!line.text.trim()) {
-    const enclosing = blocksAround(state.doc.toString(), line.number).at(-1)
+    const enclosing = blocksAround(raw, line.number).at(-1)
     return enclosing ? { kind: 'insert', parent: enclosing.name } : { kind: 'insert' }
   }
   const before = line.text.slice(0, head - line.from)

@@ -1,4 +1,4 @@
-import type { LocalizedText } from './components.ts'
+import type { ComponentAttribute } from './components.ts'
 import { z } from 'zod'
 import { attributeSource } from './attributes.ts'
 import { componentKey } from './components.ts'
@@ -76,18 +76,7 @@ export interface SlideLayout {
   align?: VerticalAlign
 }
 
-export interface LayoutAttribute {
-  name: string
-  /** The closed set of values, when the attribute has one. */
-  values?: readonly string[]
-  /** The value that applies when the attribute is absent. */
-  default?: string
-  /** Written alone, without a value, to turn it on. */
-  flag?: boolean
-  description: LocalizedText
-}
-
-export const LAYOUT_ATTRIBUTES: readonly LayoutAttribute[] = [
+export const LAYOUT_ATTRIBUTES: readonly ComponentAttribute[] = [
   {
     name: 'media',
     values: MEDIA_PLACEMENTS,
@@ -130,7 +119,7 @@ export const LAYOUT_ATTRIBUTES: readonly LayoutAttribute[] = [
   },
   {
     name: 'lightbox',
-    flag: true,
+    boolean: true,
     description: { fr: 'Le média s\'ouvre en grand au clic', en: 'The media opens full screen on a click' },
   },
   {
@@ -380,12 +369,12 @@ export function modernLayoutAttributes(attributes: Attributes): Attributes {
 }
 
 const ATTRIBUTE_ORDER = LAYOUT_ATTRIBUTES.map(attribute => attribute.name)
-const FLAGS = new Set(LAYOUT_ATTRIBUTES.filter(attribute => attribute.flag).map(attribute => attribute.name))
+const BOOLEANS = new Set(LAYOUT_ATTRIBUTES.filter(attribute => attribute.boolean).map(attribute => attribute.name))
 
 /**
  * The text of a `:layout` annotation with these attributes in their current
  * form, in the order of `LAYOUT_ATTRIBUTES`; an empty string without any. A
- * flag is written alone when it is on and left out when it is off.
+ * `true`/`false` attribute is written alone when true and left out when false.
  */
 export function layoutSource(attributes: Attributes): string {
   const modern = modernLayoutAttributes(attributes)
@@ -394,7 +383,7 @@ export function layoutSource(attributes: Attributes): string {
     const value = modern[key]
     if (value === undefined || value === '')
       return []
-    if (FLAGS.has(key))
+    if (BOOLEANS.has(key))
       return value === false || value === 'false' ? [] : [key]
     return [attributeSource(key, String(value))]
   })

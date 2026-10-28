@@ -46,6 +46,14 @@ describe('attribute completion cases', () => {
     expect(at(':quicklink{text="Voir" |')?.options.map(option => option.label)).toEqual(['href'])
   })
 
+  it('offers the attributes of `:layout` but those written, and their closed values', () => {
+    const labels = at(':layout{media="right" | src="/a.png"}')?.options.map(option => option.label)
+    expect(labels).toContain('lightbox')
+    expect(labels).not.toContain('media')
+    expect(labels).not.toContain('src')
+    expect(at(':layout{media="|"}')?.options.map(option => option.label)).toEqual(['right', 'left', 'top', 'bottom', 'behind'])
+  })
+
   it('offers the attributes written as YAML under a component, and their values', () => {
     expect(at(':::Columns\n---\n|\n---')?.options.map(option => option.apply)).toEqual(['size: '])
     expect(at(':::Columns\n---\nsize: |\n---')?.options.map(option => option.label)).toEqual(['xs', 'sm', 'md', 'lg', 'xl'])
@@ -97,6 +105,7 @@ describe('completion hint', () => {
     expect(hint(':::Columns{si|')).toBeNull()
     expect(hint('::Fragments{effect="|"}')).toBeNull()
     expect(hint('```md\n|\n```')).toBeNull()
+    expect(hint('````md\n```\n|\n````')).toBeNull()
     expect(hint('Some text|')).toBeNull()
   })
 })

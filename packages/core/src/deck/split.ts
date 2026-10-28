@@ -3,7 +3,8 @@ import type { LayoutIssueKind } from './layout.ts'
 import type { ParserId } from './parser.ts'
 import { isRefusedEmbed, readAttribute } from './attributes.ts'
 import { ANNOTATION_TAGS, componentKey, DECK_ANNOTATIONS, deckComponents, NOTES_COMPONENT } from './components.ts'
-import { readLayout } from './layout.ts'
+import { frontmatterSource } from './frontmatter.ts'
+import { LAYOUT_ATTRIBUTES, readLayout } from './layout.ts'
 
 /**
  * The slide boundaries of a deck, read from its markdown text: the one
@@ -31,7 +32,6 @@ export interface SlideSource {
   text: string
 }
 
-const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/
 const BLOCK_OPEN_RE = /^(\s*)(:{2,})([a-z][\w-]*)/i
 const BLOCK_CLOSE_RE = /^\s*(:{2,})\s*$/
@@ -58,11 +58,11 @@ interface ScannedLine {
 }
 
 function frontmatterLineCount(raw: string): number {
-  const match = FRONTMATTER_RE.exec(raw)
-  if (!match)
+  const block = frontmatterSource(raw)
+  if (!block)
     return 0
-  const lines = match[0].split('\n').length
-  return match[0].endsWith('\n') ? lines - 1 : lines
+  const lines = block.split('\n').length
+  return block.endsWith('\n') ? lines - 1 : lines
 }
 
 function isFenceClose(line: string, fence: string): boolean {
@@ -333,6 +333,16 @@ export function blockEndAround(raw: string, line: number): number | undefined {
   return outer ? lines.length : undefined
 }
 
+/** The 0-based indexes of the lines of a markdown text that belong to fenced code, its fences included. */
+export function codeLines(markdown: string): Set<number> {
+  const code = new Set<number>()
+  for (const { index, code: fenced } of walk(markdown.split('\n'), 0)) {
+    if (fenced)
+      code.add(index)
+  }
+  return code
+}
+
 /** The blocks open around the 1-based `line`, outermost first: those the lines above it opened and did not close. */
 export function blocksAround(raw: string, line: number): OpenBlock[] {
   let around: OpenBlock[] = []
@@ -588,7 +598,7 @@ export function deckComponentNamed(tag: string): DeckComponent | undefined {
 // Attributes every element takes: MDC's `.class` and `#id` shorthands, and the HTML ones.
 const PASSTHROUGH_ATTRIBUTE_RE = /^(?:[.#]|(?:class|id|style)$|(?:data|aria)-)/
 
-/** A directive that declares its attributes: a registered component, or an annotation but `:layout`. */
+/** A directive that declares its attributes: a registered component, or an annotation. */
 export interface AttributedDirective {
   name: string
   attributes?: readonly ComponentAttribute[]
@@ -598,7 +608,9 @@ export interface AttributedDirective {
 /** The component or the annotation a deck names `tag`. */
 export function attributedDirective(tag: string): AttributedDirective | undefined {
   const annotation = DECK_ANNOTATIONS.find(candidate => candidate.tag === tag)
-  return annotation ? { name: annotation.tag, attributes: annotation.attributes, docs: annotation.docs } : deckComponentNamed(tag)
+  if (!annotation)
+    return deckComponentNamed(tag)
+  return { name: annotation.tag, attributes: annotation.tag === 'layout' ? LAYOUT_ATTRIBUTES : annotation.attributes, docs: annotation.docs }
 }
 
 /** The declared attribute a written name reaches: Vue reads `node-width` as `nodeWidth`. */
@@ -623,11 +635,15 @@ export interface ComponentAttributeIssue {
   length: number
 }
 
-/** The attributes of the components of a deck that the component leaves unused, for the components that declare their attributes. */
+/**
+ * The attributes of the components of a deck that the component leaves unused,
+ * for the components that declare their attributes. `layoutMentions` reports
+ * those of `:layout`, which `readLayout` reads.
+ */
 export function componentAttributeIssues(raw: string): ComponentAttributeIssue[] {
   const issues: ComponentAttributeIssue[] = []
   for (const mention of componentAttributeMentions(raw)) {
-    const component = attributedDirective(mention.tag)
+    const component = mention.tag === 'layout' ? undefined : attributedDirective(mention.tag)
     if (!component?.attributes || PASSTHROUGH_ATTRIBUTE_RE.test(mention.name) || /^(?:v-|@)/.test(mention.name))
       continue
     const attribute = attributeNamed(component, mention.name)

@@ -13,7 +13,7 @@ import { HEADING_RE, slideContentAt } from './editor-slides'
  * source: a choice in the panel rewrites the annotation.
  */
 
-/** The text of the editor, which the editor page gives the layout panel. */
+/** The text of the editor, which the editor page gives the panels of the toolbar. */
 export const EDITOR_TEXT: InjectionKey<Readonly<Ref<string>>> = Symbol('editorText')
 
 export interface SlideLayoutAtCursor {

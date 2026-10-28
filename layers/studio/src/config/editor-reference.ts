@@ -1,7 +1,7 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import type { DeckComponent, DeckComponentGroup, LocalizedText } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
+import { attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
@@ -386,19 +386,6 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
 ] as const
-
-/** An attribute of `:layout`, with its description in the interface language. */
-export interface LayoutAttributeEntry {
-  name: string
-  values?: readonly string[]
-  default?: string
-  flag?: boolean
-  description: string
-}
-
-export function layoutAttributeEntries(lang: string): LayoutAttributeEntry[] {
-  return LAYOUT_ATTRIBUTES.map(attribute => ({ ...attribute, description: inLanguage(attribute.description, lang) }))
-}
 
 export interface ShortcutEntry {
   keys: string[]
