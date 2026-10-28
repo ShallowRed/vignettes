@@ -7,7 +7,7 @@
       "componentsHeading": "Components and annotations",
       "insertTooltip": "Insert into the text",
       "insert": "Insert {name}",
-      "layoutsIntro": "Settings of {annotation} and their values, which the Layout button of the toolbar also writes:",
+      "layoutsIntro": "Attributes of {annotation} and their values, which the Layout button of the toolbar also writes:",
       "frontmatterHeading": "Front matter",
       "shortcutsHeading": "Shortcuts",
       "completionTriggers": "Type {components} or {annotations}, or press {keys}, to see the suggestions.",

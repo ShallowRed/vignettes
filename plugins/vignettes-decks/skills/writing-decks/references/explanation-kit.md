@@ -135,7 +135,7 @@ Attributes:
 - `planned` (`boolean`): Draws a dashed frame, for a target state.
 - `step` (`string | number`): Fragment step; defaults to the writing order.
 - `variant` (`'card' | 'entity' | 'flow' | 'plain'`): `entity`: left-aligned box whose caption lists attributes, one per list item. `flow`: a pill for the data that travels between two machines. `plain`: title and caption without a card, for a row or column heading.
-- `emphasis` (`boolean`): Fills the card with the accent: the one node the screen is about.
+- `emphasis` (`boolean`): Fills the card with the accent, for the node the slide is about.
 - `orientation` (`'column' | 'row'`): Pictogram above the text or beside it; defaults to the diagram's `tiles`.
 
 Content: The caption, in markdown; with `variant="entity"`, a list of attributes, one per item.
@@ -161,7 +161,7 @@ Attributes:
 - `dashed` (`boolean`): Draws a dashed arrow.
 - `arrow` (`boolean`): `false` leaves the arrowhead off, for the leg that reaches a flow box.
 - `step` (`string | number`): Fragment step; defaults to the later of the two nodes.
-- `anchors` (`string`): Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); geometry decides when absent.
+- `anchors` (`string`): Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); without it, the sides follow the position of the cards.
 - `route` (`'curve' | 'orthogonal'`): Route of this arrow, over the `route` of the diagram.
 
 <!-- /component -->
@@ -186,7 +186,7 @@ Attributes:
 - `title` (`string`): Name of the region.
 - `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
 - `icon` (`string`): Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram.
-- `tone` (`'neutral' | 'subject'`): `subject` tints the region that the story follows; `neutral` is the default.
+- `tone` (`'neutral' | 'subject'`): `subject` tints the region the slide is about; `neutral` is the default.
 - `color` (`string`): Color of the title, the surface and the outline of the region: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
 - `label` (`'legend' | 'header'`): Where the title sits: on the top border like a legend, or as a header band inside.
 
@@ -221,7 +221,7 @@ What these lines hold.
 Attributes:
 
 - `file` (`string`): File name shown above the code panel.
-- `height` (`string`, default `'330px'`): Maximum height of the code panel, in slide pixels (the deck is 1280x720).
+- `height` (`string`, default `'330px'`): Maximum height of the code panel, in slide pixels.
 - `panel` (`string`, default `'47%'`): Width of the code panel, any CSS length.
 - `size` (`'xs' | 'sm' | 'md'`, default `'sm'`): Scale of the zone cards.
 - `fragments` (`boolean`, default `true`): Shows the zones one at a time.

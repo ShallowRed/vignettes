@@ -263,7 +263,7 @@ export const DOCS_SECTIONS = {
   frontmatter: '/ecrire/syntaxe#len-tête',
   layout: '/ecrire/syntaxe#les-mises-en-page',
   components: '/ecrire/composants',
-  unknownComponent: '/studio/problemes-frequents#un-composant-est-souligné-en-orange',
+  unknownComponent: '/studio/problemes-frequents#un-composant-inconnu-est-souligné',
   refusedAttribute: '/studio/problemes-frequents#adresse-refusée-ou-attribut-refusé',
 } as const
 

@@ -97,11 +97,11 @@
         "dropLabel": "Drop a .md file",
         "dropDescription": "or click to choose it. Its front matter gives the title and the theme.",
         "fromFile": "Read from the file's front matter.",
-        "titleTyped": "Type the title: it will be added to the header of the file.",
+        "titleTyped": "Type the title: it will be added to the front matter of the file.",
         "defaultTheme": "{theme}, the default theme",
         "titleMissing": "The file's front matter gives no title: add the title key.",
         "keysInvalid": "The file's front matter has a refused value for the key {keys}. | The file's front matter has a refused value for the key {keys}. | The file's front matter has refused values for the keys {keys}.",
-        "yamlInvalid": "The header of the file is unreadable: write one key per line, as key: value, and put a value that holds “:” between quotes."
+        "yamlInvalid": "The front matter of the file is unreadable: write one key per line, as key: value, and put a value that holds “:” between quotes."
       }
     },
     "form": {

@@ -43,7 +43,7 @@ export const SCHEMA_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttrib
     { name: 'planned', boolean: true, description: { fr: 'Dessine un cadre en pointillés, pour un état visé.', en: 'Draws a dashed frame, for a target state.' } },
     { name: 'step', description: { fr: 'Étape d\'apparition ; par défaut, l\'ordre d\'écriture.', en: 'Fragment step; defaults to the writing order.' } },
     { name: 'variant', values: ['card', 'entity', 'flow', 'plain'], description: { fr: '`entity` : boîte alignée à gauche dont la légende liste des attributs, un par élément de liste. `flow` : une pastille pour les données qui circulent entre deux machines. `plain` : titre et légende sans carte, pour un en-tête de rangée ou de colonne.', en: '`entity`: left-aligned box whose caption lists attributes, one per list item. `flow`: a pill for the data that travels between two machines. `plain`: title and caption without a card, for a row or column heading.' } },
-    { name: 'emphasis', boolean: true, description: { fr: 'Remplit la carte de la couleur d\'accent : le nœud dont parle l\'écran.', en: 'Fills the card with the accent: the one node the screen is about.' } },
+    { name: 'emphasis', boolean: true, description: { fr: 'Remplit la carte de la couleur d\'accent, pour le nœud dont parle la diapositive.', en: 'Fills the card with the accent, for the node the slide is about.' } },
     { name: 'orientation', values: ['column', 'row'], description: { fr: 'Pictogramme au-dessus du texte ou à côté ; par défaut, le `tiles` du diagramme.', en: 'Pictogram above the text or beside it; defaults to the diagram\'s `tiles`.' } },
   ],
   Edge: [
@@ -53,7 +53,7 @@ export const SCHEMA_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttrib
     { name: 'dashed', boolean: true, description: { fr: 'Dessine une flèche en pointillés.', en: 'Draws a dashed arrow.' } },
     { name: 'arrow', boolean: true, description: { fr: '`false` retire la pointe de la flèche, pour le tronçon qui arrive sur une pastille `flow`.', en: '`false` leaves the arrowhead off, for the leg that reaches a flow box.' } },
     { name: 'step', description: { fr: 'Étape d\'apparition ; par défaut, celle du dernier des deux nœuds.', en: 'Fragment step; defaults to the later of the two nodes.' } },
-    { name: 'anchors', description: { fr: 'Côtés de départ et d\'arrivée, `from,to` (`top` | `right` | `bottom` | `left`) ; sans lui, la position des cartes décide.', en: 'Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); geometry decides when absent.' } },
+    { name: 'anchors', description: { fr: 'Côtés de départ et d\'arrivée, `from,to` (`top` | `right` | `bottom` | `left`) ; sans lui, les côtés suivent la position des cartes.', en: 'Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); without it, the sides follow the position of the cards.' } },
     { name: 'route', values: ['curve', 'orthogonal'], description: { fr: 'Tracé de cette flèche, qui remplace le `route` du diagramme.', en: 'Route of this arrow, over the `route` of the diagram.' } },
   ],
   Area: [
@@ -62,13 +62,13 @@ export const SCHEMA_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttrib
     { name: 'title', description: { fr: 'Nom de la zone.', en: 'Name of the region.' } },
     { name: 'picto', description: { fr: 'Pictogramme, par son chemin sous `/pictograms` sans l\'extension : `digital/coding`.', en: 'Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.' } },
     { name: 'icon', description: { fr: 'Icône Remix (`ri:server-line`), plus légère qu\'un pictogramme dans un diagramme chargé.', en: 'Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram.' } },
-    { name: 'tone', values: ['neutral', 'subject'], description: { fr: '`subject` teinte la zone que suit le récit ; `neutral` par défaut.', en: '`subject` tints the region that the story follows; `neutral` is the default.' } },
+    { name: 'tone', values: ['neutral', 'subject'], description: { fr: '`subject` teinte la zone dont parle la diapositive ; `neutral` par défaut.', en: '`subject` tints the region the slide is about; `neutral` is the default.' } },
     { name: 'color', description: { fr: 'Couleur du titre, du fond et du contour de la zone : un nom de la palette du thème, comme `green`, ou une couleur hexadécimale ou une fonction de couleur, comme `#2a7f62`.', en: 'Color of the title, the surface and the outline of the region: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.' } },
     { name: 'label', values: ['legend', 'header'], description: { fr: 'Place du titre : sur la bordure du haut comme une légende, ou dans un bandeau en tête de la zone.', en: 'Where the title sits: on the top border like a legend, or as a header band inside.' } },
   ],
   JsonTour: [
     { name: 'file', description: { fr: 'Nom de fichier affiché au-dessus du code.', en: 'File name shown above the code panel.' } },
-    { name: 'height', default: '330px', description: { fr: 'Hauteur maximale du panneau de code, en pixels de diapositive (la présentation mesure 1280x720).', en: 'Maximum height of the code panel, in slide pixels (the deck is 1280x720).' } },
+    { name: 'height', default: '330px', description: { fr: 'Hauteur maximale du panneau de code, en pixels de diapositive.', en: 'Maximum height of the code panel, in slide pixels.' } },
     { name: 'panel', default: '47%', description: { fr: 'Largeur du panneau de code, en longueur CSS.', en: 'Width of the code panel, any CSS length.' } },
     { name: 'size', values: ['xs', 'sm', 'md'], default: 'sm', description: { fr: 'Taille des cartes des zones.', en: 'Scale of the zone cards.' } },
     { name: 'fragments', boolean: true, default: 'true', description: { fr: 'Montre les zones une à une.', en: 'Shows the zones one at a time.' } },

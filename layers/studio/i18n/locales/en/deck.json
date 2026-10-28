@@ -15,7 +15,7 @@
       "stableAddressHint": "A link that stays the same if the identifier changes. It may hold letters, digits, - and _. Empty, the presentation has none.",
       "alias": "Alias",
       "aliasPlaceholder": "my-alias",
-      "link": "Link to the deck",
+      "link": "Link to the presentation",
       "audienceTitle": "Who can open this presentation",
       "audience": {
         "public": {

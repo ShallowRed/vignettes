@@ -13,8 +13,8 @@ interface Props {
    */
   file?: string
   /**
-   * Maximum height of the code panel, in slide pixels (the deck is 1280x720).
-   * @fr Hauteur maximale du panneau de code, en pixels de diapositive (la présentation mesure 1280x720).
+   * Maximum height of the code panel, in slide pixels.
+   * @fr Hauteur maximale du panneau de code, en pixels de diapositive.
    */
   height?: string
   /**

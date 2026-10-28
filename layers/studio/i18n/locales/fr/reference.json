@@ -7,7 +7,7 @@
       "componentsHeading": "Composants et annotations",
       "insertTooltip": "Insérer dans le texte",
       "insert": "Insérer {name}",
-      "layoutsIntro": "Réglages de {annotation} et leurs valeurs, que le bouton « Mise en page » de la barre d'outils écrit aussi :",
+      "layoutsIntro": "Attributs de {annotation} et leurs valeurs, que le bouton « Mise en page » de la barre d'outils écrit aussi :",
       "frontmatterHeading": "En-tête de la présentation",
       "shortcutsHeading": "Raccourcis",
       "completionTriggers": "Tapez {components} ou {annotations}, ou appuyez sur {keys}, pour voir les propositions.",

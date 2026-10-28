@@ -62,8 +62,8 @@ interface Props {
    */
   variant?: 'card' | 'entity' | 'flow' | 'plain'
   /**
-   * Fills the card with the accent: the one node the screen is about.
-   * @fr Remplit la carte de la couleur d'accent : le nœud dont parle l'écran.
+   * Fills the card with the accent, for the node the slide is about.
+   * @fr Remplit la carte de la couleur d'accent, pour le nœud dont parle la diapositive.
    */
   emphasis?: boolean
   /**

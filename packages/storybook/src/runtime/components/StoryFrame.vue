@@ -31,18 +31,18 @@ interface Props {
    */
   fit?: 'cover' | 'contain'
   /**
-   * Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, `wide` outside a gallery.
-   * @fr Proportions : un nom (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) ou un rapport comme `16/9`. Sans lui, `wide` hors d'une galerie.
+   * Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, the frame is `wide` outside a gallery.
+   * @fr Proportions : un nom (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) ou un rapport comme `16/9`. Sans lui, le cadre est en `wide` hors d'une galerie.
    */
   ratio?: string
   /**
-   * Logical width (px) the iframe renders at before scaling; higher = more of the page visible.
+   * Logical width (px) the iframe renders at before scaling; a higher value shows more of the page.
    * @fr Largeur en px à laquelle la page est affichée avant d'être réduite ; plus elle est grande, plus on voit de la page.
    */
   viewport?: string | number
   /**
-   * The name of `viewport` in the earlier format.
-   * @fr Ancien nom de `viewport`.
+   * Another name of `viewport`, read in the existing presentations.
+   * @fr Autre nom de `viewport`, lu dans les présentations existantes.
    */
   previewWidth?: string | number
   /**

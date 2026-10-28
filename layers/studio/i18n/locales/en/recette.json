@@ -90,7 +90,7 @@
       },
       "collab": {
         "sharedFolder": "“Publique”, “Mot de passe”, “Brouillon” and the English deck have a pencil. The New presentation button is present.",
-        "sync": "The top bar of the editor says Saved. A text typed in a second tab appears with the initial of the peer.",
+        "sync": "The top bar of the editor says Saved. A text typed in a second tab appears with the initial of the other person.",
         "pasteImage": "A pasted image is inserted into the text.",
         "unpublished": "After a change, the top bar of the editor and the card say Unpublished changes. Publishing removes that mention.",
         "password": "The presentation opens without a password.",

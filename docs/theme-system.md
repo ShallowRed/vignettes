@@ -70,7 +70,7 @@ mise run theme:push -- <name>[,<name>] --staging --apply
 
 Staging serves the themes published under its prefix: a deck whose theme was published without `--staging` renders there without its stylesheet.
 
-The themes of production stay as they were. After the merge into `main` and the deployment of production, publish the same themes from `main` without `--staging`:
+Production keeps serving the themes published without `--staging`. After the merge into `main` and the deployment of production, publish the same themes from `main` without `--staging`:
 
 ```sh
 mise run theme:push -- <name>[,<name>] --apply

@@ -36,8 +36,8 @@ interface Props {
    */
   step?: string | number
   /**
-   * Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); geometry decides when absent.
-   * @fr Côtés de départ et d'arrivée, `from,to` (`top` | `right` | `bottom` | `left`) ; sans lui, la position des cartes décide.
+   * Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); without it, the sides follow the position of the cards.
+   * @fr Côtés de départ et d'arrivée, `from,to` (`top` | `right` | `bottom` | `left`) ; sans lui, les côtés suivent la position des cartes.
    */
   anchors?: string
   /**

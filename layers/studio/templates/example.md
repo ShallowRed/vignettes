@@ -28,7 +28,7 @@ Une ligne `---` commence une nouvelle diapositive. `#` donne le titre de la pré
 Je retrouve ma demande sans chercher.
 ::
 
-Avec le menu « Insérer », vous ajoutez ce bloc sans le taper.
+Avec le menu « Insérer », vous ajoutez ce composant sans le taper.
 
 ---
 
@@ -75,4 +75,4 @@ Vous lisez ces notes dans la vue conférencier ; le public voit la diapositive s
 
 Remplacez ce texte par le vôtre, puis cliquez sur « Publier ».
 
-Le bouton « Aide », en bas de l'éditeur, liste les composants, et l'icône en forme de livre, à côté, ouvre la documentation.
+Le bouton « Aide », à droite de la barre d'outils, liste les composants et mène à la documentation.

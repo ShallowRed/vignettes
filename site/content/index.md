@@ -12,7 +12,7 @@ Des présentations en Markdown, avec les écrans réels de votre produit
 
 #description
 
-Des titres, des listes, et quelques blocs pour les colonnes, les schémas et les stories de votre Storybook. Votre équipe écrit à plusieurs dans son studio, publie par versions et présente avec ses notes.
+Des titres, des listes, et quelques composants pour les colonnes, les schémas et les stories de votre Storybook. Votre équipe écrit à plusieurs dans son studio, publie par versions et présente avec ses notes.
 
 #links
 
@@ -54,8 +54,8 @@ to: /demarrer/le-markdown
 ::::u-page-card
 ---
 icon: i-lucide-layout-panel-left
-title: Des mises en page par blocs
-description: Colonnes, citations, étapes illustrées, diagrammes Mermaid, image à côté du texte. Chaque bloc a un nom et quelques réglages.
+title: Des mises en page par composants
+description: Colonnes, citations, étapes illustrées, diagrammes Mermaid, image à côté du texte. Chaque composant a un nom et quelques attributs.
 to: /ecrire/composants
 ---
 ::::

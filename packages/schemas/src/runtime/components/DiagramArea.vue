@@ -33,8 +33,8 @@ interface Props {
    */
   icon?: string
   /**
-   * `subject` tints the region that the story follows; `neutral` is the default.
-   * @fr `subject` teinte la zone que suit le récit ; `neutral` par défaut.
+   * `subject` tints the region the slide is about; `neutral` is the default.
+   * @fr `subject` teinte la zone dont parle la diapositive ; `neutral` par défaut.
    */
   tone?: 'neutral' | 'subject'
   /**
