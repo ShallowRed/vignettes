@@ -83,7 +83,7 @@ watch(requiresPassword, (needsPassword) => {
       :description="t('auth.deckError.unpublishedMessage')"
       :actions="[
         { label: t('auth.viewer.openEditor'), icon: 'i-lucide-pencil', to: `/edit/${slug}` },
-        { label: t('editor.preview.presentDraft'), icon: 'i-lucide-play', to: `/slides/${slug}?draft`, external: true, color: 'neutral', variant: 'subtle' },
+        { label: t('editor.preview.preview'), icon: 'i-lucide-eye', to: `/slides/${slug}?draft`, external: true, color: 'neutral', variant: 'subtle' },
       ]"
       :back="{ to: '/' }"
     />

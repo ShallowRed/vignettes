@@ -37,7 +37,8 @@ import { useCompletionKeys } from '../../composables/useCompletionKeys'
 import { useDeckLinks } from '../../composables/useDeckLinks'
 import { useDocsAddress } from '../../composables/useDocsAddress'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
-import { projectsQuery } from '../../queries'
+import { historyQuery, projectsQuery } from '../../queries'
+import { changedLines } from '../../utils/changed-lines'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
 import { deckCompletions } from '../../utils/editor-completions'
@@ -148,14 +149,35 @@ const unpublished = computed<boolean | null>(() => {
 })
 const publishedAtLabel = computed(() =>
   publishedAt.value ? new Date(publishedAt.value).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' }) : null)
-const publicationLabel = computed(() =>
-  neverPublished.value ? t('editor.publication.neverPublished') : unpublished.value ? t('editor.publication.unpublishedChanges') : t('editor.publication.upToDate'))
+// The versions are numbered in the order of their publication; the history
+// lists the newest first.
+const historyQ = useQuery({ ...historyQuery(requestFetch, slug), enabled: () => writable.value })
+const versionNumber = computed(() => {
+  const versions = (historyQ.data.value ?? []).filter(entry => entry.kind === 'version')
+  const index = versions.findIndex(entry => entry.current)
+  return index === -1 ? null : versions.length - index
+})
+// The lines the draft changed since the version the visitors see.
+const changes = computed(() => publishedRaw.value === null || !unpublished.value ? 0 : changedLines(publishedRaw.value, raw.value))
+const publishLabel = computed(() => {
+  const next = (versionNumber.value ?? 0) + 1
+  return changes.value
+    ? t('editor.publication.publishChanges', { version: next, n: changes.value }, changes.value)
+    : t('editor.publication.publishVersion', { version: next })
+})
+
 const publicationHint = computed(() => {
   if (neverPublished.value)
     return t('editor.publication.hintNeverPublished')
   const date = publishedAtLabel.value
-  if (unpublished.value)
+  const version = versionNumber.value
+  if (unpublished.value) {
+    if (date && version)
+      return t('editor.publication.hintUnpublishedVersion', { date, version })
     return date ? t('editor.publication.hintUnpublishedSince', { date }) : t('editor.publication.hintUnpublished')
+  }
+  if (date && version)
+    return t('editor.publication.hintUpToDateVersion', { date, version })
   return date ? t('editor.publication.hintUpToDateSince', { date }) : t('editor.publication.hintUpToDate')
 })
 const collabLabel = computed(() => {
@@ -818,6 +840,7 @@ async function publish() {
     publishedRaw.value = raw.value
     publishedAt.value = Date.now()
     publishState.value = 'idle'
+    historyQ.refetch()
     await notifyPublished()
   }
   catch (e: any) {
@@ -877,12 +900,23 @@ async function onRestored(stamp: number | null) {
 
 // The draft is the text in the editor, saved or not; the published version is
 // the one the page loaded.
-// The occasional actions on the deck: its history, its settings, its files.
-const deckMenuItems = computed(() => [
+// The sentence that opens the menu wraps inside its width.
+const PUBLICATION_MENU_UI = { content: 'w-80', label: 'font-normal text-muted', itemLabel: 'whitespace-normal' }
+
+// The menu of the publication: what the visitors see, then the changes, the
+// snapshots and the history of the deck.
+const publicationItems = computed(() => [
+  [{ type: 'label' as const, label: publicationHint.value }],
   [
-    { label: t('editor.page.history'), icon: 'i-lucide-history', onSelect: () => { historyOpen.value = true } },
-    ...(statusDisplay.value ? [{ label: t('editor.page.settings'), icon: 'i-lucide-settings-2', disabled: !privileged.value && !viewer.value.canEdit, onSelect: () => openMeta() }] : []),
+    ...(unpublished.value && !neverPublished.value ? [{ label: t('editor.publication.changes'), icon: 'i-lucide-git-compare', onSelect: () => { historyOpen.value = true } }] : []),
+    ...(collabEnabled.value ? [{ label: t('editor.publication.snapshot'), icon: 'i-lucide-camera', onSelect: () => snapshotPopover.value?.capture() }] : []),
+    { label: t('editor.publication.history'), icon: 'i-lucide-history', onSelect: () => { historyOpen.value = true } },
   ],
+])
+
+// The occasional actions on the deck: its settings, its files.
+const deckMenuItems = computed(() => [
+  ...(statusDisplay.value ? [[{ label: t('editor.page.settings'), icon: 'i-lucide-settings-2', disabled: !privileged.value && !viewer.value.canEdit, onSelect: () => openMeta() }]] : []),
   [
     { type: 'label' as const, label: t('editor.page.download') },
     { label: t('editor.page.downloadDraft'), icon: 'i-lucide-file-pen-line', onSelect: () => saveTextFile(t('catalog.deck.draftFileName', { slug }), raw.value, 'text/markdown') },
@@ -946,8 +980,8 @@ async function onMetaSaved() {
     class="tailwind-app h-screen flex flex-col overflow-hidden bg-muted"
   >
     <!-- The way back reads as on the catalog pages. On the right, in reading
-         order: the draft, who sees the deck, its publication, its occasional
-         actions in one menu, then the account. -->
+         order: the draft, who sees the deck, presenting it, its publication,
+         its occasional actions in one menu, then the account. -->
     <header
       class="flex items-center gap-2 sm:gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
     >
@@ -1028,7 +1062,7 @@ async function onMetaSaved() {
 
       <!-- The visibility of the deck opens its settings drawer. Whoever may edit
            the deck may share it (canShare), so a collaborator opens the drawer
-           on its sharing. -->
+           on its sharing. On a phone, the menu of the deck opens the drawer. -->
       <UTooltip
         v-if="statusDisplay"
         :text="privileged ? t('editor.page.settingsTooltip') : t('editor.page.settingsTooltipSharing')"
@@ -1037,7 +1071,7 @@ async function onMetaSaved() {
           color="neutral"
           variant="ghost"
           size="sm"
-          class="shrink-0 gap-1.5 max-sm:px-1.5"
+          class="shrink-0 gap-1.5 max-sm:hidden"
           :aria-label="`${t('editor.page.settings')}, ${t(statusDisplay.labelKey)}`"
           :disabled="!privileged && !viewer.canEdit"
           @click="openMeta()"
@@ -1046,44 +1080,63 @@ async function onMetaSaved() {
             :name="statusDisplay.icon"
             class="size-4.5 shrink-0 text-muted"
           />
-          <span class="hidden sm:inline text-xs text-muted">{{ t(statusDisplay.labelKey) }}</span>
+          <span class="text-xs text-muted">{{ t(statusDisplay.labelKey) }}</span>
         </UButton>
       </UTooltip>
 
-      <!-- The publication state: the button, with a dot while the draft differs
-           from what visitors see, then « En ligne » once they are the same. -->
-      <UTooltip :text="`${publicationLabel}. ${publicationHint}`">
-        <!-- The width of the publish button it replaces. -->
-        <span
-          v-if="writable && unpublished === false"
-          :aria-label="t('editor.publication.upToDate')"
-          tabindex="0"
-          class="inline-flex items-center justify-center gap-1.5 sm:w-28 px-1.5 text-sm font-medium text-success"
-        >
-          <UIcon
-            name="i-lucide-check"
-            class="size-5 shrink-0"
-          />
-          <span :class="HEADER_LABEL">{{ t('editor.publication.upToDate') }}</span>
-        </span>
-        <UChip
-          v-else
-          :show="writable && unpublished === true"
-          color="warning"
-          size="lg"
+      <!-- Publishing: the one filled button of the page, with the number of
+           lines the draft changed since the version the visitors see. Once
+           the draft and that version are the same, it gives the version. Its
+           menu reaches the changes, the snapshots and the history. -->
+      <UFieldGroup
+        v-if="writable && unpublished !== false"
+        class="shrink-0"
+      >
+        <UTooltip :text="publicationHint">
+          <UButton
+            icon="i-lucide-send"
+            :label="t('editor.publication.publish')"
+            :aria-label="publishLabel"
+            :ui="HEADER_BUTTON_UI"
+            :loading="publishState === 'publishing'"
+            @click="publish"
+          >
+            <template
+              v-if="changes"
+              #trailing
+            >
+              <span class="grid place-items-center min-w-5 h-5 px-1.5 rounded-full bg-white/25 text-xs font-semibold tabular-nums">{{ changes }}</span>
+            </template>
+          </UButton>
+        </UTooltip>
+        <UDropdownMenu
+          :items="publicationItems"
+          :content="{ align: 'end' }"
+          :ui="PUBLICATION_MENU_UI"
         >
           <UButton
-            :label="t('editor.publication.publish')"
-            :aria-label="t('editor.publication.publish')"
-            :ui="HEADER_BUTTON_UI"
-            icon="i-lucide-send"
-            class="sm:w-28 justify-center"
-            :loading="publishState === 'publishing'"
-            :disabled="!writable"
-            @click="publish"
+            icon="i-lucide-chevron-down"
+            class="border-s border-inverted/20"
+            :aria-label="t('editor.publication.menu')"
           />
-        </UChip>
-      </UTooltip>
+        </UDropdownMenu>
+      </UFieldGroup>
+      <UDropdownMenu
+        v-else-if="writable"
+        :items="publicationItems"
+        :content="{ align: 'end' }"
+        :ui="PUBLICATION_MENU_UI"
+      >
+        <UButton
+          icon="i-lucide-check"
+          trailing-icon="i-lucide-chevron-down"
+          :label="versionNumber ? t('editor.publication.upToDateVersion', { version: versionNumber }) : t('editor.publication.upToDate')"
+          :ui="HEADER_BUTTON_UI"
+          color="success"
+          variant="soft"
+          class="shrink-0"
+        />
+      </UDropdownMenu>
 
       <UDropdownMenu
         :items="deckMenuItems"
@@ -1220,6 +1273,9 @@ async function onMetaSaved() {
             </li>
           </ul>
 
+          <!-- The same bar as the deck page's commands: the settings of the
+               preview, then the deck opened in a new tab, the draft to preview
+               it and the version the visitors see to present it. -->
           <div
             class="editor-stage__controls"
             role="toolbar"
@@ -1242,22 +1298,30 @@ async function onMetaSaved() {
             >
               <UIcon name="i-lucide-crosshair" />
             </DeckControlButton>
+            <span
+              v-if="(writable && unpublished !== false) || !neverPublished"
+              class="editor-stage__separator"
+            />
             <DeckControlButton
-              :label="neverPublished ? t('editor.preview.presentDraft') : t('editor.preview.present')"
-              primary
-              :to="`/slides/${slug}${neverPublished ? '?draft' : ''}${cursorSlideHash}`"
-              target="_blank"
-              rel="noopener"
-            >
-              <UIcon name="i-lucide-play" />
-            </DeckControlButton>
-            <DeckControlButton
-              v-if="writable && !neverPublished"
-              :label="t('editor.preview.draftPreview')"
+              v-if="writable && unpublished !== false"
+              labelled
+              :label="t('editor.preview.preview')"
+              :tip="t('editor.preview.previewTip')"
               :to="`/slides/${slug}?draft${cursorSlideHash}`"
               target="_blank"
             >
               <UIcon name="i-lucide-eye" />
+            </DeckControlButton>
+            <DeckControlButton
+              v-if="!neverPublished"
+              labelled
+              :label="unpublished && versionNumber ? t('editor.preview.presentVersion', { version: versionNumber }) : t('editor.preview.present')"
+              :tip="unpublished ? t('editor.preview.presentVersionTip') : undefined"
+              :to="`/slides/${slug}${cursorSlideHash}`"
+              target="_blank"
+              rel="noopener"
+            >
+              <UIcon name="i-lucide-play" />
             </DeckControlButton>
           </div>
         </div>
@@ -1308,21 +1372,24 @@ async function onMetaSaved() {
                 </div>
               </template>
             </ClientOnly>
-            <div
+            <UBadge
               v-if="previewFragments && slideSteps > 0"
-              class="editor-stage__step"
+              icon="i-lucide-step-forward"
+              :label="`${stepShown}/${slideSteps}`"
+              color="neutral"
+              variant="solid"
+              size="sm"
+              class="absolute right-2 bottom-2 z-30 rounded-full tabular-nums pointer-events-none"
               role="status"
               :aria-label="t('editor.preview.step', { shown: stepShown, total: slideSteps })"
-            >
-              <UIcon name="i-lucide-step-forward" />
-              {{ stepShown }}/{{ slideSteps }}
-            </div>
-            <Transition name="editor-stage-rendering">
-              <div
-                v-if="previewPending"
-                class="editor-stage__rendering"
-              />
-            </Transition>
+            />
+            <UProgress
+              v-if="previewPending"
+              :model-value="null"
+              size="2xs"
+              class="absolute inset-x-0 top-0 z-30 pointer-events-none"
+              :ui="{ base: 'rounded-none bg-transparent' }"
+            />
           </div>
         </div>
       </section>
@@ -1408,7 +1475,14 @@ async function onMetaSaved() {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 6px 24px rgba(0, 0, 0, 0.25);
 }
 
-.editor-stage__controls > :deep(.deck-control:nth-last-child(-n + 3) .deck-control__tip) {
+.editor-stage__separator {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.editor-stage__controls > :deep(.deck-control:nth-last-child(-n + 2) .deck-control__tip) {
   right: 0;
   left: auto;
   transform: none;
@@ -1430,6 +1504,15 @@ async function onMetaSaved() {
   .editor-stage__issues {
     flex-basis: 100%;
     order: 1;
+  }
+
+  /* The commands show their icon, and their tooltip names them. */
+  .editor-stage__controls :deep(.deck-control--labelled) {
+    padding: 0 8px;
+  }
+
+  .editor-stage__controls :deep(.deck-control--labelled .deck-control__label) {
+    display: none;
   }
 }
 
@@ -1466,64 +1549,6 @@ async function onMetaSaved() {
 
 .editor-stage__frame :deep(.reveal) {
   height: 100%;
-}
-
-.editor-stage__step {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 0.65);
-  color: #fff;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
-
-.editor-stage__rendering {
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: 30;
-  height: 3px;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.editor-stage__rendering::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 30%;
-  background: var(--ui-primary);
-  animation: editor-stage-rendering 0.9s ease-in-out infinite;
-}
-
-@keyframes editor-stage-rendering {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(340%); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .editor-stage__rendering::before {
-    width: 100%;
-    opacity: 0.6;
-    animation: none;
-  }
-}
-
-.editor-stage-rendering-enter-active,
-.editor-stage-rendering-leave-active {
-  transition: opacity 0.15s;
-}
-
-.editor-stage-rendering-enter-from,
-.editor-stage-rendering-leave-to {
-  opacity: 0;
 }
 
 /* Below the md width the panes stack: the stage comes first and is as tall as

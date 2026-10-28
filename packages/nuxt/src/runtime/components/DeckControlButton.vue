@@ -7,8 +7,10 @@ withDefaults(defineProps<{
   shortcut?: string
   /** A link instead of a button. */
   to?: string
-  /** Shows the label beside the icon. */
+  /** Shows the label beside the icon, on a light background. */
   primary?: boolean
+  /** Shows the label beside the icon, as the other commands. */
+  labelled?: boolean
   /** Draws a dot on the icon, for a state worth noticing. */
   badge?: boolean
   /** A command that turns a setting on and off, shown pressed while it is on. */
@@ -26,14 +28,14 @@ defineEmits<{ click: [event: MouseEvent] }>()
     :href="to"
     :type="to ? undefined : 'button'"
     class="deck-control"
-    :class="{ 'deck-control--primary': primary, 'deck-control--pressed': pressed }"
+    :class="{ 'deck-control--primary': primary, 'deck-control--labelled': labelled, 'deck-control--pressed': pressed }"
     :aria-label="label"
     :aria-pressed="pressed"
     @click="$emit('click', $event)"
   >
     <slot />
     <span
-      v-if="primary"
+      v-if="primary || labelled"
       class="deck-control__label"
     >{{ label }}</span>
     <span
@@ -92,8 +94,12 @@ defineEmits<{ click: [event: MouseEvent] }>()
   background: rgba(255, 255, 255, 0.24);
 }
 
+.deck-control--labelled,
 .deck-control--primary {
   padding: 0 12px 0 10px;
+}
+
+.deck-control--primary {
   color: #16161a;
   background: #fff;
 }
