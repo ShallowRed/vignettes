@@ -89,7 +89,7 @@ export interface FrontmatterKey {
   snippet: string | LocalizedText
   /** Keys nested under this one. */
   children?: readonly FrontmatterKey[]
-  /** Known to the checks and the hover, left out of the completion and the help. */
+  /** Left out of the help panel. */
   advanced?: boolean
 }
 

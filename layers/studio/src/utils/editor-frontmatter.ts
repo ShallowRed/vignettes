@@ -143,7 +143,7 @@ function completionSource(options: FrontmatterOptions) {
       return null
     const written = siblingKeys(state, line.number, indent)
     const completions: Completion[] = scope.fields
-      .filter(field => !field.advanced && !written.has(field.key))
+      .filter(field => !written.has(field.key))
       .map(field => snippetCompletion(inLanguage(field.snippet, options.lang).replaceAll('\n', `\n${' '.repeat(indent)}`), {
         label: field.key,
         detail: field.values ? field.values.join(' | ') : field.children ? blockLabel : undefined,
