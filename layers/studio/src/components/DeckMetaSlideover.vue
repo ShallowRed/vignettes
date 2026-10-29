@@ -2,7 +2,7 @@
 import type { GrantSummary, PublicationStatus } from '#shared/access'
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import { isExpired, PUBLICATION_STATUSES, sharingLimit } from '#shared/access'
+import { PUBLICATION_STATUSES, sharingLimit } from '#shared/access'
 import { ACCESS_PASSWORD_MIN_LENGTH, STATUS_CONFIG } from '#shared/presentations'
 import { useMutation, useQuery } from '@pinia/colada'
 import { isDeckSlug } from '@vignettes/core/deck'
@@ -15,7 +15,6 @@ import { useSharing } from '../composables/useSharing'
 import { grantsQuery } from '../queries'
 import { countAudience } from '../utils/audience'
 import { requestErrorMessage } from '../utils/request-error'
-import { shortDate } from '../utils/short-date'
 
 /**
  * Deck settings panel, in three tabs: who can open the deck (link, visibility,
@@ -34,7 +33,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ saved: [] }>()
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -429,30 +428,15 @@ const audience = computed(() => {
 
                 <div
                   v-if="projectGrants.length"
-                  class="rounded-lg bg-muted p-3 flex flex-col gap-2"
+                  class="flex flex-col gap-2"
                 >
-                  <p class="text-xs font-medium text-muted uppercase tracking-wide">
+                  <p class="text-sm font-medium text-default">
                     {{ t('deck.meta.folderGrants') }}
                   </p>
-                  <ul class="flex flex-col gap-1">
-                    <li
-                      v-for="grant in projectGrants"
-                      :key="grant.userId"
-                      class="flex flex-wrap items-baseline gap-x-2 text-sm"
-                    >
-                      <span class="break-all">{{ grant.login }}</span>
-                      <span class="text-xs text-muted">{{ grant.role === 'editor' ? t('deck.sharing.roleEditor') : t('deck.sharing.roleViewer') }}</span>
-                      <span
-                        v-if="grant.invited"
-                        class="text-xs text-dimmed"
-                      >{{ t('deck.sharing.neverSignedIn') }}</span>
-                      <span
-                        v-if="grant.expiresAt"
-                        class="text-xs"
-                        :class="isExpired(grant) ? 'text-error' : 'text-dimmed'"
-                      >{{ isExpired(grant) ? t('deck.sharing.expired') : t('deck.sharing.expiresOn', { date: shortDate(grant.expiresAt, locale) }) }}</span>
-                    </li>
-                  </ul>
+                  <GrantList
+                    :grants="projectGrants"
+                    readonly
+                  />
                   <p class="text-xs text-dimmed">
                     {{ isOwner ? t('deck.meta.folderGrantsHint') : t('deck.meta.folderGrantsOwnerHint') }}
                   </p>

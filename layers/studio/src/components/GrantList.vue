@@ -9,13 +9,15 @@ import { shortDate } from '../utils/short-date'
  * narrow panel the login keeps its full width and the mentions (never signed
  * in, expiry) move to the next line first. `locked` grants keep their role, and
  * a role disabled for a grant gives its reason under the row, which describes
- * the select.
+ * the select. A `readonly` list names the role among the mentions, for grants
+ * managed from another scope.
  */
 const props = defineProps<{
   grants: GrantSummary[]
-  roleItems: (grant: GrantSummary) => GrantRoleItem[]
-  busy: boolean
+  roleItems?: (grant: GrantSummary) => GrantRoleItem[]
+  busy?: boolean
   locked?: (grant: GrantSummary) => boolean
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -27,7 +29,7 @@ const { t, locale } = useI18n()
 const id = useId()
 
 const rows = computed(() => props.grants.map((grant) => {
-  const items = props.roleItems(grant)
+  const items = props.roleItems?.(grant) ?? []
   return { grant, items, reason: items.find(item => item.disabled && item.reason)?.reason }
 }))
 </script>
@@ -43,6 +45,10 @@ const rows = computed(() => props.grants.map((grant) => {
         <div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
           <span class="text-sm font-medium break-all">{{ grant.login }}</span>
           <span
+            v-if="readonly"
+            class="text-xs text-muted"
+          >{{ grant.role === 'editor' ? t('deck.sharing.roleEditor') : t('deck.sharing.roleViewer') }}</span>
+          <span
             v-if="grant.invited"
             class="text-xs text-dimmed"
           >{{ t('deck.sharing.neverSignedIn') }}</span>
@@ -53,6 +59,7 @@ const rows = computed(() => props.grants.map((grant) => {
           >{{ isExpired(grant) ? t('deck.sharing.expired') : t('deck.sharing.expiresOn', { date: shortDate(grant.expiresAt, locale) }) }}</span>
         </div>
         <USelect
+          v-if="!readonly"
           :model-value="grant.role"
           :items="items"
           size="xs"
@@ -63,6 +70,7 @@ const rows = computed(() => props.grants.map((grant) => {
           @update:model-value="(role: any) => emit('changeRole', grant, role)"
         />
         <UButton
+          v-if="!readonly"
           icon="i-lucide-x"
           color="neutral"
           variant="ghost"
