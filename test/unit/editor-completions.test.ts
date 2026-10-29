@@ -116,4 +116,12 @@ describe('frontmatter value completion', () => {
     const result = frontmatterGuide({ lang: 'fr', t, docsUrl: () => undefined }).source(new CompletionContext(EditorState.create({ doc }), doc.length, true))
     expect(result?.options.map(option => [option.label, option.apply])).toEqual([['separator', ' separator'], ['heading', ' heading']])
   })
+
+  it('leaves the advanced keys out of the key suggestions', () => {
+    const doc = '---\n'
+    const result = frontmatterGuide({ lang: 'fr', t, docsUrl: () => undefined }).source(new CompletionContext(EditorState.create({ doc }), doc.length, true))
+    const labels = result?.options.map(option => option.label)
+    expect(labels).toContain('theme')
+    expect(labels).not.toContain('parser')
+  })
 })

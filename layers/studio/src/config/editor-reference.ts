@@ -89,6 +89,8 @@ export interface FrontmatterKey {
   snippet: string | LocalizedText
   /** Keys nested under this one. */
   children?: readonly FrontmatterKey[]
+  /** Known to the checks and the hover, left out of the completion and the help. */
+  advanced?: boolean
 }
 
 const BOOLEAN = ['true', 'false'] as const
@@ -143,7 +145,7 @@ const CODE_KEYS: readonly FrontmatterKey[] = [
 export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'title', descriptionKey: 'reference.frontmatter.root.title', defaultKey: 'reference.frontmatter.root.titleDefault', snippet: { fr: 'title: "${Titre}"', en: 'title: "${Title}"' } },
   { key: 'theme', descriptionKey: 'reference.frontmatter.root.theme', values: knownThemes(), snippet: 'theme: ${dsfr}' },
-  { key: 'parser', descriptionKey: 'reference.frontmatter.root.parser', values: ['separator', 'heading'], default: 'separator', snippet: 'parser: ${separator}' },
+  { key: 'parser', descriptionKey: 'reference.frontmatter.root.parser', values: ['separator', 'heading'], default: 'separator', snippet: 'parser: ${separator}', advanced: true },
   { key: 'lang', descriptionKey: 'reference.frontmatter.root.lang', values: ['fr', 'en'], default: 'fr', snippet: 'lang: ${fr}' },
   { key: 'project', descriptionKey: 'reference.frontmatter.root.project', snippet: { fr: 'project: ${slug-du-dossier}', en: 'project: ${folder-slug}' } },
   { key: 'status', descriptionKey: 'reference.frontmatter.root.status', values: PUBLICATION_STATUSES, default: 'private', snippet: 'status: ${private}' },
@@ -413,16 +415,16 @@ export const EDITOR_SHORTCUTS: readonly ShortcutEntry[] = [
   { keys: ['meta', 'alt', 'L'], descriptionKey: 'reference.shortcuts.formatJson' },
 ] as const
 
-/** Slide structure rules, per parser, as message keys. */
+/** Slide structure rules, per parser: the mark that opens a slide and what it opens. */
 export const STRUCTURE_HELP = {
   heading: [
-    'reference.structure.headingTitle',
-    'reference.structure.headingHorizontal',
-    'reference.structure.headingVertical',
-    'reference.structure.headingBreak',
+    { syntax: '#', descriptionKey: 'reference.structure.headingTitle' },
+    { syntax: '##', descriptionKey: 'reference.structure.headingHorizontal' },
+    { syntax: '###', descriptionKey: 'reference.structure.headingVertical' },
+    { syntax: '---', descriptionKey: 'reference.structure.headingBreak' },
   ],
   separator: [
-    'reference.structure.separatorHorizontal',
-    'reference.structure.separatorVertical',
+    { syntax: '---', descriptionKey: 'reference.structure.separatorHorizontal' },
+    { syntax: '----', descriptionKey: 'reference.structure.separatorVertical' },
   ],
 } as const

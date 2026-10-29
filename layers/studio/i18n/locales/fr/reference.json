@@ -2,28 +2,31 @@
   "reference": {
     "help": {
       "title": "Aide à la rédaction",
-      "description": "Syntaxe, composants et réglages d'une présentation.",
       "structureHeading": "Découpage en diapositives",
-      "componentsHeading": "Composants et annotations",
       "insertTooltip": "Insérer dans le texte",
       "insert": "Insérer {name}",
-      "layoutsIntro": "Attributs de {annotation} et leurs valeurs, que le bouton « Mise en page » de la barre d'outils écrit aussi :",
-      "frontmatterHeading": "En-tête de la présentation",
-      "shortcutsHeading": "Raccourcis",
+      "layoutsIntro": "Attributs de {annotation} et leurs valeurs.",
       "completionTriggers": "Tapez {components} ou {annotations}, ou appuyez sur {keys}, pour voir les propositions.",
-      "splitHeading": "Chaque titre ## commence une diapositive. Pour découper aux lignes ---, écrivez {other} dans l'en-tête.",
-      "splitSeparator": "Chaque ligne --- commence une diapositive. Pour découper aux titres ##, écrivez {other} dans l'en-tête.",
       "docsTooltip": "Ouvrir la documentation",
       "docs": "Documentation de {name}",
-      "docsHome": "Toute la documentation"
+      "docsHome": "Documentation",
+      "tabs": {
+        "components": "Composants",
+        "slides": "Diapositives",
+        "frontmatter": "En-tête",
+        "shortcuts": "Raccourcis"
+      },
+      "search": "Rechercher un composant",
+      "noMatch": "Aucun composant ne correspond à « {query} ».",
+      "layoutHeading": "Mise en page"
     },
     "structure": {
-      "headingTitle": "# Titre : première diapositive, titre de la présentation",
-      "headingHorizontal": "## Titre : nouvelle diapositive",
-      "headingVertical": "### Titre : diapositive placée sous la précédente",
-      "headingBreak": "--- : nouvelle diapositive sans titre",
-      "separatorHorizontal": "--- : nouvelle diapositive",
-      "separatorVertical": "---- : diapositive placée sous la précédente"
+      "headingTitle": "Première diapositive, titre de la présentation",
+      "headingHorizontal": "Nouvelle diapositive",
+      "headingVertical": "Diapositive placée sous la précédente",
+      "headingBreak": "Nouvelle diapositive sans titre",
+      "separatorHorizontal": "Nouvelle diapositive",
+      "separatorVertical": "Diapositive placée sous la précédente"
     },
     "templates": {
       "twoColumns": {

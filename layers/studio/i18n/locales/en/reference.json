@@ -2,28 +2,31 @@
   "reference": {
     "help": {
       "title": "Authoring help",
-      "description": "Syntax, components and settings of a presentation.",
       "structureHeading": "Splitting into slides",
-      "componentsHeading": "Components and annotations",
       "insertTooltip": "Insert into the text",
       "insert": "Insert {name}",
-      "layoutsIntro": "Attributes of {annotation} and their values, which the Layout button of the toolbar also writes:",
-      "frontmatterHeading": "Front matter",
-      "shortcutsHeading": "Shortcuts",
+      "layoutsIntro": "Attributes of {annotation} and their values.",
       "completionTriggers": "Type {components} or {annotations}, or press {keys}, to see the suggestions.",
-      "splitHeading": "Each ## heading starts a slide. To split at the --- lines, write {other} in the front matter.",
-      "splitSeparator": "Each --- line starts a slide. To split at the ## headings, write {other} in the front matter.",
       "docsTooltip": "Open the documentation",
       "docs": "Documentation of {name}",
-      "docsHome": "All the documentation"
+      "docsHome": "Documentation",
+      "tabs": {
+        "components": "Components",
+        "slides": "Slides",
+        "frontmatter": "Front matter",
+        "shortcuts": "Shortcuts"
+      },
+      "search": "Search a component",
+      "noMatch": "No component matches “{query}”.",
+      "layoutHeading": "Layout"
     },
     "structure": {
-      "headingTitle": "# Title: first slide, title of the presentation",
-      "headingHorizontal": "## Title: new slide",
-      "headingVertical": "### Title: slide placed under the previous one",
-      "headingBreak": "---: new slide without a title",
-      "separatorHorizontal": "---: new slide",
-      "separatorVertical": "----: slide placed under the previous one"
+      "headingTitle": "First slide, title of the presentation",
+      "headingHorizontal": "New slide",
+      "headingVertical": "Slide placed under the previous one",
+      "headingBreak": "New slide without a title",
+      "separatorHorizontal": "New slide",
+      "separatorVertical": "Slide placed under the previous one"
     },
     "templates": {
       "twoColumns": {
