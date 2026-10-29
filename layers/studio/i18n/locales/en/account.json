@@ -35,10 +35,8 @@
       "removed": "Token removed from the list",
       "actionFailed": "The action on the token failed",
       "form": {
-        "description": "The token acts with the rights of your account.",
         "name": "Name",
         "namePlaceholder": "CLI MacBook",
-        "nameHelp": "This name tells the token apart in the list.",
         "scope": "Scope",
         "duration": "Duration",
         "days": "{n} days",

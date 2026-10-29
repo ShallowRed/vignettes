@@ -82,7 +82,6 @@ async function confirmPurge() {
           <UEmpty
             icon="i-lucide-trash-2"
             :title="t('admin.trash.emptyTitle')"
-            :description="t('admin.trash.emptyDescription')"
             variant="naked"
           />
         </template>

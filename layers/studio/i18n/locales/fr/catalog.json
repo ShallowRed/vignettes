@@ -120,7 +120,6 @@
       }
     },
     "projectCreate": {
-      "description": "Un dossier pour regrouper des présentations.",
       "namePlaceholder": "Nom du dossier",
       "fillFromName": "Remplir depuis le nom",
       "colorHelp": "Optionnel : teinte l'icône du dossier.",
@@ -130,7 +129,6 @@
     },
     "projectEdit": {
       "title": "Modifier le dossier",
-      "description": "Nom, couleur et adresse.",
       "regenerateFromName": "Régénérer depuis le nom",
       "saved": "Dossier mis à jour",
       "saveFailed": "Échec de la mise à jour",
@@ -156,7 +154,6 @@
       "noResultDescription": "Aucune présentation ne correspond à vos critères.",
       "resetFilters": "Réinitialiser les filtres",
       "title": "Présentations",
-      "intro": "Ce studio publie les présentations ci-dessous, rangées par dossier. Ouvrez-en une pour la présenter, ou pour la lire en faisant défiler ses diapositives.",
       "pageTitle": "Présentations · Vignettes"
     },
     "folder": {

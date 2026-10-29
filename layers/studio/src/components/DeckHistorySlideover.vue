@@ -221,28 +221,6 @@ const summary = computed(() => {
     entry: 'deck.history.summaryChangedSincePreviousEntry',
   }[against], lines)
 })
-// The legend keeps its line whatever the state, so the diff never moves.
-const baseEntry = computed(() => {
-  const base = baseRef.value
-  return base ? entries.value.find(e => same(e, base)) ?? null : null
-})
-function textName(entry: HistoryEntry | null): string {
-  if (!entry)
-    return t('deck.history.textDraft')
-  return t(entry.kind === 'version' ? 'deck.history.textVersion' : 'deck.history.textSnapshot', { when: when(entry.at) })
-}
-const legend = computed(() => {
-  if (chunks.value === null)
-    return ''
-  if (firstEntry.value)
-    return t('deck.history.legendFirstEntry')
-  if (chunks.value === 0)
-    return t('deck.history.legendIdentical', { to: textName(selectedEntry.value), from: textName(baseEntry.value) })
-  return selected.value === 'draft'
-    ? t('deck.history.legendDraft')
-    : t('deck.history.legendEntry')
-})
-
 // What a restore would put in the draft, and whether that changes anything.
 const restoreRef = computed<HistoryRef | null>(() => selected.value === 'draft' ? (current.value ? { kind: 'version', id: current.value.id } : null) : targetRef.value)
 const restoreLabel = computed(() => {
@@ -263,7 +241,6 @@ const { mutateAsync: restore, isLoading: restoring } = useMutation({
   onSuccess(result) {
     toast.add({
       title: t('deck.history.restored'),
-      description: t('deck.history.restoredDescription'),
       icon: 'i-lucide-check',
       color: 'success',
     })
@@ -284,7 +261,6 @@ const { capture, capturing } = useSnapshotCapture(props.slug, () => {
   <USlideover
     v-model:open="open"
     :title="t('deck.history.title')"
-    :description="t('deck.history.description')"
     :ui="{ content: 'max-w-5xl', body: 'p-0 sm:p-0' }"
   >
     <template #actions>
@@ -323,7 +299,10 @@ const { capture, capturing } = useSnapshotCapture(props.slug, () => {
                 size="sm"
               />
             </span>
-            <span class="text-xs text-muted">{{ unpublished === false ? t('deck.history.draftIdentical') : t('deck.history.draftHint') }}</span>
+            <span
+              v-if="unpublished === false"
+              class="text-xs text-muted"
+            >{{ t('deck.history.draftIdentical') }}</span>
           </button>
           <p
             v-if="listQ.status.value === 'pending'"
@@ -457,22 +436,6 @@ const { capture, capturing } = useSnapshotCapture(props.slug, () => {
               @click="() => { confirming = false }"
             />
           </ActionNotice>
-
-          <div
-            v-if="selected !== null"
-            class="min-h-9 px-4 py-2"
-          >
-            <USkeleton
-              v-if="loading"
-              class="h-3 w-80 rounded-sm"
-            />
-            <p
-              v-else
-              class="text-xs text-muted"
-            >
-              {{ legend }}
-            </p>
-          </div>
 
           <!-- The diff mounts under the skeleton, which lifts once it settled. -->
           <div class="relative min-h-0 flex-1 overflow-hidden">

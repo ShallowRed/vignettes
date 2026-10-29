@@ -35,10 +35,8 @@
       "removed": "Jeton retiré de la liste",
       "actionFailed": "L'action sur le jeton a échoué",
       "form": {
-        "description": "Le jeton agit avec les droits de votre compte.",
         "name": "Nom",
         "namePlaceholder": "CLI MacBook",
-        "nameHelp": "Ce nom distingue le jeton dans la liste.",
         "scope": "Portée",
         "duration": "Durée",
         "days": "{n} jours",

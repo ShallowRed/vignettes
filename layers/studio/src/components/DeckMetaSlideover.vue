@@ -255,14 +255,9 @@ const audience = computed(() => {
         <template #general>
           <div class="settings">
             <div class="settings__row">
-              <div>
-                <p class="settings__label">
-                  {{ t('deck.meta.folder') }}
-                </p>
-                <p class="settings__hint">
-                  {{ t('deck.meta.folderHint') }}
-                </p>
-              </div>
+              <p class="settings__label">
+                {{ t('deck.meta.folder') }}
+              </p>
               <USelect
                 v-model="state.project"
                 :items="projectItems"

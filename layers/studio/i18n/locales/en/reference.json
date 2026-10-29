@@ -73,14 +73,14 @@
         "theme": "Visual theme",
         "parser": "Splitting into slides: separator (--- lines) or heading (headings)",
         "lang": "Language of the document; French typography applies in fr",
-        "project": "Catalog folder; for a presentation created in the studio, choose it in Settings and sharing",
-        "status": "Visibility; for a presentation created in the studio, set it in Settings and sharing",
-        "unlisted": "Reachable by link but absent from the catalog; for a presentation created in the studio, set it in Settings and sharing",
+        "project": "Catalog folder; for a presentation created in the studio, choose it in Settings",
+        "status": "Visibility; for a presentation created in the studio, set it in Settings",
+        "unlisted": "Reachable by link but absent from the catalog; for a presentation created in the studio, set it in Settings",
         "storybook": "Address of the published Storybook, without iframe.html, used by ::StoryFrame and by the story option of :layout",
         "backgrounds": "Background images per slide role",
         "code": "Colors and font size of the code blocks: a theme (nuit, sombre, clair) or its settings",
         "reveal": "Display settings of Reveal.js, the engine of the presentations: format, numbering, transitions…",
-        "accessPassword": "Password of the semi-private visibility; for a presentation created in the studio, enter it in Settings and sharing",
+        "accessPassword": "Password of the semi-private visibility; for a presentation created in the studio, enter it in Settings",
         "titleDefault": "the identifier"
       },
       "backgrounds": {

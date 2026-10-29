@@ -84,7 +84,6 @@ async function copy() {
   <UModal
     v-model:open="open"
     :title="secret ? t('account.tokens.created.title') : t('account.tokens.create')"
-    :description="secret ? undefined : t('account.tokens.form.description')"
     :dismissible="!secret"
     :close="!secret"
   >
@@ -130,7 +129,6 @@ async function copy() {
       >
         <UFormField
           :label="t('account.tokens.form.name')"
-          :help="t('account.tokens.form.nameHelp')"
           required
         >
           <UInput

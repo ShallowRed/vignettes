@@ -73,14 +73,14 @@
         "theme": "Thème visuel",
         "parser": "Découpage en diapositives : separator (lignes ---) ou heading (titres)",
         "lang": "Langue du document ; la typographie française s'applique en fr",
-        "project": "Dossier du catalogue ; pour une présentation créée dans le studio, choisissez-le dans Réglages et partage",
-        "status": "Visibilité ; pour une présentation créée dans le studio, réglez-la dans Réglages et partage",
-        "unlisted": "Accessible par lien mais absente du catalogue ; pour une présentation créée dans le studio, réglez ce choix dans Réglages et partage",
+        "project": "Dossier du catalogue ; pour une présentation créée dans le studio, choisissez-le dans Réglages",
+        "status": "Visibilité ; pour une présentation créée dans le studio, réglez-la dans Réglages",
+        "unlisted": "Accessible par lien mais absente du catalogue ; pour une présentation créée dans le studio, réglez ce choix dans Réglages",
         "storybook": "Adresse du Storybook publié, sans iframe.html, qui sert aux ::StoryFrame et à l'option story de :layout",
         "backgrounds": "Images de fond par rôle de diapositive",
         "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
         "reveal": "Réglages d'affichage de Reveal.js, le moteur des présentations : format, numérotation, transitions…",
-        "accessPassword": "Mot de passe de la visibilité semi-private ; pour une présentation créée dans le studio, saisissez-le dans Réglages et partage",
+        "accessPassword": "Mot de passe de la visibilité semi-private ; pour une présentation créée dans le studio, saisissez-le dans Réglages",
         "titleDefault": "l'identifiant"
       },
       "backgrounds": {

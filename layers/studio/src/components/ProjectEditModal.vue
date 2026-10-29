@@ -71,7 +71,6 @@ function close() {
   <UModal
     v-model:open="open"
     :title="t('catalog.projectEdit.title')"
-    :description="t('catalog.projectEdit.description')"
   >
     <template #body>
       <form

@@ -83,8 +83,11 @@ const projectDeckCount = computed(() =>
       <h1 class="text-xl font-semibold text-highlighted">
         {{ t('catalog.home.title') }}
       </h1>
-      <p class="text-sm text-muted">
-        {{ welcome || t('catalog.home.intro') }}
+      <p
+        v-if="welcome"
+        class="text-sm text-muted"
+      >
+        {{ welcome }}
       </p>
     </div>
     <AsyncSection

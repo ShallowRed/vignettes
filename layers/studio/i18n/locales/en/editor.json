@@ -33,7 +33,7 @@
     },
     "save": {
       "saved": "Draft saved",
-      "conflict": "Someone saved this draft in the meantime: reload the page to start again from their version (your changes would have to be applied again).",
+      "conflict": "Someone saved this draft in the meantime: copy your changes, then reload the page.",
       "failed": "Saving failed"
     },
     "publication": {
@@ -44,12 +44,12 @@
       "publishedDescriptionPrivate": "The presentation is private: Editor and Owner accounts and the people with an individual access see this version.",
       "share": "Share",
       "failed": "Publishing failed",
-      "hintNeverPublished": "Publish the draft to show it to visitors.",
-      "hintUnpublished": "Visitors see the published version. Publish to update it.",
-      "hintUnpublishedSince": "Visitors see the version published on {date}. Publish to update it.",
+      "hintNeverPublished": "Draft never published",
+      "hintUnpublished": "Visitors see the published version.",
+      "hintUnpublishedSince": "Visitors see the version published on {date}.",
       "hintUpToDate": "Visitors see this draft.",
       "hintUpToDateSince": "Visitors have seen this draft since {date}.",
-      "hintUnpublishedVersion": "Visitors see version {version}, published on {date}. Publish to update it.",
+      "hintUnpublishedVersion": "Visitors see version {version}, published on {date}.",
       "hintUpToDateVersion": "Visitors see this draft, published as version {version} on {date}."
     },
     "preview": {
@@ -65,7 +65,7 @@
       "frame": "Preview slide: the arrow keys change the slide",
       "preview": "Preview",
       "previewTip": "The draft full screen, as it would be published",
-      "presentVersionTip": "The version the visitors see, without the changes of the draft",
+      "presentVersionTip": "The live version, full screen",
       "presentNeverPublished": "Publish the presentation to present it."
     },
     "toolbar": {

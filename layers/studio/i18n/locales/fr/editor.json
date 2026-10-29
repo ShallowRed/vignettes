@@ -33,7 +33,7 @@
     },
     "save": {
       "saved": "Brouillon enregistré",
-      "conflict": "Quelqu'un a enregistré ce brouillon entre-temps : rechargez la page pour repartir de sa version (vos modifications resteraient à reporter).",
+      "conflict": "Quelqu'un a enregistré ce brouillon entre-temps : copiez vos modifications, puis rechargez la page.",
       "failed": "Échec de l'enregistrement"
     },
     "publication": {
@@ -44,12 +44,12 @@
       "publishedDescriptionPrivate": "La présentation est privée : les comptes Éditeur et Propriétaire et les personnes qui ont un accès individuel voient cette version.",
       "share": "Partager",
       "failed": "Échec de la publication",
-      "hintNeverPublished": "Publiez le brouillon pour le montrer aux visiteurs.",
-      "hintUnpublished": "Les visiteurs voient la version publiée. Publiez pour la mettre à jour.",
-      "hintUnpublishedSince": "Les visiteurs voient la version publiée le {date}. Publiez pour la mettre à jour.",
+      "hintNeverPublished": "Brouillon jamais publié",
+      "hintUnpublished": "Les visiteurs voient la version publiée.",
+      "hintUnpublishedSince": "Les visiteurs voient la version publiée le {date}.",
       "hintUpToDate": "Les visiteurs voient ce brouillon.",
       "hintUpToDateSince": "Les visiteurs voient ce brouillon depuis le {date}.",
-      "hintUnpublishedVersion": "Les visiteurs voient la version {version}, publiée le {date}. Publiez pour la mettre à jour.",
+      "hintUnpublishedVersion": "Les visiteurs voient la version {version}, publiée le {date}.",
       "hintUpToDateVersion": "Les visiteurs voient ce brouillon, publié comme version {version} le {date}."
     },
     "preview": {
@@ -65,7 +65,7 @@
       "frame": "Diapositive de l'aperçu : les flèches changent de diapositive",
       "preview": "Prévisualiser",
       "previewTip": "Le brouillon en plein écran, tel qu'il serait publié",
-      "presentVersionTip": "La version que voient les visiteurs, sans les modifications du brouillon",
+      "presentVersionTip": "La version en ligne, en plein écran",
       "presentNeverPublished": "Publiez la présentation pour la présenter."
     },
     "toolbar": {

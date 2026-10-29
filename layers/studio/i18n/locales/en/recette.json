@@ -90,20 +90,20 @@
       },
       "collab": {
         "sharedFolder": "“Publique”, “Mot de passe”, “Brouillon” and the English deck have a pencil. The New presentation button is present.",
-        "sync": "The top bar of the editor says Saved. A text typed in a second tab appears with the initial of the other person.",
+        "sync": "A text typed in a second tab appears with the initial of the other person.",
         "pasteImage": "A pasted image is inserted into the text.",
-        "unpublished": "After a change, the top bar of the editor and the card say Unpublished changes. Publishing removes that mention.",
+        "unpublished": "After a change, the Publish button of the preview carries a dot and the card says Unpublished changes. Publishing removes both.",
         "password": "The presentation opens without a password.",
         "readOnly": "“Lecture seule” opens and its card has no pencil.",
         "share": "The menu of the Publique card offers \"Share…\". The panel lists the grants of the presentation, and the collaborator adds an account there by its GitHub username or its Google address.",
-        "private": "The screen says “Presentation not found”, as it does for a dead link. No card offers “Settings and sharing…”."
+        "private": "The screen says “Presentation not found”, as it does for a dead link. No card offers “Settings…”."
       },
       "expired": {
         "catalog": "Publique and English deck are the only presentations listed.",
         "editorDenied": "The screen says “Presentation not found”, as it does for a dead link."
       },
       "editor": {
-        "catalog": "The whole data set is listed, Brouillon included, with the pencil and “Settings and sharing…”.",
+        "catalog": "The whole data set is listed, Brouillon included, with the pencil and “Settings…”.",
         "trash": "The trash contains the presentation Corbeille, which can be restored.",
         "accountsDenied": "The page is denied. The menu of a presentation offers \"Share…\"."
       },

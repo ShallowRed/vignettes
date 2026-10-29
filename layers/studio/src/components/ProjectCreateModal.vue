@@ -67,7 +67,6 @@ function submit() {
   <UModal
     v-model:open="open"
     :title="t('common.actions.newFolder')"
-    :description="t('catalog.projectCreate.description')"
   >
     <template #body>
       <form
