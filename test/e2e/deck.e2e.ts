@@ -32,6 +32,14 @@ test('the deck lifts its loading veil once Reveal is ready', async ({ page }) =>
   expect(errors).toEqual([])
 })
 
+test('a visitor without a session gets a sign-in command that returns to the current slide', async ({ page }) => {
+  await page.goto(`${DECK}#/1`)
+  await expect(page.locator('.reveal.ready')).toHaveCount(1)
+
+  await expect(page.locator('.deck-control[href^="/login"]'))
+    .toHaveAttribute('href', `/login?redirect=${encodeURIComponent(`${DECK}#/1/0`)}`)
+})
+
 test('a deck without `reveal:` takes the slide size of its theme manifest', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'The slide size does not depend on the browser.')
   await page.goto(DECK)

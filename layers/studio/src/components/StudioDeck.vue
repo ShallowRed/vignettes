@@ -7,7 +7,8 @@ import { inSpeakerViewFrame } from '@vignettes/core/render'
 
 // A deck as the studio shows it: the Reveal presentation with the other
 // variants of its family the visitor may open, the commands of whoever may edit
-// it (editing the current slide, the draft, the folder) and the draft banner.
+// it (editing the current slide, the draft, the folder), the sign-in of a
+// visitor without a session, and the draft banner.
 const props = defineProps<{
   slug?: string
   presentationData: PresentationData
@@ -16,6 +17,8 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const route = useRoute()
+const { loggedIn } = useAppSession()
 // The speaker view shows the deck in frames and sends its keys to them, so these
 // frames get neither the draft banner nor the E key of the editor.
 const speakerViewFrame = inSpeakerViewFrame(useRequestURL().search)
@@ -52,6 +55,9 @@ const slideHash = computed(() => `#/${indices.value.h}/${indices.value.v}`)
 const editHref = computed(() => `/edit/${props.slug}?slide=${indices.value.h}/${indices.value.v}`)
 const draftHref = computed(() => `/slides/${props.slug}${props.draft ? '' : '?draft'}${slideHash.value}`)
 const folderHref = computed(() => viewer.value.project ? `/projects/${viewer.value.project}` : '/')
+// A visitor whose session ended sees the deck without the editing commands;
+// the sign-in link brings them back to this slide.
+const signInHref = computed(() => `/login?redirect=${encodeURIComponent(`${route.path}${slideHash.value}`)}`)
 
 watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
   if (instance && canEdit && !speakerViewFrame)
@@ -133,14 +139,23 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
       </DeckControlButton>
     </template>
     <template
-      v-if="viewer.canEdit"
+      v-if="viewer.canEdit || !loggedIn"
       #controls-after
     >
       <DeckControlButton
+        v-if="viewer.canEdit"
         :label="t('auth.viewer.backToFolder')"
         :to="folderHref"
       >
         <UIcon name="i-lucide-folder-open" />
+      </DeckControlButton>
+      <DeckControlButton
+        v-else
+        :label="t('common.actions.signIn')"
+        :to="signInHref"
+        labelled
+      >
+        <UIcon name="i-lucide-log-in" />
       </DeckControlButton>
     </template>
   </RevealPresentation>
