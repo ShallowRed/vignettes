@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TokenSummary } from '#shared/access'
+import { loginHref } from '#shared/access'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { tokensApi } from '../api'
 import { useAppSession } from '../composables/useAppSession'
@@ -104,7 +105,7 @@ const { mutate: remove, isLoading: removing } = useMutation({
         icon="i-lucide-lock"
         :title="t('admin.access.restrictedTitle')"
         :description="t('account.tokens.restrictedDescription')"
-        :actions="[{ label: t('common.actions.signIn'), to: '/login', icon: 'i-lucide-log-in' }]"
+        :actions="[{ label: t('common.actions.signIn'), to: loginHref('/tokens'), icon: 'i-lucide-log-in' }]"
       />
 
       <AsyncSection

@@ -2,6 +2,7 @@
 import type { DeckVariant, DeckViewer } from '#shared/presentations'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
+import { loginHref } from '#shared/access'
 import { deckPath } from '#shared/presentations'
 import { inSpeakerViewFrame } from '@vignettes/core/render'
 
@@ -57,7 +58,7 @@ const draftHref = computed(() => `/slides/${props.slug}${props.draft ? '' : '?dr
 const folderHref = computed(() => viewer.value.project ? `/projects/${viewer.value.project}` : '/')
 // A visitor whose session ended sees the deck without the editing commands;
 // the sign-in link brings them back to this slide.
-const signInHref = computed(() => `/login?redirect=${encodeURIComponent(`${route.path}${slideHash.value}`)}`)
+const signInHref = computed(() => loginHref(`${route.path}${slideHash.value}`))
 
 watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
   if (instance && canEdit && !speakerViewFrame)

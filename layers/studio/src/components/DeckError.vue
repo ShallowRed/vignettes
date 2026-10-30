@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { loginHref } from '#shared/access'
 import { postForm } from '../utils/post-form'
 
 // The error screen of the deck routes. `loginRedirect` turns it into a sign-in
@@ -16,7 +17,7 @@ const props = defineProps<{
 const { t } = useI18n()
 
 const actions = computed(() => props.loginRedirect
-  ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=${encodeURIComponent(props.loginRedirect)}` }]
+  ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: loginHref(props.loginRedirect) }]
   : [])
 </script>
 

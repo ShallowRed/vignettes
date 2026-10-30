@@ -18,6 +18,7 @@ import type { Extension } from '@codemirror/state'
 import type { PreviewInstance } from '../../composables/useEditorPreview'
 import type { Translate } from '../../config/editor-reference'
 import type { Severity } from '../../utils/editor-problems'
+import { loginHref } from '#shared/access'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
@@ -82,7 +83,7 @@ const loadError = computed(() => loadErrorStatus.value !== null)
 const refusal = computed(() => {
   switch (loadErrorStatus.value) {
     case 401:
-      return { icon: 'i-lucide-lock', title: t('editor.page.signInTitle'), description: t('editor.page.signInMessage'), actions: [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=${encodeURIComponent(`/edit/${slug}`)}` }] }
+      return { icon: 'i-lucide-lock', title: t('editor.page.signInTitle'), description: t('editor.page.signInMessage'), actions: [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: loginHref(`/edit/${slug}`) }] }
     case 403:
       return { icon: 'i-lucide-eye', title: t('editor.page.readOnlyTitle'), description: t('editor.page.readOnlyMessage'), actions: [{ label: t('editor.page.openDeck'), icon: 'i-lucide-play', to: `/slides/${slug}` }] }
     case 404:

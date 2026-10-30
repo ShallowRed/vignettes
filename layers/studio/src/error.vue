@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
+import { loginHref } from '#shared/access'
 
 /**
  * The page Nuxt renders when a request fails outside a page's own handling: a
@@ -22,7 +23,7 @@ const description = computed(() => t(`common.error.${known.value}.description`))
       :icon="error.statusCode === 404 ? 'i-lucide-file-question' : 'i-lucide-triangle-alert'"
       :title="title"
       :description="description"
-      :actions="error.statusCode === 401 ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=${encodeURIComponent(route.fullPath)}` }] : []"
+      :actions="error.statusCode === 401 ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: loginHref(route.fullPath) }] : []"
       :back="{ onClick: () => clearError({ redirect: '/' }) }"
     >
       <p class="text-xs text-dimmed">

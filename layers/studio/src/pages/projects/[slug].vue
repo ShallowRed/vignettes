@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
-import { mayEdit } from '#shared/access'
+import { loginHref, mayEdit } from '#shared/access'
 import { buildFolderContents, UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '../../composables/useAppSession'
 import { useCatalog } from '../../composables/useCatalog'
@@ -161,7 +161,7 @@ const { target, metaOpen, metaFocus, deleteOpen, duplicateOpen, duplicateMode, o
             :actions="canCreateHere
               ? [{ label: t('common.actions.newDeck'), icon: 'i-lucide-file-plus-2', onClick: () => (createOpen = true) }]
               : !loggedIn
-                ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: `/login?redirect=/projects/${routeSlug}` }]
+                ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: loginHref(`/projects/${routeSlug}`) }]
                 : []"
           />
         </template>

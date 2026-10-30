@@ -21,3 +21,7 @@ export function safeRedirectPath(value: unknown, fallback = '/'): string {
   }
   return url.origin === BASE && !url.pathname.startsWith('//') ? `${url.pathname}${url.search}${url.hash}` : fallback
 }
+
+export function loginHref(path: string): string {
+  return `/login?redirect=${encodeURIComponent(path)}`
+}

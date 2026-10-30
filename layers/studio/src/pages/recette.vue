@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RecettePersona } from '#shared/recette/personas'
+import { loginHref } from '#shared/access'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PREFIX } from '#shared/recette/personas'
 import { postForm } from '../utils/post-form'
 import { requestErrorMessage } from '../utils/request-error'
@@ -171,7 +172,7 @@ useHead({ title: () => t('recette.page.pageTitle') })
         color="warning"
         variant="subtle"
         :title="t('recette.page.ownerRequired')"
-        :actions="[{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: '/login?redirect=/recette' }]"
+        :actions="[{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: loginHref('/recette') }]"
       />
 
       <template v-else-if="data">

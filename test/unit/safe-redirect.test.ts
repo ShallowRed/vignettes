@@ -1,4 +1,4 @@
-import { safeRedirectPath } from '#shared/access'
+import { loginHref, safeRedirectPath } from '#shared/access'
 import { describe, expect, it } from 'vitest'
 
 describe('safeRedirectPath', () => {
@@ -36,5 +36,13 @@ describe('safeRedirectPath', () => {
   it('answers the fallback for a value that is not a string', () => {
     expect(safeRedirectPath(['/a', '/b'])).toBe('/')
     expect(safeRedirectPath(undefined, '/login')).toBe('/login')
+  })
+})
+
+describe('loginHref', () => {
+  it('carries the whole path, its query and its hash, in the redirect parameter', () => {
+    const href = loginHref('/p/demo?draft&a=1#/2')
+    expect(href).toBe('/login?redirect=%2Fp%2Fdemo%3Fdraft%26a%3D1%23%2F2')
+    expect(new URL(href, 'https://studio.invalid').searchParams.get('redirect')).toBe('/p/demo?draft&a=1#/2')
   })
 })
