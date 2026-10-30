@@ -11,9 +11,11 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     label: { fr: 'Étapes illustrées', en: 'Illustrated steps' },
     group: 'diagram',
     aliases: ['scheme'],
-    snippet: {
-      fr: ':::Scheme\n::Step{n="1" picto="${buildings/city-hall}" title="${Première étape}"}\n${Légende}\n::\n::Step{n="2" picto="${digital/coding}" title="${Deuxième étape}"}\n::\n:::',
-      en: ':::Scheme\n::Step{n="1" picto="${buildings/city-hall}" title="${First step}"}\n${Caption}\n::\n::Step{n="2" picto="${digital/coding}" title="${Second step}"}\n::\n:::',
+    example: {
+      content: [
+        { name: 'Step', attributes: { n: '1', picto: '${buildings/city-hall}', title: { fr: '${Première étape}', en: '${First step}' } }, content: [{ fr: '${Légende}', en: '${Caption}' }] },
+        { name: 'Step', attributes: { n: '2', picto: '${digital/coding}', title: { fr: '${Deuxième étape}', en: '${Second step}' } } },
+      ],
     },
     description: {
       fr: 'Étapes illustrées reliées par des flèches, qui apparaissent une à une',
@@ -26,7 +28,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     aliases: ['step'],
     parent: 'Scheme',
     label: { fr: 'Étape', en: 'Step' },
-    snippet: { fr: '::Step{picto="${digital/coding}" title="${Étape}"}\n${Légende}\n::', en: '::Step{picto="${digital/coding}" title="${Step}"}\n${Caption}\n::' },
+    example: { attributes: { picto: '${digital/coding}', title: { fr: '${Étape}', en: '${Step}' } }, content: [{ fr: '${Légende}', en: '${Caption}' }] },
     description: { fr: 'Une étape illustrée', en: 'One illustrated step' },
     docs: '/reference/schemas#step',
   },
@@ -36,9 +38,13 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     label: { fr: 'Schéma de cartes', en: 'Card diagram' },
     group: 'diagram',
     aliases: ['diagram'],
-    snippet: {
-      fr: ':::Diagram{layout="grid" cols="2"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${alimente}"}\n::\n:::',
-      en: ':::Diagram{layout="grid" cols="2"}\n::Node{id="a" at="1,1" title="${Source}"}\n::\n::Node{id="b" at="2,1" title="${Destination}"}\n::\n::Edge{from="a" to="b" label="${feeds}"}\n::\n:::',
+    example: {
+      attributes: { layout: 'grid', cols: '2' },
+      content: [
+        { name: 'Node', attributes: { id: 'a', at: '1,1', title: '${Source}' } },
+        { name: 'Node', attributes: { id: 'b', at: '2,1', title: '${Destination}' } },
+        { name: 'Edge', attributes: { from: 'a', to: 'b', label: { fr: '${alimente}', en: '${feeds}' } } },
+      ],
     },
     description: {
       fr: 'Cartes reliées par des flèches, placées sur une grille',
@@ -52,7 +58,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     aliases: ['node'],
     parent: 'Diagram',
     label: { fr: 'Carte', en: 'Card' },
-    snippet: { fr: '::Node{id="${id}" at="${1,1}" title="${Titre}"}\n::', en: '::Node{id="${id}" at="${1,1}" title="${Title}"}\n::' },
+    example: { attributes: { id: '${id}', at: '${1,1}', title: { fr: '${Titre}', en: '${Title}' } } },
     description: { fr: 'Une carte du schéma, placée sur la grille', en: 'One card of the diagram, placed on the grid' },
     docs: '/reference/schemas#node',
   },
@@ -62,7 +68,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     aliases: ['edge'],
     parent: 'Diagram',
     label: { fr: 'Flèche', en: 'Arrow' },
-    snippet: { fr: '::Edge{from="${a}" to="${b}" label="${libellé}"}\n::', en: '::Edge{from="${a}" to="${b}" label="${label}"}\n::' },
+    example: { attributes: { from: '${a}', to: '${b}', label: { fr: '${libellé}', en: '${label}' } } },
     description: { fr: 'Une flèche entre deux cartes', en: 'An arrow between two cards' },
     docs: '/reference/schemas#edge',
   },
@@ -72,7 +78,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     aliases: ['area'],
     parent: 'Diagram',
     label: { fr: 'Zone', en: 'Area' },
-    snippet: { fr: '::Area{at="${1,1}" span="${2,1}" title="${Zone}"}\n::', en: '::Area{at="${1,1}" span="${2,1}" title="${Area}"}\n::' },
+    example: { attributes: { at: '${1,1}', span: '${2,1}', title: { fr: '${Zone}', en: '${Area}' } } },
     description: { fr: 'Une zone qui regroupe des cartes', en: 'A region that groups cards' },
     docs: '/reference/schemas#area',
   },
@@ -83,9 +89,12 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     group: 'diagram',
     aliases: ['json-tour'],
     images: ['image'],
-    snippet: {
-      fr: ':::JsonTour{file="${exemple.json}"}\n::Zone{lines="${2-3}" title="${Identité}"}\n${Ce que ces lignes contiennent.}\n::\n\n```json\n{\n  "name": "${exemple}",\n  "version": 1\n}\n```\n\n:::',
-      en: ':::JsonTour{file="${example.json}"}\n::Zone{lines="${2-3}" title="${Identity}"}\n${What these lines hold.}\n::\n\n```json\n{\n  "name": "${example}",\n  "version": 1\n}\n```\n\n:::',
+    example: {
+      attributes: { file: { fr: '${exemple.json}', en: '${example.json}' } },
+      content: [
+        { name: 'Zone', attributes: { lines: '${2-3}', title: { fr: '${Identité}', en: '${Identity}' } }, content: [{ fr: '${Ce que ces lignes contiennent.}', en: '${What these lines hold.}' }] },
+        { fr: '\n```json\n{\n  "name": "${exemple}",\n  "version": 1\n}\n```\n', en: '\n```json\n{\n  "name": "${example}",\n  "version": 1\n}\n```\n' },
+      ],
     },
     description: {
       fr: 'Fichier commenté zone par zone, à côté de ses explications',
@@ -99,7 +108,7 @@ export const SCHEMA_COMPONENTS: readonly DeckComponent[] = withAttributes([
     aliases: ['zone'],
     parent: 'JsonTour',
     label: { fr: 'Étape de la visite', en: 'Tour step' },
-    snippet: { fr: '::Zone{lines="${1-4}" title="${Titre}"}\n${Ce que contiennent ces lignes}\n::', en: '::Zone{lines="${1-4}" title="${Title}"}\n${What these lines hold}\n::' },
+    example: { attributes: { lines: '${1-4}', title: { fr: '${Titre}', en: '${Title}' } }, content: [{ fr: '${Ce que contiennent ces lignes}', en: '${What these lines hold}' }] },
     description: { fr: 'Des lignes du fichier, expliquées', en: 'Lines of the file, explained' },
     docs: '/reference/schemas#zone',
   },

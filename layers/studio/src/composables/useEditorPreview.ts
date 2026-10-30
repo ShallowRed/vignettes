@@ -1,4 +1,4 @@
-import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
+import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutMention, LegacyMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { Ref, ShallowRef } from 'vue'
@@ -7,7 +7,7 @@ import type { LineProblem } from '../utils/editor-problems'
 import type { useDocsAddress } from './useDocsAddress'
 import { completionStatus } from '@codemirror/autocomplete'
 import { EditorView } from '@codemirror/view'
-import { attributeMentions, componentAttributeIssues, componentMentions, deckRevealOptions, layoutMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks, valueMentions } from '@vignettes/core/deck'
+import { attributeMentions, componentAttributeIssues, componentMentions, deckRevealOptions, layoutMentions, legacyMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks, valueMentions } from '@vignettes/core/deck'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
@@ -37,6 +37,8 @@ interface EditorPreviewOptions {
   t: Translate
   /** `t` with the shortcut of the suggestions, for the messages that name it. */
   tWithKeys: Translate
+  /** The interface language, for the texts of the deck contract. */
+  locale: Readonly<Ref<string>>
 }
 
 const FRAGMENT_STEPS_KEY = 'vignettes:editor-fragment-steps'
@@ -48,13 +50,13 @@ const FRAGMENT_STEPS_KEY = 'vignettes:editor-fragment-steps'
  * screen.
  */
 export function useEditorPreview(options: EditorPreviewOptions) {
-  const { raw, editorView, staleThemes, t, tWithKeys } = options
+  const { raw, editorView, staleThemes, t, tWithKeys, locale } = options
 
   const { previewFrame, previewInstance: previewRef } = options
   const previewHasFocus = () => previewFrame.value?.matches(':focus-within') ?? false
 
   const preview = ref<PresentationData | null>(null)
-  const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser }))
+  const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser, syntax: preview.value?.metadata?.syntax }))
 
   // ── Follow the caret ───────────────────────────────────────────────────────
   // The preview navigates to the slide the caret sits in: `slideRanges` of
@@ -218,6 +220,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   const unknownMentions = ref<ComponentMention[]>([])
   const refusedMentions = ref<AttributeMention[]>([])
   const layoutIssues = ref<LayoutMention[]>([])
+  const legacyIssues = ref<LegacyMention[]>([])
   const unclosedIssues = ref<OpenBlock[]>([])
   const malformedIssues = ref<MalformedAttributes[]>([])
   const componentAttributeProblems = ref<ComponentAttributeIssue[]>([])
@@ -239,7 +242,8 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     unknown: unknownMentions.value,
     refused: refusedMentions.value,
     layout: layoutIssues.value,
-  }, t, options.docsUrl))
+    legacy: legacyIssues.value,
+  }, t, locale.value, options.docsUrl))
 
   const previewSource = previewSourceReader()
 
@@ -251,6 +255,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
       unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
       refusedMentions.value = attributeMentions(text)
       layoutIssues.value = layoutMentions(text)
+      legacyIssues.value = legacyMentions(text)
       unclosedIssues.value = unclosedBlocks(text)
       malformedIssues.value = malformedAttributeMentions(text)
       componentAttributeProblems.value = componentAttributeIssues(text)

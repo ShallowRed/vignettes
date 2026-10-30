@@ -1,6 +1,7 @@
-import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutIssueKind, LayoutMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
+import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutMention, LegacyMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
 import type { Translate } from '../config/editor-reference'
-import type { LineProblem, Severity } from './editor-problems'
+import type { LineProblem, ProblemFix, Severity } from './editor-problems'
+import { inLanguage, LEGACY_FORMS, legacyMentions } from '@vignettes/core/deck'
 import { DOCS_SECTIONS } from '../config/editor-reference'
 
 /**
@@ -21,6 +22,7 @@ export interface PreviewFindings {
   unknown: readonly ComponentMention[]
   refused: readonly AttributeMention[]
   layout: readonly LayoutMention[]
+  legacy: readonly LegacyMention[]
 }
 
 export interface EditorIssue extends LineProblem {
@@ -40,10 +42,9 @@ const COMPONENT_ATTRIBUTE_MESSAGES: Record<ComponentAttributeIssue['kind'], stri
   'false-text': 'attributeFalseText',
 }
 
-const LAYOUT_MESSAGES: Record<LayoutIssueKind, string> = {
+const LAYOUT_MESSAGES: Record<LayoutMention['kind'], string> = {
   'unknown-attribute': 'editor.diagnostics.layoutUnknownAttribute',
   'invalid-value': 'editor.diagnostics.layoutInvalidValue',
-  'legacy': 'editor.diagnostics.layoutLegacy',
   'missing-source': 'editor.diagnostics.layoutMissingSource',
   'unused': 'editor.diagnostics.layoutUnused',
   'behind-needs-image': 'editor.diagnostics.layoutBehindNeedsImage',
@@ -51,10 +52,9 @@ const LAYOUT_MESSAGES: Record<LayoutIssueKind, string> = {
 
 // An error breaks or drops content, a warning changes what the author probably
 // meant, an info asks for a cleanup without effect on the slide.
-const LAYOUT_SEVERITIES: Record<LayoutIssueKind, Severity> = {
+const LAYOUT_SEVERITIES: Record<LayoutMention['kind'], Severity> = {
   'unknown-attribute': 'warning',
   'invalid-value': 'warning',
-  'legacy': 'info',
   'missing-source': 'error',
   'unused': 'info',
   'behind-needs-image': 'error',
@@ -62,7 +62,21 @@ const LAYOUT_SEVERITIES: Record<LayoutIssueKind, Severity> = {
 
 const SEVERITY_RANK: Record<Severity, number> = { error: 0, warning: 1, info: 2 }
 
-export function editorIssues(raw: string, findings: PreviewFindings, t: Translate, docsUrl: (docs?: string) => string | undefined): EditorIssue[] {
+/** The conversion of the legacy form written on the line of `from`, read from the text as it stands. */
+function legacyFix(mention: LegacyMention, t: Translate): ProblemFix | undefined {
+  if (!mention.changes.length)
+    return undefined
+  return {
+    label: t('editor.convert'),
+    change: (state, from) => {
+      const line = state.doc.lineAt(from).number
+      const current = legacyMentions(state.doc.toString()).find(found => found.form === mention.form && found.line === line)
+      return current?.changes.length ? { changes: current.changes } : undefined
+    },
+  }
+}
+
+export function editorIssues(raw: string, findings: PreviewFindings, t: Translate, lang: string, docsUrl: (docs?: string) => string | undefined): EditorIssue[] {
   const { overflow } = findings
   const issues: EditorIssue[] = [
     ...(overflow
@@ -132,6 +146,17 @@ export function editorIssues(raw: string, findings: PreviewFindings, t: Translat
       severity: LAYOUT_SEVERITIES[mention.kind],
       marked: false,
     })),
+    ...findings.legacy.map((mention) => {
+      const form = LEGACY_FORMS[mention.form]
+      return {
+        ...mention,
+        short: t('editor.diagnostics.legacyShort', { line: mention.line, name: form.written }),
+        message: inLanguage(form.description, lang),
+        fix: legacyFix(mention, t),
+        severity: 'info' as const,
+        marked: false,
+      }
+    }),
   ]
   return issues.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.line - b.line || a.column - b.column)
 }

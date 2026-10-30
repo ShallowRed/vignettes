@@ -3,7 +3,8 @@ title: "Deck hostile"
 status: public
 theme: dsfr
 lang: fr
-parser: heading
+syntax:
+  split: heading
 storybook: "javascript:alert('storybook')"
 component:
   name: a

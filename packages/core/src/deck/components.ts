@@ -7,20 +7,53 @@ import { BUILT_IN_ATTRIBUTES } from './component-attributes.ts'
 /** A text in each interface language, by language code (`fr`, `en`). */
 export type LocalizedText = Readonly<Record<string, string>>
 
-/* eslint-disable no-template-curly-in-string -- `${…}` is the snippet placeholder syntax */
+/**
+ * The text in the interface language, French when it has none in that
+ * language. A plain string, the same in every language, comes back as it is.
+ */
+export function inLanguage(text: string | LocalizedText | undefined, lang: string): string {
+  if (typeof text === 'string')
+    return text
+  return text?.[lang] ?? text?.fr ?? ''
+}
+
+/** A text the same in every language, or one per language. */
+export type ExampleText = string | LocalizedText
 
 /**
- * A `:tag{...}` directive the parser extracts into the `Slide` and removes from
- * the body. Its snippet is the text an editor inserts, with `${…}` placeholders
- * to tab through.
+ * What an editor inserts for a component or an annotation, which
+ * `exampleSource` writes in the deck syntax. Its texts hold `${…}`
+ * placeholders to tab through.
  */
+export interface ComponentExample {
+  /** The name it is written under, when it differs from the component's (`i` for `IconInline`). */
+  name?: string
+  /** Written in a line of text: `:name{…}`. */
+  inline?: boolean
+  /** Its attributes, in the order they are written; `true` writes a boolean attribute alone. */
+  attributes?: Readonly<Record<string, ExampleText | true>>
+  /** Its content, in order: Markdown text, and the examples of the components written inside it. */
+  content?: readonly (ExampleText | NestedExample)[]
+}
+
+/** What an editor inserts for an annotation: its attributes, written in a line. */
+export type AnnotationExample = Pick<ComponentExample, 'attributes'>
+
+/** The example of a component written inside another. */
+export interface NestedExample extends ComponentExample {
+  name: string
+}
+
+/* eslint-disable no-template-curly-in-string -- `${…}` is the snippet placeholder syntax */
+
+/** A `:tag{...}` directive the parser extracts into the `Slide` and removes from the body. */
 export interface DeckAnnotation {
   tag: string
   /** The name an editor shows for it. */
   label: LocalizedText
   /** The icon an editor shows beside its name, as an Iconify name (`i-lucide-quote`). */
   icon?: string
-  snippet: LocalizedText
+  example: AnnotationExample
   description: LocalizedText
   /** Its section on the documentation site, as a path (`/ecrire/syntaxe#les-annotations`) or a full address. */
   docs?: string
@@ -39,7 +72,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     label: { fr: 'Image de fond', en: 'Background image' },
     images: ['image'],
     attributes: [{ name: 'image', description: { fr: 'Adresse de l\'image de fond.', en: 'Address of the background image.' } }],
-    snippet: { fr: ':slide-background{image="${/images/placeholder.svg}"}', en: ':slide-background{image="${/images/placeholder.svg}"}' },
+    example: { attributes: { image: '${/images/placeholder.svg}' } },
     description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide' },
     docs: '/ecrire/syntaxe#les-annotations',
   },
@@ -48,7 +81,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     icon: 'i-lucide-arrow-up-to-line',
     label: { fr: 'Surtitre', en: 'Pretitle' },
     attributes: [TEXT_ATTRIBUTE('Texte affiché au-dessus du titre.', 'Text shown above the title.')],
-    snippet: { fr: ':pretitle{text="${Contexte}"}', en: ':pretitle{text="${Context}"}' },
+    example: { attributes: { text: { fr: '${Contexte}', en: '${Context}' } } },
     description: { fr: 'Texte au-dessus du titre', en: 'Text above the title' },
     docs: '/ecrire/syntaxe#les-annotations',
   },
@@ -57,7 +90,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     icon: 'i-lucide-arrow-down-to-line',
     label: { fr: 'Sous-titre', en: 'Subtitle' },
     attributes: [TEXT_ATTRIBUTE('Texte affiché sous le titre.', 'Text shown below the title.')],
-    snippet: { fr: ':subtitle{text="${Sous-titre}"}', en: ':subtitle{text="${Subtitle}"}' },
+    example: { attributes: { text: { fr: '${Sous-titre}', en: '${Subtitle}' } } },
     description: { fr: 'Texte sous le titre', en: 'Text below the title' },
     docs: '/ecrire/syntaxe#les-annotations',
   },
@@ -65,7 +98,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     tag: 'layout',
     icon: 'i-lucide-layout-panel-left',
     label: { fr: 'Mise en page', en: 'Layout' },
-    snippet: { fr: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}', en: ':layout{media="${right}" src="${/images/placeholder.svg}" alt="${Description}"}' },
+    example: { attributes: { media: '${right}', src: '${/images/placeholder.svg}', alt: '${Description}' } },
     description: { fr: 'Image, page ou story à côté, au-dessus, au-dessous ou derrière le texte', en: 'Image, page or story beside, above, below or behind the text' },
     docs: '/ecrire/syntaxe#les-mises-en-page',
   },
@@ -77,7 +110,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
       TEXT_ATTRIBUTE('Texte du lien.', 'Text of the link.'),
       { name: 'href', description: { fr: 'Adresse que le lien ouvre.', en: 'Address the link opens.' } },
     ],
-    snippet: { fr: ':quicklink{text="${Voir la démo}" href="${https://exemple.fr}"}', en: ':quicklink{text="${See the demo}" href="${https://example.com}"}' },
+    example: { attributes: { text: { fr: '${Voir la démo}', en: '${See the demo}' }, href: { fr: '${https://exemple.fr}', en: '${https://example.com}' } } },
     description: { fr: 'Lien affiché en bas de la diapositive', en: 'Link shown at the bottom of the slide' },
     docs: '/ecrire/syntaxe#les-annotations',
   },
@@ -127,11 +160,11 @@ export interface DeckComponent {
   /** Takes the whole slide content area, so the parser keeps every child in `body`. */
   fullSlide?: boolean
   /**
-   * The text an editor inserts, as for an annotation. The editor offers the
-   * components that have one; a component written inside another (`Column`,
-   * `Step`) comes with the snippet of its parent.
+   * What an editor inserts. The editor offers the components that have one; a
+   * component written inside another (`Column`, `Step`) comes with the example
+   * of its parent.
    */
-  snippet?: LocalizedText
+  example?: ComponentExample
   description?: LocalizedText
   /** The props that take the address of an image, which may be a `data:image` URL (see `isDeckUrl`). */
   images?: readonly string[]
@@ -157,7 +190,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     label: { fr: 'Citation', en: 'Quote' },
     group: 'text',
     images: ['avatar'],
-    snippet: { fr: '::Quote{author="${Auteur}" role="${Rôle}"}\n${La citation.}\n::', en: '::Quote{author="${Author}" role="${Role}"}\n${The quote.}\n::' },
+    example: { attributes: { author: { fr: '${Auteur}', en: '${Author}' }, role: { fr: '${Rôle}', en: '${Role}' } }, content: [{ fr: '${La citation.}', en: '${The quote.}' }] },
     description: { fr: 'Citation, avec son auteur', en: 'Quote, with its author' },
     docs: '/reference/nuxt#quote',
   },
@@ -166,7 +199,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     icon: 'i-lucide-globe',
     label: { fr: 'Page web', en: 'Web page' },
     group: 'media',
-    snippet: { fr: '::Iframe{src="${https://exemple.fr}" title="${Titre}"}\n::', en: '::Iframe{src="${https://example.com}" title="${Title}"}\n::' },
+    example: { attributes: { src: { fr: '${https://exemple.fr}', en: '${https://example.com}' }, title: { fr: '${Titre}', en: '${Title}' } } },
     description: { fr: 'Page web affichée dans la diapositive', en: 'Web page shown in the slide' },
     docs: '/reference/nuxt#iframe',
   },
@@ -177,7 +210,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     group: 'media',
     aliases: ['deck-image'],
     images: ['src'],
-    snippet: { fr: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::', en: '::Image{src="${/images/placeholder.svg}" alt="${Description}"}\n::' },
+    example: { attributes: { src: '${/images/placeholder.svg}', alt: '${Description}' } },
     description: { fr: 'Image avec sa légende', en: 'Image with its caption' },
     docs: '/reference/nuxt#image',
   },
@@ -186,7 +219,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     icon: 'i-lucide-workflow',
     label: { fr: 'Schéma Mermaid', en: 'Mermaid diagram' },
     group: 'diagram',
-    snippet: { fr: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n```\n::', en: '::Mermaid\n```mermaid\nflowchart LR\n    A[${Start}] --> B[${End}]\n```\n::' },
+    example: { content: [{ fr: '```mermaid\nflowchart LR\n    A[${Départ}] --> B[${Arrivée}]\n```', en: '```mermaid\nflowchart LR\n    A[${Start}] --> B[${End}]\n```' }] },
     description: { fr: 'Schéma de boîtes et de flèches, décrit en texte', en: 'Diagram of boxes and arrows, written as text' },
     docs: '/reference/nuxt#mermaid',
   },
@@ -196,7 +229,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     label: { fr: 'Icône', en: 'Icon' },
     group: 'text',
     aliases: ['i'],
-    snippet: { fr: ':i{name="${ri:home-line}"}', en: ':i{name="${ri:home-line}"}' },
+    example: { name: 'i', inline: true, attributes: { name: '${ri:home-line}' } },
     description: { fr: 'Icône dans une phrase', en: 'Icon in a sentence' },
     docs: '/reference/nuxt#iconinline',
   },
@@ -206,7 +239,12 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     label: { fr: 'Colonnes', en: 'Columns' },
     group: 'text',
     aliases: ['TwoColumns', 'ThreeColumns'],
-    snippet: { fr: ':::Columns\n::Column\n${Colonne 1}\n::\n::Column\n${Colonne 2}\n::\n:::', en: ':::Columns\n::Column\n${Column 1}\n::\n::Column\n${Column 2}\n::\n:::' },
+    example: {
+      content: [
+        { name: 'Column', content: [{ fr: '${Colonne 1}', en: '${Column 1}' }] },
+        { name: 'Column', content: [{ fr: '${Colonne 2}', en: '${Column 2}' }] },
+      ],
+    },
     description: { fr: 'Blocs côte à côte', en: 'Blocks side by side' },
     docs: '/reference/nuxt#columns',
   },
@@ -215,7 +253,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     aliases: ['column'],
     parent: 'Columns',
     label: { fr: 'Colonne', en: 'Column' },
-    snippet: { fr: '::Column\n${Contenu de la colonne}\n::', en: '::Column\n${Column content}\n::' },
+    example: { content: [{ fr: '${Contenu de la colonne}', en: '${Column content}' }] },
     description: { fr: 'Une colonne du bloc', en: 'One column of the block' },
     docs: '/reference/nuxt#column',
   },
@@ -224,7 +262,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     icon: 'i-lucide-highlighter',
     label: { fr: 'Message clé', en: 'Key message' },
     group: 'text',
-    snippet: { fr: '::Highlight\n${Message clé.}\n::', en: '::Highlight\n${Key message.}\n::' },
+    example: { content: [{ fr: '${Message clé.}', en: '${Key message.}' }] },
     description: { fr: 'Message clé en gras, dans la couleur d\'accent, avec un liseré à gauche', en: 'Key message in bold, in the accent color, with a bar on its left' },
     docs: '/reference/nuxt#highlight',
   },
@@ -234,7 +272,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     label: { fr: 'Notes de l\'orateur', en: 'Speaker notes' },
     group: 'slide',
     aliases: ['notes'],
-    snippet: { fr: '::Notes\n${Ce que dit l\'orateur.}\n::', en: '::Notes\n${What the speaker says.}\n::' },
+    example: { content: [{ fr: '${Ce que dit l\'orateur.}', en: '${What the speaker says.}' }] },
     description: { fr: 'Notes de l\'orateur, visibles dans la vue conférencier (touche S)', en: 'Speaker notes, shown in the speaker view (S key)' },
     docs: '/reference/nuxt#notes',
   },
@@ -244,7 +282,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     label: { fr: 'Points un par un', en: 'Points one by one' },
     group: 'text',
     aliases: ['fragments'],
-    snippet: { fr: '::Fragments\n- ${Premier point}\n- ${Deuxième point}\n::', en: '::Fragments\n- ${First point}\n- ${Second point}\n::' },
+    example: { content: [{ fr: '- ${Premier point}\n- ${Deuxième point}', en: '- ${First point}\n- ${Second point}' }] },
     description: { fr: 'Liste dont les éléments apparaissent un par un', en: 'List whose items appear one at a time' },
     docs: '/reference/nuxt#fragments',
   },

@@ -33,7 +33,7 @@ import type { ArchiveWrite } from '../layers/studio/server/db/ports.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
-import { isDeckSlug, splitFrontmatter } from '@vignettes/core/deck'
+import { isDeckSlug, LEGACY_FORMS, legacyMentions, splitFrontmatter } from '@vignettes/core/deck'
 import { isFrozen } from '@vignettes/core/status'
 import { contentDir } from '@vignettes/nuxt/build/theme-registry'
 import { load as parseYaml } from 'js-yaml'
@@ -210,6 +210,16 @@ interface DeckPlan {
 
 const deckPlans: DeckPlan[] = []
 
+// The studio editor converts these forms once the deck is in the database.
+// A frozen deck keeps its text: the warning skips it.
+function warnLegacyForms(slug: string, raw: string, registryDriven: boolean) {
+  if (registryDriven)
+    return
+  const forms = [...new Set(legacyMentions(raw).map(mention => mention.form))]
+  if (forms.length)
+    plan.warnings.push(`${slug} : formes anciennes à convertir dans l'éditeur (${forms.map(id => LEGACY_FORMS[id].written).join(', ')})`)
+}
+
 for (const stub of stubs) {
   const raw = readFileSync(stub.path, 'utf8')
   const { data, yamlError } = splitFrontmatter(raw)
@@ -219,6 +229,11 @@ for (const stub of stubs) {
   }
   const reg = registryBySlug.get(stub.slug)
   const row = existing.get(stub.slug)
+  // Frozen/archived decks are listed from the registry, not from their stub:
+  // `presentations.get.ts` takes the registry title and forces `public`. Mirror
+  // that here, or the import would silently re-title them and close their access.
+  const lifecycle = reg?.lifecycle ?? 'live'
+  const registryDriven = isFrozen({ lifecycle })
 
   if (row?.managed) {
     if (!REPUBLISH.has(stub.slug)) {
@@ -232,18 +247,13 @@ for (const stub of stubs) {
     }
     republishPlans.push({ slug: stub.slug, title: (data.title as string) ?? null, theme: (data.theme as string) ?? null, raw })
     plan.republish.push(stub.slug)
+    warnLegacyForms(stub.slug, raw, registryDriven)
     continue
   }
 
   const project = (data.project as string) ?? null
   if (project)
     projectsUsed.add(project)
-
-  // Frozen/archived decks are listed from the registry, not from their stub:
-  // `presentations.get.ts` takes the registry title and forces `public`. Mirror
-  // that here, or the import would silently re-title them and close their access.
-  const lifecycle = reg?.lifecycle ?? 'live'
-  const registryDriven = isFrozen({ lifecycle })
 
   const p: DeckPlan = {
     slug: stub.slug,
@@ -268,8 +278,10 @@ for (const stub of stubs) {
     plan.decksUpdate.push(p.slug)
   else
     plan.decksCreate.push(p.slug)
-  if (p.needsVersion)
+  if (p.needsVersion) {
     plan.versionsInsert.push(p.slug)
+    warnLegacyForms(p.slug, raw, registryDriven)
+  }
   if (p.alias)
     plan.aliasesCanonical.push(`${p.alias} → ${p.slug}`)
 }

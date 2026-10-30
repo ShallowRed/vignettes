@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { ComponentAttribute } from '@vignettes/core/deck'
+import { inLanguage } from '@vignettes/core/deck'
 import { useCursorReading } from '../composables/useCursorReading'
-import { directiveEntry, inLanguage } from '../config/editor-reference'
+import { directiveEntry } from '../config/editor-reference'
 import { attributeChange, attributeValue, componentAt } from '../utils/editor-properties'
-import { codeParts } from '../utils/editor-tooltip'
 import { menuWidth } from '../utils/toolbar-buttons'
 
 // The attributes of the component under the cursor. Each choice rewrites its
@@ -84,20 +84,10 @@ const value = (attribute: ComponentAttribute) => current.value ? attributeValue(
                 @update:model-value="set(attribute, $event ? 'true' : 'false')"
               />
             </div>
-            <p class="text-xs text-muted">
-              <template
-                v-for="(part, index) in codeParts(inLanguage(attribute.description, locale))"
-                :key="index"
-              >
-                <code
-                  v-if="part.code"
-                  class="font-mono text-default"
-                >{{ part.text }}</code>
-                <template v-else>
-                  {{ part.text }}
-                </template>
-              </template>
-            </p>
+            <CodeText
+              :text="inLanguage(attribute.description, locale)"
+              class="block text-xs text-muted [&_code]:text-default"
+            />
             <ChoiceRow
               v-if="attribute.values"
               :choices="attribute.values.map(choice => ({ value: choice, label: choice, active: value(attribute) === choice }))"

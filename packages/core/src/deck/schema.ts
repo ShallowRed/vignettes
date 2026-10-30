@@ -55,13 +55,21 @@ export const ThemeBackgroundsSchema = z
   })
   .catchall(z.unknown())
 
+/** How the deck's text is read, nested under `syntax:`. */
+export const SyntaxConfigSchema = z
+  .object({
+    /** The lines that open a slide: `---` and `----` (`separator`), or the headings (`heading`). */
+    split: z.enum(['heading', 'separator']).optional(),
+  })
+  .catchall(z.unknown())
+
 export const DeckMetaSchema = z
   .object({
     title: z.string().optional(),
     lang: z.string().optional(),
     /** Free string; existence is checked separately (isKnownTheme) so a CSS-only theme isn't rejected. */
     theme: z.string().optional(),
-    parser: z.enum(['heading', 'separator']).optional(),
+    syntax: SyntaxConfigSchema.optional(),
     /** Root of the live story embeds. */
     storybook: z.string().refine(value => isDeckUrl(value), { message: DECK_URL_MESSAGE }).optional(),
     backgrounds: ThemeBackgroundsSchema.optional(),
@@ -74,10 +82,9 @@ export const DeckMetaSchema = z
     project: z.string().optional(),
     /** @deprecated legacy alias of `status`. */
     access: z.string().optional(),
+    /** @deprecated legacy alias of `syntax.split`. */
+    parser: z.enum(['heading', 'separator']).optional(),
     accessPassword: z.string().optional(),
-    // Legacy flat Reveal options, kept for backward compatibility.
-    transition: z.string().optional(),
-    center: z.boolean().optional(),
   })
   .catchall(z.unknown())
 
@@ -88,6 +95,8 @@ export const DeckMetaSchema = z
 export const FRONTMATTER_EMBED_KEYS: readonly string[] = ['storybook', 'backgrounds']
 
 export type RevealConfig = z.infer<typeof RevealConfigSchema>
+
+export type SyntaxConfig = z.infer<typeof SyntaxConfigSchema>
 
 export type ThemeBackgrounds = z.infer<typeof ThemeBackgroundsSchema>
 export type DeckMeta = z.infer<typeof DeckMetaSchema>

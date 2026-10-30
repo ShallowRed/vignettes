@@ -1,14 +1,14 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
-import type { DeckComponent, DeckComponentGroup, LocalizedText } from '@vignettes/core/deck'
+import type { ComponentExample, DeckComponent, DeckComponentGroup, LocalizedText } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents } from '@vignettes/core/deck'
+import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
 /**
  * Declarative authoring reference for the writer: one dataset feeding the
  * autocompletion, the toolbar "Insérer" menu and the help panel. The components
- * and the annotations come from `@vignettes/core/deck`, with the snippet and the
+ * and the annotations come from `@vignettes/core/deck`, with the example and the
  * description each declaration carries. The other labels and descriptions are
  * message keys of the `reference` locale file, and follow the engine contracts
  * (packages/core/src/deck/schema.ts): extend those first, then here.
@@ -122,6 +122,11 @@ const BACKGROUND_KEYS: readonly FrontmatterKey[] = [
   { key: 'default', descriptionKey: 'reference.frontmatter.backgrounds.default', snippet: 'default: ${/backgrounds/default.svg}' },
 ]
 
+/** How the text is read, nested under `syntax:`. */
+const SYNTAX_KEYS: readonly FrontmatterKey[] = [
+  { key: 'split', descriptionKey: 'reference.frontmatter.syntax.split', values: ['separator', 'heading'], default: 'separator', snippet: 'split: ${heading}' },
+]
+
 /** Code theme properties, nested under `code:`; a name alone also works (`code: sombre`). */
 const CODE_KEYS: readonly FrontmatterKey[] = [
   { key: 'theme', descriptionKey: 'reference.frontmatter.code.theme', values: Object.keys(CODE_THEMES), snippet: 'theme: ${sombre}' },
@@ -145,7 +150,6 @@ const CODE_KEYS: readonly FrontmatterKey[] = [
 export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'title', descriptionKey: 'reference.frontmatter.root.title', defaultKey: 'reference.frontmatter.root.titleDefault', snippet: { fr: 'title: "${Titre}"', en: 'title: "${Title}"' } },
   { key: 'theme', descriptionKey: 'reference.frontmatter.root.theme', values: knownThemes(), snippet: 'theme: ${dsfr}' },
-  { key: 'parser', descriptionKey: 'reference.frontmatter.root.parser', values: ['separator', 'heading'], default: 'separator', snippet: 'parser: ${separator}', advanced: true },
   { key: 'lang', descriptionKey: 'reference.frontmatter.root.lang', values: ['fr', 'en'], default: 'fr', snippet: 'lang: ${fr}' },
   { key: 'project', descriptionKey: 'reference.frontmatter.root.project', snippet: { fr: 'project: ${slug-du-dossier}', en: 'project: ${folder-slug}' } },
   { key: 'status', descriptionKey: 'reference.frontmatter.root.status', values: PUBLICATION_STATUSES, default: 'private', snippet: 'status: ${private}' },
@@ -154,26 +158,9 @@ export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'backgrounds', descriptionKey: 'reference.frontmatter.root.backgrounds', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
   { key: 'code', descriptionKey: 'reference.frontmatter.root.code', values: Object.keys(CODE_THEMES), snippet: 'code: ${sombre}', children: CODE_KEYS },
   { key: 'reveal', descriptionKey: 'reference.frontmatter.root.reveal', snippet: 'reveal:\n  width: 1280\n  height: 720', children: REVEAL_KEYS },
+  { key: 'syntax', descriptionKey: 'reference.frontmatter.root.syntax', snippet: 'syntax:\n  split: ${heading}', children: SYNTAX_KEYS, advanced: true },
   { key: 'accessPassword', descriptionKey: 'reference.frontmatter.root.accessPassword', snippet: { fr: 'accessPassword: ${motdepasse}', en: 'accessPassword: ${password}' } },
 ]
-
-/** Keys a deck may still carry from older formats; known, never suggested. */
-export const LEGACY_FRONTMATTER_KEYS: readonly string[] = ['access', 'transition', 'center']
-
-/**
- * The text in the interface language, French when it has none in that
- * language. A plain string, the same in every language, comes back as it is.
- */
-export function inLanguage(text: string | LocalizedText | undefined, lang: string): string {
-  if (typeof text === 'string')
-    return text
-  return text?.[lang] ?? text?.fr ?? ''
-}
-
-/** The deck syntax that opens a snippet: `::Quote`, `:::Columns`, `:i`. */
-function directiveOf(snippet: string): string {
-  return /^:+[\w-]+/.exec(snippet)?.[0] ?? snippet
-}
 
 /** A component with its texts in the interface language, written with `syntax`; its name stands for a missing label. */
 function componentEntry(component: DeckComponent, syntax: string, lang: string): DirectiveEntry {
@@ -205,7 +192,7 @@ export function componentAttributeEntries(tag: string, lang: string): ComponentA
 /**
  * The components a deck can use, read from the registry the renderer reads, so
  * a component an extension package or the application registers is offered
- * with its own snippet and description.
+ * with its own example and description.
  */
 export function componentEntries(lang: string): ReferenceEntry[] {
   return insertable(deckComponents().filter(component => !component.parent), lang)
@@ -219,11 +206,11 @@ export function childEntries(parent: string, lang: string): ReferenceEntry[] {
 
 function insertable(components: readonly DeckComponent[], lang: string): ReferenceEntry[] {
   return components
-    .filter((component): component is DeckComponent & { snippet: LocalizedText } => Boolean(component.snippet))
-    .map((component) => {
-      const snippet = inLanguage(component.snippet, lang)
-      return { ...componentEntry(component, directiveOf(snippet), lang), snippet }
-    })
+    .filter((component): component is DeckComponent & { example: ComponentExample } => Boolean(component.example))
+    .map(component => ({
+      ...componentEntry(component, exampleOpening(component.name, component.example), lang),
+      snippet: exampleSource(component.name, component.example, lang),
+    }))
 }
 
 /** The `:tag{…}` annotations the parser lifts out of the slide body. */
@@ -235,7 +222,7 @@ export function annotationEntries(lang: string): ReferenceEntry[] {
     group: 'slide',
     icon: annotation.icon ?? GROUP_ICONS.slide,
     docs: annotation.docs,
-    snippet: inLanguage(annotation.snippet, lang),
+    snippet: annotationSource(annotation.tag, annotation.example, lang),
   }))
 }
 

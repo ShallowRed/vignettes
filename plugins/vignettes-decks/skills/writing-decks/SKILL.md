@@ -3,7 +3,7 @@ name: writing-decks
 description: >-
   Write or edit a deck for Vignettes, the presentation engine built on Nuxt,
   MDC and reveal.js. Use when authoring a Vignettes .md deck in any project,
-  choosing its frontmatter and parser, placing annotations (`:layout`,
+  choosing its frontmatter and how it splits into slides, placing annotations (`:layout`,
   `:subtitle`, `:slide-background`), using its components (`::Columns`,
   `::Notes`, `::Scheme`, `::Diagram`, `::JsonTour`), embedding live Storybook
   stories (`:layout{story=…}`, `::StoryFrame`, `::Screens`), or preparing a deck
@@ -38,13 +38,12 @@ Start from the frontmatter:
 title: One sentence that names the subject
 lang: fr
 theme: dsfr
-parser: heading
 ---
 ```
 
-With `parser: heading`, the headings cut the slides; with the default `separator` parser, `---` and `----` lines do. Pick one per deck.
+By default, `---` and `----` lines cut the slides. With `split: heading` under `syntax:` in the frontmatter, the headings cut them. Pick one per deck.
 
-With either parser, a `##` slide that holds its heading and at most one paragraph of 140 characters or fewer is a section, which the themes paint in contrast. A `##` slide with more content, a list, a component or a `:layout` takes the layout of a content slide. Write a section as its `##` heading alone, or with one short sentence under it.
+With either rule, a `##` slide that holds its heading and at most one paragraph of 140 characters or fewer is a section, which the themes paint in contrast. A `##` slide with more content, a list, a component or a `:layout` takes the layout of a content slide. Write a section as its `##` heading alone, or with one short sentence under it.
 
 One idea per slide, stated by its heading. When the audience has to read a slide to follow, it holds too much: move the detail to `::Notes`, which the speaker view shows. Vertical slides hold the depth a question might call for. A deck presents the work; open questions and decisions to take belong in the notes of the project.
 

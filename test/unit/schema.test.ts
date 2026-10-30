@@ -20,6 +20,12 @@ describe('parseDeckMeta', () => {
     expect((meta as any).parser).toBe('lea')
   })
 
+  it('flags a typo in `syntax.split`', () => {
+    const { valid, issues } = parseDeckMeta({ syntax: { split: 'titres' } })
+    expect(valid).toBe(false)
+    expect(issues.join()).toContain('syntax.split')
+  })
+
   it('throws in strict mode on invalid frontmatter', () => {
     expect(() => parseDeckMeta({ parser: 'lea' }, { strict: true })).toThrow(/parser/)
   })

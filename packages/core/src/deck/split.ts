@@ -3,7 +3,7 @@ import type { LayoutIssueKind } from './layout.ts'
 import type { ParserId } from './parser.ts'
 import { isRefusedEmbed, readAttribute } from './attributes.ts'
 import { ANNOTATION_TAGS, componentKey, DECK_ANNOTATIONS, deckComponents, NOTES_COMPONENT } from './components.ts'
-import { frontmatterSource } from './frontmatter.ts'
+import { frontmatterLineCount } from './frontmatter.ts'
 import { LAYOUT_ATTRIBUTES, readLayout } from './layout.ts'
 
 /**
@@ -55,14 +55,6 @@ interface ScannedLine {
   text: string
   /** For a setext heading, the first line of the paragraph it lifts. */
   from?: number
-}
-
-function frontmatterLineCount(raw: string): number {
-  const block = frontmatterSource(raw)
-  if (!block)
-    return 0
-  const lines = block.split('\n').length
-  return block.endsWith('\n') ? lines - 1 : lines
 }
 
 function isFenceClose(line: string, fence: string): boolean {
@@ -674,9 +666,34 @@ export function layoutAnnotationValues(annotation: LayoutAnnotation): Record<str
   return Object.fromEntries(annotation.attributes.map(attribute => [attribute.name, attribute.value]))
 }
 
-/** An attribute of a `:layout` annotation that `readLayout` leaves out or translates, placed in the source. */
+/** A replacement of the text from `from` to `to`, offsets in the deck text. */
+export interface TextChange {
+  from: number
+  to: number
+  insert: string
+}
+
+/**
+ * The change that writes `source` in place of an annotation of `raw`. An empty
+ * `source` removes the annotation, and the annotation alone on its line goes
+ * with its line and the blank line after it.
+ */
+export function layoutAnnotationChange(raw: string, annotation: LayoutAnnotation, source: string): TextChange {
+  const lines = raw.split('\n')
+  const lineFrom = lines.slice(0, annotation.line - 1).reduce((offset, line) => offset + line.length + 1, 0)
+  const text = lines[annotation.line - 1]!
+  const from = lineFrom + annotation.column
+  const to = from + annotation.length
+  if (source || text.trim() !== raw.slice(from, to))
+    return { from, to, insert: source }
+  const next = lines[annotation.line]
+  const end = lineFrom + text.length + (next !== undefined && !next.trim() ? next.length + 1 : 0)
+  return { from: lineFrom, to: Math.min(end + 1, raw.length), insert: '' }
+}
+
+/** An attribute of a `:layout` annotation that `readLayout` leaves out, placed in the source; `legacyMentions` places the attributes it translates. */
 export interface LayoutMention {
-  kind: LayoutIssueKind
+  kind: Exclude<LayoutIssueKind, 'legacy'>
   attribute: string
   /** 1-based line, 0-based column and length of the marked text: the attribute, or the annotation when it names no attribute. */
   line: number
@@ -684,17 +701,11 @@ export interface LayoutMention {
   length: number
 }
 
-/**
- * The issues `readLayout` finds in each `:layout` annotation of a deck, placed
- * on their attribute. The attributes of the earlier writing of an annotation
- * make one issue, on the whole annotation.
- */
+/** The issues `readLayout` finds in each `:layout` annotation of a deck, placed on their attribute. */
 export function layoutMentions(raw: string): LayoutMention[] {
   return layoutAnnotations(raw).flatMap((annotation) => {
     const { issues } = readLayout(layoutAnnotationValues(annotation))
-    const legacy = issues.find(issue => issue.kind === 'legacy')
-    const placed = [...issues.filter(issue => issue.kind !== 'legacy'), ...(legacy ? [{ kind: legacy.kind, attribute: '' }] : [])]
-    return placed.map((issue) => {
+    return issues.flatMap(({ kind, attribute }) => kind === 'legacy' ? [] : [{ kind, attribute }]).map((issue) => {
       const written = annotation.attributes.find(attribute => attribute.name === issue.attribute)
       return {
         ...issue,

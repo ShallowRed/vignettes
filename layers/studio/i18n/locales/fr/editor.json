@@ -176,8 +176,7 @@
       "layoutUnknownAttributeShort": "Ligne {line} : attribut « {name} » inconnu",
       "layoutInvalidValue": "Valeur inconnue pour « {name} ». Choisissez une valeur dans l'aide.",
       "layoutInvalidValueShort": "Ligne {line} : valeur de « {name} » inconnue",
-      "layoutLegacy": "Format de :layout à convertir : cliquez sur « Convertir » dans le panneau Mise en page.",
-      "layoutLegacyShort": "Ligne {line} : format de :layout à convertir",
+      "legacyShort": "Ligne {line} : {name} à convertir",
       "layoutMissingSource": "Média sans adresse : ajoutez l'attribut src ou story.",
       "layoutMissingSourceShort": "Ligne {line} : média sans adresse",
       "layoutUnused": "Retirez « {name} » : cet attribut est sans effet avec ce placement du média.",
@@ -236,10 +235,10 @@
         "print": "À l'impression"
       },
       "legacy": "Format de :layout à convertir en attributs.",
-      "modernize": "Convertir",
       "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story.",
       "outside": "Placez le curseur dans une diapositive pour régler sa mise en page."
     },
+    "convert": "Convertir",
     "docsLink": "Documentation",
     "attributeDefault": "Par défaut : {value}",
     "componentAttributes": "Attributs : {names}",

@@ -1,8 +1,8 @@
-import type { EditorState, Extension } from '@codemirror/state'
+import type { EditorState, Extension, TransactionSpec } from '@codemirror/state'
 import type { Translate } from '../config/editor-reference'
 import { StateEffect, StateField } from '@codemirror/state'
 import { Decoration, EditorView, hoverTooltip } from '@codemirror/view'
-import { docsLink } from './editor-tooltip'
+import { codeParagraph, docsLink } from './editor-tooltip'
 
 /**
  * Problems marked in the source pane: a wavy underline on the range, and the
@@ -13,6 +13,13 @@ import { docsLink } from './editor-tooltip'
 
 export type Severity = 'error' | 'warning' | 'info'
 
+/** A change that solves a problem, offered in its tooltip. */
+export interface ProblemFix {
+  label: string
+  /** The change for the text as it stands, the problem starting at `from`; none once the problem is gone. */
+  change: (state: EditorState, from: number) => TransactionSpec | undefined
+}
+
 export interface Problem {
   from: number
   to: number
@@ -22,6 +29,7 @@ export interface Problem {
   short?: string
   /** Address of the documentation section that explains the fix. */
   docs?: string
+  fix?: ProblemFix
 }
 
 /** A problem placed by line, as the parse of the preview reports it. */
@@ -34,6 +42,7 @@ export interface LineProblem {
   severity: Severity
   message: string
   docs?: string
+  fix?: ProblemFix
 }
 
 export const problemMarks = {
@@ -42,12 +51,24 @@ export const problemMarks = {
   info: Decoration.mark({ class: 'cm-problem cm-problem--info' }),
 }
 
-/** The paragraph of a tooltip that states a problem, and the link to its documentation. */
-export function problemMessage(problem: Problem, t: Translate): HTMLElement[] {
-  const text = document.createElement('p')
-  text.className = `cm-source-tooltip__problem cm-source-tooltip__problem--${problem.severity}`
-  text.textContent = problem.message
-  return problem.docs ? [text, docsLink(problem.docs, t('editor.docsLink'))] : [text]
+/** The paragraph of a tooltip that states a problem, the button of its fix in `view`, and the link to its documentation. */
+export function problemMessage(problem: Problem, t: Translate, view?: EditorView): HTMLElement[] {
+  const text = codeParagraph(problem.message, `cm-source-tooltip__problem cm-source-tooltip__problem--${problem.severity}`)
+  const parts: HTMLElement[] = [text]
+  const { fix } = problem
+  if (fix && view) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'cm-source-tooltip__action'
+    button.textContent = fix.label
+    button.addEventListener('click', () => {
+      const spec = fix.change(view.state, problem.from)
+      if (spec)
+        view.dispatch(spec)
+    })
+    parts.push(button)
+  }
+  return problem.docs ? [...parts, docsLink(problem.docs, t('editor.docsLink'))] : parts
 }
 
 /** Line problems as ranges of `state`; a line beyond the end of the text is left out. */
@@ -58,7 +79,7 @@ export function placeProblems(state: EditorState, problems: readonly LineProblem
       const line = state.doc.line(problem.line)
       const from = Math.min(line.from + problem.column, line.to)
       const to = Math.min(from + problem.length, line.to)
-      return { from, to, severity: problem.severity, message: problem.message, docs: problem.docs }
+      return { from, to, severity: problem.severity, message: problem.message, docs: problem.docs, fix: problem.fix }
     })
     .filter(problem => problem.to > problem.from)
 }
@@ -95,7 +116,7 @@ function previewProblemTooltip(t: Translate): Extension {
       create: () => {
         const dom = document.createElement('div')
         dom.className = 'cm-source-tooltip'
-        dom.append(...problems.flatMap(problem => problemMessage(problem, t)))
+        dom.append(...problems.flatMap(problem => problemMessage(problem, t, view)))
         return { dom }
       },
     }

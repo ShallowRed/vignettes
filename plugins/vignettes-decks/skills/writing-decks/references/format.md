@@ -11,17 +11,14 @@ Validated against `DeckMetaSchema` of `@vignettes/core/deck`. An unknown key is 
 - `title`
 - `lang`
 - `theme`
-- `parser`: `heading`, `separator`
+- `syntax`, holding `split` (`heading`, `separator`)
 - `storybook`
-- `backgrounds`
-- `reveal`
+- `backgrounds`, holding `h1`, `h2`, `h3`, `default`
+- `reveal`, holding `hash`, `transition`, `backgroundTransition`, `slideNumber`, `embedded`, `margin`, `minScale`, `maxScale`, `width`, `height`, `controls`, `progress`, `keyboard`, `touch`, `loop`, `fragments`, `fragmentInURL`, `help`, `showNotes`, `autoPlayMedia`, `preloadIframes`, `autoSlide`, `view`, `navigationMode` (`default`, `linear`, `grid`), `pdfMaxPagesPerSlide`, `pdfSeparateFragments`
 - `code`
 - `status`: `public`, `private`, `semi-private`
 - `project`
-- `access`
 - `accessPassword`
-- `transition`
-- `center`
 
 ## Annotations
 
@@ -35,7 +32,7 @@ Written `:tag{…}` on a line of the slide. The parser reads them and removes th
 
 ## Layouts
 
-Set by the attributes of `:layout{…}`, read by `readLayout` of `@vignettes/core/deck`. A source without `media` goes to the right. The parser also reads the attributes of decks written before `media` and `size` (`name="media-right-wide"`, `previewWidth`).
+Set by the attributes of `:layout{…}`, read by `readLayout` of `@vignettes/core/deck`. A source without `media` goes to the right.
 
 - `media` (`right`, `left`, `top`, `bottom`, `behind`), `right` by default: Place of the media: right, left, top, bottom or behind the text
 - `size` (`1/3`, `1/2`, `2/3`, `3/4`): Share of the slide the media takes: of its width on a side, 1/2 by default; of its height at the top or the bottom, where the media takes by default the height the text leaves
@@ -84,3 +81,13 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 
 - `StoryFrame`: Screen of a Storybook story, from its id
 - `Screens`: Several Storybook screens side by side
+
+## Earlier forms
+
+Forms of the earlier format that a conversion rewrites into the current form, listed by `LEGACY_FORMS` of `@vignettes/core/deck`. Write the current form: the studio editor marks each earlier one and converts it.
+
+- `parser` → `syntax.split`: Earlier form of `split` under the `syntax` key.
+- `access` → `status`: Earlier form of `status`.
+- `transition` → `reveal.transition`: No effect at the root: write the transition under the `reveal` key.
+- `center`: No effect: write the vertical alignment of a slide in the `align` attribute of `:layout`.
+- `:layout{name=…}` → `:layout{media=… size=…}`: Earlier form of the attributes of `:layout`: `name="media-right-wide"`, `previewWidth`, `title`, `raw`.

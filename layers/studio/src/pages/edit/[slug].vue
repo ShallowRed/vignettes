@@ -189,6 +189,7 @@ const {
   docsUrl,
   t,
   tWithKeys,
+  locale,
 })
 
 // `?slide=h/v`: the deck page's edit command opens the editor on the slide it
@@ -546,7 +547,10 @@ async function onMetaSaved() {
               :key="`${issue.line}-${issue.column}`"
               class="max-w-full"
             >
-              <UTooltip :text="issue.message">
+              <UTooltip>
+                <template #content>
+                  <CodeText :text="issue.message" />
+                </template>
                 <UButton
                   :label="issue.short"
                   :icon="SEVERITY_ICONS[issue.severity].icon"

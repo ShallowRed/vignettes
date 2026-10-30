@@ -1,4 +1,5 @@
 import type { Translate } from '../config/editor-reference'
+import { codeParts } from './code-parts'
 
 /**
  * The content of the editor's tooltips: a component, an annotation, an
@@ -20,9 +21,16 @@ export interface ReferenceCard {
   docs?: string
 }
 
-/** A description cut into its text and its `code` spans, which the descriptions write between backticks. */
-export function codeParts(text: string): { text: string, code: boolean }[] {
-  return text.split('`').map((part, index) => ({ text: part, code: index % 2 === 1 })).filter(part => part.text)
+/** A paragraph of `text`, its spans between backticks shown as code. */
+export function codeParagraph(text: string, className = ''): HTMLParagraphElement {
+  const paragraph = document.createElement('p')
+  paragraph.className = className
+  for (const part of codeParts(text)) {
+    const node = document.createElement(part.code ? 'code' : 'span')
+    node.textContent = part.text
+    paragraph.append(node)
+  }
+  return paragraph
 }
 
 /** The link to a documentation section, opened in another tab. */
@@ -52,15 +60,8 @@ export function referenceCard(card: ReferenceCard, t: Translate): HTMLElement {
   syntax.textContent = card.syntax
   heading.append(syntax)
   dom.append(heading)
-  if (card.description) {
-    const text = document.createElement('p')
-    for (const part of codeParts(card.description)) {
-      const node = document.createElement(part.code ? 'code' : 'span')
-      node.textContent = part.text
-      text.append(node)
-    }
-    dom.append(text)
-  }
+  if (card.description)
+    dom.append(codeParagraph(card.description))
   if (card.values?.length) {
     const values = document.createElement('p')
     values.className = 'cm-source-tooltip__values'

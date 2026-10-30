@@ -46,15 +46,17 @@ A deck is a markdown document with frontmatter:
 title: Presentation title # defaults to the slug
 theme: dsfr # a compiled theme name, or one of its aliases
 lang: fr # French orthotypography applies when lang is absent or starts with fr
-parser: separator # separator (default) or heading
-transition: slide # Reveal transition
 storybook: https://sb.example # root for live story embeds
+reveal:
+  transition: slide # Reveal options
+syntax:
+  split: separator # separator (default) or heading
 ---
 ```
 
 ## Slides
 
-By default, `---` separates horizontal slides and `----` vertical ones. With `parser: heading`, `#` opens the title slide, `##` starts a horizontal slide, a thematic break (`---`, `***`) outside the title slide starts one too, and `###` nests a vertical slide under it. A line inside fenced code or inside a block component (`::Name` … `::`) never separates slides. `splitSlides` of `@vignettes/core/deck` defines these rules.
+By default, `---` separates horizontal slides and `----` vertical ones. With `split: heading` under `syntax:` (or the earlier root key `parser: heading`), `#` opens the title slide, `##` starts a horizontal slide, a thematic break (`---`, `***`) outside the title slide starts one too, and `###` nests a vertical slide under it. A line inside fenced code or inside a block component (`::Name` … `::`) never separates slides. `splitSlides` of `@vignettes/core/deck` defines these rules.
 
 Each slide is tagged with the class of its role, which themes style: `slide-h1` for the title slide, `slide-h2` for a section, `slide-h3` for a content slide. A section is a `##` slide made of its heading and at most one paragraph of 140 characters or fewer, besides its `::Notes` and its annotations other than `:layout`; `isSectionSlide` of `@vignettes/core/deck` defines this rule. A `##` slide with more content carries `slide-h3`, and the keys of `backgrounds` follow the same roles. A section holding vertical slides is wrapped in Reveal's stack, which carries `stack-h1` or `stack-h2` and no `slide-` class: the wrapper is not a slide, so a rule written for a slide role cannot reach the slides nested under it.
 

@@ -3,7 +3,8 @@ title: "Composants"
 status: public
 theme: dsfr
 lang: fr
-parser: heading
+syntax:
+  split: heading
 ---
 
 # Composants

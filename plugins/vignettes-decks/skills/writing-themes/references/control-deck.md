@@ -8,7 +8,8 @@ Each slide role and each element a theme colors. Write the name of the theme und
 ---
 title: Contrôle du thème
 theme: exemple-marque
-parser: heading
+syntax:
+  split: heading
 ---
 
 # Contrôle du thème

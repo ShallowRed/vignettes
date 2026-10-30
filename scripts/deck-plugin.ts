@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, DeckMetaSchema, LAYOUT_ATTRIBUTES } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS, DeckMetaSchema, LAYOUT_ATTRIBUTES, LEGACY_FORMS, LEGACY_FRONTMATTER_KEYS } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 
@@ -34,13 +34,34 @@ const COPIED: Record<string, string> = {
   [`${THEMES}/theme-dsfr.md`]: 'packages/theme-dsfr/README.md',
 }
 
-function frontmatterKeys(): string[] {
-  return Object.entries(DeckMetaSchema.shape).map(([key, schema]) => {
-    const inner = (schema as any).unwrap?.() ?? schema
-    const options: unknown[] | undefined = inner.options
-    const values = options?.every(value => typeof value === 'string') ? options as string[] : undefined
-    return values ? `- \`${key}\`: ${values.map(v => `\`${v}\``).join(', ')}` : `- \`${key}\``
+// A schema without its `optional` wrapper.
+const unwrapped = (schema: unknown): any => (schema as any).unwrap?.() ?? schema
+
+// The closed values of an enum; none for an open value.
+function closedValues(schema: unknown): string[] | undefined {
+  const options: unknown[] | undefined = unwrapped(schema).options
+  return options?.every(value => typeof value === 'string') ? options as string[] : undefined
+}
+
+const codeList = (names: string[]) => names.map(name => `\`${name}\``).join(', ')
+
+// A key with its closed values, or with the keys under it and theirs.
+function keyLine(key: string, schema: unknown): string {
+  const values = closedValues(schema)
+  if (values)
+    return `\`${key}\`: ${codeList(values)}`
+  const shape: Record<string, unknown> | undefined = unwrapped(schema).shape
+  if (!shape)
+    return `\`${key}\``
+  const children = Object.entries(shape).map(([child, childSchema]) => {
+    const childValues = closedValues(childSchema)
+    return childValues ? `\`${child}\` (${codeList(childValues)})` : `\`${child}\``
   })
+  return `\`${key}\`, holding ${children.join(', ')}`
+}
+
+function frontmatterKeys(): string[] {
+  return Object.entries(DeckMetaSchema.shape).filter(([key]) => !LEGACY_FRONTMATTER_KEYS.includes(key)).map(([key, schema]) => `- ${keyLine(key, schema)}`)
 }
 
 function componentLines(components: readonly DeckComponent[]): string[] {
@@ -73,7 +94,7 @@ function formatReference(): string {
     '',
     '## Layouts',
     '',
-    'Set by the attributes of `:layout{…}`, read by `readLayout` of `@vignettes/core/deck`. A source without `media` goes to the right. The parser also reads the attributes of decks written before `media` and `size` (`name="media-right-wide"`, `previewWidth`).',
+    'Set by the attributes of `:layout{…}`, read by `readLayout` of `@vignettes/core/deck`. A source without `media` goes to the right.',
     '',
     ...LAYOUT_ATTRIBUTES.map(a => `- \`${a.name}\`${a.values ? ` (${a.values.map(v => `\`${v}\``).join(', ')})` : ''}${a.default ? `, \`${a.default}\` by default` : ''}: ${a.description.en}`),
     '',
@@ -92,6 +113,12 @@ function formatReference(): string {
     '`@vignettes/storybook`, live story embeds:',
     '',
     ...componentLines(STORYBOOK_COMPONENTS),
+    '',
+    '## Earlier forms',
+    '',
+    'Forms of the earlier format that a conversion rewrites into the current form, listed by `LEGACY_FORMS` of `@vignettes/core/deck`. Write the current form: the studio editor marks each earlier one and converts it.',
+    '',
+    ...Object.values(LEGACY_FORMS).map(form => `- \`${form.written}\`${form.current ? ` → \`${form.current}\`` : ''}: ${form.description.en}`),
     '',
   ].join('\n')
 }

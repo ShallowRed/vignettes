@@ -176,8 +176,7 @@
       "layoutUnknownAttributeShort": "Line {line}: unknown attribute “{name}”",
       "layoutInvalidValue": "Unknown value for “{name}”. Pick a value from the help.",
       "layoutInvalidValueShort": "Line {line}: unknown value of “{name}”",
-      "layoutLegacy": ":layout format to convert: click “Convert” in the Layout panel.",
-      "layoutLegacyShort": "Line {line}: :layout format to convert",
+      "legacyShort": "Line {line}: {name} to convert",
       "layoutMissingSource": "Media without an address: add the src or story attribute.",
       "layoutMissingSourceShort": "Line {line}: media without an address",
       "layoutUnused": "Remove “{name}”: this attribute has no effect with this placement of the media.",
@@ -236,10 +235,10 @@
         "print": "In print"
       },
       "legacy": ":layout format to convert into attributes.",
-      "modernize": "Convert",
       "missingSource": "Enter the address of an image or a page, or the id of a story.",
       "outside": "Place the cursor in a slide to set its layout."
     },
+    "convert": "Convert",
     "docsLink": "Documentation",
     "attributeDefault": "Default: {value}",
     "componentAttributes": "Attributes: {names}",

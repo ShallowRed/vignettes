@@ -30,7 +30,7 @@ The core declares the contracts and leaves the implementations to whoever has th
 
 ## The component contract
 
-`BUILT_IN_COMPONENTS` lists what the render layer ships. `registerDeckComponents` adds to it, which is how an extension module or a tenant declares its own components: the parser then knows whether one takes the whole slide, and the renderer resolves its authoring name. A component declared with a `snippet` and a `description`, each given in French and in English (`{ fr, en }`), is offered by the editor of the studio, in its help, its insert menu and its autocompletion, in the language of the interface.
+`BUILT_IN_COMPONENTS` lists what the render layer ships. `registerDeckComponents` adds to it, which is how an extension module or a tenant declares its own components: the parser then knows whether one takes the whole slide, and the renderer resolves its authoring name. A component declared with an `example` and a `description` is offered by the editor of the studio, in its help, its insert menu and its autocompletion, in the language of the interface. The example gives the attributes and the content the editor inserts, each text the same in every language or given in French and in English (`{ fr, en }`), with `${…}` placeholders; `exampleSource` writes it in the deck syntax.
 
 ```ts
 import { registerDeckComponents } from '@vignettes/core/deck'
@@ -39,12 +39,16 @@ registerDeckComponents([
   {
     name: 'Scheme',
     aliases: ['scheme'],
-    snippet: { fr: ':::Scheme\n::Step{title="Étape"}\n::\n:::', en: ':::Scheme\n::Step{title="Step"}\n::\n:::' },
+    example: { content: [{ name: 'Step', attributes: { title: { fr: 'Étape', en: 'Step' } } }] },
     description: { fr: 'Étapes reliées par des flèches', en: 'Steps linked by arrows' },
   },
   { name: 'Step', aliases: ['step'] },
 ])
 ```
+
+## Earlier forms
+
+`LEGACY_FORMS` lists the forms of the earlier format that a deck may still hold and that a conversion rewrites into the current format, and `legacyMentions` finds them in a deck with the changes that convert each one. The studio editor marks them and converts them, the content import names the decks that hold one, and the reference of the deck authoring plugin lists them. A change to the format that retires a form adds its entry there.
 
 ## Entry points
 

@@ -2,7 +2,7 @@ import type { EditorState, TransactionSpec } from '@codemirror/state'
 import type { LayoutAnnotation, MediaPlacement } from '@vignettes/core/deck'
 import type { InjectionKey, Ref } from 'vue'
 import type { SketchShape } from '../config/editor-reference'
-import { layoutAnnotations, layoutAnnotationValues, layoutSource, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
+import { layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, layoutSource, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
 import { SKETCH_FRAME, text as sketchText, title } from '../config/editor-reference'
 import { frontmatterEnd } from './editor-frontmatter'
 import { HEADING_RE, slideContentAt } from './editor-slides'
@@ -57,20 +57,8 @@ export function slideLayoutChange(state: EditorState, attributes: Record<string,
   const at = slideLayoutAt(state)
   const source = layoutSource(attributes)
   const { annotation } = at
-  if (annotation) {
-    const line = state.doc.line(annotation.line)
-    const from = line.from + annotation.column
-    const to = from + annotation.length
-    if (source)
-      return { changes: { from, to, insert: source } }
-    // A line that holds the annotation alone goes with the blank line after it.
-    if (line.text.trim() === state.sliceDoc(from, to)) {
-      const next = line.number < state.doc.lines ? state.doc.line(line.number + 1) : undefined
-      const end = next && !next.text.trim() ? next.to : line.to
-      return { changes: { from: line.from, to: Math.min(end + 1, state.doc.length), insert: '' } }
-    }
-    return { changes: { from, to, insert: '' } }
-  }
+  if (annotation)
+    return { changes: layoutAnnotationChange(state.doc.toString(), annotation, source) }
   if (!source)
     return {}
   for (let n = at.startLine; n <= at.endLine && n <= state.doc.lines; n++) {

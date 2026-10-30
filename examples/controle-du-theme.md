@@ -1,7 +1,8 @@
 ---
 title: Contrôle du thème
 theme: exemple-marque
-parser: heading
+syntax:
+  split: heading
 ---
 
 # Contrôle du thème

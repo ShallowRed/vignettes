@@ -22,7 +22,7 @@ Two more rules hold the entry points:
 
 ## The deck format
 
-The format is defined once, in `packages/core/src/deck`: `split.ts` cuts the slides and gives their source lines, `components.ts` lists the annotations, layouts and components, `schema.ts` validates the frontmatter. The parsers, the editor and the catalog read these; add a rule there, never in one of its readers.
+The format is defined once, in `packages/core/src/deck`: `split.ts` cuts the slides and gives their source lines, `components.ts` lists the annotations, layouts and components, `schema.ts` validates the frontmatter, `legacy-forms.ts` lists the forms of the earlier format that a conversion rewrites into the current format. The parsers, the editor and the catalog read these; add a rule there, never in one of its readers. A change that renames or retires a form keeps reading it and adds its conversion to `legacy-forms.ts`.
 
 An extension package declares its components as data (`packages/schemas/src/components.ts`, `packages/storybook/src/components.ts`) and registers them in its Nuxt plugin.
 

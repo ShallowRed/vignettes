@@ -2,7 +2,8 @@
 title: "Vignettes, en une présentation"
 status: public
 theme: dsfr
-parser: heading
+syntax:
+  split: heading
 ---
 
 # Vignettes
@@ -17,7 +18,7 @@ Une présentation est écrite en Markdown, avec des composants et des annotation
 
 ### Titres et diapositives
 
-Avec `parser: heading`, un titre `#` produit la diapositive de titre, un titre `##` commence une diapositive horizontale et un titre `###` ajoute une diapositive verticale sous elle. Avec `parser: separator`, le réglage par défaut des thèmes fournis, une ligne `---` sépare les diapositives horizontales et une ligne `----` sépare les verticales.
+Avec `split: heading` sous la clé `syntax`, un titre `#` produit la diapositive de titre, un titre `##` commence une diapositive horizontale et un titre `###` ajoute une diapositive verticale sous elle. Avec `split: separator`, le réglage par défaut, une ligne `---` sépare les diapositives horizontales et une ligne `----` sépare les verticales.
 
 ### Les composants
 

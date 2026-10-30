@@ -90,7 +90,7 @@ describe('completion hint', () => {
 
   it('shows where the suggestions or the slash menu have something to offer', () => {
     expect(hint('---\ntitle: Deck\n|\n---\n')).toEqual({ kind: 'settings' })
-    expect(hint('---\nparser:|\n---\n')).toEqual({ kind: 'values' })
+    expect(hint('---\nsyntax:\n  split:|\n---\n')).toEqual({ kind: 'values' })
     expect(hint('# Slide\n\n:::Columns{|}')).toEqual({ kind: 'attributes' })
     expect(hint('# Slide\n\n:::Columns{size="|"}')).toEqual({ kind: 'values' })
     expect(hint('# Slide\n\n|')).toEqual({ kind: 'insert' })
@@ -112,7 +112,7 @@ describe('completion hint', () => {
 
 describe('frontmatter value completion', () => {
   it('offers the values of an empty key, with the space YAML needs after the colon', () => {
-    const doc = '---\nparser:'
+    const doc = '---\nsyntax:\n  split:'
     const result = frontmatterGuide({ lang: 'fr', t, docsUrl: () => undefined }).source(new CompletionContext(EditorState.create({ doc }), doc.length, true))
     expect(result?.options.map(option => [option.label, option.apply])).toEqual([['separator', ' separator'], ['heading', ' heading']])
   })

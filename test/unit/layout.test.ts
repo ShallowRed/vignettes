@@ -1,4 +1,4 @@
-import { LAYOUT_ATTRIBUTES, layoutAnnotations, layoutForPlacement, layoutMentions, layoutSource, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
+import { LAYOUT_ATTRIBUTES, layoutAnnotationChange, layoutAnnotations, layoutForPlacement, layoutMentions, layoutSource, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 
 describe('readLayout', () => {
@@ -129,9 +129,28 @@ describe('layoutMentions', () => {
     expect(layoutMentions(raw)).toEqual([{ kind: 'invalid-value', attribute: 'media', line: 3, column: 8, length: 14 }])
   })
 
-  it('reads an attribute written alone as on, and marks the earlier writing once on the whole annotation', () => {
-    expect(layoutMentions('## Un\n\n:layout{name="media-right" src="/a.png" previewWidth="1600" lightbox}\n'))
-      .toEqual([{ kind: 'legacy', attribute: '', line: 3, column: 0, length: 69 }])
+  it('reads an attribute written alone as on, and leaves the earlier writing to legacyMentions', () => {
+    expect(layoutMentions('## Un\n\n:layout{name="media-right" src="/a.png" previewWidth="1600" lightbox}\n')).toEqual([])
+  })
+})
+
+describe('layoutAnnotationChange', () => {
+  const changed = (raw: string, source: string) => {
+    const change = layoutAnnotationChange(raw, layoutAnnotations(raw)[0]!, source)
+    return raw.slice(0, change.from) + change.insert + raw.slice(change.to)
+  }
+
+  it('writes the source in place of the annotation', () => {
+    expect(changed('## A\n\n:layout{name="full"}\nTexte\n', ':layout{media="left"}')).toBe('## A\n\n:layout{media="left"}\nTexte\n')
+  })
+
+  it('removes an annotation alone on its line with its line, and the blank line after it', () => {
+    expect(changed('## A\n\n:layout{name="full"}\nTexte\n', '')).toBe('## A\n\nTexte\n')
+    expect(changed('## A\n\n:layout{name="full"}\n\nTexte\n', '')).toBe('## A\n\nTexte\n')
+  })
+
+  it('removes an annotation written beside text and keeps the text', () => {
+    expect(changed('## A\n\nTexte :layout{name="full"}\n', '')).toBe('## A\n\nTexte \n')
   })
 })
 

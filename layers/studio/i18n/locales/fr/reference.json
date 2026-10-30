@@ -74,7 +74,6 @@
       "root": {
         "title": "Titre de la présentation",
         "theme": "Thème visuel",
-        "parser": "Découpage en diapositives : separator (lignes ---) ou heading (titres)",
         "lang": "Langue du document ; la typographie française s'applique en fr",
         "project": "Dossier du catalogue ; pour une présentation créée dans le studio, choisissez-le dans Réglages",
         "status": "Visibilité ; pour une présentation créée dans le studio, réglez-la dans Réglages",
@@ -83,8 +82,12 @@
         "backgrounds": "Images de fond par rôle de diapositive",
         "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
         "reveal": "Réglages d'affichage de Reveal.js, le moteur des présentations : format, numérotation, transitions…",
+        "syntax": "Lecture du texte : la règle de découpage en diapositives",
         "accessPassword": "Mot de passe de la visibilité semi-private ; pour une présentation créée dans le studio, saisissez-le dans Réglages",
         "titleDefault": "l'identifiant"
+      },
+      "syntax": {
+        "split": "Ce qui ouvre une diapositive : separator (lignes --- et ----) ou heading (titres)"
       },
       "backgrounds": {
         "h1": "Fond de la diapositive de titre (#)",

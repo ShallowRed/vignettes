@@ -1,9 +1,10 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the snippet placeholder syntax */
 import type { MDCNode } from '@nuxtjs/mdc'
+import type { ComponentExample } from '@vignettes/core/deck'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
-import { BUILT_IN_COMPONENTS, componentAttributeIssues, DECK_ANNOTATIONS, malformedAttributeMentions, registerDeckComponents, resetDeckComponents, RevealConfigSchema, unclosedBlocks } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, componentAttributeIssues, DECK_ANNOTATIONS, exampleOpening, exampleSource, malformedAttributeMentions, registerDeckComponents, resetDeckComponents, RevealConfigSchema, unclosedBlocks } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -14,7 +15,7 @@ import { references } from '../../site/references'
 afterEach(() => resetDeckComponents())
 
 describe('componentEntries', () => {
-  it('offers each registered component that has a snippet, in the order of the registry', () => {
+  it('offers each registered component that has an example, in the order of the registry', () => {
     registerDeckComponents(SCHEMA_COMPONENTS)
     registerDeckComponents(STORYBOOK_COMPONENTS)
     const labels = componentEntries('fr').map(entry => entry.syntax)
@@ -37,20 +38,20 @@ describe('componentEntries', () => {
   })
 
   it('offers a component the application registers, with its texts in the interface language', () => {
-    registerDeckComponents([{ name: 'Cover', snippet: { fr: '::Cover\n${Titre}\n::', en: '::Cover\n${Title}\n::' }, description: { fr: 'Couverture', en: 'Cover' } }])
+    registerDeckComponents([{ name: 'Cover', example: { content: [{ fr: '${Titre}', en: '${Title}' }] }, description: { fr: 'Couverture', en: 'Cover' } }])
     expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Cover', icon: 'i-lucide-shapes', snippet: '::Cover\n${Title}\n::' })
   })
 
   it('falls back to French for a language a component lacks', () => {
-    registerDeckComponents([{ name: 'Cover', snippet: { fr: '::Cover\n::' }, description: { fr: 'Couverture' } }])
-    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Couverture', icon: 'i-lucide-shapes', snippet: '::Cover\n::' })
+    registerDeckComponents([{ name: 'Cover', example: { content: [{ fr: '${Titre}' }] }, description: { fr: 'Couverture' } }])
+    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Couverture', icon: 'i-lucide-shapes', snippet: '::Cover\n${Titre}\n::' })
   })
 })
 
 describe('groupedEntries', () => {
   it('lists the groups in their order, the annotations under the slide and the components outside every group last', () => {
     registerDeckComponents(STORYBOOK_COMPONENTS)
-    registerDeckComponents([{ name: 'Cover', label: { fr: 'Couverture' }, snippet: { fr: '::Cover\n::' } }])
+    registerDeckComponents([{ name: 'Cover', label: { fr: 'Couverture' }, example: {} }])
     const groups = groupedEntries('fr').map(({ group, entries }) => [group, entries.map(entry => entry.label)])
     expect(groups).toEqual([
       ['text', ['Citation', 'Icône', 'Colonnes', 'Message clé', 'Points un par un']],
@@ -170,10 +171,17 @@ describe('slide templates', () => {
 })
 
 describe('authoring texts of the packages', () => {
-  it('carries each name, snippet and description in French and in English', () => {
-    const entries = [...DECK_ANNOTATIONS, ...[...BUILT_IN_COMPONENTS, ...SCHEMA_COMPONENTS, ...STORYBOOK_COMPONENTS].filter(c => c.snippet)]
+  // The texts of an example given per language.
+  function localizedTexts(example: ComponentExample): object[] {
+    const values = [...Object.values(example.attributes ?? {}), ...(example.content ?? [])]
+    return values.flatMap(value => typeof value !== 'object' ? [] : 'name' in value ? localizedTexts(value) : [value])
+  }
+
+  it('carries each name, example text and description in French and in English', () => {
+    const entries = [...DECK_ANNOTATIONS, ...[...BUILT_IN_COMPONENTS, ...SCHEMA_COMPONENTS, ...STORYBOOK_COMPONENTS].filter(c => c.example)]
     for (const entry of entries) {
-      expect(Object.keys(entry.snippet ?? {}).sort(), JSON.stringify(entry.snippet)).toEqual(['en', 'fr'])
+      for (const text of localizedTexts(entry.example!))
+        expect(Object.keys(text).sort(), JSON.stringify(text)).toEqual(['en', 'fr'])
       expect(Object.keys(entry.description ?? {}).sort(), JSON.stringify(entry.description)).toEqual(['en', 'fr'])
       expect(Object.keys(entry.label ?? {}).sort(), JSON.stringify(entry.label ?? entry)).toEqual(['en', 'fr'])
     }
@@ -181,6 +189,13 @@ describe('authoring texts of the packages', () => {
 })
 
 describe('snippets', () => {
+  it('write a block inside a block with one more colon, a true attribute alone and an inline example on its line', () => {
+    const example = { attributes: { cols: '2' }, content: [{ name: 'Frame', attributes: { lightbox: true as const }, content: [{ fr: 'Texte', en: 'Text' }] }, 'Fin'] }
+    expect(exampleSource('Screens', example, 'en')).toBe(':::Screens{cols="2"}\n::Frame{lightbox}\nText\n::\nFin\n:::')
+    expect(exampleOpening('Screens', example)).toBe(':::Screens')
+    expect(exampleSource('IconInline', { name: 'i', inline: true, attributes: { name: '${ri:home-line}' } }, 'fr')).toBe(':i{name="${ri:home-line}"}')
+  })
+
   it('write numbers as text: a numeric `${…}` is an empty tab stop', () => {
     registerDeckComponents(SCHEMA_COMPONENTS)
     registerDeckComponents(STORYBOOK_COMPONENTS)

@@ -25,7 +25,7 @@ export async function buildPresentationData(
   const themeReveal = getThemeTokens(metadata.theme)?.reveal
   if (themeReveal || metadata.reveal)
     metadata.reveal = { ...themeReveal, ...deckRevealOptions(metadata.reveal) }
-  // The deck's `parser` mode selects heading vs separator via the shared port.
+  // The deck's `syntax.split` selects heading vs separator via the shared port.
   const parser = PARSERS[parserIdFor(metadata)]
   // `?? []` keeps `slides` an array even if a parser degrades, so downstream
   // `.slides.length` guards can never read `.length` of undefined.

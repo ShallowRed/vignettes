@@ -30,7 +30,12 @@ describe('deckModel IR serialization (audit §5.8)', () => {
 
 describe('parserIdFor', () => {
   it('selects the heading parser when requested', () => {
+    expect(parserIdFor({ syntax: { split: 'heading' } })).toBe('heading')
+  })
+
+  it('reads the legacy root `parser` when `syntax.split` is absent', () => {
     expect(parserIdFor({ parser: 'heading' })).toBe('heading')
+    expect(parserIdFor({ parser: 'heading', syntax: { split: 'separator' } })).toBe('separator')
   })
 
   it('defaults to the separator parser', () => {

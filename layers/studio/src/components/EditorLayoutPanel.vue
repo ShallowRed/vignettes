@@ -146,7 +146,7 @@ const fields = computed(() => placement.value === 'none'
               size="xs"
               color="neutral"
               variant="outline"
-              :label="t('editor.layout.modernize')"
+              :label="t('editor.convert')"
               @click="write(fresh => fresh)"
             />
           </div>

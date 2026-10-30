@@ -45,14 +45,17 @@ A deck is one Markdown file with a frontmatter block:
 ---
 title: My deck
 theme: dsfr
-parser: heading
 ---
 
 # Title slide
 
+---
+
 ## First section
 
 Content.
+
+----
 
 ### A vertical slide
 
@@ -63,7 +66,7 @@ A quote.
 ::
 ```
 
-Two parsers split the file into slides. With `parser: heading`, `#` opens the title slide, `##` starts a horizontal slide and `###` nests a vertical one under it. With `parser: separator`, which is what the shipped themes use unless a deck says otherwise, `---` separates horizontal slides and `----` vertical ones.
+A `---` line separates horizontal slides and a `----` line vertical ones. A deck that sets `split: heading` under `syntax:` in its frontmatter is split at its headings instead: `#` opens the title slide, `##` starts a horizontal slide and `###` nests a vertical one under it.
 
 [examples/vignettes-demo.md](examples/vignettes-demo.md) is a deck that shows the dialect and loads into a running instance in one command. [docs/presentation-format.md](docs/presentation-format.md) says where a deck is stored and points at the reference of each package: the dialect and the generic components in [packages/nuxt](packages/nuxt/README.md), the explanation kit in [packages/schemas](packages/schemas/README.md), the story embeds in [packages/storybook](packages/storybook/README.md).
 

@@ -164,7 +164,8 @@ function markdownFor(deck: SeedDeck): string {
     `theme: ${deck.theme}`,
     // The body opens its slides with headings, which a deck has to ask for:
     // `---` is what splits a deck that says nothing.
-    'parser: heading',
+    'syntax:',
+    '  split: heading',
     ...(deck.lang ? [`lang: ${deck.lang}`] : []),
     ...(deck.project ? [`project: ${deck.project}`] : []),
     '---',

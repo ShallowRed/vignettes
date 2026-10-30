@@ -2,8 +2,8 @@ import type { Extension } from '@codemirror/state'
 import type { Translate } from '../config/editor-reference'
 import type { ReferenceCard } from './editor-tooltip'
 import { hoverTooltip } from '@codemirror/view'
-import { attributedDirective, attributeNamed, componentAttributeMentions, directiveMentions } from '@vignettes/core/deck'
-import { directiveEntry, inLanguage } from '../config/editor-reference'
+import { attributedDirective, attributeNamed, componentAttributeMentions, directiveMentions, inLanguage } from '@vignettes/core/deck'
+import { directiveEntry } from '../config/editor-reference'
 import { referenceCard } from './editor-tooltip'
 
 /**

@@ -21,6 +21,15 @@ export function frontmatterSource(markdown: string): string {
   return FRONTMATTER_RE.exec(markdown)?.[0] ?? ''
 }
 
+/** The number of lines of the leading frontmatter block, its `---` lines included; 0 without one. */
+export function frontmatterLineCount(markdown: string): number {
+  const block = frontmatterSource(markdown)
+  if (!block)
+    return 0
+  const lines = block.split('\n').length
+  return block.endsWith('\n') ? lines - 1 : lines
+}
+
 const KEY_LINE_RE = /^\s*[\w.-]+\s*:/
 const HEADING_RE = /^#{1,6}\s/
 

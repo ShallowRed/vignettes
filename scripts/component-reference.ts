@@ -2,8 +2,8 @@
 /**
  * Writes the reference of each deck component into the README of its package,
  * between `<!-- component: Name -->` and `<!-- /component -->`: its other
- * names, the snippet the editor inserts, its attributes and its content. The
- * names and the snippet come from the deck contract, the attributes and the
+ * names, the example the editor inserts, its attributes and its content. The
+ * names and the example come from the deck contract, the attributes and the
  * content from the `defineProps`, `withDefaults` and `defineSlots` of its Vue
  * file and their JSDoc. It writes the attributes as data too, in the
  * `component-attributes.ts` of the package, which the editor reads with the
@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { BUILT_IN_COMPONENTS } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, exampleSource } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { compileScript, parse } from 'vue/compiler-sfc'
@@ -148,8 +148,8 @@ export function componentBlock(component: DeckComponent, api: ComponentApi, file
   const lines: string[] = []
   if (component.aliases?.length)
     lines.push(`Also written ${component.aliases.map(alias => `\`${alias}\``).join(', ')}.`, '')
-  if (component.snippet?.en)
-    lines.push(...example(component.snippet.en), '')
+  if (component.example)
+    lines.push(...example(exampleSource(component.name, component.example, 'en')), '')
   if (api.props.length)
     lines.push('Attributes:', '', ...api.props.map(attributeLine), '')
   for (const slot of api.slots)
