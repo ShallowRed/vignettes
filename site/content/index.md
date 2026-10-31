@@ -1,18 +1,18 @@
 ---
 seo:
   title: Vignettes
-  description: Des présentations écrites en Markdown, aux couleurs de votre équipe, qui affichent en direct les composants de votre Storybook.
+  description: Des présentations écrites en Markdown, mises en page aux couleurs de votre équipe.
 ---
 
-::u-page-hero
+::u-page-hero{:ui='{"container":"pb-10 sm:pb-12 lg:pb-16"}'}
 
 #title
 
-Des présentations en Markdown, avec les écrans réels de votre produit
+Vos présentations en Markdown
 
 #description
 
-Des titres, des listes, et quelques composants pour les colonnes, les schémas et les stories de votre Storybook. Votre équipe écrit à plusieurs dans son studio, publie par versions et présente avec ses notes.
+Vous écrivez le texte, Vignettes le met en page aux couleurs de votre équipe.
 
 #links
 
@@ -30,72 +30,281 @@ La syntaxe
 
 ::
 
-::u-container{class="max-w-5xl"}
+::u-container
 
-:::deck-example{example="vignettes-demo"}
+[Modifiez le texte : la diapositive suit votre curseur.]{.block .mb-3 .text-sm .text-muted}
 
+:::deck-playground
+```mdc
+---
+title: Bilan du trimestre
+theme: dsfr
+---
+
+### Le parcours en trois étapes
+
+:::Scheme{:fragments="false"}
+::Step{n="1" picto="document/document-add" title="Dépôt"}
+L'usager remplit le formulaire.
+::
+::Step{n="2" picto="digital/in-progress" title="Instruction"}
+Un agent vérifie les pièces.
+::
+::Step{n="3" picto="digital/mail-send" title="Réponse"}
+L'usager reçoit un message.
+::
+:::
+
+---
+
+### La suite
+
+:::Columns
+::Column
+#### Ce mois-ci
+Les tests avec cinq usagers.
+::
+
+::Column
+#### Le mois prochain
+L'affichage sur téléphone.
+::
+:::
+
+::Notes
+Donner le nombre de demandes reçues.
+::
+```
 :::
 
 ::
 
-::u-container{class="max-w-5xl pt-12 pb-24"}
+::u-page-section{orientation="horizontal" :ui='{"container":"py-12 sm:py-16 lg:py-20"}' headline="Écrire"}
 
-:::u-page-grid
+#title
 
-::::u-page-card
----
-icon: i-lucide-file-text
-title: Un texte lisible
-description: La source d'une présentation est un fichier Markdown. Vous le versionnez avec votre projet et vous le relisez dans une revue de code.
-to: /demarrer/le-markdown
----
-::::
+Le Markdown que vous connaissez
 
-::::u-page-card
----
-icon: i-lucide-layout-panel-left
-title: Des mises en page par composants
-description: Colonnes, citations, étapes illustrées, diagrammes Mermaid, image à côté du texte. Chaque composant a un nom et quelques attributs.
-to: /ecrire/composants
----
-::::
+#description
 
-::::u-page-card
----
-icon: i-lucide-monitor-smartphone
-title: Les écrans réels du produit
-description: Une diapositive affiche une story de votre Storybook, publiée pour la branche principale ou pour une branche en cours. Le composant montré est celui du code.
-to: /ecrire/story-storybook
----
-::::
+Un titre commence une diapositive. Pour des colonnes, une citation, des étapes ou un diagramme, vous ajoutez un composant par son nom.
 
-::::u-page-card
+#features
+
+:::u-page-feature
+---
+icon: i-lucide-list-checks
+title: Point par point
+description: Les éléments d'une liste apparaissent un à un, à chaque appui sur la flèche.
+---
+:::
+
+:::u-page-feature
+---
+icon: i-lucide-notebook-pen
+title: Vos notes sous les yeux
+description: Vous lisez les notes de chaque diapositive dans la vue conférencier.
+---
+:::
+
+:::u-page-feature
+---
+icon: i-lucide-workflow
+title: Des schémas écrits en texte
+description: Étapes illustrées, cartes reliées par des flèches, diagrammes Mermaid.
+---
+:::
+
+#links
+
+:::u-button{to="/ecrire/composants" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
+
+Les composants
+
+:::
+
+#default
+
+:::deck-example{hide-source}
+```mdc
+---
+theme: dsfr
+---
+
+### Le circuit d'une demande
+
+:::Diagram{layout="grid" cols="3" rows="2" :fragments="false"}
+::Area{at="2,1" span="2,1" title="Le service" color="purple"}
+::
+::Node{id="depot" at="1,1" picto="document/contract" title="Dépôt" color="green"}
+::
+::Node{id="instruction" at="2,1" picto="digital/data-visualization" title="Instruction" :emphasis="true"}
+Une étape par agent
+::
+::Node{id="reponse" at="3,1" picto="digital/application" title="Réponse" :planned="true"}
+::
+::Node{id="pieces" at="1,2" title="Pièces" variant="flow"}
+::
+::Edge{from="depot" to="instruction" label="transmet"}
+::
+::Edge{from="instruction" to="reponse" :dashed="true"}
+::
+:::
+```
+:::
+
+::
+
+::u-page-section{orientation="horizontal" reverse :ui='{"container":"py-12 sm:py-16 lg:py-20","wrapper":"order-first lg:order-last"}' headline="Thèmes"}
+
+#title
+
+Aux couleurs de votre équipe
+
+#description
+
+Le thème du Système de design de l'État est fourni. Pour votre équipe, vous écrivez un thème avec ses couleurs et sa police, puis vous le choisissez par une ligne de l'en-tête de la présentation.
+
+#links
+
+:::u-button{to="/themes/theme-de-votre-equipe" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
+
+Écrire votre thème
+
+:::
+
+#default
+
+:::deck-example{hide-source}
+```mdc
+---
+theme: dsfr
+syntax:
+  split: heading
+---
+
+## Les résultats du trimestre
+
+Trois indicateurs suivis chaque mois par l'équipe.
+```
+:::
+
+::
+
+::u-page-section{:ui='{"container":"py-12 sm:py-16 lg:py-20"}' headline="Studio"}
+
+#title
+
+À plusieurs, de l'écriture à la présentation
+
+#description
+
+Le studio range les présentations par projet. Vous y écrivez avec vos collègues, vous publiez une version, vous choisissez qui peut la lire, puis vous présentez.
+
+#features
+
+:::u-page-feature
 ---
 icon: i-lucide-users
 title: Un brouillon partagé
-description: Plusieurs personnes modifient la même présentation en même temps. Les visiteurs voient la dernière version publiée, et l'historique garde les précédentes.
+description: Plusieurs personnes modifient la même présentation en même temps.
 to: /studio/versions-et-brouillon
 ---
-::::
+:::
 
-::::u-page-card
+:::u-page-feature
 ---
-icon: i-lucide-bot
-title: Écrire avec un agent
-description: Une skill donne à votre agent de code les règles du format. Vous demandez la présentation depuis le dépôt de votre produit, puis vous importez le fichier.
-to: /ecrire/ecrire-avec-un-agent
+icon: i-lucide-history
+title: Des versions publiées
+description: Les visiteurs voient la dernière version publiée, et l'historique garde les précédentes.
+to: /studio/versions-et-brouillon
 ---
-::::
+:::
 
-::::u-page-card
+:::u-page-feature
 ---
-icon: i-lucide-palette
-title: Le thème DSFR ou le vôtre
-description: Le thème DSFR, ou un thème écrit avec les couleurs et la police de votre équipe, choisi par une ligne de l'en-tête.
-to: /themes/theme-dsfr
+icon: i-lucide-lock-keyhole
+title: Un accès par présentation
+description: Publique, privée ou protégée par un mot de passe, et partagée avec un compte GitHub ou Google.
+to: /studio/roles-et-partage
 ---
-::::
+:::
 
+:::u-page-feature
+---
+icon: i-lucide-presentation
+title: Vue conférencier
+description: La diapositive suivante, un chronomètre et vos notes, dans une seconde fenêtre.
+to: /ecrire/presenter#la-vue-conférencier
+---
+:::
+
+:::u-page-feature
+---
+icon: i-lucide-file-down
+title: Export PDF
+description: Chaque diapositive sur une page, dans un fichier à joindre à un courriel.
+to: /ecrire/presenter#exporter-en-pdf
+---
+:::
+
+:::u-page-feature
+---
+icon: i-lucide-monitor-smartphone
+title: Stories Storybook
+description: Une diapositive affiche un composant de votre Storybook, rendu en direct.
+to: /ecrire/story-storybook
+---
+:::
+
+::
+
+::u-page-section{orientation="horizontal" :ui='{"container":"py-12 sm:py-16 lg:py-20"}' headline="Agents"}
+
+#title
+
+Demandez la présentation à votre agent de code
+
+#description
+
+Une skill donne à votre agent les règles du format. Depuis le dépôt de votre produit, il lit le code et la documentation, puis il écrit le fichier que vous importez dans le studio.
+
+#links
+
+:::u-button{to="/ecrire/ecrire-avec-un-agent" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
+
+Installer la skill
+
+:::
+
+#default
+
+```text
+/plugin install vignettes-decks@vignettes
+
+Écris une présentation Vignettes de six diapositives
+pour la revue de sprint, dans
+docs/presentations/revue-de-sprint.md.
+```
+
+::
+
+::u-page-section{:ui='{"container":"pt-0 sm:pt-0 lg:pt-0 pb-24"}'}
+
+:::u-page-c-t-a
+---
+title: Votre première présentation
+description: Le tutoriel vous guide de la page blanche au lien envoyé à un collègue, puis à la présentation avec vos notes.
+variant: subtle
+links:
+  - label: Commencer le tutoriel
+    to: /demarrer/premiere-presentation
+    trailingIcon: i-lucide-arrow-right
+  - label: Écrire avec un agent
+    to: /ecrire/ecrire-avec-un-agent
+    color: neutral
+    variant: outline
+---
 :::
 
 ::
