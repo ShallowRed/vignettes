@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { redirects } from './redirects'
 import { referenceFolder, references } from './references'
 
 // The documentation site: a Docus application that installs the render module
@@ -34,9 +35,12 @@ export default defineNuxtConfig({
     },
   },
 
-  routeRules: Object.fromEntries(references.map(({ path, previous }) => [previous, { redirect: { to: path, statusCode: 301 } }])),
+  routeRules: Object.fromEntries(Object.entries(redirects).map(([from, to]) => [from, { redirect: { to, statusCode: 301 } }])),
 
   nitro: {
+    prerender: {
+      routes: Object.keys(redirects),
+    },
     // The pictograms of `Scheme` steps and the images of the example deck, served as the studio serves them.
     publicAssets: [
       { dir: fileURLToPath(new URL('../public/pictograms', import.meta.url)), baseURL: '/pictograms', maxAge: 0 },

@@ -16,15 +16,15 @@ Vous écrivez le texte, Vignettes le met en page aux couleurs de votre équipe.
 
 #links
 
-:::u-button{size="xl" to="/demarrer/premiere-presentation" trailing-icon="i-lucide-arrow-right"}
+:::u-button{size="xl" to="/docs/demarrer/premiere-presentation" trailing-icon="i-lucide-arrow-right"}
 
 Écrire une première présentation
 
 :::
 
-:::u-button{size="xl" to="/ecrire/syntaxe" color="neutral" variant="outline"}
+:::u-button{size="xl" to="/docs" color="neutral" variant="outline"}
 
-La syntaxe
+Lire la documentation
 
 :::
 
@@ -101,23 +101,23 @@ description: Les éléments d'une liste apparaissent un à un, à chaque appui s
 
 :::u-page-feature
 ---
-icon: i-lucide-notebook-pen
-title: Vos notes sous les yeux
-description: Vous lisez les notes de chaque diapositive dans la vue conférencier.
----
-:::
-
-:::u-page-feature
----
 icon: i-lucide-workflow
 title: Des schémas écrits en texte
 description: Étapes illustrées, cartes reliées par des flèches, diagrammes Mermaid.
 ---
 :::
 
+:::u-page-feature
+---
+icon: i-lucide-monitor-smartphone
+title: Stories Storybook
+description: Une diapositive affiche un composant de votre Storybook, rendu en direct.
+---
+:::
+
 #links
 
-:::u-button{to="/ecrire/composants" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
+:::u-button{to="/docs/ecrire/composants" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
 
 Les composants
 
@@ -155,6 +155,47 @@ Une étape par agent
 
 ::
 
+::u-page-section{:ui='{"container":"py-12 sm:py-16 lg:py-20"}' headline="Présenter"}
+
+#title
+
+Présentez depuis votre navigateur
+
+#description
+
+Un lien ouvre la présentation, sur un ordinateur comme sur un téléphone. Vous présentez avec vos notes, puis vous envoyez le PDF ou le texte.
+
+#features
+
+:::u-page-feature
+---
+icon: i-lucide-presentation
+title: Vue conférencier
+description: La diapositive suivante, un chronomètre et vos notes, dans une seconde fenêtre.
+to: /docs/ecrire/presenter#la-vue-conférencier
+---
+:::
+
+:::u-page-feature
+---
+icon: i-lucide-file-down
+title: Export PDF
+description: Chaque diapositive sur une page, dans un fichier à joindre à un courriel.
+to: /docs/ecrire/presenter#exporter-en-pdf
+---
+:::
+
+:::u-page-feature
+---
+icon: i-lucide-file-text
+title: Le Markdown à télécharger
+description: Vous téléchargez le Markdown du brouillon ou de la version publiée, pour le garder ou le faire modifier par un agent.
+to: /docs/ecrire/presenter#télécharger-le-texte
+---
+:::
+
+::
+
 ::u-page-section{orientation="horizontal" reverse :ui='{"container":"py-12 sm:py-16 lg:py-20","wrapper":"order-first lg:order-last"}' headline="Thèmes"}
 
 #title
@@ -167,7 +208,7 @@ Le thème du Système de design de l'État est fourni. Pour votre équipe, vous 
 
 #links
 
-:::u-button{to="/themes/theme-de-votre-equipe" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
+:::u-button{to="/docs/themes/theme-de-votre-equipe" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
 
 Écrire votre thème
 
@@ -208,7 +249,7 @@ Le studio range les présentations par projet. Vous y écrivez avec vos collègu
 icon: i-lucide-users
 title: Un brouillon partagé
 description: Plusieurs personnes modifient la même présentation en même temps.
-to: /studio/versions-et-brouillon
+to: /docs/studio/versions-et-brouillon
 ---
 :::
 
@@ -217,7 +258,7 @@ to: /studio/versions-et-brouillon
 icon: i-lucide-history
 title: Des versions publiées
 description: Les visiteurs voient la dernière version publiée, et l'historique garde les précédentes.
-to: /studio/versions-et-brouillon
+to: /docs/studio/versions-et-brouillon
 ---
 :::
 
@@ -226,34 +267,7 @@ to: /studio/versions-et-brouillon
 icon: i-lucide-lock-keyhole
 title: Un accès par présentation
 description: Publique, privée ou protégée par un mot de passe, et partagée avec un compte GitHub ou Google.
-to: /studio/roles-et-partage
----
-:::
-
-:::u-page-feature
----
-icon: i-lucide-presentation
-title: Vue conférencier
-description: La diapositive suivante, un chronomètre et vos notes, dans une seconde fenêtre.
-to: /ecrire/presenter#la-vue-conférencier
----
-:::
-
-:::u-page-feature
----
-icon: i-lucide-file-down
-title: Export PDF
-description: Chaque diapositive sur une page, dans un fichier à joindre à un courriel.
-to: /ecrire/presenter#exporter-en-pdf
----
-:::
-
-:::u-page-feature
----
-icon: i-lucide-monitor-smartphone
-title: Stories Storybook
-description: Une diapositive affiche un composant de votre Storybook, rendu en direct.
-to: /ecrire/story-storybook
+to: /docs/studio/roles-et-partage
 ---
 :::
 
@@ -271,7 +285,7 @@ Une skill donne à votre agent les règles du format. Depuis le dépôt de votre
 
 #links
 
-:::u-button{to="/ecrire/ecrire-avec-un-agent" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
+:::u-button{to="/docs/ecrire/ecrire-avec-un-agent" color="neutral" variant="subtle" trailing-icon="i-lucide-arrow-right"}
 
 Installer la skill
 
@@ -298,10 +312,10 @@ description: Le tutoriel vous guide de la page blanche au lien envoyé à un col
 variant: subtle
 links:
   - label: Commencer le tutoriel
-    to: /demarrer/premiere-presentation
+    to: /docs/demarrer/premiere-presentation
     trailingIcon: i-lucide-arrow-right
   - label: Écrire avec un agent
-    to: /ecrire/ecrire-avec-un-agent
+    to: /docs/ecrire/ecrire-avec-un-agent
     color: neutral
     variant: outline
 ---

@@ -94,13 +94,14 @@ describe('docsAddress', () => {
   })
 })
 
-// The source of a page of the documentation site: a reference kept beside the
-// code, or a file of site/content whose folders and name carry an order prefix.
+// The source of a page of the documentation site, by its path under `/docs`: a
+// reference kept beside the code, or a file of site/content/docs whose folders
+// and name carry an order prefix.
 function pageSource(path: string): string {
-  const reference = references.find(entry => entry.path === path)
+  const reference = references.find(entry => entry.path === `/docs${path}`)
   if (reference)
     return readFileSync(join(import.meta.dirname, '../..', reference.file), 'utf8')
-  let dir = join(import.meta.dirname, '../../site/content')
+  let dir = join(import.meta.dirname, '../../site/content/docs')
   const segments = path.split('/').filter(Boolean)
   if (!segments.length)
     return readFileSync(join(dir, 'index.md'), 'utf8')

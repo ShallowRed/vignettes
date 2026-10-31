@@ -44,7 +44,7 @@ export default defineNuxtConfig({
       // hidden while empty; `NUXT_PUBLIC_HELP_URL` and `NUXT_PUBLIC_FEEDBACK_URL`
       // set them. The documentation of the project is the default help; the
       // editor adds the paths of the pages of the documentation site to it.
-      helpUrl: 'https://vignettes.io',
+      helpUrl: 'https://vignettes.io/docs',
       feedbackUrl: '',
       // The sentence of the home page for a visitor without an account;
       // `NUXT_PUBLIC_WELCOME` sets it, and the studio messages give one while empty.
