@@ -1,7 +1,8 @@
 name: Documentation site
 
-# Publishes the documentation site (site/, Docus) to the VPS, which serves it at
-# the address of the repository variable DOCS_SITE_URL.
+# Publishes the documentation site (site/, Docus) to the VPS: a push on `main`
+# for the address of the repository variable DOCS_SITE_URL, a push on `staging`
+# for docs.staging.vignettes.io.
 #
 # `checks.yml` generates the site, which builds the render module and reads
 # the package READMEs; this workflow sends that output. The upload goes over
@@ -9,11 +10,12 @@ name: Documentation site
 # `vignettes/docs-deploy.sh` script of the vps-infra repository: the key can
 # replace the site, never redeploy the application. The job reads that key, VPS_DOCS_SSH_KEY, from the `/docs` path of
 # Infisical over OIDC, with the repository variables INFISICAL_* and VPS_*, as
-# `docker-publish.yml` does.
+# `docker-publish.yml` does: on `staging`, the identity and the project of
+# staging, whose key the VPS accepts for the staging site only.
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
     # What the site reads: its own files, the packages and their READMEs, the
     # themes, the example decks, `docs/theme-system.md` and the pictograms of the studio.
     paths:
@@ -29,7 +31,7 @@ on:
 
 # One upload at a time: a newer push waits for the running one.
 concurrency:
-  group: docs-site
+  group: docs-site-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -42,7 +44,7 @@ jobs:
 
   publish:
     needs: site
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -61,17 +63,18 @@ jobs:
         uses: Infisical/secrets-action@77ab1f4ccd183a543cb5b42435fbd181189f4995 # v1.0.16
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
+          identity-id: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_MACHINE_IDENTITY_ID || vars.INFISICAL_STAGING_IDENTITY_ID }}
           domain: ${{ vars.INFISICAL_API_URL }}
           oidc-audience: infisical-vignettes
-          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
-          env-slug: prod
+          project-slug: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_PROJECT_SLUG || vars.INFISICAL_STAGING_PROJECT_SLUG }}
+          env-slug: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
           secret-path: /docs
 
       - name: Send the site to the VPS over SSH
         env:
           VPS_HOST: ${{ vars.VPS_HOST }}
           VPS_USER: ${{ vars.VPS_USER }}
+          TARGET: ${{ github.ref == 'refs/heads/main' && 'docs' || 'docs-staging' }}
           # The Infisical step above puts VPS_DOCS_SSH_KEY in the job environment.
         run: |
           set -euo pipefail
@@ -80,8 +83,8 @@ jobs:
           # Trusts the host key the VPS presents now, as the deploy job of
           # docker-publish.yml does.
           ssh-keyscan -H "${VPS_HOST}" > known_hosts 2>/dev/null
-          # The script on the VPS reads `docs <sha>` as the command and the archive
-          # on its standard input.
+          # The script on the VPS reads `docs <sha>` or `docs-staging <sha>` as the
+          # command and the archive on its standard input.
           ssh -i deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts \
-            "${VPS_USER}@${VPS_HOST}" "docs ${GITHUB_SHA:0:7}" < site.tar.gz
+            "${VPS_USER}@${VPS_HOST}" "${TARGET} ${GITHUB_SHA:0:7}" < site.tar.gz
           rm -f deploy_key
