@@ -1,0 +1,59 @@
+/*
+ * The interface in the colors, the square corners and the typeface of the DSFR
+ * (@gouvfr/dsfr 1.15). The palettes take the blue France and the greys of the
+ * DSFR at the steps Nuxt UI reads: 500 is the action color in light mode, 400
+ * in dark mode. Marianne is served with the dsfr deck theme, under
+ * /themes/dsfr/fonts/.
+ */
+@font-face {
+  font-family: Marianne;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/themes/dsfr/fonts/Marianne-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: Marianne;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/themes/dsfr/fonts/Marianne-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: Marianne;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/themes/dsfr/fonts/Marianne-Bold.woff2") format("woff2");
+}
+
+:root[data-ui-theme='dsfr'] {
+  --app-font-family: Marianne, arial, sans-serif;
+  --ui-radius: 0;
+
+  --ui-color-primary-50: #f5f5fe;
+  --ui-color-primary-100: #ececfe;
+  --ui-color-primary-200: #e3e3fd;
+  --ui-color-primary-300: #cacafb;
+  --ui-color-primary-400: #8585f6;
+  --ui-color-primary-500: #000091;
+  --ui-color-primary-600: #00007a;
+  --ui-color-primary-700: #000066;
+  --ui-color-primary-800: #000052;
+  --ui-color-primary-900: #00003d;
+  --ui-color-primary-950: #00002b;
+
+  --ui-color-neutral-50: #f6f6f6;
+  --ui-color-neutral-100: #eeeeee;
+  --ui-color-neutral-200: #dddddd;
+  --ui-color-neutral-300: #cecece;
+  --ui-color-neutral-400: #929292;
+  --ui-color-neutral-500: #666666;
+  --ui-color-neutral-600: #4e4e4e;
+  --ui-color-neutral-700: #3a3a3a;
+  --ui-color-neutral-800: #242424;
+  --ui-color-neutral-900: #161616;
+  --ui-color-neutral-950: #0e0e0e;
+}
+
+/* The lines of the DSFR dark mode are lighter than its raised surfaces. */
+:root[data-ui-theme='dsfr'].dark {
+  --ui-border: #353535;
+}

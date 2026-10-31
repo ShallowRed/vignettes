@@ -52,6 +52,9 @@ export default defineNuxtConfig({
       // The name of the instance after the product name, in the header, the
       // page titles and the link previews; `NUXT_PUBLIC_INSTANCE_NAME` sets it.
       instanceName: '',
+      // The interface theme of the instance, one of `UI_THEMES` in
+      // src/utils/ui-themes.ts; `NUXT_PUBLIC_UI_THEME` sets it.
+      uiTheme: '',
     },
   },
   css: [fileURLToPath(new URL('./src/assets/css/tailwind.css', import.meta.url))],

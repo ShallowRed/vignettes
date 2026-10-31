@@ -3,7 +3,9 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { ROLE_CONFIG } from '#shared/access'
 import { useAppSession } from '../composables/useAppSession'
 import { useInstanceLinks } from '../composables/useInstanceLinks'
+import { useUiTheme } from '../composables/useUiTheme'
 import { postForm } from '../utils/post-form'
+import { UI_THEME_NAMES, UI_THEMES } from '../utils/ui-themes'
 
 // The occasional destinations and the preferences of the reader: the links of
 // the instance, the language, the color mode, then the account pages. One menu
@@ -13,6 +15,7 @@ const { loggedIn, role, user, privileged, owner } = useAppSession()
 const { t, locale, locales, setLocale } = useI18n()
 const colorMode = useColorMode()
 const links = useInstanceLinks()
+const uiTheme = useUiTheme()
 
 const COLOR_MODES = [
   { value: 'light', icon: 'i-lucide-sun' },
@@ -42,6 +45,20 @@ const preferences = computed<DropdownMenuItem[]>(() => [
       onSelect: () => { colorMode.preference = mode.value },
     })),
   },
+  ...(uiTheme.trials.value
+    ? [
+        {
+          label: t('common.header.uiTheme'),
+          icon: 'i-lucide-palette',
+          children: UI_THEMES.map(id => ({
+            label: UI_THEME_NAMES[id],
+            type: 'checkbox' as const,
+            checked: uiTheme.theme.value === id,
+            onSelect: () => uiTheme.setTheme(id),
+          })),
+        },
+      ]
+    : []),
 ])
 
 // The links open in a new tab; their arrow takes the place of a submenu's chevron.

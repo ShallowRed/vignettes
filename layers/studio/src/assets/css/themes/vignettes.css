@@ -1,0 +1,9 @@
+/*
+ * The default interface theme: Lexend Deca on the palettes of Nuxt UI. The
+ * other themes replace these values under `:root[data-ui-theme='<id>']`.
+ */
+@import "@fontsource-variable/lexend-deca";
+
+:root {
+  --app-font-family: "Lexend Deca Variable", ui-sans-serif, system-ui, sans-serif;
+}

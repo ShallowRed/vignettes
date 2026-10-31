@@ -81,6 +81,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
+    "@fontsource-variable/lexend-deca": "catalog:",
     "@fontsource-variable/quicksand": "catalog:",
     "@gouvfr/dsfr": "catalog:",
     "@iconify-json/fluent": "catalog:",

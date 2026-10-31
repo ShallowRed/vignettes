@@ -8,13 +8,17 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 @import "@nuxt/ui";
+@import "./themes/vignettes.css";
+@import "./themes/dsfr.css";
+@import "./themes/lasuite.css";
 
 /* Scoped Preflight - only applies within .tailwind-app */
 @layer base {
+  /* The interface theme sets --app-font-family. */
   :root {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    font-family: var(--app-font-family, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
       "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
   }
   /* Safe globally: Reveal.js assumes a marginless body too. */
   html, body {

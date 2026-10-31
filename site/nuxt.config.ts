@@ -16,6 +16,16 @@ export default defineNuxtConfig({
     name: 'Vignettes',
   },
 
+  css: [fileURLToPath(new URL('../layers/studio/src/assets/css/themes/vignettes.css', import.meta.url))],
+
+  runtimeConfig: {
+    public: {
+      // The menu of the interface themes on trial, opened in the build made
+      // from staging by `NUXT_PUBLIC_UI_TRIALS`.
+      uiTrials: false,
+    },
+  },
+
   // The site is generated as static files: the assistant and the MCP server of
   // Docus need a server or a key.
   docus: {

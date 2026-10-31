@@ -51,6 +51,7 @@
         "dark": "Dark",
         "system": "Same as the system"
       },
+      "uiTheme": "Interface theme",
       "backHome": "Back to home",
       "menu": "Menu"
     },

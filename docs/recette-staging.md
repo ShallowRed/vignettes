@@ -8,6 +8,8 @@
 
 Le kit répond 404 tant que la variable `NUXT_RECETTE_ENABLED=1` est absente de l'environnement du conteneur ; en développement local il est toujours actif (`import.meta.dev`). Sur l'instance de référence, seule l'instance de staging définit cette variable. Le code est dans `server/utils/recette.ts`, `server/api/recette/`, `server/routes/auth/recette.ts` et `src/pages/recette.vue`.
 
+Là où le kit s'ouvre, le menu du compte contient aussi l'entrée « Thème d'interface » : on y essaie un autre thème, et le navigateur garde ce choix dans le cookie `ui_theme`.
+
 ## Accès
 
 La page s'ouvre avec un compte **owner** (connexion Google ou GitHub habituelle).

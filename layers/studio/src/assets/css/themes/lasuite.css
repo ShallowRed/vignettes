@@ -1,0 +1,39 @@
+/*
+ * The interface of La Suite numérique: the values of the DSFR flavour of its
+ * ui-kit (@gouvfr-lasuite/ui-tokens 3.2.0), the one Docs ships. Its brand blue
+ * and its cool greys at the steps Nuxt UI reads, 4 px controls and 8 px cards,
+ * and Marianne, declared in dsfr.css.
+ */
+:root[data-ui-theme='lasuite'] {
+  --app-font-family: Marianne, arial, sans-serif;
+  --ui-radius: 0.25rem;
+
+  --ui-color-primary-50: #edf0ff;
+  --ui-color-primary-100: #dae2ff;
+  --ui-color-primary-200: #b5c4ff;
+  --ui-color-primary-300: #90a7ff;
+  --ui-color-primary-400: #7e98ff;
+  --ui-color-primary-500: #3e5de7;
+  --ui-color-primary-600: #2845c1;
+  --ui-color-primary-700: #223e9e;
+  --ui-color-primary-800: #1f367d;
+  --ui-color-primary-900: #1b2e5f;
+  --ui-color-primary-950: #172446;
+
+  --ui-color-neutral-50: #f8f8f9;
+  --ui-color-neutral-100: #f0f0f3;
+  --ui-color-neutral-200: #dfe2ea;
+  --ui-color-neutral-300: #cfd5de;
+  --ui-color-neutral-400: #8891a4;
+  --ui-color-neutral-500: #6d778c;
+  --ui-color-neutral-600: #555e74;
+  --ui-color-neutral-700: #3f4759;
+  --ui-color-neutral-800: #2b303d;
+  --ui-color-neutral-900: #181b24;
+  --ui-color-neutral-950: #0f1117;
+}
+
+/* The body text of the kit is darker than step 700 of its greys. */
+:root[data-ui-theme='lasuite']:not(.dark) {
+  --ui-text: #222631;
+}

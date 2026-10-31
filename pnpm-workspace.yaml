@@ -63,6 +63,7 @@ catalog:
   '@codemirror/view': ^6.43.2
   '@dagrejs/dagre': ^3.1.1
   '@electric-sql/pglite': ^0.5.10
+  '@fontsource-variable/lexend-deca': ^5.3.0
   '@fontsource-variable/quicksand': ^5.3.0
   '@gouvfr/dsfr': ^1.15.3
   '@hocuspocus/provider': ^4.3.0

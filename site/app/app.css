@@ -1,0 +1,12 @@
+/*
+ * The interface themes of the studio, so that the site shows the typeface of
+ * the default theme and, in the build made from staging, the themes on trial.
+ * vignettes.css is loaded by `css` in nuxt.config.ts: the Tailwind of Docus
+ * does not resolve the Fontsource packages.
+ */
+@import "../../layers/studio/src/assets/css/themes/dsfr.css";
+@import "../../layers/studio/src/assets/css/themes/lasuite.css";
+
+:root {
+  --font-sans: var(--app-font-family);
+}

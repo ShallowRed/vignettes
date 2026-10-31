@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import * as uiLocales from '@nuxt/ui/locale'
+import { useUiTheme } from './composables/useUiTheme'
 
 const { locale, t } = useI18n()
 const uiLocale = computed(() => uiLocales[locale.value])
 const { instanceName } = useRuntimeConfig().public
 const siteName = instanceName ? `Vignettes ${instanceName}` : 'Vignettes'
+const { theme } = useUiTheme()
 useHead({
-  htmlAttrs: { lang: locale },
+  htmlAttrs: {
+    'lang': locale,
+    'data-ui-theme': () => theme.value === 'vignettes' ? undefined : theme.value,
+  },
   titleTemplate: title => title ? `${title} · ${siteName}` : siteName,
 })
 
