@@ -29,10 +29,40 @@ export interface ServerConfig {
   trustedProxyHops: number
   /** The build of a frozen bundle, which serves one deck. */
   bundle: BundleConfig
+  origins: Origins
+}
+
+/**
+ * The origins of an instance that serves its decks apart from the studio, so
+ * that a script of a deck page never runs with a session of the studio. Without
+ * `decks`, and in a frozen bundle, one origin serves everything. A value that is
+ * not an address reads `null`.
+ */
+export interface Origins {
+  studio?: string | null
+  decks?: string | null
+}
+
+function originOf(value: string | undefined): string | null | undefined {
+  if (!value?.trim())
+    return undefined
+  try {
+    return new URL(value.trim()).origin
+  }
+  catch {
+    return null
+  }
+}
+
+export function readOrigins(env: Record<string, string | undefined>, bundle: Pick<BundleConfig, 'enabled'>): Origins {
+  if (bundle.enabled)
+    return {}
+  return { studio: originOf(env.NUXT_STUDIO_URL), decks: originOf(env.NUXT_PUBLIC_DECKS_URL) }
 }
 
 export function serverConfig(): ServerConfig {
   const env = process.env
+  const bundle = readBundleConfig(env)
   return {
     sessionPassword: env.NUXT_SESSION_PASSWORD,
     database: readDatabaseConfig(env),
@@ -44,7 +74,8 @@ export function serverConfig(): ServerConfig {
     roleMap: readRoleMap(env),
     frozenS3: frozenS3ConfigFromEnv(env),
     trustedProxyHops: /^\d+$/.test(env.NUXT_TRUSTED_PROXY_HOPS ?? '') ? Number(env.NUXT_TRUSTED_PROXY_HOPS) : 0,
-    bundle: readBundleConfig(env),
+    bundle,
+    origins: readOrigins(env, bundle),
   }
 }
 
@@ -53,9 +84,15 @@ export function serverConfig(): ServerConfig {
  * A PostgreSQL server keeps the rows outside the container. Without the bucket,
  * the server writes the uploaded media to the container's disk and reads the
  * published themes from it, and a platform such as Scalingo empties that disk at
- * each restart.
+ * each restart. The deck origin needs the studio origin, where it sends every
+ * other route.
  */
-export function productionConfigProblem(config: Pick<ServerConfig, 'database' | 'frozenS3'>): string | undefined {
+export function productionConfigProblem(config: Pick<ServerConfig, 'database' | 'frozenS3' | 'origins'>): string | undefined {
   if (config.database.driver === 'postgres' && !isFrozenS3Configured(config.frozenS3))
     return 'NUXT_DATABASE_URL names a PostgreSQL server, and the bucket is not configured: set NUXT_FROZEN_S3_BUCKET, NUXT_FROZEN_S3_ACCESS_KEY_ID and NUXT_FROZEN_S3_SECRET_ACCESS_KEY.'
+  const { studio, decks } = config.origins
+  if (decks === null || studio === null)
+    return 'NUXT_PUBLIC_DECKS_URL and NUXT_STUDIO_URL are addresses, such as https://decks.example.org.'
+  if (decks && (!studio || studio === decks))
+    return 'NUXT_PUBLIC_DECKS_URL serves the decks apart from the studio: set NUXT_STUDIO_URL to the address of the studio, another origin.'
 }

@@ -98,6 +98,7 @@ catalog:
   drizzle-kit: ^0.31.10
   drizzle-orm: ^0.45.2
   eslint: ^9.39.1
+  iron-webcrypto: ^1.2.1
   js-yaml: ^5.4.3
   mermaid: ^11.17.2
   nuxt: ^4.5.2

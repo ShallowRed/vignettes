@@ -36,16 +36,9 @@ const errorShown = computed(() => Boolean(error.value) && !requiresPassword.valu
 
 // Whoever may edit a deck that has no published version learns so, with the
 // way to its editor and its draft. The viewer route tells the others nothing
-// about the deck. The answer is read with the deck, on the server too, so the
-// server and the browser render the same screen.
-const requestFetch = useRequestFetch()
-const { data: editorView } = useAsyncData(
-  `deck-viewer-${slug}`,
-  () => user.value
-    ? requestFetch<{ canEdit: boolean, published?: boolean }>(`/api/presentations/${slug}/viewer`).catch(() => null)
-    : Promise.resolve(null),
-)
-const unpublished = computed(() => notFound.value && editorView.value?.canEdit === true && editorView.value.published === false)
+// about the deck.
+const { data: viewer } = useDeckViewer(slug)
+const unpublished = computed(() => notFound.value && viewer.value.canEdit && viewer.value.published === false)
 
 // `replace: true`: this route only ever bounces to /unlock, so keeping it in
 // history would trap Back (it re-fires the watch and bounces forward again).

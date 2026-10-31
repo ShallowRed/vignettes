@@ -88,6 +88,8 @@ export interface DeckVariant {
  */
 export interface DeckViewer {
   canEdit: boolean
+  /** Whether the visitor reads the deck with an account: on the deck origin, the one of its view pass. */
+  signedIn: boolean
   variants: DeckVariant[]
   published?: boolean
   unpublishedChanges?: boolean

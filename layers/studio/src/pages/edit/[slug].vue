@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeckViewer, PresentationListItem } from '#shared/presentations'
+import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 /**
  * Integrated Markdown editor.
@@ -140,11 +140,7 @@ else if (data.value) {
 }
 
 // The folder of the deck, for the path back in the header.
-const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${slug}/viewer`, {
-  server: false,
-  lazy: true,
-  default: () => ({ canEdit: false, variants: [] }),
-})
+const { data: viewer } = useDeckViewer(slug)
 
 // ── CodeMirror setup ────────────────────────────────────────────────────────
 

@@ -55,6 +55,9 @@ export default defineNuxtConfig({
       // The interface theme of the instance, one of `UI_THEMES` in
       // src/utils/ui-themes.ts; `NUXT_PUBLIC_UI_THEME` sets it.
       uiTheme: '',
+      // The origin of the deck pages, apart from the studio, which the link to
+      // a deck names; `NUXT_PUBLIC_DECKS_URL` sets it (see `serverConfig().origins`).
+      decksUrl: '',
     },
   },
   css: [fileURLToPath(new URL('./src/assets/css/tailwind.css', import.meta.url))],

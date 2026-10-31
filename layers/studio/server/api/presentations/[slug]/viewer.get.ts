@@ -1,7 +1,7 @@
 import type { DeckVariant, DeckViewer } from '#shared/presentations'
 import { variantsOf } from '#shared/presentations'
 import { canActorEditDeck } from '../../../utils/access'
-import { getActor } from '../../../utils/actor'
+import { getDeckActor } from '../../../utils/actor'
 import { listVisiblePresentations, unpublishedChanges } from '../../../utils/catalog'
 import { useDeckMeta } from '../../../utils/sources'
 
@@ -10,7 +10,8 @@ import { useDeckMeta } from '../../../utils/sources'
  * versions of its family they may open, and for whoever may edit, the draft,
  * whether a version is published, and the way back to the folder. The variants
  * come from the visitor's own catalog, so a visitor learns nothing they could
- * not list.
+ * not list; on the deck origin, from the catalog of an anonymous visitor, so
+ * that a script of the deck learns no other deck from the view pass.
  */
 /** The family members the visitor may open. A member with nothing published has no page. */
 async function familyVariants(event: Parameters<typeof listVisiblePresentations>[0], slug: string): Promise<DeckVariant[]> {
@@ -28,12 +29,14 @@ export default defineEventHandler(async (event): Promise<DeckViewer> => {
 
   const meta = await useDeckMeta().get(slug)
   const variants = meta?.family ? await familyVariants(event, slug) : []
-  const actor = await getActor(event)
+  const actor = await getDeckActor(event, slug)
+  const signedIn = Boolean(actor.id)
   if (!meta || !await canActorEditDeck(actor, slug))
-    return { canEdit: false as const, variants }
+    return { canEdit: false as const, signedIn, variants }
 
   return {
     canEdit: true as const,
+    signedIn,
     variants,
     published: Boolean(meta.published),
     unpublishedChanges: meta.published && (await unpublishedChanges(new Set([slug]))).has(slug),

@@ -35,6 +35,18 @@ const SERVER_ENV = {
   message: 'The server reads its configuration in server/utils/config.ts: add the value to serverConfig().',
 }
 
+const REQUEST_HOST_MESSAGE = 'The host a request reaches is read in server/utils/deck-origin.ts: use requestOrigin() or requestSide().'
+const HOST_HEADER = '/^(?:host|x-forwarded-host)$/i'
+const REQUEST_HOST = [
+  // The selectors of @antfu/eslint-config, which a block that sets the rule replaces.
+  'TSEnumDeclaration[const=true]',
+  'TSExportAssignment',
+  { selector: 'CallExpression[callee.name=/^getRequest(?:URL|Host)$/]', message: REQUEST_HOST_MESSAGE },
+  { selector: `CallExpression[callee.name='getRequestHeader'][arguments.1.value=${HOST_HEADER}]`, message: REQUEST_HOST_MESSAGE },
+  { selector: `MemberExpression[object.callee.name='getRequestHeaders'][property.name=${HOST_HEADER}]`, message: REQUEST_HOST_MESSAGE },
+  { selector: `CallExpression[callee.property.name='get'][callee.object.property.name='headers'][arguments.0.value=${HOST_HEADER}]`, message: REQUEST_HOST_MESSAGE },
+]
+
 const PROCESS_ENV = {
   object: 'process',
   property: 'env',
@@ -97,6 +109,12 @@ export default antfu({
   ignores: ['layers/studio/server/utils/config.ts'],
   rules: {
     'no-restricted-properties': ['error', SERVER_ENV],
+  },
+}, {
+  files: ['layers/studio/server/**'],
+  ignores: ['layers/studio/server/utils/deck-origin.ts'],
+  rules: {
+    'no-restricted-syntax': ['error', ...REQUEST_HOST],
   },
 }, {
   files: ['packages/core/src/**'],

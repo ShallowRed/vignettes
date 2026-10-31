@@ -10,8 +10,10 @@ const route = useRoute()
 const alias = route.params.alias as string
 
 // Frozen/archived aliases redirect to their static bundle; live ones render here.
+// The request carries the cookies of the visitor, as on `/slides/<slug>`.
+const requestFetch = useRequestFetch()
 const { data: resolved, error: resolveError } = await useAsyncData(`p-resolve-${alias}`, () =>
-  $fetch<{ lifecycle: string, slug?: string, frozenUrl?: string }>(`/api/p/${alias}`))
+  requestFetch<{ lifecycle: string, slug?: string, frozenUrl?: string }>(`/api/p/${alias}`))
 
 if (resolved.value?.frozenUrl) {
   await navigateTo(resolved.value.frozenUrl, { external: true, redirectCode: 302 })

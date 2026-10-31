@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDeckMeta, usePermissionStore } from '../../layers/studio/server/utils/sources'
 import { seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
@@ -15,8 +16,8 @@ vi.mock('../../layers/studio/server/utils/actor', async importOriginal => ({
 }))
 
 const { default: collab } = await import('../../layers/studio/server/routes/collab')
-function knock(deck: string, origin: string | null = 'http://localhost') {
-  return collab.upgrade!(new Request(`http://localhost/collab?deck=${deck}`, { headers: origin ? { origin } : {} }) as any)
+function knock(deck: string, origin: string | null = 'http://localhost', instance = 'http://localhost') {
+  return collab.upgrade!(new Request(`${instance}/collab?deck=${deck}`, { headers: origin ? { origin } : {} }) as any)
 }
 
 beforeEach(async () => {
@@ -29,6 +30,20 @@ describe('collab room upgrade', () => {
   it('admits a collaborator holding an editor grant on the deck', async () => {
     await usePermissionStore().set('deck', 2, 'editor', 'boss')
     await expect(knock('deck')).resolves.toBeUndefined()
+  })
+
+  it('refuses a socket of the deck origin, which holds no session (403)', async () => {
+    await usePermissionStore().set('deck', 2, 'editor', 'boss')
+    process.env.NUXT_PUBLIC_DECKS_URL = 'http://decks.localhost'
+    process.env.NUXT_STUDIO_URL = 'http://localhost'
+    try {
+      await expect(knock('deck', 'http://decks.localhost', 'http://decks.localhost')).rejects.toMatchObject({ status: 403 })
+      await expect(knock('deck')).resolves.toBeUndefined()
+    }
+    finally {
+      delete process.env.NUXT_PUBLIC_DECKS_URL
+      delete process.env.NUXT_STUDIO_URL
+    }
   })
 
   it('refuses a read-only grant (401)', async () => {

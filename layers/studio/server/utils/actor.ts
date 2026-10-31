@@ -3,6 +3,8 @@ import type { H3Event, SessionConfig } from 'h3'
 import { resolveRole } from '#shared/access'
 import { unsealSession } from 'h3'
 import { serverConfig } from './config'
+import { requestSide } from './deck-origin'
+import { viewPassIdentity } from './deck-pass'
 import { authenticatePersonalToken, personalTokenActor } from './personal-token'
 import { useUserStore } from './users'
 
@@ -86,17 +88,33 @@ async function readActor(event: H3Event): Promise<Actor> {
 
 /**
  * The actor for an H3 request: the account of its personal token, else of its
- * session; anonymous without either, and with a stale or ended session.
- * `getActor` keeps it in `event.context.actor` for the rest of the request, so
- * that the middlewares and the route read the account once.
+ * session; anonymous without either, with a stale or ended session, and on the
+ * deck origin, which holds no session of the studio. `getActor` keeps it in
+ * `event.context.actor` for the rest of the request, so that the middlewares
+ * and the route read the account once.
  */
 export async function getActor(event: H3Event): Promise<Actor> {
   if (event.context?.actor)
     return event.context.actor as Actor
-  const actor = await personalTokenActor(event) ?? await readActor(event)
+  const actor = requestSide(event) === 'decks'
+    ? ANONYMOUS
+    : await personalTokenActor(event) ?? await readActor(event)
   if (event.context)
     event.context.actor = actor
   return actor
+}
+
+/**
+ * The actor of a request on one deck. On the deck origin, it is the account of
+ * the view pass of that deck, read again from the database, so that a logout or
+ * a role change ends the pass; elsewhere, `getActor`. It stays out of
+ * `event.context.actor`, which names the actor of the request on every deck.
+ */
+export async function getDeckActor(event: H3Event, slug: string): Promise<Actor> {
+  if (requestSide(event) !== 'decks')
+    return await getActor(event)
+  const identity = await viewPassIdentity(event, slug)
+  return identity ? await resolveActor(identity) ?? ANONYMOUS : ANONYMOUS
 }
 
 /**

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeckVariant, DeckViewer } from '#shared/presentations'
+import type { DeckVariant } from '#shared/presentations'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import { loginHref } from '#shared/access'
@@ -36,13 +36,7 @@ const deckTitle = metadata.title || titleSlide.title || props.slug
 useSeoMeta({ ogTitle: deckTitle, description: titleSlide.subtitle, ogDescription: titleSlide.subtitle })
 defineOgImage('Deck', { ...titleSlide, title: titleSlide.title ?? deckTitle })
 
-// The deck renders without this answer, so it loads after the page.
-const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${props.slug}/viewer`, {
-  server: false,
-  lazy: true,
-  immediate: Boolean(props.slug),
-  default: () => ({ canEdit: false, variants: [] }),
-})
+const { data: viewer } = useDeckViewer(props.slug)
 // The family shows only when there is somewhere else to go.
 const variants = computed(() => (viewer.value.variants?.length ?? 0) > 1 ? viewer.value.variants! : [])
 const variantHref = (variant: DeckVariant) => `${deckPath({ slug: variant.slug, alias: variant.alias ?? undefined })}${props.draft ? '?draft' : ''}`
@@ -149,7 +143,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
       </DeckControlButton>
     </template>
     <template
-      v-if="viewer.canEdit || !loggedIn"
+      v-if="viewer.canEdit || !(loggedIn || viewer.signedIn)"
       #controls-after
     >
       <DeckControlButton

@@ -1,7 +1,7 @@
 import type { DeckDraftSource } from '#shared/presentations'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
-import { assertCanEditDeck, gateDeckAccess, gateOptionsOf } from '../../utils/access'
+import { assertCanReadDraft, gateDeckAccess, gateOptionsOf } from '../../utils/access'
 import { useDraftStore } from '../../utils/collab'
 import { serverConfig } from '../../utils/config'
 import { useDbContent, useDeckMeta } from '../../utils/sources'
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if ('draft' in getQuery(event)) {
-    await assertCanEditDeck(event, slug, { contentToken: true })
+    await assertCanReadDraft(event, slug)
     const store = useDbContent()
     const draft = await useDraftStore().load(slug).then(update => update && yDocUpdateToMarkdown(update))
     const published = await store.source.load(slug)

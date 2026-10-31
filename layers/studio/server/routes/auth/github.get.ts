@@ -6,9 +6,10 @@
  * so a store failure falls through to onError (fail closed).
  */
 
-import { resolveRole, safeRedirectPath } from '#shared/access'
+import { resolveRole } from '#shared/access'
 import { openUserSession } from '../../utils/actor'
 import { serverConfig } from '../../utils/config'
+import { afterLoginPath } from '../../utils/deck-origin'
 import { securityLog } from '../../utils/security-log'
 import { useUserStore } from '../../utils/users'
 
@@ -30,7 +31,7 @@ export default defineOAuthGitHubEventHandler({
 
     const intended = getCookie(event, 'auth_redirect')
     deleteCookie(event, 'auth_redirect')
-    return sendRedirect(event, safeRedirectPath(intended))
+    return sendRedirect(event, afterLoginPath(event, intended))
   },
   onError(event, error) {
     console.error('GitHub OAuth error:', error)

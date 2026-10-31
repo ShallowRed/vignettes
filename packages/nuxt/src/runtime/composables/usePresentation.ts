@@ -39,14 +39,14 @@ export function usePresentation(slug: string, apiUrl?: string, options: { draft?
   const draft = options.draft === true
   // Must be called in setup scope. useRequestFetch re-emits the session cookie in
   // SSR so a logged-in user can load a PROTECTED deck (else the API sees anonymous).
-  // Only for the internal path: an explicit apiUrl (possibly external, e.g. a bundle)
-  // uses bare $fetch to avoid leaking the cookie to a third party.
+  // Only for a path of this site: an external apiUrl uses bare $fetch to avoid
+  // leaking the cookie to a third party.
   const requestFetch = useRequestFetch()
   const { data, error, status, refresh } = useAsyncData(
     `presentation-${slug}${draft ? '-draft' : ''}`,
     async (): Promise<PresentationData> => {
       const response = apiUrl
-        ? await $fetch<{ content: string }>(apiUrl)
+        ? await (apiUrl.startsWith('/') && !apiUrl.startsWith('//') ? requestFetch : $fetch)<{ content: string }>(apiUrl)
         : await requestFetch<{ content: string }>(`/api/presentations/${slug}`, draft ? { query: { draft: '' } } : {})
 
       return buildPresentationData(response.content)

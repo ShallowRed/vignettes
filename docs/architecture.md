@@ -99,6 +99,19 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 - Reveal.js is imported client-side only.
 - Bundle mode (`BUNDLE_ONLY_SLUG`) prerenders one deck and its API JSON into a self-contained, JS-free static bundle (`noScripts`, inlined CSS); a Nitro plugin turns the page into a standalone Reveal document.
 
+### Deck origin
+An instance may serve its deck pages from an origin of their own, on another registrable domain than the studio (`NUXT_PUBLIC_DECKS_URL`, with `NUXT_STUDIO_URL`), so that a script of a deck never runs with a session of the studio. The browser never sends the session cookie of the studio to that origin, and a page of another domain cannot set a cookie the studio reads. One server answers both hosts:
+- `routeSide` of `#shared/origins` sorts each route: a deck page (`/slides/`, `/p/`, `/unlock/`, `/frozen/`), a route both origins answer (the deck reads, the two unlock routes, the files and the module routes a deck page loads), or a route of the studio. `test/unit/origins.test.ts` lists every route Nitro serves and fails on a new one until it is sorted.
+- `server/middleware/00.origins.ts` sends a deck page of the studio to the deck origin, and a page of the studio requested on the deck origin to the studio; it refuses the other requests of the studio on the deck origin. `src/middleware/origins.global.ts` turns a link between the two kinds of page into a full navigation, which the server redirects.
+- `server/utils/deck-origin.ts` is the one reader of the host a request reaches. On the deck origin, `getActor` answers anonymous.
+- A signed-in person reads a private deck or a draft there with a view pass of that one deck (`server/utils/deck-pass.ts`). The studio seals a ticket of one minute into the redirect when the person opened the deck with a click in the studio or from the address bar (`Sec-Fetch-Site` `same-origin` or `none`), and `/deck-pass` turns it into the pass cookie. `getDeckActor` reads the account of the pass again at each request, so that a logout or a lost grant ends it; the write routes read the session alone. A person sent from the deck origin to the login page opens the deck with its button.
+- Without `NUXT_PUBLIC_DECKS_URL` and `NUXT_STUDIO_URL` both set, and in bundle mode, one origin serves everything. The server writes the side of each request in `event.context.originSide`, which the pages read through `useOriginSide`.
+
+The deck origin has three limits:
+- The editor previews a deck in its own page, on the origin of the studio, with the session of the person who edits.
+- The pages of the deck origin share its cookies: a script of one deck can use the view passes and the unlock cookies of the other decks the same browser opened. The server keeps each pass to its deck; the browser does not.
+- A page of another site can open `/login?redirect=<deck page>` and wait for the signed-in person to click « Ouvrir la présentation »; the text above the button names the page of the deck.
+
 ### Slide Parsing Rules
 `splitSlides` of `@vignettes/core/deck` holds the slide boundaries the two parsers, the editor and the catalog share; fenced code and MDC block components are read as content, never as boundaries.
 
@@ -175,6 +188,6 @@ Production is SSR, not static hosting:
 
 ### One instance at a time
 
-The application runs as a single process. Three pieces of state are kept in the memory of that process: the rate limiter of the password attempts and of the personal tokens (failures, creations, requests) (`server/utils/rate-limit.ts`), the editors of a deck since its last snapshot (`noteContributor` in `server/utils/collab.ts`) and the open collaborative documents of the Hocuspocus server (`useCollabServer`, same file). On an instance running SQLite, the file on a volume, replicated by Litestream, also accepts one writer.
+The application runs as a single process. Four pieces of state are kept in the memory of that process: the rate limiter of the password attempts and of the personal tokens (failures, creations, requests) (`server/utils/rate-limit.ts`), the editors of a deck since its last snapshot (`noteContributor` in `server/utils/collab.ts`), the open collaborative documents of the Hocuspocus server (`useCollabServer`, same file) and the deck tickets already redeemed (`server/utils/deck-pass.ts`). On an instance running SQLite, the file on a volume, replicated by Litestream, also accepts one writer.
 
-With a second replica, each replica would count the password attempts and the token requests separately, a snapshot would credit only the editors who reached the replica that writes it, and two editors on different replicas would edit the same deck in two documents that never merge. Running several replicas requires moving these three to a shared store first.
+With a second replica, each replica would count the password attempts and the token requests separately, a snapshot would credit only the editors who reached the replica that writes it, and two editors on different replicas would edit the same deck in two documents that never merge. A ticket could be redeemed once on each replica. Running several replicas requires moving these four to a shared store first.

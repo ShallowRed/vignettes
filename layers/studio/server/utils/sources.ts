@@ -1,7 +1,9 @@
 import type { DeckGrant } from '#shared/access'
 import type { ProjectDirectory } from '#shared/projects'
-import type { ContentSource, DeckDirectory } from '@vignettes/core/deck'
+import type { ContentSource, DeckDirectory, DeckDirectoryEntry } from '@vignettes/core/deck'
 import { strongerGrant } from '#shared/access'
+import { deckPage } from '#shared/origins'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { useStores } from './db'
 
 /**
@@ -105,6 +107,39 @@ export function useGrants() {
 export const deckDirectory: DeckDirectory = {
   resolveAlias: alias => useStores().deckDirectory.resolveAlias(alias),
   list: () => useStores().deckDirectory.list(),
+}
+
+/**
+ * The deck the `/frozen/<name>/` segment names: by the bundle it declares, which
+ * is the name `/p/` redirects to, or else by its alias.
+ */
+export async function deckOfBundleName(name: string): Promise<DeckDirectoryEntry | null> {
+  const all = await deckDirectory.list()
+  return all.find(entry => (entry.frozenBundle ?? entry.slug) === name) ?? await deckDirectory.resolveAlias(name)
+}
+
+/**
+ * The slug of the deck a page names: `/slides/<slug or alias>`, `/p/<alias>`,
+ * `/unlock/<slug or alias>` or `/frozen/<bundle>/…`; `null` for any other path.
+ */
+export async function deckOfPagePath(path: string): Promise<string | null> {
+  const match = deckPage(path)
+  if (!match)
+    return null
+  const { page, rest } = match
+  let name: string
+  try {
+    name = decodeURIComponent(page === 'frozen' ? rest.split('/')[0]! : rest.replace(/\/+$/, ''))
+  }
+  catch {
+    return null
+  }
+  if (page === 'frozen')
+    return isDeckSlug(name) ? (await deckOfBundleName(name))?.slug ?? null : null
+  const entry = await deckDirectory.resolveAlias(name)
+  if (entry)
+    return entry.slug
+  return page !== 'p' && isDeckSlug(name) ? name : null
 }
 
 /** Project directory: database rows. */

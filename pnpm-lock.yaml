@@ -147,6 +147,9 @@ catalogs:
     eslint:
       specifier: ^9.39.1
       version: 9.39.1
+    iron-webcrypto:
+      specifier: ^1.2.1
+      version: 1.2.1
     js-yaml:
       specifier: ^5.4.3
       version: 5.5.0
@@ -345,6 +348,9 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@electric-sql/pglite@0.5.10)(@types/better-sqlite3@7.6.13)(@types/pg@8.23.1)(better-sqlite3@12.11.1)(pg@8.23.1)
+      iron-webcrypto:
+        specifier: 'catalog:'
+        version: 1.2.1
       js-yaml:
         specifier: 'catalog:'
         version: 5.5.0

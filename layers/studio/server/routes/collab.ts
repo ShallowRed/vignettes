@@ -3,6 +3,7 @@ import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
 import { useCollabServer, useDraftStore } from '../utils/collab'
 import { databaseReady } from '../utils/db'
+import { sideOfOrigin, upgradeOrigin } from '../utils/deck-origin'
 import { crossOriginRefusal } from '../utils/same-origin'
 import { useDeckMeta } from '../utils/sources'
 
@@ -65,13 +66,14 @@ function toWebSocketLike(peer: Peer) {
 export default defineWebSocketHandler({
   async upgrade(request) {
     // A page of another origin would open the socket with its visitor's cookie.
-    const url = new URL(request.url)
-    if (crossOriginRefusal(request.headers, url.origin))
+    // The deck origin holds no session to edit with: its pages open no socket.
+    const origin = upgradeOrigin(request)
+    if (crossOriginRefusal(request.headers, origin) || sideOfOrigin(origin) === 'decks')
       throw new Response('Forbidden', { status: 403 })
 
     // An upgrade skips the request hook that holds requests during the migrations.
     await databaseReady()
-    const deck = url.searchParams.get('deck') ?? ''
+    const deck = new URL(request.url).searchParams.get('deck') ?? ''
     if (!isDeckSlug(deck))
       throw new Response('A ?deck=<slug> parameter is required', { status: 400 })
 

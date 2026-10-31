@@ -63,6 +63,7 @@
     "better-sqlite3": "catalog:",
     "codemirror": "catalog:",
     "drizzle-orm": "catalog:",
+    "iron-webcrypto": "catalog:",
     "js-yaml": "catalog:",
     "mermaid": "catalog:",
     "nuxt": "catalog:",

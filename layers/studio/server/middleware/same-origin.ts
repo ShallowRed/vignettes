@@ -1,4 +1,5 @@
 import { contentTokenActor } from '../utils/content-token'
+import { requestOrigin } from '../utils/deck-origin'
 import { authenticatePersonalToken } from '../utils/personal-token'
 import { crossOriginRefusal } from '../utils/same-origin'
 
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
   if (contentTokenActor(event) || await authenticatePersonalToken(event))
     return
   const headers = { get: (name: string) => getRequestHeader(event, name) }
-  const refusal = crossOriginRefusal(headers, getRequestURL(event).origin)
+  const refusal = crossOriginRefusal(headers, requestOrigin(event))
   if (refusal)
     throw createError({ statusCode: 403, statusMessage: `Cross-origin request refused: ${refusal}` })
   const type = getRequestHeader(event, 'content-type')

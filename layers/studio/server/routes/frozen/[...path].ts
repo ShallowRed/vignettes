@@ -1,4 +1,3 @@
-import type { DeckDirectoryEntry } from '@vignettes/core/deck'
 import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
@@ -14,7 +13,7 @@ import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
 import { serverConfig } from '../../utils/config'
 import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
 import { fileUnder, requestPathSegments } from '../../utils/request-path'
-import { deckDirectory } from '../../utils/sources'
+import { deckOfBundleName } from '../../utils/sources'
 
 /**
  * Frozen-bundle static server. `/frozen/<name>/<...>` resolves the name to its
@@ -25,15 +24,6 @@ import { deckDirectory } from '../../utils/sources'
  * lookups in the local database, and a memo here once left a closed deck open
  * and an undeclared bundle unreachable.
  */
-
-/**
- * The deck the `/frozen/<name>/` segment names: by the bundle it declares, which
- * is the name `/p/` redirects to, or else by its alias.
- */
-async function deckOfName(name: string): Promise<DeckDirectoryEntry | null> {
-  const all = await deckDirectory.list()
-  return all.find(entry => (entry.frozenBundle ?? entry.slug) === name) ?? await deckDirectory.resolveAlias(name)
-}
 
 /** Normalise the asset path within a bundle: directory-ish → index.html. */
 function normaliseAssetPath(parts: string[]): string[] {
@@ -46,7 +36,7 @@ function normaliseAssetPath(parts: string[]): string[] {
 
 export default defineEventHandler(async (event) => {
   const [name, ...rest] = requestPathSegments(event) as [string, ...string[]]
-  const deck = isDeckSlug(name) ? await deckOfName(name) : null
+  const deck = isDeckSlug(name) ? await deckOfBundleName(name) : null
   // The bundle read is the one of the deck the gate decides on, whatever name the URL gives.
   const bundle = deck ? deck.frozenBundle ?? deck.slug : null
   const gate = deck && bundle && isDeckSlug(bundle) ? await gateOptionsOf(deck.slug) : null

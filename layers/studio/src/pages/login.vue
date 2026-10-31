@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { safeRedirectPath } from '#shared/access'
+import { isDeckPage } from '#shared/origins'
 
 definePageMeta({
   layout: false,
@@ -18,6 +19,13 @@ onMounted(() => {
   if (redirect.value)
     redirectCookie.value = redirect.value
 })
+
+// On an instance that serves its decks apart, a signed-in person sent here on
+// their way to a deck opens it with a click in the studio, the navigation that
+// receives the ticket of the deck origin.
+const { loggedIn } = useAppSession()
+const originSide = useOriginSide()
+const deckToOpen = computed(() => originSide.value === 'studio' && loggedIn.value && redirect.value && isDeckPage(redirect.value) ? redirect.value : undefined)
 
 const errorMessage = computed(() => {
   switch (error.value) {
@@ -57,83 +65,99 @@ const devRoles = computed(() => [
         <h1 class="text-2xl font-bold text-highlighted">
           Vignettes
         </h1>
-        <p class="text-muted mb-4">
-          {{ t('auth.login.tagline') }}
-        </p>
-
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="subtle"
-          icon="i-lucide-circle-alert"
-          :description="errorMessage"
-          class="mb-2 text-left"
-        />
-
-        <ActionNotice
-          v-if="noProvider"
-          :title="t('auth.login.noProviderTitle')"
-          :description="t('auth.login.noProviderDescription')"
-          icon="i-lucide-key-round"
-          class="w-full text-left"
-        />
-
-        <UButton
-          v-if="providers?.github"
-          to="/auth/github"
-          external
-          icon="i-lucide-github"
-          :label="t('auth.login.withGithub')"
-          color="neutral"
-          size="lg"
-          block
-        />
-
-        <UButton
-          v-if="providers?.google"
-          to="/auth/google"
-          external
-          icon="i-ri-google-fill"
-          :label="t('auth.login.withGoogle')"
-          color="neutral"
-          size="lg"
-          block
-        />
-        <p
-          v-if="providers?.google"
-          class="text-xs text-muted text-left"
-        >
-          {{ t('auth.login.sharedAccessHint') }}
-        </p>
-
-        <template v-if="isDev">
-          <USeparator
-            label="dev"
-            class="my-3"
+        <template v-if="deckToOpen">
+          <p class="text-muted mb-4">
+            {{ t('auth.login.openDeckDescription', { path: deckToOpen }) }}
+          </p>
+          <UButton
+            :to="deckToOpen"
+            external
+            icon="i-lucide-presentation"
+            :label="t('auth.login.openDeck')"
+            size="lg"
+            block
           />
-          <div class="w-full rounded-lg border border-dashed border-warning/40 bg-warning/5 p-3">
-            <p class="text-xs text-muted mb-2 flex items-center gap-1.5">
-              <UIcon
-                name="i-lucide-flask-conical"
-                class="size-3.5 text-warning"
-              />
-              {{ t('auth.login.devLogin') }}
-            </p>
-            <div class="flex gap-2">
-              <UButton
-                v-for="entry in devRoles"
-                :key="entry.role"
-                :to="`/auth/dev-login?role=${entry.role}${devRedirect}`"
-                external
-                :icon="entry.icon"
-                :label="entry.label"
-                color="neutral"
-                variant="subtle"
-                size="sm"
-                block
-              />
+        </template>
+
+        <template v-else>
+          <p class="text-muted mb-4">
+            {{ t('auth.login.tagline') }}
+          </p>
+
+          <UAlert
+            v-if="errorMessage"
+            color="error"
+            variant="subtle"
+            icon="i-lucide-circle-alert"
+            :description="errorMessage"
+            class="mb-2 text-left"
+          />
+
+          <ActionNotice
+            v-if="noProvider"
+            :title="t('auth.login.noProviderTitle')"
+            :description="t('auth.login.noProviderDescription')"
+            icon="i-lucide-key-round"
+            class="w-full text-left"
+          />
+
+          <UButton
+            v-if="providers?.github"
+            to="/auth/github"
+            external
+            icon="i-lucide-github"
+            :label="t('auth.login.withGithub')"
+            color="neutral"
+            size="lg"
+            block
+          />
+
+          <UButton
+            v-if="providers?.google"
+            to="/auth/google"
+            external
+            icon="i-ri-google-fill"
+            :label="t('auth.login.withGoogle')"
+            color="neutral"
+            size="lg"
+            block
+          />
+          <p
+            v-if="providers?.google"
+            class="text-xs text-muted text-left"
+          >
+            {{ t('auth.login.sharedAccessHint') }}
+          </p>
+
+          <template v-if="isDev">
+            <USeparator
+              label="dev"
+              class="my-3"
+            />
+            <div class="w-full rounded-lg border border-dashed border-warning/40 bg-warning/5 p-3">
+              <p class="text-xs text-muted mb-2 flex items-center gap-1.5">
+                <UIcon
+                  name="i-lucide-flask-conical"
+                  class="size-3.5 text-warning"
+                />
+                {{ t('auth.login.devLogin') }}
+              </p>
+              <div class="flex gap-2">
+                <UButton
+                  v-for="entry in devRoles"
+                  :key="entry.role"
+                  :to="`/auth/dev-login?role=${entry.role}${devRedirect}`"
+                  external
+                  :icon="entry.icon"
+                  :label="entry.label"
+                  color="neutral"
+                  variant="subtle"
+                  size="sm"
+                  block
+                />
+              </div>
             </div>
-          </div>
+          </template>
         </template>
 
         <USeparator

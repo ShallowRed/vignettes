@@ -4,7 +4,7 @@ import type { Actor } from './actor'
 import { canShare, decideAccess, isPrivileged, mayEdit, sharingLimit } from '#shared/access'
 import { resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { accessCookieName, mintAccessPass, verifyAccessPass } from './access-pass'
-import { getActor } from './actor'
+import { getActor, getDeckActor } from './actor'
 import { clientAddress } from './client-address'
 import { serverConfig } from './config'
 import { contentTokenActor } from './content-token'
@@ -73,7 +73,7 @@ async function resolveGrant(actor: Actor, slug: string): Promise<DeckGrant | und
 /** The access decision for this request on this deck, before its mapping to HTTP. */
 export async function decideDeckAccess(event: H3Event, opts: GateOptions): Promise<AccessDecision> {
   const { slug, status, lifecycle, storedHash } = opts
-  const actor = await getActor(event)
+  const actor = await getDeckActor(event, slug)
   const grant = await resolveGrant(actor, slug)
   const hasPassword = Boolean(storedHash)
   const passwordGranted = hasPassword
@@ -156,7 +156,19 @@ export async function canActorEditDeck(actor: Actor, slug: string): Promise<bool
  * only the markdown write path opts in (see `content-token.ts`).
  */
 export async function assertCanEditDeck(event: H3Event, slug: string, opts: { contentToken?: boolean } = {}): Promise<Actor> {
-  const actor = (opts.contentToken ? contentTokenActor(event) : null) ?? await getActor(event)
+  return await assertActorCanEdit(event, (opts.contentToken ? contentTokenActor(event) : null) ?? await getActor(event), slug)
+}
+
+/**
+ * Refuses unless the actor of this deck may read its working draft, which whoever
+ * may edit it reads: on the deck origin, the account of its view pass. The write
+ * routes keep `assertCanEditDeck`, which reads the session alone.
+ */
+export async function assertCanReadDraft(event: H3Event, slug: string): Promise<Actor> {
+  return await assertActorCanEdit(event, contentTokenActor(event) ?? await getDeckActor(event, slug), slug)
+}
+
+async function assertActorCanEdit(event: H3Event, actor: Actor, slug: string): Promise<Actor> {
   if (!await canActorEditDeck(actor, slug))
     throw await refusalOnDeck(event, actor, slug)
   await assertNotTrashed(slug)
