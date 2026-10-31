@@ -51,6 +51,11 @@ export default defineNuxtConfig({
     fonts: false,
   },
 
+  // The link preview images, drawn by the server on request: a frozen bundle has no server.
+  ogImage: {
+    enabled: !bundle.enabled,
+  },
+
   icon: {
     mode: 'svg', // SVG mode for better SSR support
     serverBundle: {

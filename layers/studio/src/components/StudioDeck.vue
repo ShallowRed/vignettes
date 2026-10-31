@@ -3,8 +3,9 @@ import type { DeckVariant, DeckViewer } from '#shared/presentations'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import { loginHref } from '#shared/access'
-import { deckPath } from '#shared/presentations'
+import { deckPath, parsedTitleSlide, titleSlidePreview } from '#shared/presentations'
 import { inSpeakerViewFrame } from '@vignettes/core/render'
+import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
 
 // A deck as the studio shows it: the Reveal presentation with the other
 // variants of its family the visitor may open, the commands of whoever may edit
@@ -26,6 +27,14 @@ const speakerViewFrame = inSpeakerViewFrame(useRequestURL().search)
 const draftBanner = computed(() => props.draft && !speakerViewFrame)
 
 useHead({ title: () => `${props.presentationData.metadata.title || props.slug || ''} · Vignettes` })
+
+// A link to the deck shows its title slide. The page reaches this component only
+// with a deck its visitor may read, so a closed deck keeps the image of the studio.
+const { metadata, slides } = props.presentationData
+const { background: _, ...titleSlide } = titleSlidePreview(parsedTitleSlide(slides, metadata.backgrounds), resolveThemeName(metadata.theme || getDefaultTheme()))
+const deckTitle = metadata.title || titleSlide.title || props.slug
+useSeoMeta({ ogTitle: deckTitle, description: titleSlide.subtitle, ogDescription: titleSlide.subtitle })
+defineOgImage('Deck', { ...titleSlide, title: titleSlide.title ?? deckTitle })
 
 // The deck renders without this answer, so it loads after the page.
 const { data: viewer } = useFetch<DeckViewer>(() => `/api/presentations/${props.slug}/viewer`, {

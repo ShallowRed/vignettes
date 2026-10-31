@@ -79,6 +79,9 @@
         "title": "Une erreur est survenue",
         "description": "La page n'a pas pu être affichée. Réessayez dans un instant."
       }
+    },
+    "og": {
+      "description": "Des présentations écrites en Markdown, mises en page aux couleurs de votre équipe."
     }
   }
 }

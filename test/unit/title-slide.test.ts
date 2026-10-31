@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readTitleSlide, titleSlidePreview } from '../../layers/studio/shared/presentations/title-slide'
+import { parsedTitleSlide, readTitleSlide, titleSlidePreview } from '../../layers/studio/shared/presentations/title-slide'
 
 describe('readTitleSlide', () => {
   it('reads the title, the annotations and the backgrounds of a separator deck', () => {
@@ -61,6 +61,31 @@ describe('readTitleSlide', () => {
   it('ignores headings inside fenced code', () => {
     const raw = '```md\n# Not a title\n```\n\n# Real title'
     expect(readTitleSlide(raw).title).toBe('Real title')
+  })
+})
+
+describe('parsedTitleSlide', () => {
+  const text = (value: string) => ({ type: 'text', value })
+  const element = (tag: string, ...children: unknown[]) => ({ type: 'element', tag, children })
+
+  it('reads the title, the pretitle and the first paragraph of the first slide with a heading', () => {
+    const slides = [
+      { body: { type: 'root', children: [element('p', text('Avant le titre'))] } },
+      {
+        header: { type: 'root', children: [element('h1', text('Un '), element('strong', text('registre')), text(' public'))] },
+        pretitle: { type: 'root', children: [element('p', text('Atelier'))] },
+        body: { type: 'root', children: [element('ul'), element('p', text('Le bilan de septembre.'))] },
+        headingLevel: 'h1',
+      },
+    ]
+    expect(parsedTitleSlide(slides, { h1: '/backgrounds/title.png' })).toEqual({
+      title: 'Un registre public',
+      pretitle: 'Atelier',
+      subtitle: 'Le bilan de septembre.',
+      headingLevel: 'h1',
+      backgroundImage: undefined,
+      backgrounds: { h1: '/backgrounds/title.png' },
+    })
   })
 })
 

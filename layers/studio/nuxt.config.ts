@@ -19,6 +19,7 @@ const messageFiles = (locale: string) => MESSAGE_FILES.map(area => `${locale}/${
 export default defineNuxtConfig({
   modules: [
     '@nuxtjs/i18n',
+    'nuxt-og-image',
     (_options, nuxt) => {
       if (!nuxt.options._prepare)
         nuxt.options.runtimeConfig.themePackages = themePackageVersions(nuxt.options.rootDir)
@@ -56,8 +57,10 @@ export default defineNuxtConfig({
   },
   // Nitro sets route rule headers on every response it matches; a handler may
   // replace one (https://nitro.build/config#routerules).
+  // nuxt-site-config reads a route without an `ssr` rule as rendered on the
+  // client and writes its state in a body script, which the page policy blocks.
   routeRules: {
-    '/**': { headers: SECURITY_HEADERS },
+    '/**': { headers: SECURITY_HEADERS, ssr: true },
   },
   nitro: {
     // The starting points of a new deck, read by `server/utils/templates.ts`.

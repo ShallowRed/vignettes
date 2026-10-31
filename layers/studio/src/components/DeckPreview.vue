@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DeckPreview } from '#shared/presentations'
-import { getThemeTokens } from '@vignettes/core/theme'
+import { previewTokens } from '#shared/presentations'
 
 // A deck's title slide drawn in HTML and CSS: its background, its pretitle,
 // title and subtitle, in the type and colors its theme declares for previews.
@@ -10,13 +10,7 @@ const props = defineProps<{
   fallbackTitle: string
 }>()
 
-const tokens = computed(() => {
-  if (!props.preview)
-    return undefined
-  const { levels, ...base } = getThemeTokens(props.preview.theme)?.preview ?? {}
-  const level = props.preview.surface ? levels?.[props.preview.surface] : undefined
-  return { ...base, ...level }
-})
+const tokens = computed(() => props.preview ? previewTokens(props.preview) : undefined)
 const gradient = computed(() => tokens.value?.titleGradient && tokens.value.titleGradient !== 'none'
   ? tokens.value.titleGradient
   : undefined)

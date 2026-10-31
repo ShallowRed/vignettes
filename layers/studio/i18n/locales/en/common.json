@@ -79,6 +79,9 @@
         "title": "Something went wrong",
         "description": "The page could not be shown. Try again in a moment."
       }
+    },
+    "og": {
+      "description": "Slide decks written in Markdown, laid out in your team's colors."
     }
   }
 }

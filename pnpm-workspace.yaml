@@ -27,6 +27,7 @@ packages:
 # the production dependencies, in the major version their dependents accept.
 overrides:
   '@nuxt/devtools': ^3.4.4
+  '@unhead/vue@3': ^3.4.3
   brace-expansion@1: ^1.1.20
   brace-expansion@2: ^2.1.6
   defu: ^6.1.5
@@ -42,6 +43,7 @@ overrides:
   picomatch@4: ^4.0.4
   shell-quote: ^1.11.0
   source-map-js: ^1.2.2
+  unhead@3: ^3.4.3
   vite@8: ^8.3.3
 
 catalog:
@@ -81,6 +83,7 @@ catalog:
   '@pinia/colada-nuxt': ^1.0.2
   '@pinia/nuxt': ^1.0.1
   '@playwright/test': 1.63.0
+  '@takumi-rs/core': ^2.17.1
   '@tanstack/vue-table': ^8.21.3
   '@types/better-sqlite3': ^7.6.13
   '@types/js-yaml': ^4.0.9
@@ -97,6 +100,7 @@ catalog:
   mermaid: ^11.17.2
   nuxt: ^4.5.2
   nuxt-auth-utils: ^0.5.29
+  nuxt-og-image: ~6.9.1
   pg: ^8.23.1
   pinia: ^4.0.2
   reveal.js: ^5.2.1

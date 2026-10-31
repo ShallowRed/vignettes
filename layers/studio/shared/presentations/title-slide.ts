@@ -1,7 +1,9 @@
-import type { ThemeBackgrounds } from '@vignettes/core/deck'
+import type { Slide, ThemeBackgrounds } from '@vignettes/core/deck'
+import type { ThemePreview } from '@vignettes/core/theme'
 import type { DeckPreview } from './list-item'
 import { codeLines, isSectionSlide, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel } from '@vignettes/core/deck'
 import { resolveSlideBackground } from '@vignettes/core/render'
+import { getThemeTokens } from '@vignettes/core/theme'
 
 /** The first slide of a deck, read from its markdown for a catalog card. */
 export interface TitleSlide {
@@ -86,6 +88,42 @@ export function readTitleSlide(raw: string): TitleSlide {
     backgroundImage: annotation(slide, 'slide-background', 'image'),
     backgrounds: data.backgrounds && typeof data.backgrounds === 'object' ? data.backgrounds as ThemeBackgrounds : undefined,
   }
+}
+
+interface TreeNode { type?: string, tag?: string, value?: string, children?: TreeNode[] }
+
+/** The text a reader sees in a tree of the parsed deck. */
+function treeText(node: unknown): string | undefined {
+  const walk = (n: TreeNode): string => n.type === 'text' ? n.value ?? '' : (n.children ?? []).map(walk).join('')
+  const text = node ? walk(node as TreeNode).replace(/\s+/g, ' ').trim() : ''
+  return text || undefined
+}
+
+/**
+ * The title slide of a parsed deck, read from the trees the renderer draws: the
+ * first slide with a heading, its pretitle, and its subtitle or first paragraph.
+ */
+export function parsedTitleSlide(slides: readonly Slide[], backgrounds?: ThemeBackgrounds): TitleSlide {
+  const slide = slides.find(candidate => candidate.headingLevel) ?? slides[0]
+  if (!slide)
+    return { backgrounds }
+  const lead = ((slide.body as TreeNode | undefined)?.children ?? []).find(node => node.tag === 'p')
+  const subtitle = treeText(slide.subtitle) ?? treeText(lead)
+  return {
+    title: treeText(slide.header),
+    pretitle: treeText(slide.pretitle),
+    subtitle: subtitle && subtitle.length > LEAD_MAX_LENGTH ? `${subtitle.slice(0, LEAD_MAX_LENGTH).trimEnd()}…` : subtitle,
+    headingLevel: slide.headingLevel as TitleSlide['headingLevel'],
+    ...(slide.section ? { section: true } : {}),
+    backgroundImage: slide.backgroundImage,
+    backgrounds,
+  }
+}
+
+/** The preview colors and type of a title slide: its theme's, with those of its surface level. */
+export function previewTokens(preview: DeckPreview): Omit<ThemePreview, 'levels'> {
+  const { levels, ...base } = getThemeTokens(preview.theme)?.preview ?? {}
+  return { ...base, ...(preview.surface ? levels?.[preview.surface] : undefined) }
 }
 
 /**
