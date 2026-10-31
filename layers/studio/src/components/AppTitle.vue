@@ -2,11 +2,12 @@
 import type { BreadcrumbItem } from '@nuxt/ui'
 
 // The brand mark, which leads to the home page, then the path to the page on
-// screen; the name of the studio on the home page. Below the `lg` width the
-// breadcrumb shows its last item only.
+// screen; the name of the studio and of its instance on the home page. Below
+// the `lg` width the breadcrumb shows its last item only.
 defineProps<{ items?: BreadcrumbItem[] }>()
 
 const { t } = useI18n()
+const { instanceName } = useRuntimeConfig().public
 </script>
 
 <template>
@@ -28,7 +29,13 @@ const { t } = useI18n()
     />
     <span
       v-else
-      class="text-highlighted font-bold"
-    >Vignettes</span>
+      class="flex items-baseline gap-1.5 min-w-0"
+    >
+      <span class="text-highlighted font-bold">Vignettes</span>
+      <span
+        v-if="instanceName"
+        class="text-muted truncate"
+      >{{ instanceName }}</span>
+    </span>
   </div>
 </template>

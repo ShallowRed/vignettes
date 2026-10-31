@@ -26,7 +26,7 @@ const { loggedIn } = useAppSession()
 const speakerViewFrame = inSpeakerViewFrame(useRequestURL().search)
 const draftBanner = computed(() => props.draft && !speakerViewFrame)
 
-useHead({ title: () => `${props.presentationData.metadata.title || props.slug || ''} · Vignettes` })
+useHead({ title: () => props.presentationData.metadata.title || props.slug })
 
 // A link to the deck shows its title slide. The page reaches this component only
 // with a deck its visitor may read, so a closed deck keeps the image of the studio.

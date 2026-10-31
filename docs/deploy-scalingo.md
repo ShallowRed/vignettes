@@ -55,6 +55,7 @@ Then set the other variables in the Environment tab of the dashboard, or with `s
 - `NUXT_PUBLIC_DEFAULT_THEME`: the theme of a deck that declares none, `dsfr` by default.
 - `NUXT_PUBLIC_HELP_URL=<address of the documentation site>`: the « Documentation » link, and the root to which the editor adds the paths of the pages of the Vignettes documentation site.
 - `NUXT_PUBLIC_FEEDBACK_URL`: the « Envoyer un retour » link, for example the address of a Tchap room.
+- `NUXT_PUBLIC_INSTANCE_NAME`: the name of the instance, after « Vignettes » in the header of the home page, in the page titles and in the link previews.
 - `NUXT_PUBLIC_WELCOME`: the sentence under the title of the home page for a visitor without an account, what the instance publishes and for whom.
 
 Scalingo gives a container the variables of the app when it starts it ([environment](https://doc.scalingo.com/platform/app/environment)), and a running container keeps the values it started with. After changing a variable on a running app, restart it so that new containers read the values:

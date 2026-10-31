@@ -19,7 +19,7 @@
       "signInMessage": "Connectez-vous pour modifier cette présentation.",
       "failedTitle": "Chargement impossible",
       "failedMessage": "La présentation n'a pas pu être chargée. Réessayez dans un instant.",
-      "pageTitle": "Modifier « {title} » · Vignettes",
+      "pageTitle": "Modifier « {title} »",
       "versions": "Versions"
     },
     "collab": {

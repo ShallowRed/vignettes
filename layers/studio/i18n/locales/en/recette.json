@@ -1,7 +1,7 @@
 {
   "recette": {
     "page": {
-      "pageTitle": "Acceptance · Vignettes",
+      "pageTitle": "Acceptance",
       "title": "Acceptance kit",
       "intro": "Each line opens its page in a new tab, with the account of its block.",
       "disabled": "The acceptance kit is disabled in this environment.",

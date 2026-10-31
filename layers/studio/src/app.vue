@@ -3,11 +3,16 @@ import * as uiLocales from '@nuxt/ui/locale'
 
 const { locale, t } = useI18n()
 const uiLocale = computed(() => uiLocales[locale.value])
-useHead({ htmlAttrs: { lang: locale } })
+const { instanceName } = useRuntimeConfig().public
+const siteName = instanceName ? `Vignettes ${instanceName}` : 'Vignettes'
+useHead({
+  htmlAttrs: { lang: locale },
+  titleTemplate: title => title ? `${title} · ${siteName}` : siteName,
+})
 
 // The link preview of every page; a deck page draws its own.
-useSeoMeta({ ogSiteName: 'Vignettes' })
-defineOgImage('Studio', { description: t('common.og.description') })
+useSeoMeta({ ogSiteName: siteName })
+defineOgImage('Studio', { description: t('common.og.description'), instanceName })
 </script>
 
 <template>

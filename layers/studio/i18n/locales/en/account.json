@@ -1,7 +1,7 @@
 {
   "account": {
     "tokens": {
-      "pageTitle": "Access tokens · Vignettes",
+      "pageTitle": "Access tokens",
       "title": "Access tokens",
       "intro": "A token gives the command line and your scripts the rights of your account.",
       "count": "{n} tokens | {n} token | {n} tokens",

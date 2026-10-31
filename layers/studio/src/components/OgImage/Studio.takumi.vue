@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 // The link preview image of the studio pages: the mark of the favicon, the name
-// of the product and a line of text.
-defineProps<{ description?: string }>()
+// of the product, the name of the instance and a line of text.
+defineProps<{ description?: string, instanceName?: string }>()
 </script>
 
 <template>
@@ -13,6 +13,10 @@ defineProps<{ description?: string }>()
         <div class="w-[10px] h-[42px] bg-[#2563eb] opacity-50" />
       </div>
       <span class="text-[72px] font-bold text-[#0f172a]">Vignettes</span>
+      <span
+        v-if="instanceName"
+        class="text-[72px] text-[#64748b]"
+      >{{ instanceName }}</span>
     </div>
     <p
       v-if="description"

@@ -52,7 +52,7 @@ const breadcrumb = computed(() => [
   { label: projectTitle.value },
 ])
 
-useHead(() => ({ title: `${projectTitle.value} · Vignettes` }))
+useHead(() => ({ title: projectTitle.value }))
 
 // The owner's folder menu, as on the folder cards: edit the folder, manage its
 // access (a master-key grant over every deck in it), or trash it whole.

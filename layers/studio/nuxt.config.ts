@@ -49,6 +49,9 @@ export default defineNuxtConfig({
       // The sentence of the home page for a visitor without an account;
       // `NUXT_PUBLIC_WELCOME` sets it, and the studio messages give one while empty.
       welcome: '',
+      // The name of the instance after the product name, in the header, the
+      // page titles and the link previews; `NUXT_PUBLIC_INSTANCE_NAME` sets it.
+      instanceName: '',
     },
   },
   css: [fileURLToPath(new URL('./src/assets/css/tailwind.css', import.meta.url))],

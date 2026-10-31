@@ -1,7 +1,7 @@
 {
   "recette": {
     "page": {
-      "pageTitle": "Recette · Vignettes",
+      "pageTitle": "Recette",
       "title": "Recette",
       "intro": "Chaque ligne ouvre sa page dans un nouvel onglet, avec le compte de son bloc.",
       "disabled": "Le kit de recette est désactivé sur cet environnement.",
