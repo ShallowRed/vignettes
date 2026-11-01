@@ -44,6 +44,9 @@ export const TOKEN_ROUTES: TokenRoute[] = [
   { method: 'POST', path: '/api/media', scope: 'write' },
   { method: 'POST', path: '/api/content/push', scope: 'write' },
   { method: 'POST', path: '/api/content/theme-rename', scope: 'write' },
+  // Opens the acceptance kit where it opens, for a script that checks a version
+  // in a browser: the token of an owner stands for the owner's session.
+  { method: 'POST', path: '/auth/recette', scope: 'write' },
 ]
 
 const MINUTE = 60_000

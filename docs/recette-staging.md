@@ -18,6 +18,8 @@ signé avec `NUXT_SESSION_PASSWORD`). Ce laissez-passer permet ensuite, depuis l
 même navigateur, d'ouvrir l'application en tant que n'importe quel persona et de
 revenir à son compte par le bouton « Revenir à mon compte », sans repasser par OAuth.
 
+Un script qui fait la recette dans un navigateur, celui d'un agent par exemple, ouvre le kit avec un jeton d'accès d'un compte owner, de portée « Lecture et écriture » : il envoie `POST /auth/recette` avec l'en-tête `Authorization: Bearer <jeton>` et le corps `as=<persona>&redirect=<chemin>`, et le navigateur reçoit la session du persona. Sur l'instance de référence, ce jeton est rangé dans Infisical, à la racine de l'environnement `staging`, sous `RECETTE_TOKEN`, et `mise run recette:session -- <persona>` écrit la session du persona dans un état de stockage de Playwright.
+
 ## Jeu de données
 
 Toutes les lignes portent le préfixe `recette-`. Le jeu de données est défini dans `server/utils/recette.ts` (`SEED_DECKS`). Une instance qui définit `NUXT_RECETTE_ENABLED=1` le crée à son démarrage quand il est absent ou incomplet (`server/plugins/recette-dataset.ts`) : ajouter un deck à `SEED_DECKS` le fait apparaître au déploiement suivant. Une instance où le kit ne peut pas s'ouvrir supprime au démarrage ce que le kit a créé, désigné exactement : les decks de `SEED_DECKS` par slug, les comptes des personas par identifiant, et les deux dossiers quand ils ne contiennent plus rien. Un deck qui partage seulement le préfixe `recette-` reste en place. En développement, le jeu de données se crée depuis la page. Le bouton s'appelle « Créer » tant que le jeu de données est incomplet, « Réinitialiser » ensuite ; il supprime ces lignes et les recrée, sans toucher au reste de la base.

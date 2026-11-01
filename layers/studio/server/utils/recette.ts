@@ -85,8 +85,9 @@ export function readRecettePass(event: H3Event): RecettePass | null {
 }
 
 /**
- * 404 when the kit is off; 403 unless the request comes from an owner (who then
- * receives the pass) or carries a pass whose holder is still an owner. The
+ * 404 when the kit is off; 403 unless the request comes from an owner, by a
+ * session or a personal token (who then receives the pass), or carries a pass
+ * whose holder is still an owner. The
  * second check is what keeps the pass from outliving the role: the session of a
  * persona is not an owner, so the pass has to be accepted on its own, and the
  * role it stands for is read from the database on every call.
@@ -100,6 +101,11 @@ export async function assertRecette(event: H3Event): Promise<RecettePass> {
     const { name, sessionVersion } = (session?.user ?? {}) as { name?: string, sessionVersion?: number }
     return mintRecettePass(event, { id: actor.id, login: actor.login, name, sessionVersion })
   }
+  // A personal token acts as an editor at most; here the role of its account
+  // counts, as the kit opens on staging alone.
+  const tokenAccount = actor.token && actor.id ? await useUserStore().getAccount(actor.id) : null
+  if (tokenAccount?.role === 'owner' && actor.login)
+    return mintRecettePass(event, { id: actor.id!, login: actor.login, sessionVersion: tokenAccount.sessionVersion })
   const pass = readRecettePass(event)
   const holder = pass && await useUserStore().getAccount(pass.user.id)
   if (!pass || holder?.role !== 'owner' || holder.login !== pass.user.login || holder.sessionVersion !== (pass.user.sessionVersion ?? 0))

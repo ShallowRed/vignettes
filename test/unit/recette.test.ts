@@ -5,6 +5,7 @@ import process from 'node:process'
 import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { decideMediaAccess } from '../../layers/studio/server/utils/access'
+import { mintToken, useTokenStore } from '../../layers/studio/server/utils/personal-token'
 import { hasRecetteData, isRecetteSeeded, recetteImages, resetRecette } from '../../layers/studio/server/utils/recette'
 import { useDbContent, useDeckMeta, useGrants, useMediaIndex } from '../../layers/studio/server/utils/sources'
 import { useUserStore } from '../../layers/studio/server/utils/users'
@@ -123,6 +124,22 @@ describe('persona switch', () => {
   it('answers 405 to a GET, which a link on another site can send', async () => {
     const pass = await ownerPass()
     await expect(openAs(asUser(1, 'boss', { cookies: { recette_pass: pass }, query: { as: 'collab' } }))).rejects.toMatchObject({ statusCode: 405 })
+  })
+
+  it('opens for the personal token of an owner, and refuses the token of an editor (403)', async () => {
+    const tokenOf = async (id: number) => {
+      const { secret, tokenHash, prefix } = mintToken()
+      await useTokenStore().create(id, { name: 'recette', scope: 'write', tokenHash, prefix, expiresAt: new Date(Date.now() + 86_400_000) }, new Date())
+      return secret
+    }
+    const request = (secret: string) => anon({ method: 'POST', path: '/auth/recette', headers: { authorization: `Bearer ${secret}` }, body: { as: 'viewer' } })
+    await seedAccount(1, 'boss', 'owner')
+    const byOwner = request(await tokenOf(1))
+    await openAs(byOwner)
+    expect(byOwner.sessionSet.user).toMatchObject({ id: persona('viewer').id, role: 'viewer' })
+    expect(byOwner.setCookies.recette_pass).toBeDefined()
+    await seedAccount(3, 'eve', 'editor')
+    await expect(openAs(request(await tokenOf(3)))).rejects.toMatchObject({ statusCode: 403 })
   })
 
   it('rejects an unknown persona (400)', async () => {

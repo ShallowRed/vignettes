@@ -86,12 +86,14 @@ describe('token rules', () => {
     expect(mintToken().secret).not.toBe(secret)
   })
 
-  it('lists routes that exist in server/api', () => {
-    const api = join(process.cwd(), 'layers/studio/server')
+  it('lists routes that exist in server/api and server/routes', () => {
+    const server = join(process.cwd(), 'layers/studio/server')
     for (const route of TOKEN_ROUTES) {
-      const base = join(api, route.path.replace(/:(\w+)/g, '[$1]'))
+      const path = route.path.replace(/:(\w+)/g, '[$1]')
       const method = route.method.toLowerCase()
-      expect([`${base}.${method}.ts`, join(base, `index.${method}.ts`)].some(existsSync), `${route.method} ${route.path}`).toBe(true)
+      const bases = [join(server, path), join(server, 'routes', path)]
+      const files = bases.flatMap(base => [`${base}.${method}.ts`, join(base, `index.${method}.ts`), `${base}.ts`])
+      expect(files.some(existsSync), `${route.method} ${route.path}`).toBe(true)
     }
   })
 })

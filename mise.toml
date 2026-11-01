@@ -175,6 +175,15 @@ flag "-f --force" help="Overwrite a draft edited online and not yet published"
 '''
 run = "sh scripts/with-secrets.sh node scripts/content-import.ts --apply --remote=\"${VIGNETTES_REMOTE:?set VIGNETTES_REMOTE to the instance URL, e.g. in mise.local.toml}\" --republish=\"$usage_slugs\" ${usage_force:+--force}"
 
+[tasks."recette:session"]
+description = "Open the staging instance as a persona of the acceptance kit and write the session to a Playwright storage state: mise run recette:session -- <persona> [<file>]"
+depends = [ "install" ]
+usage = """
+arg "<persona>" help="A persona of the acceptance kit (owner, editor, viewer…) or me"
+arg "[file]" help="The storage state to write, in the temporary directory by default"
+"""
+run = "INFISICAL_ENV=staging INFISICAL_SECRETS=RECETTE_TOKEN sh scripts/with-secrets.sh node scripts/recette-session.ts \"$usage_persona\" ${usage_file:+\"$usage_file\"}"
+
 [tasks."content:push"]
 description = "Push stubs into the production instance with NUXT_CONTENT_TOKEN (dry run; --apply writes, --staging targets the staging instance): mise run content:push -- <slug>[,<slug>]"
 depends = [ "install" ]
