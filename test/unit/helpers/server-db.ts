@@ -125,8 +125,9 @@ export function stubH3Globals() {
       return existsSync(path) ? readFileSync(path, 'utf8') : null
     },
   }))
-  vi.stubGlobal('sendRedirect', (e: any, url: string) => {
+  vi.stubGlobal('sendRedirect', (e: any, url: string, code = 302) => {
     e.redirectedTo = url
+    e.redirectCode = code
   })
 }
 

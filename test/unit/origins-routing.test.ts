@@ -68,6 +68,20 @@ describe('the deck origin', () => {
   })
 })
 
+describe('another address of the instance', () => {
+  it('sends every request to the studio for good, and lets the loopback address through', async () => {
+    const platform = anon({ context: {}, method: 'GET', path: '/edit/secret?slide=2', headers: { host: 'app.platform.example' } })
+    await origins(platform)
+    expect(platform.redirectedTo).toBe('http://app.example/edit/secret?slide=2')
+    expect(platform.redirectCode).toBe(301)
+    for (const host of ['127.0.0.1:3000', 'localhost:3000']) {
+      const health = anon({ context: {}, method: 'GET', path: '/', headers: { host } })
+      await origins(health)
+      expect(health.redirectedTo, host).toBeUndefined()
+    }
+  })
+})
+
 describe('a deck page of the studio', () => {
   it('goes to the deck origin, with a ticket for a person who may read the deck', async () => {
     const anonymous = anon({ context: {}, method: 'GET', path: '/slides/secret?draft', headers: STUDIO })

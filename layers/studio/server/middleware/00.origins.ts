@@ -3,12 +3,14 @@ import { isDeckPage, routeSide } from '#shared/origins'
 import { decideDeckAccess, gateOptionsOf } from '../utils/access'
 import { getActor } from '../utils/actor'
 import { serverConfig } from '../utils/config'
-import { requestSide } from '../utils/deck-origin'
+import { requestOrigin, requestSide } from '../utils/deck-origin'
 import { mintDeckTicket } from '../utils/deck-pass'
 import { deckOfPagePath } from '../utils/sources'
 import { useUserStore } from '../utils/users'
 
 const READ = new Set(['GET', 'HEAD'])
+// The container health checks call the server by its loopback address.
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
 
 /**
  * On an instance that serves its decks apart from the studio, each origin
@@ -16,7 +18,8 @@ const READ = new Set(['GET', 'HEAD'])
  * the studio to the studio, and refuses any other request of the studio; the
  * studio sends a deck page to the deck origin, with a ticket for a signed-in
  * person who may read the deck. The redirect is temporary: its target follows
- * the session.
+ * the session. Any other address, such as the default domain of a platform,
+ * sends the request to the studio for good.
  */
 export default defineEventHandler(async (event) => {
   const side = requestSide(event)
@@ -25,6 +28,9 @@ export default defineEventHandler(async (event) => {
   if (side === 'single')
     return
   const { studio, decks } = serverConfig().origins
+  const { host, hostname } = new URL(requestOrigin(event))
+  if (side === 'studio' && studio && host !== new URL(studio).host && !LOOPBACK.has(hostname))
+    return sendRedirect(event, `${studio}${event.path}`, 301)
   if (side === 'decks') {
     if (routeSide(event.method, event.path) !== 'studio')
       return
