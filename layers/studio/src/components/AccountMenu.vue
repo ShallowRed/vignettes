@@ -5,10 +5,11 @@ import { useAppSession } from '../composables/useAppSession'
 import { useInstanceLinks } from '../composables/useInstanceLinks'
 import { useUiTheme } from '../composables/useUiTheme'
 import { postForm } from '../utils/post-form'
-import { UI_THEME_NAMES, UI_THEMES } from '../utils/ui-themes'
+import { uiThemeMenuItems } from '../utils/ui-themes'
 
 // The occasional destinations and the preferences of the reader: the links of
-// the instance, the language, the color mode, then the account pages. One menu
+// the instance, the language, the color mode, the interface theme on trial,
+// then the account pages. One menu
 // holds them, opened by the account once signed in and by a menu button for a
 // visitor, who signs in beside it.
 const { loggedIn, role, user, privileged, owner } = useAppSession()
@@ -50,12 +51,7 @@ const preferences = computed<DropdownMenuItem[]>(() => [
         {
           label: t('common.header.uiTheme'),
           icon: 'i-lucide-palette',
-          children: UI_THEMES.map(id => ({
-            label: UI_THEME_NAMES[id],
-            type: 'checkbox' as const,
-            checked: uiTheme.theme.value === id,
-            onSelect: () => uiTheme.setTheme(id),
-          })),
+          children: uiThemeMenuItems(uiTheme.theme.value, uiTheme.setTheme),
         },
       ]
     : []),

@@ -1,17 +1,12 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { UI_THEME_NAMES, UI_THEMES } from '../../../../layers/studio/src/utils/ui-themes'
+import { uiThemeMenuItems } from '../../../../layers/studio/src/utils/ui-themes'
 
 // The menu of the interface themes on trial, in the build made from staging
 // only.
 const uiTheme = useUiTheme()
 
-const trialItems = computed<DropdownMenuItem[]>(() => UI_THEMES.map(id => ({
-  label: UI_THEME_NAMES[id],
-  type: 'checkbox' as const,
-  checked: uiTheme.theme.value === id,
-  onSelect: () => uiTheme.setTheme(id),
-})))
+const trialItems = computed<DropdownMenuItem[]>(() => uiThemeMenuItems(uiTheme.theme.value, uiTheme.setTheme))
 </script>
 
 <template>

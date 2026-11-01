@@ -31,3 +31,11 @@ export function resolveUiTheme(instance: string, choice: unknown, trials: boolea
     return choice
   return isUiTheme(instance) ? instance : 'vignettes'
 }
+
+/** The cookie that keeps the theme a visitor tries, read by the server of the studio and by the head script of the site. */
+export const UI_THEME_COOKIE = { name: 'ui_theme', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' } as const
+
+/** The entries of the menu of the themes on trial. */
+export function uiThemeMenuItems(current: UiTheme, select: (id: UiTheme) => void) {
+  return UI_THEMES.map(id => ({ label: UI_THEME_NAMES[id], type: 'checkbox' as const, checked: current === id, onSelect: () => select(id) }))
+}

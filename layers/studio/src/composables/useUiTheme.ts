@@ -1,7 +1,5 @@
 import type { UiTheme } from '../utils/ui-themes'
-import { resolveUiTheme } from '../utils/ui-themes'
-
-const ONE_YEAR = 60 * 60 * 24 * 365
+import { resolveUiTheme, UI_THEME_COOKIE } from '../utils/ui-themes'
 
 /**
  * The interface theme. `NUXT_PUBLIC_UI_THEME` sets the theme of the instance;
@@ -12,7 +10,8 @@ const ONE_YEAR = 60 * 60 * 24 * 365
 export function useUiTheme() {
   const trials = useState('ui-trials', () => useRequestEvent()?.context.uiTrials === true)
   const { uiTheme } = useRuntimeConfig().public
-  const themeChoice = useCookie<string | null>('ui_theme', { maxAge: ONE_YEAR, sameSite: 'lax' })
+  const { name, ...options } = UI_THEME_COOKIE
+  const themeChoice = useCookie<string | null>(name, options)
 
   return {
     trials,

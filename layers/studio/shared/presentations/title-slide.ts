@@ -49,13 +49,15 @@ function headingIndex(lines: string[]): number {
   return lines.findIndex((line, index) => !code.has(index) && HEADING_RE.test(line))
 }
 
+/** A paragraph that reads as a subtitle, cut to the length of a preview. */
+function asLead(text: string): string {
+  return text.length > LEAD_MAX_LENGTH ? `${text.slice(0, LEAD_MAX_LENGTH).trimEnd()}…` : text
+}
+
 /** The first plain paragraph after the heading, which reads as a subtitle. */
 function leadParagraph(lines: string[]): string | undefined {
   const line = lines.map(l => l.trim()).find(l => l && !NOT_PARAGRAPH_RE.test(l))
-  if (!line)
-    return undefined
-  const text = plainText(line)
-  return text.length > LEAD_MAX_LENGTH ? `${text.slice(0, LEAD_MAX_LENGTH).trimEnd()}…` : text
+  return line ? asLead(plainText(line)) : undefined
 }
 
 export function readTitleSlide(raw: string): TitleSlide {
@@ -100,7 +102,8 @@ function treeText(node: unknown): string | undefined {
 }
 
 /**
- * The title slide of a parsed deck, read from the trees the renderer draws: the
+ * The title slide of a parsed deck, read from the trees the renderer draws, by
+ * the rule of `readTitleSlide`, which reads the Markdown for the catalog: the
  * first slide with a heading, its pretitle, and its subtitle or first paragraph.
  */
 export function parsedTitleSlide(slides: readonly Slide[], backgrounds?: ThemeBackgrounds): TitleSlide {
@@ -112,7 +115,7 @@ export function parsedTitleSlide(slides: readonly Slide[], backgrounds?: ThemeBa
   return {
     title: treeText(slide.header),
     pretitle: treeText(slide.pretitle),
-    subtitle: subtitle && subtitle.length > LEAD_MAX_LENGTH ? `${subtitle.slice(0, LEAD_MAX_LENGTH).trimEnd()}…` : subtitle,
+    subtitle: subtitle && asLead(subtitle),
     headingLevel: slide.headingLevel as TitleSlide['headingLevel'],
     ...(slide.section ? { section: true } : {}),
     backgroundImage: slide.backgroundImage,
