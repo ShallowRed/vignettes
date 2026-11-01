@@ -1,18 +1,16 @@
 <script lang="ts" setup>
+import VignettesIcon from '../../../../layers/studio/src/components/VignettesIcon.vue'
+
 // The preview image of a documentation page, in place of the one of Docus: the
-// mark of the favicon, the section and the title of the page. The description
-// stays out: Docus removes its commas to fit it in the image address.
+// icon, the section and the title of the page. The description stays out: Docus
+// removes its commas to fit it in the image address.
 const { title, headline } = defineProps<{ title?: string, description?: string, headline?: string }>()
 </script>
 
 <template>
   <div class="w-full h-full flex flex-col justify-between bg-[#f8fafc] px-[80px] py-[64px]">
     <div class="flex items-center gap-[16px]">
-      <div class="flex items-center gap-[4px] w-[56px] h-[56px] rounded-[12px] bg-[#dbeafe] px-[7px]">
-        <div class="w-[20px] h-[26px] bg-[#2563eb]" />
-        <div class="w-[11px] h-[26px] bg-[#2563eb] opacity-50" />
-        <div class="w-[6px] h-[26px] bg-[#2563eb] opacity-50" />
-      </div>
+      <VignettesIcon :size="56" />
       <span class="text-[28px] font-bold text-[#0f172a]">Vignettes</span>
     </div>
 

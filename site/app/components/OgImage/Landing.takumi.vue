@@ -1,6 +1,8 @@
 <script lang="ts" setup>
-// The preview image of the home page, in place of the one of Docus: the mark of
-// the favicon, the name of the product, its promise and three slides.
+import VignettesIcon from '../../../../layers/studio/src/components/VignettesIcon.vue'
+
+// The preview image of the home page, in place of the one of Docus: the icon,
+// the name of the product, its promise and three slides.
 const { description } = defineProps<{ title?: string, description?: string }>()
 </script>
 
@@ -8,11 +10,7 @@ const { description } = defineProps<{ title?: string, description?: string }>()
   <div class="w-full h-full flex items-center bg-[#f8fafc] px-[80px]">
     <div class="flex flex-col w-[560px]">
       <div class="flex items-center gap-[20px] mb-[32px]">
-        <div class="flex items-center gap-[5px] w-[72px] h-[72px] rounded-[16px] bg-[#dbeafe] px-[9px]">
-          <div class="w-[26px] h-[34px] bg-[#2563eb]" />
-          <div class="w-[14px] h-[34px] bg-[#2563eb] opacity-50" />
-          <div class="w-[8px] h-[34px] bg-[#2563eb] opacity-50" />
-        </div>
+        <VignettesIcon :size="72" />
         <span class="text-[56px] font-bold text-[#0f172a]">Vignettes</span>
       </div>
       <p

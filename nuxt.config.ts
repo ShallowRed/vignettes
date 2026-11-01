@@ -99,8 +99,13 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ],
-      // A frozen bundle ships a reduced public/ without the favicon.
-      link: bundle.publicDir ? [] : [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+      // A frozen bundle ships a reduced public/ without the icons.
+      link: bundle.publicDir
+        ? []
+        : [
+            { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+            { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+          ],
     },
   },
 

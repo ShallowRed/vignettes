@@ -3,7 +3,7 @@ import type { DeckPreview } from '#shared/presentations'
 import { previewTokens } from '#shared/presentations'
 
 // The link preview image of a deck: its title slide, in the colors its theme
-// declares for previews, with the mark of the favicon in a corner.
+// declares for previews, with the icon in a corner.
 const props = defineProps<DeckPreview>()
 
 const tokens = computed(() => previewTokens(props))
@@ -34,10 +34,9 @@ const tokens = computed(() => previewTokens(props))
     >
       {{ subtitle }}
     </p>
-    <div class="absolute bottom-[40px] right-[48px] flex items-center gap-[4px] w-[48px] h-[48px] rounded-[10px] bg-[#dbeafe] px-[6px]">
-      <div class="w-[17px] h-[22px] bg-[#2563eb]" />
-      <div class="w-[9px] h-[22px] bg-[#2563eb] opacity-50" />
-      <div class="w-[5px] h-[22px] bg-[#2563eb] opacity-50" />
-    </div>
+    <VignettesIcon
+      :size="48"
+      class="absolute bottom-[40px] right-[48px]"
+    />
   </div>
 </template>
