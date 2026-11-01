@@ -146,6 +146,9 @@ const { data: viewer } = useDeckViewer(slug)
 
 const cm = useTemplateRef<{ view?: EditorView }>('cm')
 const editorView = computed(() => cm.value?.view)
+// The editor holds the text once it is mounted and, in collab mode, once the
+// shared document has arrived.
+const editorReady = computed(() => Boolean(editorView.value) && (!collabEnabled.value || collab.docSynced.value))
 
 // A published theme compiled with other theme packages than this studio's
 // renders with another engine stylesheet; the frontmatter guide marks `theme:`.
@@ -162,6 +165,7 @@ const {
   previewHasFocus,
   previewRatio,
   previewPending,
+  previewParsed,
   previewIssues,
   parseFailed,
   previewFragments,
@@ -479,31 +483,39 @@ async function onMetaSaved() {
           @upload-images="uploadChosenImages"
           @help="helpOpen = !helpOpen"
         />
-        <ClientOnly>
-          <!-- Collab mode: the Y.Text owns the document (no v-model — it would fight
-               Yjs); the yCollab extension syncs the editor and we mirror into `raw`. -->
-          <Codemirror
-            v-if="collabEnabled"
-            ref="cm"
-            class="flex-1 min-h-0 overflow-hidden"
-            :extensions="extensions"
-            :tab-size="2"
-          />
-          <!-- Solo mode: plain two-way binding. -->
-          <Codemirror
-            v-else
-            ref="cm"
-            v-model="cmModel"
-            class="flex-1 min-h-0 overflow-hidden"
-            :extensions="extensions"
-            :tab-size="2"
-          />
-          <template #fallback>
-            <div class="flex-1 grid place-items-center text-muted text-sm">
-              {{ t('editor.page.editorLoading') }}
-            </div>
-          </template>
-        </ClientOnly>
+        <div class="relative flex-1 min-h-0 flex flex-col">
+          <ClientOnly>
+            <!-- Collab mode: the Y.Text owns the document (no v-model: it would fight
+                 Yjs); the yCollab extension syncs the editor and we mirror into `raw`. -->
+            <Codemirror
+              v-if="collabEnabled"
+              ref="cm"
+              class="flex-1 min-h-0 overflow-hidden"
+              :extensions="extensions"
+              :tab-size="2"
+            />
+            <!-- Solo mode: plain two-way binding. -->
+            <Codemirror
+              v-else
+              ref="cm"
+              v-model="cmModel"
+              class="flex-1 min-h-0 overflow-hidden"
+              :extensions="extensions"
+              :tab-size="2"
+            />
+          </ClientOnly>
+          <!-- Until the editor holds the text, the text shows where the editor
+               will place it, without its colors and line numbers. -->
+          <div
+            v-if="!editorReady"
+            class="editor-source-pending"
+            :class="{ 'editor-source-pending--wrap': wrapLines }"
+            role="status"
+          >
+            <span class="sr-only">{{ t('editor.page.editorLoading') }}</span>
+            <pre aria-hidden="true">{{ raw }}</pre>
+          </div>
+        </div>
         <EditorStatusBar
           v-model:wrap="wrapLines"
           :view="editorView"
@@ -624,7 +636,7 @@ async function onMetaSaved() {
               :label="t('editor.publication.publish')"
               :tip="publicationHint"
               :badge="unpublished === true"
-              :disabled="unpublished === false || publishState === 'publishing'"
+              :disabled="unpublished !== true || publishState === 'publishing'"
               @click="publication.publish"
             >
               <UIcon name="i-lucide-send" />
@@ -667,16 +679,11 @@ async function onMetaSaved() {
                 <RevealSlides :presentation-data="preview" />
               </RevealPresentation>
               <div
-                v-else
+                v-else-if="previewParsed && !previewPending"
                 class="h-full grid place-items-center text-muted text-sm p-8 text-center"
               >
                 {{ t('editor.preview.placeholder') }}
               </div>
-              <template #fallback>
-                <div class="h-full grid place-items-center text-muted text-sm p-8 text-center">
-                  {{ t('editor.preview.placeholder') }}
-                </div>
-              </template>
             </ClientOnly>
             <UBadge
               v-if="previewFragments && slideSteps > 0"
@@ -746,6 +753,30 @@ async function onMetaSaved() {
 
 .dark .editor-stage {
   background: #0e0e11;
+}
+
+/* The geometry of the editor (utils/editor-theme.ts): its 58px gutters, its
+   lines of 21px in 13px type, 8px of padding above the text and at its start. */
+.editor-source-pending {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* The editor keeps room for its scrollbar, which narrows its lines. */
+  scrollbar-gutter: stable;
+  background: var(--ui-bg);
+}
+
+.editor-source-pending pre {
+  margin: 0;
+  padding: 8px 16px 0 66px;
+  font: 13px/21px ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  color: var(--ui-text-muted);
+  white-space: pre;
+}
+
+.editor-source-pending--wrap pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* The band above the slide grows with its rows; the slide takes the rest. */

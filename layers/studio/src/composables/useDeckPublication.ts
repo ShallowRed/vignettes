@@ -39,12 +39,13 @@ export function useDeckPublication(options: DeckPublicationOptions) {
   // The served text, to tell whether the draft holds changes the visitors do not see yet.
   const publishedRaw = ref<string | null>(options.source?.publishedRaw ?? null)
   const publishedAt = ref<number | null>(options.source?.publishedAt ?? null)
-  // Solo mode seeds the editor from the fetched markdown. In collab mode the
-  // server seeds the Y.Text, the one source of the text: pushing this content in
-  // as well would make yCollab duplicate it.
-  if (options.source && !collab.value) {
+  // The fetched markdown seeds `raw`, which the preview and the status bar read
+  // at once. Solo mode edits it; in collab mode the server seeds the Y.Text, the
+  // one source of the editor, and `raw` follows it once the document syncs.
+  if (options.source) {
     raw.value = options.source.content
-    lastSaved.value = options.source.content
+    if (!collab.value)
+      lastSaved.value = options.source.content
   }
 
   // In solo mode the draft is only "unsaved" when it differs from what the server has.

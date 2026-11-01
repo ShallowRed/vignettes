@@ -56,7 +56,10 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   const previewHasFocus = () => previewFrame.value?.matches(':focus-within') ?? false
 
   const preview = ref<PresentationData | null>(null)
-  const parserId = computed(() => parserIdFor({ parser: preview.value?.metadata?.parser, syntax: preview.value?.metadata?.syntax }))
+  // Before the first parse, the frontmatter of the text names the parser.
+  const parserId = computed(() => preview.value
+    ? parserIdFor({ parser: preview.value.metadata?.parser, syntax: preview.value.metadata?.syntax })
+    : parserIdFor(splitFrontmatter(raw.value).data))
 
   // ── Follow the caret ───────────────────────────────────────────────────────
   // The preview navigates to the slide the caret sits in: `slideRanges` of
@@ -229,6 +232,9 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   // From a change of the text to the render of its preview, a bar runs along the
   // top of the slide.
   const previewPending = ref(false)
+  // Whether a parse of the text has ended: before it, an empty preview says
+  // nothing about the deck.
+  const previewParsed = ref(false)
 
   // The frontmatter guide marks its own problems in the source pane; the list
   // shows them with the others, the most severe first.
@@ -273,8 +279,10 @@ export function useEditorPreview(options: EditorPreviewOptions) {
       parseFailed.value = true
     }
     // A text typed during the parse keeps the bar until its own render.
-    if (raw.value === text)
+    if (raw.value === text) {
       previewPending.value = false
+      previewParsed.value = true
+    }
   }
 
   // The marks go to the text that was parsed; a text typed since then gets its
@@ -318,6 +326,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     previewHasFocus,
     previewRatio,
     previewPending,
+    previewParsed,
     previewIssues,
     parseFailed,
     previewFragments,
