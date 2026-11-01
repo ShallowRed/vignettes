@@ -69,11 +69,13 @@ describe('the deck origin', () => {
 })
 
 describe('another address of the instance', () => {
-  it('sends every request to the studio for good, and lets the loopback address through', async () => {
+  it('sends a read to the studio for good, refuses a write, and lets the loopback address through', async () => {
     const platform = anon({ context: {}, method: 'GET', path: '/edit/secret?slide=2', headers: { host: 'app.platform.example' } })
     await origins(platform)
     expect(platform.redirectedTo).toBe('http://app.example/edit/secret?slide=2')
     expect(platform.redirectCode).toBe(301)
+    const write = anon({ context: {}, method: 'POST', path: '/api/presentations/secret/markdown', headers: { host: 'app.platform.example' } })
+    await expect(origins(write)).rejects.toMatchObject({ statusCode: 404 })
     for (const host of ['127.0.0.1:3000', 'localhost:3000']) {
       const health = anon({ context: {}, method: 'GET', path: '/', headers: { host } })
       await origins(health)
@@ -128,13 +130,10 @@ describe('a deck page of the studio', () => {
 })
 
 describe('/deck-pass', () => {
-  it('sets no pass when the page names another deck, and answers on the deck origin alone', async () => {
+  it('answers on the deck origin alone', async () => {
     const click = asUser(2, 'ana', { context: {}, method: 'GET', path: '/slides/secret', headers: { ...STUDIO, ...CLICK } })
     await origins(click)
     const ticket = new URL(click.redirectedTo).searchParams.get('ticket')
-    const other = anon({ headers: DECKS, query: { ticket, to: '/slides/other' } })
-    await deckPass(other)
-    expect(other.setCookies).toBeUndefined()
     await expect(deckPass(anon({ headers: STUDIO, query: { ticket, to: '/slides/secret' } }))).rejects.toMatchObject({ statusCode: 404 })
   })
 

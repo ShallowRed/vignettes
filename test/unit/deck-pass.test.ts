@@ -1,7 +1,7 @@
 import process from 'node:process'
 import { sealSession } from 'h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mintDeckTicket, redeemDeckTicket, viewPassIdentity } from '../../layers/studio/server/utils/deck-pass'
+import { mintDeckTicket, PASS_DECKS, redeemDeckTicket, viewPassIdentity } from '../../layers/studio/server/utils/deck-pass'
 import { anon, stubH3Globals } from './helpers/server-db'
 
 stubH3Globals()
@@ -50,21 +50,44 @@ describe('a deck ticket', () => {
     await expect(redeemDeckTicket(anon(), sealedSession, 'talk')).resolves.toBe(false)
     const event = anon()
     await redeemDeckTicket(event, await mintDeckTicket(ANA, 'talk'), 'talk')
-    await expect(redeemDeckTicket(anon(), event.setCookies.view_talk, 'talk')).resolves.toBe(false)
+    await expect(redeemDeckTicket(anon(), event.setCookies.view_pass, 'talk')).resolves.toBe(false)
   })
 })
 
 describe('a view pass', () => {
-  it('opens its deck alone, even under the cookie name of another deck', async () => {
+  it('opens the decks of its tickets alone', async () => {
     const event = anon()
     await redeemDeckTicket(event, await mintDeckTicket(ANA, 'talk'), 'talk')
     await expect(viewPassIdentity(carrying(event), 'other')).resolves.toBeNull()
-    await expect(viewPassIdentity(anon({ cookies: { view_other: event.setCookies.view_talk } }), 'other')).resolves.toBeNull()
+  })
+
+  it('keeps the decks a person opened last in one cookie of a bounded size', async () => {
+    let event = anon()
+    for (let i = 0; i <= PASS_DECKS; i++) {
+      const slug = `deck-with-a-slug-of-thirty-${String(i).padStart(2, '0')}`
+      const next = carrying(event)
+      await redeemDeckTicket(next, await mintDeckTicket(ANA, slug), slug)
+      event = { setCookies: { ...event.setCookies, ...next.setCookies } }
+    }
+    expect(Object.keys(event.setCookies)).toEqual(['view_pass'])
+    expect(event.setCookies.view_pass.length).toBeLessThan(4096)
+    await expect(viewPassIdentity(carrying(event), `deck-with-a-slug-of-thirty-${PASS_DECKS}`)).resolves.toEqual(ANA)
+    await expect(viewPassIdentity(carrying(event), 'deck-with-a-slug-of-thirty-01')).resolves.toEqual(ANA)
+    await expect(viewPassIdentity(carrying(event), 'deck-with-a-slug-of-thirty-00')).resolves.toBeNull()
+  })
+
+  it('starts again for another account or another session', async () => {
+    const first = anon()
+    await redeemDeckTicket(first, await mintDeckTicket(ANA, 'talk'), 'talk')
+    const second = carrying(first)
+    await redeemDeckTicket(second, await mintDeckTicket({ ...ANA, sessionVersion: 3 }, 'other'), 'other')
+    await expect(viewPassIdentity(carrying(second), 'other')).resolves.toEqual({ ...ANA, sessionVersion: 3 })
+    await expect(viewPassIdentity(carrying(second), 'talk')).resolves.toBeNull()
   })
 
   it('is not a ticket turned into a cookie', async () => {
     const ticket = await mintDeckTicket(ANA, 'talk')
-    await expect(viewPassIdentity(anon({ cookies: { view_talk: ticket } }), 'talk')).resolves.toBeNull()
+    await expect(viewPassIdentity(anon({ cookies: { view_pass: ticket } }), 'talk')).resolves.toBeNull()
   })
 
   it('lasts as long as an idle session', async () => {

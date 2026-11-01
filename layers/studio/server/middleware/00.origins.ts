@@ -19,7 +19,7 @@ const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
  * studio sends a deck page to the deck origin, with a ticket for a signed-in
  * person who may read the deck. The redirect is temporary: its target follows
  * the session. Any other address, such as the default domain of a platform,
- * sends the request to the studio for good.
+ * sends a read to the studio for good and refuses a write.
  */
 export default defineEventHandler(async (event) => {
   const side = requestSide(event)
@@ -29,8 +29,14 @@ export default defineEventHandler(async (event) => {
     return
   const { studio, decks } = serverConfig().origins
   const { host, hostname } = new URL(requestOrigin(event))
-  if (side === 'studio' && studio && host !== new URL(studio).host && !LOOPBACK.has(hostname))
+  if (side === 'studio' && studio && host !== new URL(studio).host && !LOOPBACK.has(hostname)) {
+    // A client that follows a redirect sends a write again as a read, without
+    // its credentials: a script pointed at that address fails on a 404 that
+    // names the cause.
+    if (!READ.has(event.method))
+      throw createError({ statusCode: 404, statusMessage: `Not found: this instance answers on ${studio}` })
     return sendRedirect(event, `${studio}${event.path}`, 301)
+  }
   if (side === 'decks') {
     if (routeSide(event.method, event.path) !== 'studio')
       return
