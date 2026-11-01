@@ -8,7 +8,10 @@ const { title, headline } = defineProps<{ title?: string, description?: string, 
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col justify-between bg-[#f8fafc] px-[80px] py-[64px]">
+  <div
+    class="w-full h-full flex flex-col justify-between bg-[#f8fafc] px-[80px] py-[64px]"
+    style="font-family: 'Lexend Deca'"
+  >
     <div class="flex items-center gap-[16px]">
       <VignettesIcon :size="56" />
       <span class="text-[28px] font-bold text-[#0f172a]">Vignettes</span>

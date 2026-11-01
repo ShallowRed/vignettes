@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { UI_FONT_FAMILIES } from '../layers/studio/src/utils/ui-themes'
 import { redirects } from './redirects'
 import { referenceFolder, references } from './references'
 
@@ -10,13 +11,15 @@ import { referenceFolder, references } from './references'
 export default defineNuxtConfig({
   extends: ['docus'],
 
-  modules: ['@vignettes/nuxt', '@vignettes/schemas', '@vignettes/storybook'],
+  modules: ['@nuxt/fonts', '@vignettes/nuxt', '@vignettes/schemas', '@vignettes/storybook'],
 
   site: {
     name: 'Vignettes',
   },
 
-  css: [fileURLToPath(new URL('../layers/studio/src/assets/css/themes/vignettes.css', import.meta.url))],
+  fonts: {
+    families: UI_FONT_FAMILIES,
+  },
 
   runtimeConfig: {
     public: {

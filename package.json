@@ -45,6 +45,7 @@
     "@hocuspocus/server": "catalog:",
     "@iconify/vue": "catalog:",
     "@lezer/highlight": "catalog:",
+    "@nuxt/fonts": "catalog:",
     "@nuxt/ui": "catalog:",
     "@nuxtjs/i18n": "catalog:",
     "@nuxtjs/mdc": "catalog:",
@@ -82,7 +83,6 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
-    "@fontsource-variable/lexend-deca": "catalog:",
     "@fontsource-variable/quicksand": "catalog:",
     "@gouvfr/dsfr": "catalog:",
     "@iconify-json/fluent": "catalog:",

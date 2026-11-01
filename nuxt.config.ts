@@ -31,7 +31,8 @@ export default defineNuxtConfig({
     inlineStyles: bundle.enabled ? () => true : undefined,
   },
 
-  // @nuxt/ui registers @nuxt/icon, @nuxt/fonts and @nuxtjs/color-mode itself.
+  // @nuxt/ui registers @nuxt/icon and @nuxtjs/color-mode itself; the studio
+  // layer registers @nuxt/fonts.
   // Pinia + Pinia Colada power the app-wide data layer (queries + mutations with
   // SSR hydration, cache invalidation and optimistic updates).
   modules: ['@pinia/nuxt', '@pinia/colada-nuxt', '@nuxtjs/mdc', 'nuxt-auth-utils', '@nuxt/ui', '@vignettes/nuxt', '@vignettes/schemas', '@vignettes/storybook'],
@@ -44,11 +45,6 @@ export default defineNuxtConfig({
   // Workspace packages ship TypeScript sources: transpiled by Vite, inlined by Nitro.
   build: {
     transpile: ['@vignettes/core', '@vignettes/typographie'],
-  },
-
-  ui: {
-    // Reveal themes own their typography; keep the system font stack for the app.
-    fonts: false,
   },
 
   // The link preview images, drawn by the server on request: a frozen bundle has no server.

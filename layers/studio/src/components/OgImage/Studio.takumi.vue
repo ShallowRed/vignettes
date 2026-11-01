@@ -5,7 +5,10 @@ defineProps<{ description?: string, instanceName?: string }>()
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col justify-center bg-[#f8fafc] px-[96px]">
+  <div
+    class="w-full h-full flex flex-col justify-center bg-[#f8fafc] px-[96px]"
+    style="font-family: 'Lexend Deca'"
+  >
     <div class="flex items-center gap-[24px] mb-[36px]">
       <VignettesIcon :size="88" />
       <span class="text-[72px] font-bold text-[#0f172a]">Vignettes</span>

@@ -5,6 +5,16 @@
 export const UI_THEMES = ['vignettes', 'dsfr', 'lasuite'] as const
 export type UiTheme = typeof UI_THEMES[number]
 
+/**
+ * The typefaces of the interface themes that @nuxt/fonts serves, in the studio
+ * and on the documentation site; the link preview images read them from it.
+ * Marianne comes with the dsfr deck theme (assets/css/themes/dsfr.css).
+ */
+export const UI_FONT_FAMILIES = [
+  { name: 'Lexend Deca', provider: 'google', global: true, weights: [400, 500, 600, 700] },
+  { name: 'Marianne', provider: 'none' },
+]
+
 export const UI_THEME_NAMES: Record<UiTheme, string> = {
   vignettes: 'Vignettes',
   dsfr: 'DSFR',

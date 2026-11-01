@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { themePackageVersions } from '@vignettes/nuxt/build/theme-build'
 import { SECURITY_HEADERS } from './server/utils/security-headers'
+import { UI_FONT_FAMILIES } from './src/utils/ui-themes'
 
 /** One file per area of the interface, the same list for every locale. */
 const MESSAGE_FILES = ['common', 'catalog', 'deck', 'editor', 'reference', 'admin', 'account', 'auth', 'recette']
@@ -17,8 +18,11 @@ const messageFiles = (locale: string) => MESSAGE_FILES.map(area => `${locale}/${
  */
 
 export default defineNuxtConfig({
+  // @nuxt/fonts before nuxt-og-image, which draws the link previews with the
+  // typefaces it serves.
   modules: [
     '@nuxtjs/i18n',
+    '@nuxt/fonts',
     'nuxt-og-image',
     (_options, nuxt) => {
       if (!nuxt.options._prepare)
@@ -26,6 +30,9 @@ export default defineNuxtConfig({
     },
   ],
   srcDir: 'src/',
+  fonts: {
+    families: UI_FONT_FAMILIES,
+  },
   i18n: {
     strategy: 'no_prefix',
     defaultLocale: 'fr',
