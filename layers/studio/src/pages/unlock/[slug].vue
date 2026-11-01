@@ -19,7 +19,7 @@ const verifyApi = computed(() => {
 })
 const returnTo = computed(() => safeRedirectPath(route.query.return, `/slides/${slug.value}`))
 
-useHead({ title: () => t('auth.unlock.pageTitle') })
+useHead({ title: () => t('auth.unlock.title') })
 
 const password = ref('')
 const errorMessage = ref('')

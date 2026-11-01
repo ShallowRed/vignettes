@@ -10,12 +10,15 @@ A Nuxt 4 application that turns MDC markdown into reveal.js slides. Ports and ad
 - PostgreSQL through drizzle-orm, behind the storage ports: node-postgres for a server, PGlite in the process for development and the tests; the SQLite adapter (better-sqlite3) runs an instance that sets `NUXT_DATABASE_DRIVER=sqlite`. Each adapter has its migrations in `layers/studio/server/db/<adapter>/migrations`
 - Yjs + Hocuspocus (collaborative draft), CodeMirror 6 (editor)
 - nuxt-auth-utils (session, GitHub and Google OAuth)
+- nuxt-og-image with Takumi (link preview images, drawn by the server on request, off in bundle mode), in the typefaces that @nuxt/fonts serves, Lexend Deca among them
 - @nuxt/ui + Tailwind CSS (app shell), Pinia Colada (client queries); slides themed via SCSS
 - zod (deck metadata + config validation), sass (theme compilation)
 - pnpm (catalog in pnpm-workspace.yaml), Node 22, vitest
 
 ## Directory Structure
 The repository holds three kinds of code. `packages/` are published units that know nothing about this instance: the deck core, the Nuxt render module, the two extension modules, the themes and the orthotypography. `layers/studio/` is the application a tenant extends: catalog, access, accounts, editor, collaboration, trash, acceptance kit, with its own `src/`, `server/` and `shared/`. The repository root is one such tenant: it extends the layer, installs the modules, and adds its themes, its brand component and its deployment.
+
+`site/` holds the site of the project, its home page and its documentation under `/docs`: a Docus application, generated as static files, that installs the render module and its two extension modules so its pages show live decks.
 
 Inside the layer, files import each other by relative path, since `~` resolves to the application's source directory and never to a layer's. The layer redeclares `#shared` so it keeps pointing at the domain it carries.
 
@@ -37,6 +40,7 @@ layers/studio/
 
 themes/          this instance's themes, compiled to public/themes/
 presentations/   this instance's content space, ignored by git: deck stubs, registry.yml, projects.yml
+site/            the home page and the documentation of the project, a Docus application
 scripts/         content and build commands, run through mise
 test/            unit and golden suites
 ```
@@ -48,7 +52,7 @@ session, crypto, filesystem or YAML sit in `layers/studio/server/utils/`. A `sha
 module usually has a matching `server/utils/<x>` adapter, as `shared/access` has
 `server/utils/access.ts`.
 
-`eslint.config.js` checks these boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone; drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are imported by the adapters (`server/db/sqlite/`, `server/db/postgres/`), the test helpers and `test/unit/migrations.test.ts`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
+`eslint.config.js` checks these boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone, and the host a request reaches through `server/utils/deck-origin.ts` alone; drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are imported by the adapters (`server/db/sqlite/`, `server/db/postgres/`), the test helpers and `test/unit/migrations.test.ts`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
 
 The deck core is the workspace package `@vignettes/core`, which depends on nothing in the
 application and ships its TypeScript sources (`build.transpile` for Vite,
@@ -154,6 +158,11 @@ Three layers:
 - In development the render module watches the theme directories and reloads the page.
 
 `docs/theme-system.md` holds the full reference.
+
+### Interface themes
+The interface themes set the colors, the radius and the typeface of the studio, apart from the deck themes: `vignettes`, the default, with Lexend Deca on the palettes of Nuxt UI, `dsfr` and `lasuite`. Each has its CSS file in `layers/studio/src/assets/css/themes/`: `vignettes.css` sets the values under `:root`, and the others replace the palettes, the radius and the typeface under `:root[data-ui-theme='<id>']`. `UI_THEMES` of `layers/studio/src/utils/ui-themes.ts` lists the themes, and `resolveUiTheme` gives the theme of a page. `NUXT_PUBLIC_UI_THEME` sets the theme of the instance. Where the acceptance kit opens, in development and on staging, the account menu offers the other themes on trial, and the cookie `ui_theme` keeps the choice of the visitor so that the server renders the page with it.
+
+The site reads the same files by relative path: `site/nuxt.config.ts` and `site/app/app.css` import the three CSS files, and its composable `useUiTheme`, its header menu and its plugin `ui-theme.ts` import `ui-themes.ts`. The build of the site made from `staging` opens the menu with `NUXT_PUBLIC_UI_TRIALS`; since the pages are static files, a script in the head reads the cookie and sets the theme before the first paint. Whoever moves or renames one of these files in `layers/studio/src/` updates the imports of the site.
 
 ## Build
 

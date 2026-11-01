@@ -153,8 +153,7 @@
       "noResultTitle": "No result",
       "noResultDescription": "No presentation matches your criteria.",
       "resetFilters": "Reset the filters",
-      "title": "Presentations",
-      "pageTitle": "Presentations"
+      "title": "Presentations"
     },
     "folder": {
       "sorted": "Sorted by last update",

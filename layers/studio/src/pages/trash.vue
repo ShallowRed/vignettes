@@ -16,7 +16,7 @@ const breadcrumb = computed(() => [
   { label: t('common.home'), to: '/' },
   { label: t('admin.trash.title') },
 ])
-useHead({ title: () => t('admin.trash.pageTitle') })
+useHead({ title: () => t('admin.trash.title') })
 
 const restoreProject = (slug: string) => restore({ kind: 'project', slug })
 const restoreDeck = (slug: string) => restore({ kind: 'deck', slug })

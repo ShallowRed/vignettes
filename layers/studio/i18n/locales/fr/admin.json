@@ -4,7 +4,6 @@
       "restrictedTitle": "Accès réservé"
     },
     "users": {
-      "pageTitle": "Comptes",
       "title": "Comptes",
       "count": "{n} compte | {n} compte | {n} comptes",
       "add": "Ajouter un compte",
@@ -43,7 +42,6 @@
       "addFailed": "Échec de l'ajout"
     },
     "trash": {
-      "pageTitle": "Corbeille",
       "title": "Corbeille",
       "restrictedDescription": "La corbeille est réservée aux comptes autorisés.",
       "emptyTitle": "Corbeille vide",

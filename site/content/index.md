@@ -240,7 +240,7 @@ Trois indicateurs suivis chaque mois par l'équipe.
 
 #description
 
-Le studio range les présentations par projet. Vous y écrivez avec vos collègues, vous publiez une version, vous choisissez qui peut la lire, puis vous présentez.
+Le studio range les présentations par dossier. Vous y écrivez avec vos collègues, vous publiez une version, vous choisissez qui peut la lire, puis vous présentez.
 
 #features
 

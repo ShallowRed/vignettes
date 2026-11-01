@@ -4,7 +4,6 @@
       "restrictedTitle": "Restricted access"
     },
     "users": {
-      "pageTitle": "Accounts",
       "title": "Accounts",
       "count": "{n} accounts | {n} account | {n} accounts",
       "add": "Add an account",
@@ -43,7 +42,6 @@
       "addFailed": "The account could not be added"
     },
     "trash": {
-      "pageTitle": "Trash",
       "title": "Trash",
       "restrictedDescription": "The trash is reserved for authorized accounts.",
       "emptyTitle": "The trash is empty",

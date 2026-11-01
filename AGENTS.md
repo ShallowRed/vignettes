@@ -15,9 +15,10 @@ The code keeps these boundaries, and `eslint.config.js` checks them with message
 - `@nuxtjs/mdc` is read by the render module (`packages/nuxt`), the configuration files and the tests.
 - drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are read by the adapters (`layers/studio/server/db/sqlite`, `layers/studio/server/db/postgres`), the test helpers and `test/unit/migrations.test.ts`. Code elsewhere reaches the rows through a port of `server/db/ports.ts`.
 
-Two more rules hold the entry points:
+Three more rules hold the entry points:
 
 - `layers/studio/server` reads its configuration through `serverConfig()` of `server/utils/config.ts`, the one server module that reads `process.env`.
+- `layers/studio/server` reads the host a request reaches through `requestOrigin()` and `requestSide()` of `server/utils/deck-origin.ts`, the one server module that calls `getRequestURL` or `getRequestHost` or reads the `Host` header.
 - `@vignettes/nuxt` exposes the entry points its `package.json` lists under `exports`; an import of anything else fails the type check. Its slide helpers stay out of the auto-imports.
 
 ## The deck format

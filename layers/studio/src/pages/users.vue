@@ -29,7 +29,7 @@ const breadcrumb = computed(() => [
   { label: t('common.home'), to: '/' },
   { label: t('admin.users.title') },
 ])
-useHead({ title: () => t('admin.users.pageTitle') })
+useHead({ title: () => t('admin.users.title') })
 
 const roleItems = computed(() => ACCOUNT_ROLES.map(value => ({ label: t(`common.role.${value}`), value })))
 

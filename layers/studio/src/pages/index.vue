@@ -11,7 +11,7 @@ import { useModalTarget } from '../composables/useModalTarget'
 const { t } = useI18n()
 const { privileged, loggedIn, owner: isOwner, user } = useAppSession()
 const { welcome } = useRuntimeConfig().public
-useHead({ title: () => t('catalog.home.pageTitle') })
+useHead({ title: () => t('catalog.home.title') })
 
 // Shared, access-filtered catalog state (decks + folders) on Pinia Colada.
 // Mutations invalidate the cache, so create/delete reflect everywhere instantly.

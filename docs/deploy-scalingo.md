@@ -53,7 +53,7 @@ Then set the other variables in the Environment tab of the dashboard, or with `s
 - `NUXT_OWNER_LOGINS`, `NUXT_EDITOR_LOGINS`: the GitHub handles of the owners and of the editors, separated by commas.
 - `NUXT_FROZEN_S3_BUCKET`, `NUXT_FROZEN_S3_ACCESS_KEY_ID`, `NUXT_FROZEN_S3_SECRET_ACCESS_KEY`: the bucket and its API key. Add `NUXT_FROZEN_S3_ENDPOINT` and `NUXT_FROZEN_S3_REGION` for a provider other than Scaleway `fr-par`.
 - `NUXT_PUBLIC_DEFAULT_THEME`: the theme of a deck that declares none, `dsfr` by default.
-- `NUXT_PUBLIC_HELP_URL=<address of the documentation site>`: the « Documentation » link, and the root to which the editor adds the paths of the pages of the Vignettes documentation site.
+- `NUXT_PUBLIC_HELP_URL=<address of the documentation>`: the « Documentation » link, the `/docs` address of a copy of the Vignettes documentation site, `https://vignettes.io/docs` by default. The editor adds to it the paths of the pages of the documentation.
 - `NUXT_PUBLIC_FEEDBACK_URL`: the « Envoyer un retour » link, for example the address of a Tchap room.
 - `NUXT_PUBLIC_INSTANCE_NAME`: the name of the instance, after « Vignettes » in the header of the home page, in the page titles and in the link previews.
 - `NUXT_PUBLIC_UI_THEME`: the interface theme of the instance, `vignettes` (default), `dsfr` or `lasuite`.

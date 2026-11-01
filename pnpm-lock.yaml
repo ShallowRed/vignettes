@@ -51,9 +51,6 @@ catalogs:
     '@electric-sql/pglite':
       specifier: ^0.5.10
       version: 0.5.10
-    '@fontsource-variable/quicksand':
-      specifier: ^5.3.0
-      version: 5.3.0
     '@gouvfr/dsfr':
       specifier: ^1.15.3
       version: 1.15.3
@@ -403,9 +400,6 @@ importers:
       '@antfu/eslint-config':
         specifier: 'catalog:'
         version: 6.4.2(@vue/compiler-sfc@3.5.43)(eslint@9.39.1(jiti@2.7.0))(typescript@5.9.3)(vitest@4.1.9(@types/node@24.10.1)(vite@8.3.5(@types/node@24.10.1)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.94.2)(terser@5.51.2)(tsx@4.23.1)(yaml@2.9.1)))
-      '@fontsource-variable/quicksand':
-        specifier: 'catalog:'
-        version: 5.3.0
       '@gouvfr/dsfr':
         specifier: 'catalog:'
         version: 1.15.3
@@ -1912,9 +1906,6 @@ packages:
     resolution: {integrity: sha512-043dyEKD9TDSfz080YH2vobubgg+NIo/9Fw4RAl7sEMpD8Am1DNrrSTl/GpMBjyGHoD/FbJY2QLawY+HSQsEIA==}
     peerDependencies:
       vue: '>=3.3.0'
-
-  '@fontsource-variable/quicksand@5.3.0':
-    resolution: {integrity: sha512-EMyoXnGC0uIbjyHDB01MTJoQuODsMo7Q/4XLEwN97YJEeV1WIVFI0QBiW2exGnxvhnMHb+IwQ9E5QZDgGMWCHw==}
 
   '@gouvfr/dsfr@1.15.3':
     resolution: {integrity: sha512-R9AALZc1LfZjtytWZMOaUIOHWTkllBZ/sZlsL8TpKZVgF3qUKXt/uNYh+L1D1Fh4p92ZqWxbtNcebsigBZe5pQ==}
@@ -11525,8 +11516,6 @@ snapshots:
       '@floating-ui/dom': 1.8.0
       '@floating-ui/utils': 0.2.12
       vue: 3.5.43(typescript@5.9.3)
-
-  '@fontsource-variable/quicksand@5.3.0': {}
 
   '@gouvfr/dsfr@1.15.3': {}
 

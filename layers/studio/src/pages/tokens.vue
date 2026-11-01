@@ -29,7 +29,7 @@ const breadcrumb = computed(() => [
   { label: t('common.home'), to: '/' },
   { label: t('account.tokens.title') },
 ])
-useHead({ title: () => t('account.tokens.pageTitle') })
+useHead({ title: () => t('account.tokens.title') })
 
 const date = (value: string) => shortDate(value, locale.value)
 

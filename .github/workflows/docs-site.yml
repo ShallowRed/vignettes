@@ -2,7 +2,7 @@ name: Documentation site
 
 # Publishes the documentation site (site/, Docus) to the VPS: a push on `main`
 # for the address of the repository variable DOCS_SITE_URL, a push on `staging`
-# for docs.staging.vignettes.io.
+# for the address of DOCS_STAGING_SITE_URL.
 #
 # `checks.yml` generates the site, which builds the render module and reads
 # the package READMEs; this workflow sends that output. The upload goes over

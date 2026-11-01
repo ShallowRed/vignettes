@@ -23,10 +23,13 @@ trustPolicyExclude:
 packages:
   - packages/*
   - site
-# These overrides force the releases past the high and critical advisories of
-# the production dependencies, in the major version their dependents accept.
+# The overrides without a comment force the releases past the high and
+# critical advisories of the production dependencies, in the major version
+# their dependents accept.
 overrides:
   '@nuxt/devtools': ^3.4.4
+  # The two unhead overrides resolve one release of unhead 3 for every
+  # dependent, so that the built server contains `unhead/legacy` and starts.
   '@unhead/vue@3': ^3.4.3
   brace-expansion@1: ^1.1.20
   brace-expansion@2: ^2.1.6
@@ -44,6 +47,7 @@ overrides:
   picomatch@4: ^4.0.4
   shell-quote: ^1.11.0
   source-map-js: ^1.2.2
+  # See '@unhead/vue@3' above.
   unhead@3: ^3.4.3
   vite@8: ^8.3.3
 
@@ -63,7 +67,6 @@ catalog:
   '@codemirror/view': ^6.43.2
   '@dagrejs/dagre': ^3.1.1
   '@electric-sql/pglite': ^0.5.10
-  '@fontsource-variable/quicksand': ^5.3.0
   '@gouvfr/dsfr': ^1.15.3
   '@hocuspocus/provider': ^4.3.0
   '@hocuspocus/server': ^4.3.0

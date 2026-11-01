@@ -1,7 +1,6 @@
 {
   "account": {
     "tokens": {
-      "pageTitle": "Jetons d'accès",
       "title": "Jetons d'accès",
       "intro": "Un jeton donne à la ligne de commande et à vos scripts les droits de votre compte.",
       "count": "{n} jeton | {n} jeton | {n} jetons",

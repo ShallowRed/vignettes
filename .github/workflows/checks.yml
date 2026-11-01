@@ -91,12 +91,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # The repository variable DOCS_SITE_URL gives the public address of the
-      # site, and a run on `staging` builds for docs.staging.vignettes.io, with the
-      # menu of the interface themes on trial; a pull request may fall back on a
-      # placeholder, a published run may not.
+      # site, and DOCS_STAGING_SITE_URL the address a run on `staging` builds
+      # for, with the menu of the interface themes on trial; a pull request may
+      # fall back on a placeholder, a published run may not.
       - name: Generate the site
         env:
-          NUXT_SITE_URL: ${{ github.ref == 'refs/heads/staging' && 'https://docs.staging.vignettes.io' || vars.DOCS_SITE_URL || (github.event_name == 'pull_request' && 'https://docs.example.com' || '') }}
+          NUXT_SITE_URL: ${{ github.ref == 'refs/heads/staging' && vars.DOCS_STAGING_SITE_URL || github.ref != 'refs/heads/staging' && (vars.DOCS_SITE_URL || (github.event_name == 'pull_request' && 'https://docs.example.com' || '')) || '' }}
           NUXT_PUBLIC_UI_TRIALS: ${{ github.ref == 'refs/heads/staging' }}
           NODE_OPTIONS: --max-old-space-size=4096
           NUXT_TELEMETRY_DISABLED: 1
