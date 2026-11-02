@@ -135,7 +135,9 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
     '.cm-problem--error': { textDecorationColor: palette.error },
     '.cm-problem--warning': { textDecorationColor: palette.warning },
     '.cm-problem--info': { textDecorationColor: palette.dimmed },
-    '.cm-hint': { marginLeft: '8px', color: palette.dimmed, fontStyle: 'italic', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12px', cursor: 'pointer' },
+    // With the inherited line height, the smaller sans-serif text makes the caret line 1px taller.
+    // On an empty line the caret is drawn against the hint's box: a margin would push it off the line start.
+    '.cm-hint': { paddingLeft: '8px', color: palette.dimmed, fontStyle: 'italic', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12px', lineHeight: '1', cursor: 'pointer' },
     '.cm-hint:hover': { color: palette.text, textDecoration: 'underline' },
     '.cm-hint--text, .cm-hint--text:hover': { color: palette.dimmed, textDecoration: 'none', cursor: 'text' },
     '.cm-hint:has(.cm-hint__choice), .cm-hint:has(.cm-hint__choice):hover': { textDecoration: 'none', cursor: 'default' },
