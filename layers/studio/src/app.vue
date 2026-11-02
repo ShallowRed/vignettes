@@ -4,7 +4,7 @@ import { useUiTheme } from './composables/useUiTheme'
 
 const { locale, t } = useI18n()
 const uiLocale = computed(() => uiLocales[locale.value])
-const { instanceName } = useRuntimeConfig().public
+const { instanceName, uiTheme } = useRuntimeConfig().public
 const siteName = instanceName ? `Vignettes ${instanceName}` : 'Vignettes'
 const { theme } = useUiTheme()
 useHead({
@@ -17,7 +17,7 @@ useHead({
 
 // The link preview of every page; a deck page draws its own.
 useSeoMeta({ ogSiteName: siteName })
-defineOgImage('Studio', { description: t('common.og.description'), instanceName })
+defineOgImage('Studio', { description: t('common.og.description'), instanceName, fontFamily: UI_THEME_FONTS[resolveUiTheme(uiTheme, undefined, false)] })
 </script>
 
 <template>

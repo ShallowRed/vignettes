@@ -10,7 +10,7 @@ A Nuxt 4 application that turns MDC markdown into reveal.js slides. Ports and ad
 - PostgreSQL through drizzle-orm, behind the storage ports: node-postgres for a server, PGlite in the process for development and the tests; the SQLite adapter (better-sqlite3) runs an instance that sets `NUXT_DATABASE_DRIVER=sqlite`. Each adapter has its migrations in `layers/studio/server/db/<adapter>/migrations`
 - Yjs + Hocuspocus (collaborative draft), CodeMirror 6 (editor)
 - nuxt-auth-utils (session, GitHub and Google OAuth)
-- nuxt-og-image with Takumi (link preview images, drawn by the server on request, off in bundle mode), in the typefaces that @nuxt/fonts serves, Lexend Deca among them
+- nuxt-og-image with Takumi (link preview images, drawn by the server on request, off in bundle mode), in the typefaces that @nuxt/fonts serves: Lexend Deca, and Marianne from the files of the dsfr deck theme. The image of the studio takes the typeface of the interface theme of the instance
 - @nuxt/ui + Tailwind CSS (app shell), Pinia Colada (client queries); slides themed via SCSS
 - zod (deck metadata + config validation), sass (theme compilation)
 - pnpm (catalog in pnpm-workspace.yaml), Node 22, vitest
@@ -193,7 +193,7 @@ Production is SSR, not static hosting:
 - Content lives in the database; the image holds code only, so a content change never rebuilds it. With `NUXT_DATABASE_URL`, `run-app.sh` starts the app on that PostgreSQL server. Without it, `run-app.sh` sets `NUXT_DATABASE_DRIVER=sqlite`, restores the SQLite file from object storage on an empty volume and runs the app under Litestream replication.
 - `.github/workflows/docker-publish.yml` builds + pushes the image to GHCR and deploys it over SSH: push to `staging` deploys the staging instance, push to `main` the production one (infra lives in a separate `vps-infra` repo).
 - Runtime secrets are pulled from a self-hosted Infisical instance by `docker-entrypoint.sh` (`infisical run`); secrets never touch disk.
-- Single-deck frozen bundles (`mise run freeze -- <alias>`) are the static mode, served by `/frozen/**` behind the deck's access gate.
+- Single-deck frozen bundles (`mise run freeze -- <alias>`) are the static mode, served by `/frozen/**` behind the deck's access gate. The route adds to the page of a public bundle the preview image of its title slide (`server/utils/frozen-preview.ts`), which the bundle is built without.
 
 ### One instance at a time
 

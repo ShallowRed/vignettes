@@ -2,27 +2,9 @@
  * The interface in the colors, the square corners and the typeface of the DSFR
  * (@gouvfr/dsfr 1.15). The palettes take the blue France and the greys of the
  * DSFR at the steps Nuxt UI reads: 500 is the action color in light mode, 400
- * in dark mode. Marianne is served with the dsfr deck theme, under
- * /themes/dsfr/fonts/.
+ * in dark mode. @nuxt/fonts declares Marianne from the files of the dsfr deck
+ * theme (UI_FONT_FAMILIES in src/utils/ui-themes.ts).
  */
-@font-face {
-  font-family: Marianne;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/themes/dsfr/fonts/Marianne-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: Marianne;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/themes/dsfr/fonts/Marianne-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: Marianne;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/themes/dsfr/fonts/Marianne-Bold.woff2") format("woff2");
-}
 
 :root[data-ui-theme='dsfr'] {
   --app-font-family: Marianne, arial, sans-serif;

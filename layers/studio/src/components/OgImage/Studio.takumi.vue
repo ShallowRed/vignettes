@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 // The link preview image of the studio pages: the icon, the name of the product,
-// the name of the instance and a line of text.
-defineProps<{ description?: string, instanceName?: string }>()
+// the name of the instance and a line of text, in the typeface of its theme.
+defineProps<{ description?: string, instanceName?: string, fontFamily: string }>()
 </script>
 
 <template>
   <div
     class="w-full h-full flex flex-col justify-center bg-[#f8fafc] px-[96px]"
-    style="font-family: 'Lexend Deca'"
+    :style="{ fontFamily }"
   >
     <div class="flex items-center gap-[24px] mb-[36px]">
       <VignettesIcon :size="88" />

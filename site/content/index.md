@@ -1,7 +1,7 @@
 ---
 seo:
   title: Vignettes
-  description: Des présentations écrites en Markdown, mises en page aux couleurs de votre équipe.
+  description: Écrivez, publiez, présentez.
 ---
 
 ::u-page-hero{:ui='{"container":"pb-10 sm:pb-12 lg:pb-16"}'}

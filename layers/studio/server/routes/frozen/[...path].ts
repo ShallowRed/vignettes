@@ -11,6 +11,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { gateDeckAccess, gateOptionsOf } from '../../utils/access'
 import { serverConfig } from '../../utils/config'
+import { withPreviewImage } from '../../utils/frozen-preview'
 import { makeFrozenS3Client } from '../../utils/frozen-s3-client'
 import { fileUnder, requestPathSegments } from '../../utils/request-path'
 import { deckOfBundleName } from '../../utils/sources'
@@ -40,7 +41,7 @@ export default defineEventHandler(async (event) => {
   // The bundle read is the one of the deck the gate decides on, whatever name the URL gives.
   const bundle = deck ? deck.frozenBundle ?? deck.slug : null
   const gate = deck && bundle && isDeckSlug(bundle) ? await gateOptionsOf(deck.slug) : null
-  if (!gate || !bundle)
+  if (!deck || !gate || !bundle)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
   const assetParts = normaliseAssetPath(rest)
@@ -85,6 +86,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, statusMessage: 'Asset not found' })
     }
   }
+
+  if (isPublic && assetParts.at(-1) === 'index.html')
+    body = Buffer.from(await withPreviewImage(event, body.toString(), deck))
 
   setResponseHeader(event, 'Content-Type', contentType || contentTypeOf(assetPath))
   setResponseHeader(event, 'Content-Length', body.byteLength)

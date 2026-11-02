@@ -2,13 +2,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { useDbContent, useDeckMeta } from '../../layers/studio/server/utils/sources'
 import { anon, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The route serves a bundle from `.frozen/` under the working directory, behind
 // the view gate of the deck the bundle belongs to.
 stubH3Globals()
+// The address nuxt-og-image would build, with the page and the props of the image.
+vi.stubGlobal('getOgImageUrl', (_e: unknown, path: string, options: any) => `https://app.example/_og${path}/${options.component}/${options.props.title}.png`)
 setupServerDb()
 process.env.NUXT_SESSION_PASSWORD = 'frozen-test-password-with-32-characters'
 
@@ -18,7 +20,7 @@ const cwd = process.cwd()
 const workdir = mkdtempSync(join(tmpdir(), 'frozen-'))
 beforeAll(() => {
   mkdirSync(join(workdir, '.frozen', 'talk-2026'), { recursive: true })
-  writeFileSync(join(workdir, '.frozen', 'talk-2026', 'index.html'), '<h1>talk</h1>')
+  writeFileSync(join(workdir, '.frozen', 'talk-2026', 'index.html'), '<head><title>Talk</title></head><h1>talk</h1>')
   mkdirSync(join(workdir, '.frozen', 'notes-2026'))
   writeFileSync(join(workdir, '.frozen', 'notes-2026', 'index.html'), '<h1>notes</h1>')
   mkdirSync(join(workdir, '.data'))
@@ -59,6 +61,15 @@ describe('the frozen bundle route', () => {
 
     await useDeckMeta().update('talk', { status: 'public' })
     await expect(page()).resolves.toBeDefined()
+  })
+
+  it('gives the page of a public bundle the preview image of its title slide', async () => {
+    await publishedDeck('public')
+    await useDeckMeta().update('talk', { frozenBundle: 'talk-2026' })
+    const html = String(await page())
+    expect(html).toContain('<meta property="og:image" content="https://app.example/_og/p/talk/Deck/Talk.png">')
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image">')
+    expect(html.indexOf('og:image')).toBeLessThan(html.indexOf('</head>'))
   })
 
   it('ignores a password given on a bundle file', async () => {
