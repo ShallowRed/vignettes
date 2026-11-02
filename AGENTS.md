@@ -6,6 +6,14 @@ Instructions for coding agents working in this repository. [CONTRIBUTING.md](CON
 
 Node 22, pinned in `mise.toml`: `better-sqlite3` is built for that line. pnpm comes from `packageManager` through corepack. `mise run check` runs what the CI runs: `pnpm lint`, `pnpm exec nuxi typecheck`, `pnpm test`.
 
+## Pushes
+
+[CONTRIBUTING.md](CONTRIBUTING.md#checks) says what each push runs in the CI.
+
+- Related changes (same audit, same surface, same family of texts) go in one pull request: before opening one, look for an open pull request on the same subject with `gh pr list` and add to it. A stack is one pull request, or pull requests that follow each other, built with `gh stack` from the `github/gh-stack` extension.
+- Keep the commits of the stack local until `mise run check` passes and Lucas approves the stack on the local studio: run `mise run dev` and give Lucas the host it prints, with `/auth/dev-login?role=owner` to sign in. When Lucas works on another machine of the tailnet, run `PORTLESS_TAILSCALE=1 mise run dev` and give the Tailscale address it prints. Fix the feedback locally and ask Lucas to try again. Once Lucas approves the stack, run `mise run test:e2e`, push the stack once, then push its top branch to `staging`.
+- Lucas tries a documentation change with `mise run site:dev`, and it goes to `main` from its pull request.
+
 ## Boundaries
 
 The code keeps these boundaries, and `eslint.config.js` checks them with messages that name the place a change belongs. When a rule fires, move the code there; keep the rule.

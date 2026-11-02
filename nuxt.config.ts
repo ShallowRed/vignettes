@@ -79,7 +79,12 @@ export default defineNuxtConfig({
   ignore: ['.claude/**', '.frozen/**'],
 
   vite: {
-    server: { watch: { ignored: ['**/.claude/**', '**/.frozen/**'] } },
+    server: {
+      // `PORTLESS_TAILSCALE=1 mise run dev` serves the studio on the machine's
+      // Tailscale name, for another device of the tailnet.
+      allowedHosts: ['.ts.net'],
+      watch: { ignored: ['**/.claude/**', '**/.frozen/**'] },
+    },
     // The SSR Vite server runs in middleware mode with `hmr: false`; Vite then
     // still opens an unused websocket server on 24678, which collides with any
     // other Vite dev server on the machine. It has no client: drop it.
