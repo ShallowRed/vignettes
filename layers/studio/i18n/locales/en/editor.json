@@ -201,6 +201,8 @@
       },
       "size": "Media share",
       "sizeAuto": "Auto",
+      "sizeOverflows": "The text overflows the slide at this size.",
+      "sizeShrinks": "The body text shrinks to {percent}% of its size.",
       "src": "Address of the image or the page",
       "story": "Storybook story",
       "alt": "Media description",
@@ -236,7 +238,13 @@
       },
       "legacy": ":layout format to convert into attributes.",
       "missingSource": "Enter the address of an image or a page, or the id of a story.",
-      "outside": "Place the cursor in a slide to set its layout."
+      "outside": "Place the cursor in a slide to set its layout.",
+      "measuring": "Measuring the media sizes…",
+      "proposeSize": "The text fits with a media on {size} of the width.",
+      "proposeBody": "Place the media to the right of the text, on {size} of the width.",
+      "sizeFits": "The text fits with the media on {size} of the width.",
+      "tooLong": "The text overflows at every size: shorten it or split the slide.",
+      "apply": "Apply"
     },
     "convert": "Convert",
     "docsLink": "Documentation",

@@ -201,6 +201,8 @@
       },
       "size": "Part du média",
       "sizeAuto": "Auto",
+      "sizeOverflows": "Le texte dépasse de la diapositive à cette taille.",
+      "sizeShrinks": "Le texte du corps passe à {percent} % de sa taille.",
       "src": "Adresse de l'image ou de la page",
       "story": "Story du Storybook",
       "alt": "Description du média",
@@ -236,7 +238,13 @@
       },
       "legacy": "Format de :layout à convertir en attributs.",
       "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story.",
-      "outside": "Placez le curseur dans une diapositive pour régler sa mise en page."
+      "outside": "Placez le curseur dans une diapositive pour régler sa mise en page.",
+      "measuring": "Mesure des tailles du média…",
+      "proposeSize": "Le texte tient avec un média sur {size} de la largeur.",
+      "proposeBody": "Placer le média à droite du texte, sur {size} de la largeur.",
+      "sizeFits": "Le texte tient avec le média sur {size} de la largeur.",
+      "tooLong": "Le texte dépasse à chaque taille : raccourcissez-le ou coupez la diapositive.",
+      "apply": "Appliquer"
     },
     "convert": "Convertir",
     "docsLink": "Documentation",

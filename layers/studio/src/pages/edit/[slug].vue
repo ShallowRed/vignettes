@@ -16,6 +16,7 @@ import type { Project } from '#shared/projects'
  */
 import type { Extension } from '@codemirror/state'
 import type { PreviewInstance } from '../../composables/useEditorPreview'
+import type { LayoutProbeInstance } from '../../composables/useLayoutProbe'
 import type { Translate } from '../../config/editor-reference'
 import type { Severity } from '../../utils/editor-problems'
 import { loginHref } from '#shared/access'
@@ -33,6 +34,7 @@ import { useDeckPublication } from '../../composables/useDeckPublication'
 import { useDocsAddress } from '../../composables/useDocsAddress'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { useEditorPreview } from '../../composables/useEditorPreview'
+import { LAYOUT_PROBE, useLayoutProbe } from '../../composables/useLayoutProbe'
 import { useSnapshotCapture } from '../../composables/useSnapshotCapture'
 import { presentationsQuery, projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
@@ -192,6 +194,12 @@ const {
   tWithKeys,
   locale,
 })
+
+// The layout panel measures each size of a media in a hidden render, drawn with
+// the metadata of the preview.
+const layoutProbeInstance = useTemplateRef<LayoutProbeInstance>('layoutProbeInstance')
+const layoutProbe = useLayoutProbe({ preview, instance: layoutProbeInstance })
+provide(LAYOUT_PROBE, layoutProbe)
 
 // `?slide=h/v`: the deck page's edit command opens the editor on the slide it
 // showed. The caret goes to the slide's first line once the text is loaded.
@@ -684,6 +692,15 @@ async function onMetaSaved() {
               >
                 {{ t('editor.preview.placeholder') }}
               </div>
+              <!-- Out of the transformed frame, so that its fixed position is the window's. -->
+              <Teleport to="body">
+                <LayoutProbe
+                  v-if="layoutProbe.data.value"
+                  ref="layoutProbeInstance"
+                  :key="layoutProbe.data.value.metadata.theme"
+                  :data="layoutProbe.data.value"
+                />
+              </Teleport>
             </ClientOnly>
             <UBadge
               v-if="previewFragments && slideSteps > 0"

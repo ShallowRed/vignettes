@@ -17,7 +17,7 @@ import { jsonBlockAt } from '../utils/editor-json'
 import { placeProblems, setPreviewProblems } from '../utils/editor-problems'
 import { previewSourceReader } from '../utils/preview-header'
 import { imageMention, missingImages } from '../utils/preview-images'
-import { slideOverflow, transitionsEnded } from '../utils/preview-overflow'
+import { OVERFLOW_THRESHOLD, slideOverflow, transitionsEnded } from '../utils/preview-overflow'
 
 /** The Reveal component of the preview. */
 export interface PreviewInstance { slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => RevealApi | null }
@@ -160,7 +160,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
       const ranges = slideRanges(raw.value, parserId.value)
       const index = ranges.findIndex(range => range.h === h && range.v === (v ?? 0))
       const startLine = ranges[index]?.startLine
-      overflow.value = startLine && slideOverflow(reveal) > 4 ? { line: startLine, slide: index + 1 } : null
+      overflow.value = startLine && slideOverflow(reveal) > OVERFLOW_THRESHOLD ? { line: startLine, slide: index + 1 } : null
       const missing = startLine ? await missingImages(reveal) : []
       if (check !== slideCheck)
         return

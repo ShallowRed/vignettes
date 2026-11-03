@@ -1,4 +1,4 @@
-import { LAYOUT_ATTRIBUTES, layoutAnnotationChange, layoutAnnotations, layoutDefault, layoutForPlacement, layoutMentions, layoutSource, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
+import { bodyMediaLayout, LAYOUT_ATTRIBUTES, layoutAnnotationChange, layoutAnnotations, layoutDefault, layoutForPlacement, layoutMentions, layoutSource, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 
 describe('readLayout', () => {
@@ -194,5 +194,25 @@ describe('layout attributes', () => {
   it('describes each attribute in French and in English', () => {
     for (const attribute of LAYOUT_ATTRIBUTES)
       expect(Object.keys(attribute.description).sort()).toEqual(['en', 'fr'])
+  })
+})
+
+describe('bodyMediaLayout', () => {
+  it('writes the attributes of a media of the body under their :layout names', () => {
+    expect(bodyMediaLayout({ component: 'image', attributes: { src: '/a.png', alt: 'Une vue' } })).toEqual({ src: '/a.png', alt: 'Une vue' })
+    expect(bodyMediaLayout({ component: 'Iframe', attributes: { src: 'https://exemple.fr', title: 'Le site' } })).toEqual({ src: 'https://exemple.fr', alt: 'Le site' })
+  })
+
+  it('writes nothing for a component that no package registers', () => {
+    expect(bodyMediaLayout({ component: 'StoryFrame', attributes: { story: 'a--b', src: '/x.png' } })).toEqual({})
+  })
+
+  it('writes out a setting the component defaults otherwise than :layout', () => {
+    expect(bodyMediaLayout({ component: 'Image', attributes: { src: '/a.png' } })).toEqual({ src: '/a.png', fit: 'contain' })
+  })
+
+  it('keeps the kind of the media when its address would give the other one', () => {
+    expect(bodyMediaLayout({ component: 'image', attributes: { src: 'https://hote/image?id=3', alt: '' } })).toEqual({ src: 'https://hote/image?id=3', type: 'image' })
+    expect(bodyMediaLayout({ component: 'Iframe', attributes: { src: '/cartes/plan.svg' } })).toEqual({ src: '/cartes/plan.svg', type: 'iframe' })
   })
 })

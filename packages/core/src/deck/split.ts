@@ -1,10 +1,10 @@
-import type { ComponentAttribute, DeckComponent } from './components.ts'
+import type { BodyMediaLayoutSpec, ComponentAttribute, DeckComponent } from './components.ts'
 import type { LayoutIssueKind } from './layout.ts'
 import type { ParserId } from './parser.ts'
 import { isRefusedEmbed, readAttribute } from './attributes.ts'
 import { ANNOTATION_TAGS, componentKey, DECK_ANNOTATIONS, deckComponents, NOTES_COMPONENT } from './components.ts'
 import { frontmatterLineCount } from './frontmatter.ts'
-import { LAYOUT_ATTRIBUTES, readLayout } from './layout.ts'
+import { bodyMediaLayout, LAYOUT_ATTRIBUTES, MARKDOWN_IMAGE_LAYOUT, readLayout } from './layout.ts'
 
 /**
  * The slide boundaries of a deck, read from its markdown text: the one
@@ -722,9 +722,16 @@ export function layoutMentions(raw: string): LayoutMention[] {
 const SECTION_ANNOTATION_RE = new RegExp(`^\\s*:(?:${ANNOTATION_TAGS.filter(tag => tag !== 'layout').join('|')})\\{[^}]*\\}\\s*$`)
 const BLOCK_COMPONENT_RE = /^[ \t]*(:{2,})([a-z][\w-]*)(?:[^\w\n-][^\n]*)?\n[\s\S]*?^[ \t]*\1[ \t]*$/gim
 const COMMENT_RE = /^\s*<!--.*-->\s*$/
-// A line that holds a component or an image alone.
-const STANDALONE_RE = /^\s*(?::[a-z][\w-]*(?:\[[^\]]*\])?(?:\{[^}]*\})?|!\[[^\]]*\]\([^)]*\))\s*$/i
+// A line that holds an image alone, with its address, its title and its MDC attributes.
+const MARKDOWN_IMAGE_LINE_RE = /^\s*!\[([^\]]*)\]\(\s*<?([^\s<>)]+)>?([ \t][^)]*)?\)(?:\{([^{}]*)\})?\s*$/
+// A line that holds a component alone, with its label and its attributes.
+const COMPONENT_LINE_RE = /^\s*(:+)([a-z][\w-]*)(\[[^\]]*\])?(?:\{([^{}]*)\})?\s*$/i
 const SECTION_TEXT_MAX_LENGTH = 140
+
+/** Whether a line holds a component or an image alone. */
+function isStandalone(line: string): boolean {
+  return MARKDOWN_IMAGE_LINE_RE.test(line) || COMPONENT_LINE_RE.test(line)
+}
 
 /** The text a reader sees of a markdown line: no link targets, attributes, component names or markup. */
 function displayedText(line: string): string {
@@ -762,7 +769,7 @@ export function isSectionSlide(text: string): boolean {
       inParagraph = false
       continue
     }
-    if (line.kind !== 'text' || OTHER_BLOCK_RE.test(line.text) || STANDALONE_RE.test(line.text))
+    if (line.kind !== 'text' || OTHER_BLOCK_RE.test(line.text) || isStandalone(line.text))
       return false
     const text = displayedText(line.text)
     if (inParagraph)
@@ -772,6 +779,94 @@ export function isSectionSlide(text: string): boolean {
     inParagraph = true
   }
   return heading && paragraphs.length <= 1 && (paragraphs[0]?.length ?? 0) <= SECTION_TEXT_MAX_LENGTH
+}
+
+/** A media written alone on a top-level line of a slide body, or as a block of its own. */
+export interface BodyMedia {
+  /** The component that draws it, by its declared name; `image` for a markdown image. */
+  component: string
+  /** Its attributes as written; a markdown image gives `src` and `alt`. */
+  attributes: Record<string, string | true>
+  /** 1-based first and last lines in the slide text, the closing line of a block included. */
+  from: number
+  to: number
+  /**
+   * `:layout` can show it as its component does: it is the only media of the
+   * slide, it holds no content, label or title, and `:layout` takes each of
+   * its attributes.
+   */
+  movable: boolean
+}
+
+const MEDIA_GROUPS = new Set(['media', 'storybook'])
+
+/**
+ * A media as the walk finds it: how `:layout` shows it, whether its block holds
+ * content, whether it carries a label or a title.
+ */
+type FoundMedia = Omit<BodyMedia, 'movable'> & { spec?: BodyMediaLayoutSpec, content: boolean, captioned: boolean }
+
+/** The attributes of a `{…}` block, by name; an attribute written alone is `true`. */
+function writtenAttributes(content = ''): Record<string, string | true> {
+  return Object.fromEntries([...blockAttributes(content, 0)].map(attribute => [attribute.name, attribute.value ?? true]))
+}
+
+/** Whether the line at `index` stands apart: after a blank line, a heading or the end of a block, and before a blank line. */
+function isApart(lines: readonly string[], index: number): boolean {
+  const previous = lines[index - 1]
+  const next = lines[index + 1]
+  const before = previous === undefined || !previous.trim() || ATX_RE.test(previous) || BLOCK_CLOSE_RE.test(previous)
+  return before && (next === undefined || !next.trim())
+}
+
+/** The media of a slide body, from the text of one slide as `splitSlides` gives it. */
+export function bodyMedia(text: string): BodyMedia[] {
+  const lines = text.split('\n')
+  const found: FoundMedia[] = []
+  let block: { media: FoundMedia, open: OpenBlock } | undefined
+  // `walk` yields one array of open blocks, which it changes: its length before the line is kept.
+  let openBefore = 0
+  for (const { index, text: line, code, open } of walk(lines, 0)) {
+    const before = openBefore
+    openBefore = open.length
+    if (block) {
+      if (!open.includes(block.open)) {
+        found.push({ ...block.media, to: index + 1 })
+        block = undefined
+      }
+      else if (line.trim() && open.length === 1) {
+        block.media.content = true
+      }
+      continue
+    }
+    // A media of the body starts its line; an image or an inline component also
+    // stands apart from the text around it, or it belongs to a paragraph.
+    if (code || before || !/^\S/.test(line))
+      continue
+    const apart = isApart(lines, index)
+    const image = apart && MARKDOWN_IMAGE_LINE_RE.exec(line)
+    if (image) {
+      found.push({ component: 'image', attributes: { src: image[2]!, alt: image[1]!, ...writtenAttributes(image[4]) }, from: index + 1, to: index + 1, spec: MARKDOWN_IMAGE_LAYOUT, content: false, captioned: Boolean(image[3]?.trim()) })
+      continue
+    }
+    const written = COMPONENT_LINE_RE.exec(line)
+    const component = written && deckComponentNamed(written[2]!)
+    if (!written || !component || !MEDIA_GROUPS.has(component.group ?? '') || (written[1]!.length === 1 && !apart))
+      continue
+    const media: FoundMedia = { component: component.name, attributes: writtenAttributes(written[4]), from: index + 1, to: index + 1, spec: component.layout, content: false, captioned: Boolean(written[3]) }
+    if (written[1]!.length > 1 && open.length === 1)
+      block = { media, open: open[0]! }
+    else
+      found.push(media)
+  }
+  if (block)
+    found.push({ ...block.media, to: lines.length })
+  return found.map(({ spec, content, captioned, ...media }) => {
+    const names = spec?.attributes
+    const taken = Boolean(names) && Object.keys(media.attributes).every(name => name in names!)
+    const movable = found.length === 1 && !content && !captioned && taken && !readLayout({ media: 'right', ...bodyMediaLayout(media) }).issues.length
+    return { ...media, movable }
+  })
 }
 
 /** A slide's position and first source line, for the editor and the catalog. */

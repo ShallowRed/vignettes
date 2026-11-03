@@ -1,11 +1,12 @@
 import type { EditorState, TransactionSpec } from '@codemirror/state'
-import type { LayoutAnnotation, MediaPlacement } from '@vignettes/core/deck'
+import type { BodyMedia, LayoutAnnotation, MediaPlacement, MediaSize, MediaType } from '@vignettes/core/deck'
 import type { InjectionKey, Ref } from 'vue'
 import type { SketchShape } from '../config/editor-reference'
-import { layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, layoutSource, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
+import { bodyMedia, bodyMediaLayout, DEFAULT_SIDE_MEDIA_SIZE, inferMediaType, layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, layoutPlacement, layoutSource, MEDIA_SIZES, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
 import { SKETCH_FRAME, text as sketchText, title } from '../config/editor-reference'
 import { frontmatterEnd } from './editor-frontmatter'
 import { HEADING_RE, slideContentAt } from './editor-slides'
+import { OVERFLOW_THRESHOLD } from './preview-overflow'
 
 /**
  * The layout of the slide under the cursor, read from and written to its
@@ -73,6 +74,111 @@ export function slideLayoutChange(state: EditorState, attributes: Record<string,
   while (first < Math.min(at.endLine, state.doc.lines) && !state.doc.line(first).text.trim())
     first++
   return { changes: { from: state.doc.line(first).from, insert: `${source}\n\n` } }
+}
+
+/** The media of the slide under the cursor, written in its `:layout` or alone in its body. */
+export interface SlideMediaAtCursor {
+  source: 'layout' | 'body'
+  placement: MediaPlacement
+  kind: MediaType
+  /** The media of the body, its lines in the whole document. */
+  body?: BodyMedia
+  /** The panel may propose a size beside the text. */
+  proposable: boolean
+}
+
+/** Reads the media of the slide under the cursor; none outside a slide or on a slide without one. */
+export function slideMediaAt(state: EditorState): SlideMediaAtCursor | undefined {
+  const at = slideLayoutAt(state)
+  if (at.outside)
+    return undefined
+  const lines = Array.from({ length: Math.max(0, Math.min(at.endLine, state.doc.lines) - at.startLine + 1) }, (_, n) => state.doc.line(at.startLine + n).text)
+  const found = bodyMedia(lines.join('\n')).map(media => ({ ...media, from: media.from + at.startLine - 1, to: media.to + at.startLine - 1 }))
+  const placement = layoutPlacement(at.attributes)
+  if (placement) {
+    const { src, story, type } = at.attributes as { src?: string, story?: string, type?: string }
+    return { source: 'layout', placement, kind: inferMediaType(src ?? '', type, Boolean(story)), proposable: (placement === 'right' || placement === 'left') && !found.length }
+  }
+  const [body] = found
+  if (!body)
+    return undefined
+  const { src = '', story, type } = bodyMediaLayout(body) as { src?: string, story?: string, type?: string }
+  return { source: 'body', placement: 'right', kind: inferMediaType(src, type, Boolean(story)), body, proposable: body.movable }
+}
+
+/** A size of the media the panel measures: the attributes the slide takes with it, and the change that writes them. */
+export interface LayoutCandidate {
+  size: MediaSize
+  attributes: Record<string, unknown>
+  change: TransactionSpec
+}
+
+/**
+ * The sizes of the media of the slide under the cursor, in its placement: each
+ * one with the change the panel makes when the author takes it. A media of the
+ * body goes to the right of the text. None behind the text, or for a media of
+ * the body that `:layout` cannot take.
+ */
+export function layoutCandidates(state: EditorState): LayoutCandidate[] {
+  const media = slideMediaAt(state)
+  if (!media || media.placement === 'behind' || (media.body && !media.proposable))
+    return []
+  const written = slideLayoutAt(state).attributes
+  const base = media.body ? { ...written, ...bodyMediaLayout(media.body), media: 'right' } : written
+  return MEDIA_SIZES.map((size) => {
+    const attributes = { ...base, size }
+    return { size, attributes, change: slideLayoutProposal(state, attributes) }
+  })
+}
+
+/**
+ * The change that gives the slide under the cursor these attributes, and takes
+ * out of its body the media they show, with a blank line beside it.
+ */
+export function slideLayoutProposal(state: EditorState, attributes: Record<string, unknown>): TransactionSpec {
+  const layout = slideLayoutChange(state, attributes).changes
+  const body = slideMediaAt(state)?.body
+  if (!body || !layout)
+    return { changes: layout }
+  const doc = state.doc
+  const blank = (n: number) => n >= 1 && n <= doc.lines && !doc.line(n).text.trim()
+  let first = body.from
+  let last = body.to
+  if (blank(last + 1))
+    last++
+  else if (blank(first - 1))
+    first--
+  // The lines go with their line break: the one after them, or before them at the end of the text.
+  const removed = last < doc.lines
+    ? { from: doc.line(first).from, to: doc.line(last + 1).from }
+    : { from: first > 1 ? doc.line(first - 1).to : doc.line(first).from, to: doc.line(last).to }
+  return { changes: [layout, removed].flat() }
+}
+
+/** What the panel measures of a size of the media: the overflow of the text, in slide pixels, and the share its body text keeps. */
+export interface LayoutReading {
+  overflow: number
+  textScale: number
+}
+
+/** The size the panel proposes, or that the text overflows the slide at every size beside it. */
+export type LayoutProposal = { kind: 'size', size: MediaSize } | { kind: 'too-long' }
+
+/**
+ * The size the panel proposes for a media beside the text, from what it
+ * measured: for an image, the half of the slide, else its third; for a page
+ * or a story, which shrinks a wide screen, two thirds, else the half. None
+ * when the written size fits.
+ */
+export function proposeLayout(media: SlideMediaAtCursor, writtenSize: MediaSize | undefined, readings: Partial<Record<MediaSize, LayoutReading>>): LayoutProposal | undefined {
+  if (!media.proposable)
+    return undefined
+  const fits = (size: MediaSize) => (readings[size]?.overflow ?? Number.POSITIVE_INFINITY) <= OVERFLOW_THRESHOLD
+  if (media.source === 'layout' && fits(writtenSize ?? DEFAULT_SIDE_MEDIA_SIZE))
+    return undefined
+  const order: MediaSize[] = media.kind === 'image' ? ['1/2', '1/3'] : ['2/3', '1/2']
+  const size = order.find(fits)
+  return size ? { kind: 'size', size } : { kind: 'too-long' }
 }
 
 /**

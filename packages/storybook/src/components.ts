@@ -16,6 +16,7 @@ export const STORYBOOK_COMPONENTS: readonly DeckComponent[] = withAttributes([
       en: 'Screen of a Storybook story, from its id',
     },
     docs: '/reference/storybook#storyframe',
+    layout: { attributes: { story: 'story', src: 'src', type: 'type', fit: 'fit', viewport: 'viewport', previewWidth: 'viewport', lightbox: 'lightbox', title: 'alt', hint: 'hint' } },
   },
   {
     name: 'Screens',

@@ -1,7 +1,7 @@
-import type { ComponentAttribute } from './components.ts'
+import type { BodyMediaLayoutSpec, ComponentAttribute } from './components.ts'
 import { z } from 'zod'
 import { attributeSource } from './attributes.ts'
-import { componentKey } from './components.ts'
+import { componentKey, deckComponents } from './components.ts'
 
 /**
  * The settings of `:layout`, as data: the attributes an author writes, the
@@ -452,5 +452,30 @@ export function layoutForPlacement(attributes: Attributes, placement: MediaPlace
   else {
     drop(BEHIND_SETTINGS)
   }
+  return next
+}
+
+/** How `:layout` shows a markdown image written alone in a slide body. */
+export const MARKDOWN_IMAGE_LAYOUT: BodyMediaLayoutSpec = { attributes: { src: 'src', alt: 'alt' }, type: 'image' }
+
+/**
+ * The `:layout` attributes that show a media of the body as its component
+ * draws it: its attributes under their `:layout` names, a setting the
+ * component defaults otherwise than `:layout` written out, and `type` when the
+ * address alone would give the other kind. Without `media`, which the caller
+ * chooses.
+ */
+export function bodyMediaLayout(media: { component: string, attributes: Readonly<Record<string, string | true>> }): Attributes {
+  const component = media.component === 'image' ? undefined : deckComponents().find(declared => componentKey(declared.name) === componentKey(media.component))
+  const spec = media.component === 'image' ? MARKDOWN_IMAGE_LAYOUT : component?.layout
+  const declared = component?.attributes ?? []
+  const next: Attributes = {}
+  for (const [written, name] of Object.entries(spec?.attributes ?? {})) {
+    const value = media.attributes[written] ?? declared.find(attribute => attribute.name === written)?.default
+    if (value !== undefined && value !== '' && value !== 'false' && value !== layoutDefault(name))
+      next[name] = value
+  }
+  if (spec?.type && !next.type && typeof next.src === 'string' && inferMediaType(next.src) !== spec.type)
+    next.type = spec.type
   return next
 }

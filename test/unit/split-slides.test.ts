@@ -1,5 +1,6 @@
-import { attributeMentions, blockEndAround, componentAttributeIssues, componentMentions, directiveMentions, isSectionSlide, malformedAttributeMentions, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
-import { describe, expect, it } from 'vitest'
+import { attributeMentions, blockEndAround, bodyMedia, componentAttributeIssues, componentMentions, directiveMentions, isSectionSlide, malformedAttributeMentions, registerDeckComponents, resetDeckComponents, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
+import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
+import { afterEach, describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
 function positions(raw: string, parser: 'heading' | 'separator') {
@@ -240,5 +241,56 @@ describe('malformedAttributeMentions', () => {
   it('leaves well-written attributes, flags, unquoted values and quoted braces or typographic quotes', () => {
     const raw = ':::Screens{cols=3 lightbox}\n::StoryFrame{story="a--b" lightbox}\n::\n:::\n:i{name="ri:home-line"}\n:pretitle{text="Le « dossier » unique"}\n:quicklink{text="a}b" href="https://example.com"}'
     expect(malformedAttributeMentions(raw)).toEqual([])
+  })
+})
+
+describe('bodyMedia', () => {
+  afterEach(() => resetDeckComponents())
+
+  const slide = (...lines: string[]) => ['## Une diapositive', '', 'Un texte.', '', ...lines].join('\n')
+
+  it('reads a markdown image and an image block alone in the body, with their lines', () => {
+    expect(bodyMedia(slide('![Une vue](/images/a.png)'))).toEqual([
+      { component: 'image', attributes: { src: '/images/a.png', alt: 'Une vue' }, from: 5, to: 5, movable: true },
+    ])
+    expect(bodyMedia(slide('::Image{src="/a.png" alt="Une vue"}', '::'))).toEqual([
+      { component: 'Image', attributes: { src: '/a.png', alt: 'Une vue' }, from: 5, to: 6, movable: true },
+    ])
+  })
+
+  it('leaves a media written inside another component, a list, a paragraph or the code', () => {
+    expect(bodyMedia(slide('::Columns', ':::Column', '![x](/b.png)', ':::', '::'))).toEqual([])
+    expect(bodyMedia(slide('```md', '![x](/b.png)', '```'))).toEqual([])
+    expect(bodyMedia(slide('- Un point', '  ![x](/b.png)'))).toEqual([])
+    expect(bodyMedia(['## Une diapositive', '', 'Un texte.', '![x](/b.png)'].join('\n'))).toEqual([])
+    expect(bodyMedia(slide('    ![x](/b.png)'))).toEqual([])
+    expect(bodyMedia(slide('![x](/b.png)', 'La suite du texte.'))).toEqual([])
+    expect(bodyMedia(['## Une diapositive', '', 'Un texte.', ':Image{src="/a.png"}'].join('\n'))).toEqual([])
+  })
+
+  it('reads an image right under the heading or after the end of a block', () => {
+    expect(bodyMedia('## Une diapositive\n![x](/b.png)\n').map(media => media.from)).toEqual([2])
+    expect(bodyMedia(slide('::Notes', 'Une note.', '::', '![x](/b.png)')).map(media => media.from)).toEqual([8])
+  })
+
+  it('keeps in place a media that :layout cannot show as its component does', () => {
+    const movable = (text: string) => bodyMedia(text).map(media => media.movable)
+    expect(movable(slide('![x](/b.png "Un titre")'))).toEqual([false])
+    expect(movable(slide('::Image{src="/a.png"}', 'Une légende', '::'))).toEqual([false])
+    expect(movable(slide('::Image{src="/a.png" rounded}', '::'))).toEqual([false])
+    expect(movable(slide('::Image{src="/a.png" fit="fill"}', '::'))).toEqual([false])
+    expect(movable(slide('::Image[Une légende]{src="/a.png"}', '::'))).toEqual([false])
+    expect(movable(slide('![x](/a.png){.rounded}'))).toEqual([false])
+    expect(movable(slide('![x](/a.png)', '', '![y](/b.png)'))).toEqual([false, false])
+    expect(movable(slide('![x](/a.png){.rounded}', '', '![y](/b.png)'))).toEqual([false, false])
+  })
+
+  it('counts a story as a media once the extension registers its components', () => {
+    registerDeckComponents(STORYBOOK_COMPONENTS)
+    expect(bodyMedia(slide('::StoryFrame{story="page--home" lightbox}', '::'))).toEqual([
+      { component: 'StoryFrame', attributes: { story: 'page--home', lightbox: true }, from: 5, to: 6, movable: true },
+    ])
+    expect(bodyMedia(slide('::StoryFrame{story="page--home" label="Accueil"}', '::')).map(media => media.movable)).toEqual([false])
+    expect(bodyMedia(slide('![x](/a.png)', '', '::StoryFrame{story="page--home"}', '::')).map(media => media.movable)).toEqual([false, false])
   })
 })

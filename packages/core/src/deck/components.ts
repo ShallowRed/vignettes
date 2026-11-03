@@ -172,6 +172,18 @@ export interface DeckComponent {
   attributes?: readonly ComponentAttribute[]
   /** The component it is written in: an editor offers it inside that one, in place of the others, and nowhere else. */
   parent?: string
+  /** How `:layout` shows it when it is written alone in a slide body (see `bodyMediaLayout`). */
+  layout?: BodyMediaLayoutSpec
+}
+
+/**
+ * The attributes of a media of the body that `:layout` takes, by the name each
+ * one takes in `:layout`, and the kind of media the component draws when its
+ * address alone could give the other.
+ */
+export interface BodyMediaLayoutSpec {
+  attributes: Readonly<Record<string, string>>
+  type?: 'image' | 'iframe'
 }
 
 /** The components with the attributes that `scripts/component-reference.ts` wrote for them. */
@@ -202,6 +214,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     example: { attributes: { src: { fr: '${https://exemple.fr}', en: '${https://example.com}' }, title: { fr: '${Titre}', en: '${Title}' } } },
     description: { fr: 'Page web affichée dans la diapositive', en: 'Web page shown in the slide' },
     docs: '/reference/nuxt#iframe',
+    layout: { attributes: { src: 'src', title: 'alt', lightbox: 'lightbox' }, type: 'iframe' },
   },
   {
     name: 'Image',
@@ -213,6 +226,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     example: { attributes: { src: '${/images/placeholder.svg}', alt: '${Description}' } },
     description: { fr: 'Image avec sa légende', en: 'Image with its caption' },
     docs: '/reference/nuxt#image',
+    layout: { attributes: { src: 'src', alt: 'alt', fit: 'fit', position: 'position' }, type: 'image' },
   },
   {
     name: 'Mermaid',
