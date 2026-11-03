@@ -204,6 +204,19 @@ export function useCollabServer(): Hocuspocus {
 }
 
 /**
+ * Stores now the rooms whose save waits for the Hocuspocus debounce, as its
+ * `flushPendingStores` does, and resolves once they are stored. The server
+ * calls it when it stops, before it closes the database: the sockets that
+ * close with the server would store these rooms into a closed database.
+ */
+export async function storePendingRooms(): Promise<void> {
+  const server = instance
+  if (!server)
+    return
+  await Promise.all([...server.documents.keys()].map(name => server.debouncer.executeNow(`onStoreDocument-${name}`)))
+}
+
+/**
  * Replace the whole draft text of a deck (restoring a version or a snapshot).
  * The text being replaced is kept as a snapshot first, so the restore can be
  * undone from the history. The change goes through the live room when one is

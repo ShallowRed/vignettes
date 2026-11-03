@@ -1,7 +1,7 @@
 import { MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
-import { useCollabServer, useDraftStore } from '../../layers/studio/server/utils/collab'
+import { storePendingRooms, useCollabServer, useDraftStore } from '../../layers/studio/server/utils/collab'
 import { useDbContent } from '../../layers/studio/server/utils/sources'
 import { yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { setupServerDb, stubH3Globals } from './helpers/server-db'
@@ -52,5 +52,15 @@ describe('collab document hooks', () => {
     expect(closed).toEqual(['big'])
     await hooks().onStoreDocument!({ documentName: 'big', document: large as any, lastContext: { deck: 'big' }, clientsCount: 0, lastTransactionOrigin: null, instance: server() })
     expect(await useDraftStore().load('big')).toBeNull()
+  })
+
+  it('stores an edited room before its save debounce ends, for a server that stops', async () => {
+    const connection = await server().openDirectConnection('room', { deck: 'room' })
+    await connection.transact(document => document.getText('codemirror').insert(0, '# edited'))
+    expect(await useDraftStore().load('room')).toBeNull()
+    await storePendingRooms()
+    const stored = await useDraftStore().load('room')
+    expect(stored && yDocUpdateToMarkdown(stored)).toBe('# edited')
+    await connection.disconnect()
   })
 })
