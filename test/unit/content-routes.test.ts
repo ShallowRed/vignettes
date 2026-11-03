@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { useProjectStore } from '../../layers/studio/server/utils/sources'
+import { useMediaIndex, useProjectStore } from '../../layers/studio/server/utils/sources'
 import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { NOW, seedDeck } from './helpers/adapters'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
@@ -63,6 +63,13 @@ describe('the content routes', () => {
     await expect(push(token({ body: { stubs: [stub('binned', '# B')], apply: true } })))
       .resolves
       .toEqual([{ slug: 'binned', action: 'trashed', folderMissing: null }])
+  })
+
+  it('push indexes the images of each version it writes, so the deck serves them', async () => {
+    await push(token({ body: { stubs: [stub('illustrated', '# I\n\n![](/images/team/a.png)')], apply: true } }))
+    await push(token({ body: { stubs: [stub('illustrated', '# I\n\n![](/images/team/b.png)')], apply: true } }))
+    expect(await useMediaIndex().decksFor('images/team/a.png')).toEqual(['illustrated'])
+    expect(await useMediaIndex().decksFor('images/team/b.png')).toEqual(['illustrated'])
   })
 
   it('push refuses an alias or a frozen bundle that is not a slug', async () => {

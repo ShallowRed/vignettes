@@ -298,8 +298,9 @@ export type ArchivedDeckAxes = Partial<Pick<ArchivedDeck, 'title' | 'status' | '
  * One write of {@link ContentArchive.apply}. `project` creates the project or
  * updates its title, order and color. `deck` creates the deck (titled by its slug
  * when `axes` has no title) or updates these columns, and marks the row managed.
- * `version` adds a published version that the deck then serves. `alias` records
- * a historical path, and leaves an alias already recorded as it is.
+ * `version` adds a published version that the deck then serves, and records the
+ * images it cites in the {@link MediaIndex}. `alias` records a historical path,
+ * and leaves an alias already recorded as it is.
  */
 export type ArchiveWrite
   = | { kind: 'project', project: ArchivedProject }

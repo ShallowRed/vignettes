@@ -1,6 +1,8 @@
 import type { ContentArchive } from '../ports.ts'
 import type { PostgresDb } from './index.ts'
 import { asc, eq } from 'drizzle-orm'
+import { referencedImages } from '../../../shared/storage/media-refs.ts'
+import { recordDeckMedia } from './media-index.ts'
 import { deckAliases, decks, deckVersions, projects } from './schema.ts'
 
 /** PostgreSQL adapter for the rows the content scripts exchange. */
@@ -61,6 +63,7 @@ export function createContentArchive(db: PostgresDb): ContentArchive {
               .values({ deckSlug: write.slug, raw: write.raw, publishedBy: by, publishedAt: at })
               .returning({ id: deckVersions.id })
             await tx.update(decks).set({ publishedVersionId: version!.id, updatedAt: at }).where(eq(decks.slug, write.slug))
+            await recordDeckMedia(tx, write.slug, referencedImages(write.raw))
           }
           else {
             await tx.insert(deckAliases).values({ alias: write.alias, deckSlug: write.slug }).onConflictDoNothing()

@@ -54,6 +54,15 @@ describe.each(ADAPTERS)('content archive ($name)', (adapter) => {
     expect(await archive().aliases()).toEqual([{ alias: 'old/d', slug: 'd' }])
   })
 
+  it('records the images a version cites in the media index', async () => {
+    await archive().apply([
+      { kind: 'deck', slug: 'd', axes: {} },
+      { kind: 'version', slug: 'd', raw: '![](/images/team/a.png)\n\n![](/media/abc123.png)' },
+    ], { by: 'content-import', at: AT })
+    expect(await db.stores.mediaIndex.decksFor('images/team/a.png')).toEqual(['d'])
+    expect(await db.stores.mediaIndex.decksFor('abc123.png')).toEqual(['d'])
+  })
+
   it('updates only the given columns of a deck, titled by its slug when created without one', async () => {
     await seedDeck(db.rows, 'kept', { title: 'Kept', theme: 'dsfr', status: 'private' })
     await archive().apply([

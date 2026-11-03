@@ -1,6 +1,8 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import type { ContentArchive } from '../ports.ts'
 import { asc, eq } from 'drizzle-orm'
+import { referencedImages } from '../../../shared/storage/media-refs.ts'
+import { recordDeckMedia } from './media-index.ts'
 import { deckAliases, decks, deckVersions, projects } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
@@ -68,6 +70,7 @@ export function createContentArchive(db: Db): ContentArchive {
               .returning({ id: deckVersions.id })
               .get()!
             tx.update(decks).set({ publishedVersionId: version.id, updatedAt: at }).where(eq(decks.slug, write.slug)).run()
+            recordDeckMedia(tx, write.slug, referencedImages(write.raw))
           }
           else {
             tx.insert(deckAliases).values({ alias: write.alias, deckSlug: write.slug }).onConflictDoNothing().run()
