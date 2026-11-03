@@ -31,6 +31,7 @@ describe('componentEntries', () => {
       '::Fragments',
       ':::Scheme',
       ':::Diagram',
+      ':::Sequence',
       ':::JsonTour',
       '::StoryFrame',
       ':::Screens',

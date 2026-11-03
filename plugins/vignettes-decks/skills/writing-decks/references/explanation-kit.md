@@ -2,7 +2,7 @@
 
 # @vignettes/schemas
 
-Deck components that explain a system on a slide: pictogram steps linked by arrows, diagrams whose cards sit on a grid or are ranked automatically, and a file read beside the description of what it holds.
+Deck components that explain a system on a slide: pictogram steps linked by arrows, diagrams whose cards sit on a grid or are ranked automatically, exchanges between participants over time, one row at a time, and a file read beside the description of what it holds.
 
 ```bash
 pnpm add @vignettes/schemas
@@ -189,6 +189,126 @@ Attributes:
 - `tone` (`'neutral' | 'subject'`): `subject` tints the region the slide is about; `neutral` is the default.
 - `color` (`string`): Color of the title, the surface and the outline of the region: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
 - `label` (`'legend' | 'header'`): Where the title sits: on the top border like a legend, or as a header band inside.
+
+<!-- /component -->
+
+## Sequence
+
+`Sequence` shows exchanges between participants over time. Each `Actor` heads a column and draws its lifeline. Each row child takes one row of the grid and appears as one fragment: `Message` draws an arrow between two lifelines, `State` lays side by side the value each participant holds at that moment, and `Remark` lays a short text over some lifelines. The time of a row, or the name of a state, sits in the left margin. The rules of the rows are drawn from the start, so the sequence keeps its height while it builds up.
+
+<!-- component: Sequence -->
+
+Also written `sequence`.
+
+```markdown
+:::Sequence
+::Actor{id="a" icon="ri:user-line" title="User"}
+::
+::Actor{id="b" icon="ri:server-line" title="API"}
+::
+::Message{from="a" to="b" time="10 h 00" label="Request"}
+::
+::State{label="State" values="a=Draft|b=Sent"}
+::
+:::
+```
+
+Attributes:
+
+- `fragments` (`boolean`, default `true`): Reveals the rows one at a time; `:fragments="false"` shows the whole sequence at once.
+- `dim` (`boolean`, default `true`): Dims the rows already shown once a later one is current.
+- `size` (`'sm' | 'md'`, default `'md'`): Scale of the cards and the text; `sm` fits about ten rows on a slide.
+- `enter` (`'start' | 'first-row'`, default `'start'`): When the participants appear: `start`, all of them with the slide; `first-row`, those of the first row and those no row names with the slide, each other one with the first row that names it, in a column kept for it from the start.
+
+Content: The `::Actor` blocks, then the `::Message`, `::State` and `::Remark` rows in reading order.
+
+<!-- /component -->
+
+### Actor
+
+<!-- component: Actor -->
+
+Also written `actor`.
+
+```markdown
+::Actor{id="id" icon="ri:user-line" title="Participant"}
+::
+```
+
+Attributes:
+
+- `id` (`string`, required): Name the rows use to reach the participant.
+- `title` (`string`): Name of the participant.
+- `icon` (`string`): Remix icon, `ri:user-line`, lighter than a pictogram.
+- `picto` (`string`): Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+- `color` (`string`): Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
+
+<!-- /component -->
+
+### Message
+
+<!-- component: Message -->
+
+Also written `message`.
+
+```markdown
+::Message{from="a" to="b" label="label"}
+::
+```
+
+Attributes:
+
+- `from` (`string`, required): `id` of the participant that sends.
+- `to` (`string`, required): `id` of the participant that receives.
+- `via` (`string`): `id` of the participants the arrow goes through, separated by commas; each takes a dot.
+- `label` (`string`): Text above the arrow.
+- `time` (`string`): Time written in the left margin, `10 h 00`.
+- `dashed` (`boolean`): Draws a dashed arrow, for an answer.
+- `step` (`string | number`): Fragment step; defaults to the reading order.
+
+<!-- /component -->
+
+### State
+
+<!-- component: State -->
+
+Also written `state`.
+
+```markdown
+::State{label="State" values="a=value|b=value"}
+::
+```
+
+Attributes:
+
+- `values` (`string`, required): Values on the lifelines, `id=value` separated by `|`: `a=Draft|b=Sent`.
+- `label` (`string`): Name of the state, written in the left margin.
+- `color` (`string`): Tints the row and frames the values: a palette name of the theme, such as `orange`, or a hexadecimal color or a color function.
+- `mark` (`string`): `id` of the values framed in `color`, separated by commas; all of them when absent.
+- `step` (`string | number`): Fragment step; defaults to the reading order.
+
+<!-- /component -->
+
+### Remark
+
+<!-- component: Remark -->
+
+Also written `remark`.
+
+```markdown
+::Remark{over="a,b"}
+Remark
+::
+```
+
+Attributes:
+
+- `over` (`string`): `id` of the first and the last participant the remark covers, separated by a comma; all of them when absent.
+- `time` (`string`): Time written in the left margin, `10 h 00`.
+- `color` (`string`): Color of the remark: a palette name of the theme, such as `orange`, or a hexadecimal color or a color function.
+- `step` (`string | number`): Fragment step; defaults to the reading order.
+
+Content: The text of the remark.
 
 <!-- /component -->
 

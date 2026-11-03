@@ -100,6 +100,24 @@ flowchart TD
 ::
 :::
 
+### Séquence
+
+:::Sequence{enter="first-row"}
+::Actor{id="a" icon="ri:user-line" title="Autrice"}
+::
+::Actor{id="b" icon="ri:server-line" title="Serveur"}
+::
+::Actor{id="c" icon="ri:user-line" title="Lectrice"}
+::
+::Message{time="10 h 00" from="a" to="b" label="Publie"}
+::
+::State{label="État" values="a=Brouillon|b=Publié"}
+::
+::Remark{over="a,c"}
+Rien ne prévient la lectrice.
+::
+:::
+
 ### Visite d'un fichier
 
 :::JsonTour{file="deck.json" size="xs"}

@@ -3,7 +3,7 @@
 A deck is a markdown document with frontmatter. Its reference lives next to the code that reads it:
 
 - [the dialect and the generic components](../packages/nuxt/README.md): frontmatter, slide hierarchy, annotations, layouts, `Quote`, `Image`, `Columns`, `Mermaid`, `Notes`, `Fragments` and the rest.
-- [the explanation kit](../packages/schemas/README.md): `Scheme`, `Diagram`, `JsonTour` and their props.
+- [the explanation kit](../packages/schemas/README.md): `Scheme`, `Diagram`, `Sequence`, `JsonTour` and their props.
 - [live Storybook embeds](../packages/storybook/README.md): `StoryFrame` and `Screens`.
 - [themes](theme-system.md) and [backgrounds](backgrounds.md).
 

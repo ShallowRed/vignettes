@@ -37,6 +37,17 @@ export interface DiagramRegistry {
 // Lets `::Node` and `::Edge` children declare themselves to their `:::Diagram`.
 export const DIAGRAM: InjectionKey<DiagramRegistry> = Symbol('diagram')
 
+export interface SequenceRegistry {
+  /** Ids of the `::Actor` children, in column order. */
+  actors: readonly string[]
+  registerActor: (id: string) => void
+  unregisterActor: (id: string) => void
+  registerRow: () => void
+  unregisterRow: () => void
+}
+// Lets the `::Actor` children of a `:::Sequence` take their column, and its rows (`::Message`, `::State`, `::Remark`) be counted.
+export const SEQUENCE: InjectionKey<SequenceRegistry> = Symbol('sequence')
+
 export interface JsonTourZoneRegistration {
   el: HTMLElement
   /** Line range highlighted in the file, `12` or `12-24`. */

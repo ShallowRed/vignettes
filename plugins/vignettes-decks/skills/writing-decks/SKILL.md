@@ -5,7 +5,7 @@ description: >-
   MDC and reveal.js. Use when authoring a Vignettes .md deck in any project,
   choosing its frontmatter and how it splits into slides, placing annotations (`:layout`,
   `:subtitle`, `:slide-background`), using its components (`::Columns`,
-  `::Notes`, `::Scheme`, `::Diagram`, `::JsonTour`), embedding live Storybook
+  `::Notes`, `::Scheme`, `::Diagram`, `::Sequence`, `::JsonTour`), embedding live Storybook
   stories (`:layout{story=…}`, `::StoryFrame`, `::Screens`), or preparing a deck
   to import, republish or freeze.
 ---
@@ -16,7 +16,7 @@ A deck is one markdown document with YAML frontmatter, written in the dialect th
 
 - `references/format.md`: frontmatter keys, annotations, layouts, components.
 - `references/render-module.md`: frontmatter, slide boundaries, annotations, layouts and the components every deck has.
-- `references/explanation-kit.md`: `Scheme`, `Diagram`, `JsonTour`.
+- `references/explanation-kit.md`: `Scheme`, `Diagram`, `Sequence`, `JsonTour`.
 - `references/storybook.md`: live story embeds and frozen decks.
 
 Use only the names these files list. An unknown component renders nothing, and an unknown layout falls back to the default one.

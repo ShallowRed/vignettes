@@ -3,8 +3,9 @@ import { addComponentsDir, addPlugin, createResolver, defineNuxtModule } from '@
 
 /**
  * Components that explain a system on a slide: pictogram steps linked by arrows,
- * diagrams whose cards are placed on a grid or ranked automatically, and a file
- * read beside the description of what it holds.
+ * diagrams whose cards are placed on a grid or ranked automatically, exchanges
+ * between participants over time, and a file read beside the description of
+ * what it holds.
  */
 export default defineNuxtModule({
   meta: {

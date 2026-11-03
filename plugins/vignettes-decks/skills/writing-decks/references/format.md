@@ -75,6 +75,11 @@ Written `::Name{…}` … `::` as a block, or `:Name{…}` inline.
 - `Node`: One card of the diagram, placed on the grid, also written `node`
 - `Edge`: An arrow between two cards, also written `edge`
 - `Area`: A region that groups cards, also written `area`
+- `Sequence`: Exchanges between participants, one row per step, revealed one at a time, also written `sequence`
+- `Actor`: One participant, at the head of its column, also written `actor`
+- `Message`: An arrow from one participant to another, also written `message`
+- `State`: The values the participants hold at that moment, also written `state`
+- `Remark`: A text laid over the lifelines, also written `remark`
 - `JsonTour`: File explained zone by zone, beside its explanations, also written `json-tour`
 - `Zone`: Lines of the file, explained, also written `zone`
 

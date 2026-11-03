@@ -2,7 +2,7 @@
   "name": "@vignettes/schemas",
   "type": "module",
   "version": "0.1.0",
-  "description": "Deck components that explain a system: pictogram steps, drawn diagrams and a guided file reading.",
+  "description": "Deck components that explain a system: pictogram steps, drawn diagrams, exchange sequences and a guided file reading.",
   "license": "MIT",
   "exports": {
     ".": "./src/module.ts",
