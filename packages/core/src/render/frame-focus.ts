@@ -30,7 +30,7 @@ export function frameFocus() {
       const slides = deck.getSlidesElement()
       let active: HTMLIFrameElement | null = null
       let held: HTMLElement | null = null
-      let tabbedAt = Number.NEGATIVE_INFINITY
+      let tabbing = false
 
       const isFrame = (node: unknown): node is HTMLIFrameElement =>
         node instanceof HTMLIFrameElement && slides.contains(node)
@@ -45,6 +45,7 @@ export function frameFocus() {
       }
 
       const activate = (frame: HTMLIFrameElement) => {
+        tabbing = false
         active = frame
         frame.setAttribute('data-frame-active', '')
       }
@@ -70,8 +71,10 @@ export function frameFocus() {
       }
 
       const onFocusIn = (event: FocusEvent) => {
-        if (!(event.target instanceof HTMLIFrameElement))
+        if (!(event.target instanceof HTMLIFrameElement)) {
           held = event.target as HTMLElement
+          tabbing = false
+        }
       }
 
       const frameInFocus = () => {
@@ -79,21 +82,22 @@ export function frameFocus() {
         return isFrame(frame) && frame !== active ? frame : undefined
       }
 
+      // The last key moves the focus when it is a Tab the page leaves to the
+      // browser; the editor's indentation cancels it.
       const onKeyDown = (event: KeyboardEvent) => {
-        if (event.key === 'Tab')
-          tabbedAt = performance.now()
+        tabbing = event.key === 'Tab' && !event.defaultPrevented
       }
 
       // Chromium blurs the window when a frame takes the focus. Firefox does
       // not, nor does a window that lacks the focus when the frame takes it,
       // so the plugin also checks the focus four times a second. A frame of
       // another origin takes the focus a moment after Tab: the frame focused
-      // within half a second of a Tab is active.
+      // while Tab is the last key is active.
       const guard = () => {
         const frame = frameInFocus()
         if (!frame)
           return
-        if (performance.now() - tabbedAt < 500)
+        if (tabbing)
           activate(frame)
         else
           giveBack(frame)
@@ -102,6 +106,7 @@ export function frameFocus() {
       const check = setInterval(guard, 250)
 
       const onPointerDown = (event: PointerEvent) => {
+        tabbing = false
         const frame = frameAt(event)
         if (frame === active)
           return
@@ -117,7 +122,7 @@ export function frameFocus() {
       }
 
       document.addEventListener('focusin', onFocusIn, true)
-      document.addEventListener('keydown', onKeyDown, true)
+      window.addEventListener('keydown', onKeyDown)
       document.addEventListener('pointerdown', onPointerDown, true)
       document.addEventListener('pointerover', onPointerOver, true)
       window.addEventListener('blur', onWindowBlur)
@@ -126,7 +131,7 @@ export function frameFocus() {
       teardown = () => {
         clearInterval(check)
         document.removeEventListener('focusin', onFocusIn, true)
-        document.removeEventListener('keydown', onKeyDown, true)
+        window.removeEventListener('keydown', onKeyDown)
         document.removeEventListener('pointerdown', onPointerDown, true)
         document.removeEventListener('pointerover', onPointerOver, true)
         window.removeEventListener('blur', onWindowBlur)

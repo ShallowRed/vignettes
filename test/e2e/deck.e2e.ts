@@ -225,11 +225,12 @@ test('a click activates a frame, and a click beside it gives the keyboard back t
 
 test('Tab enters a frame and activates it', async ({ page }) => {
   await openFocusingFrame(page)
-  const focused = () => page.evaluate(() => document.activeElement?.tagName)
   // A frame of another origin takes the focus a moment after Tab.
-  for (let presses = 0; presses < 20 && await focused() !== 'IFRAME'; presses++) {
+  for (let presses = 0; presses < 20; presses++) {
     await page.keyboard.press('Tab')
-    await page.waitForTimeout(200)
+    const entered = await page.waitForFunction(() => document.activeElement?.tagName === 'IFRAME', null, { timeout: 1000 }).then(() => true, () => false)
+    if (entered)
+      break
   }
 
   await page.waitForTimeout(500)
