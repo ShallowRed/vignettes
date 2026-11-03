@@ -1,4 +1,4 @@
-import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutMention, LegacyMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
+import type { AttributeMention, ComponentAttributeIssue, ComponentMention, DeckProblem, LayoutMention, LegacyMention } from '@vignettes/core/deck'
 import type { Translate } from '../config/editor-reference'
 import type { LineProblem, ProblemFix, Severity } from './editor-problems'
 import { inLanguage, LEGACY_FORMS, legacyMentions } from '@vignettes/core/deck'
@@ -14,15 +14,11 @@ export interface PreviewFindings {
   /** The first slide whose content reaches below it, placed on its first line. */
   overflow: { line: number, slide: number } | null
   brokenImages: readonly { src: string, line: number, column: number, length: number }[]
-  malformed: readonly MalformedAttributes[]
-  componentAttributes: readonly ComponentAttributeIssue[]
-  unclosed: readonly OpenBlock[]
   /** The frontmatter guide marks these in the source pane already. */
   frontmatter: readonly (LineProblem & { short: string })[]
   unknown: readonly ComponentMention[]
-  refused: readonly AttributeMention[]
-  layout: readonly LayoutMention[]
-  legacy: readonly LegacyMention[]
+  /** What `checkDeck` finds in the text. */
+  deck: readonly DeckProblem[]
 }
 
 export interface EditorIssue extends LineProblem {
@@ -50,16 +46,6 @@ const LAYOUT_MESSAGES: Record<LayoutMention['kind'], string> = {
   'behind-needs-image': 'editor.diagnostics.layoutBehindNeedsImage',
 }
 
-// An error breaks or drops content, a warning changes what the author probably
-// meant, an info asks for a cleanup without effect on the slide.
-const LAYOUT_SEVERITIES: Record<LayoutMention['kind'], Severity> = {
-  'unknown-attribute': 'warning',
-  'invalid-value': 'warning',
-  'missing-source': 'error',
-  'unused': 'info',
-  'behind-needs-image': 'error',
-}
-
 const SEVERITY_RANK: Record<Severity, number> = { error: 0, warning: 1, info: 2 }
 
 /** The conversion of the legacy form written on the line of `from`, read from the text as it stands. */
@@ -73,6 +59,54 @@ function legacyFix(mention: LegacyMention, t: Translate): ProblemFix | undefined
       const current = legacyMentions(state.doc.toString()).find(found => found.form === mention.form && found.line === line)
       return current?.changes.length ? { changes: current.changes } : undefined
     },
+  }
+}
+
+/** The place, the texts and the conversion of a problem that `checkDeck` finds. */
+function deckIssue(problem: DeckProblem, t: Translate, lang: string, docsUrl: (docs?: string) => string | undefined): Omit<EditorIssue, 'severity' | 'marked'> {
+  const place = { line: problem.line, column: problem.column, length: problem.length }
+  switch (problem.check) {
+    case 'malformed':
+      return {
+        ...place,
+        short: t('editor.diagnostics.malformedAttributesShort', { line: problem.line, name: problem.name }),
+        message: t(`editor.diagnostics.malformedAttributes.${problem.reason}`, { name: problem.name }),
+      }
+    case 'component-attribute':
+      return {
+        ...place,
+        short: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[problem.kind]}Short`, { line: problem.line, name: problem.name }),
+        message: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[problem.kind]}`, { name: problem.name, component: problem.component }),
+      }
+    case 'unclosed':
+      return {
+        ...place,
+        short: t('editor.diagnostics.unclosedBlockShort', { line: problem.line, name: problem.name, colons: problem.colons }),
+        message: t('editor.diagnostics.unclosedBlock', { name: problem.name, colons: problem.colons }),
+      }
+    case 'refused':
+      return {
+        ...place,
+        short: t(ATTRIBUTE_MESSAGES[problem.reason].short, { line: problem.line, name: problem.name }),
+        message: t(ATTRIBUTE_MESSAGES[problem.reason].message),
+        docs: docsUrl(DOCS_SECTIONS.refusedAttribute),
+      }
+    case 'layout':
+      return {
+        ...place,
+        short: t(`${LAYOUT_MESSAGES[problem.kind]}Short`, { line: problem.line, name: problem.attribute }),
+        message: t(LAYOUT_MESSAGES[problem.kind], { name: problem.attribute }),
+        docs: docsUrl(DOCS_SECTIONS.layout),
+      }
+    case 'legacy': {
+      const form = LEGACY_FORMS[problem.form]
+      return {
+        ...place,
+        short: t('editor.diagnostics.legacyShort', { line: problem.line, name: form.written }),
+        message: inLanguage(form.description, lang),
+        fix: legacyFix(problem, t),
+      }
+    }
   }
 }
 
@@ -99,30 +133,9 @@ export function editorIssues(raw: string, findings: PreviewFindings, t: Translat
       severity: 'error' as const,
       marked: false,
     })),
-    ...findings.malformed.map(mention => ({
-      ...mention,
-      short: t('editor.diagnostics.malformedAttributesShort', { line: mention.line, name: mention.name }),
-      message: t(`editor.diagnostics.malformedAttributes.${mention.reason}`, { name: mention.name }),
-      severity: 'error' as const,
-      marked: false,
-    })),
-    ...findings.componentAttributes.map(issue => ({
-      ...issue,
-      short: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}Short`, { line: issue.line, name: issue.name }),
-      message: t(`editor.diagnostics.${COMPONENT_ATTRIBUTE_MESSAGES[issue.kind]}`, { name: issue.name, component: issue.component }),
-      severity: 'warning' as const,
-      marked: false,
-    })),
-    ...findings.unclosed.map(block => ({
-      ...block,
-      short: t('editor.diagnostics.unclosedBlockShort', { line: block.line, name: block.name, colons: block.colons }),
-      message: t('editor.diagnostics.unclosedBlock', { name: block.name, colons: block.colons }),
-      severity: 'error' as const,
-      marked: false,
-    })),
     ...findings.frontmatter.map(problem => ({ ...problem, marked: true })),
     // A directive whose attributes cannot be read shows as unknown too: one message is enough.
-    ...findings.unknown.filter(mention => !findings.malformed.some(bad => bad.line === mention.line && bad.name === mention.name)).map(mention => ({
+    ...findings.unknown.filter(mention => !findings.deck.some(bad => bad.check === 'malformed' && bad.line === mention.line && bad.name === mention.name)).map(mention => ({
       ...mention,
       short: t('editor.diagnostics.unknownComponentShort', { line: mention.line, name: mention.name }),
       message: t('editor.diagnostics.unknownComponent', { name: mention.name }),
@@ -130,33 +143,7 @@ export function editorIssues(raw: string, findings: PreviewFindings, t: Translat
       severity: 'error' as const,
       marked: false,
     })),
-    ...findings.refused.map(mention => ({
-      ...mention,
-      short: t(ATTRIBUTE_MESSAGES[mention.reason].short, { line: mention.line, name: mention.name }),
-      message: t(ATTRIBUTE_MESSAGES[mention.reason].message),
-      docs: docsUrl(DOCS_SECTIONS.refusedAttribute),
-      severity: 'error' as const,
-      marked: false,
-    })),
-    ...findings.layout.map(mention => ({
-      ...mention,
-      short: t(`${LAYOUT_MESSAGES[mention.kind]}Short`, { line: mention.line, name: mention.attribute }),
-      message: t(LAYOUT_MESSAGES[mention.kind], { name: mention.attribute }),
-      docs: docsUrl(DOCS_SECTIONS.layout),
-      severity: LAYOUT_SEVERITIES[mention.kind],
-      marked: false,
-    })),
-    ...findings.legacy.map((mention) => {
-      const form = LEGACY_FORMS[mention.form]
-      return {
-        ...mention,
-        short: t('editor.diagnostics.legacyShort', { line: mention.line, name: form.written }),
-        message: inLanguage(form.description, lang),
-        fix: legacyFix(mention, t),
-        severity: 'info' as const,
-        marked: false,
-      }
-    }),
+    ...findings.deck.map(problem => ({ ...deckIssue(problem, t, lang, docsUrl), severity: problem.severity, marked: false })),
   ]
   return issues.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.line - b.line || a.column - b.column)
 }

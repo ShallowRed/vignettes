@@ -1,5 +1,6 @@
 export * from './attributes.ts'
 export * from './cache.ts'
+export * from './check.ts'
 export * from './components.ts'
 export * from './directory.ts'
 export * from './frontmatter.ts'

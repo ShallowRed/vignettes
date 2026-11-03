@@ -1,4 +1,5 @@
 import type { EditorState, Extension, TransactionSpec } from '@codemirror/state'
+import type { DeckProblemSeverity } from '@vignettes/core/deck'
 import type { Translate } from '../config/editor-reference'
 import { StateEffect, StateField } from '@codemirror/state'
 import { Decoration, EditorView, hoverTooltip } from '@codemirror/view'
@@ -11,7 +12,7 @@ import { codeParagraph, docsLink } from './editor-tooltip'
  * deck arrive through `setPreviewProblems`.
  */
 
-export type Severity = 'error' | 'warning' | 'info'
+export type Severity = DeckProblemSeverity
 
 /** A change that solves a problem, offered in its tooltip. */
 export interface ProblemFix {

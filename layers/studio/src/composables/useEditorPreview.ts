@@ -1,4 +1,4 @@
-import type { AttributeMention, ComponentAttributeIssue, ComponentMention, LayoutMention, LegacyMention, MalformedAttributes, OpenBlock } from '@vignettes/core/deck'
+import type { ComponentMention, DeckProblem } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { Ref, ShallowRef } from 'vue'
@@ -7,7 +7,7 @@ import type { LineProblem } from '../utils/editor-problems'
 import type { useDocsAddress } from './useDocsAddress'
 import { completionStatus } from '@codemirror/autocomplete'
 import { EditorView } from '@codemirror/view'
-import { attributeMentions, componentAttributeIssues, componentMentions, deckRevealOptions, layoutMentions, legacyMentions, malformedAttributeMentions, parserIdFor, slideRanges, splitFrontmatter, unclosedBlocks, valueMentions } from '@vignettes/core/deck'
+import { checkDeck, componentMentions, deckRevealOptions, parserIdFor, slideRanges, splitFrontmatter, valueMentions } from '@vignettes/core/deck'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
@@ -221,12 +221,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   // a failure after which the preview keeps the last good render.
   const frontmatterIssues = ref<Array<LineProblem & { short: string }>>([])
   const unknownMentions = ref<ComponentMention[]>([])
-  const refusedMentions = ref<AttributeMention[]>([])
-  const layoutIssues = ref<LayoutMention[]>([])
-  const legacyIssues = ref<LegacyMention[]>([])
-  const unclosedIssues = ref<OpenBlock[]>([])
-  const malformedIssues = ref<MalformedAttributes[]>([])
-  const componentAttributeProblems = ref<ComponentAttributeIssue[]>([])
+  const deckProblems = ref<DeckProblem[]>([])
   const parseFailed = ref(false)
   let parsedText = ''
   // From a change of the text to the render of its preview, a bar runs along the
@@ -241,14 +236,9 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   const previewIssues = computed(() => editorIssues(raw.value, {
     overflow: overflow.value,
     brokenImages: brokenImages.value,
-    malformed: malformedIssues.value,
-    componentAttributes: componentAttributeProblems.value,
-    unclosed: unclosedIssues.value,
     frontmatter: frontmatterIssues.value,
     unknown: unknownMentions.value,
-    refused: refusedMentions.value,
-    layout: layoutIssues.value,
-    legacy: legacyIssues.value,
+    deck: deckProblems.value,
   }, t, locale.value, options.docsUrl))
 
   const previewSource = previewSourceReader()
@@ -259,12 +249,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
       const data = await buildPresentationData(previewSource(text))
       preview.value = data
       unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
-      refusedMentions.value = attributeMentions(text)
-      layoutIssues.value = layoutMentions(text)
-      legacyIssues.value = legacyMentions(text)
-      unclosedIssues.value = unclosedBlocks(text)
-      malformedIssues.value = malformedAttributeMentions(text)
-      componentAttributeProblems.value = componentAttributeIssues(text)
+      deckProblems.value = checkDeck(text)
       frontmatterIssues.value = listedFrontmatterProblems(text, tWithKeys, staleThemes.value)
       parseFailed.value = false
       parsedText = text
