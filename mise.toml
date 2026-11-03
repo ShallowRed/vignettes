@@ -46,14 +46,20 @@ echo "Se connecter sans OAuth : http://localhost:3000/auth/dev-login?role=owner"
 """
 
 [tasks.dev]
-description = "Nuxt behind portless; the browser opens once the app answers. Host: vignettes-studio.localhost, or <branch>.vignettes-studio.localhost in a worktree"
+description = "Nuxt behind portless; the browser opens the recette page, signed in as owner, once the app answers, and its address is printed. Host: vignettes-studio.localhost, or <branch>.vignettes-studio.localhost in a worktree"
 depends = [ "install" ]
 run = "portless run mise run dev:serve"
 
 [tasks."dev:serve"]
 hide = true
 run = """
-mise run open "${PORTLESS_URL:-http://localhost:${PORT:-3000}}" &
+url="${PORTLESS_URL:-http://localhost:${PORT:-3000}}"
+recette="/auth/dev-login?role=owner&redirect=/recette"
+{
+  mise run open "$url$recette" || exit
+  echo "Recette : $url$recette"
+  [ -z "$PORTLESS_TAILSCALE_URL" ] || echo "Recette sur le tailnet : $PORTLESS_TAILSCALE_URL$recette"
+} &
 pnpm dev
 """
 

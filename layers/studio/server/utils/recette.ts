@@ -272,7 +272,8 @@ export async function isRecetteSeeded(): Promise<boolean> {
   return present.every(Boolean)
 }
 
-const SEED_SLUGS = SEED_DECKS.map(deck => deck.slug)
+/** The decks of the data set, which a trial deck of a branch may not replace. */
+export const SEED_SLUGS = SEED_DECKS.map(deck => deck.slug)
 
 /** Whether the kit left anything behind: a deck of the data set, or one of its accounts. */
 export async function hasRecetteData(): Promise<boolean> {

@@ -26,6 +26,17 @@
       "resetSummary": "{decks} présentations, {folders} dossiers, {accounts} comptes",
       "resetFailed": "La réinitialisation a échoué"
     },
+    "branch": {
+      "title": "Recette de la branche",
+      "empty": "Cette branche n'a pas de fichier de recette. On en ajoute un dans {path}.",
+      "invalid": "Ce fichier de recette ne peut pas être lu.",
+      "missing": "Présentations d'essai absentes : {slugs}.",
+      "recreate": "Recréer les présentations d'essai",
+      "recreateDone": "Présentations d'essai recréées",
+      "recreateSummary": "{decks} présentations publiées",
+      "recreateFailed": "La création des présentations d'essai a échoué",
+      "subject": "sujet"
+    },
     "personas": {
       "anonymous": {
         "label": "Visiteur non connecté",

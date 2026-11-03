@@ -26,6 +26,17 @@
       "resetSummary": "{decks} presentations, {folders} folders, {accounts} accounts",
       "resetFailed": "The reset failed"
     },
+    "branch": {
+      "title": "Branch acceptance",
+      "empty": "This branch has no acceptance file. Add one in {path}.",
+      "invalid": "This acceptance file cannot be read.",
+      "missing": "Missing trial presentations: {slugs}.",
+      "recreate": "Recreate the trial presentations",
+      "recreateDone": "Trial presentations recreated",
+      "recreateSummary": "{decks} presentations published",
+      "recreateFailed": "The trial presentations could not be created",
+      "subject": "subject"
+    },
     "personas": {
       "anonymous": {
         "label": "Visitor, not signed in",

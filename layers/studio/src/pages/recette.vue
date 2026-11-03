@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { BranchRecetteFile, RecetteCheck } from '#shared/recette/branch'
 import type { RecettePersona } from '#shared/recette/personas'
 import { loginHref } from '#shared/access'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PREFIX } from '#shared/recette/personas'
@@ -20,6 +21,8 @@ interface Status {
   personas: RecettePersona[]
   /** Address of the image seeded into a deck, by deck slug. */
   images: Record<string, string>
+  /** The recette files of the branch, in development; null elsewhere. */
+  branch: BranchRecetteFile[] | null
 }
 
 const { t } = useI18n()
@@ -42,7 +45,7 @@ async function seed() {
   try {
     const summary = await $fetch<Status['counts']>('/api/recette/seed', { method: 'POST' })
     toast.add({ title: t('recette.dataset.resetDone'), description: t('recette.dataset.resetSummary', summary), icon: 'i-lucide-check', color: 'success' })
-    checked.value = {}
+    checked.value = Object.fromEntries(Object.entries(checked.value).filter(([key]) => key.startsWith('branch.')))
     await refresh()
   }
   catch (e: any) {
@@ -52,6 +55,27 @@ async function seed() {
     seeding.value = false
   }
 }
+
+const recreating = ref(false)
+async function recreateBranchDecks() {
+  recreating.value = true
+  try {
+    const summary = await $fetch<{ decks: number }>('/api/recette/branch', { method: 'POST' })
+    toast.add({ title: t('recette.branch.recreateDone'), description: t('recette.branch.recreateSummary', summary), icon: 'i-lucide-check', color: 'success' })
+    await refresh()
+  }
+  catch (e: any) {
+    toast.add({ title: requestErrorMessage(e, t('recette.branch.recreateFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
+  }
+  finally {
+    recreating.value = false
+  }
+}
+
+const branchFiles = computed(() => data.value?.branch ?? [])
+const hasTrialDecks = computed(() => branchFiles.value.some(file => 'decks' in file && file.decks.length > 0))
+/** Keyed by content, so a check keeps its mark when the file inserts or reorders checks. */
+const branchCheckKey = (path: string, check: RecetteCheck) => `branch.${path}.${check.account} ${check.page} ${check.expect}`
 
 /** Opens the app as a persona, then `redirect`, in this tab or in `target`. */
 const openAs = (key: string, redirect = '/', target?: string) => postForm('/auth/recette', { as: key, redirect }, target)
@@ -134,7 +158,8 @@ const blocks = computed<Block[]>(() => {
 
 const isCurrent = (block: Block) => (data.value?.current.login ?? null) === block.login
 
-const doneIn = (block: Block) => block.steps.filter(step => checked.value[`${block.key}.${step.id}`]).length
+/** The progress of a list of checks, from the keys of their marks. */
+const progressOf = (keys: string[]) => t('recette.page.progress', { done: keys.filter(key => checked.value[key]).length, total: keys.length })
 
 const breadcrumb = computed(() => [
   { label: t('common.home'), to: '/' },
@@ -176,6 +201,90 @@ useHead({ title: () => t('recette.page.pageTitle') })
       />
 
       <template v-else-if="data">
+        <section
+          v-if="data.branch"
+          class="flex flex-col gap-3"
+        >
+          <div class="flex items-center gap-4">
+            <h2 class="flex-1 font-medium text-highlighted">
+              {{ t('recette.branch.title') }}
+            </h2>
+            <UButton
+              v-if="hasTrialDecks"
+              :label="t('recette.branch.recreate')"
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="subtle"
+              size="sm"
+              :loading="recreating"
+              @click="recreateBranchDecks"
+            />
+          </div>
+
+          <i18n-t
+            v-if="branchFiles.length === 0"
+            keypath="recette.branch.empty"
+            tag="p"
+            class="text-sm text-muted"
+            scope="global"
+          >
+            <template #path>
+              <code>test/recette/&lt;{{ t('recette.branch.subject') }}&gt;.yaml</code>
+            </template>
+          </i18n-t>
+
+          <UCard
+            v-for="file in branchFiles"
+            :key="file.path"
+            :ui="{ body: 'p-0 sm:p-0' }"
+          >
+            <template #header>
+              <div class="flex flex-col gap-0.5">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-highlighted">{{ 'title' in file ? file.title : file.path }}</span>
+                  <span
+                    v-if="'checks' in file"
+                    class="text-xs text-muted tabular-nums"
+                  >{{ progressOf(file.checks.map(check => branchCheckKey(file.path, check))) }}</span>
+                </div>
+                <code class="text-xs text-muted">{{ file.path }}</code>
+              </div>
+            </template>
+
+            <UAlert
+              v-if="'error' in file"
+              icon="i-lucide-triangle-alert"
+              color="error"
+              variant="subtle"
+              :title="t('recette.branch.invalid')"
+              :description="file.error"
+              class="rounded-none"
+            />
+
+            <template v-else>
+              <UAlert
+                v-if="file.decks.some(deck => !deck.exists)"
+                icon="i-lucide-file-question"
+                color="warning"
+                variant="subtle"
+                :title="t('recette.branch.missing', { slugs: file.decks.filter(deck => !deck.exists).map(deck => deck.slug).join(', ') })"
+                class="rounded-none"
+              />
+              <ul class="divide-y divide-default text-sm">
+                <RecetteCheckRow
+                  v-for="check in file.checks"
+                  :key="branchCheckKey(file.path, check)"
+                  v-model="checked[branchCheckKey(file.path, check)]"
+                  :target="check.page"
+                  :account="t(`recette.personas.${check.account}.label`)"
+                  :expect="check.expect"
+                  @open="openAs(check.account, check.page, '_blank')"
+                />
+              </ul>
+            </template>
+          </UCard>
+        </section>
+
         <UCard :ui="{ body: 'grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-default' }">
           <div class="flex flex-col items-start gap-1">
             <span class="text-xs text-muted">{{ t('recette.page.session') }}</span>
@@ -251,7 +360,7 @@ useHead({ title: () => t('recette.page.pageTitle') })
                     variant="outline"
                     size="sm"
                   />
-                  <span class="text-xs text-muted tabular-nums">{{ t('recette.page.progress', { done: doneIn(block), total: block.steps.length }) }}</span>
+                  <span class="text-xs text-muted tabular-nums">{{ progressOf(block.steps.map(step => `${block.key}.${step.id}`)) }}</span>
                 </div>
                 <p class="text-sm text-muted">
                   {{ block.summary }}
@@ -276,31 +385,14 @@ useHead({ title: () => t('recette.page.pageTitle') })
           </template>
 
           <ul class="divide-y divide-default text-sm">
-            <li
+            <RecetteCheckRow
               v-for="step in block.steps"
               :key="step.id"
-              class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1 px-4 py-2.5 sm:grid-cols-[auto_13rem_minmax(0,1fr)] sm:px-6"
-            >
-              <UCheckbox
-                v-model="checked[`${block.key}.${step.id}`]"
-                :aria-label="t('recette.page.checkStep')"
-                class="mt-0.5"
-              />
-              <ULink
-                class="inline-flex items-center gap-1.5 font-medium text-highlighted hover:text-primary"
-                @click="step.to && openAs(block.key, step.to, '_blank')"
-              >
-                {{ step.target }}
-                <UIcon
-                  name="i-lucide-arrow-up-right"
-                  class="size-3.5 shrink-0 text-muted"
-                />
-              </ULink>
-              <span
-                class="col-start-2 text-muted sm:col-start-3"
-                :class="{ 'line-through opacity-60': checked[`${block.key}.${step.id}`] }"
-              >{{ step.expect }}</span>
-            </li>
+              v-model="checked[`${block.key}.${step.id}`]"
+              :target="step.target"
+              :expect="step.expect"
+              @open="step.to && openAs(block.key, step.to, '_blank')"
+            />
           </ul>
         </UCard>
       </template>

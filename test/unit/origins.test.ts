@@ -67,6 +67,7 @@ const SIDES: Record<string, RouteSide> = {
   'POST /api/presentations/:slug/versions/:id/restore': 'studio',
   'GET /api/presentations/:slug/viewer': 'both',
   'GET /api/projects': 'studio',
+  'POST /api/recette/branch': 'studio',
   'POST /api/recette/seed': 'studio',
   'GET /api/recette/status': 'studio',
   'GET /api/templates': 'studio',
