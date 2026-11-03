@@ -78,6 +78,7 @@ An annotation is a `:tag{...}` directive the parser reads and removes from the b
 - `viewport`, `1440` by default, is the width in pixels a page or a story is laid out at before it shrinks to its pane.
 - `veil`, behind the text only, lays a dark veil over the image, as a percentage, and writes the text in light colors; without a veil, the text sits on a card.
 - `heading`: `compact` keeps the heading to one line, for a tall gallery; `hidden` hides it; `print` hides it on screen only.
+- `screen`, on a slide without a media pane, gives the screens of the body (`::StoryFrame`, `::Screens` of `@vignettes/storybook`) the whole height the heading leaves, and keeps the heading to one line unless `heading` names another mode.
 - `align`: `top`, `center` or `bottom`, the vertical alignment of the content: of the heading and the text on a title or a section slide, of the body under the heading on a content slide, of the text in its column beside a media, of the text card over an image. By default, the content is centered; a caption column at `3/4` and a text above or below a media start at the top; the card over an image sits at the bottom.
 
 The media pane extends to the edge of the slide and the text keeps its margins. A media behind the text is the slide background, over the whole screen and the printed page. The phone's scroll view stacks the text and the media.

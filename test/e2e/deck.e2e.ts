@@ -187,6 +187,55 @@ test('a frame loads when its slide is shown', async ({ page }) => {
   await expect(frame).toHaveAttribute('src', FRAMED_PAGE)
 })
 
+const FOCUSING_PAGE = 'http://127.0.0.1:3210/page-focus.html'
+
+// A page that focuses its own field once loaded, as a story's `play` function does.
+async function openFocusingFrame(page: Page) {
+  await page.route(FOCUSING_PAGE, route => route.fulfill({
+    contentType: 'text/html',
+    body: '<input id="champ"><script>setTimeout(() => { document.getElementById("champ").focus(); window.focused = document.activeElement.id }, 200)</script>',
+  }))
+  await page.goto(`${FRAMES_DECK}#/page-qui-prend-le-focus`)
+  await expect(page.locator('.reveal')).toHaveClass(/\bready\b/)
+  const frame = page.locator('section#page-qui-prend-le-focus iframe')
+  await expect(frame).toHaveAttribute('src', FOCUSING_PAGE)
+  await expect.poll(() => page.frame({ url: FOCUSING_PAGE })?.evaluate(() => (window as any).focused)).toBe('champ')
+  return frame
+}
+
+test('the keyboard stays on the deck when a frame focuses its page', async ({ page }) => {
+  await openFocusingFrame(page)
+  await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).not.toBe('IFRAME')
+
+  await page.keyboard.press('ArrowRight')
+  await expect(page).toHaveURL(/#\/fin$/)
+})
+
+test('a click activates a frame, and a click beside it gives the keyboard back to the deck', async ({ page }) => {
+  const frame = await openFocusingFrame(page)
+  const box = (await frame.boundingBox())!
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  await expect(frame).toHaveAttribute('data-frame-active', '')
+
+  await page.locator('section#page-qui-prend-le-focus h2').click()
+  await expect(frame).not.toHaveAttribute('data-frame-active')
+  await page.keyboard.press('ArrowRight')
+  await expect(page).toHaveURL(/#\/fin$/)
+})
+
+test('Tab enters a frame and activates it', async ({ page }) => {
+  await openFocusingFrame(page)
+  const focused = () => page.evaluate(() => document.activeElement?.tagName)
+  // A frame of another origin takes the focus a moment after Tab.
+  for (let presses = 0; presses < 20 && await focused() !== 'IFRAME'; presses++) {
+    await page.keyboard.press('Tab')
+    await page.waitForTimeout(200)
+  }
+
+  await page.waitForTimeout(500)
+  expect(await page.evaluate(() => [document.activeElement?.tagName, document.activeElement?.hasAttribute('data-frame-active')])).toEqual(['IFRAME', true])
+})
+
 test('the print view opens the dialog once every diagram is drawn', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'The print view opens the dialog in Chromium only.')
   await page.addInitScript(() => {

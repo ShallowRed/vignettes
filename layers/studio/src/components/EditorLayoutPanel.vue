@@ -19,7 +19,7 @@ const { t } = useI18n()
 const { open, current, refresh } = useCursorReading(() => props.view, slideLayoutAt)
 
 const attributes = computed(() => current.value?.attributes ?? {})
-const value = (name: string) => (attributes.value[name] as string | undefined) ?? layoutDefault(name) ?? ''
+const value = (name: string) => (attributes.value[name] as string | undefined) ?? layoutDefault(name, attributes.value) ?? ''
 const placement = computed(() => layoutPlacement(attributes.value) ?? 'none')
 const side = computed(() => placement.value === 'right' || placement.value === 'left')
 const size = computed(() => layoutSize(layoutPlacement(attributes.value), attributes.value.size as MediaSize | undefined) ?? '')
@@ -40,7 +40,7 @@ function write(next: (attributes: Record<string, unknown>) => Record<string, unk
 /** Sets an attribute; the value its absence gives, or none, removes it. */
 function set(name: string, chosen: unknown) {
   write((fresh) => {
-    const absent = name === 'size' ? layoutSize(layoutPlacement(fresh), undefined) : layoutDefault(name)
+    const absent = name === 'size' ? layoutSize(layoutPlacement(fresh), undefined) : layoutDefault(name, fresh)
     const next = { ...fresh }
     if (chosen === undefined || chosen === '' || chosen === false || chosen === absent)
       delete next[name]

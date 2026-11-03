@@ -186,6 +186,23 @@
   }
 }
 
+// `:layout{screen}`: the body hands the height the heading leaves to its
+// screens, which `@vignettes/storybook` lays out in it.
+.reveal .slides section.layout-screen {
+  --slide-body-padding-y: 0;
+}
+
+.reveal .slides section.layout-screen article {
+  justify-content: stretch;
+
+  > div {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+
 // A full-slide component takes the height the slide heading leaves: the MDC
 // wrapper stacks the two and fills the slide.
 .reveal .slides section.layout-full > div {

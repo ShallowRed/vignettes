@@ -74,6 +74,8 @@ export interface SlideLayout {
   media?: MediaLayout
   heading?: HeadingMode
   align?: VerticalAlign
+  /** The body is a screen or a gallery of screens, at the largest size the slide leaves them. */
+  screen?: true
 }
 
 export const LAYOUT_ATTRIBUTES: readonly ComponentAttribute[] = [
@@ -144,6 +146,14 @@ export const LAYOUT_ATTRIBUTES: readonly ComponentAttribute[] = [
     },
   },
   {
+    name: 'screen',
+    boolean: true,
+    description: {
+      fr: 'Le corps est un écran ou une galerie d\'écrans (`::StoryFrame`, `::Screens`) : le titre tient sur une ligne et les écrans prennent toute la place qu\'il laisse. Un écran sans `ratio` remplit sa place, un écran avec `ratio` y prend la plus grande taille à ces proportions',
+      en: 'The body is a screen or a gallery of screens (`::StoryFrame`, `::Screens`): the heading keeps to one line and the screens take all the room it leaves. A screen without `ratio` fills its room, a screen with `ratio` takes the largest size at those proportions in it',
+    },
+  },
+  {
     name: 'heading',
     values: HEADING_MODES,
     description: { fr: 'Titre sur une ligne (compact), masqué (hidden) ou masqué à l\'écran seulement (print)', en: 'Heading on one line (compact), hidden, or hidden on screen only (print)' },
@@ -166,6 +176,9 @@ type Attributes = Record<string, unknown>
 
 const PERCENT_RE = /^(\d{1,3})%$/
 
+// MDC gives `true` for a bare attribute and the text for a written value.
+const isSet = (value: unknown) => value === true || value === 'true' || value === ''
+
 const LayoutAttributesSchema = z.strictObject({
   media: z.enum(MEDIA_PLACEMENTS).optional(),
   size: z.enum(MEDIA_SIZES).optional(),
@@ -182,6 +195,7 @@ const LayoutAttributesSchema = z.strictObject({
   veil: z.string().refine(value => Number(PERCENT_RE.exec(value)?.[1] ?? Number.NaN) <= 100).optional(),
   heading: z.enum(HEADING_MODES).optional(),
   align: z.enum(VERTICAL_ALIGNS).optional(),
+  screen: z.union([z.boolean(), z.enum(['true', 'false', ''])]).optional(),
 })
 
 type LayoutAttributes = z.infer<typeof LayoutAttributesSchema>
@@ -270,7 +284,7 @@ function percentOf(overlay: unknown): string | undefined {
 const LEGACY_COMPONENTS: Readonly<Record<string, (props: Attributes) => Attributes>> = {
   fullscreenimage: ({ src, alt, overlay, heading }) => ({ media: 'behind', src, type: 'image', alt, veil: percentOf(overlay), heading }),
   splitslide: ({ src, type, fit, alt, title, lightbox, ratio, reverse }) => ({
-    media: reverse === true || reverse === 'true' || reverse === '' ? 'left' : 'right',
+    media: isSet(reverse) ? 'left' : 'right',
     size: LEGACY_RATIOS[String(ratio ?? '1:2')],
     src,
     type: type ?? 'iframe',
@@ -336,8 +350,14 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
 
   if (!placement) {
     unused([...MEDIA_SETTINGS])
+    if (isSet(attrs.screen)) {
+      layout.screen = true
+      layout.heading ??= layoutDefault('heading', attrs) as HeadingMode
+    }
     return { layout, issues }
   }
+  // A media pane lays the slide out on its own.
+  unused(['screen'])
   if (!source) {
     issues.push({ kind: 'missing-source', attribute: 'src' })
     return { layout, issues }
@@ -362,7 +382,7 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
     fit: attrs.fit ?? 'cover',
     position: attrs.position ?? 'center',
     alt: attrs.alt ?? '',
-    lightbox: attrs.lightbox === true || attrs.lightbox === 'true' || attrs.lightbox === '',
+    lightbox: isSet(attrs.lightbox),
     ...(attrs.hint ? { hint: attrs.hint } : {}),
     viewport: attrs.viewport ? Number(attrs.viewport) : DEFAULT_MEDIA_VIEWPORT,
     ...(placement === 'behind' && veil !== undefined ? { veil } : {}),
@@ -399,8 +419,14 @@ export function layoutSource(attributes: Attributes): string {
   return parts.length ? `:layout{${parts.join(' ')}}` : ''
 }
 
-/** The value of an attribute of `:layout` when the annotation leaves it out. */
-export function layoutDefault(name: string): string | undefined {
+/**
+ * The value of an attribute of `:layout` when the annotation leaves it out,
+ * among the other attributes it writes: a screen slide keeps its heading to
+ * one line.
+ */
+export function layoutDefault(name: string, attributes: Attributes = {}): string | undefined {
+  if (name === 'heading' && isSet(attributes.screen))
+    return 'compact'
   return LAYOUT_ATTRIBUTES.find(attribute => attribute.name === name)?.default
 }
 
@@ -417,6 +443,7 @@ export function layoutForPlacement(attributes: Attributes, placement: MediaPlace
     return next
   }
   next.media = placement
+  delete next.screen
   if (placement === 'behind') {
     drop([...PANE_SETTINGS, 'story'])
     if (next.type === 'iframe')

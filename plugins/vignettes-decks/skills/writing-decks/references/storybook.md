@@ -41,6 +41,31 @@ The value is the Storybook story id, `<componentId>--<storyName>`. `lightbox` le
 
 `Screens` lays its `StoryFrame` children in a row. An iframe renders at its logical width and the frame scales it down to fit, so the frame shows the whole page. `StoryFrame` also works on its own in a slide body, without `Screens`.
 
+A screen takes clicks from the first click on it: a story whose `play` function clicks, types or opens a drawer leaves the keyboard to the deck and to the editor. The first click on the screen outlines it and lets the next clicks reach the page; the pointer back on the slide, a click outside the screen or the next slide gives the keyboard back to the deck. A screen with `lightbox` opens full-screen on that first click.
+
+## A slide made of screens
+
+`:layout{screen}` gives the screens of the body the whole height the heading leaves, and keeps the heading to one line. A screen without `ratio` fills its room; with a `ratio`, it takes the largest size at that ratio, with its caption under it. `heading="hidden"` gives the screens the whole slide, and the notes hold the text:
+
+```markdown
+### Changer d'étape
+
+:layout{screen}
+
+::::Screens{cols="2"}
+::StoryFrame{story="kanban--today" label="Aujourd'hui"}
+::
+::StoryFrame{story="kanban--proposal" label="Proposition"}
+::
+::::
+
+::Notes
+What the two screens show.
+::
+```
+
+Side by side, two screens at `ratio="desktop"` keep the height their width allows; without `ratio`, each one shows the page at `viewport` width over the whole height.
+
 ### Screens
 
 <!-- component: Screens -->
@@ -79,7 +104,7 @@ Attributes:
 - `src` (`string`): Explicit URL, used when `story` is absent.
 - `type` (`'iframe' | 'image'`): Kind of media; without it, a story or an address is a page, and an address that ends with an image extension an image.
 - `fit` (`'cover' | 'contain'`, default `'cover'`): CSS `object-fit` of an image in the frame.
-- `ratio` (`string`): Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, the frame is `wide` outside a gallery.
+- `ratio` (`string`): Aspect ratio: a name (`desktop` 16/10, `wide` 16/9, `classic` 4/3, `photo` 3/2, `square`, `mobile` 9/16, `portrait` 3/4) or a ratio such as `16/9`. Without it, the frame is `wide` outside a gallery, and fills its room on a `:layout{screen}` slide.
 - `viewport` (`string | number`): Logical width (px) the iframe renders at before scaling; a higher value shows more of the page.
 - `previewWidth` (`string | number`): Another name of `viewport`, read in the existing presentations.
 - `raw` (`boolean`, default `false`): Renders the frame at its native size, without scaling.

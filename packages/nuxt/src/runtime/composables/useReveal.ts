@@ -3,7 +3,7 @@ import type { RevealApi } from 'reveal.js'
 import type { Ref } from 'vue'
 import type { RevealConfig } from '../types/presentation.ts'
 import { isDeckUrl } from '@vignettes/core/deck'
-import { deckMessages, EMBED_REFERRER_POLICY, embedSandbox, localizedNotes, mergeRevealConfig, scrollViewFrames, scrollViewLinks } from '@vignettes/core/render'
+import { deckMessages, EMBED_REFERRER_POLICY, embedSandbox, frameFocus, localizedNotes, mergeRevealConfig, scrollViewFrames, scrollViewLinks } from '@vignettes/core/render'
 
 /**
  * Reveal calls its API for the message of any window, and its overlay writes the
@@ -99,7 +99,7 @@ export function useReveal(
 
     window.addEventListener('message', refuseMessage, { capture: true })
 
-    revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [localizedNotes(RevealNotes(), messages), scrollViewLinks, scrollViewFrames] })
+    revealInstance = new Reveal(container.value, { ...mergedConfig, plugins: [localizedNotes(RevealNotes(), messages), scrollViewLinks, scrollViewFrames, frameFocus] })
     await revealInstance.initialize()
 
     // Sync to pick up Vue-rendered content (lightbox, previews, fragments won't

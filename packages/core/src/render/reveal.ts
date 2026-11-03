@@ -65,6 +65,11 @@ export function embedSandbox(src: string, origin: string): string {
 // receives the origin alone, which a video host checks before it plays.
 export const EMBED_REFERRER_POLICY = 'strict-origin-when-cross-origin' as const
 
+// A frame of a slide focuses its page only after a click in it. Browsers that
+// apply this permission refuse the other focus calls themselves; `frameFocus`
+// gives the focus back in the others.
+export const EMBED_FOCUS_POLICY = 'focus-without-user-activation \'none\'' as const
+
 // Directories whose root-absolute URLs a self-contained bundle rebases to a
 // location-relative prefix.
 export const REBASEABLE_ASSET_DIRS = [

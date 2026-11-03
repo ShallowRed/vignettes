@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { EMBED_FOCUS_POLICY } from '@vignettes/core/render'
 import { useDeckMessages } from '../../composables/useDeckMessages.ts'
 import { useFrameAttributes } from '../../composables/useFrameAttributes.ts'
 
@@ -74,7 +75,7 @@ const frameAttributes = useFrameAttributes()
         v-bind="frameAttributes(props.src)"
         :title="props.title"
         :style="{ width: props.width, height: props.height }"
-        :allow="props.allow"
+        :allow="`${props.allow}; ${EMBED_FOCUS_POLICY}`"
         :frameborder="props.frameborder"
       />
       <div class="expand-hint">
@@ -86,7 +87,7 @@ const frameAttributes = useFrameAttributes()
       v-bind="frameAttributes(props.src)"
       :title="props.title"
       :style="{ width: props.width, height: props.height }"
-      :allow="props.allow"
+      :allow="`${props.allow}; ${EMBED_FOCUS_POLICY}`"
       :frameborder="props.frameborder"
       allowfullscreen
     />

@@ -71,6 +71,13 @@ describe('slide layouts', () => {
     expect(getSlideClasses(slide!)).toEqual(['slide-h3', 'heading-compact'])
   })
 
+  it('names a screen slide in the classes, with a compact heading unless it names another', async () => {
+    const [screen] = await headingParser.parse('### Title\n\n:layout{screen}\n\nText')
+    const [hidden] = await headingParser.parse('### Title\n\n:layout{screen heading="hidden"}\n\nText')
+    expect(getSlideClasses(screen!)).toEqual(['slide-h3', 'layout-screen', 'heading-compact'])
+    expect(getSlideClasses(hidden!)).toEqual(['slide-h3', 'layout-screen', 'heading-hidden'])
+  })
+
   it('names the vertical alignment in the classes', async () => {
     const [slide] = await headingParser.parse('### Title\n\n:layout{align="top"}\n\nText')
     expect(getSlideClasses(slide!)).toEqual(['slide-h3', 'align-top'])

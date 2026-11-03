@@ -1,4 +1,4 @@
-import { LAYOUT_ATTRIBUTES, layoutAnnotationChange, layoutAnnotations, layoutForPlacement, layoutMentions, layoutSource, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
+import { LAYOUT_ATTRIBUTES, layoutAnnotationChange, layoutAnnotations, layoutDefault, layoutForPlacement, layoutMentions, layoutSource, legacyComponentLayout, readLayout } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
 
 describe('readLayout', () => {
@@ -32,6 +32,12 @@ describe('readLayout', () => {
 
   it('reads the heading mode with or without a media', () => {
     expect(readLayout({ heading: 'compact' })).toEqual({ layout: { heading: 'compact' }, issues: [] })
+  })
+
+  it('reads a screen slide, and leaves it out beside a media pane', () => {
+    expect(readLayout({ screen: true })).toEqual({ layout: { screen: true, heading: 'compact' }, issues: [] })
+    expect(readLayout({ screen: '', heading: 'hidden' }).layout).toEqual({ screen: true, heading: 'hidden' })
+    expect(readLayout({ media: 'right', src: '/a.png', screen: true })).toMatchObject({ layout: { media: { placement: 'right' } }, issues: [{ kind: 'unused', attribute: 'screen' }] })
   })
 
   it('reads the vertical alignment with or without a media', () => {
@@ -108,6 +114,14 @@ describe('layoutSource', () => {
   })
 })
 
+describe('layoutDefault', () => {
+  it('keeps the heading of a screen slide to one line', () => {
+    expect(layoutDefault('heading')).toBeUndefined()
+    expect(layoutDefault('heading', { screen: true })).toBe('compact')
+    expect(layoutDefault('fit', { screen: true })).toBe('cover')
+  })
+})
+
 describe('layoutForPlacement', () => {
   it('keeps the settings the new placement uses', () => {
     expect(layoutForPlacement({ media: 'right', size: '2/3', src: '/a.png', align: 'top' }, 'left')).toEqual({ media: 'left', size: '2/3', src: '/a.png', align: 'top' })
@@ -116,6 +130,10 @@ describe('layoutForPlacement', () => {
   it('drops a story, a page and the pane settings behind the text, and the veil elsewhere', () => {
     expect(layoutForPlacement({ media: 'right', story: 'a--b', src: '/a.png', type: 'iframe', size: '3/4', viewport: '1600', lightbox: true }, 'behind')).toEqual({ media: 'behind', src: '/a.png' })
     expect(layoutForPlacement({ media: 'behind', src: '/a.png', veil: '40%' }, 'top')).toEqual({ media: 'top', src: '/a.png' })
+  })
+
+  it('drops the screen slide for a media pane', () => {
+    expect(layoutForPlacement({ screen: true }, 'right')).toEqual({ media: 'right' })
   })
 
   it('keeps the heading and the alignment without a media, in the current form', () => {

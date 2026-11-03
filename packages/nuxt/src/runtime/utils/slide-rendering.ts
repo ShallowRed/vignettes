@@ -191,6 +191,8 @@ export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'section' | 
     if (media.placement === 'behind')
       classes.push(media.veil === undefined ? 'media-card' : 'media-veil')
   }
+  if (slide.layout?.screen)
+    classes.push('layout-screen')
   if (slide.layout?.heading)
     classes.push(`heading-${slide.layout.heading}`)
   if (slide.layout?.align)

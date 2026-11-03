@@ -61,4 +61,10 @@ const gridStyle = computed(() => ({
 .screens :deep(.story-frame) {
   height: 100%;
 }
+
+/* `:layout{screen}`: the rows share the height the slide leaves. */
+.reveal section.layout-screen .screens {
+  flex: 1 1 0;
+  grid-auto-rows: minmax(0, 1fr);
+}
 </style>

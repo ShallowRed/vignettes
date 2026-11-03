@@ -55,6 +55,8 @@ Declare one Storybook root in the frontmatter (`storybook: https://…`) and nam
 
 - One story beside the text: `:layout{media="right" size="2/3" story="…"}`.
 - Several side by side: `::Screens` holding `::StoryFrame` blocks.
+- A slide that shows screens, with the text in `::Notes`: `:layout{screen}` gives the screens the height the one-line heading leaves (`heading="hidden"` gives them the whole slide). Leave `ratio` out so each screen fills its room; with a `ratio`, two screens side by side keep the height their width allows.
+- A screen takes clicks once the audience clicks it, so a story with a `play` function leaves the keyboard to the deck.
 - `viewport` sets the width the story renders at before it is scaled to its frame: raise it to show more of the page, lower it to zoom in. Galleries of three columns or more read better with a lower value or `ratio="portrait"`.
 - A local Storybook that is stopped leaves empty frames; a deployed one must allow being framed by the instance. Freezing the deck (`references/storybook.md`, section on frozen decks) serves the stories from the deck itself.
 

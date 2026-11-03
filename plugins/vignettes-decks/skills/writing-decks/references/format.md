@@ -47,6 +47,7 @@ Set by the attributes of `:layout{…}`, read by `readLayout` of `@vignettes/cor
 - `viewport`, `1440` by default: Width in pixels the page or the story is laid out at before it is shrunk to the pane
 - `veil`: Behind the text: dark veil over the image, as a percentage, with the text in a light color; without a veil, the text sits on a card
 - `align` (`top`, `center`, `bottom`): Vertical alignment of the content: of the heading and the text on a title or a section slide, of the body under the heading on a content slide, of the text in its column beside a media, of the text card over an image. By default: centered; at the top for a caption column at 3/4 and for a text above or below a media; at the bottom for the card over an image
+- `screen`: The body is a screen or a gallery of screens (`::StoryFrame`, `::Screens`): the heading keeps to one line and the screens take all the room it leaves. A screen without `ratio` fills its room, a screen with `ratio` takes the largest size at those proportions in it
 - `heading` (`compact`, `hidden`, `print`): Heading on one line (compact), hidden, or hidden on screen only (print)
 
 ## Components

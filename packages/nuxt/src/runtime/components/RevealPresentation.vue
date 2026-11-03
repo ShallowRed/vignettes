@@ -539,4 +539,14 @@ onUnmounted(() => {
 html.print-pdf:not(.reveal-print) .reveal .backgrounds > .slide-background:not(.present) {
   display: none !important;
 }
+
+/* A frame of a slide takes the pointer once a click activates it (`frameFocus`). */
+.reveal .slides iframe:not([data-frame-active]) {
+  pointer-events: none;
+}
+
+.reveal .slides :has(> iframe[data-frame-active]) {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 2px;
+}
 </style>
