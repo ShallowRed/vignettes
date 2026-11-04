@@ -87,6 +87,10 @@ function remove(row: Row) {
 }
 
 onBeforeUnmount(() => notices.close())
+watch(() => props.writable, (writable) => {
+  if (!writable)
+    notices.close()
+})
 
 function select(row: Row) {
   focused.value = { h: row.h, v: row.v }

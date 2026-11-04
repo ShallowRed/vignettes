@@ -11,9 +11,9 @@ import { outlineTransaction } from '../../layers/studio/src/utils/editor-outline
 const DECK = '## Un\n\nTexte un.\n\n## Deux\n\nTexte deux.\n\n## Trois\n\nTexte trois.\n'
 
 // An editor with the history of solo mode, with the members the history reads: Vitest runs without a DOM.
-function editor(calls: string[] = []) {
+function editor(calls: string[] = [], readOnly = false) {
   const view = {
-    state: EditorState.create({ doc: DECK, extensions: history() }),
+    state: EditorState.create({ doc: DECK, extensions: [history(), EditorState.readOnly.of(readOnly)] }),
     dispatch(spec: Transaction | TransactionSpec) {
       calls.push('dispatch')
       view.state = spec instanceof Transaction ? spec.state : view.state.update(spec).state
@@ -50,5 +50,17 @@ describe('useEditorHistory', () => {
     editorHistory.undo()
     expect(calls).toEqual(['isolate', 'dispatch', 'isolate', 'undo'])
     expect(editorHistory.changes()).toBe(3)
+  })
+
+  it('undoes nothing in a read-only editor, in solo mode and in collaboration', () => {
+    for (const collab of [false, true]) {
+      const calls: string[] = []
+      const locked = editor(calls, true)
+      locked.dispatch({ changes: { from: 0, insert: 'x' } })
+      const editorHistory = useEditorHistory({ view: shallowRef(locked), collab: ref(collab), shared: sharedHistory(calls) })
+      editorHistory.undo()
+      expect(locked.state.doc.toString()).toBe(`x${DECK}`)
+      expect(calls).not.toContain('undo')
+    }
   })
 })

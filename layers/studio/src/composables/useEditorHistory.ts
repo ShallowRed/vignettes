@@ -41,11 +41,16 @@ export function useEditorHistory(options: EditorHistoryOptions) {
     options.shared.isolateUndo()
   }
 
+  // A read-only editor undoes nothing, like its undo keys: the shared history
+  // writes to the shared text, which the write gate lets through.
   function undo() {
+    const view = options.view.value
+    if (!view || view.state.readOnly)
+      return
     if (options.collab.value)
       options.shared.undo()
-    else if (options.view.value)
-      undoInEditor(options.view.value)
+    else
+      undoInEditor(view)
   }
 
   return {
