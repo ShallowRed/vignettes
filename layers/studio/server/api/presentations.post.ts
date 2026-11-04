@@ -63,7 +63,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: `A deck "${slug}" already exists (it may be in the trash)` })
   }
 
-  await drafts.save(slug, markdownToYDocUpdate(deck.raw))
+  if (!await drafts.create(slug, markdownToYDocUpdate(deck.raw)))
+    throw createError({ statusCode: 409, statusMessage: `A deck "${slug}" already exists` })
   const meta = await useDeckMeta().update(slug, {
     title: deck.title,
     status: 'private',

@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { listVisiblePresentations, listVisibleProjects } from '../../layers/studio/server/utils/catalog'
-import { useDraftStore } from '../../layers/studio/server/utils/collab'
+import { useDraftStore, writeDraftText } from '../../layers/studio/server/utils/collab'
 import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
-import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals, testRows } from './helpers/server-db'
 
 // The catalog reports capability, not role: an `editor` grant is what the server
@@ -72,7 +71,7 @@ describe('unpublished changes', () => {
   it('flags, for whoever may edit, a draft that differs from the published text', async () => {
     await seedAccount(3, 'ed', 'editor')
     await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
-    await useDraftStore().save('live', markdownToYDocUpdate(DECK.replace('# v1', '# v2')))
+    await writeDraftText('live', DECK.replace('# v1', '# v2'))
     const listed = await listVisiblePresentations(asUser(3, 'ed'))
     expect(listed.find(d => d.slug === 'live')?.unpublishedChanges).toBe(true)
     // A visitor never learns about drafts.
@@ -82,9 +81,42 @@ describe('unpublished changes', () => {
   it('stays quiet when the draft only repeats the published text', async () => {
     await seedAccount(3, 'ed', 'editor')
     await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
-    await useDraftStore().save('live', markdownToYDocUpdate(DECK))
+    await writeDraftText('live', DECK)
     const listed = await listVisiblePresentations(asUser(3, 'ed'))
     expect(listed.find(d => d.slug === 'live')?.unpublishedChanges).toBeUndefined()
+  })
+})
+
+describe('the date and the flag of a published deck', () => {
+  const DECK = '---\ntitle: Live\nstatus: public\n---\n# v1\n'
+  const PAST = new Date('2026-01-01T00:00:00Z')
+  const FUTURE = new Date(Date.now() + 3_600_000)
+  const card = async (slug: string) => (await listVisiblePresentations(asUser(3, 'ed'))).find(d => d.slug === slug)
+
+  beforeEach(async () => {
+    await seedAccount(3, 'ed', 'editor')
+    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
+  })
+
+  it('keep the date of the version for a draft equal to it, saved later', async () => {
+    await testRows().update('deckVersions', { publishedAt: PAST }, { deckSlug: 'live' })
+    await testRows().update('decks', { updatedAt: PAST }, { slug: 'live' })
+    await writeDraftText('live', DECK)
+    expect(await card('live')).toMatchObject({ updatedAt: PAST.getTime() })
+    expect((await card('live'))?.unpublishedChanges).toBeUndefined()
+  })
+
+  it('take the date of a draft that differs from the version', async () => {
+    await testRows().update('deckVersions', { publishedAt: PAST }, { deckSlug: 'live' })
+    await testRows().update('decks', { updatedAt: PAST }, { slug: 'live' })
+    await writeDraftText('live', DECK.replace('# v1', '# v2'))
+    expect(await card('live')).toMatchObject({ updatedAt: await useDraftStore().stamp('live'), unpublishedChanges: true })
+  })
+
+  it('flag a draft that differs from a version published after it', async () => {
+    await writeDraftText('live', DECK.replace('# v1', '# v2'))
+    await testRows().update('deckVersions', { publishedAt: FUTURE }, { deckSlug: 'live' })
+    expect(await card('live')).toMatchObject({ unpublishedChanges: true })
   })
 })
 
@@ -93,7 +125,7 @@ describe('the date of a deck never published', () => {
 
   it('is the last draft save, for whoever may edit the deck', async () => {
     await useProjectPermissionStore().set('client', 10, 'editor', 'boss')
-    await useDraftStore().save('draft-deck', markdownToYDocUpdate(DRAFT))
+    await writeDraftText('draft-deck', DRAFT)
     const stamp = await useDraftStore().stamp('draft-deck')
     const listed = await listVisiblePresentations(collab())
     expect(listed.find(d => d.slug === 'draft-deck')?.updatedAt).toBe(stamp)

@@ -1,6 +1,6 @@
 import { DeckWriteError } from '@vignettes/core/deck'
 import { assertCanEditDeck } from '../../../utils/access'
-import { currentDraftText, useCollabServer } from '../../../utils/collab'
+import { announcePublication, currentDraftText } from '../../../utils/collab'
 import { useDbContent } from '../../../utils/sources'
 
 /**
@@ -24,9 +24,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const result = await useDbContent().writer.save({ slug, raw: draft, actor: editor.login ?? 'unknown' })
-    // Everyone in the room re-reads the published state (their header would
-    // otherwise keep the publication state they loaded).
-    useCollabServer().documents.get(slug)?.broadcastStateless(JSON.stringify({ type: 'published', at: Date.now() }))
+    announcePublication(slug)
     return { ok: true, ...result }
   }
   catch (error) {

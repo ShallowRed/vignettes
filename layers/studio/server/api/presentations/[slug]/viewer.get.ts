@@ -3,7 +3,7 @@ import { variantsOf } from '#shared/presentations'
 import { canActorEditDeck } from '../../../utils/access'
 import { getDeckActor } from '../../../utils/actor'
 import { listVisiblePresentations, unpublishedChanges } from '../../../utils/catalog'
-import { useDeckMeta } from '../../../utils/sources'
+import { useDbContent, useDeckMeta } from '../../../utils/sources'
 
 /**
  * What the deck page offers the current visitor beside the deck: the other
@@ -34,12 +34,13 @@ export default defineEventHandler(async (event): Promise<DeckViewer> => {
   if (!meta || !await canActorEditDeck(actor, slug))
     return { canEdit: false as const, signedIn, variants }
 
+  const versionId = meta.published ? await useDbContent().publishedVersion(slug) : null
   return {
     canEdit: true as const,
     signedIn,
     variants,
     published: Boolean(meta.published),
-    unpublishedChanges: meta.published && (await unpublishedChanges(new Set([slug]))).has(slug),
+    unpublishedChanges: versionId !== null && (await unpublishedChanges(new Map([[slug, versionId]]))).has(slug),
     project: meta.project ?? null,
   }
 })

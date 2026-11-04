@@ -14,6 +14,8 @@ import { crosshairCursor, drawSelection, keymap, rectangularSelection } from '@c
 
 /** Insert a blank line above the cursor and move to it, as Mod-Shift-Enter does in VS Code. */
 function insertBlankLineAbove(view: EditorView): boolean {
+  if (view.state.readOnly)
+    return false
   const changes = view.state.changeByRange((range) => {
     const line = view.state.doc.lineAt(range.from)
     const indent = /^\s*/.exec(line.text)?.[0] ?? ''

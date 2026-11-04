@@ -1,6 +1,6 @@
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertOwner } from '../../../utils/access'
-import { useCollabServer } from '../../../utils/collab'
+import { hasRoom } from '../../../utils/collab'
 import { useProjectStore } from '../../../utils/sources'
 
 /**
@@ -17,8 +17,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const store = useProjectStore()
-  const collab = useCollabServer()
-  const openDeck = (await store.liveDeckSlugs(slug)).find(deckSlug => collab.documents.has(deckSlug))
+  const openDeck = (await store.liveDeckSlugs(slug)).find(hasRoom)
   if (openDeck) {
     throw createError({ statusCode: 409, statusMessage: `A collab session is open on "${openDeck}"; close it first` })
   }

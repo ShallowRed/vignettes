@@ -1,6 +1,10 @@
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
+import { MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import * as Y from 'yjs'
+import { hasRoom, useCollabServer, useDraftStore, useSnapshotStore, writeDraftText } from '../../layers/studio/server/utils/collab'
+import { useStores } from '../../layers/studio/server/utils/db'
 import { useMediaIndex, useProjectStore } from '../../layers/studio/server/utils/sources'
 import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { NOW, seedDeck } from './helpers/adapters'
@@ -63,6 +67,85 @@ describe('the content routes', () => {
     await expect(push(token({ body: { stubs: [stub('binned', '# B')], apply: true } })))
       .resolves
       .toEqual([{ slug: 'binned', action: 'trashed', folderMissing: null }])
+  })
+
+  it('push brings along a draft that holds the version it replaces, in its lineage, and tells an open room', async () => {
+    const push1 = (raw: string, apply = true) => push(token({ body: { stubs: [stub('followed', raw)], apply } }))
+    await push1('# v1')
+    const open = await useCollabServer().openDirectConnection('followed', { deck: 'followed' })
+    const tab = new Y.Doc()
+    Y.applyUpdate(tab, Y.encodeStateAsUpdate(open.document!))
+    const announced = vi.spyOn(open.document!, 'broadcastStateless')
+    const snapshots = await useSnapshotStore().list('followed')
+
+    await expect(push1('# v2', false)).resolves.toEqual([{ slug: 'followed', action: 'republish', folderMissing: null, draft: 'updated' }])
+    expect(open.document!.getText('codemirror').toString()).toBe('# v1')
+    await expect(push1('# v2')).resolves.toEqual([{ slug: 'followed', action: 'republish', folderMissing: null, draft: 'updated' }])
+    expect(open.document!.getText('codemirror').toString()).toBe('# v2')
+    expect(announced).toHaveBeenCalledWith(expect.stringContaining('"published"'))
+    Y.applyUpdate(tab, (await useDraftStore().load('followed'))!)
+    expect(tab.getText('codemirror').toString()).toBe('# v2')
+    expect(await useSnapshotStore().list('followed')).toEqual(snapshots)
+    await open.disconnect()
+  })
+
+  it('push keeps a draft with changes the editor did not publish, and gives no draft to a deck without one', async () => {
+    const push1 = (slug: string, raw: string) => push(token({ body: { stubs: [stub(slug, raw)], apply: true } }))
+    await push1('edited', '# v1')
+    await writeDraftText('edited', '# v1 edited online')
+    const stamp = await useDraftStore().stamp('edited')
+    await expect(push1('edited', '# v2')).resolves.toEqual([{ slug: 'edited', action: 'republish', folderMissing: null, draft: 'kept' }])
+    expect(yDocUpdateToMarkdown((await useDraftStore().load('edited'))!)).toBe('# v1 edited online')
+    expect(await useDraftStore().stamp('edited')).toBe(stamp)
+
+    await push1('bare', '# v1')
+    await expect(push1('bare', '# v2')).resolves.toEqual([{ slug: 'bare', action: 'republish', folderMissing: null, draft: 'none' }])
+    expect(await useDraftStore().load('bare')).toBeNull()
+
+    // A deck never published whose draft was written in the studio.
+    await writeDraftText('unpublished', '# work in progress')
+    await expect(push1('unpublished', '# v1')).resolves.toEqual([{ slug: 'unpublished', action: 'republish', folderMissing: null, draft: 'kept' }])
+    expect(yDocUpdateToMarkdown((await useDraftStore().load('unpublished'))!)).toBe('# work in progress')
+  })
+
+  it('push writes nothing to a draft that already holds the new version', async () => {
+    const push1 = (raw: string) => push(token({ body: { stubs: [stub('ahead', raw)], apply: true } }))
+    await push1('# v1')
+    await writeDraftText('ahead', '# v2')
+    const stamp = await useDraftStore().stamp('ahead')
+    const snapshots = await useSnapshotStore().list('ahead')
+    await expect(push1('# v2')).resolves.toEqual([{ slug: 'ahead', action: 'republish', folderMissing: null, draft: 'updated' }])
+    expect(await useDraftStore().stamp('ahead')).toBe(stamp)
+    expect(await useSnapshotStore().list('ahead')).toEqual(snapshots)
+  })
+
+  it('push brings along the draft of a room still loading', async () => {
+    const push1 = (raw: string) => push(token({ body: { stubs: [stub('loading', raw)], apply: true } }))
+    await push1('# v1')
+    const opening = useCollabServer().openDirectConnection('loading', { deck: 'loading' })
+    await expect(push1('# v2')).resolves.toEqual([{ slug: 'loading', action: 'republish', folderMissing: null, draft: 'updated' }])
+    const open = await opening
+    expect(open.document!.getText('codemirror').toString()).toBe('# v2')
+    await open.disconnect()
+    expect(yDocUpdateToMarkdown((await useDraftStore().load('loading'))!)).toBe('# v2')
+  })
+
+  it('push names a draft that failed to follow, and still follows the next decks', async () => {
+    const both = (a: string, b: string) => push(token({ body: { stubs: [stub('first', a), stub('second', b)], apply: true } }))
+    await both('# a1', '# b1')
+    await (await useCollabServer().openDirectConnection('first', { deck: 'first' })).disconnect()
+    await (await useCollabServer().openDirectConnection('second', { deck: 'second' })).disconnect()
+    vi.spyOn(useStores().drafts, 'update').mockRejectedValueOnce(new Error('disk full'))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await expect(both('# a2', '# b2')).resolves.toMatchObject([{ slug: 'first', draft: 'failed' }, { slug: 'second', draft: 'updated' }])
+    expect(yDocUpdateToMarkdown((await useDraftStore().load('second'))!)).toBe('# b2')
+    warn.mockRestore()
+    expect(hasRoom('first')).toBe(false)
+  })
+
+  it('push refuses a version longer than a deck may be', async () => {
+    await expect(push(token({ body: { stubs: [stub('long', 'x'.repeat(MAX_DECK_LENGTH + 1))], apply: true } }))).rejects.toMatchObject({ statusCode: 400 })
+    expect(await testRows().select('decks', { slug: 'long' })).toEqual([])
   })
 
   it('push indexes the images of each version it writes, so the deck serves them', async () => {

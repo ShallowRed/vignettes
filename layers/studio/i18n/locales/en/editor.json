@@ -29,7 +29,16 @@
       "saving": "Saving…",
       "switchToSolo": "Switch to solo",
       "solo": "Solo",
-      "soloTooltip": "Solo mode: you save the draft yourself, and the save is refused when a more recent version exists."
+      "soloTooltip": "Solo mode: you save the draft yourself, and the save is refused when a more recent version exists.",
+      "ended": {
+        "refused": "This tab has no access to the shared draft: reload the page.",
+        "tooLong": "This deck is longer than the shared draft accepts: switch to solo to shorten it.",
+        "closed": "The connection of this tab to the shared draft is closed: copy the text of the tab if needed, then reload the page."
+      },
+      "reload": "Reload",
+      "copyLocal": "Copy the text of this tab",
+      "copied": "Text copied",
+      "copyFailed": "The copy failed: select the text in the editor."
     },
     "save": {
       "saved": "Draft saved",
@@ -103,6 +112,7 @@
     },
     "imageUpload": {
       "failed": "The image “{name}” was not uploaded",
+      "notInserted": "The image “{name}” was not inserted: this tab has no access to the shared draft.",
       "type": "The studio accepts images in the formats {formats}.",
       "size": "The image weighs {size}\u00a0MB, over the {limit}\u00a0MB limit.",
       "content": "The content of the file does not match its extension or is not a readable image.",

@@ -1,7 +1,9 @@
 import type { Extension } from '@codemirror/state'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import type { Peer } from '../utils/editor-peers'
+import { REFUSAL_REASONS, STOPPING_CLOSES } from '#shared/collab/close-reasons'
 import { keymap } from '@codemirror/view'
+import { collabUndoKeys, collabWriteGate } from '../utils/collab-write-gate'
 import { awarenessPeers, peerColor } from '../utils/editor-peers'
 import { useAppSession } from './useAppSession'
 
@@ -21,6 +23,14 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
   const { user } = useAppSession()
 
   const status = ref<'connecting' | 'connected' | 'disconnected'>('connecting')
+  // Why the shared draft stopped for good: the server refused the room, or
+  // refused it for a published version past the deck limit, or it closed the
+  // connection of this tab, whose document holds another lineage than the stored
+  // draft, or whose room passed the deck limit. The page offers to reload, or to
+  // switch to solo for a deck past the limit.
+  const ended = ref<'refused' | 'tooLong' | 'closed' | null>(null)
+  // The text of this tab when the draft stopped, for whoever wants to copy it.
+  const localText = ref('')
   const docSynced = ref(false)
   const synced = ref(true)
   // The other connected people, one entry per account.
@@ -49,8 +59,26 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
       document: ydoc,
     })
 
+    const ytext = ydoc.getText(DECK_TEXT_FIELD)
+    // Retrying would meet the same answer: the provider stops, and the editor
+    // keeps the text it has.
+    const stop = (reason: 'refused' | 'tooLong' | 'closed') => {
+      localText.value = ytext.toString()
+      ended.value = reason
+      status.value = 'disconnected'
+      provider.destroy()
+    }
+
     provider.on('status', (e: { status: string }) => {
-      status.value = e.status === 'connected' ? 'connected' : 'connecting'
+      if (!ended.value)
+        status.value = e.status === 'connected' ? 'connected' : 'connecting'
+    })
+    // The server refuses to load the room (no deck, a deck too long, another deck
+    // than the one this socket was opened for, or storage unavailable).
+    provider.on('authenticationFailed', ({ reason }: { reason: string }) => stop(reason === REFUSAL_REASONS.tooLong ? 'tooLong' : 'refused'))
+    provider.on('close', ({ event }: { event: { reason?: string } }) => {
+      if (event.reason && STOPPING_CLOSES.includes(event.reason))
+        stop('closed')
     })
     provider.on('disconnect', () => {
       status.value = 'disconnected'
@@ -72,7 +100,6 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
       catch {}
     })
 
-    const ytext = ydoc.getText(DECK_TEXT_FIELD)
     const syncRaw = () => {
       raw.value = ytext.toString()
     }
@@ -92,9 +119,10 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
     // yCollab wires sync + local awareness; yRemoteSelectionsTheme is
     // y-codemirror.next's own styling for remote carets/selections.
     extensions.value = [
+      collabWriteGate(ydoc, () => docSynced.value && !ended.value),
       yCollab(ytext, provider.awareness),
       yRemoteSelectionsTheme,
-      keymap.of(yUndoManagerKeymap),
+      keymap.of(collabUndoKeys(yUndoManagerKeymap)),
     ]
 
     cleanup = () => {
@@ -136,6 +164,8 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
 
   return {
     status,
+    ended,
+    localText,
     docSynced,
     peers,
     extensions,

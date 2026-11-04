@@ -1,5 +1,8 @@
+import type { Connection, Document } from '@hocuspocus/server'
 import type { DraftStore } from '@vignettes/core/deck'
-import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
+import type { DraftFollow } from './content-push'
+import { CLOSE_REASONS, REFUSAL_REASONS } from '#shared/collab/close-reasons'
+import { DraftLineageError, followOutcome, followText, includesState, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { Hocuspocus } from '@hocuspocus/server'
 import { isDeckSlug, MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import * as Y from 'yjs'
@@ -12,17 +15,17 @@ const TEXT_FIELD = 'codemirror'
 /**
  * The socket is authorized for ONE deck at upgrade time (`/collab?deck=<slug>`);
  * the route hands that deck, and the login editing, to Hocuspocus as the
- * connection context. Hocuspocus
- * lets a client name any document afterwards, so the load and message hooks
- * check the requested name against the pinned deck. The store hook does not:
- * only updates that passed the message check reach a document, and the earlier
- * store-time check (on request parameters the hook never receives) silently
- * dropped every save.
+ * connection context. Hocuspocus lets a client name any document afterwards:
+ * `onAuthenticate` checks the requested name against the pinned deck, and
+ * Hocuspocus hands a message only to a document its connection authenticated
+ * for.
  */
 export interface CollabContext {
   deck: string
   /** Login of the account behind the socket; null for a content token. */
   user?: string | null
+  /** False for a write of the server that leaves no snapshot of its own. */
+  snapshot?: boolean
 }
 
 export function isPinnedTo(context: CollabContext | undefined, documentName: string): boolean {
@@ -34,24 +37,109 @@ export function isPinnedTo(context: CollabContext | undefined, documentName: str
 
 let instance: Hocuspocus | undefined
 
-// One seed at a time per deck: Hocuspocus loads a document once, but two clients
-// racing the very first connection could both find an empty text and stack the
-// published markdown twice. Serialising the seed makes the second wait.
-const seeding = new Map<string, Promise<void>>()
+/** The draft store of the server, which keeps one Yjs lineage per draft. */
+export interface CollabDraftStore extends Omit<DraftStore, 'update'> {
+  /**
+   * Merges a state of the room into the stored draft, in the transaction of the
+   * adapter; throws `DraftLineageError` for an update of another lineage, an
+   * empty one, or a deck without a stored draft.
+   */
+  save: (slug: string, ydoc: Uint8Array) => Promise<void>
+}
 
 /**
- * The draft store backing collab sessions (gates the /collab route). Each save
- * records the images the text references in the media index.
+ * The draft store backing collab sessions (gates the /collab route), and the
+ * one way the server writes a draft. Each write records the images the text
+ * references in the media index.
  */
-export function useDraftStore(): DraftStore {
+export function useDraftStore(): CollabDraftStore {
   const store = useStores().drafts
   return {
-    ...store,
+    isWritable: () => store.isWritable(),
+    load: slug => store.load(slug),
+    stamp: slug => store.stamp(slug),
     async save(slug, ydoc) {
-      await store.save(slug, ydoc)
+      await store.update(slug, stored => mergeDraftUpdate(stored, ydoc))
       await useMediaIndex().recordFromMarkdown(slug, yDocUpdateToMarkdown(ydoc))
     },
+    async create(slug, ydoc) {
+      const created = await store.create(slug, ydoc)
+      if (created)
+        await useMediaIndex().recordFromMarkdown(slug, yDocUpdateToMarkdown(ydoc))
+      return created
+    },
   }
+}
+
+/**
+ * Whether a room of the deck is open or loading. The trash, the purge and the
+ * solo save are refused meanwhile.
+ */
+export function hasRoom(slug: string): boolean {
+  const server = useCollabServer()
+  return server.documents.has(slug) || server.loadingDocuments.has(slug)
+}
+
+/**
+ * A refusal Hocuspocus hands to the client: its `reason` reaches the provider's
+ * `authenticationFailed` event.
+ */
+function refusal(reason: typeof REFUSAL_REASONS[keyof typeof REFUSAL_REASONS]): Error {
+  return Object.assign(new Error(reason), { reason })
+}
+
+// The y-protocols type of a sync step 1 message (`messageYjsSyncStep1`).
+const SYNC_STEP_1 = 0
+
+// The connections whose sync step 1 shares the lineage of the room, and those
+// refused: Hocuspocus goes on handling the messages queued after a refusal.
+const validated = new WeakSet<object>()
+const refused = new WeakSet<object>()
+
+type CloseReason = typeof CLOSE_REASONS[keyof typeof CLOSE_REASONS]
+
+/**
+ * Ends a connection with one of `CLOSE_REASONS`, on which the client stops.
+ * `Connection.close` sends the reason to the client on a socket that stays
+ * open, and the socket closes after it: a tab that reads the reason shows its
+ * notice, any other tab goes offline. A socket serves one deck (`isPinnedTo`).
+ */
+function closeConnection(connection: Connection, reason: CloseReason): void {
+  connection.close({ code: 4409, reason })
+  connection.webSocket.close(4409, reason)
+}
+
+function closeRoom(document: Document, reason: CloseReason): void {
+  for (const connection of document.getConnections())
+    closeConnection(connection, reason)
+}
+
+function lineageRefusal(connection: Connection): Error {
+  if (!refused.has(connection)) {
+    refused.add(connection)
+    closeConnection(connection, CLOSE_REASONS.lineage)
+  }
+  return Object.assign(new Error(CLOSE_REASONS.lineage), { reason: CLOSE_REASONS.lineage })
+}
+
+/**
+ * The stored draft of a deck that has none yet: the published text, created
+ * once. When two loads race (two containers during a deployment), `create`
+ * writes the first and the second reads it, so every room holds one lineage.
+ */
+async function firstDraft(slug: string): Promise<Uint8Array> {
+  const loaded = await publishedSource.load(slug)
+  // A deck in the trash has no published version to load.
+  if (!loaded)
+    throw refusal(REFUSAL_REASONS.notFound)
+  if (loaded.raw.length > MAX_DECK_LENGTH)
+    throw refusal(REFUSAL_REASONS.tooLong)
+  const drafts = useDraftStore()
+  await drafts.create(slug, markdownToYDocUpdate(loaded.raw))
+  const stored = await drafts.load(slug)
+  if (!stored)
+    throw new Error(`[collab] the draft of "${slug}" vanished after its creation`)
+  return stored
 }
 
 /** The snapshots of the drafts (the fine history between two publications). */
@@ -119,83 +207,88 @@ export async function currentDraftText(slug: string): Promise<string | null> {
 
 /**
  * Lazy Hocuspocus singleton speaking only to the content ports: drafts load and
- * persist as opaque Y.Doc binaries (DraftStore); a deck with no draft seeds from
- * its published markdown (ContentSource). Publishing is a separate explicit act.
+ * persist as opaque Y.Doc binaries (DraftStore); a deck with no draft gets one
+ * from its published markdown (ContentSource) before its room opens. Publishing
+ * is a separate explicit act.
  * Document names are deck slugs (`isDeckSlug`).
  */
 export function useCollabServer(): Hocuspocus {
   instance ??= new Hocuspocus({
     name: 'vignettes-collab',
 
-    async onLoadDocument({ documentName, document, context }) {
-      if (!isDeckSlug(documentName)) {
-        console.warn(`[collab] invalid document name "${documentName}"`)
-        return document
-      }
-      // Serve no content to a document the socket wasn't authorized for.
+    // Hocuspocus calls it for each connection and each document it names, and
+    // its refusal stays with that connection. It reads nothing from storage: an
+    // await here would let a direct connection unload the room meanwhile, and
+    // the client would join a destroyed document.
+    async onAuthenticate({ documentName, context }) {
       if (!isPinnedTo(context, documentName))
-        return document
+        throw refusal(REFUSAL_REASONS.notPinned)
+    },
 
-      const draft = await useDraftStore().load(documentName)
-      if (draft) {
-        // CRDT merge: applying the stored update is idempotent by construction.
-        Y.applyUpdate(document, draft)
-        return document
-      }
-
-      const ytext = document.getText(TEXT_FIELD)
-      // Idempotent seed: reconnect/unload cycles re-enter here; without the
-      // length guards (before AND after the await) the file gets stacked onto
-      // the live text, turning one deck into N copies.
-      if (ytext.length > 0)
-        return document
-      const pending = seeding.get(documentName)
-      if (pending) {
-        await pending
-        return document
-      }
-      const seed = (async () => {
-        const loaded = await publishedSource.load(documentName)
-        if (!loaded) {
-          console.warn(`[collab] no markdown for "${documentName}"`)
-          return
-        }
-        if (ytext.length > 0)
-          return
-        ytext.insert(0, loaded.raw)
-      })()
-      seeding.set(documentName, seed)
-      try {
-        await seed
-      }
-      finally {
-        seeding.delete(documentName)
-      }
+    // Hocuspocus loads a document once per process and starts listening to its
+    // updates afterwards: a seed inserted here would only be stored at the first
+    // keystroke, and a tab kept across an unload would merge its own copy into
+    // the next seed. The room applies the stored draft, created first if needed.
+    async onLoadDocument({ documentName, document }) {
+      if (!isDeckSlug(documentName))
+        throw refusal(REFUSAL_REASONS.notFound)
+      const stored = await useDraftStore().load(documentName) ?? await firstDraft(documentName)
+      Y.applyUpdate(document, stored)
       return document
     },
 
-    // A document is loaded once and then shared by every connection that names
-    // it, so the load-time check alone would let a socket pinned to deck A push
-    // updates into an already-open deck B. Throwing here closes that socket.
-    async beforeHandleMessage({ documentName, context }) {
-      if (!isPinnedTo(context, documentName))
-        throw new Error(`Socket not authorized for "${documentName}"`)
+    // A tab holds the Y.Doc it synced, across a disconnection. Its first sync
+    // message carries the state vector of that document: one that shares no
+    // client with the room comes from another lineage, and merging it would add
+    // its text to the room's. Hocuspocus documents this hook as synchronous: it
+    // reads the message and the room only, with no storage access.
+    async beforeSync({ type, payload, document, connection }) {
+      if (type === SYNC_STEP_1) {
+        if (!sharesLineage(payload, Y.encodeStateVector(document))) {
+          console.warn(`[collab] refused a tab of another lineage on "${document.name}"`)
+          throw lineageRefusal(connection)
+        }
+        validated.add(connection)
+        return
+      }
+      if (!validated.has(connection))
+        throw lineageRefusal(connection)
     },
 
-    // A document past the limit closes its connections unstored: the editors
-    // reconnect to the draft last stored.
-    async onChange({ documentName, document, context, instance }) {
+    async beforeHandleMessage({ connection }) {
+      if (refused.has(connection))
+        throw lineageRefusal(connection)
+    },
+
+    // A document past the limit closes its connections unstored: the editor
+    // stops and offers to reload the draft last stored.
+    async onChange({ documentName, document, context }) {
       noteContributor(documentName, (context as CollabContext | undefined)?.user)
       if (document.getText(TEXT_FIELD).length > MAX_DECK_LENGTH) {
         console.warn(`[collab] "${documentName}" holds more than ${MAX_DECK_LENGTH} characters: connections closed`)
-        instance.closeConnections(documentName)
+        closeRoom(document, CLOSE_REASONS.tooLong)
       }
     },
 
-    async onStoreDocument({ documentName, document, clientsCount }) {
+    async onStoreDocument({ documentName, document, clientsCount, lastContext }) {
       if (!isDeckSlug(documentName) || document.getText(TEXT_FIELD).length > MAX_DECK_LENGTH)
         return
-      await useDraftStore().save(documentName, Y.encodeStateAsUpdate(document))
+      try {
+        await useDraftStore().save(documentName, Y.encodeStateAsUpdate(document))
+      }
+      catch (error) {
+        if (!(error instanceof DraftLineageError))
+          throw error
+        // Hocuspocus 4.4 tries no second store, and unloads the room when its
+        // last client leaves: the text of the room goes to the history, and its
+        // editors reload the stored draft.
+        console.warn(`[collab] "${documentName}": ${error.message}; the text of the room is kept as a snapshot`)
+        await recordDraftSnapshot(documentName, document.getText(TEXT_FIELD).toString(), { force: true })
+        closeRoom(document, CLOSE_REASONS.lineage)
+        return
+      }
+      if ((lastContext as CollabContext | undefined)?.snapshot === false)
+        return
       // The last editor leaving closes the editing session: keep its final state.
       await recordDraftSnapshot(documentName, document.getText(TEXT_FIELD).toString(), { force: clientsCount === 0 })
     },
@@ -217,37 +310,103 @@ export async function storePendingRooms(): Promise<void> {
 }
 
 /**
+ * Ends a write of the server through a direct connection: the store runs at
+ * once, the room unloads once when no one else holds it, and the stored draft
+ * must hold the state that the write reached.
+ */
+async function endDirectWrite(slug: string, connection: Awaited<ReturnType<Hocuspocus['openDirectConnection']>>): Promise<void> {
+  const server = useCollabServer()
+  const document = connection.document!
+  const written = Y.encodeStateVector(document)
+  // Hocuspocus 4.4 unloads a room twice after an immediate unload: the second
+  // call, after the store, removes by name a room opened in between. The store
+  // runs here and unloads the room once.
+  await connection.disconnect({ unloadImmediately: false })
+  await server.debouncer.executeNow(`onStoreDocument-${slug}`)
+  // The store unloads an empty room on the next macrotask: the caller's next
+  // write meets no room.
+  await new Promise(resolve => setTimeout(resolve, 0))
+  await server.unloadingDocuments.get(slug)
+  const stored = await useDraftStore().load(slug)
+  if (stored && includesState(stored, written))
+    return
+  // Hocuspocus keeps in memory a room whose store failed. A room with no
+  // editor unloads, and the next one loads the stored draft.
+  if (server.documents.get(slug) === document)
+    await server.unloadDocument(document)
+  throw new Error(`[collab] the draft of "${slug}" does not hold the text just written`)
+}
+
+/**
+ * Writes `raw` as the text of the draft, in its lineage: through a direct
+ * connection to the room, which loads the stored draft or joins the open room,
+ * so every editor receives the change and a tab that holds the lineage merges
+ * one copy. A deck with neither draft nor published version gets its first
+ * draft. The write leaves no snapshot; the callers record theirs. Throws when
+ * the stored draft does not hold the write.
+ */
+export async function writeDraftText(slug: string, raw: string, by?: string | null): Promise<void> {
+  const drafts = useDraftStore()
+  if (!await drafts.load(slug) && !await publishedSource.load(slug) && await drafts.create(slug, markdownToYDocUpdate(raw)))
+    return
+  const context: CollabContext = { deck: slug, user: by ?? null, snapshot: false }
+  const connection = await useCollabServer().openDirectConnection(slug, context).catch(async (error: { reason?: string }) => {
+    // A published version past the limit opens no room, and no tab holds one.
+    if (error.reason === REFUSAL_REASONS.tooLong && await drafts.create(slug, markdownToYDocUpdate(raw)))
+      return null
+    throw error
+  })
+  if (!connection)
+    return
+  await connection.transact(document => replaceText(document.getText(TEXT_FIELD), raw))
+  await endDirectWrite(slug, connection)
+}
+
+/**
+ * After a new published version `next`, the draft follows it by `followOutcome`:
+ * `'updated'` when it holds `previous` or `next`, `'kept'` when it holds changes
+ * not published, `'none'` for a deck without a draft, which gets none. An open
+ * or loading room receives the text through a direct connection. Without
+ * `apply`, says what it would do and writes nothing.
+ */
+export async function followPublication(slug: string, previous: string | null, next: string, { apply }: { apply: boolean }): Promise<DraftFollow> {
+  const server = useCollabServer()
+  const loading = server.loadingDocuments.has(slug)
+  const live = server.documents.get(slug)
+  const text = live ? live.getText(TEXT_FIELD).toString() : await storedDraftText(slug)
+  if (text === null && !loading)
+    return 'none'
+  // A loading room has no text to read yet: the connection reads it.
+  const outcome = text === null ? 'replace' : followOutcome(text, previous, next)
+  if (outcome === 'current')
+    return 'updated'
+  if (outcome === 'kept')
+    return 'kept'
+  if (!apply)
+    return 'updated'
+  const connection = await server.openDirectConnection(slug, { deck: slug, user: null, snapshot: false })
+  let follow: DraftFollow = 'updated'
+  await connection.transact((document) => {
+    if (followText(document.getText(TEXT_FIELD), previous, next) === 'kept')
+      follow = 'kept'
+  })
+  await endDirectWrite(slug, connection)
+  return follow
+}
+
+/** Tells the editors of an open room that the deck has a new published version, so their header reads it again. */
+export function announcePublication(slug: string): void {
+  useCollabServer().documents.get(slug)?.broadcastStateless(JSON.stringify({ type: 'published', at: Date.now() }))
+}
+
+/**
  * Replace the whole draft text of a deck (restoring a version or a snapshot).
  * The text being replaced is kept as a snapshot first, so the restore can be
- * undone from the history. The change goes through the live room when one is
- * open, so every editor receives it and Hocuspocus stores it; otherwise it is
- * applied to the stored document, whose lineage a client reconnecting later
- * still merges with.
+ * undone from the history.
  */
 export async function replaceDraft(slug: string, raw: string, by?: string | null): Promise<void> {
-  // The room is read once: the text kept and the text replaced are the same.
-  const live = useCollabServer().documents.get(slug)
-  const current = live ? live.getText(TEXT_FIELD).toString() : await storedDraftText(slug)
+  const current = await currentDraftText(slug)
   if (current !== null && current !== raw)
     await recordDraftSnapshot(slug, current, { by, force: true })
-  if (live) {
-    const ytext = live.getText(TEXT_FIELD)
-    live.transact(() => {
-      ytext.delete(0, ytext.length)
-      ytext.insert(0, raw)
-    })
-    return
-  }
-  const drafts = useDraftStore()
-  const stored = await drafts.load(slug)
-  const doc = new Y.Doc()
-  if (stored)
-    Y.applyUpdate(doc, stored)
-  const ytext = doc.getText(TEXT_FIELD)
-  doc.transact(() => {
-    ytext.delete(0, ytext.length)
-    ytext.insert(0, raw)
-  })
-  await drafts.save(slug, Y.encodeStateAsUpdate(doc))
-  doc.destroy()
+  await writeDraftText(slug, raw, by)
 }

@@ -1,6 +1,6 @@
 import { isDeckSlug } from '@vignettes/core/deck'
 import { assertOwner } from '../../../../utils/access'
-import { useCollabServer } from '../../../../utils/collab'
+import { hasRoom } from '../../../../utils/collab'
 import { useDeckMeta } from '../../../../utils/sources'
 
 /**
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid slug' })
   }
 
-  if (useCollabServer().documents.has(slug)) {
+  if (hasRoom(slug)) {
     throw createError({ statusCode: 409, statusMessage: 'A collab session is open for this deck; close it first' })
   }
 

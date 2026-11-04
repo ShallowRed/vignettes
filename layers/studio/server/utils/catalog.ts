@@ -2,6 +2,7 @@ import type { PresentationListItem, TitleSlide } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import type { H3Event } from 'h3'
 import type { DeckMetaRecord } from '../db/ports'
+import { createHash } from 'node:crypto'
 import { canList, canShare, isPrivileged, mayEdit } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { readTitleSlide, titleSlidePreview, UNGROUPED_PROJECT } from '#shared/presentations'
@@ -10,26 +11,40 @@ import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
 import { useStores } from './db'
-import { projectDirectory, useDbContent, useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
+import { projectDirectory, useDeckMeta, useGrants, useProjectPermissionStore } from './sources'
 import { loadTenantThemes } from './themes'
 
 /**
- * Decks whose draft holds changes the published version does not. Drafts saved
- * since the publish are the candidates (one query); a text comparison confirms
- * them, because a draft seeded from the published text is newer without differing.
+ * Whether the draft of a deck differs from its published version, by deck: the
+ * key is the published version id and the SHA-256 of the draft bytes, and an
+ * entry is valid while both stay the same.
  */
-export async function unpublishedChanges(candidates: Set<string>): Promise<Set<string>> {
-  if (candidates.size === 0)
-    return new Set()
-  const changed = new Set<string>()
-  for (const slug of await useStores().catalog.draftsSincePublish()) {
-    if (!candidates.has(slug))
-      continue
-    const [draft, published] = await Promise.all([useDraftStore().load(slug), useDbContent().source.load(slug)])
-    if (draft && published && yDocUpdateToMarkdown(draft) !== published.raw)
-      changed.add(slug)
+const draftComparisons = new Map<string, { key: string, changed: boolean }>()
+
+/**
+ * Decks whose draft holds changes the published version does not, among the
+ * candidates, given as slug → id of the published version: every draft is
+ * compared with the text of that version, whatever their dates.
+ */
+export async function unpublishedChanges(candidates: Map<string, number>): Promise<Set<string>> {
+  const drafts = useDraftStore()
+  const entries = (await Promise.all([...candidates].map(async ([slug, versionId]) => {
+    const draft = await drafts.load(slug)
+    return draft ? [{ slug, draft, versionId, key: `${versionId}:${createHash('sha256').update(draft).digest('hex')}` }] : []
+  }))).flat()
+  const missing = entries.filter(entry => draftComparisons.get(entry.slug)?.key !== entry.key)
+  if (missing.length) {
+    const texts = new Map((await useStores().catalog.versionTexts(missing.map(entry => entry.versionId))).map(({ id, raw }) => [id, raw]))
+    for (const { slug, draft, versionId, key } of missing) {
+      const published = texts.get(versionId)
+      if (published !== undefined)
+        draftComparisons.set(slug, { key, changed: yDocUpdateToMarkdown(draft) !== published })
+    }
   }
-  return changed
+  return new Set(entries.filter(({ slug, key }) => {
+    const comparison = draftComparisons.get(slug)
+    return comparison?.key === key && comparison.changed
+  }).map(entry => entry.slug))
 }
 
 /** What a catalog card shows of a deck's content, read from its markdown. */
@@ -39,9 +54,11 @@ interface VersionStats {
 }
 
 interface DeckStats extends VersionStats {
+  /** The published version. */
+  versionId: number
   /** Latest of the metadata edit and the publish, in milliseconds. */
   updatedAt: number
-  /** Last draft save, in milliseconds, which counts only for whoever may edit. */
+  /** Last draft save, in milliseconds, which counts for whoever may edit, when the draft differs from the version. */
   draftSavedAt?: number
 }
 
@@ -59,7 +76,7 @@ function readVersionStats(raw: string): VersionStats {
   }
 }
 
-/** Slide count and dates of every published deck; the markdown is read once per version. */
+/** Slide count, version and dates of every published deck; the markdown is read once per version. */
 async function deckStats(): Promise<Map<string, DeckStats>> {
   const { catalog } = useStores()
   const rows = await catalog.publishedDecks()
@@ -73,6 +90,11 @@ async function deckStats(): Promise<Map<string, DeckStats>> {
     if (!published.has(id))
       versionStats.delete(id)
   }
+  const publishedSlugs = new Set(rows.map(row => row.slug))
+  for (const slug of draftComparisons.keys()) {
+    if (!publishedSlugs.has(slug))
+      draftComparisons.delete(slug)
+  }
 
   const stats = new Map<string, DeckStats>()
   for (const row of rows) {
@@ -81,6 +103,7 @@ async function deckStats(): Promise<Map<string, DeckStats>> {
       continue
     stats.set(row.slug, {
       ...version,
+      versionId: row.versionId,
       updatedAt: Math.max(row.updatedAt.getTime(), row.publishedAt.getTime()),
       draftSavedAt: row.draftSavedAt?.getTime(),
     })
@@ -94,11 +117,12 @@ function deckPreview(stats: DeckStats | undefined, theme: string): Pick<Presenta
   return { preview: titleSlidePreview(stats.titleSlide, resolveThemeName(theme)) }
 }
 
-function deckDates(stats: DeckStats | undefined, canEdit: boolean, unpublishedDraftAt?: number | null): Pick<PresentationListItem, 'slideCount' | 'updatedAt'> {
-  // A deck never published dates from its draft, which only an editor sees.
+// A deck never published dates from its draft, which only an editor sees; a
+// published deck dates from its draft when the draft differs from the version.
+function deckDates(stats: DeckStats | undefined, draftChanged: boolean, unpublishedDraftAt?: number | null): Pick<PresentationListItem, 'slideCount' | 'updatedAt'> {
   if (!stats)
     return unpublishedDraftAt ? { updatedAt: unpublishedDraftAt } : {}
-  const draftSavedAt = canEdit ? stats.draftSavedAt ?? 0 : 0
+  const draftSavedAt = draftChanged ? stats.draftSavedAt ?? 0 : 0
   return { slideCount: stats.slideCount, updatedAt: Math.max(stats.updatedAt, draftSavedAt) }
 }
 
@@ -124,8 +148,11 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   // server accepts.
   const canEdit = (deck: DeckMetaRecord) => mayEdit(actor.role, grants.get(deck.slug), deck.lifecycle)
   const mayShare = (slug: string) => canShare(actor.role, grants.get(slug))
-  const changed = await unpublishedChanges(new Set(decks.filter(d => d.published && canEdit(d)).map(d => d.slug)))
   const stats = await deckStats()
+  const changed = await unpublishedChanges(new Map(decks.flatMap((deck) => {
+    const versionId = deck.published && canEdit(deck) ? stats.get(deck.slug)?.versionId : undefined
+    return versionId === undefined ? [] : [[deck.slug, versionId] as const]
+  })))
   const drafts = useDraftStore()
   const unpublishedDrafts = new Map(await Promise.all(decks
     .filter(d => !d.published && canEdit(d))
@@ -148,7 +175,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       family: deck.family,
       variantLabel: deck.variantLabel,
       supersededBy: deck.supersededBy,
-      ...deckDates(stats.get(deck.slug), canEdit(deck), unpublishedDrafts.get(deck.slug)),
+      ...deckDates(stats.get(deck.slug), changed.has(deck.slug), unpublishedDrafts.get(deck.slug)),
       ...deckPreview(stats.get(deck.slug), deck.theme || fallbackTheme),
       ...(canEdit(deck) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),

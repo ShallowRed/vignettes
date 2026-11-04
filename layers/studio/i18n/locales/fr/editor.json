@@ -29,7 +29,16 @@
       "saving": "Enregistrement…",
       "switchToSolo": "Passer en solo",
       "solo": "Solo",
-      "soloTooltip": "Mode solo : vous enregistrez le brouillon vous-même, et l'enregistrement est refusé quand une version plus récente existe."
+      "soloTooltip": "Mode solo : vous enregistrez le brouillon vous-même, et l'enregistrement est refusé quand une version plus récente existe.",
+      "ended": {
+        "refused": "Cet onglet n'a pas accès au brouillon partagé : rechargez la page.",
+        "tooLong": "Ce deck dépasse la longueur que le brouillon partagé accepte : passez en solo pour le raccourcir.",
+        "closed": "La connexion de cet onglet au brouillon partagé est fermée : copiez le texte de l'onglet si besoin, puis rechargez la page."
+      },
+      "reload": "Recharger",
+      "copyLocal": "Copier le texte de cet onglet",
+      "copied": "Texte copié",
+      "copyFailed": "La copie a échoué : sélectionnez le texte dans l'éditeur."
     },
     "save": {
       "saved": "Brouillon enregistré",
@@ -103,6 +112,7 @@
     },
     "imageUpload": {
       "failed": "L'image « {name} » n'a pas été téléversée",
+      "notInserted": "L'image « {name} » n'a pas été insérée : cet onglet n'a pas accès au brouillon partagé.",
       "type": "Le studio accepte les images aux formats {formats}.",
       "size": "L'image pèse {size}\u00a0Mo, au-delà de la limite de {limit}\u00a0Mo.",
       "content": "Le contenu du fichier ne correspond pas à son extension ou n'est pas une image lisible.",

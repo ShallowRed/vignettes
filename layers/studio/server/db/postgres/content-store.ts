@@ -12,6 +12,11 @@ import { decks, deckVersions } from './schema.ts'
  */
 export function createDbContent(db: PostgresDb): DeckContent {
   return {
+    async publishedVersion(slug) {
+      const [row] = await db.select({ id: decks.publishedVersionId }).from(decks).where(eq(decks.slug, slug))
+      return row?.id ?? null
+    },
+
     async publishedAt(slug) {
       const [row] = await db.select({ at: deckVersions.publishedAt })
         .from(decks)

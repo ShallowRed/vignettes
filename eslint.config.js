@@ -47,6 +47,14 @@ const REQUEST_HOST = [
   { selector: `CallExpression[callee.property.name='get'][callee.object.property.name='headers'][arguments.0.value=${HOST_HEADER}]`, message: REQUEST_HOST_MESSAGE },
 ]
 
+// One Yjs lineage per draft: the server writes a draft through collab.ts, whose
+// store merges each write into the stored draft and refuses another lineage.
+const DRAFT_STORE_MESSAGE = 'Write a draft through useDraftStore() or writeDraftText() of server/utils/collab.ts, which keep its Yjs lineage.'
+const DRAFT_STORE = [
+  { selector: 'MemberExpression[property.name="drafts"][object.type="CallExpression"][object.callee.name="useStores"]', message: DRAFT_STORE_MESSAGE },
+  { selector: 'VariableDeclarator[init.callee.name="useStores"] > ObjectPattern > Property[key.name="drafts"]', message: DRAFT_STORE_MESSAGE },
+]
+
 const PROCESS_ENV = {
   object: 'process',
   property: 'env',
@@ -112,7 +120,12 @@ export default antfu({
   },
 }, {
   files: ['layers/studio/server/**'],
-  ignores: ['layers/studio/server/utils/deck-origin.ts'],
+  ignores: ['layers/studio/server/utils/deck-origin.ts', 'layers/studio/server/utils/collab.ts'],
+  rules: {
+    'no-restricted-syntax': ['error', ...REQUEST_HOST, ...DRAFT_STORE],
+  },
+}, {
+  files: ['layers/studio/server/utils/collab.ts'],
   rules: {
     'no-restricted-syntax': ['error', ...REQUEST_HOST],
   },

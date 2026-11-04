@@ -18,14 +18,18 @@
  * axes follow the remote, a trashed local deck is refused, an identical text is
  * a no-op. The access password never travels: a semi-private deck lands
  * without its hash, closed to everyone but a privileged account. A folder the
- * local database lacks is reported and the deck lands without one.
+ * local database lacks is reported and the deck lands without one. The local
+ * draft of a republished deck follows the new version when it held the
+ * replaced one.
  */
 
+import type { Followed } from './lib/follow-drafts.ts'
 import process from 'node:process'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { describeDatabase } from '../layers/studio/server/db/config.ts'
 import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 import { scriptDatabaseConfig } from './lib/database.ts'
+import { followDrafts } from './lib/follow-drafts.ts'
 import { callInstance, instanceFromEnv } from './lib/instance.ts'
 
 const args = process.argv.slice(2)
@@ -68,6 +72,7 @@ const { archive } = database.stores
 const locals = new Map((await archive.decks()).map(row => [row.slug, row]))
 const localProjects = new Set((await archive.projects()).map(row => row.slug))
 const at = new Date()
+const republished: Followed[] = []
 const LABEL: Record<string, string> = {
   create: 'à créer',
   republish: 'nouvelle version publiée, axes du catalogue alignés',
@@ -112,7 +117,13 @@ for (const [i, deck] of pulled.entries()) {
     },
     { kind: 'version', slug, raw: deck.raw },
   ], { by: 'content-pull', at })
+  if (action === 'republish')
+    republished.push({ slug, previous: local!.raw, next: deck.raw })
 }
+
+const followed = await followDrafts(database.stores.rewrites, republished, at)
+if (followed.length)
+  console.log(`brouillons mis à jour : ${followed.join(', ')}`)
 
 await database.close()
 console.log(APPLY ? '\n✅ Rapatrié.' : '\nDry-run terminé. Relancer avec --apply pour écrire.')

@@ -40,6 +40,7 @@ export default defineEventHandler(async (event) => {
       stamp: await useDraftStore().stamp(slug),
       publishedRaw: published?.raw ?? null,
       publishedAt: (await store.publishedAt(slug))?.getTime() ?? null,
+      publishedVersion: await store.publishedVersion(slug),
     } satisfies DeckDraftSource
   }
 

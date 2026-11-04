@@ -1,6 +1,6 @@
 import type { ArchivedDeckAxes, ArchiveWrite, ContentArchive } from '../db/ports'
 import { isAccessPasswordHash } from '#shared/access/password-shape'
-import { resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
+import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 import { inFolder } from './templates'
 
 /** A stub of the content space, sent by `content:push`. */
@@ -15,11 +15,26 @@ export interface PushedStub {
 
 export type PushAction = 'create' | 'republish' | 'identical' | 'trashed'
 
+/**
+ * What a republish did to the draft of the deck: it follows the new version
+ * (`updated`), it keeps changes the editor did not publish (`kept`), the deck
+ * has no draft (`none`), or the follow failed (`failed`).
+ */
+export type DraftFollow = 'updated' | 'kept' | 'none' | 'failed'
+
+/** A deck the push gives a new published version: the version it replaces (null for a deck never published) and the text written. */
+export interface Republished {
+  slug: string
+  previous: string | null
+  raw: string
+}
+
 export interface PushResult {
   slug: string
   action: PushAction
   /** The folder the frontmatter names when the instance has none of that slug. */
   folderMissing: string | null
+  draft?: DraftFollow
 }
 
 /**
@@ -34,10 +49,11 @@ export interface PushResult {
  * a known deck filed elsewhere is refused, since the studio moves a deck with
  * its family. The caller checks that the folder exists.
  */
-export async function pushStubs(archive: ContentArchive, stubs: PushedStub[], { apply, folder }: { apply: boolean, folder?: string }): Promise<PushResult[]> {
+export async function pushStubs(archive: ContentArchive, stubs: PushedStub[], { apply, folder }: { apply: boolean, folder?: string }): Promise<{ results: PushResult[], republished: Republished[] }> {
   const decks = new Map((await archive.decks()).map(deck => [deck.slug, deck]))
   const projects = new Set((await archive.projects()).map(project => project.slug))
   const results: PushResult[] = []
+  const republished: Republished[] = []
   const writes: ArchiveWrite[] = []
 
   for (const stub of stubs) {
@@ -61,6 +77,11 @@ export async function pushStubs(archive: ContentArchive, stubs: PushedStub[], { 
     results.push({ slug, action, folderMissing: project && !projects.has(project) ? project : null })
     if (action === 'trashed' || action === 'identical')
       continue
+    // The checks of a publish from the editor, its length limit included: the
+    // collab room refuses a longer text.
+    prepareDeckWrite({ slug, raw })
+    if (action === 'republish')
+      republished.push({ slug, previous: row!.raw, raw })
 
     const axes: ArchivedDeckAxes = action === 'create'
       ? { title: title ?? slug, status: resolveDeckStatus(raw), lifecycle: 'live', project, theme, accessPasswordHash: accessPassword, unlisted: Boolean(meta.unlisted) || unlisted }
@@ -72,5 +93,5 @@ export async function pushStubs(archive: ContentArchive, stubs: PushedStub[], { 
 
   if (apply && writes.length)
     await archive.apply(writes, { by: 'content-push', at: new Date() })
-  return results
+  return { results, republished }
 }

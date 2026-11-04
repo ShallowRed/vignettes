@@ -56,7 +56,7 @@ describe('planRemoteRepublish', () => {
 describe('applyRemoteRepublish', () => {
   it('saves the draft with the loaded stamp, then publishes, for writable items only', async () => {
     const { deps, calls } = fakeRemote({
-      changed: { content: 'old', from: 'published', publishedRaw: 'old', stamp: 3 },
+      changed: { content: 'old', from: 'published', publishedRaw: 'old', publishedVersion: 12, stamp: 3 },
       same: { content: 'old', from: 'published', publishedRaw: stub('same', 'old').raw, stamp: null },
     })
     const plan = await planRemoteRepublish(deps, [stub('changed', 'new'), stub('same', 'old')])
@@ -64,7 +64,7 @@ describe('applyRemoteRepublish', () => {
     const results = await applyRemoteRepublish(deps, plan)
     expect(results).toEqual([{ slug: 'changed', bytes: 7 }])
     expect(calls).toEqual([
-      { method: 'PUT', url: 'https://x/api/presentations/changed', body: { raw: stub('changed', 'new').raw, stamp: 3 } },
+      { method: 'PUT', url: 'https://x/api/presentations/changed', body: { raw: stub('changed', 'new').raw, stamp: 3, publishedVersion: 12 } },
       { method: 'POST', url: 'https://x/api/presentations/changed/publish', body: undefined },
     ])
   })

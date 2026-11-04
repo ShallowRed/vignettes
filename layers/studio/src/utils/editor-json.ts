@@ -100,8 +100,10 @@ export function formatJsonBlocks(text: string, at?: number): JsonFormatResult {
   return { changes, blocks: targets.length, invalid, tours }
 }
 
-/** Formats the `json` block under the caret, or every `json` block, as one undoable change. */
-export function formatJson(view: EditorView): JsonFormatResult {
+/** Formats the `json` block under the caret, or every `json` block, as one undoable change; null in a read-only editor. */
+export function formatJson(view: EditorView): JsonFormatResult | null {
+  if (view.state.readOnly)
+    return null
   const result = formatJsonBlocks(view.state.doc.toString(), view.state.selection.main.head)
   if (result.changes.length)
     view.dispatch({ changes: result.changes })
@@ -110,7 +112,9 @@ export function formatJson(view: EditorView): JsonFormatResult {
 }
 
 /** The toast shown after formatting, or null when blocks were formatted without anything to say. */
-export function jsonFormatNotice(result: JsonFormatResult, t: Translate): { title: string, description?: string, color: 'neutral' | 'warning' } | null {
+export function jsonFormatNotice(result: JsonFormatResult | null, t: Translate): { title: string, description?: string, color: 'neutral' | 'warning' } | null {
+  if (!result)
+    return null
   if (!result.blocks)
     return { title: t('editor.json.noBlock'), color: 'neutral' }
   if (result.invalid)

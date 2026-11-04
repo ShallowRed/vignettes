@@ -3,6 +3,7 @@ import { DeckSlugSchema } from '#shared/presentations'
 import { z } from 'zod'
 import { assertContentScript } from '../../utils/access'
 import { actorLabel } from '../../utils/actor'
+import { announcePublication, followPublication } from '../../utils/collab'
 import { pushStubs } from '../../utils/content-push'
 import { useContentArchive, useProjectStore } from '../../utils/sources'
 
@@ -27,10 +28,20 @@ export default defineEventHandler(async (event) => {
   if (folder && !await useProjectStore().isLive(folder))
     throw createError({ statusCode: 400, statusMessage: `No folder "${folder}"` })
   try {
-    const results = await pushStubs(useContentArchive(), stubs, { apply, folder })
+    const { results, republished } = await pushStubs(useContentArchive(), stubs, { apply, folder })
     const written = results.filter(r => r.action === 'create' || r.action === 'republish')
     if (apply && written.length)
       console.info(`[content] ${actorLabel(actor)} pushed ${written.map(r => `${r.slug} (${r.action})`).join(', ')}`)
+    // The versions are written: a failed follow names its deck and the others go on.
+    for (const { slug, previous, raw } of republished) {
+      const result = results.find(r => r.slug === slug)!
+      result.draft = await followPublication(slug, previous, raw, { apply }).catch((error: Error) => {
+        console.warn(`[content] the draft of "${slug}" did not follow the pushed version: ${error.message}`)
+        return 'failed' as const
+      })
+      if (apply)
+        announcePublication(slug)
+    }
     return results
   }
   catch (error) {

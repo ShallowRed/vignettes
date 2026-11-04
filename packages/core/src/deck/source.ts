@@ -43,7 +43,14 @@ export interface DraftStore {
   /** Whether drafts can currently be persisted (gates collab sessions). */
   isWritable: () => boolean
   load: (slug: string) => Promise<Uint8Array | null>
-  save: (slug: string, ydoc: Uint8Array) => Promise<void>
+  /** Writes the first draft of a deck when it has none: the one creator of its Yjs lineage. Resolves true when this call wrote it. */
+  create: (slug: string, ydoc: Uint8Array) => Promise<boolean>
+  /**
+   * Reads the stored draft (null when there is none) and writes what `merge`
+   * returns, in one transaction; an exception of `merge` writes nothing. The
+   * adapter hands the bytes over without reading them.
+   */
+  update: (slug: string, merge: (stored: Uint8Array | null) => Uint8Array) => Promise<void>
   /**
    * Last-save stamp (epoch ms), null when no draft exists. Solo saves send the
    * stamp they loaded so the server can refuse to overwrite a draft someone

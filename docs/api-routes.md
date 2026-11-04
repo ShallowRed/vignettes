@@ -10,7 +10,7 @@ Every route resolves the actor from the session cookie, and the routes listed un
 |-------|--------|--------|
 | `GET /api/presentations` | any | Decks the actor may list, with status, project, theme, grants summary, and the unpublished-changes flag |
 | `GET /api/projects` | any | Project folders the actor may see; privileged actors see every folder |
-| `GET /api/presentations/:slug` | gate | The published version of a deck; `?draft` returns the draft to actors who may edit it |
+| `GET /api/presentations/:slug` | gate | The published version of a deck; `?draft` returns the draft to actors who may edit it, with its `stamp` and the id of the published version in `publishedVersion`, which a solo save sends back |
 | `GET /api/presentations/:slug/markdown` | gate | The Markdown of the published version as a `<slug>.md` attachment; `?draft` returns the draft, the live text of an open collab room included, to actors who may edit the deck |
 | `GET /api/templates` | any | The ids of the templates a new deck starts from, the default one first |
 | `GET /api/themes/version-gaps` | signed in | The published themes compiled with other theme packages than the instance's, which the editor flags on a deck in one of them |
@@ -23,7 +23,7 @@ Every route resolves the actor from the session cookie, and the routes listed un
 |-------|--------|--------|
 | `POST /api/presentations` | privileged, creation right on the project | Create a deck from a template (`template`, `title`, `theme`) or from a Markdown file (`raw`), whose frontmatter gives the title and the theme; a refused frontmatter answers 400 with the key in `data.issues`. The route writes the chosen folder in the draft's frontmatter and removes `status`, which the row holds |
 | `POST /api/presentations/:slug/duplicate` | may edit, creation right on the folder | Copy the deck as a new draft: a variant of its family, or the edition replacing it |
-| `PUT /api/presentations/:slug` | may edit | Save the markdown as the draft, and keep it as a snapshot |
+| `PUT /api/presentations/:slug` | may edit | Save the markdown as the draft, and keep it as a snapshot; the body `{ raw, stamp?, publishedVersion? }` names the draft or the version the save loaded, and a `409` refuses a save over a newer draft or while a collab room is open |
 | `POST /api/presentations/:slug/publish` | may edit | Persist the draft as a new immutable version and point readers to it |
 | `GET /api/presentations/:slug/history` | may edit | The published versions and the draft snapshots, newest first, with the version readers see marked |
 | `GET /api/presentations/:slug/versions/:id` | may edit | One published version with its markdown |
@@ -116,7 +116,7 @@ The kit answers 404 unless `NUXT_RECETTE_ENABLED=1` or the app runs in developme
 
 | Route | Access | Effect |
 |-------|--------|--------|
-| `POST /api/content/push` | content token, or privileged | `content:push`: publish stubs of the content space, or say what it would do; a new deck takes its access axes from the frontmatter, a known one keeps them; a `folder` files a created deck there and sets its `project` key, and refuses a known deck filed elsewhere |
+| `POST /api/content/push` | content token, or privileged | `content:push`: publish stubs of the content space, or say what it would do; a new deck takes its access axes from the frontmatter, a known one keeps them; a `folder` files a created deck there and sets its `project` key, and refuses a known deck filed elsewhere; a republished deck reports its draft in `draft`: `updated`, `kept` when it holds changes not published, `none` without a draft, `failed` |
 | `GET /api/content/decks?slugs=<slug>[,<slug>]` | content token, or privileged | `content:pull`: the catalog axes and the published markdown of live decks; the access password column stays on the instance, and a hash written in the frontmatter travels with the markdown |
 | `POST /api/content/theme-rename` | content token, or privileged | `theme:rename`: rename a theme in the `theme` column, the published versions, the snapshots and the drafts of the decks declaring it, in one transaction, or say which decks it would rewrite |
 

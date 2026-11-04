@@ -28,7 +28,7 @@ const entry = computed(() => {
 
 function set(attribute: ComponentAttribute, value: string) {
   const view = props.view
-  if (!view)
+  if (!view || view.state.readOnly)
     return
   view.dispatch(attributeChange(view.state, attribute, value))
   refresh()

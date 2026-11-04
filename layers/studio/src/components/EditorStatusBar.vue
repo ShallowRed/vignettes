@@ -14,6 +14,8 @@ const props = defineProps<{
   slideCount: number
   /** The caret is in a `json` code block. */
   inJson?: boolean
+  /** The text cannot be changed yet, or any more. */
+  disabled?: boolean
 }>()
 
 const wrap = defineModel<boolean>('wrap', { default: false })
@@ -76,7 +78,7 @@ function run(action: (view: EditorView) => unknown) {
           color="neutral"
           variant="ghost"
           size="xs"
-          :disabled="!view"
+          :disabled="!view || disabled"
           @click="run(indentJson)"
         />
       </UTooltip>

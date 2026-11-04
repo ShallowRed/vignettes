@@ -17,6 +17,8 @@ export interface DeckContent {
   writer: ContentWriter
   /** When the served version was published; null when the deck has none. */
   publishedAt: (slug: string) => Promise<Date | null>
+  /** The id of the served version; null when the deck has none. */
+  publishedVersion: (slug: string) => Promise<number | null>
 }
 
 /**
@@ -255,8 +257,6 @@ export interface CatalogStore {
   deckGrantCounts: () => Promise<Map<string, number>>
   /** project slug → number of grants on the project, expired ones included. */
   projectGrantCounts: () => Promise<Map<string, number>>
-  /** Decks whose draft was saved at or after the publication of their served version. */
-  draftsSincePublish: () => Promise<string[]>
   /** Every deck with a published version, trashed ones included. */
   publishedDecks: () => Promise<PublishedDeckDates[]>
   /** The markdown of these versions; an unknown id is left out. */

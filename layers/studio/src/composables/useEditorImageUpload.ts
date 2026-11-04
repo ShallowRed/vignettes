@@ -31,6 +31,10 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
     for (const file of files) {
       try {
         const src = await uploadImage(file)
+        if (view.state.readOnly) {
+          toast.add({ title: t('editor.imageUpload.notInserted', { name: file.name }), icon: 'i-lucide-triangle-alert', color: 'error' })
+          continue
+        }
         view.dispatch(imageDirectiveInsertion(view.state, view.state.selection.main.head, src))
         view.focus()
       }

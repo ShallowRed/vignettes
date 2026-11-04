@@ -12,18 +12,29 @@ describe.each(ADAPTERS)('draft store ($name)', (adapter) => {
 
   it('round-trips the Y.Doc binary', async () => {
     const bytes = new Uint8Array([0, 1, 128, 255, 42])
-    await store().save('my-deck', bytes)
+    await store().create('my-deck', bytes)
     expect(await store().load('my-deck')).toEqual(bytes)
   })
 
-  it('overwrites on re-save (debounced snapshot semantics)', async () => {
-    await store().save('my-deck', new Uint8Array([1]))
-    await store().save('my-deck', new Uint8Array([2, 3]))
-    expect(await store().load('my-deck')).toEqual(new Uint8Array([2, 3]))
+  it('writes what the merge returns from the stored draft, and nothing when it throws', async () => {
+    await store().create('my-deck', new Uint8Array([1]))
+    await store().update('my-deck', stored => new Uint8Array([...stored!, 2, 3]))
+    expect(await store().load('my-deck')).toEqual(new Uint8Array([1, 2, 3]))
+    await expect(store().update('my-deck', () => {
+      throw new Error('refused')
+    })).rejects.toThrow('refused')
+    expect(await store().load('my-deck')).toEqual(new Uint8Array([1, 2, 3]))
+  })
+
+  it('creates the first draft only, and says which call wrote it', async () => {
+    expect(await store().create('first', new Uint8Array([1]))).toBe(true)
+    expect(await store().create('first', new Uint8Array([2]))).toBe(false)
+    expect(await store().load('first')).toEqual(new Uint8Array([1]))
+    expect((await deck('first')).status).toBe('private')
   })
 
   it('anchors an unknown deck with fail-closed defaults', async () => {
-    await store().save('brand-new', new Uint8Array([7]))
+    await store().create('brand-new', new Uint8Array([7]))
     const row = await deck('brand-new')
     expect(row.status).toBe('private')
     expect(row.lifecycle).toBe('live')
@@ -32,7 +43,7 @@ describe.each(ADAPTERS)('draft store ($name)', (adapter) => {
   it('does not clobber an existing deck row', async () => {
     const now = new Date()
     await db.rows.insert('decks', { slug: 'kept', title: 'Vrai titre', status: 'public', createdAt: now, updatedAt: now })
-    await store().save('kept', new Uint8Array([9]))
+    await store().create('kept', new Uint8Array([9]))
     const row = await deck('kept')
     expect(row.title).toBe('Vrai titre')
     expect(row.status).toBe('public')

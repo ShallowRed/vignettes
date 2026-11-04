@@ -127,6 +127,8 @@ NUXT_CONTENT_TOKEN="$(sc env-get NUXT_CONTENT_TOKEN)" \
 MISE_ENV=<env> mise run content:push -- <slug>[,<slug>] --apply
 ```
 
+For a republished deck, the output says `brouillon mis à jour` when its draft held the text of the replaced version and takes the text of the new one, and `brouillon gardé` when its draft holds changes not published, which stay in the editor.
+
 A new deck goes to the folder that the `project` key of its frontmatter names. `--folder <slug>` creates it in that folder of the instance and sets its `project` key to it. The instance refuses a folder it lacks, which you create in the studio first, and a known deck filed in another folder, which you move from the studio.
 
 ## Check the instance

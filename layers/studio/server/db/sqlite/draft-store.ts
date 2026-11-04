@@ -8,8 +8,8 @@ type Db = BetterSQLite3Database<Record<string, unknown>>
 
 /**
  * SQLite adapter for the `DraftStore` port. Factory over a drizzle handle so
- * tests run it against an in-memory database. Saving upserts a minimal deck row
- * first (FK anchor, fail-closed defaults); the real title/status arrive at
+ * tests run it against an in-memory database. `create` upserts a minimal deck
+ * row first (FK anchor, fail-closed defaults); the real title/status arrive at
  * publish time.
  */
 export function createDraftStore(db: Db): DraftStore {
@@ -26,17 +26,28 @@ export function createDraftStore(db: Db): DraftStore {
       return row ? row.updatedAt.getTime() : null
     },
 
-    async save(slug, ydoc) {
+    async create(slug, ydoc) {
       const now = new Date()
-      db.transaction((tx) => {
+      return db.transaction((tx) => {
         tx.insert(decks)
           .values({ slug, title: slug, createdAt: now, updatedAt: now })
           .onConflictDoNothing()
           .run()
-        tx.insert(deckDrafts)
+        return tx.insert(deckDrafts)
           .values({ deckSlug: slug, ydoc: Buffer.from(ydoc), updatedAt: now })
-          .onConflictDoUpdate({ target: deckDrafts.deckSlug, set: { ydoc: Buffer.from(ydoc), updatedAt: now } })
+          .onConflictDoNothing()
           .run()
+          .changes === 1
+      })
+    },
+
+    async update(slug, merge) {
+      db.transaction((tx) => {
+        const row = tx.select({ ydoc: deckDrafts.ydoc }).from(deckDrafts).where(eq(deckDrafts.deckSlug, slug)).get()
+        const ydoc = merge(row ? new Uint8Array(row.ydoc) : null)
+        if (!row)
+          throw new Error(`No draft of "${slug}" to update`)
+        tx.update(deckDrafts).set({ ydoc: Buffer.from(ydoc), updatedAt: new Date() }).where(eq(deckDrafts.deckSlug, slug)).run()
       })
     },
   }

@@ -1,8 +1,12 @@
 import { Buffer } from 'node:buffer'
+import { MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useCollabServer } from '../../layers/studio/server/utils/collab'
+import * as Y from 'yjs'
+import { hasRoom, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
+import { useStores } from '../../layers/studio/server/utils/db'
 import { storeMedia } from '../../layers/studio/server/utils/media-store'
-import { useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
+import { useContentArchive, useDbContent, useDeckMeta, usePermissionStore, useProjectPermissionStore } from '../../layers/studio/server/utils/sources'
+import { yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // Drive the write handlers directly: the h3 auto-imports read from the event
@@ -22,9 +26,11 @@ const { default: trashDeck } = await import('../../layers/studio/server/api/pres
 
 const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
 const collab = (over: Record<string, unknown>) => asUser(10, 'collab', over)
-function save(raw: string, stamp?: number | null) {
-  return saveDraft(editor({ params: { slug: 'deck' }, body: stamp === undefined ? { raw } : { raw, stamp } }))
+function save(raw: string, stamp?: number | null, publishedVersion?: number | null) {
+  const body = { raw, ...(stamp === undefined ? {} : { stamp }), ...(publishedVersion === undefined ? {} : { publishedVersion }) }
+  return saveDraft(editor({ params: { slug: 'deck' }, body }))
 }
+const storedText = async () => yDocUpdateToMarkdown((await useDraftStore().load('deck'))!)
 
 beforeEach(async () => {
   await seedAccount(3, 'ed', 'editor')
@@ -46,10 +52,65 @@ describe('saving a draft solo (PUT /api/presentations/:slug)', () => {
     await save('# v1', null)
     await expect(save('# legacy')).resolves.toMatchObject({ ok: true })
   })
+
+  it('writes in the lineage of the stored draft: a tab that holds it merges one copy', async () => {
+    await save('# v1', null)
+    const tab = new Y.Doc()
+    Y.applyUpdate(tab, (await useDraftStore().load('deck'))!)
+    await save('# v2')
+    Y.applyUpdate(tab, (await useDraftStore().load('deck'))!)
+    expect(tab.getText('codemirror').toString()).toBe('# v2')
+    expect(await storedText()).toBe('# v2')
+  })
+
+  it('passes a save that loaded no draft while the stored draft is the published version it loaded', async () => {
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    const loaded = await useDbContent().publishedVersion('deck')
+    // An editor opened in real time stores the published text as the draft.
+    await (await useCollabServer().openDirectConnection('deck', { deck: 'deck' })).disconnect()
+    await expect(save('# solo', null)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(save('# solo', null, loaded)).resolves.toMatchObject({ ok: true })
+    expect(await storedText()).toBe('# solo')
+  })
+
+  it('refuses a save that loaded no draft once another version is published, or once the draft changed', async () => {
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    const loaded = await useDbContent().publishedVersion('deck')
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v2', actor: 'content-push' })
+    await (await useCollabServer().openDirectConnection('deck', { deck: 'deck' })).disconnect()
+    await expect(save('# solo', null, loaded)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(save('# typed', null, await useDbContent().publishedVersion('deck'))).resolves.toMatchObject({ ok: true })
+    await expect(save('# late', null, await useDbContent().publishedVersion('deck'))).rejects.toMatchObject({ statusCode: 409 })
+  })
+
+  it('fails when the store does not keep the text, and leaves the stamp and the history as they were', async () => {
+    const first = await save('# v1', null)
+    const snapshots = await useSnapshotStore().list('deck')
+    vi.spyOn(useStores().drafts, 'update').mockRejectedValueOnce(new Error('disk full'))
+    await expect(save('# v2', first.stamp)).rejects.toThrow(/does not hold the text just written/)
+    expect(await useDraftStore().stamp('deck')).toBe(first.stamp)
+    expect(await storedText()).toBe('# v1')
+    expect(await useSnapshotStore().list('deck')).toEqual(snapshots)
+    expect(hasRoom('deck')).toBe(false)
+  })
+
+  it('creates the draft of a deck whose published version is past the limit', async () => {
+    await useContentArchive().apply([
+      { kind: 'deck', slug: 'deck', axes: { title: 'Long', status: 'private', lifecycle: 'live', project: null, theme: null, accessPasswordHash: null, unlisted: false } },
+      { kind: 'version', slug: 'deck', raw: 'x'.repeat(MAX_DECK_LENGTH + 1) },
+    ], { by: 'content-push', at: new Date() })
+    await expect(save('# short', null)).resolves.toMatchObject({ ok: true })
+    expect(await storedText()).toBe('# short')
+  })
 })
 
 describe('creating a deck (POST /api/presentations)', () => {
   const body = (project?: string) => ({ body: { slug: 'new-deck', title: 'Nouveau', project } })
+
+  it('answers 409 when another write created the draft meanwhile', async () => {
+    vi.spyOn(useStores().drafts, 'create').mockResolvedValueOnce(false)
+    await expect(createDeck(editor(body()))).rejects.toMatchObject({ statusCode: 409 })
+  })
 
   it('lets a collaborator create a deck inside a folder they can edit', async () => {
     await useProjectPermissionStore().set('client', 10, 'editor', 'boss')
@@ -143,7 +204,7 @@ describe('loading a deck for edit (GET /api/presentations/:slug?draft)', () => {
     await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
     await save('# draft', null)
     const loaded = await loadDeck(editor({ params: { slug: 'deck' }, query: { draft: '' } }))
-    expect(loaded).toMatchObject({ content: '# draft', from: 'draft', publishedRaw: '# published' })
+    expect(loaded).toMatchObject({ content: '# draft', from: 'draft', publishedRaw: '# published', publishedVersion: await useDbContent().publishedVersion('deck') })
     expect(typeof loaded.publishedAt).toBe('number')
   })
 
@@ -151,7 +212,7 @@ describe('loading a deck for edit (GET /api/presentations/:slug?draft)', () => {
     await save('# draft', null)
     await expect(loadDeck(editor({ params: { slug: 'deck' }, query: { draft: '' } })))
       .resolves
-      .toMatchObject({ publishedRaw: null, publishedAt: null })
+      .toMatchObject({ publishedRaw: null, publishedAt: null, publishedVersion: null })
   })
 })
 

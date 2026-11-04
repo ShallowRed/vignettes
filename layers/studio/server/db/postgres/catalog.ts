@@ -1,6 +1,6 @@
 import type { CatalogStore } from '../ports.ts'
 import type { PostgresDb } from './index.ts'
-import { count, eq, gte, inArray } from 'drizzle-orm'
+import { count, eq, inArray } from 'drizzle-orm'
 import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from './schema.ts'
 
 /** PostgreSQL adapter for the reads of the catalog. */
@@ -14,15 +14,6 @@ export function createCatalogStore(db: PostgresDb): CatalogStore {
     async projectGrantCounts() {
       const rows = await db.select({ slug: projectPermissions.projectSlug, n: count() }).from(projectPermissions).groupBy(projectPermissions.projectSlug)
       return new Map(rows.map(r => [r.slug, r.n]))
-    },
-
-    async draftsSincePublish() {
-      const rows = await db.select({ slug: deckDrafts.deckSlug })
-        .from(deckDrafts)
-        .innerJoin(decks, eq(decks.slug, deckDrafts.deckSlug))
-        .innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId))
-        .where(gte(deckDrafts.updatedAt, deckVersions.publishedAt))
-      return rows.map(r => r.slug)
     },
 
     async publishedDecks() {

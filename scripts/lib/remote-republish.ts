@@ -9,6 +9,8 @@ export interface RemoteDeckState {
   content: string
   from: 'draft' | 'published'
   publishedRaw: string | null
+  /** The id of the served version, sent with a save of a deck that had no draft. */
+  publishedVersion: number | null
   stamp: number | null
   title?: string
 }
@@ -29,6 +31,7 @@ export interface RemotePlanItem {
   title: string | null
   slides: number
   stamp: number | null
+  publishedVersion: number | null
   raw: string
 }
 
@@ -71,6 +74,7 @@ export async function loadRemoteDeck(deps: RemoteDeps, slug: string): Promise<Re
     content: data.content,
     from: data.from,
     publishedRaw: data.publishedRaw ?? null,
+    publishedVersion: data.publishedVersion ?? null,
     stamp: data.stamp ?? null,
     title: data.title,
   }
@@ -95,7 +99,7 @@ export async function planRemoteRepublish(
   const items: RemotePlanItem[] = []
   for (const stub of stubs) {
     const state = await loadRemoteDeck(deps, stub.slug)
-    const base = { slug: stub.slug, title: titleOf(stub.raw), slides: slidesOf(stub.raw), raw: stub.raw, stamp: state?.stamp ?? null }
+    const base = { slug: stub.slug, title: titleOf(stub.raw), slides: slidesOf(stub.raw), raw: stub.raw, stamp: state?.stamp ?? null, publishedVersion: state?.publishedVersion ?? null }
     if (!state) {
       items.push({ ...base, action: 'create' })
       continue
@@ -126,7 +130,7 @@ export async function applyRemoteRepublish(deps: RemoteDeps, items: RemotePlanIt
     const saved = await deps.fetch(url, {
       method: 'PUT',
       headers: headers(deps.token, true),
-      body: JSON.stringify({ raw: item.raw, stamp: item.stamp }),
+      body: JSON.stringify({ raw: item.raw, stamp: item.stamp, publishedVersion: item.publishedVersion }),
     })
     if (!saved.ok)
       throw await failure(saved, `${item.slug} : enregistrement du brouillon`)

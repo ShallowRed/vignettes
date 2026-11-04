@@ -6,11 +6,14 @@ import { blockEndAround } from '@vignettes/core/deck'
 /**
  * Markdown insertion helpers for the writer toolbar. Each command edits the
  * document through the view's dispatch (single undoable transaction) and gives
- * focus back to the editor.
+ * focus back to the editor. A read-only editor ignores them, as the commands of
+ * `@codemirror/commands` do: the shared draft is read-only until it arrives.
  */
 
 /** Wrap the selection in `marker` (bold, italic, code…); no selection inserts a selected placeholder. */
 export function wrapSelection(view: EditorView, marker: string, placeholder: string): void {
+  if (view.state.readOnly)
+    return
   const { from, to } = view.state.selection.main
   const selected = view.state.sliceDoc(from, to) || placeholder
   view.dispatch({
@@ -22,6 +25,8 @@ export function wrapSelection(view: EditorView, marker: string, placeholder: str
 
 /** Set the current line to heading `level`; the same level again removes it. */
 export function setHeading(view: EditorView, level: number): void {
+  if (view.state.readOnly)
+    return
   const line = view.state.doc.lineAt(view.state.selection.main.head)
   const stripped = line.text.replace(/^#{1,6} /, '')
   const current = (line.text.length - stripped.length - 1)
@@ -32,6 +37,8 @@ export function setHeading(view: EditorView, level: number): void {
 
 /** Toggle a line prefix (`- `, `1. `, `> `) on the current line. */
 export function toggleLinePrefix(view: EditorView, prefix: string): void {
+  if (view.state.readOnly)
+    return
   const line = view.state.doc.lineAt(view.state.selection.main.head)
   view.dispatch(line.text.startsWith(prefix)
     ? { changes: { from: line.from, to: line.from + prefix.length, insert: '' } }
@@ -45,6 +52,8 @@ const URL_START = 'https://'
 
 /** Turn the selection into a link, the caret in its address; no selection inserts `placeholder` as its text. */
 export function insertLink(view: EditorView, placeholder: string): void {
+  if (view.state.readOnly)
+    return
   const { from, to } = view.state.selection.main
   const text = view.state.sliceDoc(from, to) || placeholder
   const insert = `[${text}](${URL_START})`
@@ -61,6 +70,8 @@ export function insertLink(view: EditorView, placeholder: string): void {
  * A multi-line block dropped mid-line gets its own paragraph first.
  */
 export function insertSnippet(view: EditorView, template: string): void {
+  if (view.state.readOnly)
+    return
   const { from, to } = view.state.selection.main
   const line = view.state.doc.lineAt(from)
   const needsBreak = template.includes('\n') && line.text.trim().length > 0
@@ -115,6 +126,8 @@ export function slideTemplateFor(template: string, parser: 'heading' | 'separato
 
 /** Insert a whole-slide template on its own paragraph after the current line, out of any block. */
 export function insertSlideTemplate(view: EditorView, template: string): void {
+  if (view.state.readOnly)
+    return
   const pos = slideInsertPos(view.state)
   snippet(`\n\n${template}`)(view, null, pos, pos)
   view.focus()
@@ -122,6 +135,8 @@ export function insertSlideTemplate(view: EditorView, template: string): void {
 
 /** Insert a Markdown image, the caret in its address; no selection inserts `placeholder` as its alternative text. */
 export function insertImage(view: EditorView, placeholder: string): void {
+  if (view.state.readOnly)
+    return
   const { from, to } = view.state.selection.main
   const alt = view.state.sliceDoc(from, to) || placeholder
   const insert = `![${alt}](${URL_START})`
@@ -135,6 +150,8 @@ export function insertImage(view: EditorView, placeholder: string): void {
 
 /** Start a new slide: a `---` separator on its own paragraph after the current line, out of any block. */
 export function insertSlideBreak(view: EditorView): void {
+  if (view.state.readOnly)
+    return
   const pos = slideInsertPos(view.state)
   const insert = '\n\n---\n\n'
   view.dispatch({

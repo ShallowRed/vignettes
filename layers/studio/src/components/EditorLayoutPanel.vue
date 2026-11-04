@@ -31,7 +31,7 @@ const size = computed(() => layoutSize(layoutPlacement(attributes.value), attrib
 // starts from the text as it is.
 function write(next: (attributes: Record<string, unknown>) => Record<string, unknown>) {
   const view = props.view
-  if (!view)
+  if (!view || view.state.readOnly)
     return
   const at = slideLayoutAt(view.state)
   if (at.outside)

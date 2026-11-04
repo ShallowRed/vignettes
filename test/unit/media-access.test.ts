@@ -1,10 +1,9 @@
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
 import { decideMediaAccess } from '../../layers/studio/server/utils/access'
-import { useDraftStore } from '../../layers/studio/server/utils/collab'
+import { writeDraftText } from '../../layers/studio/server/utils/collab'
 import { hashAccessPassword, verifyAccessPassword } from '../../layers/studio/server/utils/password'
 import { useDeckMeta, useMediaIndex } from '../../layers/studio/server/utils/sources'
-import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
 import { referencedImages } from '../../layers/studio/shared/storage/media-refs'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
@@ -16,13 +15,13 @@ const { default: serveMedia } = await import('../../layers/studio/server/routes/
 
 /** A deck with the given status, carrying one image in its draft. */
 async function deckWithImage(slug: string, status: 'public' | 'semi-private' | 'private', image: string, storedHash?: string) {
-  await useDraftStore().save(slug, markdownToYDocUpdate(`# ${slug}\n\n![](/media/${image})`))
+  await writeDraftText(slug, `# ${slug}\n\n![](/media/${image})`)
   await useDeckMeta().update(slug, { title: slug, status, ...(storedHash ? { accessPasswordHash: storedHash } : {}) })
 }
 
 /** A deck with the given status, showing one file of the content space. */
 async function deckWithAsset(slug: string, status: 'public' | 'private', key: string) {
-  await useDraftStore().save(slug, markdownToYDocUpdate(`# ${slug}\n\n![](/${key})`))
+  await writeDraftText(slug, `# ${slug}\n\n![](/${key})`)
   await useDeckMeta().update(slug, { title: slug, status })
 }
 
@@ -62,7 +61,7 @@ describe('the media index', () => {
 
   it('keeps the key when the image leaves the deck', async () => {
     await deckWithImage('notes', 'private', 'abc123.png')
-    await useDraftStore().save('notes', markdownToYDocUpdate('# notes\n\nNo image any more.'))
+    await writeDraftText('notes', '# notes\n\nNo image any more.')
     expect(await useMediaIndex().decksFor('abc123.png')).toEqual(['notes'])
   })
 })

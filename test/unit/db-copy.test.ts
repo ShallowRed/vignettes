@@ -23,7 +23,7 @@ describe('copy of a SQLite database into PostgreSQL', () => {
     await from.users.remove(202)
     await from.projects.create({ title: 'Atelier' })
     await from.content.writer.save({ slug: 'deck', raw: '---\ntitle: Deck\nproject: atelier\n---\n\n# One', actor: 'alice' })
-    await from.drafts.save('deck', markdownToYDocUpdate('# Draft'))
+    await from.drafts.create('deck', markdownToYDocUpdate('# Draft'))
     await from.snapshots.add('deck', { raw: '# Snapshot', authors: ['alice'], at: NOW })
     await from.deckGrants.set('deck', 101, 'editor', 'alice')
     const token = { name: 'CLI', scope: 'write' as const, prefix: 'vgt_00000000', expiresAt: NOW }

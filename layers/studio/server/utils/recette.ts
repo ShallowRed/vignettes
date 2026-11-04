@@ -232,7 +232,8 @@ export async function seedRecette(): Promise<SeedSummary> {
     if (image)
       await storeMedia(image.name, image.data, IMAGE_MIME)
     if (deck.draftOnly) {
-      await useDraftStore().save(deck.slug, markdownToYDocUpdate(raw))
+      if (!await useDraftStore().create(deck.slug, markdownToYDocUpdate(raw)))
+        throw new Error(`[recette] "${deck.slug}" already has a draft`)
       await meta.update(deck.slug, { title: deck.title, status: deck.status, project: deck.project ?? null, theme: deck.theme })
       continue
     }

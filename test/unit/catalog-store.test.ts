@@ -26,19 +26,6 @@ describe.each(ADAPTERS)('catalog reads ($name)', (adapter) => {
     expect(await catalog().projectGrantCounts()).toEqual(new Map([['p', 1]]))
   })
 
-  it('names the decks whose draft was saved since their publication', async () => {
-    for (const slug of ['ahead', 'behind', 'draft-only'])
-      await seedDeck(db.rows, slug)
-    await publish('ahead', '# a', NOW)
-    await publish('behind', '# b', LATER)
-    await db.rows.insert('deckDrafts', [
-      { deckSlug: 'ahead', ydoc: Buffer.from([1]), updatedAt: NOW },
-      { deckSlug: 'behind', ydoc: Buffer.from([1]), updatedAt: NOW },
-      { deckSlug: 'draft-only', ydoc: Buffer.from([1]), updatedAt: LATER },
-    ])
-    expect(await catalog().draftsSincePublish()).toEqual(['ahead'])
-  })
-
   it('dates every published deck, trashed ones included, and reads their versions', async () => {
     await seedDeck(db.rows, 'live')
     await seedDeck(db.rows, 'binned', { deletedAt: NOW })

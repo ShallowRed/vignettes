@@ -1,9 +1,8 @@
-import { Document } from '@hocuspocus/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
-import { useCollabServer, useDraftStore } from '../../layers/studio/server/utils/collab'
+import { useCollabServer, useDraftStore, writeDraftText } from '../../layers/studio/server/utils/collab'
 import { useDbContent } from '../../layers/studio/server/utils/sources'
-import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
+import { yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The restore route, driven like the other write handlers: a migrated temp
@@ -34,7 +33,7 @@ describe('restoring a version (POST /api/presentations/:slug/versions/:id/restor
   it('rewrites the stored draft, keeping the lineage a client already holds', async () => {
     const v1 = await publish('# v1')
     await publish('# v2')
-    await useDraftStore().save('deck', markdownToYDocUpdate('# v2 edited'))
+    await writeDraftText('deck', '# v2 edited')
     const client = new Y.Doc()
     Y.applyUpdate(client, (await useDraftStore().load('deck'))!)
 
@@ -54,14 +53,20 @@ describe('restoring a version (POST /api/presentations/:slug/versions/:id/restor
     expect(yDocUpdateToMarkdown((await useDraftStore().load('deck'))!)).toBe('# v1')
   })
 
-  it('goes through the live room when one is open', async () => {
+  it('goes through the live room when one is open: the room, the stored draft and a tab of its lineage hold one copy', async () => {
     const v1 = await publish('# v1')
-    const room = new Document('deck')
-    room.getText('codemirror').insert(0, '# live text')
-    useCollabServer().documents.set('deck', room)
+    await publish('# v2')
+    const open = await useCollabServer().openDirectConnection('deck', { deck: 'deck' })
+    const tab = new Y.Doc()
+    Y.applyUpdate(tab, Y.encodeStateAsUpdate(open.document!))
 
     await restoreVersion(editor(params(v1)))
-    expect(room.getText('codemirror').toString()).toBe('# v1')
+    expect(open.document!.getText('codemirror').toString()).toBe('# v1')
+    const stored = (await useDraftStore().load('deck'))!
+    expect(yDocUpdateToMarkdown(stored)).toBe('# v1')
+    Y.applyUpdate(tab, stored)
+    expect(tab.getText('codemirror').toString()).toBe('# v1')
+    await open.disconnect()
   })
 
   it('refuses an unknown version and a read-only account', async () => {

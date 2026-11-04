@@ -128,7 +128,8 @@ export function bodySource(options: CompletionOptions, t: Translate) {
     }))
 
   return (context: CompletionContext): CompletionResult | null => {
-    if (inFrontmatter(context))
+    // A read-only editor offers no choice: choosing one writes into the text.
+    if (context.state.readOnly || inFrontmatter(context))
       return null
 
     const line = context.state.doc.lineAt(context.pos)
@@ -288,7 +289,7 @@ class HintWidget extends WidgetType {
     const open = (event: MouseEvent, colons = '') => {
       event.preventDefault()
       event.stopPropagation()
-      if (colons) {
+      if (colons && !view.state.readOnly) {
         const at = view.state.selection.main.head
         view.dispatch({ changes: { from: at, insert: colons }, selection: { anchor: at + colons.length } })
       }

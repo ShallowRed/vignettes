@@ -102,7 +102,8 @@ const requestFetch = useRequestFetch()
 const { data, error } = await useAsyncData(`edit-${slug}`, () => deckApi.loadDraft(requestFetch, slug))
 
 const writable = computed(() => data.value?.writable !== false)
-const collabEnabled = computed(() => writable.value && !soloRequested.value)
+// A deck that failed to load opens no shared draft.
+const collabEnabled = computed(() => Boolean(data.value) && writable.value && !soloRequested.value)
 
 const collab = useCollabDraft(slug, raw, collabEnabled)
 const publication = useDeckPublication({
@@ -116,7 +117,7 @@ const publication = useDeckPublication({
   onPublished: notifyPublished,
 })
 collab.onPublished(publication.refreshPublished)
-const { status: collabStatus, peers, indicator: syncIndicator } = collab
+const { status: collabStatus, peers, indicator: syncIndicator, ended: collabEnded, localText: collabLocalText } = collab
 const { dirty, unpublished, neverPublished, publicationHint, saveState, publishState } = publication
 
 // ⌘S captures a snapshot of the shared draft. Until the connection is up, the
@@ -151,6 +152,32 @@ const editorView = computed(() => cm.value?.view)
 // The editor holds the text once it is mounted and, in collab mode, once the
 // shared document has arrived.
 const editorReady = computed(() => Boolean(editorView.value) && (!collabEnabled.value || collab.docSynced.value))
+// The commands stay off until the shared text arrives, and after the shared
+// draft stops; `collabWriteGate` holds every other change in the meantime.
+const editorWritable = computed(() => writable.value && editorReady.value && !collabEnded.value)
+
+function reloadPage() {
+  window.location.reload()
+}
+
+async function copyCollabLocalText() {
+  try {
+    await navigator.clipboard.writeText(collabLocalText.value)
+    toast.add({ title: t('editor.collab.copied'), icon: 'i-lucide-check', color: 'success' })
+  }
+  catch {
+    toast.add({ title: t('editor.collab.copyFailed'), icon: 'i-lucide-triangle-alert', color: 'error' })
+  }
+}
+
+// The text of the tab can be copied when the draft stopped after it arrived. A
+// deck past the limit opens in solo, where a shorter text can be saved.
+const collabEndedActions = computed(() => [
+  collabEnded.value === 'tooLong'
+    ? { label: t('editor.collab.switchToSolo'), icon: 'i-lucide-pencil', color: 'neutral' as const, variant: 'outline' as const, to: `/edit/${slug}?solo`, external: true }
+    : { label: t('editor.collab.reload'), icon: 'i-lucide-refresh-cw', color: 'neutral' as const, variant: 'outline' as const, onClick: reloadPage },
+  ...(collabLocalText.value ? [{ label: t('editor.collab.copyLocal'), icon: 'i-lucide-copy', color: 'neutral' as const, variant: 'ghost' as const, onClick: copyCollabLocalText }] : []),
+])
 
 // A published theme compiled with other theme packages than this studio's
 // renders with another engine stylesheet; the frontmatter guide marks `theme:`.
@@ -268,10 +295,10 @@ const shortcutKeymap = keymap.of([
   },
 ])
 
-const { imageUploadHandlers, uploadImages } = useEditorImageUpload(writable, slug)
+const { imageUploadHandlers, uploadImages } = useEditorImageUpload(editorWritable, slug)
 
 function uploadChosenImages(files: File[]) {
-  if (editorView.value)
+  if (editorView.value && editorWritable.value)
     uploadImages(editorView.value, files)
 }
 
@@ -486,10 +513,19 @@ async function onMetaSaved() {
         <EditorToolbar
           :view="editorView"
           :parser="parserId"
-          :disabled="!writable"
+          :disabled="!editorWritable"
           :help-open="helpOpen"
           @upload-images="uploadChosenImages"
           @help="helpOpen = !helpOpen"
+        />
+        <UAlert
+          v-if="collabEnded"
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-cloud-off"
+          :title="t(`editor.collab.ended.${collabEnded}`)"
+          :actions="collabEndedActions"
+          class="rounded-none border-b border-default"
         />
         <div class="relative flex-1 min-h-0 flex flex-col">
           <ClientOnly>
@@ -500,6 +536,7 @@ async function onMetaSaved() {
               ref="cm"
               class="flex-1 min-h-0 overflow-hidden"
               :extensions="extensions"
+              :readonly="!editorWritable"
               :tab-size="2"
             />
             <!-- Solo mode: plain two-way binding. -->
@@ -520,7 +557,10 @@ async function onMetaSaved() {
             :class="{ 'editor-source-pending--wrap': wrapLines }"
             role="status"
           >
-            <span class="sr-only">{{ t('editor.page.editorLoading') }}</span>
+            <span
+              v-if="!collabEnded"
+              class="sr-only"
+            >{{ t('editor.page.editorLoading') }}</span>
             <pre aria-hidden="true">{{ raw }}</pre>
           </div>
         </div>
@@ -530,6 +570,7 @@ async function onMetaSaved() {
           :slide="cursorSlideNumber"
           :slide-count="slideCount"
           :in-json="cursorInJson"
+          :disabled="!editorWritable"
         />
       </UDashboardPanel>
 

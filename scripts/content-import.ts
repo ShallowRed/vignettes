@@ -26,7 +26,9 @@
  * `--republish=<slug>[,<slug>]` takes the listed decks back from their stub even
  * when the database owns them: a new published version is written from the
  * file and the row's title and theme follow it; status, unlisted, password and
- * project stay as the database has them, like a publish from the editor.
+ * project stay as the database has them, like a publish from the editor. The
+ * draft of a deck that gets a new version follows it when it held the replaced
+ * one.
  */
 
 import type { ArchiveWrite } from '../layers/studio/server/db/ports.ts'
@@ -40,6 +42,7 @@ import { load as parseYaml } from 'js-yaml'
 import { describeDatabase } from '../layers/studio/server/db/config.ts'
 import { openDatabaseFile } from '../layers/studio/server/db/open.ts'
 import { scriptDatabaseConfig } from './lib/database.ts'
+import { followDrafts } from './lib/follow-drafts.ts'
 import { applyRemoteRepublish, planRemoteRepublish } from './lib/remote-republish.ts'
 
 const ROOT = process.cwd()
@@ -370,7 +373,14 @@ for (const r of republishPlans) {
   writes.push({ kind: 'deck', slug: r.slug, axes: { ...(r.title !== null && { title: r.title }), ...(r.theme !== null && { theme: r.theme }) } })
 }
 
-await archive.apply(writes, { by: 'content-import', at: new Date() })
+const at = new Date()
+await archive.apply(writes, { by: 'content-import', at })
+// Every deck that had a row and receives a version: the managed ones taken
+// back from their stub, and the rows that predate the managed flag.
+const versioned = [...republishPlans, ...deckPlans.filter(d => d.needsVersion && existing.has(d.slug))]
+const followed = await followDrafts(database.stores.rewrites, versioned.map(d => ({ slug: d.slug, previous: publishedRaw.get(d.slug) ?? null, next: d.raw })), at)
+if (followed.length)
+  console.log(`brouillons mis à jour : ${followed.join(', ')}`)
 await database.close()
 
 console.log('\n✅ Import appliqué.')

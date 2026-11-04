@@ -18,10 +18,12 @@
  * trashed deck is refused, an identical text is a no-op. A folder the instance
  * lacks is reported, not created. With `--folder`, a created deck goes to that
  * folder and its `project` key names it; the instance refuses a folder it lacks
- * and a known deck filed in another folder.
+ * and a known deck filed in another folder. The draft of a republished deck
+ * follows the new version when it held the replaced one, and keeps changes not
+ * published otherwise; each line says which.
  */
 
-import type { PushedStub, PushResult } from '../layers/studio/server/utils/content-push.ts'
+import type { DraftFollow, PushedStub, PushResult } from '../layers/studio/server/utils/content-push.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -74,10 +76,16 @@ const LABEL: Record<PushResult['action'], string> = {
   identical: 'identique à la version publiée, rien à faire',
   trashed: 'à la corbeille : refusé, restaurer d\'abord',
 }
+const DRAFT_LABEL: Record<DraftFollow, string | null> = {
+  none: null,
+  updated: 'brouillon mis à jour',
+  kept: 'brouillon gardé : modifications non publiées dans l\'éditeur',
+  failed: 'brouillon non mis à jour : erreur, voir le journal de l\'instance',
+}
 try {
   const results = await callInstance<PushResult[]>(instance, '/api/content/push', { stubs: slugs.map(readStub), apply: APPLY, folder: FOLDER })
   for (const r of results)
-    console.log(`  · ${r.slug} : ${LABEL[r.action]}${r.folderMissing ? ` ; dossier « ${r.folderMissing} » absent de l'instance (à créer dans l'interface)` : ''}`)
+    console.log(`  · ${r.slug} : ${LABEL[r.action]}${r.draft && DRAFT_LABEL[r.draft] ? ` ; ${DRAFT_LABEL[r.draft]}` : ''}${r.folderMissing ? ` ; dossier « ${r.folderMissing} » absent de l'instance (à créer dans l'interface)` : ''}`)
 }
 catch (error) {
   console.error(`✖ ${(error as Error).message}`)

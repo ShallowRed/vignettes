@@ -39,6 +39,8 @@ export function useDeckPublication(options: DeckPublicationOptions) {
   // The served text, to tell whether the draft holds changes the visitors do not see yet.
   const publishedRaw = ref<string | null>(options.source?.publishedRaw ?? null)
   const publishedAt = ref<number | null>(options.source?.publishedAt ?? null)
+  // The served version when the draft was loaded, sent with a save that loaded no draft.
+  let loadedVersion = options.source?.publishedVersion ?? null
   // The fetched markdown seeds `raw`, which the preview and the status bar read
   // at once. Solo mode edits it; in collab mode the server seeds the Y.Text, the
   // one source of the editor, and `raw` follows it once the document syncs.
@@ -95,11 +97,12 @@ export function useDeckPublication(options: DeckPublicationOptions) {
     raw.value = fresh.content
     lastSaved.value = fresh.content
     draftStamp.value = stamp
+    loadedVersion = fresh.publishedVersion
   }
 
   async function writeDraft() {
     const saved = raw.value
-    const res = await deckApi.saveDraft($fetch, slug, { raw: saved, stamp: draftStamp.value })
+    const res = await deckApi.saveDraft($fetch, slug, { raw: saved, stamp: draftStamp.value, publishedVersion: loadedVersion })
     draftStamp.value = res.stamp ?? null
     lastSaved.value = saved
   }

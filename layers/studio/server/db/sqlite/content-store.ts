@@ -16,6 +16,11 @@ type Db = BetterSQLite3Database<Record<string, unknown>>
  */
 export function createDbContent(db: Db): DeckContent {
   return {
+    async publishedVersion(slug) {
+      const row = db.select({ id: decks.publishedVersionId }).from(decks).where(eq(decks.slug, slug)).get()
+      return row?.id ?? null
+    },
+
     async publishedAt(slug) {
       const row = db.select({ at: deckVersions.publishedAt })
         .from(decks)

@@ -107,4 +107,6 @@ export interface DeckDraftSource {
   stamp: number | null
   publishedRaw: string | null
   publishedAt: number | null
+  /** The id of the served version, echoed back by a solo save that loaded no draft. */
+  publishedVersion: number | null
 }

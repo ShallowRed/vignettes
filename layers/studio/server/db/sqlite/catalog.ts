@@ -1,6 +1,6 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import type { CatalogStore } from '../ports.ts'
-import { count, eq, gte, inArray } from 'drizzle-orm'
+import { count, eq, inArray } from 'drizzle-orm'
 import { deckDrafts, deckPermissions, decks, deckVersions, projectPermissions } from './schema.ts'
 
 type Db = BetterSQLite3Database<Record<string, unknown>>
@@ -19,16 +19,6 @@ export function createCatalogStore(db: Db): CatalogStore {
     async projectGrantCounts() {
       const rows = db.select({ slug: projectPermissions.projectSlug, n: count() }).from(projectPermissions).groupBy(projectPermissions.projectSlug).all()
       return new Map(rows.map(r => [r.slug, r.n]))
-    },
-
-    async draftsSincePublish() {
-      return db.select({ slug: deckDrafts.deckSlug })
-        .from(deckDrafts)
-        .innerJoin(decks, eq(decks.slug, deckDrafts.deckSlug))
-        .innerJoin(deckVersions, eq(deckVersions.id, decks.publishedVersionId))
-        .where(gte(deckDrafts.updatedAt, deckVersions.publishedAt))
-        .all()
-        .map(r => r.slug)
     },
 
     async publishedDecks() {

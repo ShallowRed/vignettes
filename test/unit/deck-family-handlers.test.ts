@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { useDraftStore } from '../../layers/studio/server/utils/collab'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useDraftStore, writeDraftText } from '../../layers/studio/server/utils/collab'
+import { useStores } from '../../layers/studio/server/utils/db'
 import { useDbContent, useDeckMeta, usePermissionStore, useProjectStore } from '../../layers/studio/server/utils/sources'
-import { markdownToYDocUpdate, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
+import { yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The family routes: the guards of the metadata patch, the copy of a deck as a
@@ -82,10 +83,15 @@ describe('copying a deck (POST /api/presentations/:slug/duplicate)', () => {
   })
 
   it('copies the draft of a deck never published', async () => {
-    await useDraftStore().save('wip', markdownToYDocUpdate('# Work in progress'))
+    await writeDraftText('wip', '# Work in progress')
     await useDeckMeta().update('wip', { title: 'WIP' })
     await copy({ slug: 'wip-2', mode: 'variant', variantLabel: 'B' }, 'wip')
     expect(yDocUpdateToMarkdown((await useDraftStore().load('wip-2'))!)).toContain('# Work in progress')
+  })
+
+  it('answers 409 when another write created the draft of the copy meanwhile', async () => {
+    vi.spyOn(useStores().drafts, 'create').mockResolvedValueOnce(false)
+    await expect(copy({ slug: 'talk-copy', mode: 'variant' })).rejects.toMatchObject({ statusCode: 409 })
   })
 
   it('refuses a taken slug, a malformed body, and a read-only account', async () => {

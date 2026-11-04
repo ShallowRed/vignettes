@@ -48,7 +48,8 @@ export default defineEventHandler(async (event) => {
   const title = body.title ?? source.title
   // The title lives in the frontmatter too: a publish re-reads it from there.
   const { data, body: text } = splitFrontmatter(raw)
-  await drafts.save(body.slug, markdownToYDocUpdate(stringifyDocument({ ...data, title }, text)))
+  if (!await drafts.create(body.slug, markdownToYDocUpdate(stringifyDocument({ ...data, title }, text))))
+    throw createError({ statusCode: 409, statusMessage: `A deck "${body.slug}" already exists` })
 
   const family = body.mode === 'variant' ? source.family ?? source.title : source.family
   const created = await meta.update(body.slug, {

@@ -1,7 +1,8 @@
 import { Document } from '@hocuspocus/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { noteContributor, recordDraftSnapshot, SNAPSHOT_INTERVAL_MS, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
-import { markdownToYDocUpdate } from '../../layers/studio/shared/collab/ydoc'
+import * as Y from 'yjs'
+import { noteContributor, recordDraftSnapshot, SNAPSHOT_INTERVAL_MS, useCollabServer, useDraftStore, useSnapshotStore, writeDraftText } from '../../layers/studio/server/utils/collab'
+import { replaceText } from '../../layers/studio/shared/collab/ydoc'
 import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // The fine history of the draft: what the collab hooks and the solo save keep.
@@ -13,19 +14,23 @@ const { default: saveDraft } = await import('../../layers/studio/server/api/pres
 const hooks = () => useCollabServer().configuration
 const editor = (over: Record<string, unknown>) => asUser(3, 'ed', over)
 
+// One room per test, as Hocuspocus keeps one per deck: its stores share the
+// lineage of the stored draft.
+let shared = new Document('deck')
 function room(text: string) {
-  const doc = new Document('deck')
-  doc.getText('codemirror').insert(0, text)
-  return doc
+  replaceText(shared.getText('codemirror'), text)
+  return shared
 }
 function change(user: string) {
-  return hooks().onChange!({ documentName: 'deck', document: room(''), context: { deck: 'deck', user } } as any)
+  return hooks().onChange!({ documentName: 'deck', document: new Document('deck'), context: { deck: 'deck', user } } as any)
 }
 async function store(doc: Document, clientsCount: number) {
+  await useDraftStore().create('deck', Y.encodeStateAsUpdate(new Y.Doc()))
   await hooks().onStoreDocument!({ documentName: 'deck', document: doc as any, clientsCount, lastContext: { deck: 'deck' }, lastTransactionOrigin: null, instance: useCollabServer() })
 }
 
 beforeEach(async () => {
+  shared = new Document('deck')
   await seedAccount(3, 'ed', 'editor')
   useCollabServer().documents.delete('deck')
 })
@@ -66,7 +71,7 @@ describe('snapshots while people edit', () => {
 
 describe('recordDraftSnapshot', () => {
   it('names the contributors noted since the last snapshot, then forgets them', async () => {
-    await useDraftStore().save('deck', markdownToYDocUpdate('# x'))
+    await writeDraftText('deck', '# x')
     noteContributor('deck', 'ana')
     noteContributor('deck', null)
     expect(await recordDraftSnapshot('deck', '# x', { by: 'ed', force: true })).toEqual(expect.any(Number))

@@ -113,6 +113,8 @@ function completionSource(options: FrontmatterOptions) {
   const defaultLabel = t('editor.frontmatter.defaultValue')
   const blockLabel = t('editor.frontmatter.block')
   return (context: CompletionContext): CompletionResult | null => {
+    if (context.state.readOnly)
+      return null
     const { state } = context
     const line = state.doc.lineAt(context.pos)
     if (!inFrontmatter(state, line.number))

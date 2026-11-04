@@ -64,7 +64,7 @@ export function problemMessage(problem: Problem, t: Translate, view?: EditorView
     button.textContent = fix.label
     button.addEventListener('click', () => {
       const spec = fix.change(view.state, problem.from)
-      if (spec)
+      if (spec && !view.state.readOnly)
         view.dispatch(spec)
     })
     parts.push(button)
