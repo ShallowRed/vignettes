@@ -42,7 +42,7 @@ interface EditorPreviewOptions {
   locale: Readonly<Ref<string>>
 }
 
-const FRAGMENT_STEPS_KEY = 'vignettes:editor-fragment-steps'
+const FRAGMENT_STEPS_COOKIE = 'editor_fragment_steps'
 
 /**
  * The live preview of the editor: the text reparsed through the pipeline of the
@@ -73,20 +73,10 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   // Fragments in the preview: the slide in its final state (every fragment shown),
   // or opened at the fragment under the caret and stepped with the preview's arrows
   // as in the deck. The choice is kept per browser.
-  const fragmentSteps = ref(false)
-  onMounted(() => {
-    try {
-      fragmentSteps.value = localStorage.getItem(FRAGMENT_STEPS_KEY) === '1'
-    }
-    catch {}
-  })
+  const fragmentSteps = useBrowserPreference(FRAGMENT_STEPS_COOKIE, false)
 
   function toggleFragmentSteps() {
     fragmentSteps.value = !fragmentSteps.value
-    try {
-      localStorage.setItem(FRAGMENT_STEPS_KEY, fragmentSteps.value ? '1' : '0')
-    }
-    catch {}
   }
 
   // A deck whose frontmatter turns fragments off shows them all in both modes.
@@ -396,6 +386,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     followCursor,
     cursorListener,
     cursorSlideHash,
+    cursorSlide,
     cursorSlideNumber,
     slideCount,
     cursorInJson,

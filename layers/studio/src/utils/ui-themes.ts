@@ -1,3 +1,5 @@
+import { PREFERENCE_COOKIE } from './preference-cookie'
+
 // The interface themes of the studio, each with its file in assets/css/themes/.
 // vignettes.css sets the default values under `:root`; the others set the
 // palettes, the radius and the typeface of Nuxt UI under
@@ -41,7 +43,7 @@ export function resolveUiTheme(instance: string, choice: unknown, trials: boolea
 }
 
 /** The cookie that keeps the theme a visitor tries, read by the server of the studio and by the head script of the site. */
-export const UI_THEME_COOKIE = { name: 'ui_theme', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' } as const
+export const UI_THEME_COOKIE = { name: 'ui_theme', ...PREFERENCE_COOKIE } as const
 
 /** The entries of the menu of the themes on trial. */
 export function uiThemeMenuItems(current: UiTheme, select: (id: UiTheme) => void) {

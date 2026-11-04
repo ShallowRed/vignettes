@@ -2,7 +2,7 @@ import type { LocalizedText } from './components.ts'
 import type { TextChange } from './split.ts'
 import { frontmatterLineCount } from './frontmatter.ts'
 import { layoutSource, readLayout } from './layout.ts'
-import { layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues } from './split.ts'
+import { layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, lineStarts } from './split.ts'
 
 /**
  * The forms of the earlier format that a deck may still hold and that a
@@ -97,13 +97,6 @@ export function legacyMentions(raw: string): LegacyMention[] {
   return [...frontmatterMentions(raw), ...layoutFormMentions(raw)]
 }
 
-function lineStarts(lines: string[]): number[] {
-  const starts = [0]
-  for (const line of lines)
-    starts.push(starts.at(-1)! + line.length + 1)
-  return starts
-}
-
 function rootEntries(raw: string, lines: string[]): RootEntry[] {
   const entries: RootEntry[] = []
   // The block opens and closes with a `---` line.
@@ -123,7 +116,7 @@ function rootEntries(raw: string, lines: string[]): RootEntry[] {
 
 function frontmatterMentions(raw: string): LegacyMention[] {
   const lines = raw.split('\n')
-  const starts = lineStarts(lines)
+  const starts = lineStarts(raw)
   const entries = rootEntries(raw, lines)
   const removeLine = (index: number): TextChange => ({ from: starts[index]!, to: starts[index + 1]!, insert: '' })
   return entries.flatMap((entry) => {

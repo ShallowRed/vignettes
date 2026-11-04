@@ -75,12 +75,14 @@
       "preview": "Preview",
       "previewTip": "The draft full screen, as it would be published",
       "presentVersionTip": "The live version, full screen",
-      "presentNeverPublished": "Publish the presentation to present it.",
-      "slideTextChanged": "This text was changed while you were typing",
-      "slideTextStructure": "This text would change how the deck splits into slides",
-      "slideTextCopy": "Copy your version to carry it over in the source of the deck.",
+      "presentNeverPublished": "Publish the presentation to present it."
+    },
+    "typedText": {
+      "changed": "This text was changed while you were typing",
+      "structure": "This text would change how the deck splits into slides",
+      "copy": "Copy your version to carry it over in the source of the deck.",
       "copyText": "Copy the text",
-      "textCopied": "Text copied",
+      "copied": "Text copied",
       "copyFailed": "The browser refused the copy: select the text below"
     },
     "toolbar": {
@@ -275,6 +277,26 @@
     },
     "keys": {
       "space": "Space"
+    },
+    "outline": {
+      "title": "Outline",
+      "close": "Close the outline",
+      "empty": "The deck has no slide yet.",
+      "untitled": "Untitled",
+      "slide": "Slide {number}: {title}",
+      "actions": "Actions of “{title}”",
+      "rename": "Rename",
+      "renameLabel": "Title of the slide",
+      "duplicate": "Duplicate",
+      "duplicateStack": "Duplicate the stack",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Delete",
+      "removeStack": "Delete the stack",
+      "removed": "Slide deleted",
+      "removedStack": "Stack deleted",
+      "undo": "Undo",
+      "refused": "This would change how the deck splits into slides"
     }
   }
 }

@@ -209,6 +209,7 @@ const {
   followCursor,
   cursorListener,
   cursorSlideHash,
+  cursorSlide,
   cursorSlideNumber,
   slideCount,
   cursorInJson,
@@ -226,6 +227,10 @@ const {
   locale,
 })
 
+// The undo history of the mode, through which the gestures outside the source
+// write their changes: the preview and the outline.
+const editorHistory = useEditorHistory({ view: editorView, collab: collabEnabled, shared: collab })
+
 // A click on an element of the preview selects its source in the editor, and a
 // double-click on a heading, a paragraph or a list item edits its text on the slide.
 const { onPreviewClick, onPreviewDoubleClick, sourceTracking } = usePreviewSource({
@@ -237,7 +242,7 @@ const { onPreviewClick, onPreviewDoubleClick, sourceTracking } = usePreviewSourc
   writable: editorWritable,
   holdPreview,
   parseRun,
-  isolateUndo: collab.isolateUndo,
+  history: editorHistory,
 })
 
 // The layout panel measures each size of a media in a hidden render, drawn with
@@ -336,21 +341,10 @@ const breadcrumb = computed(() => {
 
 // On by default, so a paragraph stays in the pane; a wrapped line continues
 // under its own text. The choice is kept per browser.
-const WRAP_LINES_KEY = 'vignettes:editor-wrap-lines'
-const wrapLines = ref(true)
-onMounted(() => {
-  try {
-    wrapLines.value = localStorage.getItem(WRAP_LINES_KEY) !== '0'
-  }
-  catch {}
-})
+const wrapLines = useBrowserPreference('editor_wrap_lines', true)
 
-watch(wrapLines, (wrap) => {
-  try {
-    localStorage.setItem(WRAP_LINES_KEY, wrap ? '1' : '0')
-  }
-  catch {}
-})
+// The outline of the slides beside the source, kept open or closed per browser.
+const outlineOpen = useBrowserPreference('editor_outline', false)
 
 function toggleWrap() {
   wrapLines.value = !wrapLines.value
@@ -367,6 +361,7 @@ const extensions = computed<Extension[]>(() => [
   previewProblemMarks(t),
   cursorListener,
   sourceTracking,
+  editorHistory.extension,
   shortcutKeymap,
   imageUploadHandlers,
   // Yjs owns undo in collab mode; the local history would fight it.
@@ -529,68 +524,83 @@ async function onMetaSaved() {
         :aria-label="t('editor.page.sourcePane')"
         :ui="{ root: 'min-h-0 max-md:flex-1 md:w-(--width) border-t md:border-t-0 md:border-e border-default bg-default overflow-hidden', handle: 'hidden md:block after:absolute after:inset-y-0 after:-left-px after:w-0.5 after:transition-colors hover:after:bg-primary active:after:bg-primary' }"
       >
-        <EditorToolbar
-          :view="editorView"
-          :parser="parserId"
-          :disabled="!editorWritable"
-          :help-open="helpOpen"
-          @upload-images="uploadChosenImages"
-          @help="helpOpen = !helpOpen"
-        />
-        <UAlert
-          v-if="collabEnded"
-          color="warning"
-          variant="subtle"
-          icon="i-lucide-cloud-off"
-          :title="t(`editor.collab.ended.${collabEnded}`)"
-          :actions="collabEndedActions"
-          class="rounded-none border-b border-default"
-        />
-        <div class="relative flex-1 min-h-0 flex flex-col">
-          <ClientOnly>
-            <!-- Collab mode: the Y.Text owns the document (no v-model: it would fight
+        <!-- The outline of the slides sits beside the source; below the md width it covers it. -->
+        <div class="relative flex flex-1 min-h-0">
+          <EditorOutline
+            v-if="outlineOpen"
+            class="w-56 shrink-0 border-e border-default max-md:absolute max-md:inset-0 max-md:z-20 max-md:w-full"
+            :view="editorView"
+            :cursor-slide="cursorSlide"
+            :writable="editorWritable"
+            :history="editorHistory"
+            @close="outlineOpen = false"
+          />
+          <div class="flex flex-1 min-w-0 flex-col">
+            <EditorToolbar
+              :view="editorView"
+              :parser="parserId"
+              :disabled="!editorWritable"
+              :help-open="helpOpen"
+              @upload-images="uploadChosenImages"
+              @help="helpOpen = !helpOpen"
+            />
+            <UAlert
+              v-if="collabEnded"
+              color="warning"
+              variant="subtle"
+              icon="i-lucide-cloud-off"
+              :title="t(`editor.collab.ended.${collabEnded}`)"
+              :actions="collabEndedActions"
+              class="rounded-none border-b border-default"
+            />
+            <div class="relative flex-1 min-h-0 flex flex-col">
+              <ClientOnly>
+                <!-- Collab mode: the Y.Text owns the document (no v-model: it would fight
                  Yjs); the yCollab extension syncs the editor and we mirror into `raw`. -->
-            <Codemirror
-              v-if="collabEnabled"
-              ref="cm"
-              class="flex-1 min-h-0 overflow-hidden"
-              :extensions="extensions"
-              :readonly="!editorWritable"
-              :tab-size="2"
-            />
-            <!-- Solo mode: plain two-way binding. -->
-            <Codemirror
-              v-else
-              ref="cm"
-              v-model="cmModel"
-              class="flex-1 min-h-0 overflow-hidden"
-              :extensions="extensions"
-              :tab-size="2"
-            />
-          </ClientOnly>
-          <!-- Until the editor holds the text, the text shows where the editor
+                <Codemirror
+                  v-if="collabEnabled"
+                  ref="cm"
+                  class="flex-1 min-h-0 overflow-hidden"
+                  :extensions="extensions"
+                  :readonly="!editorWritable"
+                  :tab-size="2"
+                />
+                <!-- Solo mode: plain two-way binding. -->
+                <Codemirror
+                  v-else
+                  ref="cm"
+                  v-model="cmModel"
+                  class="flex-1 min-h-0 overflow-hidden"
+                  :extensions="extensions"
+                  :tab-size="2"
+                />
+              </ClientOnly>
+              <!-- Until the editor holds the text, the text shows where the editor
                will place it, without its colors and line numbers. -->
-          <div
-            v-if="!editorReady"
-            class="editor-source-pending"
-            :class="{ 'editor-source-pending--wrap': wrapLines }"
-            role="status"
-          >
-            <span
-              v-if="!collabEnded"
-              class="sr-only"
-            >{{ t('editor.page.editorLoading') }}</span>
-            <pre aria-hidden="true">{{ raw }}</pre>
+              <div
+                v-if="!editorReady"
+                class="editor-source-pending"
+                :class="{ 'editor-source-pending--wrap': wrapLines }"
+                role="status"
+              >
+                <span
+                  v-if="!collabEnded"
+                  class="sr-only"
+                >{{ t('editor.page.editorLoading') }}</span>
+                <pre aria-hidden="true">{{ raw }}</pre>
+              </div>
+            </div>
+            <EditorStatusBar
+              v-model:wrap="wrapLines"
+              v-model:outline="outlineOpen"
+              :view="editorView"
+              :slide="cursorSlideNumber"
+              :slide-count="slideCount"
+              :in-json="cursorInJson"
+              :disabled="!editorWritable"
+            />
           </div>
         </div>
-        <EditorStatusBar
-          v-model:wrap="wrapLines"
-          :view="editorView"
-          :slide="cursorSlideNumber"
-          :slide-count="slideCount"
-          :in-json="cursorInJson"
-          :disabled="!editorWritable"
-        />
       </UDashboardPanel>
 
       <!-- The preview pane shows the slide at scale, with the commands of the

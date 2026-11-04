@@ -4,7 +4,7 @@ import type { Translate } from '../config/editor-reference'
 import { codeFolding, foldEffect, foldGutter, foldKeymap, foldService, unfoldAll } from '@codemirror/language'
 import { Prec, RangeSet, StateField } from '@codemirror/state'
 import { Decoration, EditorView, gutterLineClass, GutterMarker, keymap, lineNumbers, MatchDecorator, ViewPlugin } from '@codemirror/view'
-import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { parserIdFor, slideRanges, slideTitle, splitFrontmatter } from '@vignettes/core/deck'
 
 /**
  * The deck structure in the markdown pane: line numbers, the lines of the slide
@@ -182,14 +182,9 @@ function summarize(state: EditorState, range: { from: number, to: number }, fron
   const lines = last.number - first.number
   if (first.number === 1)
     return { label: frontmatterLabel, lines }
-  if (!SEPARATOR_RE.test(first.text))
+  if (!SEPARATOR_RE.test(first.text) || first.number === last.number)
     return { label: '', lines }
-  for (let n = first.number + 1; n <= last.number; n++) {
-    const heading = HEADING_RE.exec(state.doc.line(n).text)
-    if (heading)
-      return { label: state.doc.line(n).text.slice(heading[0].length).trim(), lines }
-  }
-  return { label: '', lines }
+  return { label: slideTitle(state.sliceDoc(state.doc.line(first.number + 1).from, last.to))?.text ?? '', lines }
 }
 
 function folding(t: Translate): Extension {

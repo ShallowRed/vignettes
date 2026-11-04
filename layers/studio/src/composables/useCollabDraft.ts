@@ -39,6 +39,10 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
   let onPublished = () => {}
   let cleanup: (() => void) | null = null
   let isolateUndo = () => {}
+  let undo = () => {}
+  // The changes of this tab: each one the shared undo history keeps, an undo
+  // included, which adds to the redo stack.
+  const localChanges = ref(0)
 
   async function start() {
     const [{ Doc, UndoManager }, { HocuspocusProvider }, { yCollab, yUndoManagerKeymap, yRemoteSelectionsTheme }, { DECK_TEXT_FIELD }] = await Promise.all([
@@ -123,6 +127,10 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
     // close its group.
     const undoManager = new UndoManager(ytext)
     isolateUndo = () => undoManager.stopCapturing()
+    undo = () => undoManager.undo()
+    undoManager.on('stack-item-added', () => {
+      localChanges.value++
+    })
     extensions.value = [
       collabWriteGate(ydoc, () => docSynced.value && !ended.value),
       yCollab(ytext, provider.awareness, { undoManager }),
@@ -181,5 +189,9 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
     },
     /** Ends the group of the shared undo history, so that the next change is undone on its own. */
     isolateUndo: () => isolateUndo(),
+    /** Undoes the last change of this tab in the shared draft. */
+    undo: () => undo(),
+    /** The changes this tab made to the shared draft. */
+    localChanges: readonly(localChanges),
   }
 }

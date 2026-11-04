@@ -1,13 +1,13 @@
-import type { ParserId } from '@vignettes/core/deck'
+import type { ParserId, TextBlock } from '@vignettes/core/deck'
 import type { SourceRange } from '@vignettes/core/render'
 import type { Ref, ShallowRef } from 'vue'
-import type { TextBlock } from '../utils/preview-source'
+import type { EditorHistory } from './useEditorHistory'
 import type { PreviewInstance } from './useEditorPreview'
-import { isolateHistory } from '@codemirror/commands'
 import { EditorView } from '@codemirror/view'
+import { typedTextChange } from '@vignettes/core/deck'
 import { readSourceRange, SOURCE_ATTRIBUTE, SOURCE_TEXT_ATTRIBUTE, TASK_BOX_TAG, TEXT_END_TAGS } from '@vignettes/core/render'
 import { transformerTexte } from '@vignettes/typographie'
-import { deckRange, followRange, slideTextChange, textBlock } from '../utils/preview-source'
+import { deckRange, followRange, textBlock } from '../utils/preview-source'
 
 interface PreviewSourceOptions {
   previewFrame: Readonly<ShallowRef<HTMLElement | null>>
@@ -22,8 +22,8 @@ interface PreviewSourceOptions {
   holdPreview: () => () => void
   /** The parses of the preview that ended. */
   parseRun: Readonly<Ref<number>>
-  /** Ends the group of the shared undo history, in collaboration. */
-  isolateUndo: () => void
+  /** The undo history of the mode, which writes an edit as one step. */
+  history: EditorHistory
 }
 
 // The elements of a slide that answer a click themselves, and the field of an edit.
@@ -90,8 +90,7 @@ function clickedOffset(event: MouseEvent, nodes: ChildNode[]): number | undefine
  */
 export function usePreviewSource(options: PreviewSourceOptions) {
   const { previewFrame, previewInstance, editorView, renderedText, parserId, writable } = options
-  const { t } = useI18n()
-  const toast = useToast()
+  const { refused } = useRefusedText()
 
   let edit: Edit | null = null
   // A field written into the document, shown until the preview draws the new text.
@@ -218,7 +217,7 @@ export function usePreviewSource(options: PreviewSourceOptions) {
     // eslint-disable-next-line unicorn/prefer-dom-node-text-content
     const typed = current.field.innerText
     close(current)
-    const change = write ? slideTextChange(current.view.state.doc.toString(), current.range, current.written, typed, current.block, parserId.value) : undefined
+    const change = write ? typedTextChange(current.view.state.doc.toString(), current.range, current.written, typed, current.block, parserId.value) : undefined
     if (typeof change !== 'object') {
       restore(current)
       current.release()
@@ -226,9 +225,7 @@ export function usePreviewSource(options: PreviewSourceOptions) {
         refused(change, typed)
       return
     }
-    options.isolateUndo()
-    current.view.dispatch({ changes: change, annotations: isolateHistory.of('full'), userEvent: 'input.preview' })
-    options.isolateUndo()
+    options.history.write(current.view, { changes: change, userEvent: 'input.preview' })
     current.field.textContent = change.insert
     written = { field: current.field, nodes: current.nodes, lead: current.lead }
     current.release()
@@ -238,29 +235,6 @@ export function usePreviewSource(options: PreviewSourceOptions) {
   function restore(shown: Pick<Edit, 'field' | 'nodes' | 'lead'>) {
     shown.lead.remove()
     shown.field.replaceWith(...shown.nodes)
-  }
-
-  function refused(reason: 'conflict' | 'structure', typed: string) {
-    toast.add({
-      title: t(reason === 'conflict' ? 'editor.preview.slideTextChanged' : 'editor.preview.slideTextStructure'),
-      description: t('editor.preview.slideTextCopy'),
-      icon: 'i-lucide-triangle-alert',
-      color: 'warning',
-      // The message holds the only copy of the text typed: it stays until the person closes it.
-      duration: 0,
-      actions: [{ label: t('editor.preview.copyText'), icon: 'i-lucide-copy', color: 'neutral', variant: 'outline', onClick: () => copy(typed) }],
-    })
-  }
-
-  // A browser that refuses the copy gets the text in the message, to select by hand.
-  async function copy(typed: string) {
-    try {
-      await navigator.clipboard.writeText(typed)
-      toast.add({ title: t('editor.preview.textCopied'), icon: 'i-lucide-clipboard-check', color: 'success' })
-    }
-    catch {
-      toast.add({ title: t('editor.preview.copyFailed'), description: typed, icon: 'i-lucide-triangle-alert', color: 'error', duration: 0 })
-    }
   }
 
   // The nodes of a written field come back before Vue updates the preview,

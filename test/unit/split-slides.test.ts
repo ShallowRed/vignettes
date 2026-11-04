@@ -1,4 +1,4 @@
-import { attributeMentions, blockEndAround, bodyMedia, componentAttributeIssues, componentMentions, containerPrefix, directiveMentions, escapeBlockStart, escapeHeadingClose, headingTextRange, isSectionSlide, listItemTextStart, malformedAttributeMentions, opensBlock, registerDeckComponents, resetDeckComponents, slideSourceAt, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
+import { attributeMentions, blockEndAround, bodyMedia, componentAttributeIssues, componentMentions, containerPrefix, directiveMentions, escapeBlockStart, escapeHeadingClose, headingTextRange, isSectionSlide, listItemTextStart, malformedAttributeMentions, opensBlock, registerDeckComponents, resetDeckComponents, slideSourceAt, slideTitle, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
@@ -381,5 +381,26 @@ describe('the text of a heading and of a list item', () => {
     expect(containerPrefix('  > > suite')).toBe('  > > ')
     expect(containerPrefix('  dure')).toBe('  ')
     expect(containerPrefix('texte')).toBe('')
+  })
+})
+
+describe('slideTitle', () => {
+  it('reads the first heading of a slide, at any level or underlined, as a reader sees it', () => {
+    expect(slideTitle('## Un **titre** ##\n\nTexte')).toMatchObject({ text: 'Un titre', underlined: false })
+    expect(slideTitle('Texte\n\n###### Petit [titre](/a)')!.text).toBe('Petit titre')
+    expect(slideTitle('---\n\nTitre sur\ndeux lignes\n---\n\nTexte')).toMatchObject({ text: 'Titre sur deux lignes', underlined: true })
+    expect(slideTitle('## Langage C \\#')!.text).toBe('Langage C #')
+  })
+
+  it('places the source of the title in the slide text', () => {
+    const text = '---\n\n## Un **titre**\n'
+    const title = slideTitle(text)!
+    expect(text.slice(title.from, title.to)).toBe('Un **titre**')
+  })
+
+  it('gives no title to a slide without one, or with an empty first heading', () => {
+    expect(slideTitle('```\n## code\n```\n\nTexte')).toBeUndefined()
+    expect(slideTitle('::Notes\n## notes\n::')).toBeUndefined()
+    expect(slideTitle('##\n\n## Ensuite')).toBeUndefined()
   })
 })

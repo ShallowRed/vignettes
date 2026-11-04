@@ -950,10 +950,41 @@ export function slideSourceAt(raw: string, parser: ParserId, h: number, v: numbe
   const source = splitSlides(raw, parser).find(slide => slide.h === h && slide.v === v)
   if (!source)
     return undefined
-  let from = 0
-  for (let line = 1; line < source.startLine; line++)
-    from = raw.indexOf('\n', from) + 1
-  return { from, text: source.text }
+  return { from: lineStarts(raw)[source.startLine - 1]!, text: source.text }
+}
+
+/** The offset of the start of each line of a text. */
+export function lineStarts(text: string): number[] {
+  const starts = [0]
+  for (let at = text.indexOf('\n'); at !== -1; at = text.indexOf('\n', at + 1))
+    starts.push(at + 1)
+  return starts
+}
+
+/** The range from `from` to `to` of a text without its blank lines at both ends. */
+export function contentRange(text: string, from = 0, to = text.length): { from: number, to: number } {
+  let start = from
+  while (start < to) {
+    const newline = text.indexOf('\n', start)
+    const lineEnd = newline === -1 ? to : Math.min(newline, to)
+    if (text.slice(start, lineEnd).trim())
+      break
+    start = Math.min(lineEnd + 1, to)
+  }
+  let end = to
+  while (end > start) {
+    const lineStart = Math.max(text.lastIndexOf('\n', end - 1) + 1, start)
+    if (text.slice(lineStart, end).trim())
+      break
+    end = Math.max(lineStart - 1, start)
+  }
+  // The carriage return of a `\r\n` line ending stays out of the range.
+  return { from: start, to: end > start && text[end - 1] === '\r' ? end - 1 : end }
+}
+
+/** A text with `changes` applied, their offsets in the text before any of them. */
+export function applyTextChanges(text: string, changes: readonly TextChange[]): string {
+  return [...changes].sort((a, b) => b.from - a.from).reduce((result, { from, to, insert }) => result.slice(0, from) + insert + result.slice(to), text)
 }
 
 /**
@@ -983,4 +1014,39 @@ export function listItemTextStart(source: string): number {
 /** The marks of the containers a line sits in: its quote marks and its indentation. */
 export function containerPrefix(line: string): string {
   return CONTAINER_RE.exec(line)![0]
+}
+
+/** The title of a slide: what a reader sees of it, and where its source sits in the slide text, marks left out. */
+export interface SlideTitle {
+  text: string
+  from: number
+  to: number
+  underlined: boolean
+}
+
+const ESCAPE_RE = /\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g
+
+/**
+ * The first heading of a slide, as `splitSlides` cuts its text: a `#` heading
+ * of any level, or a setext heading inside the slide, out of fenced code and
+ * MDC blocks. An empty first heading gives no title.
+ */
+export function slideTitle(text: string): SlideTitle | undefined {
+  const lines = text.split('\n')
+  const starts = lineStarts(text)
+  for (const line of scan(lines, 0)) {
+    const underlined = line.from !== undefined
+    if (line.kind === 'nested' || (!underlined && !ATX_RE.test(line.text)))
+      continue
+    const range = underlined
+      ? { from: starts[line.from!]!, to: starts[line.index]! - 1 }
+      : { from: starts[line.index]! + headingTextRange(line.text)!.from, to: starts[line.index]! + headingTextRange(line.text)!.to }
+    const source = text.slice(range.from, range.to)
+    const from = range.from + source.length - source.trimStart().length
+    const to = range.to - (source.length - source.trimEnd().length)
+    if (from >= to)
+      return undefined
+    return { text: displayedText(text.slice(from, to)).replace(ESCAPE_RE, '$1').replace(/\s+/g, ' '), from, to, underlined }
+  }
+  return undefined
 }

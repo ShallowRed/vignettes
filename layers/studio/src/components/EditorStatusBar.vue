@@ -4,9 +4,9 @@ import { useInstanceLinks } from '../composables/useInstanceLinks'
 import { formatJson, jsonFormatNotice } from '../utils/editor-json'
 import { foldOtherSlides, unfoldAll } from '../utils/editor-slides'
 
-// The foot of the markdown pane: where the caret is in the deck, how the source
-// is shown (folds, line wrapping), the indentation of the JSON block under the
-// caret and the links of the instance.
+// The foot of the markdown pane: the outline of the deck and where the caret is
+// in it, how the source is shown (folds, line wrapping), the indentation of the
+// JSON block under the caret and the links of the instance.
 const props = defineProps<{
   view?: EditorView
   /** 1-based position of the slide under the caret. */
@@ -19,6 +19,8 @@ const props = defineProps<{
 }>()
 
 const wrap = defineModel<boolean>('wrap', { default: false })
+/** The outline of the slides is open beside the source. */
+const outline = defineModel<boolean>('outline', { default: false })
 
 const { t } = useI18n()
 const toast = useToast()
@@ -63,6 +65,22 @@ function run(action: (view: EditorView) => unknown) {
     ref="bar"
     class="@container flex items-center gap-1 h-8 px-2 shrink-0 border-t border-default text-xs text-muted"
   >
+    <UTooltip
+      :text="t('editor.outline.title')"
+      :disabled="!compact"
+    >
+      <UButton
+        icon="i-lucide-list-tree"
+        :label="t('editor.outline.title')"
+        :aria-label="t('editor.outline.title')"
+        :ui="BUTTON_UI"
+        color="neutral"
+        :variant="outline ? 'soft' : 'ghost'"
+        size="xs"
+        :aria-pressed="outline"
+        @click="() => { outline = !outline }"
+      />
+    </UTooltip>
     <span class="px-1 tabular-nums whitespace-nowrap">{{ t('editor.statusBar.slidePosition', { slide, total: slideCount }) }}</span>
     <div class="flex-1" />
     <template v-if="inJson">
