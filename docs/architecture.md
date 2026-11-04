@@ -160,9 +160,12 @@ Three layers:
 `docs/theme-system.md` holds the full reference.
 
 ### Interface themes
-The interface themes set the colors, the radius and the typeface of the studio, apart from the deck themes: `vignettes`, the default, with Lexend Deca on the palettes of Nuxt UI, `dsfr` and `lasuite`. Each has its CSS file in `layers/studio/src/assets/css/themes/`: `vignettes.css` sets the values under `:root`, and the others replace the palettes, the radius and the typeface under `:root[data-ui-theme='<id>']`. `UI_THEMES` of `layers/studio/src/utils/ui-themes.ts` lists the themes, and `resolveUiTheme` gives the theme of a page. `NUXT_PUBLIC_UI_THEME` sets the theme of the instance. Where the acceptance kit opens, in development and on staging, the account menu offers the other themes on trial, and the cookie `ui_theme` keeps the choice of the visitor so that the server renders the page with it.
+The interface themes set the colors, the radius and the typeface of the studio, apart from the deck themes: `vignettes`, the default, with Lexend Deca on the palettes of Nuxt UI, `dsfr` and `lasuite`. Each has its CSS file in `layers/studio/src/assets/css/themes/`: `vignettes.css` sets the values under `:root`, and the others replace the palettes, the radius and the typeface under `:root[data-ui-theme='<id>']`. `UI_THEMES` of `layers/studio/src/utils/ui-themes.ts` lists the themes, and `resolveUiTheme` gives the theme of a page. `NUXT_PUBLIC_UI_THEME` sets the theme of the instance. Where the `ui-themes` trial opens, the account menu offers the other themes, and the cookie `ui_theme` keeps the choice of the visitor so that the server renders the page with it.
 
 The site reads the same files by relative path: `site/nuxt.config.ts` and `site/app/app.css` import the three CSS files, and its composable `useUiTheme`, its header menu and its plugin `ui-theme.ts` import `ui-themes.ts`. The build of the site made from `staging` opens the menu with `NUXT_PUBLIC_UI_TRIALS`; since the pages are static files, a script in the head reads the cookie and sets the theme before the first paint. Whoever moves or renames one of these files in `layers/studio/src/` updates the imports of the site.
+
+### Features on trial
+`TRIAL_FEATURES` of `layers/studio/shared/trials/index.ts` lists the features on trial. `layers/studio/server/plugins/trials.ts` opens them where the acceptance kit opens, in development and on staging, and `useTrial(feature)` tells the studio whether a feature opens. A feature leaves the list when it ships to everyone.
 
 ## Build
 

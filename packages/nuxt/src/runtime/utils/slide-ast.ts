@@ -1,13 +1,14 @@
 // The two implementations of the `DeckParser` port: headings and separators.
 
 import type { MDCParserResult } from '@nuxtjs/mdc'
-import type { DeckParser, Slide, SlideSource } from '@vignettes/core/deck'
+import type { DeckParser, ParseOptions, Slide, SlideSource } from '@vignettes/core/deck'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import {
   BACKGROUND_ANNOTATION_TAG,
   codeLines,
   fullSlideComponentNames,
   HTML_REWRITTEN_COMPONENT_TAGS,
+  isLinkDefinition,
   isSectionSlide,
   legacyComponentLayout,
   readLayout,
@@ -15,6 +16,7 @@ import {
   STRIPPED_ANNOTATION_TAGS,
 } from '@vignettes/core/deck'
 import { safeNodes } from './slide-rendering.ts'
+import { writeSourcePositions } from './source-positions.ts'
 
 // Renames the MDC components whose tag the HTML pass would rewrite.
 function remarkRewrittenComponentTags() {
@@ -34,9 +36,10 @@ function remarkRewrittenComponentTags() {
   }
 }
 
-function parseDeckMarkdown(md: string): Promise<MDCParserResult> {
+function parseDeckMarkdown(md: string, keepPosition = false): Promise<MDCParserResult> {
   return parseMarkdown(md, {
     remark: { plugins: { 'rewritten-component-tags': { instance: remarkRewrittenComponentTags } } },
+    keepPosition,
   })
 }
 
@@ -189,13 +192,19 @@ export function createSlide(children: any[], headingLevel?: string): Slide {
 }
 
 // The leading newline keeps MDC from reading a slide that opens on a thematic
-// break as frontmatter; the frontmatter is split off before the slides.
-async function parseChunk(text: string, definitions = ''): Promise<any[]> {
-  const ast = await parseDeckMarkdown(`\n${text.trim()}${definitions}`)
-  return safeNodes(ast.body?.children ?? [])
+// break as frontmatter; the frontmatter is split off before the slides. It also
+// gives the first node a position, which MDC leaves out at offset 0.
+async function parseChunk(text: string, definitions = '', options: ParseOptions = {}): Promise<any[]> {
+  const parsed = `\n${text.trim()}${definitions}`
+  const ast = await parseDeckMarkdown(parsed, options.sourcePositions)
+  const nodes = safeNodes(ast.body?.children ?? [])
+  if (!options.sourcePositions)
+    return nodes
+  // An offset of `parsed` is one past the leading newline, and as far from the
+  // start of the slide text as the blanks `trim` removed.
+  const leading = text.length - text.trimStart().length
+  return writeSourcePositions(nodes, parsed, leading - 1)
 }
-
-const LINK_DEFINITION_RE = /^ {0,3}\[[^\]^][^\]]*\]:\s*\S/
 
 /**
  * The link reference definitions of the whole deck, appended to each slide of a
@@ -203,7 +212,7 @@ const LINK_DEFINITION_RE = /^ {0,3}\[[^\]^][^\]]*\]:\s*\S/
  */
 function linkDefinitions(raw: string): string {
   const code = codeLines(raw)
-  const found = raw.split('\n').filter((line, index) => !code.has(index) && LINK_DEFINITION_RE.test(line)).map(line => line.trim())
+  const found = raw.split('\n').filter((line, index) => !code.has(index) && isLinkDefinition(line)).map(line => line.trim())
   return found.length ? `\n\n${found.join('\n')}` : ''
 }
 
@@ -224,8 +233,8 @@ function fingerprint(text: string): string {
 }
 
 // The slide of one source, marked when it is a section.
-async function parseSourceSlide(text: string, definitions?: string): Promise<{ children: any[], slide: Slide }> {
-  const children = await parseChunk(text, definitions)
+async function parseSourceSlide(text: string, definitions?: string, options?: ParseOptions): Promise<{ children: any[], slide: Slide }> {
+  const children = await parseChunk(text, definitions, options)
   const slide = { ...createSlide(children), key: fingerprint(text) }
   return { children, slide: isSectionSlide(text) ? { ...slide, section: true } : slide }
 }
@@ -236,15 +245,15 @@ async function parseSourceSlide(text: string, definitions?: string): Promise<{ c
 const SLIDE_CACHE_SIZE = 500
 const parsedSlides = new Map<string, Promise<{ children: any[], slide: Slide }>>()
 
-function sourceSlide(source: SlideSource, definitions = ''): Promise<{ children: any[], slide: Slide }> {
-  const key = `${source.text}\u0000${definitions}`
+function sourceSlide(source: SlideSource, definitions = '', options: ParseOptions = {}): Promise<{ children: any[], slide: Slide }> {
+  const key = `${source.text}\u0000${definitions}\u0000${options.sourcePositions ? 'positions' : ''}`
   const cached = parsedSlides.get(key)
   if (cached) {
     parsedSlides.delete(key)
     parsedSlides.set(key, cached)
     return cached
   }
-  const parsed = parseSourceSlide(source.text, definitions)
+  const parsed = parseSourceSlide(source.text, definitions, options)
   parsed.catch(() => parsedSlides.delete(key))
   parsedSlides.set(key, parsed)
   if (parsedSlides.size > SLIDE_CACHE_SIZE)
@@ -253,8 +262,8 @@ function sourceSlide(source: SlideSource, definitions = ''): Promise<{ children:
 }
 
 // Heading decks: a stack carries its vertical slides only.
-async function headingSlide(group: SlideSource[], definitions: string): Promise<Slide> {
-  const parts = await Promise.all(group.map(source => sourceSlide(source, definitions)))
+async function headingSlide(group: SlideSource[], definitions: string, options?: ParseOptions): Promise<Slide> {
+  const parts = await Promise.all(group.map(source => sourceSlide(source, definitions, options)))
   if (parts.length === 1)
     return parts[0]!.slide
   return {
@@ -266,8 +275,8 @@ async function headingSlide(group: SlideSource[], definitions: string): Promise<
 }
 
 // Separator decks: a stack carries its vertical slides only.
-async function separatorSlide(group: SlideSource[]): Promise<Slide> {
-  const parts = await Promise.all(group.map(source => sourceSlide(source)))
+async function separatorSlide(group: SlideSource[], options?: ParseOptions): Promise<Slide> {
+  const parts = await Promise.all(group.map(source => sourceSlide(source, '', options)))
   if (parts.length === 1)
     return parts[0]!.slide
   const verticalSlides = parts.map(part => part.slide)
@@ -283,16 +292,16 @@ async function separatorSlide(group: SlideSource[]): Promise<Slide> {
 // `@vignettes/core` cuts the markdown, MDC parses each slide.
 export const headingParser: DeckParser = {
   id: 'heading',
-  parse(raw: string): Promise<Slide[]> {
+  parse(raw: string, _meta?: unknown, options?: ParseOptions): Promise<Slide[]> {
     const definitions = linkDefinitions(raw)
-    return Promise.all(groupByPosition(splitSlides(raw, 'heading')).map(group => headingSlide(group, definitions)))
+    return Promise.all(groupByPosition(splitSlides(raw, 'heading')).map(group => headingSlide(group, definitions, options)))
   },
 }
 
 export const separatorParser: DeckParser = {
   id: 'separator',
-  parse(raw: string): Promise<Slide[]> {
-    return Promise.all(groupByPosition(splitSlides(raw, 'separator')).map(separatorSlide))
+  parse(raw: string, _meta?: unknown, options?: ParseOptions): Promise<Slide[]> {
+    return Promise.all(groupByPosition(splitSlides(raw, 'separator')).map(group => separatorSlide(group, options)))
   },
 }
 

@@ -38,9 +38,10 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
   const extensions = shallowRef<Extension[]>([])
   let onPublished = () => {}
   let cleanup: (() => void) | null = null
+  let isolateUndo = () => {}
 
   async function start() {
-    const [{ Doc }, { HocuspocusProvider }, { yCollab, yUndoManagerKeymap, yRemoteSelectionsTheme }, { DECK_TEXT_FIELD }] = await Promise.all([
+    const [{ Doc, UndoManager }, { HocuspocusProvider }, { yCollab, yUndoManagerKeymap, yRemoteSelectionsTheme }, { DECK_TEXT_FIELD }] = await Promise.all([
       import('yjs'),
       import('@hocuspocus/provider'),
       import('y-codemirror.next'),
@@ -117,10 +118,14 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
     })
 
     // yCollab wires sync + local awareness; yRemoteSelectionsTheme is
-    // y-codemirror.next's own styling for remote carets/selections.
+    // y-codemirror.next's own styling for remote carets/selections. The undo
+    // history is created here so that a change made outside the keyboard can
+    // close its group.
+    const undoManager = new UndoManager(ytext)
+    isolateUndo = () => undoManager.stopCapturing()
     extensions.value = [
       collabWriteGate(ydoc, () => docSynced.value && !ended.value),
-      yCollab(ytext, provider.awareness),
+      yCollab(ytext, provider.awareness, { undoManager }),
       yRemoteSelectionsTheme,
       keymap.of(collabUndoKeys(yUndoManagerKeymap)),
     ]
@@ -174,5 +179,7 @@ export function useCollabDraft(slug: string, raw: Ref<string>, enabled: MaybeRef
     onPublished: (callback: () => void) => {
       onPublished = callback
     },
+    /** Ends the group of the shared undo history, so that the next change is undone on its own. */
+    isolateUndo: () => isolateUndo(),
   }
 }

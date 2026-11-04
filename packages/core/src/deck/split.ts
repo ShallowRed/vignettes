@@ -43,7 +43,23 @@ const SETEXT_H2_RE = /^ {0,3}-+[ \t]*$/
 // them: a quote, a table, a heading, a list item, an html comment, an html
 // block tag and a line of html tags alone.
 const HTML_BLOCK_TAGS = 'address|article|aside|blockquote|details|div|dl|figure|footer|header|hr|li|main|nav|ol|p|pre|section|table|ul|h[1-6]'
-const OTHER_BLOCK_RE = new RegExp(`^ {0,3}(?:[>|]|#{1,6}(?:[ \\t]|$)|[-*+](?:[ \\t]|$)|\\d{1,9}[.)](?:[ \\t]|$)|<!--|<\\/?(?:${HTML_BLOCK_TAGS})(?:[\\s/>]|$)|(?:<\\/?[a-z][\\w-]*(?:\\s[^>]*)?>\\s*)+$)`, 'i')
+// The marker of a list item: a bullet or a number.
+const LIST_MARKER = '(?:[-*+]|\\d{1,9}[.)])'
+const OTHER_BLOCK_RE = new RegExp(`^ {0,3}(?:[>|]|#{1,6}(?:[ \\t]|$)|${LIST_MARKER}(?:[ \\t]|$)|<!--|<\\/?(?:${HTML_BLOCK_TAGS})(?:[\\s/>]|$)|(?:<\\/?[a-z][\\w-]*(?:\\s[^>]*)?>\\s*)+$)`, 'i')
+// The starts of the html blocks of types 1 to 6 of CommonMark, which open a
+// block in the middle of a paragraph; a line of tags alone (type 7) is in
+// OTHER_BLOCK_RE.
+const HTML_TYPE6_TAGS = 'address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul'
+const HTML_BLOCK_START_RE = new RegExp(`^ {0,3}(?:<(?:script|pre|style|textarea)(?:[\\s>]|$)|<!--|<\\?|<![a-z]|<!\\[CDATA\\[|<\\/?(?:${HTML_TYPE6_TAGS})(?:[\\s/>]|$))`, 'i')
+const LINK_DEFINITION_RE = /^ {0,3}\[[^\]^][^\]]*\]:\s*\S/
+// A footnote definition takes its text out of the paragraph.
+const FOOTNOTE_DEFINITION_RE = /^ {0,3}\[\^[^\]]+\]:/
+const TABLE_CELL_DELIMITER_RE = /^:?-+:?$/
+// The `#` that close an ATX heading, the marker of a list item with the box of
+// a task, and the quote marks and the indentation that start a line of a container.
+const ATX_CLOSE_RE = /(^|[ \t])(#+)([ \t]*)$/
+const LIST_MARK_RE = new RegExp(`^[ \\t]*${LIST_MARKER}(?:[ \\t]+\\[[ x]\\](?=[ \\t]|$))?`, 'i')
+const CONTAINER_RE = /^(?:[ \t]*>)*[ \t]*/
 
 type Kind = 'blank' | 'nested' | 'text' | 'h1' | 'h2' | 'h3' | 'break'
 
@@ -880,4 +896,91 @@ export interface SlideRange {
 export function slideRanges(raw: string, parser: ParserId): SlideRange[] {
   const ranges = splitSlides(raw, parser).map(({ startLine, h, v }) => ({ startLine, h, v }))
   return ranges.length ? ranges : [{ startLine: frontmatterLineCount(raw) + 1, h: 0, v: 0 }]
+}
+
+/** Whether a line is a link reference definition (`[label]: address`), which the deck reads apart from the text. */
+export function isLinkDefinition(line: string): boolean {
+  return LINK_DEFINITION_RE.test(line)
+}
+
+/**
+ * Whether a line, at the start of a line of a paragraph, opens a block: a
+ * heading, a thematic break or a setext underline, a code fence, the opening or
+ * the closing of an MDC block, a component alone on its line, a quote, a table
+ * or its delimiter row, a list item, an html block, or a link or footnote
+ * definition.
+ */
+export function opensBlock(line: string): boolean {
+  return [FENCE_RE, BLOCK_OPEN_RE, BLOCK_CLOSE_RE, ATX_RE, THEMATIC_BREAK_RE, SETEXT_H1_RE, SETEXT_H2_RE, OTHER_BLOCK_RE, HTML_BLOCK_START_RE, LINK_DEFINITION_RE, FOOTNOTE_DEFINITION_RE, COMPONENT_LINE_RE]
+    .some(re => re.test(line)) || isTableDelimiter(line)
+}
+
+// The delimiter row of a table turns the line above it into the table's header;
+// a row of one column needs no pipe once it aligns its cell (`-:`).
+function isTableDelimiter(line: string): boolean {
+  const row = line.trim()
+  if (/^ {4}/.test(line))
+    return false
+  if (!row.includes('|'))
+    return row.includes(':') && TABLE_CELL_DELIMITER_RE.test(row)
+  return row.replace(/^\||\|$/g, '').split('|').every(cell => TABLE_CELL_DELIMITER_RE.test(cell.trim()))
+}
+
+const ASCII_PUNCTUATION_RE = /^[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/
+
+/**
+ * A line with a backslash before the mark that opens its block, so that it
+ * reads as text: before each leading colon, before the `.` or `)` of a number,
+ * otherwise before its first character when it is an ASCII punctuation.
+ */
+export function escapeBlockStart(line: string): string {
+  const indent = /^[ \t]*/.exec(line)![0]
+  const rest = line.slice(indent.length)
+  const number = /^\d{1,9}(?=[.)])/.exec(rest)?.[0]
+  if (number)
+    return `${indent}${number}\\${rest.slice(number.length)}`
+  const colons = /^:+/.exec(rest)?.[0]
+  if (colons)
+    return `${indent}${colons.replace(/:/g, '\\:')}${rest.slice(colons.length)}`
+  return ASCII_PUNCTUATION_RE.test(rest) ? `${indent}\\${rest}` : line
+}
+
+/** The offset in `raw` where the text of the slide at `h`, `v` starts, with that text. */
+export function slideSourceAt(raw: string, parser: ParserId, h: number, v: number): { from: number, text: string } | undefined {
+  const source = splitSlides(raw, parser).find(slide => slide.h === h && slide.v === v)
+  if (!source)
+    return undefined
+  let from = 0
+  for (let line = 1; line < source.startLine; line++)
+    from = raw.indexOf('\n', from) + 1
+  return { from, text: source.text }
+}
+
+/**
+ * The range of the text of a heading in its source, blanks included: after
+ * its `#` marks and before the `#` that close it, or above its setext underline.
+ */
+export function headingTextRange(source: string): { from: number, to: number, underlined: boolean } | undefined {
+  const mark = ATX_RE.exec(source)?.[0]
+  if (mark !== undefined) {
+    const close = ATX_CLOSE_RE.exec(source.slice(mark.length))
+    return { from: mark.length, to: close ? mark.length + close.index + close[1]!.length : source.length, underlined: false }
+  }
+  const underline = source.lastIndexOf('\n')
+  return underline === -1 ? undefined : { from: 0, to: underline, underlined: true }
+}
+
+/** A heading text with a backslash before a run of `#` at its end, which would close the heading. */
+export function escapeHeadingClose(text: string): string {
+  return text.replace(ATX_CLOSE_RE, '$1\\$2$3')
+}
+
+/** The offset of the text of a list item in its source: after its marker and the box of a task, before the blanks that follow them. */
+export function listItemTextStart(source: string): number {
+  return LIST_MARK_RE.exec(source)?.[0].length ?? 0
+}
+
+/** The marks of the containers a line sits in: its quote marks and its indentation. */
+export function containerPrefix(line: string): string {
+  return CONTAINER_RE.exec(line)![0]
 }

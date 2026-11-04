@@ -18,6 +18,7 @@ import { placeProblems, setPreviewProblems } from '../utils/editor-problems'
 import { previewSourceReader } from '../utils/preview-header'
 import { imageMention, missingImages } from '../utils/preview-images'
 import { OVERFLOW_THRESHOLD, slideOverflow, transitionsEnded } from '../utils/preview-overflow'
+import { useTrial } from './useTrial'
 
 /** The Reveal component of the preview. */
 export interface PreviewInstance { slide: (h: number, v?: number, f?: number) => void, sync: () => void, getInstance: () => RevealApi | null }
@@ -126,7 +127,13 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     readSteps()
   }
 
+  // While the author edits a text on the slide, the preview keeps the render
+  // the text is typed in: no parse, no result applied, no move to the caret.
+  let holds = 0
+
   function syncPreviewToCursor() {
+    if (holds > 0)
+      return
     checkSlide()
     if (!followCursor.value || !previewRef.value)
       return
@@ -148,6 +155,8 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   let slideCheck = 0
   function checkSlide() {
     clearTimeout(slideTimer)
+    if (holds > 0)
+      return
     slideTimer = setTimeout(async () => {
       const reveal = previewRef.value?.getInstance()
       if (!reveal)
@@ -173,7 +182,8 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   }
 
   // Track the caret line; re-sync only when it crosses into another line (typing
-  // within a line shouldn't re-navigate).
+  // within a line shouldn't re-navigate). A click in the preview selects the
+  // source of the slide on screen, which stays at its step.
   const cursorListener = EditorView.updateListener.of((update) => {
     if (!update.selectionSet && !update.docChanged)
       return
@@ -181,7 +191,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     const line = update.state.doc.lineAt(update.state.selection.main.head).number
     const moved = line !== cursorLine.value
     cursorLine.value = line
-    if (moved)
+    if (moved && !update.transactions.some(transaction => transaction.isUserEvent('select.preview')))
       syncPreviewToCursor()
   })
 
@@ -224,6 +234,16 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   const deckProblems = ref<DeckProblem[]>([])
   const parseFailed = ref(false)
   let parsedText = ''
+  // The parses that ended, applied or failed, and the return of the text the
+  // preview draws; a parse that a newer one or a hold dropped does not count.
+  const parseRun = ref(0)
+  let generation = 0
+  // The text and the stale themes of the last parse that ended, so that the
+  // pause after an edit on the slide does not parse that text again.
+  let parsedKey = ''
+  const parseKey = () => `${raw.value}\u0000${staleThemes.value.join(',')}`
+  // The text the preview draws, whose slides carry the source ranges.
+  const renderedText = ref('')
   // From a change of the text to the render of its preview, a bar runs along the
   // top of the slide.
   const previewPending = ref(false)
@@ -242,12 +262,23 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   }, t, locale.value, options.docsUrl))
 
   const previewSource = previewSourceReader()
+  // The source positions, which the click and the edit on the slide read, are
+  // on trial: without them, no element of the preview answers.
+  const sourcePositions = useTrial('edit-on-slide')
 
   async function reparse() {
     const text = raw.value
+    const key = parseKey()
+    const run = ++generation
     try {
-      const data = await buildPresentationData(previewSource(text))
+      const source = previewSource(text)
+      const data = await buildPresentationData(source, { sourcePositions: sourcePositions.value })
+      if (run !== generation)
+        return
       preview.value = data
+      renderedText.value = source
+      parsedKey = key
+      parseRun.value++
       unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
       deckProblems.value = checkDeck(text)
       frontmatterIssues.value = listedFrontmatterProblems(text, tWithKeys, staleThemes.value)
@@ -261,7 +292,11 @@ export function useEditorPreview(options: EditorPreviewOptions) {
       readSteps()
     }
     catch {
+      if (run !== generation)
+        return
       parseFailed.value = true
+      parsedKey = key
+      parseRun.value++
     }
     // A text typed during the parse keeps the bar until its own render.
     if (raw.value === text) {
@@ -285,12 +320,22 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   function scheduleReparse() {
     if (timer)
       clearTimeout(timer)
+    if (holds > 0)
+      return
     timer = setTimeout(() => {
       const view = editorView.value
-      if (view && completionStatus(view.state) === 'active')
+      if (view && completionStatus(view.state) === 'active') {
         scheduleReparse()
-      else
+      }
+      // The text of the last parse came back: a parse under way is dropped.
+      else if (parseKey() === parsedKey) {
+        generation++
+        previewPending.value = false
+        parseRun.value++
+      }
+      else {
         reparse()
+      }
     }, 300)
   }
 
@@ -298,6 +343,32 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     previewPending.value = true
     scheduleReparse()
   }, { immediate: true })
+
+  /**
+   * Holds the preview as it is, and gives the function that releases it. Once
+   * the last hold ends, the preview parses at once a text it has not drawn.
+   */
+  function holdPreview(): () => void {
+    holds++
+    if (timer)
+      clearTimeout(timer)
+    clearTimeout(slideTimer)
+    // A parse under way is dropped.
+    generation++
+    let held = true
+    return () => {
+      if (!held)
+        return
+      held = false
+      holds--
+      if (holds > 0)
+        return
+      if (previewPending.value || raw.value !== parsedText)
+        reparse()
+      else
+        checkSlide()
+    }
+  }
 
   onBeforeUnmount(() => {
     clearTimeout(slideTimer)
@@ -307,6 +378,9 @@ export function useEditorPreview(options: EditorPreviewOptions) {
 
   return {
     preview,
+    renderedText,
+    parseRun,
+    holdPreview,
     parserId,
     previewHasFocus,
     previewRatio,

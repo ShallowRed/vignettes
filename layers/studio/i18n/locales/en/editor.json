@@ -75,7 +75,13 @@
       "preview": "Preview",
       "previewTip": "The draft full screen, as it would be published",
       "presentVersionTip": "The live version, full screen",
-      "presentNeverPublished": "Publish the presentation to present it."
+      "presentNeverPublished": "Publish the presentation to present it.",
+      "slideTextChanged": "This text was changed while you were typing",
+      "slideTextStructure": "This text would change how the deck splits into slides",
+      "slideTextCopy": "Copy your version to carry it over in the source of the deck.",
+      "copyText": "Copy the text",
+      "textCopied": "Text copied",
+      "copyFailed": "The browser refused the copy: select the text below"
     },
     "toolbar": {
       "headingMenu": "Heading",

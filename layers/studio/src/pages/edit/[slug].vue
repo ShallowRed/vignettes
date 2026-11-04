@@ -35,6 +35,7 @@ import { useDocsAddress } from '../../composables/useDocsAddress'
 import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { useEditorPreview } from '../../composables/useEditorPreview'
 import { LAYOUT_PROBE, useLayoutProbe } from '../../composables/useLayoutProbe'
+import { usePreviewSource } from '../../composables/usePreviewSource'
 import { useSnapshotCapture } from '../../composables/useSnapshotCapture'
 import { presentationsQuery, projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
@@ -190,6 +191,9 @@ const previewFrame = useTemplateRef<HTMLElement>('previewFrame')
 const previewInstance = useTemplateRef<PreviewInstance>('previewInstance')
 const {
   preview,
+  renderedText,
+  parseRun,
+  holdPreview,
   parserId,
   previewHasFocus,
   previewRatio,
@@ -220,6 +224,20 @@ const {
   t,
   tWithKeys,
   locale,
+})
+
+// A click on an element of the preview selects its source in the editor, and a
+// double-click on a heading, a paragraph or a list item edits its text on the slide.
+const { onPreviewClick, onPreviewDoubleClick, sourceTracking } = usePreviewSource({
+  previewFrame,
+  previewInstance,
+  editorView,
+  renderedText,
+  parserId,
+  writable: editorWritable,
+  holdPreview,
+  parseRun,
+  isolateUndo: collab.isolateUndo,
 })
 
 // The layout panel measures each size of a media in a hidden render, drawn with
@@ -348,6 +366,7 @@ const extensions = computed<Extension[]>(() => [
   deckHover({ lang: locale.value, t, docsUrl }),
   previewProblemMarks(t),
   cursorListener,
+  sourceTracking,
   shortcutKeymap,
   imageUploadHandlers,
   // Yjs owns undo in collab mode; the local history would fight it.
@@ -697,10 +716,13 @@ async function onMetaSaved() {
           <div
             ref="previewFrame"
             class="editor-stage__frame"
+            :class="{ 'editor-stage__frame--editable': editorWritable }"
             :aria-busy="previewPending"
             tabindex="0"
             role="group"
             :aria-label="t('editor.preview.frame')"
+            @click="onPreviewClick"
+            @dblclick="onPreviewDoubleClick"
           >
             <!-- Client-only: the preview is driven by CodeMirror input + an async
                client-side reparse, so `preview` is always null on the server.
@@ -944,6 +966,31 @@ async function onMetaSaved() {
 
 .editor-stage__frame :deep(.reveal) {
   height: 100%;
+}
+
+/* On a deck the person may change, the texts of the slide a double-click
+   edits, the innermost one under the pointer. Reveal scales the slide by
+   `--slide-scale`: the outlines keep their width on screen. */
+.editor-stage__frame--editable :deep(section.present [data-source-text]:hover:not(:has([data-source-text]:hover, .slide-text-field))) {
+  outline: calc(1px / var(--slide-scale, 1)) solid color-mix(in srgb, var(--ui-primary) 50%, transparent);
+  outline-offset: calc(2px / var(--slide-scale, 1));
+  border-radius: calc(2px / var(--slide-scale, 1));
+}
+
+/* The field keeps the place of the text, after the box of a task. */
+.editor-stage__frame :deep(.slide-text-field) {
+  display: inline-block;
+  max-width: 100%;
+  min-width: 2ch;
+  vertical-align: top;
+  white-space: pre-wrap;
+  cursor: text;
+}
+
+.editor-stage__frame :deep(.slide-text-field[contenteditable]) {
+  outline: calc(2px / var(--slide-scale, 1)) solid var(--ui-primary);
+  outline-offset: calc(2px / var(--slide-scale, 1));
+  border-radius: calc(2px / var(--slide-scale, 1));
 }
 
 /* Below the md width the panes stack: the stage comes first and is as tall as

@@ -7,11 +7,16 @@ import type { DeckMeta } from './schema.ts'
  */
 export type ParserId = 'heading' | 'separator'
 
+export interface ParseOptions {
+  /** Write on each element of a slide the range of its source (`SOURCE_ATTRIBUTE` of `@vignettes/core/render`), for the editor's preview. */
+  sourcePositions?: boolean
+}
+
 export interface DeckParser {
   /** Matches the deck's `syntax.split`. */
   readonly id: ParserId
   /** Parse raw markdown (+ resolved meta) into slides. May be async (MDC). */
-  parse: (raw: string, meta: DeckMeta) => Slide[] | Promise<Slide[]>
+  parse: (raw: string, meta: DeckMeta, options?: ParseOptions) => Slide[] | Promise<Slide[]>
 }
 
 /** Defaults to the separator parser: `---` opens a slide unless the deck sets `syntax.split` (or the legacy `parser`) to `heading`. */

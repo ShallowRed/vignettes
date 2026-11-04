@@ -1,3 +1,4 @@
+import type { ParseOptions } from '@vignettes/core/deck'
 import type { PresentationData } from '../types/presentation.ts'
 import { useAsyncData, useRequestFetch } from '#imports'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
@@ -14,6 +15,7 @@ import { PARSERS } from '../utils/slide-ast.ts'
  */
 export async function buildPresentationData(
   raw: string,
+  options?: ParseOptions,
 ): Promise<PresentationData> {
   // MDC reads the metadata from the frontmatter alone, and takes the title from
   // the first heading of the body when the frontmatter names none.
@@ -29,7 +31,7 @@ export async function buildPresentationData(
   const parser = PARSERS[parserIdFor(metadata)]
   // `?? []` keeps `slides` an array even if a parser degrades, so downstream
   // `.slides.length` guards can never read `.length` of undefined.
-  const slides = (await parser.parse(raw, metadata)) ?? []
+  const slides = (await parser.parse(raw, metadata, options)) ?? []
   return { slides, metadata }
 }
 

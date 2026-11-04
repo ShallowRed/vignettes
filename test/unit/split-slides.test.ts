@@ -1,4 +1,4 @@
-import { attributeMentions, blockEndAround, bodyMedia, componentAttributeIssues, componentMentions, directiveMentions, isSectionSlide, malformedAttributeMentions, registerDeckComponents, resetDeckComponents, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
+import { attributeMentions, blockEndAround, bodyMedia, componentAttributeIssues, componentMentions, containerPrefix, directiveMentions, escapeBlockStart, escapeHeadingClose, headingTextRange, isSectionSlide, listItemTextStart, malformedAttributeMentions, opensBlock, registerDeckComponents, resetDeckComponents, slideSourceAt, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
@@ -292,5 +292,94 @@ describe('bodyMedia', () => {
     ])
     expect(bodyMedia(slide('::StoryFrame{story="page--home" label="Accueil"}', '::')).map(media => media.movable)).toEqual([false])
     expect(bodyMedia(slide('![x](/a.png)', '', '::StoryFrame{story="page--home"}', '::')).map(media => media.movable)).toEqual([false, false])
+  })
+})
+
+describe('slideSourceAt', () => {
+  it('places the text of a slide in its deck', () => {
+    const raw = '---\ntitle: T\n---\n\n## A\n\na\n\n## B\n\n### C\n\nc\n'
+    for (const [h, v] of [[0, 0], [1, 0], [1, 1]]) {
+      const slide = slideSourceAt(raw, 'heading', h!, v!)!
+      expect(raw.slice(slide.from, slide.from + slide.text.length)).toBe(slide.text)
+    }
+    expect(slideSourceAt(raw, 'heading', 1, 1)!.text.startsWith('### C')).toBe(true)
+    expect(slideSourceAt(raw, 'heading', 2, 0)).toBeUndefined()
+  })
+
+  it('places the slides of a separator deck after their separator line', () => {
+    const raw = 'A\n\n---\n\nB\n\n----\n\nC'
+    expect(slideSourceAt(raw, 'separator', 1, 1)).toEqual({ from: raw.indexOf('\n\nC') + 1, text: '\nC' })
+  })
+})
+
+describe('opensBlock and escapeBlockStart', () => {
+  const OPENING = ['## x', '# x', '---', '===', '***', '- x', '+ x', '* x', '1. x', '2) x', '> x', '| a |', '--|--', '| :-- | --: |', '-:', ':-:', ':--', '```', '~~~ js', '::Nom', ':::Nom{a="b"}', '::', ':Nom', ':icon{name="x"}', ':Nom[x]', '<!-- x', '<div>', '<style>p{}', '<script', '<center>x', '</summary>', '<?x', '<!DOCTYPE', '<![CDATA[', '<span>', '[a]: /b', '[^1]: note']
+
+  it('knows the lines that open a block', () => {
+    for (const line of OPENING)
+      expect(opensBlock(line), line).toBe(true)
+    for (const line of ['texte', 'Bilan : fin', '2026 en bref', '<kbd>Ctrl</kbd> + C', '<https://exemple.fr>', '**gras**', ':icon{name="x"} texte', '    ## indenté', '-x', '#x', '[lien](/a)', 'a | b', '[^1] renvoi'])
+      expect(opensBlock(line), line).toBe(false)
+  })
+
+  it('escapes each of them into a line of text', () => {
+    for (const line of OPENING) {
+      const escaped = escapeBlockStart(line)
+      expect(escaped, line).not.toBe(line)
+      expect(opensBlock(escaped), escaped).toBe(false)
+    }
+    expect(escapeBlockStart('1. x')).toBe('1\\. x')
+    expect(escapeBlockStart('::Nom')).toBe('\\:\\:Nom')
+    expect(escapeBlockStart('  - x')).toBe('  \\- x')
+  })
+
+  it('escapes each of them into text MDC keeps in the paragraph', async () => {
+    for (const line of OPENING) {
+      const escaped = escapeBlockStart(line)
+      for (const raw of [escaped, `début\n${escaped}`, `a | b\n${escaped}`]) {
+        const [slide] = await PARSERS.separator.parse(raw, {} as never)
+        expect(slide!.body.children.map((node: any) => node.tag), raw).toEqual(['p'])
+      }
+    }
+  })
+
+  it('leaves a line that opens nothing as it is', () => {
+    expect(escapeBlockStart('texte')).toBe('texte')
+  })
+})
+
+describe('the text of a heading and of a list item', () => {
+  const text = (source: string) => {
+    const range = headingTextRange(source)
+    return range && { text: source.slice(range.from, range.to).trim(), underlined: range.underlined }
+  }
+
+  it('reads a heading without its marks, its closing marks and its underline', () => {
+    expect(text('## Un **titre**')).toEqual({ text: 'Un **titre**', underlined: false })
+    expect(text('### Un titre ###  ')).toEqual({ text: 'Un titre', underlined: false })
+    expect(text('## Langage C\\#')).toEqual({ text: 'Langage C\\#', underlined: false })
+    expect(text('Un titre\nsur deux lignes\n===')).toEqual({ text: 'Un titre\nsur deux lignes', underlined: true })
+    expect(text('## #')).toEqual({ text: '', underlined: false })
+  })
+
+  it('escapes the marks that would close a heading', async () => {
+    expect(escapeHeadingClose('Langage C #')).toBe('Langage C \\#')
+    expect(escapeHeadingClose('#')).toBe('\\#')
+    expect(escapeHeadingClose('C#')).toBe('C#')
+    expect(text(`## ${escapeHeadingClose('Langage C #')}`)!.text).toBe('Langage C \\#')
+    const [slide] = await PARSERS.separator.parse(`## ${escapeHeadingClose('Langage C #')}`, {} as never)
+    expect(slide!.header!.children[0].children[0].value).toBe('Langage C #')
+  })
+
+  it('starts the text of a list item after its marker and the box of a task', () => {
+    for (const [source, start] of [['- un', 1], ['  1. deux', 4], ['- [ ] tâche', 5], ['* [X] faite', 5], ['-', 1]] as const)
+      expect(listItemTextStart(source), source).toBe(start)
+  })
+
+  it('reads the quote marks and the indentation that start a line', () => {
+    expect(containerPrefix('> et continue')).toBe('> ')
+    expect(containerPrefix('  > > suite')).toBe('  > > ')
+    expect(containerPrefix('  dure')).toBe('  ')
+    expect(containerPrefix('texte')).toBe('')
   })
 })

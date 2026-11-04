@@ -46,7 +46,8 @@ const DIRECTIVE_RE = /^(?:v-bind$|v-on:|@|v-model)/
 const OBJECT_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 const withoutObjectKeys = (key: string, value: unknown) => OBJECT_KEYS.has(key) ? undefined : value
 
-const attributeKey = (name: string) => name.toLowerCase().replace(/[-:]/g, '')
+/** The name of an attribute in lower case without hyphens or colons, so that `data-src`, `dataSrc` and `:data-src` read alike. */
+export const attributeKey = (name: string) => name.toLowerCase().replace(/[-:]/g, '')
 
 /** Whether the attribute `name` of an element `tag` takes an address, and which kind. */
 export function urlKindOf(tag: string, name: string): DeckUrlKind | undefined {

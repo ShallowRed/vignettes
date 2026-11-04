@@ -75,7 +75,13 @@
       "preview": "Prévisualiser",
       "previewTip": "Le brouillon en plein écran, tel qu'il serait publié",
       "presentVersionTip": "La version en ligne, en plein écran",
-      "presentNeverPublished": "Publiez la présentation pour la présenter."
+      "presentNeverPublished": "Publiez la présentation pour la présenter.",
+      "slideTextChanged": "Ce texte a été modifié pendant votre saisie",
+      "slideTextStructure": "Ce texte changerait le découpage de la présentation",
+      "slideTextCopy": "Copiez votre version pour la reporter dans la source de la présentation.",
+      "copyText": "Copier le texte",
+      "textCopied": "Texte copié",
+      "copyFailed": "Le navigateur a refusé la copie : sélectionnez le texte ci-dessous"
     },
     "toolbar": {
       "headingMenu": "Titre",
