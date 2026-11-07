@@ -19,9 +19,13 @@ const props = defineProps<{
   parser?: 'heading' | 'separator'
   /** The help panel is open. */
   helpOpen?: boolean
+  /** The deck draws the icons and the pictograms: the bar shows a button that opens their panel. */
+  symbols?: boolean
+  /** The panel of the icons and the pictograms is open. */
+  symbolsOpen?: boolean
 }>()
 
-const emit = defineEmits<{ uploadImages: [files: File[]], help: [] }>()
+const emit = defineEmits<{ uploadImages: [files: File[]], help: [], symbols: [] }>()
 
 function run(action: (view: EditorView) => void) {
   if (props.view)
@@ -220,6 +224,20 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
           />
         </template>
       </UPopover>
+
+      <UButton
+        v-if="symbols"
+        icon="i-lucide-smile-plus"
+        color="neutral"
+        :variant="symbolsOpen ? 'soft' : 'ghost'"
+        size="sm"
+        :class="symbolsOpen ? 'text-primary' : ''"
+        :label="t('editor.toolbar.symbols')"
+        :ui="{ label: 'max-sm:sr-only' }"
+        :aria-pressed="symbolsOpen"
+        :disabled="disabled || !view"
+        @click="emit('symbols')"
+      />
     </div>
 
     <UTooltip :text="t('reference.help.title')">

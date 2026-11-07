@@ -101,6 +101,7 @@
       "emptySlide": "Diapositive vide",
       "insert": "Insérer",
       "insertSearch": "Rechercher par nom",
+      "symbols": "Icônes",
       "uploadImage": "Téléverser une image",
       "help": "Aide",
       "componentsDocs": "Documentation des composants"
@@ -299,6 +300,72 @@
       "removedStack": "Pile supprimée",
       "undo": "Annuler",
       "refused": "Cette opération changerait le découpage de la présentation"
+    },
+    "symbols": {
+      "title": "Icônes et pictogrammes",
+      "tabs": {
+        "icon": "Icônes",
+        "pictogram": "Pictogrammes"
+      },
+      "search": {
+        "icon": "Rechercher une icône",
+        "pictogram": "Rechercher un pictogramme"
+      },
+      "style": {
+        "line": "Contour",
+        "fill": "Plein"
+      },
+      "all": "Toutes",
+      "deck": "Dans cette présentation",
+      "category": "Catégorie",
+      "empty": "Aucun résultat pour « {query} ».",
+      "emptyDeck": {
+        "icon": "Aucune icône dans cette présentation.",
+        "pictogram": "Aucun pictogramme dans cette présentation."
+      },
+      "loading": "Chargement de la liste",
+      "failed": "La liste n'a pas pu être chargée.",
+      "target": {
+        "replace": "Un clic remplace {attribute} de {component}.",
+        "add": "Un clic ajoute {attribute} à {component}.",
+        "insert": "Un clic insère {syntax} au curseur."
+      },
+      "browse": {
+        "icon": "Parcourir les icônes…",
+        "pictogram": "Parcourir les pictogrammes…"
+      },
+      "categories": {
+        "arrows": "Flèches",
+        "buildings": "Bâtiments",
+        "business": "Entreprise",
+        "communication": "Communication",
+        "design": "Design",
+        "development": "Développement",
+        "device": "Appareils",
+        "document": "Documents",
+        "editor": "Éditeur",
+        "finance": "Finance",
+        "food": "Alimentation",
+        "health-medical": "Santé",
+        "logos": "Logos",
+        "map": "Cartes",
+        "media": "Médias",
+        "others": "Divers",
+        "system": "Système",
+        "user-faces": "Personnes",
+        "weather": "Météo"
+      },
+      "folders": {
+        "buildings": "Bâtiments",
+        "digital": "Numérique",
+        "document": "Documents",
+        "environment": "Environnement",
+        "health": "Santé",
+        "institutions": "Institutions",
+        "leisure": "Loisirs",
+        "map": "Cartes",
+        "system": "Système"
+      }
     }
   }
 }

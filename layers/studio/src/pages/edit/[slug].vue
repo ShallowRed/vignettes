@@ -15,6 +15,7 @@ import type { Project } from '#shared/projects'
  * Markdown stays the source of truth.
  */
 import type { Extension } from '@codemirror/state'
+import type { SymbolKind } from '@vignettes/core/deck'
 import type { PreviewInstance } from '../../composables/useEditorPreview'
 import type { LayoutProbeInstance } from '../../composables/useLayoutProbe'
 import type { Translate } from '../../config/editor-reference'
@@ -48,6 +49,7 @@ import { editorKeymap } from '../../utils/editor-keymap'
 import { EDITOR_TEXT } from '../../utils/editor-layout'
 import { previewProblemMarks } from '../../utils/editor-problems'
 import { deckStructure } from '../../utils/editor-slides'
+import { offersSymbols } from '../../utils/editor-symbols'
 import { editorTheme } from '../../utils/editor-theme'
 import { wrappedLines } from '../../utils/editor-wrap'
 
@@ -215,6 +217,7 @@ const {
   cursorSlideNumber,
   slideCount,
   cursorInJson,
+  cursorPos,
   onPreviewReady,
 } = useEditorPreview({
   previewFrame,
@@ -359,7 +362,7 @@ const extensions = computed<Extension[]>(() => [
   highlightActiveLine(),
   ...deckStructure(t),
   ...editorTheme(colorMode.value === 'dark' ? 'dark' : 'light'),
-  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value, staleThemes: themeVersionGaps.value, docsUrl }, tWithKeys),
+  deckCompletions({ projects: projects.value.map(p => p.slug), lang: locale.value, staleThemes: themeVersionGaps.value, browseSymbols, docsUrl }, tWithKeys),
   deckHover({ lang: locale.value, t, docsUrl }),
   previewProblemMarks(t),
   cursorListener,
@@ -431,6 +434,24 @@ async function notifyPublished() {
 
 const helpOpen = ref(false)
 const historyOpen = ref(false)
+
+// The icons and the pictograms, for the decks whose theme draws them. The two
+// panels beside the text open one at a time.
+const symbolsOffered = computed(() => offersSymbols(raw.value))
+const symbolsOpen = ref(false)
+const symbolsKind = ref<SymbolKind>('icon')
+function browseSymbols(kind: SymbolKind) {
+  symbolsKind.value = kind
+  symbolsOpen.value = true
+}
+watch(symbolsOpen, (opened) => {
+  if (opened)
+    helpOpen.value = false
+})
+watch(helpOpen, (opened) => {
+  if (opened)
+    symbolsOpen.value = false
+})
 
 // The help stays open beside the text, for the next insertion.
 function insertFromHelp(snippet: string) {
@@ -544,8 +565,11 @@ async function onMetaSaved() {
               :parser="parserId"
               :disabled="!editorWritable"
               :help-open="helpOpen"
+              :symbols="symbolsOffered"
+              :symbols-open="symbolsOpen"
               @upload-images="uploadChosenImages"
               @help="helpOpen = !helpOpen"
+              @symbols="symbolsOpen = !symbolsOpen"
             />
             <UAlert
               v-if="collabEnded"
@@ -816,6 +840,15 @@ async function onMetaSaved() {
       :draft="raw"
       :unpublished="unpublished"
       @restored="publication.reloadDraft"
+    />
+
+    <EditorSymbolSlideover
+      v-if="symbolsOffered"
+      v-model:open="symbolsOpen"
+      v-model:kind="symbolsKind"
+      :view="editorView"
+      :cursor="cursorPos"
+      :disabled="!editorWritable"
     />
 
     <EditorHelpSlideover

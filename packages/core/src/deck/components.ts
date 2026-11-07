@@ -360,6 +360,20 @@ export function fullSlideComponentNames(): string[] {
   return registry.filter(c => c.fullSlide).flatMap(c => [c.name, ...(c.aliases || [])])
 }
 
+/** What an attribute value names: a Remix icon (`ri:home-line`) or a pictogram under `/pictograms` (`digital/coding`). */
+export type SymbolKind = 'icon' | 'pictogram'
+
+/**
+ * The kind of symbol an attribute of a component names: `icon` takes a Remix
+ * icon and `picto` a pictogram on every component, `name` a Remix icon on
+ * `IconInline`. The component goes by its declared name.
+ */
+export function symbolAttribute(component: string, attribute: string): SymbolKind | undefined {
+  if (attribute === 'icon' || (component === 'IconInline' && attribute === 'name'))
+    return 'icon'
+  return attribute === 'picto' ? 'pictogram' : undefined
+}
+
 /**
  * Normalise an icon name to the Iconify form (`ri:home-line`). Accepts the Remix
  * CSS-class form, whose first hyphen becomes the colon.

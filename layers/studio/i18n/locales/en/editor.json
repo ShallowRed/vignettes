@@ -101,6 +101,7 @@
       "emptySlide": "Empty slide",
       "insert": "Insert",
       "insertSearch": "Search by name",
+      "symbols": "Icons",
       "uploadImage": "Upload an image",
       "help": "Help",
       "componentsDocs": "Documentation of the components"
@@ -299,6 +300,72 @@
       "removedStack": "Stack deleted",
       "undo": "Undo",
       "refused": "This would change how the deck splits into slides"
+    },
+    "symbols": {
+      "title": "Icons and pictograms",
+      "tabs": {
+        "icon": "Icons",
+        "pictogram": "Pictograms"
+      },
+      "search": {
+        "icon": "Search an icon",
+        "pictogram": "Search a pictogram"
+      },
+      "style": {
+        "line": "Outline",
+        "fill": "Filled"
+      },
+      "all": "All",
+      "deck": "In this deck",
+      "category": "Category",
+      "empty": "No result for “{query}”.",
+      "emptyDeck": {
+        "icon": "No icon in this deck.",
+        "pictogram": "No pictogram in this deck."
+      },
+      "loading": "Loading the list",
+      "failed": "The list could not be loaded.",
+      "target": {
+        "replace": "A click replaces {attribute} of {component}.",
+        "add": "A click adds {attribute} to {component}.",
+        "insert": "A click inserts {syntax} at the caret."
+      },
+      "browse": {
+        "icon": "Browse the icons…",
+        "pictogram": "Browse the pictograms…"
+      },
+      "categories": {
+        "arrows": "Arrows",
+        "buildings": "Buildings",
+        "business": "Business",
+        "communication": "Communication",
+        "design": "Design",
+        "development": "Development",
+        "device": "Devices",
+        "document": "Documents",
+        "editor": "Editor",
+        "finance": "Finance",
+        "food": "Food",
+        "health-medical": "Health",
+        "logos": "Logos",
+        "map": "Maps",
+        "media": "Media",
+        "others": "Others",
+        "system": "System",
+        "user-faces": "People",
+        "weather": "Weather"
+      },
+      "folders": {
+        "buildings": "Buildings",
+        "digital": "Digital",
+        "document": "Documents",
+        "environment": "Environment",
+        "health": "Health",
+        "institutions": "Institutions",
+        "leisure": "Leisure",
+        "map": "Maps",
+        "system": "System"
+      }
     }
   }
 }

@@ -13,6 +13,7 @@ Every route resolves the actor from the session cookie, and the routes listed un
 | `GET /api/presentations/:slug` | gate | The published version of a deck; `?draft` returns the draft to actors who may edit it, with its `stamp` and the id of the published version in `publishedVersion`, which a solo save sends back |
 | `GET /api/presentations/:slug/markdown` | gate | The Markdown of the published version as a `<slug>.md` attachment; `?draft` returns the draft, the live text of an open collab room included, to actors who may edit the deck |
 | `GET /api/templates` | any | The ids of the templates a new deck starts from, the default one first |
+| `GET /api/pictograms` | signed in | The pictograms a deck can name, of the application and of the content space, which the editor completes on `picto` |
 | `GET /api/themes/version-gaps` | signed in | The published themes compiled with other theme packages than the instance's, which the editor flags on a deck in one of them |
 | `GET /api/p/:alias` | gate | Resolve a directory alias: live decks return their published markdown, frozen ones the bundle URL |
 | `POST /api/presentations/:slug/unlock`, `POST /api/p/:alias/unlock` | gate | The password of a semi-private deck, in the body `{ password }`; the right one sets the `access_<slug>` cookie |

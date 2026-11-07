@@ -49,6 +49,7 @@ const SIDES: Record<string, RouteSide> = {
   'POST /api/content/theme-rename': 'studio',
   'POST /api/media': 'studio',
   'GET /api/p/:alias': 'both',
+  'GET /api/pictograms': 'studio',
   'POST /api/p/:alias/unlock': 'both',
   'GET /api/presentations': 'studio',
   'POST /api/presentations': 'studio',

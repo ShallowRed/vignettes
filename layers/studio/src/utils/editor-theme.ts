@@ -156,6 +156,8 @@ function baseTheme(palette: Palette, dark: boolean): Extension {
     '.cm-source-tooltip__values': { color: palette.dimmed, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '11.5px' },
     '.cm-source-tooltip__problem--error': { color: palette.error },
     '.cm-source-tooltip__problem--warning': { color: palette.warning },
+    '.cm-symbol-preview': { display: 'block', width: '48px', height: '48px', margin: '2px 0 6px' },
+    '.cm-symbol-preview--pictogram': { width: '64px', height: '64px' },
     '.cm-completionInfo': { padding: '8px 10px', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '12.5px', maxWidth: '320px' },
     '.cm-tooltip-autocomplete ul li[aria-selected]': { backgroundColor: palette.selection, color: palette.heading },
     '.cm-completionDetail': { color: palette.dimmed, fontStyle: 'normal', marginLeft: '12px' },

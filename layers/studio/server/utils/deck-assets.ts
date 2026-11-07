@@ -1,12 +1,12 @@
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
-import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { readdir, readFile } from 'node:fs/promises'
+import { relative, resolve, sep } from 'node:path'
 import process from 'node:process'
 import { contentTypeOf } from '#shared/storage/content-types'
 import { isFrozenS3Configured } from '#shared/storage/frozen-s3'
 import { assetKey } from '#shared/storage/media-refs'
-import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
 import { deckAssetKey, deckAssetLocalPath } from '@vignettes/core/deck-assets'
 import { decideMediaAccess } from './access'
 import { serverConfig } from './config'
@@ -63,4 +63,33 @@ export async function serveDeckAsset(event: H3Event, prefix: string, { gated = f
   setResponseHeader(event, 'Content-Length', body.byteLength)
   setResponseHeader(event, 'Cache-Control', !access || access.public ? 'public, max-age=300' : 'private, no-store')
   return body
+}
+
+/**
+ * The paths of the deck assets of the content space under `prefix`, relative to
+ * it (`digital/coding.svg`): from the bucket on a deployment, from the content
+ * directory on disk otherwise. An absent directory lists nothing.
+ */
+export async function listDeckAssets(prefix: string): Promise<string[]> {
+  const cfg = serverConfig().frozenS3
+  if (isFrozenS3Configured(cfg)) {
+    const folder = `${deckAssetKey(prefix)}/`
+    const client = makeFrozenS3Client(cfg)
+    const paths: string[] = []
+    let token: string | undefined
+    do {
+      const page = await client.send(new ListObjectsV2Command({ Bucket: cfg.bucket, Prefix: folder, ContinuationToken: token }))
+      for (const object of page.Contents ?? []) {
+        if (object.Key)
+          paths.push(object.Key.slice(folder.length))
+      }
+      token = page.IsTruncated ? page.NextContinuationToken : undefined
+    } while (token)
+    return paths
+  }
+  const root = resolve(process.cwd(), deckAssetLocalPath(serverConfig().contentDir, prefix))
+  const entries = await readdir(root, { recursive: true, withFileTypes: true }).catch(() => [])
+  return entries
+    .filter(entry => entry.isFile())
+    .map(entry => relative(root, resolve(entry.parentPath, entry.name)).split(sep).join('/'))
 }

@@ -1,6 +1,11 @@
+import type { Completion, CompletionResult } from '@codemirror/autocomplete'
+import type { TransactionSpec } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
 import { CompletionContext } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
-import { describe, expect, it } from 'vitest'
+import { registerDeckComponents, resetDeckComponents } from '@vignettes/core/deck'
+import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { bodySource, hintAt } from '../../layers/studio/src/utils/editor-completions'
 import { frontmatterGuide } from '../../layers/studio/src/utils/editor-frontmatter'
 
@@ -57,6 +62,49 @@ describe('attribute completion cases', () => {
   it('offers the attributes written as YAML under a component, and their values', () => {
     expect(at(':::Columns\n---\n|\n---')?.options.map(option => option.apply)).toEqual(['size: '])
     expect(at(':::Columns\n---\nsize: |\n---')?.options.map(option => option.label)).toEqual(['xs', 'sm', 'md', 'lg', 'xl'])
+  })
+})
+
+describe('symbol completion', () => {
+  vi.stubGlobal('$fetch', async () => ['digital/coding', 'equipe/atelier'])
+  beforeAll(() => registerDeckComponents(SCHEMA_COMPONENTS))
+  afterAll(() => resetDeckComponents())
+  const dsfr = '---\ntheme: dsfr\n---\n'
+
+  // The completion with the caret at `|` in `doc`, once its list is loaded.
+  async function at(doc: string) {
+    const state = EditorState.create({ doc: doc.replace('|', ''), selection: { anchor: doc.indexOf('|') } })
+    return { state, result: await source(new CompletionContext(state, doc.indexOf('|'), true)) }
+  }
+
+  // The text once `label` is chosen.
+  function choose(state: EditorState, result: CompletionResult | null, label: string) {
+    const option = result!.options.find(candidate => candidate.label === label)!
+    let next = state
+    const apply = option.apply as Exclude<Completion['apply'], string | undefined>
+    apply({ state, dispatch: (spec: TransactionSpec) => next = state.update(spec).state } as unknown as EditorView, option, result!.from, state.selection.main.head)
+    return next.doc.toString()
+  }
+
+  it('offers the Remix icons and the pictograms in a deck whose theme builds on dsfr', async () => {
+    const icon = await at(`${dsfr}::Step{icon="home|"}`)
+    expect(icon.result?.options.map(option => option.label)).toContain('home-line')
+    expect(choose(icon.state, icon.result, 'home-line')).toBe(`${dsfr}::Step{icon="ri:home-line"}`)
+    const picto = await at(`${dsfr}::Step{picto="|"}`)
+    expect(picto.result?.options.map(option => option.label)).toEqual(['digital/coding', 'equipe/atelier'])
+    expect((await at('---\ntheme: minimal\n---\n::Step{icon="|"}')).result).toBeNull()
+  })
+
+  it('completes after the prefix of an icon, the inline icon and the YAML attributes', async () => {
+    const typing = await at(`${dsfr}:i{name="r|"}`)
+    expect(['ri', 'ri-h', 'ri:h'].map(text => (typing.result?.validFor as RegExp).test(text))).toEqual([true, false, false])
+    const prefixed = await at(`${dsfr}:i{name="ri-home|"}`)
+    expect(prefixed.result?.from).toBe(dsfr.length + ':i{name="ri-'.length)
+    expect(choose(prefixed.state, prefixed.result, 'home-line')).toBe(`${dsfr}:i{name="ri:home-line"}`)
+    const unquoted = await at(`${dsfr}::Node{picto=|}`)
+    expect(choose(unquoted.state, unquoted.result, 'digital/coding')).toBe(`${dsfr}::Node{picto="digital/coding"}`)
+    const yaml = await at(`${dsfr}::Step\n---\nicon: ri:home|\n---`)
+    expect(choose(yaml.state, yaml.result, 'home-line')).toBe(`${dsfr}::Step\n---\nicon: ri:home-line\n---`)
   })
 })
 

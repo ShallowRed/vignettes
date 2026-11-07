@@ -135,3 +135,29 @@
     color: var(--project-color-lifted, var(--ui-text-dimmed));
   }
 }
+
+/* A DSFR pictogram drawn from the layers of its file (`PICTOGRAM_LAYERS`), in
+ * the colors the DSFR gives them in each color mode, as `fr-artwork` does in
+ * `@gouvfr/dsfr` (`example/core/index.html`). */
+.pictogram {
+  --pictogram-decorative: #ececfe;
+  --pictogram-minor: #e1000f;
+  --pictogram-major: #000091;
+
+  .dark & {
+    --pictogram-decorative: #21213f;
+    --pictogram-major: #8585f6;
+  }
+
+  .pictogram-decorative {
+    fill: var(--pictogram-decorative);
+  }
+
+  .pictogram-minor {
+    fill: var(--pictogram-minor);
+  }
+
+  .pictogram-major {
+    fill: var(--pictogram-major);
+  }
+}

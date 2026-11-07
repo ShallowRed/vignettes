@@ -1,13 +1,15 @@
 import type { Completion, CompletionResult, CompletionSource } from '@codemirror/autocomplete'
 import type { EditorState, Extension } from '@codemirror/state'
 import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
+import type { SymbolKind } from '@vignettes/core/deck'
 import type { ComponentAttributeEntry, FrontmatterKey, ReferenceEntry, Translate } from '../config/editor-reference'
 import { autocompletion, CompletionContext, completionStatus, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
 import { Decoration, keymap, ViewPlugin, WidgetType } from '@codemirror/view'
-import { attributedDirective, blocksAround, codeLines, componentKey } from '@vignettes/core/deck'
+import { attributedDirective, blocksAround, codeLines, componentKey, symbolAttribute } from '@vignettes/core/deck'
 import { annotationEntries, childEntries, componentAttributeEntries, componentEntries } from '../config/editor-reference'
 import { emptyValueKey, frontmatterGuide, inFrontmatter as inFrontmatterLine } from './editor-frontmatter'
 import { directiveAt } from './editor-properties'
+import { symbolCompletions } from './editor-symbols'
 import { referenceCard } from './editor-tooltip'
 
 /**
@@ -25,6 +27,8 @@ export interface CompletionOptions {
   lang: string
   /** Published themes compiled with other theme packages than the studio's, marked on `theme:`. */
   staleThemes?: readonly string[]
+  /** Opens the panel of all the icons or all the pictograms, the first entry of the list of their values. */
+  browseSymbols?: (kind: SymbolKind) => void
   /** The address of a documentation section, none when the instance has no documentation. */
   docsUrl: (docs?: string) => string | undefined
 }
@@ -38,9 +42,9 @@ function entryInfo(entry: ReferenceEntry, options: CompletionOptions, t: Transla
  * The completion of a component attribute. A `true`/`false` attribute goes in
  * as the form that changes it: alone when it is false by default, as
  * `:name="false"` when it is true by default. An attribute with closed values
- * goes in with empty quotes and opens the list of its values.
+ * or naming a symbol goes in with empty quotes and opens the list of its values.
  */
-function attributeCompletion(attribute: ComponentAttributeEntry, bound: boolean, docs: string | undefined, t: Translate): Completion {
+function attributeCompletion(attribute: ComponentAttributeEntry, bound: boolean, symbol: boolean, docs: string | undefined, t: Translate): Completion {
   const prefix = bound ? ':' : ''
   const text = attribute.boolean
     ? attribute.default === 'true' ? `:${attribute.name}="false"` : `${prefix}${attribute.name}${bound ? '="true"' : ''}`
@@ -53,7 +57,7 @@ function attributeCompletion(attribute: ComponentAttributeEntry, bound: boolean,
     type: 'property',
     apply: (view, completion, from, to) => {
       insert(view, completion, from, to)
-      if (attribute.values)
+      if (attribute.values || symbol)
         startCompletion(view)
     },
   }
@@ -118,7 +122,7 @@ function inFrontmatter(context: CompletionContext): boolean {
 // Completions are built on each query so they follow a locale change and the
 // components registered since the editor opened.
 export function bodySource(options: CompletionOptions, t: Translate) {
-  const { lang, docsUrl } = options
+  const { lang, docsUrl, browseSymbols } = options
   const build = (entries: readonly ReferenceEntry[], type: string): Completion[] =>
     entries.map(entry => snippetCompletion(entry.snippet, {
       label: entry.syntax,
@@ -127,7 +131,7 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       type,
     }))
 
-  return (context: CompletionContext): CompletionResult | null => {
+  return (context: CompletionContext): CompletionResult | Promise<CompletionResult> | null => {
     // A read-only editor offers no choice: choosing one writes into the text.
     if (context.state.readOnly || inFrontmatter(context))
       return null
@@ -142,9 +146,10 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       const [, tag = '', name = '', quote, typed = ''] = valueOf
       const attribute = componentAttributeEntries(tag, lang)?.find(entry => componentKey(entry.name) === componentKey(name.replace(/^:/, '')))
       const values = attribute?.values ?? (attribute?.boolean && name.startsWith(':') ? ['true', 'false'] : undefined)
-      return attribute && values
-        ? { from: context.pos - typed.length, options: valueCompletions(values, attribute.default, quote ? '' : '"', t) }
-        : null
+      if (attribute && values)
+        return { from: context.pos - typed.length, options: valueCompletions(values, attribute.default, quote ? '' : '"', t) }
+      const symbol = attribute && symbolAttribute(attributedDirective(tag)!.name, attribute.name)
+      return symbol ? symbolCompletions(context.state, symbol, context.pos - typed.length, typed, quote ? '' : '"', { t, browse: browseSymbols }) : null
     }
 
     // The attributes of a component or an annotation, after its brace or a
@@ -156,12 +161,13 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       // The attribute the caret is in is the one being typed.
       const caret = context.pos - line.from
       const written = new Set(directiveAt(context.state, line.number, caret)?.written.filter(entry => !(entry.column < caret && caret <= entry.column + entry.text.length)).map(entry => componentKey(entry.name.replace(/^:/, ''))))
-      const docs = docsUrl(attributedDirective(blockOf[1]!)?.docs)
+      const directive = attributedDirective(blockOf[1]!)!
+      const docs = docsUrl(directive.docs)
       return {
         from: context.pos - attributeWord.length,
         options: attributes
           .filter(attribute => !written.has(componentKey(attribute.name)))
-          .map((attribute, index) => ({ ...attributeCompletion(attribute, attributeWord.startsWith(':'), docs, t), boost: -index })),
+          .map((attribute, index) => ({ ...attributeCompletion(attribute, attributeWord.startsWith(':'), Boolean(symbolAttribute(directive.name, attribute.name)), docs, t), boost: -index })),
         validFor: /^:?[\w-]*$/,
       }
     }
@@ -174,9 +180,10 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       if (yamlValue) {
         const attribute = yamlAttributes.find(entry => componentKey(entry.name) === componentKey(yamlValue[1]!))
         const values = attribute?.values ?? (attribute?.boolean ? ['true', 'false'] : undefined)
-        return attribute && values
-          ? { from: context.pos - yamlValue[2]!.length, options: valueCompletions(values, attribute.default, '', t), validFor: /^\S*$/ }
-          : null
+        if (attribute && values)
+          return { from: context.pos - yamlValue[2]!.length, options: valueCompletions(values, attribute.default, '', t), validFor: /^\S*$/ }
+        const symbol = attribute && symbolAttribute(attributedDirective(yamlTag)!.name, attribute.name)
+        return symbol ? symbolCompletions(context.state, symbol, context.pos - yamlValue[2]!.length, yamlValue[2]!, '', { t, browse: browseSymbols }) : null
       }
       const yamlKey = /^\s*([\w-]*)$/.exec(before)
       if (!yamlKey)

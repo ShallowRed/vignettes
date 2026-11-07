@@ -16,7 +16,7 @@ export default defineNuxtConfig({
 
 The module registers its components globally and declares them to the deck contract, so `::Scheme` and the others resolve in a deck body and the parser knows their shape.
 
-Pictograms come from `/pictograms/<folder>/<name>.svg`, served by the application from its public directory or its content space. A `boolean` or `number` attribute takes a colon and a JSON value, as `:fragments="false"`.
+Pictograms come from `/pictograms/<folder>/<name>.svg`, served by the application from its public directory or its content space. A pictogram of the content space follows the DSFR file format: the symbols `artwork-decorative`, `artwork-minor` and `artwork-major`, which the studio draws in the colors of its color mode. A `boolean` or `number` attribute takes a colon and a JSON value, as `:fragments="false"`.
 
 ## Scheme
 

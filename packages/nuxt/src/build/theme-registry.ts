@@ -25,7 +25,7 @@ export interface ThemeAssetCopy {
 export interface ThemeManifest {
   /** Must equal the directory name; used in `theme:` frontmatter and `/themes/<name>.css`. */
   name: string
-  /** Theme this one builds on, for documentation and a build-time check. */
+  /** Theme this one builds on, checked at build time; the editor reads the family of a deck's theme from it. */
   extends?: string
   /** Other names that resolve to this theme, e.g. a name already used in a tenant's decks. */
   aliases?: string[]
@@ -114,6 +114,8 @@ export function themeAssetUrl(name: string, path: string): string {
 export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
   const { name, lang, parser, reveal, backgrounds, preview, code, pptx } = manifest
   const tokens: ThemeTokens = { name }
+  if (manifest.extends)
+    tokens.extends = manifest.extends
   if (lang)
     tokens.lang = lang
   if (parser)

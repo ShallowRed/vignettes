@@ -406,6 +406,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     cursorSlideNumber,
     slideCount,
     cursorInJson,
+    cursorPos,
     onPreviewReady,
   }
 }

@@ -29,7 +29,7 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 ```
 
 - `name` equals the directory name. A deck names the theme with it in `theme:`, and the stylesheet is `/themes/<name>.css`.
-- `extends` names the theme this one builds on; the build checks it.
+- `extends` names the theme this one builds on; the build checks it. The editor completes the icons and the pictograms in the decks of a theme that builds on `dsfr`, directly or through another theme.
 - `aliases` lists other frontmatter names that resolve to this theme. A tenant uses it to point a name already present in its decks to its brand. The build reports an alias that shadows another theme's name.
 - `lang`, `parser` and `reveal` are the deck defaults the theme carries: the language for orthotypography, the slide parser and the Reveal config.
 - `backgrounds` gives the background image of the title slide (`h1`), the sections (`h2`), the content slides (`h3`) and the others (`default`), as a path relative to the theme directory or an absolute URL.

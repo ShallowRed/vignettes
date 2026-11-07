@@ -9,6 +9,7 @@ import {
   knownThemes,
   resolveThemeName,
   setThemeRegistry,
+  themeLineage,
 } from '@vignettes/core/theme'
 import { themePackageVersions } from '@vignettes/nuxt/build/theme-build'
 import { discoverThemes, manifestTokens, registryOf, themeAliases } from '@vignettes/nuxt/build/theme-registry'
@@ -34,6 +35,16 @@ describe('runtime theme registry', () => {
     expect(isKnownTheme('dsfr')).toBe(true)
     expect(getThemeTokens('dsfr')?.backgrounds?.h1).toBe('/themes/brand-x/assets/h1.png')
     expect(getThemeTokens('minimal')?.name).toBe('minimal')
+  })
+
+  it('follows the themes a theme builds on, from an alias, and stops on a loop', () => {
+    setThemeRegistry({
+      tokens: { brand: { name: 'brand', extends: 'dsfr' }, team: { name: 'team', extends: 'brand' }, loop: { name: 'loop', extends: 'loop' } },
+      aliases: { equipe: 'team' },
+    })
+    expect(themeLineage('equipe')).toEqual(['team', 'brand', 'dsfr'])
+    expect(themeLineage('loop')).toEqual(['loop'])
+    expect(themeLineage(undefined)).toEqual([])
   })
 
   it('a later set replaces the previous tenant themes', () => {
@@ -71,6 +82,10 @@ describe('manifest discovery', () => {
     const themes = discoverThemes(root)
     expect(themes.map(t => `${t.source}:${t.name}`)).toEqual(['app:base', 'content:brand'])
     expect(themes[1].entry.endsWith('/content/themes/brand/brand.scss')).toBe(true)
+  })
+
+  it('keeps the theme a manifest builds on', () => {
+    expect(discoverThemes(root).map(t => manifestTokens(t.manifest).extends)).toEqual([undefined, 'base'])
   })
 
   it('turns relative backgrounds into theme URLs and keeps absolute ones', () => {

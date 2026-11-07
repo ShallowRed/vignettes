@@ -37,6 +37,8 @@ export interface ThemePptx {
 export interface ThemeTokens {
   /** Matches `/themes/<name>.css` and the theme directory. */
   name: string
+  /** Theme this one builds on, by its name. */
+  extends?: string
   /** Code theme of a deck that declares none: a name of `CODE_THEMES`, or code theme properties. */
   code?: unknown
   backgrounds?: ThemeBackgrounds
@@ -96,6 +98,14 @@ export function isKnownTheme(name: string): boolean {
 export function getThemeTokens(name?: string): ThemeTokens | undefined {
   const canonical = resolveThemeName(name)
   return canonical ? current.tokens[canonical] : undefined
+}
+
+/** The theme a frontmatter name points to, then each theme it builds on, nearest first. */
+export function themeLineage(name?: string): string[] {
+  const lineage: string[] = []
+  for (let theme = resolveThemeName(name); theme && !lineage.includes(theme); theme = resolveThemeName(current.tokens[theme]?.extends))
+    lineage.push(theme)
+  return lineage
 }
 
 // The theme of a deck that declares none. A host names its own when it registers its themes.

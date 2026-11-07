@@ -157,6 +157,9 @@ export default defineNuxtConfig({
       },
 
   nitro: {
+    // The application's pictograms, which the editor lists beside those of the content space.
+    serverAssets: [{ baseName: 'pictograms', dir: fileURLToPath(new URL('./public/pictograms', import.meta.url)) }],
+
     // Experimental until Nitro v3; carries the /collab realtime endpoint.
     experimental: {
       websocket: true,

@@ -20,11 +20,13 @@ const props = withDefaults(defineProps<Props>(), {
   size: '1.2em',
 })
 
-const iconName = computed(() => normalizeIconName(props.name))
+// `:i` without a name, as while its attributes are typed, draws nothing.
+const iconName = computed(() => (props.name ? normalizeIconName(props.name) : undefined))
 </script>
 
 <template>
   <Icon
+    v-if="iconName"
     :name="iconName"
     :size="String(props.size)"
     class="inline-icon"
