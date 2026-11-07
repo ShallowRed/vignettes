@@ -51,6 +51,8 @@ const props = defineProps<Props>()
 const registry = inject(DIAGRAM, null)
 
 onMounted(() => {
+  if (!props.from || !props.to)
+    return
   registry?.registerEdge({
     from: props.from,
     to: props.to,

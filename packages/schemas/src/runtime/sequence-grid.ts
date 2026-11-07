@@ -102,12 +102,12 @@ export interface StateCell {
 
 /**
  * The values of a `::State`, `id=value` separated by `|`, each on the column
- * of its participant. With a color, the values `mark` names are framed in it,
- * all of them when `mark` names none.
+ * of its participant; none without `values`. With a color, the values `mark`
+ * names are framed in it, all of them when `mark` names none.
  */
-export function stateCells(actors: readonly string[], values: string, options: { colored: boolean, mark?: string }): StateCell[] {
+export function stateCells(actors: readonly string[], values: string | undefined, options: { colored: boolean, mark?: string }): StateCell[] {
   const marked = ids(options.mark)
-  return values.split('|').flatMap((entry) => {
+  return (values ?? '').split('|').flatMap((entry) => {
     const separator = entry.indexOf('=')
     if (separator < 0)
       return []

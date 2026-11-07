@@ -11,12 +11,12 @@ export const BUILT_IN_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttr
     { name: 'size', values: ['sm', 'md', 'lg', 'xl'], description: { fr: 'Taille du texte du message, un cran de l\'échelle typographique au-dessus du texte courant ; sans elle, le message garde la taille du texte courant.', en: 'Text size of the message, a step of the type scale above the body text; without it, the message keeps the size of the body text.' } },
   ],
   Fragments: [
-    { name: 'effect', default: 'fade-in', description: { fr: 'Effet d\'apparition de Reveal : `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…', en: 'Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…' } },
+    { name: 'effect', default: 'fade-in', description: { fr: 'Effets d\'apparition de Reveal, séparés par des espaces : `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`, `fade-up grow`…', en: 'Reveal fragment effects, separated by spaces: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`, `fade-up grow`…' } },
     { name: 'dim', boolean: true, default: 'false', description: { fr: 'Atténue les éléments déjà montrés quand un élément suivant apparaît.', en: 'Dims the items already shown once a later one is current.' } },
     { name: 'collapse', boolean: true, default: 'false', description: { fr: 'Avec un effet qui montre un élément à son étape, les éléments encore cachés ne prennent pas de place : la diapositive se recompose à chaque étape, et l\'élément apparaît en fondu.', en: 'With an effect that shows an item at its step, the items still hidden take no space: the slide lays out its content again at each step, and an item appears with a fade.' } },
   ],
   IconInline: [
-    { name: 'name', description: { fr: 'Nom Iconify de l\'icône, `ri:home-line` ; la classe Remix `ri-home-line` fonctionne aussi.', en: 'Iconify name of the icon, `ri:home-line`; the Remix class `ri-home-line` works too.' } },
+    { name: 'name', required: true, description: { fr: 'Nom Iconify de l\'icône, `ri:home-line` ; la classe Remix `ri-home-line` fonctionne aussi.', en: 'Iconify name of the icon, `ri:home-line`; the Remix class `ri-home-line` works too.' } },
     { name: 'size', default: '1.2em', description: { fr: 'Taille CSS de l\'icône.', en: 'CSS size of the icon.' } },
   ],
   Columns: [
@@ -27,7 +27,7 @@ export const BUILT_IN_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttr
     { name: 'ratio', description: { fr: 'Largeur de la colonne en fraction de la rangée : `2/3`, `1/4`.', en: 'Width of the column as a fraction of the row: `2/3`, `1/4`.' } },
   ],
   Image: [
-    { name: 'src', description: { fr: 'Adresse de l\'image.', en: 'Address of the image.' } },
+    { name: 'src', required: true, description: { fr: 'Adresse de l\'image.', en: 'Address of the image.' } },
     { name: 'alt', default: '', description: { fr: 'Texte de remplacement de l\'image.', en: 'Text alternative of the image.' } },
     { name: 'width', default: 'auto', description: { fr: 'Largeur CSS de l\'image.', en: 'CSS width of the image.' } },
     { name: 'height', default: 'auto', description: { fr: 'Hauteur CSS de l\'image.', en: 'CSS height of the image.' } },
@@ -35,10 +35,10 @@ export const BUILT_IN_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttr
     { name: 'position', default: 'center', description: { fr: '`object-position` CSS de l\'image dans son cadre.', en: 'CSS `object-position` of the image in its box.' } },
     { name: 'rounded', boolean: true, default: 'false', description: { fr: 'Arrondit les coins.', en: 'Rounds the corners.' } },
     { name: 'shadow', boolean: true, default: 'true', description: { fr: 'Dessine une ombre sous l\'image.', en: 'Draws a shadow under the image.' } },
-    { name: 'preview', description: { fr: 'Ouvre l\'image en plein écran au clic : `true` montre `src`, une adresse montre une autre image.', en: 'Opens the image full-screen on click: `true` shows `src`, an address shows another image.' } },
+    { name: 'preview', acceptsTrue: true, description: { fr: 'Ouvre l\'image en plein écran au clic : `true` montre `src`, une adresse montre une autre image.', en: 'Opens the image full-screen on click: `true` shows `src`, an address shows another image.' } },
   ],
   Iframe: [
-    { name: 'src', description: { fr: 'Adresse de la page.', en: 'Address of the page.' } },
+    { name: 'src', required: true, description: { fr: 'Adresse de la page.', en: 'Address of the page.' } },
     { name: 'title', default: '', description: { fr: 'Titre du cadre, lu par les lecteurs d\'écran.', en: 'Accessible title of the frame.' } },
     { name: 'width', default: '100%', description: { fr: 'Largeur CSS du cadre.', en: 'CSS width of the frame.' } },
     { name: 'height', default: '500px', description: { fr: 'Hauteur CSS du cadre.', en: 'CSS height of the frame.' } },

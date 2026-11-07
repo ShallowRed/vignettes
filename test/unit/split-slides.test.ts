@@ -1,6 +1,7 @@
 import { attributeMentions, blockEndAround, bodyMedia, componentAttributeIssues, componentMentions, containerPrefix, directiveMentions, escapeBlockStart, escapeHeadingClose, headingTextRange, isSectionSlide, listItemTextStart, malformedAttributeMentions, opensBlock, registerDeckComponents, resetDeckComponents, slideSourceAt, slideTitle, splitSlides, unclosedBlocks } from '@vignettes/core/deck'
+import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
 function positions(raw: string, parser: 'heading' | 'separator') {
@@ -128,6 +129,8 @@ describe('attributeMentions', () => {
 })
 
 describe('componentAttributeIssues', () => {
+  const issues = (raw: string) => componentAttributeIssues(raw).map(({ kind, component, line, column, length }) => [kind, component, line, raw.split('\n')[line - 1]!.slice(column, column + length)])
+
   it('places an unknown attribute and "false" written as a text', () => {
     const raw = [
       '# Title',
@@ -137,11 +140,35 @@ describe('componentAttributeIssues', () => {
       '::Foo{bar="1"}',
       ':layout{zz="1"}',
     ].join('\n')
-    const found = componentAttributeIssues(raw).map(({ kind, component, line, column, length }) => [kind, component, line, raw.split('\n')[line - 1]!.slice(column, column + length)])
-    expect(found).toEqual([
+    expect(issues(raw)).toEqual([
       ['false-text', 'Fragments', 2, 'dim="false"'],
       ['unknown', 'Fragments', 2, 'efect="grow"'],
     ])
+  })
+
+  describe('with the components of the explanation kit', () => {
+    beforeEach(() => registerDeckComponents(SCHEMA_COMPONENTS))
+    afterEach(() => resetDeckComponents())
+
+    it('places an attribute written alone or empty on the attribute', () => {
+      expect(issues('::Column{ratio span="2"}\n::\n\n:::Fragments{effect="" dim}\n:::\n::Node{id="" title="A"}\n::')).toEqual([
+        ['no-value', 'Column', 1, 'ratio'],
+        ['no-value', 'Fragments', 4, 'effect=""'],
+        ['no-value', 'Node', 6, 'id=""'],
+      ])
+    })
+
+    it('places a missing attribute on the component, and an empty one on itself', () => {
+      expect(issues('::State{label="Brouillon"}\n::\n::Edge{from="" to="b"}\n::\nVoir :i{} ici.')).toEqual([
+        ['missing', 'State', 1, '::State'],
+        ['no-value', 'Edge', 3, 'from=""'],
+        ['missing', 'IconInline', 5, ':i'],
+      ])
+    })
+
+    it('finds nothing in written attributes, a `true` the attribute takes, and a block MDC cannot read', () => {
+      expect(issues('::Node{id="a" title="A"}\n::\n::Image{src="/a.png" preview}\n::\n::Node{title="X}\n::')).toEqual([])
+    })
   })
 })
 

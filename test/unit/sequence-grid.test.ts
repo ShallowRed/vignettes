@@ -67,6 +67,10 @@ describe('stateCells', () => {
     expect(stateCells(actors, 'c=Draft|b=Sent', { colored: true, mark: 'c' }).map(cell => cell.marked)).toEqual([true, false])
     expect(stateCells(actors, 'c=Draft|b=Sent', { colored: true }).map(cell => cell.marked)).toEqual([true, true])
   })
+
+  it('gives no value to a state without `values`', () => {
+    expect(stateCells(actors, undefined, { colored: false })).toEqual([])
+  })
 })
 
 describe('entrySteps', () => {

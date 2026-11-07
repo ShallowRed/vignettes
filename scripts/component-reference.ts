@@ -170,6 +170,8 @@ export function componentAttribute(prop: ComponentApi['props'][number], file: st
     name: prop.name,
     ...(values ? { values } : {}),
     ...(prop.type === 'boolean' ? { boolean: true } : {}),
+    ...(prop.type !== 'boolean' && members.includes('boolean') ? { acceptsTrue: true } : {}),
+    ...(prop.optional ? {} : { required: true }),
     ...(fallback === undefined ? {} : { default: fallback }),
     description: { fr: prop.fr, en: prop.description },
   }
@@ -183,6 +185,10 @@ function attributeSource(attribute: ComponentAttribute): string {
     fields.push(`values: [${attribute.values.map(quoted).join(', ')}]`)
   if (attribute.boolean)
     fields.push('boolean: true')
+  if (attribute.acceptsTrue)
+    fields.push('acceptsTrue: true')
+  if (attribute.required)
+    fields.push('required: true')
   if (attribute.default !== undefined)
     fields.push(`default: ${quoted(attribute.default)}`)
   fields.push(`description: { fr: ${quoted(attribute.description.fr!)}, en: ${quoted(attribute.description.en!)} }`)

@@ -1,5 +1,5 @@
 import type { DeckUrlKind } from './urls.ts'
-import { componentKey, DECK_ANNOTATIONS, deckComponents } from './components.ts'
+import { attributeNamed, componentKey, DECK_ANNOTATIONS, deckComponentNamed } from './components.ts'
 import { isDeckUrl, isRefusedEmbedUrl } from './urls.ts'
 
 /**
@@ -54,7 +54,7 @@ export function urlKindOf(tag: string, name: string): DeckUrlKind | undefined {
   const key = attributeKey(name)
   const tagKey = componentKey(tag)
   const images = DECK_ANNOTATIONS.find(annotation => componentKey(annotation.tag) === tagKey)?.images
-    ?? deckComponents().find(c => [c.name, ...(c.aliases ?? [])].some(n => componentKey(n) === tagKey))?.images
+    ?? deckComponentNamed(tag)?.images
   if (images?.some(image => attributeKey(image) === key))
     return 'image'
   if (tagKey === 'img' && key === 'src')
@@ -110,12 +110,31 @@ export function readAttribute(tag: string, name: string, value: unknown): Attrib
   return reading
 }
 
-/** The attributes of an element that `readAttribute` keeps. */
+/**
+ * Whether the attribute `name` of the component `tag`, which takes a text,
+ * holds no text: written alone (`{ratio}`, which MDC reads as `true`), empty,
+ * blank, or bound to a JSON value other than a text or a number. A `true`
+ * reaches an attribute that `acceptsTrue`. The attributes a component does not
+ * declare, and its `true`/`false` ones, always hold their value.
+ */
+export function isValueless(tag: string, name: string, value: unknown): boolean {
+  const component = deckComponentNamed(tag)
+  const attribute = component && attributeNamed(component, name)
+  if (!attribute || attribute.boolean || (attribute.acceptsTrue && value === true))
+    return false
+  return typeof value === 'string' ? !value.trim() : typeof value !== 'number'
+}
+
+/**
+ * The attributes of an element that `readAttribute` keeps, without those that
+ * hold no text (`isValueless`): the component receives them absent and takes
+ * their default.
+ */
 export function deckAttributes(tag: string, props: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const kept: Record<string, unknown> = {}
   for (const [name, value] of Object.entries(props)) {
     const reading = readAttribute(tag, name, value)
-    if ('name' in reading)
+    if ('name' in reading && !isValueless(tag, reading.name, reading.value))
       kept[reading.name] = reading.value
   }
   return kept

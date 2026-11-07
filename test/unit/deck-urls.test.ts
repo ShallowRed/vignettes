@@ -1,6 +1,8 @@
-import { deckAttributes, isDeckUrl, isRefusedEmbed, isRefusedEmbedUrl, parseDeckMeta, readAttribute, readLayout, urlKindOf } from '@vignettes/core/deck'
+import { parseMarkdown } from '@nuxtjs/mdc/runtime'
+import { deckAttributes, isDeckUrl, isRefusedEmbed, isRefusedEmbedUrl, isValueless, parseDeckMeta, readAttribute, readLayout, registerDeckComponents, resetDeckComponents, urlKindOf } from '@vignettes/core/deck'
 import { buildStoryUrl, EMBED_SANDBOX, embedSandbox, resolveSlideMedia } from '@vignettes/core/render'
-import { describe, expect, it } from 'vitest'
+import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 describe('isDeckUrl', () => {
   it.each([
@@ -182,5 +184,61 @@ describe('embedSandbox', () => {
       expect(tokens, src).not.toContain('allow-same-origin')
     }
     expect(embedSandbox('https://other.example/media/x.svg', origin)).toBe(EMBED_SANDBOX)
+  })
+})
+
+describe('deckAttributes, an attribute that holds no text', () => {
+  beforeEach(() => registerDeckComponents(SCHEMA_COMPONENTS))
+  afterEach(() => resetDeckComponents())
+
+  it('reads `{ratio}` as MDC gives it, and leaves it out', async () => {
+    const ast = await parseMarkdown('::Column{ratio span="2"}\nA\n::')
+    const column = ast.body.children[0]!
+    expect(column.type === 'element' && deckAttributes(column.tag, column.props ?? {})).toEqual({ span: 2 })
+  })
+
+  it.each([
+    ['Column', ':ratio'],
+    ['Mermaid', ':steps'],
+    ['Message', ':via'],
+    ['Remark', ':over'],
+    ['State', ':mark'],
+    ['Node', ':at'],
+    ['Node', ':span'],
+    ['Node', ':icon'],
+    ['Area', ':at'],
+    ['Area', ':icon'],
+    ['Edge', ':anchors'],
+    ['JsonTour', ':mark'],
+    ['JsonTour', ':underline'],
+    ['Zone', ':lines'],
+    ['Zone', ':spot'],
+    ['i', ':name'],
+  ])('leaves out %s{%s} written alone', (tag, name) => {
+    expect(deckAttributes(tag.toLowerCase(), { [name]: 'true' })).toEqual({})
+  })
+
+  it.each([
+    ['Fragments', 'effect'],
+    ['Node', 'id'],
+    ['Edge', 'from'],
+    ['State', 'values'],
+  ])('leaves out %s{%s=""}, and a blank value', (tag, name) => {
+    expect(deckAttributes(tag.toLowerCase(), { [name]: '' })).toEqual({})
+    expect(deckAttributes(tag.toLowerCase(), { [name]: '  ' })).toEqual({})
+  })
+
+  it('keeps a text, a number, a `true` that the attribute takes, and the attributes no component declares', () => {
+    expect(deckAttributes('node', { 'id': 'a', 'n': '3', ':step': '2' })).toEqual({ id: 'a', n: '3', step: 2 })
+    expect(deckAttributes('fragments', { ':dim': 'true', ':collapse': 'false' })).toEqual({ dim: true, collapse: false })
+    expect(deckAttributes('image', { 'src': '/a.png', ':preview': 'true' })).toEqual({ src: '/a.png', preview: true })
+    expect(deckAttributes('node', { 'data-x': '', ':foo': 'true' })).toEqual({ 'data-x': '', 'foo': true })
+    expect(deckAttributes('div', { ':title': 'true' })).toEqual({ title: true })
+  })
+
+  it('reads an object or `false` bound to a text attribute as no text', () => {
+    expect(isValueless('column', 'ratio', { a: 1 })).toBe(true)
+    expect(isValueless('column', 'ratio', false)).toBe(true)
+    expect(isValueless('column', 'ratio', '1/3')).toBe(false)
   })
 })

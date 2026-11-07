@@ -32,7 +32,7 @@ export const SCHEMA_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttrib
     { name: 'tiles', values: ['column', 'row'], default: 'column', description: { fr: 'Forme des cartes de chaque `::Node` : pictogramme au-dessus du texte, ou à côté.', en: 'Card shape for every `::Node`: pictogram above the text, or beside it.' } },
   ],
   Node: [
-    { name: 'id', description: { fr: 'Nom par lequel les blocs `::Edge` désignent le nœud.', en: 'Name the `::Edge` blocks use to reach the node.' } },
+    { name: 'id', required: true, description: { fr: 'Nom par lequel les blocs `::Edge` désignent le nœud.', en: 'Name the `::Edge` blocks use to reach the node.' } },
     { name: 'at', description: { fr: 'Case de la grille, `colonne,rangée` en partant de 1, pour `layout="grid"`.', en: 'Grid cell as `col,row` (1-based), for `layout="grid"`.' } },
     { name: 'span', description: { fr: 'Cases occupées, `colonnes,rangées`.', en: 'Cells spanned as `cols,rows`.' } },
     { name: 'picto', description: { fr: 'Pictogramme, par son chemin sous `/pictograms` sans l\'extension : `digital/coding`.', en: 'Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.' } },
@@ -47,8 +47,8 @@ export const SCHEMA_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttrib
     { name: 'orientation', values: ['column', 'row'], description: { fr: 'Pictogramme au-dessus du texte ou à côté ; par défaut, le `tiles` du diagramme.', en: 'Pictogram above the text or beside it; defaults to the diagram\'s `tiles`.' } },
   ],
   Edge: [
-    { name: 'from', description: { fr: '`id` du nœud d\'où part la flèche.', en: '`id` of the node the arrow leaves.' } },
-    { name: 'to', description: { fr: '`id` du nœud où arrive la flèche.', en: '`id` of the node the arrow reaches.' } },
+    { name: 'from', required: true, description: { fr: '`id` du nœud d\'où part la flèche.', en: '`id` of the node the arrow leaves.' } },
+    { name: 'to', required: true, description: { fr: '`id` du nœud où arrive la flèche.', en: '`id` of the node the arrow reaches.' } },
     { name: 'label', description: { fr: 'Texte sur la flèche.', en: 'Text on the arrow.' } },
     { name: 'dashed', boolean: true, description: { fr: 'Dessine une flèche en pointillés.', en: 'Draws a dashed arrow.' } },
     { name: 'arrow', boolean: true, description: { fr: '`false` retire la pointe de la flèche, pour le tronçon qui arrive sur une pastille `flow`.', en: '`false` leaves the arrowhead off, for the leg that reaches a flow box.' } },
@@ -73,15 +73,15 @@ export const SCHEMA_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttrib
     { name: 'enter', values: ['start', 'first-row'], default: 'start', description: { fr: 'Moment où les participants apparaissent : `start`, tous avec la diapositive ; `first-row`, ceux de la première rangée et ceux qu\'aucune rangée ne nomme avec la diapositive, chacun des autres avec la première rangée qui le nomme, dans une colonne qui lui est gardée dès le départ.', en: 'When the participants appear: `start`, all of them with the slide; `first-row`, those of the first row and those no row names with the slide, each other one with the first row that names it, in a column kept for it from the start.' } },
   ],
   Actor: [
-    { name: 'id', description: { fr: 'Nom par lequel les rangées désignent le participant.', en: 'Name the rows use to reach the participant.' } },
+    { name: 'id', required: true, description: { fr: 'Nom par lequel les rangées désignent le participant.', en: 'Name the rows use to reach the participant.' } },
     { name: 'title', description: { fr: 'Nom du participant.', en: 'Name of the participant.' } },
     { name: 'icon', description: { fr: 'Icône Remix, `ri:user-line`, plus légère qu\'un pictogramme.', en: 'Remix icon, `ri:user-line`, lighter than a pictogram.' } },
     { name: 'picto', description: { fr: 'Pictogramme, par son chemin sous `/pictograms` sans l\'extension : `digital/coding`.', en: 'Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.' } },
     { name: 'color', description: { fr: 'Couleur de l\'icône et du titre : un nom de la palette du thème, comme `green`, ou une couleur hexadécimale ou une fonction de couleur, comme `#2a7f62`.', en: 'Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.' } },
   ],
   Message: [
-    { name: 'from', description: { fr: '`id` du participant qui envoie.', en: '`id` of the participant that sends.' } },
-    { name: 'to', description: { fr: '`id` du participant qui reçoit.', en: '`id` of the participant that receives.' } },
+    { name: 'from', required: true, description: { fr: '`id` du participant qui envoie.', en: '`id` of the participant that sends.' } },
+    { name: 'to', required: true, description: { fr: '`id` du participant qui reçoit.', en: '`id` of the participant that receives.' } },
     { name: 'via', description: { fr: '`id` des participants par lesquels passe la flèche, séparés par des virgules ; chacun prend un point.', en: '`id` of the participants the arrow goes through, separated by commas; each takes a dot.' } },
     { name: 'label', description: { fr: 'Texte au-dessus de la flèche.', en: 'Text above the arrow.' } },
     { name: 'time', description: { fr: 'Heure écrite dans la marge de gauche, `10 h 00`.', en: 'Time written in the left margin, `10 h 00`.' } },
@@ -89,7 +89,7 @@ export const SCHEMA_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttrib
     { name: 'step', description: { fr: 'Étape d\'apparition ; par défaut, l\'ordre de lecture.', en: 'Fragment step; defaults to the reading order.' } },
   ],
   State: [
-    { name: 'values', description: { fr: 'Valeurs posées sur les lignes de vie, `id=valeur` séparés par `|` : `a=Brouillon|b=Envoyé`.', en: 'Values on the lifelines, `id=value` separated by `|`: `a=Draft|b=Sent`.' } },
+    { name: 'values', required: true, description: { fr: 'Valeurs posées sur les lignes de vie, `id=valeur` séparés par `|` : `a=Brouillon|b=Envoyé`.', en: 'Values on the lifelines, `id=value` separated by `|`: `a=Draft|b=Sent`.' } },
     { name: 'label', description: { fr: 'Nom de l\'état, écrit dans la marge de gauche.', en: 'Name of the state, written in the left margin.' } },
     { name: 'color', description: { fr: 'Teinte la rangée et encadre les valeurs : un nom de la palette du thème, comme `orange`, ou une couleur hexadécimale ou une fonction de couleur.', en: 'Tints the row and frames the values: a palette name of the theme, such as `orange`, or a hexadecimal color or a color function.' } },
     { name: 'mark', description: { fr: '`id` des valeurs encadrées de la couleur `color`, séparés par des virgules ; toutes quand il est absent.', en: '`id` of the values framed in `color`, separated by commas; all of them when absent.' } },

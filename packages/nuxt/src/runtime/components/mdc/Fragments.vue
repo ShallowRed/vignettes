@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { inject, onMounted, ref } from 'vue'
+import { fragmentEffects } from '../../utils/fragment-effects.ts'
 
 // Turns each direct child (each item of a direct list) into a Reveal fragment,
 // revealed one step at a time with the arrow keys.
 interface Props {
   /**
-   * Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…
-   * @fr Effet d'apparition de Reveal : `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…
+   * Reveal fragment effects, separated by spaces: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`, `fade-up grow`…
+   * @fr Effets d'apparition de Reveal, séparés par des espaces : `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`, `fade-up grow`…
    */
   effect?: string
   /**
@@ -45,11 +46,9 @@ onMounted(() => {
     else
       targets.push(child)
   }
-  for (const el of targets) {
-    el.classList.add('fragment')
-    if (props.effect !== 'fade-in')
-      el.classList.add(props.effect)
-  }
+  const effects = fragmentEffects(props.effect)
+  for (const el of targets)
+    el.classList.add('fragment', ...effects)
   revealSync?.()
 })
 </script>

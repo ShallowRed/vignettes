@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DiagramEdgeRegistration, DiagramNodeRegistration, DiagramSide } from '../injection-keys.ts'
-import dagre from '@dagrejs/dagre'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
+import { rankedLayout } from '../diagram-layout.ts'
 import { DIAGRAM } from '../injection-keys.ts'
 
 // Pictogram cards (`::Node`) linked by drawn arrows (`::Edge`). `layout="grid"`
@@ -148,20 +148,12 @@ function box(el: HTMLElement): Box {
 }
 
 function layoutAuto() {
-  const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: props.direction, nodesep: 36, ranksep: 64, marginx: 4, marginy: 4 })
-  g.setDefaultEdgeLabel(() => ({}))
-  for (const n of nodes)
-    g.setNode(n.id, { width: n.el.offsetWidth, height: n.el.offsetHeight })
-  for (const e of edges)
-    g.setEdge(e.from, e.to)
-  dagre.layout(g)
-  for (const n of nodes) {
-    const p = g.node(n.id)
-    n.el.style.left = `${p.x - p.width / 2}px`
-    n.el.style.top = `${p.y - p.height / 2}px`
-  }
-  const { width = 0, height = 0 } = g.graph()
+  const cards = nodes.map(n => ({ id: n.id, width: n.el.offsetWidth, height: n.el.offsetHeight }))
+  const { corners, width, height } = rankedLayout(cards, edges, props.direction)
+  nodes.forEach((n, index) => {
+    n.el.style.left = `${corners[index]!.left}px`
+    n.el.style.top = `${corners[index]!.top}px`
+  })
   const available = root.value!.offsetWidth
   const budget = Number(props.height) || height
   scale.value = Math.min(1, available / width, budget / height)

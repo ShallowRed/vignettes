@@ -39,6 +39,8 @@ const ATTRIBUTE_MESSAGES: Record<AttributeMention['reason'], { short: string, me
 const COMPONENT_ATTRIBUTE_MESSAGES: Record<ComponentAttributeIssue['kind'], string> = {
   'unknown': 'attributeUnknown',
   'false-text': 'attributeFalseText',
+  'no-value': 'attributeNoValue',
+  'missing': 'attributeMissing',
 }
 
 const LAYOUT_MESSAGES: Record<LayoutMention['kind'], string> = {

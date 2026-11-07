@@ -144,7 +144,7 @@ Also written `fragments`.
 
 Attributes:
 
-- `effect` (`string`, default `'fade-in'`): Reveal fragment effect: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`…
+- `effect` (`string`, default `'fade-in'`): Reveal fragment effects, separated by spaces: `fade-in`, `fade-up`, `fade-left`, `grow`, `highlight-current-blue`, `fade-up grow`…
 - `dim` (`boolean`, default `false`): Dims the items already shown once a later one is current.
 - `collapse` (`boolean`, default `false`): With an effect that shows an item at its step, the items still hidden take no space: the slide lays out its content again at each step, and an item appears with a fade.
 

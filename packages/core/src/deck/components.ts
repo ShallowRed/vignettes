@@ -137,6 +137,10 @@ export interface ComponentAttribute {
   values?: readonly string[]
   /** Takes `true` or `false` only: written alone for `true`, as `:name="false"` for `false`. */
   boolean?: boolean
+  /** Takes a text, or `true` when written alone: `{preview}` or `preview="…"`. */
+  acceptsTrue?: boolean
+  /** The component needs it. */
+  required?: boolean
   /** The value its absence gives. */
   default?: string
   description: LocalizedText
@@ -341,6 +345,18 @@ export function deckComponents(): readonly DeckComponent[] {
  */
 export function componentKey(name: string): string {
   return name.replaceAll('-', '').toLowerCase()
+}
+
+/** The registered component a deck names `tag`, by its name or an alias. */
+export function deckComponentNamed(tag: string): DeckComponent | undefined {
+  const key = componentKey(tag)
+  return registry.find(component => [component.name, ...(component.aliases ?? [])].some(name => componentKey(name) === key))
+}
+
+/** The declared attribute a written name reaches: Vue reads `node-width` as `nodeWidth`. */
+export function attributeNamed(directive: { attributes?: readonly ComponentAttribute[] }, name: string): ComponentAttribute | undefined {
+  const key = componentKey(name.replace(/^:/, ''))
+  return directive.attributes?.find(attribute => componentKey(attribute.name) === key)
 }
 
 /** `{ authoringName: VueComponent }`, aliases included. */

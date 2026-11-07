@@ -1,8 +1,8 @@
-import type { BodyMediaLayoutSpec, ComponentAttribute, DeckComponent } from './components.ts'
+import type { BodyMediaLayoutSpec, ComponentAttribute } from './components.ts'
 import type { LayoutIssueKind } from './layout.ts'
 import type { ParserId } from './parser.ts'
-import { isRefusedEmbed, readAttribute } from './attributes.ts'
-import { ANNOTATION_TAGS, componentKey, DECK_ANNOTATIONS, deckComponents, NOTES_COMPONENT } from './components.ts'
+import { isRefusedEmbed, isValueless, readAttribute } from './attributes.ts'
+import { ANNOTATION_TAGS, attributeNamed, componentKey, DECK_ANNOTATIONS, deckComponentNamed, NOTES_COMPONENT } from './components.ts'
 import { frontmatterLineCount } from './frontmatter.ts'
 import { bodyMediaLayout, LAYOUT_ATTRIBUTES, MARKDOWN_IMAGE_LAYOUT, readLayout } from './layout.ts'
 
@@ -369,9 +369,8 @@ export interface DirectiveMention extends ComponentMention {
   attributes?: { from: number, to: number }
 }
 
-/** The directives written in a deck, outside the frontmatter, fenced code and inline code. */
-export function directiveMentions(raw: string): DirectiveMention[] {
-  const mentions: DirectiveMention[] = []
+/** The directives written in a deck with the attributes of their `{…}` block, outside the frontmatter, fenced code and inline code. */
+function* writtenDirectives(raw: string): Generator<{ mention: DirectiveMention, written: WrittenAttribute[], malformed: boolean }> {
   for (const { line, prose } of proseLines(raw)) {
     for (const match of prose.matchAll(DIRECTIVE_RE)) {
       const [, before, colons, name] = match
@@ -379,10 +378,15 @@ export function directiveMentions(raw: string): DirectiveMention[] {
       const length = colons!.length + name!.length
       const close = prose[column + length] === '{' ? attributesEnd(prose, column + length + 1) : undefined
       const attributes = close === undefined ? undefined : { from: column + length, to: typeof close === 'number' ? close + 1 : prose.length }
-      mentions.push({ name: name!, colons: colons!, line, column, length, ...(attributes && { attributes }) })
+      const written = attributes ? [...blockAttributes(prose.slice(attributes.from + 1, typeof close === 'number' ? close : prose.length), attributes.from + 1)] : []
+      yield { mention: { name: name!, colons: colons!, line, column, length, ...(attributes && { attributes }) }, written, malformed: typeof close === 'string' }
     }
   }
-  return mentions
+}
+
+/** The directives written in a deck, outside the frontmatter, fenced code and inline code. */
+export function directiveMentions(raw: string): DirectiveMention[] {
+  return [...writtenDirectives(raw)].map(({ mention }) => mention)
 }
 
 const ANNOTATION_KEYS = new Set(ANNOTATION_TAGS.map(componentKey))
@@ -602,23 +606,7 @@ export interface ComponentAttributeMention {
 
 /** The attributes written in the `{…}` blocks of the directives, outside the frontmatter, fenced code and inline code. */
 export function componentAttributeMentions(raw: string): ComponentAttributeMention[] {
-  const mentions: ComponentAttributeMention[] = []
-  for (const { line, prose } of proseLines(raw)) {
-    for (const match of prose.matchAll(DIRECTIVE_ATTRIBUTES_RE)) {
-      const open = match.index + match[0].length
-      const end = attributesEnd(prose, open)
-      const content = prose.slice(open, typeof end === 'number' ? end : prose.length)
-      for (const attribute of blockAttributes(content, open))
-        mentions.push({ tag: match[3]!, line, ...attribute })
-    }
-  }
-  return mentions
-}
-
-/** The registered component a deck names `tag`, by its name or an alias. */
-export function deckComponentNamed(tag: string): DeckComponent | undefined {
-  const key = componentKey(tag)
-  return deckComponents().find(component => [component.name, ...(component.aliases ?? [])].some(name => componentKey(name) === key))
+  return [...writtenDirectives(raw)].flatMap(({ mention, written }) => written.map(attribute => ({ tag: mention.name, line: mention.line, ...attribute })))
 }
 
 // Attributes every element takes: MDC's `.class` and `#id` shorthands, and the HTML ones.
@@ -639,22 +627,19 @@ export function attributedDirective(tag: string): AttributedDirective | undefine
   return { name: annotation.tag, attributes: annotation.tag === 'layout' ? LAYOUT_ATTRIBUTES : annotation.attributes, docs: annotation.docs }
 }
 
-/** The declared attribute a written name reaches: Vue reads `node-width` as `nodeWidth`. */
-export function attributeNamed(directive: AttributedDirective, name: string): ComponentAttribute | undefined {
-  const key = componentKey(name.replace(/^:/, ''))
-  return directive.attributes?.find(attribute => componentKey(attribute.name) === key)
-}
-
 /**
  * An attribute that its component leaves unused: a name it does not declare
- * (`unknown`), or `"false"` written to a `true`/`false` attribute without the
- * colon (`false-text`), which the component reads as a text, so as true.
+ * (`unknown`), `"false"` written to a `true`/`false` attribute without the
+ * colon (`false-text`), which the component reads as a text, so as true, or a
+ * text attribute that holds no text (`no-value`, see `isValueless`). Or an
+ * attribute the component needs and the block leaves out (`missing`), placed
+ * on the directive.
  */
 export interface ComponentAttributeIssue {
-  kind: 'unknown' | 'false-text'
+  kind: 'unknown' | 'false-text' | 'no-value' | 'missing'
   /** The component, by its declared name. */
   component: string
-  /** The attribute as written. */
+  /** The attribute as written, or as declared when it is missing. */
   name: string
   line: number
   column: number
@@ -663,21 +648,35 @@ export interface ComponentAttributeIssue {
 
 /**
  * The attributes of the components of a deck that the component leaves unused,
- * for the components that declare their attributes. `layoutMentions` reports
- * those of `:layout`, which `readLayout` reads.
+ * and those it needs and the deck leaves out, for the components that declare
+ * their attributes. `layoutMentions` reports those of `:layout`, which
+ * `readLayout` reads.
  */
 export function componentAttributeIssues(raw: string): ComponentAttributeIssue[] {
   const issues: ComponentAttributeIssue[] = []
-  for (const mention of componentAttributeMentions(raw)) {
-    const component = mention.tag === 'layout' ? undefined : attributedDirective(mention.tag)
-    if (!component?.attributes || PASSTHROUGH_ATTRIBUTE_RE.test(mention.name) || /^(?:v-|@)/.test(mention.name))
+  for (const { mention: directive, written, malformed } of writtenDirectives(raw)) {
+    const component = directive.name === 'layout' ? undefined : attributedDirective(directive.name)
+    if (!component?.attributes)
       continue
-    const attribute = attributeNamed(component, mention.name)
-    const kind = !attribute
-      ? 'unknown'
-      : attribute.boolean && !mention.name.startsWith(':') && mention.value === 'false' ? 'false-text' : undefined
-    if (kind)
-      issues.push({ kind, component: component.name, name: mention.name, line: mention.line, column: mention.column, length: mention.length })
+    const place = { component: component.name, line: directive.line }
+    for (const mention of written) {
+      const attribute = attributeNamed(component, mention.name)
+      if (!attribute && (PASSTHROUGH_ATTRIBUTE_RE.test(mention.name) || /^(?:v-|@)/.test(mention.name)))
+        continue
+      // MDC gives an attribute written alone as `true`.
+      const reading = mention.value === undefined ? { name: mention.name, value: true } : readAttribute(directive.name, mention.name, mention.value)
+      const kind = !attribute
+        ? 'unknown'
+        : attribute.boolean && !mention.name.startsWith(':') && mention.value === 'false'
+          ? 'false-text'
+          : !malformed && 'name' in reading && isValueless(directive.name, reading.name, reading.value) ? 'no-value' : undefined
+      if (kind)
+        issues.push({ kind, ...place, name: mention.name, column: mention.column, length: mention.length })
+    }
+    for (const attribute of malformed ? [] : component.attributes) {
+      if (attribute.required && !written.some(({ name }) => attributeNamed(component, name) === attribute))
+        issues.push({ kind: 'missing', ...place, name: attribute.name, column: directive.column, length: directive.length })
+    }
   }
   return issues
 }
