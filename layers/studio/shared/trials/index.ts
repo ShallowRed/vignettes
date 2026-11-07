@@ -8,6 +8,8 @@ export const TRIAL_FEATURES = [
   'ui-themes',
   /** The click that selects the source of an element of the preview, and the edit of a text on the slide. */
   'edit-on-slide',
+  /** The command of the deck controls that exports the deck as a PowerPoint file. */
+  'pptx-export',
 ] as const
 
 export type TrialFeature = typeof TRIAL_FEATURES[number]

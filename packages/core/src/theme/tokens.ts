@@ -24,6 +24,16 @@ export interface ThemePreview {
   levels?: Partial<Record<'h1' | 'h2' | 'h3', Pick<ThemePreview, 'titleColor' | 'titleGradient' | 'textColor'>>>
 }
 
+/** What the PowerPoint export takes from the theme. */
+export interface ThemePptx {
+  /**
+   * The font the export embeds in the file, for a font whose license allows
+   * it: the family the slides name, and the address of its regular face on the
+   * site, a TrueType, OpenType or WOFF file.
+   */
+  font?: { family: string, src: string }
+}
+
 export interface ThemeTokens {
   /** Matches `/themes/<name>.css` and the theme directory. */
   name: string
@@ -34,6 +44,7 @@ export interface ThemeTokens {
   reveal?: RevealConfig
   lang?: string
   parser?: 'heading' | 'separator'
+  pptx?: ThemePptx
 }
 
 export interface ThemeRegistry {

@@ -9,9 +9,11 @@ import DeckControlButton from './DeckControlButton.vue'
 // the ones every deck has.
 const props = defineProps<{
   getInstance: () => RevealApi | null
+  /** The PowerPoint export, when the deck offers it, and what its tooltip says of its state. */
+  pptxExport?: { status: string }
 }>()
 
-const emit = defineEmits<{ print: [] }>()
+const emit = defineEmits<{ print: [], exportPptx: [] }>()
 
 const messages = useDeckMessages()
 
@@ -258,6 +260,24 @@ async function copyLink() {
             rx="1"
           /></g></svg>
         </DeckControlButton>
+        <DeckControlButton
+          v-if="pptxExport"
+          class="deck-controls__pptx"
+          :label="messages.exportPptx"
+          :tip="pptxExport.status || undefined"
+          @click="emit('exportPptx')"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          ><g
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          ><path d="M2 3h20M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3M12 16v5M8 21h8" /><path d="M12 6v6M9.5 9.5 12 12l2.5-2.5" /></g></svg>
+        </DeckControlButton>
         <template v-if="$slots.after">
           <span class="deck-controls__separator" />
           <slot name="after" />
@@ -404,9 +424,11 @@ async function copyLink() {
   transform: none;
 }
 
-/* The speaker view opens a second window, which a phone does not have. */
+/* The speaker view opens a second window, which a phone does not have, and the
+   PowerPoint file is edited on a computer. */
 @media (max-width: 767px) {
-  .deck-controls__speaker {
+  .deck-controls__speaker,
+  .deck-controls__pptx {
     display: none;
   }
 }

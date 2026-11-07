@@ -7,7 +7,7 @@
  * Pure filesystem reads, no Nuxt import: shared by the build scripts, the dev
  * watcher plugin, the token generator and the server's runtime loader.
  */
-import type { ThemePreview, ThemeRegistry, ThemeTokens } from '@vignettes/core/theme'
+import type { ThemePptx, ThemePreview, ThemeRegistry, ThemeTokens } from '@vignettes/core/theme'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -41,6 +41,8 @@ export interface ThemeManifest {
    * declaring the font faces, compiled to `<name>/preview-fonts.css`.
    */
   preview?: Omit<ThemePreview, 'fontsStylesheet'> & { fonts?: string }
+  /** What the PowerPoint export takes from the theme; the path of the font is relative to the theme directory. */
+  pptx?: ThemePptx
   /** SCSS entry, `<name>.scss` by default. */
   entry?: string
   /** Extra directories copied next to the theme's own `assets/`. */
@@ -108,9 +110,9 @@ export function themeAssetUrl(name: string, path: string): string {
   return `/themes/${name}/${path.replace(/^\.\//, '')}`
 }
 
-/** The runtime tokens a manifest declares, background paths turned into public URLs. */
+/** The runtime tokens a manifest declares, the paths of the backgrounds and of the font turned into public URLs. */
 export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
-  const { name, lang, parser, reveal, backgrounds, preview, code } = manifest
+  const { name, lang, parser, reveal, backgrounds, preview, code, pptx } = manifest
   const tokens: ThemeTokens = { name }
   if (lang)
     tokens.lang = lang
@@ -129,6 +131,8 @@ export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
     const { fonts, ...rest } = preview
     tokens.preview = fonts ? { ...rest, fontsStylesheet: themeAssetUrl(name, PREVIEW_FONTS_FILE) } : rest
   }
+  if (pptx?.font)
+    tokens.pptx = { font: { family: pptx.font.family, src: themeAssetUrl(name, pptx.font.src) } }
   return tokens
 }
 

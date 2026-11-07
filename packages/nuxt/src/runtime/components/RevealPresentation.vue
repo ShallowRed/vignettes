@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RevealApi } from 'reveal.js'
-import type { RevealConfig } from '../types/presentation.ts'
+import type { PresentationData, RevealConfig } from '../types/presentation.ts'
 import { useRequestURL } from '#imports'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, inSpeakerViewFrame, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
 import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
@@ -31,6 +31,11 @@ interface Props {
    * the editor header and its commands act on the whole page.
    */
   controls?: boolean
+  /**
+   * The deck the commands bar exports as a PowerPoint file. Without it, the bar
+   * has no PowerPoint command.
+   */
+  deck?: PresentationData
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -116,6 +121,41 @@ const VEIL_MAX_MS = 4000
 // The bar is interactive only, so it renders once mounted: a frozen bundle, which
 // has no Vue runtime, shows no inert button.
 const mounted = ref(false)
+
+// The PowerPoint export runs in the page, which downloads the file. A deck shown
+// in a frame has no command: the sandbox of a frame refuses the download.
+const inFrame = ref(true)
+const exportingPptx = ref(false)
+const pptxFailed = ref(false)
+// The state of the export, said by the tooltip of its command and read out by a
+// live region, outside the bar, which makes its folded commands inert.
+const pptxStatus = computed(() => exportingPptx.value
+  ? messages.value.exportPptxRunning
+  : pptxFailed.value ? messages.value.exportPptxFailed : '')
+const pptxExport = computed(() => props.deck && !inFrame.value ? { status: pptxStatus.value } : undefined)
+
+async function exportPptxFile() {
+  // The server bundle leaves the writer out: the export runs in the browser only.
+  // The file takes the look of the rendered deck: a click before Reveal lays it out does nothing.
+  if (!import.meta.client || !props.deck || !revealContainer.value || !ready.value || exportingPptx.value)
+    return
+  exportingPptx.value = true
+  pptxFailed.value = false
+  try {
+    const { exportPptx } = await import('../utils/pptx-export.ts')
+    await exportPptx(props.deck, revealContainer.value, {
+      frenchTypography: frenchTypography.value,
+      font: getThemeTokens(themeName.value)?.pptx?.font,
+    })
+  }
+  catch (error) {
+    console.error('[pptx] export failed', error)
+    pptxFailed.value = true
+  }
+  finally {
+    exportingPptx.value = false
+  }
+}
 
 const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, effectiveConfig, messages.value)
 
@@ -250,6 +290,7 @@ async function printWhenPaged() {
 
 onMounted(async () => {
   mounted.value = true
+  inFrame.value = window.self !== window.top
   if (isPrintMode)
     revealContainer.value?.addEventListener('pdf-ready', printWhenPaged, { once: true })
   const liftTimer = setTimeout(() => ready.value = true, VEIL_MAX_MS)
@@ -334,10 +375,19 @@ onUnmounted(() => {
         {{ messages.printBack }}
       </a>
     </div>
+    <p
+      v-if="pptxExport"
+      class="deck-status"
+      aria-live="polite"
+    >
+      {{ pptxStatus }}
+    </p>
     <DeckControls
       v-if="mounted && controls && !isPrintMode && !speakerViewFrame"
       :get-instance="getInstance"
+      :pptx-export="pptxExport"
       @print="openPrintView"
+      @export-pptx="exportPptxFile"
     >
       <template
         v-if="$slots['controls-before']"
@@ -440,7 +490,9 @@ onUnmounted(() => {
   color: #555;
 }
 
-.deck-veil__label {
+/* Read out, not shown. */
+.deck-veil__label,
+.deck-status {
   position: absolute;
   width: 1px;
   height: 1px;

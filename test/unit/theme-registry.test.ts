@@ -78,6 +78,11 @@ describe('manifest discovery', () => {
     expect(manifestTokens(brand.manifest).backgrounds).toEqual({ h1: '/themes/brand/assets/h1.png', h2: '/shared/h2.png' })
   })
 
+  it('turns the path of the font the PowerPoint export embeds into a theme URL', () => {
+    const tokens = manifestTokens({ name: 'brand', pptx: { font: { family: 'Quicksand', src: 'assets/fonts/Quicksand-Regular.ttf' } } })
+    expect(tokens.pptx).toEqual({ font: { family: 'Quicksand', src: '/themes/brand/assets/fonts/Quicksand-Regular.ttf' } })
+  })
+
   it('reports an alias that shadows a theme and lets the content theme win', () => {
     const themes = discoverThemes(root)
     const { aliases, warnings } = themeAliases(themes)

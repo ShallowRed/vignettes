@@ -506,6 +506,9 @@ importers:
       '@vignettes/core':
         specifier: workspace:*
         version: link:../core
+      '@vignettes/pptx':
+        specifier: workspace:*
+        version: link:../pptx
       '@vignettes/theme-kit':
         specifier: workspace:*
         version: link:../theme-kit

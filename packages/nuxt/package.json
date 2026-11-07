@@ -9,6 +9,7 @@
     "./types": "./src/runtime/types/presentation.ts",
     "./build/*": "./src/build/*.ts",
     "./slide-map": "./src/runtime/utils/slide-map.ts",
+    "./save-file": "./src/runtime/utils/save-file.ts",
     "./presentation-data": "./src/runtime/composables/usePresentation.ts",
     "./deck-messages": "./src/runtime/composables/useDeckMessages.ts",
     "./frame-attributes": "./src/runtime/composables/useFrameAttributes.ts",
@@ -28,6 +29,7 @@
   },
   "dependencies": {
     "@vignettes/core": "workspace:*",
+    "@vignettes/pptx": "workspace:*",
     "@vignettes/theme-kit": "workspace:*",
     "@vignettes/typographie": "workspace:*",
     "sass": "catalog:"

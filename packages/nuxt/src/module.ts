@@ -51,13 +51,17 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.nitro.externals ||= {}
     nuxt.options.nitro.externals.inline ||= []
     nuxt.options.nitro.externals.inline.push(runtime)
+    // The PowerPoint writer, which the runtime imports in the browser only.
+    nuxt.options.build.transpile.push('@vignettes/pptx')
 
-    // slugify, which `@vignettes/core` imports, is a CommonJS package, and
-    // mermaid depends on some: Vite serves them unconverted in development unless
-    // it pre-bundles them.
+    // slugify, which `@vignettes/core` imports, is a CommonJS package, and mermaid
+    // depends on some: Vite serves them unconverted in development unless it
+    // pre-bundles them. The PowerPoint writer loads pptxgenjs, jszip and pptx-embed-fonts
+    // on the first click of its command, and Vite reloads the page when it discovers a dependency
+    // that late: they are pre-bundled with the page.
     nuxt.options.vite.optimizeDeps ||= {}
     nuxt.options.vite.optimizeDeps.include ||= []
-    nuxt.options.vite.optimizeDeps.include.push('@vignettes/nuxt > @vignettes/core > slugify', '@vignettes/nuxt > mermaid')
+    nuxt.options.vite.optimizeDeps.include.push('@vignettes/nuxt > @vignettes/core > slugify', '@vignettes/nuxt > mermaid', '@vignettes/nuxt > @vignettes/pptx > pptxgenjs', '@vignettes/nuxt > @vignettes/pptx > jszip', '@vignettes/nuxt > @vignettes/pptx > pptx-embed-fonts')
 
     // The authoring components are named in markdown and resolved at runtime by
     // `resolveComponent('Quote')`, which requires them global. Nuxt skips a

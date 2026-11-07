@@ -37,6 +37,7 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 - `assets` lists extra directories copied under `public/themes/<name>/`, as `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root.
 - `code` is the default code theme of the deck blocks: a name of `CODE_THEMES` (`nuit`, `sombre`, `clair`), or its properties.
 - `preview` describes how the catalog draws the card of a deck on this theme, without loading the theme's stylesheet.
+- `pptx.font` names the font the PowerPoint export embeds in the file, for a font whose license allows it, such as a font under the SIL Open Font License: `family` is the name the slides give the font, and `src` the path of its regular face, a TrueType, OpenType or WOFF file relative to the theme directory. PowerPoint shows the embedded font on a computer that lacks it; Keynote ignores the embedded font and shows another one. A theme without `pptx.font` gives the slides the name of its font, which the computer that opens the file shows when it has it.
 
 `preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names an SCSS entry declaring the font faces, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/fonts` is the value the DSFR theme uses. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another role, and `titleGradient: 'none'` removes the gradient there.
 
@@ -48,6 +49,14 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
     "titleColor": "#000091",
     "textColor": "#3a3a3a",
     "surface": "#ffffff"
+  }
+}
+```
+
+```json
+{
+  "pptx": {
+    "font": { "family": "Quicksand", "src": "assets/fonts/Quicksand-Regular.ttf" }
   }
 }
 ```

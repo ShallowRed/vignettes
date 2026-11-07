@@ -31,6 +31,8 @@ useHead({ title: () => props.presentationData.metadata.title || props.slug })
 // A link to the deck shows its title slide. The page reaches this component only
 // with a deck its visitor may read, so a closed deck keeps the image of the studio.
 const { metadata, slides } = props.presentationData
+// The PowerPoint export, on trial: the presentation offers its command when it receives the deck.
+const pptxExport = useTrial('pptx-export')
 const { background: _, ...titleSlide } = titleSlidePreview(parsedTitleSlide(slides, metadata.backgrounds), resolveThemeName(metadata.theme || getDefaultTheme()))
 const deckTitle = metadata.title || titleSlide.title || props.slug
 useSeoMeta({ ogTitle: deckTitle, description: titleSlide.subtitle, ogDescription: titleSlide.subtitle })
@@ -92,6 +94,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
     :config="presentationData.metadata.reveal"
     :lang="presentationData.metadata.lang"
     :code="presentationData.metadata.code"
+    :deck="pptxExport ? presentationData : undefined"
     @ready="onReady"
   >
     <RevealSlides :presentation-data="presentationData" />

@@ -15,6 +15,10 @@ export interface DeckMessages {
   copyLink: string
   linkCopied: string
   print: string
+  /** The command that downloads the deck as a PowerPoint file, and its states. */
+  exportPptx: string
+  exportPptxRunning: string
+  exportPptxFailed: string
   /** The name of a part of a file whose deck has no title. */
   untitled: string
   printPreparing: string
@@ -61,6 +65,9 @@ const FR: DeckMessages = {
   copyLink: 'Copier le lien de cette diapositive',
   linkCopied: 'Lien copié',
   print: 'Imprimer ou exporter en PDF',
+  exportPptx: 'Exporter en PowerPoint',
+  exportPptxRunning: 'Export PowerPoint en cours…',
+  exportPptxFailed: 'L’export PowerPoint a échoué. Réessayez.',
   untitled: 'Sans titre',
   printPreparing: 'Préparation de l’export PDF…',
   printHint: 'La fenêtre d’impression s’ouvre automatiquement : choisissez « Enregistrer au format PDF ».',
@@ -104,6 +111,9 @@ const EN: DeckMessages = {
   copyLink: 'Copy the link to this slide',
   linkCopied: 'Link copied',
   print: 'Print or export to PDF',
+  exportPptx: 'Export to PowerPoint',
+  exportPptxRunning: 'Exporting to PowerPoint…',
+  exportPptxFailed: 'The PowerPoint export failed. Try again.',
   untitled: 'Untitled',
   printPreparing: 'Preparing the PDF export…',
   printHint: 'The print dialog opens automatically: choose “Save as PDF”.',

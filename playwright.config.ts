@@ -47,6 +47,8 @@ export default defineConfig({
     server(originsPort, '.data/e2e-origins-pglite', {
       NUXT_STUDIO_URL: `http://app.localhost:${originsPort}`,
       NUXT_PUBLIC_DECKS_URL: `http://decks.localhost:${originsPort}`,
+      // The features on trial open on this server, as on staging.
+      NUXT_RECETTE_ENABLED: '1',
     }),
   ],
 })

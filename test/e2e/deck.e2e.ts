@@ -291,6 +291,14 @@ test.describe('below 435px, where Reveal lays the deck out as a scrolling page',
   }
 })
 
+test('the deck controls hold no PowerPoint command while the export is on trial, closed in production', async ({ page }) => {
+  await page.goto(DECK)
+  await expect(page.locator('.reveal.ready')).toHaveCount(1)
+  await page.locator('.deck-controls').hover()
+  await expect(page.getByRole('button', { name: 'Imprimer ou exporter en PDF' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Exporter en PowerPoint' })).toHaveCount(0)
+})
+
 test('Reveal answers the messages of the deck origin, and ignores a frame of another origin', async ({ page }) => {
   await page.goto(DECK)
   await expect(page.locator('.deck-veil')).toBeHidden()
