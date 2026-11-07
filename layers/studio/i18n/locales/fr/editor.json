@@ -167,6 +167,8 @@
       "unknownComponent": "Composant inconnu : vérifiez le nom « {name} » dans l'aide. L'aperçu affiche son contenu sans mise en forme.",
       "unknownComponentShort": "Ligne {line} : composant « {name} » inconnu",
       "parseFailed": "L'aperçu montre la dernière version lisible : annulez votre dernière modification et reprenez-la par petites étapes.",
+      "renderFailed": "L'aperçu montre la diapositive sans le composant « {name} », qui n'a pas pu s'afficher : vérifiez ses attributs dans l'aide.",
+      "renderFailedShort": "Ligne {line} : composant « {name} » non affiché",
       "more": "{n} autre | {n} autre | {n} autres",
       "refusedUrl": "Adresse refusée : écrivez une adresse qui commence par https://, ou un chemin de ce site qui commence par /.",
       "refusedUrlShort": "Ligne {line} : adresse refusée",

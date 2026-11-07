@@ -4,6 +4,7 @@ import { buildComponentMap } from '@vignettes/core/deck'
 import { behindMedia } from '@vignettes/core/render'
 import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
+import { useSlideErrorBoundary } from '../composables/useSlideErrorBoundary.ts'
 import { useSlideIds } from '../composables/useSlideIds.ts'
 import { STORYBOOK_BASE } from '../config/injection-keys.ts'
 import { proseComponents } from '../utils/prose-components.ts'
@@ -31,6 +32,8 @@ const mdcComponents: Record<string, any> = {
     knownComponentNames().map(name => [name, componentMap[name] ? resolveComponent(componentMap[name]) : name]),
   ),
 }
+
+useSlideErrorBoundary(mdcComponents)
 
 // Reveal draws the background from these attributes. A media behind the text
 // keeps its framing, and its veil is black under the image, made that much

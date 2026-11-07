@@ -2,7 +2,7 @@ import type { PresentationData } from '../../packages/nuxt/src/runtime/types/pre
 import { componentMentions, registerDeckComponents, resetDeckComponents, slideRanges } from '@vignettes/core/deck'
 import { afterEach, describe, expect, it } from 'vitest'
 import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
-import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
+import { fragmentAtLine, slideAtLine, slidePlace, unknownDeckComponents } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
 
 // Maps a 1-based line to reveal indices for a given deck source.
 function at(raw: string, parser: 'heading' | 'separator', line: number) {
@@ -83,6 +83,16 @@ describe('slideRanges — degenerate input', () => {
   it('returns a single slide for empty or frontmatter-only decks', () => {
     expect(slideRanges('', 'heading')).toEqual([{ startLine: 1, h: 0, v: 0 }])
     expect(slideRanges('---\ntitle: X\n---\n', 'separator')).toEqual([{ startLine: 4, h: 0, v: 0 }])
+  })
+})
+
+describe('slidePlace', () => {
+  it('finds a slide among the sections and their vertical slides, by identity', () => {
+    const [first, second, third] = [{ body: 1 }, { body: 2 }, { body: 3 }]
+    const slides = [first, { body: null, verticalSlides: [second, third] }]
+    expect(slidePlace(slides, first)).toEqual({ h: 0, v: 0 })
+    expect(slidePlace(slides, third)).toEqual({ h: 1, v: 1 })
+    expect(slidePlace(slides, { ...third })).toBeUndefined()
   })
 })
 

@@ -1,4 +1,5 @@
 import type { ComponentMention, DeckProblem } from '@vignettes/core/deck'
+import type { SlideRenderFailure } from '@vignettes/nuxt/injection-keys'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { Ref, ShallowRef } from 'vue'
@@ -18,6 +19,7 @@ import { placeProblems, setPreviewProblems } from '../utils/editor-problems'
 import { previewSourceReader } from '../utils/preview-header'
 import { imageMention, missingImages } from '../utils/preview-images'
 import { OVERFLOW_THRESHOLD, slideOverflow, transitionsEnded } from '../utils/preview-overflow'
+import { renderFailureMentions } from '../utils/render-failures'
 import { useTrial } from './useTrial'
 
 /** The Reveal component of the preview. */
@@ -223,7 +225,8 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   const unknownMentions = ref<ComponentMention[]>([])
   const deckProblems = ref<DeckProblem[]>([])
   const parseFailed = ref(false)
-  let parsedText = ''
+  // The editor text of the last parse applied, before `previewSource` reads it.
+  const parsedText = ref('')
   // The parses that ended, applied or failed, and the return of the text the
   // preview draws; a parse that a newer one or a hold dropped does not count.
   const parseRun = ref(0)
@@ -241,6 +244,18 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   // nothing about the deck.
   const previewParsed = ref(false)
 
+  // The components of the preview that threw while they rendered, by mounted
+  // deck, which `RevealSlides` reports through `SLIDE_RENDER_FAILURES`.
+  const renderFailures = shallowRef(new Map<symbol, readonly SlideRenderFailure[]>())
+  function reportRenderFailures(owner: symbol, failures: readonly SlideRenderFailure[]) {
+    const next = new Map(renderFailures.value)
+    if (failures.length)
+      next.set(owner, failures)
+    else
+      next.delete(owner)
+    renderFailures.value = next
+  }
+
   // The frontmatter guide marks its own problems in the source pane; the list
   // shows them with the others, the most severe first.
   const previewIssues = computed(() => editorIssues(raw.value, {
@@ -249,6 +264,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     frontmatter: frontmatterIssues.value,
     unknown: unknownMentions.value,
     deck: deckProblems.value,
+    rendering: renderFailureMentions(parsedText.value, parserId.value, preview.value?.slides ?? [], [...renderFailures.value.values()].flat()),
   }, t, locale.value, options.docsUrl))
 
   const previewSource = previewSourceReader()
@@ -260,45 +276,44 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     const text = raw.value
     const key = parseKey()
     const run = ++generation
+    const source = previewSource(text)
+    // `parseFailed` reports a failed parse; `useSlideErrorBoundary` reports the
+    // errors of the render that follows.
+    const data = await buildPresentationData(source, { sourcePositions: sourcePositions.value }).catch(() => null)
+    if (run !== generation)
+      return
+    parsedKey = key
+    parseRun.value++
+    parseFailed.value = !data
     try {
-      const source = previewSource(text)
-      const data = await buildPresentationData(source, { sourcePositions: sourcePositions.value })
-      if (run !== generation)
-        return
-      preview.value = data
-      renderedText.value = source
-      parsedKey = key
-      parseRun.value++
-      unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
-      deckProblems.value = checkDeck(text)
-      frontmatterIssues.value = listedFrontmatterProblems(text, tWithKeys, staleThemes.value)
-      parseFailed.value = false
-      parsedText = text
-      // Let Reveal register added/removed slides, then re-align to the caret so a
-      // freshly-typed slide is reachable by the follow-cursor sync.
-      await nextTick()
-      previewRef.value?.sync?.()
-      syncPreviewToCursor()
-      readSteps()
+      if (data) {
+        preview.value = data
+        renderedText.value = source
+        unknownMentions.value = componentMentions(text, unknownDeckComponents(data))
+        deckProblems.value = checkDeck(text)
+        frontmatterIssues.value = listedFrontmatterProblems(text, tWithKeys, staleThemes.value)
+        parsedText.value = text
+        // Let Reveal register added/removed slides, then re-align to the caret so a
+        // freshly-typed slide is reachable by the follow-cursor sync.
+        await nextTick()
+        previewRef.value?.sync?.()
+        syncPreviewToCursor()
+        readSteps()
+      }
     }
-    catch {
-      if (run !== generation)
-        return
-      parseFailed.value = true
-      parsedKey = key
-      parseRun.value++
-    }
-    // A text typed during the parse keeps the bar until its own render.
-    if (raw.value === text) {
-      previewPending.value = false
-      previewParsed.value = true
+    finally {
+      // A text typed during the parse keeps the bar until its own render.
+      if (raw.value === text) {
+        previewPending.value = false
+        previewParsed.value = true
+      }
     }
   }
 
   // The marks go to the text that was parsed; a text typed since then gets its
   // own parse.
   watch([previewIssues, editorView], ([issues, view]) => {
-    if (!view || view.state.doc.toString() !== parsedText)
+    if (!view || view.state.doc.toString() !== parsedText.value)
       return
     const problems = issues.filter(issue => !issue.marked)
     view.dispatch({ effects: setPreviewProblems.of(placeProblems(view.state, problems)) })
@@ -353,7 +368,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
       holds--
       if (holds > 0)
         return
-      if (previewPending.value || raw.value !== parsedText)
+      if (previewPending.value || raw.value !== parsedText.value)
         reparse()
       else
         checkSlide()
@@ -371,6 +386,7 @@ export function useEditorPreview(options: EditorPreviewOptions) {
     renderedText,
     parseRun,
     holdPreview,
+    reportRenderFailures,
     parserId,
     previewHasFocus,
     previewRatio,

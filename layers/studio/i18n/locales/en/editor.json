@@ -167,6 +167,8 @@
       "unknownComponent": "Unknown component: check the name “{name}” in the help. The preview shows its content without formatting.",
       "unknownComponentShort": "Line {line}: unknown component “{name}”",
       "parseFailed": "The preview shows the last readable version: undo your last change and redo it in small steps.",
+      "renderFailed": "The preview shows the slide without the component “{name}”, which could not render: check its attributes in the help.",
+      "renderFailedShort": "Line {line}: component “{name}” not shown",
       "more": "{n} more",
       "refusedUrl": "Address refused: write an address that starts with https://, or a path of this site that starts with /.",
       "refusedUrlShort": "Line {line}: address refused",

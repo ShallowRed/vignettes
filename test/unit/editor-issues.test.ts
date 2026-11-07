@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { editorIssues } from '../../layers/studio/src/utils/editor-issues'
 
 const t = ((key: string) => key) as Parameters<typeof editorIssues>[2]
-const none: PreviewFindings = { overflow: null, brokenImages: [], frontmatter: [], unknown: [], deck: [] }
+const none: PreviewFindings = { overflow: null, brokenImages: [], frontmatter: [], unknown: [], deck: [], rendering: [] }
 
 describe('editorIssues', () => {
   it('lists the errors first, then by line', () => {
@@ -28,6 +28,14 @@ describe('editorIssues', () => {
       unknown: [{ name: 'Quote', line: 1, column: 0, length: 7 }],
     }, t, 'fr', () => undefined)
     expect(issues.map(issue => issue.message)).toEqual(['editor.diagnostics.malformedAttributes.quote'])
+  })
+
+  it('reports a component the preview could not render as an error, with the reference of the component', () => {
+    const [issue] = editorIssues(':i{}', {
+      ...none,
+      rendering: [{ name: 'i', line: 1, column: 0, length: 2 }],
+    }, t, 'fr', docs => docs)
+    expect(issue).toMatchObject({ line: 1, severity: 'error', short: 'editor.diagnostics.renderFailedShort', message: 'editor.diagnostics.renderFailed', docs: '/reference/nuxt#iconinline' })
   })
 
   it('states a legacy form in the interface language and offers its conversion for the text as it stands', () => {

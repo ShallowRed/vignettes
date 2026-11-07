@@ -1,7 +1,8 @@
 import type { AttributeMention, ComponentAttributeIssue, ComponentMention, DeckProblem, LayoutMention, LegacyMention } from '@vignettes/core/deck'
 import type { Translate } from '../config/editor-reference'
 import type { LineProblem, ProblemFix, Severity } from './editor-problems'
-import { inLanguage, LEGACY_FORMS, legacyMentions } from '@vignettes/core/deck'
+import type { RenderFailureMention } from './render-failures'
+import { deckComponentNamed, inLanguage, LEGACY_FORMS, legacyMentions } from '@vignettes/core/deck'
 import { DOCS_SECTIONS } from '../config/editor-reference'
 
 /**
@@ -19,6 +20,8 @@ export interface PreviewFindings {
   unknown: readonly ComponentMention[]
   /** What `checkDeck` finds in the text. */
   deck: readonly DeckProblem[]
+  /** The components that threw while the preview rendered them. */
+  rendering: readonly RenderFailureMention[]
 }
 
 export interface EditorIssue extends LineProblem {
@@ -144,6 +147,16 @@ export function editorIssues(raw: string, findings: PreviewFindings, t: Translat
       marked: false,
     })),
     ...findings.deck.map(problem => ({ ...deckIssue(problem, t, lang, docsUrl), severity: problem.severity, marked: false })),
+    ...findings.rendering.map(failure => ({
+      line: failure.line,
+      column: failure.column,
+      length: failure.length,
+      short: t('editor.diagnostics.renderFailedShort', { line: failure.line, name: failure.name }),
+      message: t('editor.diagnostics.renderFailed', { name: failure.name }),
+      docs: docsUrl(deckComponentNamed(failure.name)?.docs ?? DOCS_SECTIONS.components),
+      severity: 'error' as const,
+      marked: false,
+    })),
   ]
   return issues.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.line - b.line || a.column - b.column)
 }

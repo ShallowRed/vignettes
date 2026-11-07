@@ -25,6 +25,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery, useQueryCache } from '@pinia/colada'
 import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { SLIDE_RENDER_FAILURES } from '@vignettes/nuxt/injection-keys'
 import Codemirror from 'vue-codemirror6'
 import { deckApi } from '../../api'
 import { useCollabDraft } from '../../composables/useCollabDraft'
@@ -194,6 +195,7 @@ const {
   renderedText,
   parseRun,
   holdPreview,
+  reportRenderFailures,
   parserId,
   previewHasFocus,
   previewRatio,
@@ -226,6 +228,7 @@ const {
   tWithKeys,
   locale,
 })
+provide(SLIDE_RENDER_FAILURES, reportRenderFailures)
 
 // The undo history of the mode, through which the gestures outside the source
 // write their changes: the preview and the outline.

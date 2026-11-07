@@ -1,13 +1,14 @@
 import type { MDCRoot } from '@nuxtjs/mdc'
 import type { SlideRange } from '@vignettes/core/deck'
-import type { PresentationData } from '../types/presentation.ts'
+import type { PresentationData, Slide } from '../types/presentation.ts'
 import { knownComponentNames, unknownComponents } from './slide-rendering.ts'
 
 /**
  * Editor-only mapping between the source and what the preview shows. The slide
  * boundaries come from `slideRanges` of `@vignettes/core`, the definition the
  * renderers share; this module finds the slide and the fragment under a line,
- * and the component names the slides draw as plain content.
+ * the place of a slide the preview draws, and the component names the slides
+ * draw as plain content.
  */
 
 /**
@@ -31,6 +32,16 @@ export function slideAtLine(ranges: SlideRange[], line: number): { h: number, v:
       break
   }
   return { h: found.h, v: found.v }
+}
+
+/** Reveal indices of a slide of `slides`, found by identity, or undefined for a slide outside them. */
+export function slidePlace(slides: readonly Slide[], slide: Slide): { h: number, v: number } | undefined {
+  for (const [h, section] of slides.entries()) {
+    const v = section.verticalSlides?.length ? section.verticalSlides.indexOf(slide) : section === slide ? 0 : -1
+    if (v >= 0)
+      return { h, v }
+  }
+  return undefined
 }
 
 // ── Fragments ────────────────────────────────────────────────────────────────
