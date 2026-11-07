@@ -1,4 +1,4 @@
-import type { RevealConfig, ThemeBackgrounds } from '../deck/schema.ts'
+import type { DeckBrand, RevealConfig, ThemeBackgrounds } from '../deck/schema.ts'
 import { THEME_ALIASES as BUILT_IN_ALIASES, THEME_TOKENS as BUILT_IN_TOKENS } from './tokens.generated.ts'
 
 // The data side of a theme (backgrounds, Reveal dimensions, language, parser),
@@ -42,6 +42,8 @@ export interface ThemeTokens {
   /** Code theme of a deck that declares none: a name of `CODE_THEMES`, or code theme properties. */
   code?: unknown
   backgrounds?: ThemeBackgrounds
+  /** The bloc marque of the decks in this theme, which a deck's frontmatter `brand` overrides. */
+  brand?: DeckBrand
   preview?: ThemePreview
   reveal?: RevealConfig
   lang?: string

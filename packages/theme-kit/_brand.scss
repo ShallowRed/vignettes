@@ -1,0 +1,21 @@
+/**
+ * The header of a slide that carries the deck's bloc marque (`SlideBrand.vue`).
+ * It stays hidden here: a theme that draws it, such as `@vignettes/theme-dsfr`,
+ * shows it and sets `--slide-brand-height`, the space the slide keeps above its
+ * content for it.
+ */
+
+.reveal .slides section > .slide-brand {
+  display: none;
+}
+
+// The scroll view of a phone moves the slide out of `.slides > section`, where
+// `_spacing.scss` sizes its box: the slide keeps its height there too.
+.reveal .slides section.has-brand {
+  box-sizing: border-box;
+  padding-top: calc(var(--slide-padding-y) + var(--slide-brand-height, 0px));
+}
+
+html.reveal-print .reveal .slides .pdf-page > section.has-brand {
+  padding-top: calc(var(--slide-padding-y) + var(--slide-brand-height, 0px)) !important;
+}

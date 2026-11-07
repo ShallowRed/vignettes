@@ -14,6 +14,7 @@ Validated against `DeckMetaSchema` of `@vignettes/core/deck`. An unknown key is 
 - `syntax`, holding `split` (`heading`, `separator`)
 - `storybook`
 - `backgrounds`, holding `h1`, `h2`, `h3`, `default`
+- `brand`
 - `reveal`, holding `hash`, `transition`, `backgroundTransition`, `slideNumber`, `embedded`, `margin`, `minScale`, `maxScale`, `width`, `height`, `controls`, `progress`, `keyboard`, `touch`, `loop`, `fragments`, `fragmentInURL`, `help`, `showNotes`, `autoPlayMedia`, `preloadIframes`, `autoSlide`, `view`, `navigationMode` (`default`, `linear`, `grid`), `pdfMaxPagesPerSlide`, `pdfSeparateFragments`
 - `code`
 - `status`: `public`, `private`, `semi-private`

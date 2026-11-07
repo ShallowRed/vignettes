@@ -33,19 +33,20 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 - `aliases` lists other frontmatter names that resolve to this theme. A tenant uses it to point a name already present in its decks to its brand. The build reports an alias that shadows another theme's name.
 - `lang`, `parser` and `reveal` are the deck defaults the theme carries: the language for orthotypography, the slide parser and the Reveal config.
 - `backgrounds` gives the background image of the title slide (`h1`), the sections (`h2`), the content slides (`h3`) and the others (`default`), as a path relative to the theme directory or an absolute URL.
+- `brand` gives the bloc marque of the French state that the theme's decks show in the header of their slides: `ministry`, the lines of the official title (`République française` by default), `operator`, the operator's logo as a path relative to the theme directory or an absolute URL, `operatorAlt`, the operator's name, `slides`, `cover` for the title slide (the default) or `all`, and `onDark`, its version on a dark background, `white` (the default) or `color` for the colors on a white plate. A deck's frontmatter `brand` overrides these keys one by one, and `brand: false` removes it. A theme built on `@vignettes/theme-dsfr` draws it; the bloc marque is reserved for the services of the state.
 - `entry` is the SCSS entry, `<name>.scss` by default.
 - `assets` lists extra directories copied under `public/themes/<name>/`, as `{ "from": "node_modules/...", "to": "fonts", "match": "regex" }`, resolved from the project root.
 - `code` is the default code theme of the deck blocks: a name of `CODE_THEMES` (`nuit`, `sombre`, `clair`), or its properties.
 - `preview` describes how the catalog draws the card of a deck on this theme, without loading the theme's stylesheet.
 - `pptx.font` names the font the PowerPoint export embeds in the file, for a font whose license allows it, such as a font under the SIL Open Font License: `family` is the name the slides give the font, and `src` the path of its regular face, a TrueType, OpenType or WOFF file relative to the theme directory. PowerPoint shows the embedded font on a computer that lacks it; Keynote ignores the embedded font and shows another one. A theme without `pptx.font` gives the slides the name of its font, which the computer that opens the file shows when it has it.
 
-`preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names an SCSS entry declaring the font faces, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/fonts` is the value the DSFR theme uses. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another role, and `titleGradient: 'none'` removes the gradient there.
+`preview` takes `fontFamily`, `titleColor`, `titleGradient` (a gradient applied to the text of the title), `textColor` and `surface`. Its `fonts` field names the SCSS entry of the card's stylesheet, its font faces and what else the card draws, compiled on its own to `public/themes/<name>/preview-fonts.css`, which the catalog loads; `pkg:@vignettes/theme-dsfr/preview` is the value the DSFR theme uses: it declares the Marianne faces and draws the deck's bloc marque on the card, as the theme does on the slides. `levels` overrides `titleColor`, `titleGradient` and `textColor` for a first slide of another role, and `titleGradient: 'none'` removes the gradient there.
 
 ```json
 {
   "preview": {
     "fontFamily": "Marianne, Arial, sans-serif",
-    "fonts": "pkg:@vignettes/theme-dsfr/fonts",
+    "fonts": "pkg:@vignettes/theme-dsfr/preview",
     "titleColor": "#000091",
     "textColor": "#3a3a3a",
     "surface": "#ffffff"

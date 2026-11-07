@@ -5,6 +5,7 @@ import { inferMediaType } from '../deck/layout.ts'
 import { surfaceLevel } from '../deck/model.ts'
 import { isDeckUrl } from '../deck/urls.ts'
 import { getThemeTokens } from '../theme/tokens.ts'
+import { deckBrand } from './brand.ts'
 import { buildStoryUrl } from './storybook.ts'
 
 // Named, pure, composable transform steps over the deck model: media resolution,
@@ -96,8 +97,9 @@ export function resolveSlideBackground(
 }
 
 // Collect the external assets a deck's slides reference (storybook iframes,
-// layout media, backgrounds) so a renderer can rebase them all in one place.
-export function collectAssets(slides: Slide[], meta: Pick<DeckMeta, 'storybook' | 'theme' | 'backgrounds'>): AssetRef[] {
+// layout media, backgrounds, the operator's logo) so a renderer can rebase them
+// all in one place.
+export function collectAssets(slides: Slide[], meta: Pick<DeckMeta, 'storybook' | 'theme' | 'backgrounds' | 'brand'>): AssetRef[] {
   const assets: AssetRef[] = []
   const seen = new Set<string>()
   const push = (kind: AssetRef['kind'], url: string | undefined, origin: string) => {
@@ -120,6 +122,7 @@ export function collectAssets(slides: Slide[], meta: Pick<DeckMeta, 'storybook' 
   }
 
   slides.forEach((slide, i) => visit(slide, `slide[${i}]`))
+  push('image', deckBrand(meta)?.operator?.src, 'brand/operator')
   return assets
 }
 

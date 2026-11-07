@@ -1,0 +1,17 @@
+/**
+ * The stylesheet of the catalog card of a DSFR theme, which a manifest names in
+ * `preview.fonts`: the Marianne font faces and the bloc marque, drawn as on the
+ * slides. The card marks a title slide that has a background image with
+ * `data-background-image`, as Reveal's slides are.
+ */
+
+@use 'fonts';
+@use 'brand';
+
+.slide-brand {
+  @include brand.mark;
+}
+
+[data-background-image] .slide-brand {
+  @include brand.plate;
+}

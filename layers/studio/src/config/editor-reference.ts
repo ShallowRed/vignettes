@@ -122,6 +122,15 @@ const BACKGROUND_KEYS: readonly FrontmatterKey[] = [
   { key: 'default', descriptionKey: 'reference.frontmatter.backgrounds.default', snippet: 'default: ${/backgrounds/default.svg}' },
 ]
 
+/** The bloc marque of the French state, nested under `brand:`. */
+const BRAND_KEYS: readonly FrontmatterKey[] = [
+  { key: 'ministry', descriptionKey: 'reference.frontmatter.brand.ministry', snippet: 'ministry: [${Ministère}, ${de l\'Intérieur}]' },
+  { key: 'operator', descriptionKey: 'reference.frontmatter.brand.operator', snippet: 'operator: ${/images/operateur.svg}' },
+  { key: 'operatorAlt', descriptionKey: 'reference.frontmatter.brand.operatorAlt', snippet: { fr: 'operatorAlt: ${Nom de l\'opérateur}', en: 'operatorAlt: ${Operator name}' } },
+  { key: 'slides', descriptionKey: 'reference.frontmatter.brand.slides', values: ['cover', 'all'], default: 'cover', snippet: 'slides: ${all}' },
+  { key: 'onDark', descriptionKey: 'reference.frontmatter.brand.onDark', values: ['white', 'color'], default: 'white', snippet: 'onDark: ${color}' },
+]
+
 /** How the text is read, nested under `syntax:`. */
 const SYNTAX_KEYS: readonly FrontmatterKey[] = [
   { key: 'split', descriptionKey: 'reference.frontmatter.syntax.split', values: ['separator', 'heading'], default: 'separator', snippet: 'split: ${heading}' },
@@ -156,6 +165,7 @@ export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
   { key: 'unlisted', descriptionKey: 'reference.frontmatter.root.unlisted', values: BOOLEAN, default: 'false', snippet: 'unlisted: ${true}' },
   { key: 'storybook', descriptionKey: 'reference.frontmatter.root.storybook', snippet: 'storybook: ${https://storybook.example.com}' },
   { key: 'backgrounds', descriptionKey: 'reference.frontmatter.root.backgrounds', snippet: 'backgrounds:\n  default: ${/backgrounds/default.svg}', children: BACKGROUND_KEYS },
+  { key: 'brand', descriptionKey: 'reference.frontmatter.root.brand', snippet: 'brand:\n  ministry: [${Ministère}, ${de l\'Intérieur}]', children: BRAND_KEYS },
   { key: 'code', descriptionKey: 'reference.frontmatter.root.code', values: Object.keys(CODE_THEMES), snippet: 'code: ${sombre}', children: CODE_KEYS },
   { key: 'reveal', descriptionKey: 'reference.frontmatter.root.reveal', snippet: 'reveal:\n  width: 1280\n  height: 720', children: REVEAL_KEYS },
   { key: 'syntax', descriptionKey: 'reference.frontmatter.root.syntax', snippet: 'syntax:\n  split: ${heading}', children: SYNTAX_KEYS, advanced: true },

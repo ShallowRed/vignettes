@@ -105,4 +105,10 @@ describe('titleSlidePreview', () => {
     expect(preview.surface).toBeUndefined()
     expect(preview.background).toBe('/title.png')
   })
+
+  it('carries the deck\'s bloc marque, and none without a brand', () => {
+    const branded = readTitleSlide('---\nbrand:\n  ministry: [Ministère, des Armées]\n---\n\n# Bilan')
+    expect(titleSlidePreview(branded, 'dsfr').brand).toMatchObject({ lines: ['Ministère', 'des Armées'] })
+    expect(titleSlidePreview(readTitleSlide('# Bilan'), 'dsfr').brand).toBeUndefined()
+  })
 })

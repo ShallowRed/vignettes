@@ -80,6 +80,7 @@
         "unlisted": "Accessible par lien mais absente du catalogue ; pour une présentation créée dans le studio, réglez ce choix dans Réglages",
         "storybook": "Adresse du Storybook publié, sans iframe.html, qui sert aux ::StoryFrame et à l'option story de :layout",
         "backgrounds": "Images de fond par rôle de diapositive",
+        "brand": "Bloc marque de l'État en haut des diapositives, pour les thèmes DSFR ; false retire celui du thème",
         "code": "Couleurs et corps des blocs de code : un thème (nuit, sombre, clair) ou ses réglages",
         "reveal": "Réglages d'affichage de Reveal.js, le moteur des présentations : format, numérotation, transitions…",
         "syntax": "Lecture du texte : la règle de découpage en diapositives",
@@ -94,6 +95,13 @@
         "h2": "Fond des sections : un titre ## seul ou suivi d'un paragraphe court",
         "h3": "Fond des diapositives de contenu",
         "default": "Fond des autres diapositives"
+      },
+      "brand": {
+        "ministry": "Intitulé officiel, une ligne par élément de liste ; République française par défaut",
+        "operator": "Adresse du logo de l'opérateur, affiché à côté du bloc marque",
+        "operatorAlt": "Nom de l'opérateur, alternative textuelle de son logo",
+        "slides": "Diapositives qui l'affichent : cover (la diapositive de titre) ou all (toutes)",
+        "onDark": "Version sur un fond sombre : white (Marianne et texte en blanc) ou color (en couleur dans un cadre blanc)"
       },
       "code": {
         "theme": "Thème de code de départ, que les autres réglages modifient",

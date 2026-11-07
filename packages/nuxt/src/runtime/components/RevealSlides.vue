@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PresentationData, Slide } from '../types/presentation.ts'
 import { buildComponentMap } from '@vignettes/core/deck'
-import { behindMedia } from '@vignettes/core/render'
+import { behindMedia, deckBrand, showsBrand } from '@vignettes/core/render'
 import { getDefaultTheme } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
 import { useSlideErrorBoundary } from '../composables/useSlideErrorBoundary.ts'
@@ -23,6 +23,17 @@ provide(
 )
 
 const keys = computed(() => slideKeys(props.presentationData?.slides ?? []))
+
+const brand = computed(() => {
+  const metadata = props.presentationData?.metadata ?? {}
+  return deckBrand({ ...metadata, theme: metadata.theme || getDefaultTheme() })
+})
+function branded(index: number, vIndex = 0): boolean {
+  return showsBrand(brand.value, props.presentationData?.slides ?? [], index, vIndex)
+}
+// A theme reserves above the content of the slide the height of the bloc
+// marque, which grows with the lines of its title.
+const brandStyle = computed(() => brand.value ? { '--slide-brand-lines': brand.value.lines.length } : undefined)
 
 // A name outside the component map is a heading, rendered as a plain element.
 const componentMap = buildComponentMap()
@@ -74,9 +85,14 @@ function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgr
         :id="getVerticalId(index, vIndex)"
         :key="keys.vertical[index]?.[vIndex]"
         :data-markdown="false"
-        :class="getSlideClasses(verticalSlide)"
+        :class="[...getSlideClasses(verticalSlide), { 'has-brand': branded(index, vIndex) }]"
+        :style="branded(index, vIndex) ? brandStyle : undefined"
         v-bind="backgroundAttrs(verticalSlide)"
       >
+        <SlideBrand
+          v-if="brand && branded(index, vIndex)"
+          :brand="brand"
+        />
         <SlideContent
           :slide="verticalSlide"
           :metadata="presentationData.metadata"
@@ -90,9 +106,14 @@ function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgr
       v-else
       :id="slideIdMap[index]?.sectionId"
       :data-markdown="false"
-      :class="getSlideClasses(section)"
+      :class="[...getSlideClasses(section), { 'has-brand': branded(index) }]"
+      :style="branded(index) ? brandStyle : undefined"
       v-bind="backgroundAttrs(section)"
     >
+      <SlideBrand
+        v-if="brand && branded(index)"
+        :brand="brand"
+      />
       <SlideContent
         :slide="section"
         :metadata="presentationData.metadata"

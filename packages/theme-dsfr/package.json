@@ -29,6 +29,9 @@
     "./fonts": {
       "sass": "./_fonts.scss"
     },
+    "./preview": {
+      "sass": "./_preview.scss"
+    },
     "./variables": {
       "sass": "./_variables.scss"
     }
@@ -40,6 +43,7 @@
     "access": "public"
   },
   "peerDependencies": {
+    "@gouvfr/dsfr": "catalog:",
     "@vignettes/theme-kit": "workspace:^"
   }
 }

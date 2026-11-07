@@ -14,6 +14,7 @@
 @use 'components';
 @use 'utilities';
 @use 'palette';
+@use 'brand';
 
 // Generate CSS custom properties from Sass variables
 :root {

@@ -63,6 +63,41 @@ export const SyntaxConfigSchema = z
   })
   .catchall(z.unknown())
 
+/**
+ * The bloc marque of the French state in the header of the slides, nested
+ * under `brand:`. The theme's manifest and the deck's frontmatter both set it,
+ * the deck's keys winning; `brand: false` in a deck removes the theme's. A
+ * theme built on `@vignettes/theme-dsfr` draws it.
+ */
+export const DeckBrandSchema = z
+  .object({
+    /** The lines of the official title, `République française` by default: a list, or one line. */
+    ministry: z.union([z.string(), z.array(z.string())]).optional(),
+    /** Address of the operator's logo, shown beside the bloc marque. */
+    operator: z.string().optional(),
+    /** Text alternative of the operator's logo: the operator's name. */
+    operatorAlt: z.string().optional(),
+    /** The slides that show it: the title slide (`cover`) or every slide (`all`). */
+    slides: z.enum(['cover', 'all']).optional(),
+    /** The version on a dark background: in white (`white`) or in color on a white plate (`color`). */
+    onDark: z.enum(['white', 'color']).optional(),
+  })
+  .catchall(z.unknown())
+
+export type DeckBrand = z.infer<typeof DeckBrandSchema>
+
+/**
+ * `false`, or the keys of `DeckBrandSchema`. An issue of a key keeps its path,
+ * `brand.slides`, so the editor marks its line.
+ */
+const BrandFieldSchema = z.custom<false | DeckBrand>(() => true).superRefine((value, ctx) => {
+  if (value === false)
+    return
+  const result = DeckBrandSchema.safeParse(value)
+  for (const issue of result.error?.issues ?? [])
+    ctx.addIssue({ code: 'custom', message: issue.message, path: issue.path })
+})
+
 export const DeckMetaSchema = z
   .object({
     title: z.string().optional(),
@@ -73,6 +108,7 @@ export const DeckMetaSchema = z
     /** Root of the live story embeds. */
     storybook: z.string().refine(value => isDeckUrl(value), { message: DECK_URL_MESSAGE }).optional(),
     backgrounds: ThemeBackgroundsSchema.optional(),
+    brand: BrandFieldSchema.optional(),
     reveal: RevealConfigSchema.optional(),
     /** Code theme: a name from CODE_THEMES, or theme properties with an optional base `theme`. */
     code: z.union([z.string(), z.record(z.string(), z.union([z.string(), z.number()]))]).optional(),
@@ -90,9 +126,9 @@ export const DeckMetaSchema = z
 
 /**
  * The frontmatter keys whose addresses the page loads as a frame or an image:
- * the root of the story embeds and the background images.
+ * the root of the story embeds, the background images and the operator's logo.
  */
-export const FRONTMATTER_EMBED_KEYS: readonly string[] = ['storybook', 'backgrounds']
+export const FRONTMATTER_EMBED_KEYS: readonly string[] = ['storybook', 'backgrounds', 'brand']
 
 export type RevealConfig = z.infer<typeof RevealConfigSchema>
 

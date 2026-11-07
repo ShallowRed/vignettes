@@ -1,8 +1,8 @@
 import type { Slide, ThemeBackgrounds } from '@vignettes/core/deck'
 import type { ThemePreview } from '@vignettes/core/theme'
 import type { DeckPreview } from './list-item'
-import { codeLines, isSectionSlide, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel } from '@vignettes/core/deck'
-import { resolveSlideBackground } from '@vignettes/core/render'
+import { codeLines, isSectionSlide, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel, titleSlideIndex } from '@vignettes/core/deck'
+import { deckBrand, resolveSlideBackground } from '@vignettes/core/render'
 import { getThemeTokens } from '@vignettes/core/theme'
 
 /** The first slide of a deck, read from its markdown for a catalog card. */
@@ -17,6 +17,8 @@ export interface TitleSlide {
   backgroundImage?: string
   /** The deck's frontmatter `backgrounds`, which override the theme's. */
   backgrounds?: ThemeBackgrounds
+  /** The deck's frontmatter `brand`, over the theme's. */
+  brand?: unknown
 }
 
 const HEADING_RE = /^(#{1,6}) (\S.*)$/
@@ -89,6 +91,7 @@ export function readTitleSlide(raw: string): TitleSlide {
     ...(isSectionSlide(slide.join('\n')) ? { section: true } : {}),
     backgroundImage: annotation(slide, 'slide-background', 'image'),
     backgrounds: data.backgrounds && typeof data.backgrounds === 'object' ? data.backgrounds as ThemeBackgrounds : undefined,
+    ...(data.brand === undefined ? {} : { brand: data.brand }),
   }
 }
 
@@ -107,7 +110,7 @@ function treeText(node: unknown): string | undefined {
  * first slide with a heading, its pretitle, and its subtitle or first paragraph.
  */
 export function parsedTitleSlide(slides: readonly Slide[], backgrounds?: ThemeBackgrounds): TitleSlide {
-  const slide = slides.find(candidate => candidate.headingLevel) ?? slides[0]
+  const slide = slides[titleSlideIndex(slides)]
   if (!slide)
     return { backgrounds }
   const lead = ((slide.body as TreeNode | undefined)?.children ?? []).find(node => node.tag === 'p')
@@ -136,7 +139,9 @@ export function previewTokens(preview: DeckPreview): Omit<ThemePreview, 'levels'
  */
 export function titleSlidePreview(slide: TitleSlide, theme: string): DeckPreview {
   const { title, pretitle, subtitle, headingLevel, section, backgroundImage, backgrounds } = slide
+  const brand = deckBrand({ theme, brand: slide.brand })
   return {
+    ...(brand ? { brand } : {}),
     theme,
     title,
     pretitle,

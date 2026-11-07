@@ -80,6 +80,7 @@
         "unlisted": "Reachable by link but absent from the catalog; for a presentation created in the studio, set it in Settings",
         "storybook": "Address of the published Storybook, without iframe.html, used by ::StoryFrame and by the story option of :layout",
         "backgrounds": "Background images per slide role",
+        "brand": "Bloc marque of the French state at the top of the slides, for the DSFR themes; false removes the theme's",
         "code": "Colors and font size of the code blocks: a theme (nuit, sombre, clair) or its settings",
         "reveal": "Display settings of Reveal.js, the engine of the presentations: format, numbering, transitions…",
         "syntax": "How the text is read: the rule that splits it into slides",
@@ -94,6 +95,13 @@
         "h2": "Background of the sections: a ## heading alone or with one short paragraph",
         "h3": "Background of the content slides",
         "default": "Background of the other slides"
+      },
+      "brand": {
+        "ministry": "Official title, one line per list item; République française by default",
+        "operator": "Address of the operator's logo, shown beside the bloc marque",
+        "operatorAlt": "Name of the operator, text alternative of its logo",
+        "slides": "The slides that show it: cover (the title slide) or all",
+        "onDark": "The version on a dark background: white (Marianne and text in white) or color (in color on a white plate)"
       },
       "code": {
         "theme": "Starting code theme, which the other settings modify",

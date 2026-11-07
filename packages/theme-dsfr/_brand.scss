@@ -1,0 +1,113 @@
+/**
+ * The bloc marque of the French state at the top of a slide, drawn by the DSFR
+ * `fr-logo`: Marianne, the official title and the motto, aligned on the text
+ * inset, with the operator's logo beside it. A deck shows it when its
+ * frontmatter or its theme's manifest sets `brand`.
+ *
+ * Its version follows the background: in color on a light background, in color
+ * on a white plate on a background image, and on a dark background in white or
+ * on the white plate, as `brand.onDark` chooses. The versions are written once,
+ * in `mark`, `negative` and `plate`; the catalog card in `_preview.scss` uses
+ * `mark` and `plate`.
+ */
+
+@use 'pkg:@gouvfr/dsfr/dist/component/logo/logo.main.css';
+@use 'marianne-negative' as *;
+@use 'variables' as *;
+
+// The measures of the `fr-logo` at its default size in DSFR 1.15: the line
+// height of its title, Marianne with its margin below, the motto, one line of
+// the title (1.05rem at that line height), and the position of the light motto
+// in its image.
+$logo-line-height: 1.0317460317em;
+$logo-marianne: 1.3333rem;
+$logo-motto: 2.2083rem;
+$logo-line: 1.0834rem;
+$logo-motto-contrast-position: -2.625rem 100%;
+
+$plate-padding-y: 0.75rem;
+$plate-padding-x: 1rem;
+// The space between the bloc marque and the content of the slide.
+$brand-space-below: 1.5rem;
+
+// The bloc marque in color, its text on the left edge of the box that holds it.
+@mixin mark {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+
+  // The theme's rules for the text of a slide, such as the light paragraphs of
+  // a divider, leave the `fr-logo` as the DSFR draws it.
+  .slide-brand__mark {
+    margin: 0;
+    font-family: Marianne, Arial, sans-serif;
+    line-height: $logo-line-height;
+    color: $dsfr-text-title !important;
+    text-align: left;
+  }
+
+  .slide-brand__operator {
+    width: auto;
+    max-width: 11rem;
+    max-height: 4.5rem;
+    margin: 0;
+    object-fit: contain;
+  }
+}
+
+// The bloc marque in white, on a dark background: Marianne cut out of a white
+// flag, the title and the motto in white.
+@mixin negative {
+  .slide-brand__mark {
+    color: $dsfr-grey-1000 !important;
+  }
+
+  .slide-brand__mark::before {
+    background-image: $marianne-negative;
+  }
+
+  .slide-brand__mark::after {
+    background-position: $logo-motto-contrast-position;
+  }
+}
+
+// The white plate around the bloc marque, on a background image. The plate
+// grows around the text, which keeps its place.
+@mixin plate {
+  margin: (-$plate-padding-y) 0 0 (-$plate-padding-x);
+  padding: $plate-padding-y $plate-padding-x;
+  background: $dsfr-grey-1000;
+}
+
+// The slide keeps above its content the height of the bloc marque and the space
+// below it, for the number of lines `--slide-brand-lines` the engine sets on
+// the slide.
+.reveal .slides section.has-brand {
+  --slide-brand-height: calc(#{$logo-marianne + $logo-motto + $brand-space-below} + var(--slide-brand-lines, 2) * #{$logo-line});
+}
+
+.reveal .slides section > .slide-brand {
+  @include mark;
+
+  position: absolute;
+  top: var(--slide-padding-y);
+  left: var(--slide-padding-x);
+  z-index: 1;
+}
+
+// Reveal marks a slide whose background color is dark, a media under a veil
+// included, with `has-dark-background`. `data-on-dark` carries `brand.onDark`.
+.reveal .slides section.has-dark-background > .slide-brand[data-on-dark='white'] {
+  @include negative;
+}
+
+.reveal .slides section[data-background-image]:not(.has-dark-background) > .slide-brand,
+.reveal .slides section.has-dark-background > .slide-brand[data-on-dark='color'] {
+  @include plate;
+}
+
+// The scroll view moves the slide out of `.slides > section`, which gives it its
+// inner padding: its text starts on its left edge.
+.reveal-scroll .slides section > .slide-brand {
+  left: 0;
+}

@@ -9,7 +9,7 @@
   ],
   "preview": {
     "fontFamily": "Marianne, Arial, sans-serif",
-    "fonts": "pkg:@vignettes/theme-dsfr/fonts",
+    "fonts": "pkg:@vignettes/theme-dsfr/preview",
     "titleColor": "#000091",
     "textColor": "#3a3a3a",
     "surface": "#f5f5fe"

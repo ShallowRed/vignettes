@@ -40,6 +40,12 @@ export function surfaceLevel(slide: Pick<Slide, 'headingLevel' | 'section'>): st
   return slide.headingLevel === 'h2' && !slide.section ? 'h3' : slide.headingLevel
 }
 
+/** The title slide of a deck: the first slide with a heading, else the first slide. */
+export function titleSlideIndex(slides: readonly Pick<Slide, 'headingLevel'>[]): number {
+  const index = slides.findIndex(slide => slide.headingLevel)
+  return index === -1 ? 0 : index
+}
+
 export type AssetKind = 'image' | 'iframe' | 'storybook' | 'video'
 
 /** An external asset reference, collected for the renderers' rebasing pass. */

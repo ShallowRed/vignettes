@@ -49,8 +49,14 @@ reveal:
   transition: slide # Reveal options
 syntax:
   split: separator # separator (default) or heading
+brand: # bloc marque of the French state, drawn by the DSFR themes
+  ministry: [Ministère, de l'Intérieur] # République française by default
+  slides: cover # cover (default) or all
+  onDark: white # white (default) or color
 ---
 ```
+
+`brand` puts the bloc marque of the French state at the top of the title slide, or of every slide with `slides: all`: Marianne, the official title on the lines of `ministry`, the motto and, with `operator` and `operatorAlt`, the logo of an operator beside them. On a dark background, `onDark` draws it in white (`white`) or in color on a white plate (`color`). The keys override those the theme's manifest sets, and `brand: false` removes the theme's. A theme built on `@vignettes/theme-dsfr` draws it, and the others leave it out; it is reserved for the services of the state.
 
 ## Slides
 

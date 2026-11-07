@@ -119,6 +119,11 @@ describe('collectAssets + pipeline', () => {
     expect(assets.some(a => a.url === '/themes/brand/assets/slide-contrast.png')).toBe(true)
   })
 
+  it('collects the logo of the bloc marque\'s operator', () => {
+    const assets = collectAssets([], { theme: 'brand', brand: { operator: '/images/operateur.svg' } })
+    expect(assets).toContainEqual({ kind: 'image', url: '/images/operateur.svg', origin: 'brand/operator' })
+  })
+
   it('buildDeckModel runs the default pipeline and fills assets', () => {
     const model = buildDeckModel({ theme: 'brand', storybook: 'https://sb' }, slides, { parser: 'separator', source: 'codimd' })
     expect(model.assets.length).toBeGreaterThan(0)

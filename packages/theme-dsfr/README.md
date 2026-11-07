@@ -4,7 +4,7 @@ The base [Vignettes](https://github.com/ShallowRed/vignettes) theme following th
 
 The theme is brand-neutral and meant to be extended. Use it as it is for a deck that should look like a French public service, or build a brand on top of it and keep its proportions.
 
-This package is not an official French state product and carries no state branding beyond the design system's public tokens.
+This package is not an official French state product. It draws the bloc marque of the French state when a deck or a theme sets `brand`, and the bloc marque is reserved for the services of the state.
 
 ## Install
 
@@ -36,11 +36,27 @@ That entry imports the engine layer and the `layout` preset. Compile it with Sas
 
 `_palette.scss` gives the cards and the regions of a diagram the DSFR illustrative palette. Each generic name of the theme kit points to one DSFR tone (`green` to `green-emeraude`, `blue` to `blue-cumulus`), and the theme also defines the eighteen DSFR names, such as `color="green-menthe"` or `color="orange-terre-battue"`.
 
+## The bloc marque
+
+A Vignettes deck sets `brand` in its frontmatter, or its theme in its manifest, and the theme draws the bloc marque of the state at the top of the title slide or of every slide: Marianne, the official title, the motto and, beside them, the logo of an operator. The theme takes the `fr-logo` stylesheet from [@gouvfr/dsfr](https://www.npmjs.com/package/@gouvfr/dsfr), a peer dependency.
+
+The version follows the background of the slide: in color on a light background, and in color on a white plate on a background image. On a background that Reveal marks `has-dark-background`, a dark color or a media under a veil, `onDark` chooses between the bloc marque in white, Marianne cut out of a white flag with the title and the motto in white (`white`, the default), and the bloc marque in color on the white plate (`color`).
+
+```yaml
+brand:
+  ministry: [Ministère, de l'Intérieur]
+  operator: /images/operateur.svg
+  operatorAlt: Nom de l'opérateur
+  slides: all
+  onDark: color
+```
+
 ## Entries
 
 - `pkg:@vignettes/theme-dsfr` is the theme: variables, fonts, engine layer, layout preset, base, typography, components, utilities, palette.
 - `pkg:@vignettes/theme-dsfr/variables` contains the Sass variables, to read or override them.
 - `pkg:@vignettes/theme-dsfr/fonts` contains the Marianne `@font-face` rules.
+- `pkg:@vignettes/theme-dsfr/preview` is the stylesheet of the catalog card, which a Vignettes manifest names in `preview.fonts`: the Marianne faces and the bloc marque.
 
 ## The Marianne font files
 

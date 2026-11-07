@@ -7,6 +7,7 @@
  * Pure filesystem reads, no Nuxt import: shared by the build scripts, the dev
  * watcher plugin, the token generator and the server's runtime loader.
  */
+import type { DeckBrand } from '@vignettes/core/deck'
 import type { ThemePptx, ThemePreview, ThemeRegistry, ThemeTokens } from '@vignettes/core/theme'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
@@ -36,9 +37,12 @@ export interface ThemeManifest {
   code?: unknown
   /** Background images per slide role, relative to the theme directory or absolute URLs. */
   backgrounds?: Partial<Record<'h1' | 'h2' | 'h3' | 'default', string>>
+  /** The bloc marque of the theme's decks; `operator` is relative to the theme directory or an absolute URL. */
+  brand?: DeckBrand
   /**
-   * The title slide as a catalog card draws it. `fonts` names a sass module
-   * declaring the font faces, compiled to `<name>/preview-fonts.css`.
+   * The title slide as a catalog card draws it. `fonts` names the sass module
+   * of the card's stylesheet, its font faces and what else the card draws,
+   * compiled to `<name>/preview-fonts.css`.
    */
   preview?: Omit<ThemePreview, 'fontsStylesheet'> & { fonts?: string }
   /** What the PowerPoint export takes from the theme; the path of the font is relative to the theme directory. */
@@ -112,7 +116,7 @@ export function themeAssetUrl(name: string, path: string): string {
 
 /** The runtime tokens a manifest declares, the paths of the backgrounds and of the font turned into public URLs. */
 export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
-  const { name, lang, parser, reveal, backgrounds, preview, code, pptx } = manifest
+  const { name, lang, parser, reveal, backgrounds, brand, preview, code, pptx } = manifest
   const tokens: ThemeTokens = { name }
   if (manifest.extends)
     tokens.extends = manifest.extends
@@ -127,6 +131,8 @@ export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
       Object.entries(backgrounds).map(([level, path]) => [level, themeAssetUrl(name, path)]),
     )
   }
+  if (brand)
+    tokens.brand = typeof brand.operator === 'string' ? { ...brand, operator: themeAssetUrl(name, brand.operator) } : brand
   if (reveal)
     tokens.reveal = reveal as ThemeTokens['reveal']
   if (preview) {

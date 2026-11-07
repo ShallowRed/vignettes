@@ -68,7 +68,7 @@ describe('manifest discovery', () => {
     root = mkdtempSync(join(tmpdir(), 'themes-'))
     process.env.NUXT_CONTENT_DIR = join(root, 'content')
     manifest(join(root, 'themes/base'), { name: 'base', lang: 'fr', reveal: { width: 1200 } })
-    manifest(join(root, 'content/themes/brand'), { name: 'brand', extends: 'base', aliases: ['base'], backgrounds: { h1: 'assets/h1.png', h2: '/shared/h2.png' } })
+    manifest(join(root, 'content/themes/brand'), { name: 'brand', extends: 'base', aliases: ['base'], backgrounds: { h1: 'assets/h1.png', h2: '/shared/h2.png' }, brand: { ministry: ['Ministère', 'des Armées'], operator: 'assets/operateur.svg' } })
   })
 
   afterAll(() => {
@@ -96,6 +96,11 @@ describe('manifest discovery', () => {
   it('turns the path of the font the PowerPoint export embeds into a theme URL', () => {
     const tokens = manifestTokens({ name: 'brand', pptx: { font: { family: 'Quicksand', src: 'assets/fonts/Quicksand-Regular.ttf' } } })
     expect(tokens.pptx).toEqual({ font: { family: 'Quicksand', src: '/themes/brand/assets/fonts/Quicksand-Regular.ttf' } })
+  })
+
+  it('turns the operator\'s logo of the bloc marque into a theme URL', () => {
+    const brand = discoverThemes(root).find(t => t.name === 'brand')!
+    expect(manifestTokens(brand.manifest).brand).toEqual({ ministry: ['Ministère', 'des Armées'], operator: '/themes/brand/assets/operateur.svg' })
   })
 
   it('reports an alias that shadows a theme and lets the content theme win', () => {

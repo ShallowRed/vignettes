@@ -575,6 +575,9 @@ importers:
 
   packages/theme-dsfr:
     dependencies:
+      '@gouvfr/dsfr':
+        specifier: 'catalog:'
+        version: 1.15.3
       '@vignettes/theme-kit':
         specifier: workspace:^
         version: link:../theme-kit

@@ -1,3 +1,4 @@
+import type { SlideBrand } from '@vignettes/core/render'
 import type { Lifecycle, PublicationStatus } from '../access/status'
 
 // Canonical wire contract between GET /api/presentations and the home/admin pages.
@@ -12,6 +13,8 @@ export interface DeckPreview {
   surface?: 'h1' | 'h2' | 'h3'
   /** Background image of the title slide: its own, the deck's, or the theme's. */
   background?: string
+  /** The bloc marque of the title slide. */
+  brand?: SlideBrand
 }
 
 export interface PresentationListItem {

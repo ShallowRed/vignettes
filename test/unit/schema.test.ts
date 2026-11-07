@@ -26,6 +26,13 @@ describe('parseDeckMeta', () => {
     expect(issues.join()).toContain('syntax.split')
   })
 
+  it('accepts `brand: false` or the brand keys, and flags another set of slides or another version', () => {
+    expect(parseDeckMeta({ brand: false }).valid).toBe(true)
+    expect(parseDeckMeta({ brand: { ministry: ['Ministère', 'des Armées'], slides: 'all', onDark: 'color' } }).valid).toBe(true)
+    expect(parseDeckMeta({ brand: { slides: 'first' } }).issues.join()).toContain('brand.slides')
+    expect(parseDeckMeta({ brand: { onDark: 'plate' } }).issues.join()).toContain('brand.onDark')
+  })
+
   it('throws in strict mode on invalid frontmatter', () => {
     expect(() => parseDeckMeta({ parser: 'lea' }, { strict: true })).toThrow(/parser/)
   })
