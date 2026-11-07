@@ -1,4 +1,5 @@
 import type { RevealConfig } from '../deck/schema.ts'
+import { DECK_ASSET_PREFIXES } from '../deck-assets.ts'
 import { isUploadedFile } from '../deck/urls.ts'
 
 // Shared render helpers for the live composable and the frozen bundle: Reveal
@@ -76,8 +77,7 @@ export const REBASEABLE_ASSET_DIRS = [
   '_storybook',
   'vitrine',
   'fonts',
-  'images',
-  'backgrounds',
+  ...DECK_ASSET_PREFIXES,
   'geojson',
   'icons',
   'themes',

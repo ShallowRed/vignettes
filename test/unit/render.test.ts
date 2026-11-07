@@ -33,9 +33,9 @@ describe('embed sandbox', () => {
 
 describe('rebaseAssetUrls', () => {
   it('rebases root-absolute asset URLs to the bundle-relative prefix', () => {
-    const html = '<img src="/images/x.png"><a href="/backgrounds/y.png">'
+    const html = '<img src="/images/x.png"><a href="/backgrounds/y.png"><img src="/pictograms/institutions/police.svg">'
     expect(rebaseAssetUrls(html, '../..')).toBe(
-      '<img src="../../images/x.png"><a href="../../backgrounds/y.png">',
+      '<img src="../../images/x.png"><a href="../../backgrounds/y.png"><img src="../../pictograms/institutions/police.svg">',
     )
   })
 
