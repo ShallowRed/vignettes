@@ -385,15 +385,33 @@ export function directiveMentions(raw: string): DirectiveMention[] {
   return mentions
 }
 
+const ANNOTATION_KEYS = new Set(ANNOTATION_TAGS.map(componentKey))
+
+/**
+ * Whether the parser takes the annotation of `mention` out of the slide body:
+ * it is written alone on `text`, a line outside the blocks, from its first
+ * column. Indented, it may continue a list item, which keeps it.
+ */
+function isLiftedAnnotation(mention: DirectiveMention, text: string | undefined): boolean {
+  const end = mention.attributes?.to ?? mention.column + mention.length
+  return text !== undefined && mention.column === 0 && ANNOTATION_KEYS.has(componentKey(mention.name)) && !text.slice(end).trim()
+}
+
 /**
  * The places where the components named in `names` are written, outside the
  * frontmatter, fenced code and inline code. Names compare as `componentKey`
- * compares them.
+ * compares them. An annotation the parser takes out of the slide body is left
+ * out.
  */
 export function componentMentions(raw: string, names: Iterable<string>): ComponentMention[] {
   const wanted = new Set([...names].map(componentKey))
+  const topLevel = new Map<number, string>()
+  for (const { index, text, nested } of walk(raw.split('\n'), frontmatterLineCount(raw))) {
+    if (!nested)
+      topLevel.set(index + 1, text)
+  }
   return directiveMentions(raw)
-    .filter(mention => wanted.has(componentKey(mention.name)))
+    .filter(mention => wanted.has(componentKey(mention.name)) && !isLiftedAnnotation(mention, topLevel.get(mention.line)))
     .map(({ name, line, column, length }) => ({ name, line, column, length }))
 }
 

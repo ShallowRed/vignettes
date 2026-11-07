@@ -1,5 +1,5 @@
 import type { PresentationData } from '../../packages/nuxt/src/runtime/types/presentation.ts'
-import { registerDeckComponents, resetDeckComponents, slideRanges } from '@vignettes/core/deck'
+import { componentMentions, registerDeckComponents, resetDeckComponents, slideRanges } from '@vignettes/core/deck'
 import { afterEach, describe, expect, it } from 'vitest'
 import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
@@ -176,5 +176,28 @@ describe('unknownDeckComponents', () => {
   it('knows the annotations of a vertical slide and names its unknown components', async () => {
     const raw = '## Section\n\n:slide-background{image="/a.svg"}\n\n### Sub\n\n:layout{name="media-right"}\n:quicklink{text="Back" href="/"}\n\n::Callout\nDropped\n::'
     expect(await unknownIn(raw)).toEqual(['callout'])
+  })
+
+  it('lets componentMentions place the annotations a slide keeps in its body, and those only', async () => {
+    const raw = [
+      '## Lifted',
+      '',
+      ':layout{media="right" src="/a.svg"}',
+      'Text',
+      ':subtitle{text="a"}',
+      '',
+      '## Kept',
+      '',
+      ':layout{media="right" src="/a.svg"}`',
+      '',
+      '::Columns',
+      ':subtitle{text="b"}',
+      '::',
+      '',
+      '- Item',
+      '',
+      '  :subtitle{text="c"}',
+    ].join('\n')
+    expect(componentMentions(raw, await unknownIn(raw)).map(mention => mention.line)).toEqual([9, 12, 17])
   })
 })
