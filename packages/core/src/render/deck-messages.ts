@@ -15,6 +15,8 @@ export interface DeckMessages {
   copyLink: string
   linkCopied: string
   print: string
+  /** The name of a part of a file whose deck has no title. */
+  untitled: string
   printPreparing: string
   printHint: string
   printReady: string
@@ -59,6 +61,7 @@ const FR: DeckMessages = {
   copyLink: 'Copier le lien de cette diapositive',
   linkCopied: 'Lien copié',
   print: 'Imprimer ou exporter en PDF',
+  untitled: 'Sans titre',
   printPreparing: 'Préparation de l’export PDF…',
   printHint: 'La fenêtre d’impression s’ouvre automatiquement : choisissez « Enregistrer au format PDF ».',
   printReady: 'Les pages sont prêtes pour l’export PDF',
@@ -101,6 +104,7 @@ const EN: DeckMessages = {
   copyLink: 'Copy the link to this slide',
   linkCopied: 'Link copied',
   print: 'Print or export to PDF',
+  untitled: 'Untitled',
   printPreparing: 'Preparing the PDF export…',
   printHint: 'The print dialog opens automatically: choose “Save as PDF”.',
   printReady: 'The pages are ready for the PDF export',

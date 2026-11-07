@@ -1,0 +1,8 @@
+export type { SlideRole } from './blocks.ts'
+export { NATIVE_COMPONENTS, ROLE_LEVELS } from './blocks.ts'
+export type { PptxFont } from './font.ts'
+export type { Box } from './layout.ts'
+export type { PptxRoleStyle, PptxSlideBoxes, PptxStyle } from './theme.ts'
+export { fontFamilies, fontName } from './theme.ts'
+export type { PptxDeck, PptxImage, WritePptxOptions } from './write.ts'
+export { writePptx } from './write.ts'

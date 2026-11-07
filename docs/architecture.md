@@ -30,6 +30,7 @@ packages/
   storybook/     story embeds and their scaling
   typographie/   the French orthotypography directive
   freeze/        the static bundle of one deck, and the build toggles it reads
+  pptx/          the PowerPoint file of a deck, with editable text
   theme-kit/     engine CSS: semantic tokens, Reveal patches, layouts, scale presets
   theme-dsfr/    the brand-neutral DSFR base
 
@@ -52,7 +53,7 @@ session, crypto, filesystem or YAML sit in `layers/studio/server/utils/`. A `sha
 module usually has a matching `server/utils/<x>` adapter, as `shared/access` has
 `server/utils/access.ts`.
 
-`eslint.config.js` checks these boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone, and the host a request reaches through `server/utils/deck-origin.ts` alone; drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are imported by the adapters (`server/db/sqlite/`, `server/db/postgres/`), the test helpers and `test/unit/migrations.test.ts`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
+`eslint.config.js` checks these boundaries: `@vignettes/core` imports zod, js-yaml, slugify and its own files; `@vignettes/pptx` imports `@vignettes/core`, pptxgenjs, jszip and pptx-embed-fonts and uses no browser global (`fetch`, `XMLHttpRequest`, `document`, `window`, `Image`, `navigator`), so the render module gives it the images and the font; `shared/` imports no framework, no I/O module and no render module, reads no `process.env`, and keeps `yjs` to `shared/collab`; `server/` reads `process.env` through `server/utils/config.ts` alone, and the host a request reaches through `server/utils/deck-origin.ts` alone; drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are imported by the adapters (`server/db/sqlite/`, `server/db/postgres/`), the test helpers and `test/unit/migrations.test.ts`; `@nuxtjs/mdc` is imported by the render module, the configuration files and the tests. The `exports` of `@vignettes/nuxt` list its public entry points, and its slide helpers stay out of the auto-imports, so a helper reached without an `import` cannot escape these rules.
 
 The deck core is the workspace package `@vignettes/core`, which depends on nothing in the
 application and ships its TypeScript sources (`build.transpile` for Vite,

@@ -61,6 +61,10 @@ const PROCESS_ENV = {
   message: 'Configuration is read in an entry point (nuxt.config.ts, server plugins, scripts) and passed as an argument.',
 }
 
+// The PowerPoint writer runs in the browser and in Node, and reaches no resource itself.
+const PPTX_BROWSER_GLOBALS = ['fetch', 'XMLHttpRequest', 'document', 'window', 'Image', 'navigator']
+const PPTX_WRITER_MESSAGE = '@vignettes/pptx writes a PPTX from a deck model: it imports @vignettes/core, pptxgenjs, jszip and pptx-embed-fonts. Image and font loading, the DOM and the download belong to packages/nuxt/src/runtime/utils/pptx-export.ts.'
+
 export default antfu({
   vue: true,
   // Drizzle rewrites these on every `drizzle-kit generate` (no trailing newline),
@@ -139,6 +143,18 @@ export default antfu({
       }],
     }],
     'no-restricted-properties': ['error', PROCESS_ENV],
+  },
+}, {
+  files: ['packages/pptx/src/**'],
+  rules: {
+    'no-restricted-imports': ['error', {
+      patterns: [{
+        regex: '^(?!(@vignettes/core(/.*)?|pptxgenjs|jszip|pptx-embed-fonts)$|\\.{1,2}/)',
+        message: PPTX_WRITER_MESSAGE,
+      }],
+    }],
+    'no-restricted-globals': ['error', ...PPTX_BROWSER_GLOBALS.map(name => ({ name, message: PPTX_WRITER_MESSAGE }))],
+    'no-restricted-properties': ['error', PROCESS_ENV, ...PPTX_BROWSER_GLOBALS.map(property => ({ object: 'globalThis', property, message: PPTX_WRITER_MESSAGE }))],
   },
 }, {
   files: ['layers/studio/shared/**'],

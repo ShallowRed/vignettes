@@ -19,6 +19,7 @@ Node 22, pinned in `mise.toml`: `better-sqlite3` is built for that line. pnpm co
 The code keeps these boundaries, and `eslint.config.js` checks them with messages that name the place a change belongs. When a rule fires, move the code there; keep the rule.
 
 - `packages/core` is the deck core: it imports zod, js-yaml, slugify and its own files.
+- `packages/pptx` writes a deck as a PowerPoint file: it imports `@vignettes/core`, pptxgenjs, jszip and pptx-embed-fonts, and reaches no resource itself (no `fetch`, no DOM). The browser side of the export, images, font and download, is in `packages/nuxt/src/runtime/utils/pptx-export.ts`.
 - `layers/studio/shared` is the studio's domain, run on the client and the server: no framework, no I/O, no `process.env`, no render module. `yjs` stays in `shared/collab`.
 - `@nuxtjs/mdc` is read by the render module (`packages/nuxt`), the configuration files and the tests.
 - drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are read by the adapters (`layers/studio/server/db/sqlite`, `layers/studio/server/db/postgres`), the test helpers and `test/unit/migrations.test.ts`. Code elsewhere reaches the rows through a port of `server/db/ports.ts`.

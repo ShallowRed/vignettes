@@ -1,0 +1,21 @@
+{
+  "name": "@vignettes/pptx",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Writes a deck as a PowerPoint file whose titles, text, lists, tables, columns and images stay editable, on a master in the look of the deck.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@vignettes/core": "workspace:*",
+    "jszip": "catalog:",
+    "pptx-embed-fonts": "catalog:",
+    "pptxgenjs": "catalog:"
+  }
+}

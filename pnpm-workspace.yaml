@@ -36,6 +36,9 @@ overrides:
   defu: ^6.1.5
   flatted: ^3.4.2
   h3@1: ^1.15.9
+  # pptxgenjs declares `https`, an empty npm package: its code imports Node's
+  # own `node:https`.
+  https: '-'
   immutable: ^5.1.8
   js-yaml@4: ^4.3.2
   launch-editor: ^2.14.2
@@ -48,6 +51,12 @@ overrides:
   nitropack: ^2.13.5
   node-forge: ^1.4.1
   picomatch@4: ^4.0.4
+  # pptxgenjs also declares the Node types as a runtime dependency, an older
+  # line than the workspace's own `@types/node`.
+  pptxgenjs>@types/node: '-'
+  # pptxgenjs declares image-size and imports it nowhere: its code names it in a
+  # commented function only, and its `browser` field maps it to false.
+  pptxgenjs>image-size: '-'
   shell-quote: ^1.11.0
   source-map-js: ^1.2.2
   # See '@unhead/vue@3' above.
@@ -106,12 +115,15 @@ catalog:
   eslint: ^9.39.1
   iron-webcrypto: ^1.2.1
   js-yaml: ^5.4.3
+  jszip: ^3.10.1
   mermaid: ^11.17.2
   nuxt: ^4.5.2
   nuxt-auth-utils: ^0.5.29
   nuxt-og-image: ~6.9.1
   pg: ^8.23.1
   pinia: ^4.0.2
+  pptx-embed-fonts: 0.0.6
+  pptxgenjs: 4.0.1
   reveal.js: ^5.2.1
   sass: ^1.94.2
   slugify: ^1.6.6
