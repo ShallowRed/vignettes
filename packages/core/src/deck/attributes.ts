@@ -131,3 +131,22 @@ export function attributeSource(name: string, value: string): string {
     return `${name}="${value}"`
   return value.includes('\'') ? `${name}="${value.replaceAll('"', '&quot;')}"` : `${name}='${value}'`
 }
+
+// The names a `{{ … }}` binding reads besides the deck's data: MDCRenderer
+// (`renderBinding`) also gives it the route, the component map and its own
+// functions, and calls a function it finds on the path.
+const BINDING_PATH_RE = /\.|\[(\d+)\]/
+const MDC_DATA_KEYS = new Set(['tags', 'runtimeData', 'updateRuntimeData'])
+
+/**
+ * The keys a `{{ … }}` binding reads in the deck's data, without its `$doc.`
+ * prefix; none when it reads anything else, or the prototype of an object.
+ */
+export function bindingPath(path: string): string[] | undefined {
+  const keys = path.trim().split(BINDING_PATH_RE).filter(Boolean)
+  if (keys[0] === '$doc' || keys[0] === '$document')
+    keys.shift()
+  return keys.length > 0 && !keys[0]!.startsWith('$') && !MDC_DATA_KEYS.has(keys[0]!) && !keys.some(key => OBJECT_KEYS.has(key))
+    ? keys
+    : undefined
+}

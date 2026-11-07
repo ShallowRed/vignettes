@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { columnGroups } from '@vignettes/core/deck'
 import { computed, onMounted, ref } from 'vue'
 
 interface Props {
@@ -26,44 +27,11 @@ onMounted(() => {
   if (!container.value)
     return
 
-  const children = Array.from(container.value.children)
-  if (children.length === 0)
-    return
-
-  const columnChildren = children.filter(child => child.classList.contains('column'))
-  if (columnChildren.length >= 2)
-    return
-
-  const hrIndex = children.findIndex(child => child.tagName === 'HR')
-
-  let columns: HTMLElement[][] = []
-
-  if (hrIndex !== -1) {
-    columns = [
-      children.slice(0, hrIndex) as HTMLElement[],
-      children.slice(hrIndex + 1) as HTMLElement[],
-    ]
-  }
-  else {
-    // Auto-split on H3/H4 headings.
-    let currentColumn: HTMLElement[] = []
-
-    for (const child of children) {
-      const isHeading = child.tagName === 'H3' || child.tagName === 'H4'
-
-      if (isHeading && currentColumn.length > 0) {
-        columns.push(currentColumn)
-        currentColumn = []
-      }
-
-      currentColumn.push(child as HTMLElement)
-    }
-
-    if (currentColumn.length > 0)
-      columns.push(currentColumn)
-  }
-
-  if (columns.length < 2)
+  const children = Array.from(container.value.children) as HTMLElement[]
+  const columns = columnGroups(children, child => child.classList.contains('column')
+    ? 'column'
+    : child.tagName === 'HR' ? 'rule' : ['H3', 'H4'].includes(child.tagName) ? 'heading' : 'other')
+  if (!columns)
     return
 
   container.value.innerHTML = ''

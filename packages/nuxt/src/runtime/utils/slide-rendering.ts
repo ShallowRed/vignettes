@@ -1,7 +1,7 @@
 import type { MDCElement, MDCNode, MDCRoot } from '@nuxtjs/mdc'
 import type { Slide } from '../types/presentation.ts'
 import htmlTags from '@nuxtjs/mdc/runtime/parser/utils/html-tags-list'
-import { buildComponentMap, componentKey, deckAttributes, surfaceLevel } from '@vignettes/core/deck'
+import { bindingPath, buildComponentMap, componentKey, deckAttributes, surfaceLevel } from '@vignettes/core/deck'
 import { resolveSlideBackground } from '@vignettes/core/render'
 
 export { resolveSlideBackground }
@@ -25,20 +25,6 @@ export function knownComponentNames(): string[] {
 // MDC sets that prop on the `code` of a code block alone.
 const REFUSED_TAGS = new Set(['frame', 'frameset', 'embed', 'object', 'portal', 'base', 'meta', 'link', 'style', 'form'])
 
-// The names a `{{ … }}` binding reads besides the deck's data: MDCRenderer
-// (`renderBinding`) also gives it the route, the component map and its own
-// functions, and calls a function it finds on the path.
-const BINDING_PATH_RE = /\.|\[(\d+)\]/
-const MDC_DATA_KEYS = new Set(['tags', 'runtimeData', 'updateRuntimeData'])
-const OBJECT_KEYS = new Set(['constructor', 'prototype', '__proto__'])
-
-function readsDeckData(path: string): boolean {
-  const keys = path.trim().split(BINDING_PATH_RE).filter(Boolean)
-  if (keys[0] === '$doc' || keys[0] === '$document')
-    keys.shift()
-  return keys.length > 0 && !keys[0]!.startsWith('$') && !MDC_DATA_KEYS.has(keys[0]!) && !keys.some(key => OBJECT_KEYS.has(key))
-}
-
 /**
  * A node as a slide may draw it: its attributes as `deckAttributes` keeps them,
  * a `{{ … }}` binding that reads the deck's data, and none of `REFUSED_TAGS`.
@@ -48,7 +34,7 @@ function safeNode(node: MDCNode): MDCNode | undefined {
     return node
   if (REFUSED_TAGS.has(node.tag.toLowerCase()))
     return undefined
-  if (node.tag === 'binding' && !readsDeckData(String(node.props?.value ?? '')))
+  if (node.tag === 'binding' && !bindingPath(String(node.props?.value ?? '')))
     return { type: 'text', value: String(node.props?.defaultValue ?? '') }
   const { __ignoreMap, ...props } = node.props ?? {}
   const kept = deckAttributes(node.tag, props)

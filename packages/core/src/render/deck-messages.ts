@@ -134,7 +134,12 @@ const EN: DeckMessages = {
 
 export const DECK_MESSAGES: Record<string, DeckMessages> = { fr: FR, en: EN }
 
+/** The primary subtag of a deck language, lowercased (`fr` for `fr-FR`); French when the language is absent. */
+export function deckLanguage(lang?: string): string {
+  return lang?.toLowerCase().split('-')[0] || 'fr'
+}
+
 /** The chrome texts for a deck language (`fr-FR`, `en`…); French when the language is absent or unknown. */
 export function deckMessages(lang?: string): DeckMessages {
-  return DECK_MESSAGES[lang?.toLowerCase().split('-')[0] ?? 'fr'] ?? FR
+  return DECK_MESSAGES[deckLanguage(lang)] ?? FR
 }
