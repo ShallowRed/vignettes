@@ -1,7 +1,7 @@
-import { isDeckSlug, MAX_DECK_LENGTH } from '@vignettes/core/deck'
+import { isDeckSlug } from '@vignettes/core/deck'
 import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
-import { useCollabServer, useDraftStore } from '../utils/collab'
+import { MAX_MESSAGE_BYTES, useCollabServer, useDraftStore } from '../utils/collab'
 import { databaseReady } from '../utils/db'
 import { sideOfOrigin, upgradeOrigin } from '../utils/deck-origin'
 import { crossOriginRefusal } from '../utils/same-origin'
@@ -25,9 +25,6 @@ interface PeerState {
 
 const peers = new Map<string, PeerState>()
 const AUTHORIZATION_TTL_MS = 30_000
-
-/** A Yjs update of the longest deck, whose characters take up to 4 bytes. */
-const MAX_MESSAGE_BYTES = 4 * MAX_DECK_LENGTH
 
 async function stillAuthorized(peer: Peer, state: PeerState): Promise<boolean> {
   if (Date.now() - state.authorizedAt < AUTHORIZATION_TTL_MS)

@@ -2,7 +2,7 @@ import { IncomingMessage, MessageType, OutgoingMessage } from '@hocuspocus/serve
 import { MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import { describe, expect, it, vi } from 'vitest'
 import * as Y from 'yjs'
-import { hasRoom, storePendingRooms, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
+import { hasRoom, MAX_DRAFT_BYTES, storePendingRooms, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
 import { useContentArchive, useDbContent, useDeckMeta } from '../../layers/studio/server/utils/sources'
 import { yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 import { setupServerDb, stubH3Globals } from './helpers/server-db'
@@ -118,6 +118,15 @@ describe('collab document hooks', () => {
     expect(await useDraftStore().load('big')).toBeNull()
   })
 
+  it('closes the connections of a room past the draft size, and stores none of it', async () => {
+    const closed: unknown[] = []
+    const heavy = Object.assign(doc('# heavy'), { getConnections: () => [connectionLog(closed)] })
+    heavy.getMap('other').set('key', 'x'.repeat(MAX_DRAFT_BYTES))
+    await hooks().onStoreDocument!({ documentName: 'heavy', document: heavy as any, lastContext: { deck: 'heavy' }, clientsCount: 0, lastTransactionOrigin: null, instance: server() } as any)
+    expect(closed).toEqual([expect.objectContaining({ reason: 'Deck too long' }), 'socket closed'])
+    expect(await useDraftStore().load('heavy')).toBeNull()
+  })
+
   it('keeps the text of a room of another lineage in the history, closes it, and leaves the stored draft', async () => {
     await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
     await (await server().openDirectConnection('deck', { deck: 'deck' })).disconnect()
@@ -197,6 +206,25 @@ describe('a tab that holds another lineage of the draft', () => {
     expect(roomText('lineage-2')).toBe('# v1')
     early.leave()
     await direct.disconnect()
+  })
+
+  it('closes a tab of the stored lineage that writes outside the deck text, and applies none of it', async () => {
+    await useDbContent().writer.save({ slug: 'lineage-4', raw: '# v1', actor: 'ed' })
+    const direct = await useCollabServer().openDirectConnection('lineage-4', { deck: 'lineage-4' })
+    const kept = new Y.Doc()
+    Y.applyUpdate(kept, Y.encodeStateAsUpdate(direct.document!))
+    const known = tab('lineage-4')
+    known.step1(kept)
+    const before = Y.encodeStateVector(kept)
+    kept.getMap('other').set('key', 'x'.repeat(1000))
+    known.update(Y.encodeStateAsUpdate(kept, before))
+    await vi.waitFor(() => expect(known.closes()).toContain('socket closed'))
+    expect(useCollabServer().documents.get('lineage-4')?.share.has('other')).toBe(false)
+    known.leave()
+    await direct.disconnect()
+    const stored = new Y.Doc()
+    Y.applyUpdate(stored, (await useDraftStore().load('lineage-4'))!)
+    expect([...stored.share.keys()]).toEqual(['codemirror'])
   })
 
   it('accepts a tab of the stored lineage, and an empty one', async () => {

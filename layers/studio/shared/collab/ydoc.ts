@@ -104,13 +104,47 @@ export function followText(ytext: Y.Text, previous: string | null, next: string)
   return outcome
 }
 
-/** The stored draft once its text follows `next` by `followText`, or null when it stays as it is. */
-export function followDraftUpdate(update: Uint8Array, previous: string | null, next: string): Uint8Array | null {
+/**
+ * The stored draft once `edit` changes its text in one transaction, in its
+ * lineage, or null when `edit` returns false and the draft stays as it is.
+ */
+export function editDraftUpdate(update: Uint8Array, edit: (text: Y.Text) => boolean): Uint8Array | null {
   const doc = new Y.Doc()
   Y.applyUpdate(doc, update)
-  const result = followText(doc.getText(DECK_TEXT_FIELD), previous, next) === 'replace' ? Y.encodeStateAsUpdate(doc) : null
+  let changed = false
+  doc.transact(() => {
+    changed = edit(doc.getText(DECK_TEXT_FIELD))
+  })
+  const result = changed ? Y.encodeStateAsUpdate(doc) : null
   doc.destroy()
   return result
+}
+
+/** The stored draft once its text follows `next` by `followText`, or null when it stays as it is. */
+export function followDraftUpdate(update: Uint8Array, previous: string | null, next: string): Uint8Array | null {
+  return editDraftUpdate(update, text => followText(text, previous, next) === 'replace')
+}
+
+/**
+ * Whether an update holds deck text only: plain characters of the text field,
+ * inserted or deleted, which the editor writes. Another shared type, an embed
+ * or a format would grow the draft outside the length of its text. An item
+ * with an origin takes the type of that origin: the size bound of the stored
+ * draft holds a stored draft written with another type.
+ */
+export function isDeckTextUpdate(update: Uint8Array): boolean {
+  for (const struct of Y.decodeUpdate(update).structs) {
+    if (!(struct instanceof Y.Item))
+      continue
+    if (!(struct.content instanceof Y.ContentString || struct.content instanceof Y.ContentDeleted))
+      return false
+    // A decoded item without origins names its parent: the name of a root type,
+    // or the id of the item holding a nested type. It must name the text field.
+    const parent: unknown = struct.parent
+    if (struct.parentSub !== null || (parent !== null && parent !== DECK_TEXT_FIELD))
+      return false
+  }
+  return true
 }
 
 function isHighSurrogate(code: number): boolean {

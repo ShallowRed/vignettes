@@ -19,6 +19,7 @@ vi.mock('../../layers/studio/server/utils/access', () => ({
   canActorEditDeck: async () => mayEdit,
 }))
 vi.mock('../../layers/studio/server/utils/collab', () => ({
+  MAX_MESSAGE_BYTES: 1024,
   useCollabServer: () => ({
     handleConnection: (_socket: unknown, _request: unknown, context: { user: string }) => ({
       handleMessage: (data: Uint8Array) => handled.push(`${context.user}:${new TextDecoder().decode(data)}`),

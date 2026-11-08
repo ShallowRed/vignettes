@@ -1,7 +1,6 @@
 import type { ContentChanges, ContentRewrites, StoredContent } from './ports.ts'
 import { isDeckSlug } from '@vignettes/core/deck'
-import * as Y from 'yjs'
-import { DECK_TEXT_FIELD, yDocUpdateToMarkdown } from '../../shared/collab/ydoc.ts'
+import { editDraftUpdate, yDocUpdateToMarkdown } from '../../shared/collab/ydoc.ts'
 import { referencedImages } from '../../shared/storage/media-refs.ts'
 import { headingParserInsertion, insertHeadingParser } from './heading-parser.ts'
 
@@ -27,16 +26,14 @@ function explicitHeadingParser({ versions, drafts }: StoredContent): ContentChan
       return rewritten === null ? [] : [{ id, raw: rewritten }]
     }),
     drafts: drafts.flatMap(({ slug, ydoc }) => {
-      const doc = new Y.Doc()
-      Y.applyUpdate(doc, ydoc)
-      const text = doc.getText(DECK_TEXT_FIELD)
-      const insertion = headingParserInsertion(text.toString())
       // An insertion into the same document keeps the history the editors merge with.
-      if (insertion)
-        text.insert(insertion.index, insertion.text)
-      const rewritten = insertion ? [{ slug, ydoc: Y.encodeStateAsUpdate(doc) }] : []
-      doc.destroy()
-      return rewritten
+      const rewritten = editDraftUpdate(ydoc, (text) => {
+        const insertion = headingParserInsertion(text.toString())
+        if (insertion)
+          text.insert(insertion.index, insertion.text)
+        return Boolean(insertion)
+      })
+      return rewritten ? [{ slug, ydoc: rewritten }] : []
     }),
   }
 }

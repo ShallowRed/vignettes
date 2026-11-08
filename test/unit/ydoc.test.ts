@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
-import { DraftLineageError, followDraftUpdate, includesState, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
+import { DraftLineageError, editDraftUpdate, followDraftUpdate, includesState, isDeckTextUpdate, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 
 describe('deck ydoc helpers', () => {
   it('round-trips markdown through a Y.Doc update', () => {
@@ -120,5 +120,48 @@ describe('followDraftUpdate', () => {
     expect(followDraftUpdate(Y.encodeStateAsUpdate(docWith('# edited')), '# v1', '# v2')).toBeNull()
     expect(followDraftUpdate(Y.encodeStateAsUpdate(docWith('# draft')), null, '# v1')).toBeNull()
     expect(followDraftUpdate(Y.encodeStateAsUpdate(docWith('# v2')), '# v1', '# v2')).toBeNull()
+  })
+})
+
+describe('editDraftUpdate', () => {
+  it('edits the text of the draft in its lineage, and returns null when the edit changes nothing', () => {
+    const draft = docWith('theme: dsfr')
+    const edited = editDraftUpdate(Y.encodeStateAsUpdate(draft), (text) => {
+      text.delete(7, 4)
+      text.insert(7, 'kit')
+      return true
+    })!
+    expect(yDocUpdateToMarkdown(edited)).toBe('theme: kit')
+    expect(sharesLineage(Y.encodeStateVectorFromUpdate(edited), Y.encodeStateVector(draft))).toBe(true)
+    expect(editDraftUpdate(Y.encodeStateAsUpdate(draft), () => false)).toBeNull()
+  })
+})
+
+describe('isDeckTextUpdate', () => {
+  it('accepts the text an editor types and deletes, and the state of the draft', () => {
+    const room = docWith('# v1\n\nCorps')
+    const before = Y.encodeStateVector(room)
+    room.getText('codemirror').insert(4, ' et v2')
+    room.getText('codemirror').delete(0, 2)
+    expect(isDeckTextUpdate(Y.encodeStateAsUpdate(room, before))).toBe(true)
+    expect(isDeckTextUpdate(Y.encodeStateAsUpdate(room))).toBe(true)
+    expect(isDeckTextUpdate(Y.encodeStateAsUpdate(new Y.Doc()))).toBe(true)
+  })
+
+  it('refuses another shared type, an embed, a format and an attribute of the text', () => {
+    const changes: ((doc: Y.Doc) => void)[] = [
+      doc => doc.getMap('other').set('key', 'x'),
+      doc => doc.getText('other').insert(0, 'x'),
+      doc => doc.getText('codemirror').insertEmbed(0, { image: 'x' }),
+      doc => doc.getText('codemirror').insertEmbed(0, new Y.Map()),
+      doc => doc.getText('codemirror').format(0, 2, { bold: true }),
+      doc => doc.getText('codemirror').insert(0, 'x', { bold: true }),
+    ]
+    for (const change of changes) {
+      const room = docWith('# v1')
+      const before = Y.encodeStateVector(room)
+      change(room)
+      expect(isDeckTextUpdate(Y.encodeStateAsUpdate(room, before))).toBe(false)
+    }
   })
 })

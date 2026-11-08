@@ -1,6 +1,5 @@
 import type { ContentChanges, StoredContent, StoredText } from '../db/ports'
-import { DECK_TEXT_FIELD } from '#shared/collab/ydoc'
-import * as Y from 'yjs'
+import { editDraftUpdate } from '#shared/collab/ydoc'
 
 /**
  * Where a deck's frontmatter declares its theme. The range lets a caller edit
@@ -59,19 +58,15 @@ export function themeRenameChanges(content: StoredContent, from: string, to: str
     versions: texts(content.versions),
     snapshots: texts(content.snapshots),
     drafts: content.drafts.filter(draft => kept(draft.slug)).flatMap(({ slug, ydoc }) => {
-      const doc = new Y.Doc()
-      Y.applyUpdate(doc, ydoc)
-      const text = doc.getText(DECK_TEXT_FIELD)
-      const range = themeValueRange(text.toString(), from)
-      if (range) {
-        doc.transact(() => {
-          text.delete(range.index, range.length)
-          text.insert(range.index, to)
-        })
-      }
-      const renamed = range ? [{ slug, ydoc: Y.encodeStateAsUpdate(doc) }] : []
-      doc.destroy()
-      return renamed
+      const renamed = editDraftUpdate(ydoc, (text) => {
+        const range = themeValueRange(text.toString(), from)
+        if (!range)
+          return false
+        text.delete(range.index, range.length)
+        text.insert(range.index, to)
+        return true
+      })
+      return renamed ? [{ slug, ydoc: renamed }] : []
     }),
   }
 }

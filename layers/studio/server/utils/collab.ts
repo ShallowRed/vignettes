@@ -2,15 +2,21 @@ import type { Connection, Document } from '@hocuspocus/server'
 import type { DraftStore } from '@vignettes/core/deck'
 import type { DraftFollow } from './content-push'
 import { CLOSE_REASONS, REFUSAL_REASONS } from '#shared/collab/close-reasons'
-import { DraftLineageError, followOutcome, followText, includesState, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '#shared/collab/ydoc'
+import { DECK_TEXT_FIELD, DraftLineageError, followOutcome, followText, includesState, isDeckTextUpdate, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { Hocuspocus } from '@hocuspocus/server'
 import { isDeckSlug, MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import * as Y from 'yjs'
 import { useStores } from './db'
 import { publishedSource, useMediaIndex } from './sources'
 
-/** The Y.Doc text field shared with y-codemirror.next. */
-const TEXT_FIELD = 'codemirror'
+/** A Yjs update of the longest deck, whose characters take up to 4 bytes: the largest message of a socket. */
+export const MAX_MESSAGE_BYTES = 4 * MAX_DECK_LENGTH
+
+/**
+ * The largest draft the server stores: the text of the longest deck, and as
+ * many bytes again for the Yjs items that its edits leave.
+ */
+export const MAX_DRAFT_BYTES = 2 * MAX_MESSAGE_BYTES
 
 /**
  * The socket is authorized for ONE deck at upgrade time (`/collab?deck=<slug>`);
@@ -190,19 +196,13 @@ export async function recordDraftSnapshot(slug: string, raw: string, options: { 
 /** The text of a stored draft, null when the deck has none. */
 async function storedDraftText(slug: string): Promise<string | null> {
   const stored = await useDraftStore().load(slug)
-  if (!stored)
-    return null
-  const doc = new Y.Doc()
-  Y.applyUpdate(doc, stored)
-  const raw = doc.getText(TEXT_FIELD).toString()
-  doc.destroy()
-  return raw
+  return stored ? yDocUpdateToMarkdown(stored) : null
 }
 
 /** The draft text: the live room when one is open (the store lags by the debounce), else the stored draft. */
 export async function currentDraftText(slug: string): Promise<string | null> {
   const live = useCollabServer().documents.get(slug)
-  return live ? live.getText(TEXT_FIELD).toString() : storedDraftText(slug)
+  return live ? live.getText(DECK_TEXT_FIELD).toString() : storedDraftText(slug)
 }
 
 /**
@@ -253,6 +253,12 @@ export function useCollabServer(): Hocuspocus {
       }
       if (!validated.has(connection))
         throw lineageRefusal(connection)
+      // The other sync messages carry an update, which the editor fills with deck text only.
+      if (!isDeckTextUpdate(payload)) {
+        console.warn(`[collab] refused an update with content other than deck text on "${document.name}"`)
+        connection.webSocket.close(1008, 'Unsupported content')
+        throw new Error('an update with content other than deck text')
+      }
     },
 
     async beforeHandleMessage({ connection }) {
@@ -264,17 +270,23 @@ export function useCollabServer(): Hocuspocus {
     // stops and offers to reload the draft last stored.
     async onChange({ documentName, document, context }) {
       noteContributor(documentName, (context as CollabContext | undefined)?.user)
-      if (document.getText(TEXT_FIELD).length > MAX_DECK_LENGTH) {
+      if (document.getText(DECK_TEXT_FIELD).length > MAX_DECK_LENGTH) {
         console.warn(`[collab] "${documentName}" holds more than ${MAX_DECK_LENGTH} characters: connections closed`)
         closeRoom(document, CLOSE_REASONS.tooLong)
       }
     },
 
     async onStoreDocument({ documentName, document, clientsCount, lastContext }) {
-      if (!isDeckSlug(documentName) || document.getText(TEXT_FIELD).length > MAX_DECK_LENGTH)
+      if (!isDeckSlug(documentName) || document.getText(DECK_TEXT_FIELD).length > MAX_DECK_LENGTH)
         return
+      const update = Y.encodeStateAsUpdate(document)
+      if (update.byteLength > MAX_DRAFT_BYTES) {
+        console.warn(`[collab] "${documentName}" holds more than ${MAX_DRAFT_BYTES} bytes: connections closed`)
+        closeRoom(document, CLOSE_REASONS.tooLong)
+        return
+      }
       try {
-        await useDraftStore().save(documentName, Y.encodeStateAsUpdate(document))
+        await useDraftStore().save(documentName, update)
       }
       catch (error) {
         if (!(error instanceof DraftLineageError))
@@ -283,14 +295,14 @@ export function useCollabServer(): Hocuspocus {
         // last client leaves: the text of the room goes to the history, and its
         // editors reload the stored draft.
         console.warn(`[collab] "${documentName}": ${error.message}; the text of the room is kept as a snapshot`)
-        await recordDraftSnapshot(documentName, document.getText(TEXT_FIELD).toString(), { force: true })
+        await recordDraftSnapshot(documentName, document.getText(DECK_TEXT_FIELD).toString(), { force: true })
         closeRoom(document, CLOSE_REASONS.lineage)
         return
       }
       if ((lastContext as CollabContext | undefined)?.snapshot === false)
         return
       // The last editor leaving closes the editing session: keep its final state.
-      await recordDraftSnapshot(documentName, document.getText(TEXT_FIELD).toString(), { force: clientsCount === 0 })
+      await recordDraftSnapshot(documentName, document.getText(DECK_TEXT_FIELD).toString(), { force: clientsCount === 0 })
     },
   })
   return instance
@@ -358,7 +370,7 @@ export async function writeDraftText(slug: string, raw: string, by?: string | nu
   })
   if (!connection)
     return
-  await connection.transact(document => replaceText(document.getText(TEXT_FIELD), raw))
+  await connection.transact(document => replaceText(document.getText(DECK_TEXT_FIELD), raw))
   await endDirectWrite(slug, connection)
 }
 
@@ -373,7 +385,7 @@ export async function followPublication(slug: string, previous: string | null, n
   const server = useCollabServer()
   const loading = server.loadingDocuments.has(slug)
   const live = server.documents.get(slug)
-  const text = live ? live.getText(TEXT_FIELD).toString() : await storedDraftText(slug)
+  const text = live ? live.getText(DECK_TEXT_FIELD).toString() : await storedDraftText(slug)
   if (text === null && !loading)
     return 'none'
   // A loading room has no text to read yet: the connection reads it.
@@ -387,7 +399,7 @@ export async function followPublication(slug: string, previous: string | null, n
   const connection = await server.openDirectConnection(slug, { deck: slug, user: null, snapshot: false })
   let follow: DraftFollow = 'updated'
   await connection.transact((document) => {
-    if (followText(document.getText(TEXT_FIELD), previous, next) === 'kept')
+    if (followText(document.getText(DECK_TEXT_FIELD), previous, next) === 'kept')
       follow = 'kept'
   })
   await endDirectWrite(slug, connection)
