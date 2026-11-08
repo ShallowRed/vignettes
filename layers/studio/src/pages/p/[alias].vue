@@ -23,29 +23,8 @@ const { presentationData, error: loadError } = usePresentation(`p-${alias}`, `/a
 const { user } = useAppSession()
 
 const error = computed(() => resolveError.value || loadError.value)
-// The same three answers as `/slides/<slug>`: only the `requiresPassword` flag
-// sends to the password prompt, and a plain 401 asks to sign in.
-// ofetch nests the server's createError payload under data.data; a direct h3
-// error keeps it at data. Read both so the flag survives either transport.
-const errorData = computed(() => {
-  const err = error.value as any
-  return err?.data?.data ?? err?.data
-})
-const requiresPassword = computed(() => errorData.value?.requiresPassword === true)
-const needsLogin = computed(() => !requiresPassword.value && (error.value as any)?.statusCode === 401)
-// A deck the actor may not view answers 404 like a deck that does not exist, so
-// one screen covers both: naming either case would confirm the alias.
-const notFound = computed(() => (error.value as any)?.statusCode === 404)
-// A closed deck that is not sent to the password prompt shows an error screen.
-const errorShown = computed(() => Boolean(error.value) && !requiresPassword.value)
-
-watch(requiresPassword, (needsPassword) => {
-  if (needsPassword) {
-    const api = encodeURIComponent(`/api/p/${alias}`)
-    const ret = encodeURIComponent(`/p/${alias}`)
-    navigateTo(`/unlock/${alias}?api=${api}&return=${ret}`)
-  }
-}, { immediate: true })
+const unlockPath = `/unlock/${alias}?api=${encodeURIComponent(`/api/p/${alias}`)}&return=${encodeURIComponent(`/p/${alias}`)}`
+const { needsLogin, notFound, errorShown } = useClosedDeck(error, unlockPath)
 </script>
 
 <template>

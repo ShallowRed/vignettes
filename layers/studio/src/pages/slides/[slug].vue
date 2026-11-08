@@ -14,38 +14,13 @@ const draftPreview = 'draft' in route.query
 const { presentationData, error } = usePresentation(slug, undefined, { draft: draftPreview })
 const { user } = useAppSession()
 
-// The server answers a closed deck three ways: 401 with the `requiresPassword`
-// flag (semi-private, ask for the deck password), a plain 401 (private, ask to
-// sign in), and 404 (signed in without access, the answer of a slug that does
-// not exist). Only the flag sends to the password prompt, which a plain 401
-// could never satisfy.
-// ofetch nests the server's createError payload under data.data; a direct h3
-// error keeps it at data. Read both so the flag survives either transport.
-const errorData = computed(() => {
-  const err = error.value as any
-  return err?.data?.data ?? err?.data
-})
-const requiresPassword = computed(() => errorData.value?.requiresPassword === true)
-const needsLogin = computed(() => !requiresPassword.value && (error.value as any)?.statusCode === 401)
-// A deck the actor may not view answers 404 like a deck that does not exist, so
-// one screen covers both: naming either case would confirm the slug. The raw
-// message of the failed request is left out for the same reason.
-const notFound = computed(() => (error.value as any)?.statusCode === 404)
-// A closed deck that is not sent to the password prompt shows an error screen.
-const errorShown = computed(() => Boolean(error.value) && !requiresPassword.value)
+const { needsLogin, notFound, errorShown } = useClosedDeck(error, `/unlock/${slug}?return=/slides/${slug}`)
 
 // Whoever may edit a deck that has no published version learns so, with the
 // way to its editor and its draft. The viewer route tells the others nothing
 // about the deck.
 const { data: viewer } = useDeckViewer(slug)
 const unpublished = computed(() => notFound.value && viewer.value.canEdit && viewer.value.published === false)
-
-// `replace: true`: this route only ever bounces to /unlock, so keeping it in
-// history would trap Back (it re-fires the watch and bounces forward again).
-watch(requiresPassword, (needsPassword) => {
-  if (needsPassword)
-    navigateTo(`/unlock/${slug}?return=/slides/${slug}`, { replace: true })
-}, { immediate: true })
 </script>
 
 <template>

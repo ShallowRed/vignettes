@@ -1,6 +1,6 @@
 import type { Project } from '../projects/schema'
 import type { PresentationListItem } from './list-item'
-import { UNGROUPED_PROJECT } from './catalog-view'
+import { UNGROUPED_PROJECT } from './catalog-view.ts'
 
 // Pure, framework-free view-model for the catalog's folder grid (the primary
 // entry point). Folders are a grouping *view* over the already access-filtered

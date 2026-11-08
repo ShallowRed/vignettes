@@ -2,7 +2,7 @@
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
 import { loginHref, mayEdit } from '#shared/access'
-import { buildFolderContents, UNGROUPED_PROJECT } from '#shared/presentations'
+import { buildFolderContents, UNGROUPED_FOLDER_SLUG, UNGROUPED_PROJECT } from '#shared/presentations'
 import { useAppSession } from '../../composables/useAppSession'
 import { useCatalog } from '../../composables/useCatalog'
 import { useModalTarget } from '../../composables/useModalTarget'
@@ -12,12 +12,12 @@ import { projectColorStyle } from '../../utils/project-colors'
 definePageMeta({ layout: false })
 
 // A project folder's contents: the decks grouped under one project, reached from
-// the folder grid via the stable /projects/<slug> route. `divers` is the
-// reserved slug for the no-project bucket.
+// the folder grid via the stable /projects/<slug> route, or the decks without
+// a project at the reserved slug.
 const { t } = useI18n()
 const route = useRoute()
 const routeSlug = computed(() => route.params.slug as string)
-const isUngrouped = computed(() => routeSlug.value === 'divers')
+const isUngrouped = computed(() => routeSlug.value === UNGROUPED_FOLDER_SLUG)
 const projectKey = computed(() => isUngrouped.value ? UNGROUPED_PROJECT : routeSlug.value)
 
 const { privileged, role, loggedIn, owner: isOwner } = useAppSession()

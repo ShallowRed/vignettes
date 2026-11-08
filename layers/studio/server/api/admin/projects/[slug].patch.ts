@@ -5,6 +5,7 @@ import { isDeckSlug } from '@vignettes/core/deck'
  * of a project. Privileged only. Changing the slug cascades to the project's
  * decks and grants (simple cascade: old `/projects/<slug>` links stop resolving).
  */
+import { isReservedProjectSlug } from '../../../db/slugs'
 import { assertPrivileged } from '../../../utils/access'
 
 import { useProjectStore } from '../../../utils/sources'
@@ -31,8 +32,8 @@ export default defineEventHandler(async (event) => {
     if (!isDeckSlug(nextSlug)) {
       throw createError({ statusCode: 400, statusMessage: 'Invalid slug (letters, digits, dashes, underscores)' })
     }
-    if (await store.slugExists(nextSlug)) {
-      throw createError({ statusCode: 409, statusMessage: `A project "${nextSlug}" already exists` })
+    if (isReservedProjectSlug(nextSlug) || await store.slugExists(nextSlug)) {
+      throw createError({ statusCode: 409, statusMessage: `Slug "${nextSlug}" is not available` })
     }
     const renamed = await store.rename(slug, nextSlug)
     if (!renamed) {

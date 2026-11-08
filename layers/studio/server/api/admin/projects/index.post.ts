@@ -5,6 +5,7 @@ import { isDeckSlug } from '@vignettes/core/deck'
  * The slug is derived from the title and disambiguated. Privileged only, like
  * deck creation.
  */
+import { isReservedProjectSlug } from '../../../db/slugs'
 import { assertPrivileged } from '../../../utils/access'
 
 import { useProjectStore } from '../../../utils/sources'
@@ -21,8 +22,8 @@ export default defineEventHandler(async (event) => {
   if (parsed.data.slug !== undefined) {
     if (!isDeckSlug(parsed.data.slug))
       throw createError({ statusCode: 400, statusMessage: 'Invalid slug' })
-    if (await store.slugExists(parsed.data.slug))
-      throw createError({ statusCode: 409, statusMessage: 'Slug already taken' })
+    if (isReservedProjectSlug(parsed.data.slug) || await store.slugExists(parsed.data.slug))
+      throw createError({ statusCode: 409, statusMessage: 'Slug not available' })
   }
 
   const project = await store.create({ title: parsed.data.title, color: parsed.data.color ?? null, icon: parsed.data.icon ?? null, slug: parsed.data.slug })

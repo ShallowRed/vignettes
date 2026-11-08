@@ -18,6 +18,10 @@ describe.each(ADAPTERS)('project store, lifecycle and trash ($name)', (adapter) 
     expect(b.slug).toBe('mon-dossier-2')
   })
 
+  it('create gives a folder titled « Divers » the next slug, the slug of the decks without a project being reserved', async () => {
+    expect((await store().create({ title: 'Divers' })).slug).toBe('divers-2')
+  })
+
   it('isLive accepts a live folder only', async () => {
     const project = await store().create({ title: 'Dossier' })
     expect(await store().isLive(project.slug)).toBe(true)
