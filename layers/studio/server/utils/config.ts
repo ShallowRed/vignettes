@@ -1,6 +1,7 @@
 import type { RoleMap } from '#shared/access'
 import type { FrozenS3Config } from '#shared/storage/frozen-s3'
 import type { BundleConfig } from '@vignettes/freeze/bundle'
+import type { SessionConfig } from 'h3'
 import type { DatabaseConfig } from '../db/config'
 import process from 'node:process'
 import { readRoleMap } from '#shared/access'
@@ -76,6 +77,33 @@ export function serverConfig(): ServerConfig {
     trustedProxyHops: /^\d+$/.test(env.NUXT_TRUSTED_PROXY_HOPS ?? '') ? Number(env.NUXT_TRUSTED_PROXY_HOPS) : 0,
     bundle,
     origins: readOrigins(env, bundle),
+  }
+}
+
+/** The session of the studio, as nuxt-auth-utils passes it to h3 `useSession`. */
+export interface SessionSettings {
+  /** The name of the session cookie. */
+  name: string
+  password?: string
+  /** Seconds from the login after which the session ends, whatever its use. */
+  maxAge?: number
+  /** The iron options of a seal; `ttl`, in milliseconds, ends a session that no request reseals for that long. */
+  seal?: SessionConfig['seal']
+}
+
+/**
+ * The settings of `runtimeConfig.session` (nuxt.config.ts), read by every server
+ * module that names the session cookie or follows the lifetimes of a session.
+ * The password falls back to the env var, which runtimeConfig only merges at
+ * the first `getUserSession` call.
+ */
+export function sessionSettings(): SessionSettings {
+  const session = useRuntimeConfig().session as Partial<SessionConfig> | undefined
+  return {
+    name: session?.name || 'nuxt-session',
+    password: session?.password || serverConfig().sessionPassword,
+    maxAge: session?.maxAge,
+    seal: session?.seal,
   }
 }
 

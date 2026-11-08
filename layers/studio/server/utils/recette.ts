@@ -1,6 +1,5 @@
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
-import { createHmac, timingSafeEqual } from 'node:crypto'
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PERSONAS, RECETTE_PREFIX } from '#shared/recette/personas'
 import { getActor } from './actor'
@@ -8,6 +7,7 @@ import { useDraftStore } from './collab'
 import { serverConfig } from './config'
 import { mediaNameOf, storeMedia } from './media-store'
 import { hashAccessPassword } from './password'
+import { opened, sealed } from './seal'
 import { useDbContent, useDeckMeta, useMediaIndex, usePermissionStore, useProjectPermissionStore, useProjectStore } from './sources'
 import { useUserStore } from './users'
 
@@ -26,7 +26,7 @@ const PASS_COOKIE = 'recette_pass'
 const PASS_TTL_MS = 12 * 60 * 60 * 1000
 
 export interface RecettePass {
-  exp: number
+  kind: 'recette'
   /**
    * The owner identity that opened the kit, restored by `as=me`, with the
    * session version of the account then: a logout or a change of role ends the pass.
@@ -34,22 +34,10 @@ export interface RecettePass {
   user: { id: number, login: string, name?: string, sessionVersion?: number }
 }
 
-function passSecret(): string {
-  const secret = serverConfig().sessionPassword
-  if (!secret)
-    throw createError({ statusCode: 500, statusMessage: 'NUXT_SESSION_PASSWORD is required to sign the acceptance pass' })
-  return secret
-}
-
-function sign(payload: string): string {
-  return createHmac('sha256', passSecret()).update(payload).digest('base64url')
-}
-
 /** Issue the pass to this browser: an owner opened the kit. */
-export function mintRecettePass(event: H3Event, user: RecettePass['user']): RecettePass {
-  const pass: RecettePass = { exp: Date.now() + PASS_TTL_MS, user }
-  const payload = Buffer.from(JSON.stringify(pass)).toString('base64url')
-  setCookie(event, PASS_COOKIE, `${payload}.${sign(payload)}`, {
+async function mintRecettePass(event: H3Event, user: RecettePass['user']): Promise<RecettePass> {
+  const pass: RecettePass = { kind: 'recette', user }
+  setCookie(event, PASS_COOKIE, await sealed(pass, PASS_TTL_MS), {
     httpOnly: true,
     secure: serverConfig().secureCookies,
     sameSite: 'lax',
@@ -64,31 +52,12 @@ export function clearRecettePass(event: H3Event): void {
   deleteCookie(event, PASS_COOKIE)
 }
 
-/** The pass carried by this browser, when its signature and expiry hold. */
-export function readRecettePass(event: H3Event): RecettePass | null {
-  const raw = getCookie(event, PASS_COOKIE)
-  if (!raw)
-    return null
-  const [payload, signature] = raw.split('.')
-  if (!payload || !signature)
-    return null
-  const expected = sign(payload)
-  if (expected.length !== signature.length || !timingSafeEqual(Buffer.from(expected), Buffer.from(signature)))
-    return null
-  try {
-    const pass = JSON.parse(Buffer.from(payload, 'base64url').toString()) as RecettePass
-    return pass.exp > Date.now() && typeof pass.user?.id === 'number' ? pass : null
-  }
-  catch {
-    return null
-  }
-}
-
 /**
  * 404 when the kit is off; 403 unless the request comes from an owner, by a
- * session or a personal token (who then receives the pass), or carries a pass
- * whose holder is still an owner. The
- * second check is what keeps the pass from outliving the role: the session of a
+ * session or a personal token, or carries a pass whose holder is still an
+ * owner. An owner session receives the pass, and a token opens the persona
+ * session alone, so that the browser of a script holds that session only. The second
+ * check is what keeps the pass from outliving the role: the session of a
  * persona is not an owner, so the pass has to be accepted on its own, and the
  * role it stands for is read from the database on every call.
  */
@@ -105,8 +74,8 @@ export async function assertRecette(event: H3Event): Promise<RecettePass> {
   // counts, as the kit opens on staging alone.
   const tokenAccount = actor.token && actor.id ? await useUserStore().getAccount(actor.id) : null
   if (tokenAccount?.role === 'owner' && actor.login)
-    return mintRecettePass(event, { id: actor.id!, login: actor.login, sessionVersion: tokenAccount.sessionVersion })
-  const pass = readRecettePass(event)
+    return { kind: 'recette', user: { id: actor.id!, login: actor.login, sessionVersion: tokenAccount.sessionVersion } }
+  const pass = await opened<RecettePass>(getCookie(event, PASS_COOKIE), 'recette')
   const holder = pass && await useUserStore().getAccount(pass.user.id)
   if (!pass || holder?.role !== 'owner' || holder.login !== pass.user.login || holder.sessionVersion !== (pass.user.sessionVersion ?? 0))
     throw createError({ statusCode: 403, statusMessage: 'Le kit de recette s\'ouvre avec un compte propriétaire' })

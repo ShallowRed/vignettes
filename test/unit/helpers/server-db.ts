@@ -84,6 +84,8 @@ export function stubH3Globals() {
       (e.setCookies ??= {})['nuxt-session'] = 'new-session'
     return e.session ?? {}
   })
+  // The session h3 holds for the request: `sessionCreatedAt` sets when it opened.
+  vi.stubGlobal('getSession', async (e: any) => ({ id: 'session', createdAt: e.sessionCreatedAt ?? Date.now(), data: e.session ?? {} }))
   vi.stubGlobal('getCookie', (e: any, name: string) => e.cookies?.[name])
   vi.stubGlobal('deleteCookie', (e: any, name: string) => {
     ;(e.deletedCookies ??= []).push(name)

@@ -185,7 +185,7 @@ run = "sh scripts/with-secrets.sh node scripts/content-import.ts --apply --remot
 description = "Open the staging instance as a persona of the acceptance kit and write the session to a Playwright storage state: mise run recette:session -- <persona> [<file>]"
 depends = [ "install" ]
 usage = """
-arg "<persona>" help="A persona of the acceptance kit (owner, editor, viewer…) or me"
+arg "<persona>" help="A persona of the acceptance kit below the owner (editor, viewer…)"
 arg "[file]" help="The storage state to write, in the temporary directory by default"
 """
 run = "INFISICAL_ENV=staging INFISICAL_SECRETS=RECETTE_TOKEN sh scripts/with-secrets.sh node scripts/recette-session.ts \"$usage_persona\" ${usage_file:+\"$usage_file\"}"

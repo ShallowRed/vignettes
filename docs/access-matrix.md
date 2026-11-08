@@ -68,7 +68,7 @@ An invited account holding only an `editor` grant (deck or folder) must be able 
 
 A personal token acts as its account. `getActor` reads the role in `users` at every request, and the guards read the account's grants, so a lowered role or a removed grant applies to the token from the next request. The rules are in `shared/access/tokens.ts`.
 
-- The role of a token is the role of its account, capped at `editor` (`tokenRole`): a token of the owner acts as a global editor, and the accounts, the folder grants and the trash stay with an owner's session.
+- The role of a token is the role of its account, capped at `editor` (`tokenRole`): a token of the owner acts as a global editor, and the accounts, the folder grants and the trash stay with an owner's session. On an instance that opens the acceptance kit, the token of an owner opens through `POST /auth/recette` the session of a persona whose role is below the owner.
 - The scope `read` reads the decks and the folders; `write` also creates, saves and publishes a deck and uploads its images (`scopeAllows`).
 - A token reaches the routes listed in `TOKEN_ROUTES` (`server/utils/personal-token.ts`), and [api-routes.md](api-routes.md#personal-tokens) lists them. Sharing a deck and changing its status are left to a person in the studio. The real-time session reads the session cookie.
 - Any signed-in account creates its own tokens, an invited collaborator included. A token lasts 90 days by default and 365 days at most. The database keeps the SHA-256 of the secret, and the holder or the owner revokes a token in the studio.

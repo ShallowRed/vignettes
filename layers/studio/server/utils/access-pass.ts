@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { serverConfig } from './config'
+import { secret } from './seal'
 
 /**
  * The unlock cookie of a semi-private deck: `<expiry>.<signature>`, an HMAC of
@@ -11,13 +11,6 @@ const TTL_MS = 24 * 60 * 60 * 1000
 
 export function accessCookieName(slug: string): string {
   return `access_${slug}`
-}
-
-function secret(): string {
-  const value = serverConfig().sessionPassword
-  if (!value)
-    throw createError({ statusCode: 500, statusMessage: 'NUXT_SESSION_PASSWORD is required to sign deck access cookies' })
-  return value
 }
 
 function sign(slug: string, expiry: number, storedHash: string): string {

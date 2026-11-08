@@ -58,7 +58,7 @@ describe('recette kit gate', () => {
 
   it('opens for an owner, who receives the pass; refuses a viewer without one (403)', async () => {
     const pass = await ownerPass()
-    expect(pass).toMatch(/^[\w-]+\.[\w-]+$/)
+    expect(pass).toMatch(/^Fe26\.2\*/)
     await seedAccount(2, 'v', 'viewer')
     await expect(status(asUser(2, 'v'))).rejects.toMatchObject({ statusCode: 403 })
     await expect(status(asUser(2, 'v', { cookies: { recette_pass: pass } }))).resolves.toMatchObject({ owner: 'boss' })
@@ -66,8 +66,7 @@ describe('recette kit gate', () => {
 
   it('refuses a tampered pass', async () => {
     const pass = await ownerPass()
-    const [payload] = pass.split('.')
-    await expect(status(asUser(2, 'v', { cookies: { recette_pass: `${payload}.forged` } }))).rejects.toMatchObject({ statusCode: 403 })
+    await expect(status(asUser(2, 'v', { cookies: { recette_pass: `${pass.slice(0, -4)}AAAA` } }))).rejects.toMatchObject({ statusCode: 403 })
   })
 
   it('refuses the pass once its holder stopped being an owner', async () => {
@@ -126,20 +125,34 @@ describe('persona switch', () => {
     await expect(openAs(asUser(1, 'boss', { cookies: { recette_pass: pass }, query: { as: 'collab' } }))).rejects.toMatchObject({ statusCode: 405 })
   })
 
+  const tokenOf = async (id: number) => {
+    const { secret, tokenHash, prefix } = mintToken()
+    await useTokenStore().create(id, { name: 'recette', scope: 'write', tokenHash, prefix, expiresAt: new Date(Date.now() + 86_400_000) }, new Date())
+    return secret
+  }
+
   it('opens for the personal token of an owner, and refuses the token of an editor (403)', async () => {
-    const tokenOf = async (id: number) => {
-      const { secret, tokenHash, prefix } = mintToken()
-      await useTokenStore().create(id, { name: 'recette', scope: 'write', tokenHash, prefix, expiresAt: new Date(Date.now() + 86_400_000) }, new Date())
-      return secret
-    }
-    const request = (secret: string) => anon({ method: 'POST', path: '/auth/recette', headers: { authorization: `Bearer ${secret}` }, body: { as: 'viewer' } })
+    const request = (secret: string, as = 'viewer') => anon({ method: 'POST', path: '/auth/recette', headers: { authorization: `Bearer ${secret}` }, body: { as } })
     await seedAccount(1, 'boss', 'owner')
     const byOwner = request(await tokenOf(1))
     await openAs(byOwner)
     expect(byOwner.sessionSet.user).toMatchObject({ id: persona('viewer').id, role: 'viewer' })
-    expect(byOwner.setCookies.recette_pass).toBeDefined()
     await seedAccount(3, 'eve', 'editor')
     await expect(openAs(request(await tokenOf(3)))).rejects.toMatchObject({ statusCode: 403 })
+  })
+
+  it('opens no owner session for a personal token, and gives it no pass (403)', async () => {
+    await seedAccount(1, 'boss', 'owner')
+    const secret = await tokenOf(1)
+    const request = (as: string) => anon({ method: 'POST', path: '/auth/recette', headers: { authorization: `Bearer ${secret}` }, body: { as } })
+    const byToken = request('editor')
+    await openAs(byToken)
+    expect(byToken.setCookies?.recette_pass).toBeUndefined()
+    for (const as of ['me', 'owner']) {
+      const event = request(as)
+      await expect(openAs(event)).rejects.toMatchObject({ statusCode: 403 })
+      expect(event.sessionSet).toBeUndefined()
+    }
   })
 
   it('rejects an unknown persona (400)', async () => {

@@ -11,7 +11,7 @@ import { anon, asUser, bearer, seedAccount, setupServerDb, stubH3Globals } from 
 stubH3Globals()
 setupServerDb()
 vi.stubGlobal('getRequestURL', (e: any) => new URL(`http://${e.headers?.host ?? 'app.example'}${e.path ?? '/'}`))
-vi.stubGlobal('useRuntimeConfig', () => ({ public: {}, session: { seal: { ttl: 2 * 60 * 60 * 1000 } } }))
+vi.stubGlobal('useRuntimeConfig', () => ({ public: {}, session: { maxAge: 8 * 60 * 60, seal: { ttl: 2 * 60 * 60 * 1000 } } }))
 process.env.NUXT_SESSION_PASSWORD = 'deck-origin-password-with-32-characters'
 
 beforeAll(() => {
@@ -31,7 +31,7 @@ const DECKS = { host: 'decks.example' }
 /** A request of the deck origin, with the pass a ticket for this account and deck set. */
 async function withPass(id: number, login: string, slug: string, over: Record<string, any> = {}) {
   const redeem = anon({ headers: DECKS })
-  await redeemDeckTicket(redeem, await mintDeckTicket({ id, login, sessionVersion: 0 }, slug), slug)
+  await redeemDeckTicket(redeem, await mintDeckTicket({ id, login, sessionVersion: 0 }, slug, Date.now() + 8 * 60 * 60 * 1000), slug)
   return anon({ headers: DECKS, params: { slug }, ...over, cookies: redeem.setCookies })
 }
 

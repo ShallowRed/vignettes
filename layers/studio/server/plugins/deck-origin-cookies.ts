@@ -1,4 +1,4 @@
-import type { SessionConfig } from 'h3'
+import { sessionSettings } from '../utils/config'
 import { requestSide } from '../utils/deck-origin'
 
 /**
@@ -12,7 +12,7 @@ export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('request', (event) => {
     if (requestSide(event) !== 'decks')
       return
-    const name = (useRuntimeConfig(event).session as Partial<SessionConfig> | undefined)?.name || 'nuxt-session'
+    const { name } = sessionSettings()
     const res = event.node.res
     const writeHead = res.writeHead.bind(res) as (...args: unknown[]) => typeof res
     res.writeHead = ((...args: unknown[]) => {

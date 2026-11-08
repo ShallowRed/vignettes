@@ -5,8 +5,8 @@
  *
  *   node scripts/recette-session.ts <persona> [<file>]
  *
- * The persona is a key of `shared/recette/personas.ts` (owner, editor, viewer…)
- * or `me`, the account of the token. `RECETTE_TOKEN` is a personal token of an
+ * The persona is a key of `shared/recette/personas.ts` whose role is below the
+ * owner (editor, viewer…). `RECETTE_TOKEN` is a personal token of an
  * owner of the staging instance, with the read and write scope, that
  * `scripts/with-secrets.sh` takes from Infisical; `VIGNETTES_STAGING_REMOTE`
  * names the instance (`mise.local.toml`). The file holds a session: it is

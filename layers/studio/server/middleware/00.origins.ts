@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 import { isDeckPage, routeSide } from '#shared/origins'
 import { decideDeckAccess, gateOptionsOf } from '../utils/access'
-import { getActor } from '../utils/actor'
+import { getActor, sessionEndsAt } from '../utils/actor'
 import { serverConfig } from '../utils/config'
 import { requestOrigin, requestSide } from '../utils/deck-origin'
 import { mintDeckTicket } from '../utils/deck-pass'
@@ -65,10 +65,13 @@ async function ticketFor(event: H3Event): Promise<string | null> {
   const actor = await getActor(event)
   if (!navigation || !actor.id || !actor.login)
     return null
+  const endsAt = await sessionEndsAt(event)
+  if (!endsAt)
+    return null
   const slug = await deckOfPagePath(event.path)
   const gate = slug ? await gateOptionsOf(slug) : null
   if (!slug || !gate || (await decideDeckAccess(event, gate)).outcome !== 'allow')
     return null
   const account = await useUserStore().getAccount(actor.id)
-  return account ? await mintDeckTicket({ id: actor.id, login: actor.login, sessionVersion: account.sessionVersion }, slug) : null
+  return account ? await mintDeckTicket({ id: actor.id, login: actor.login, sessionVersion: account.sessionVersion }, slug, endsAt) : null
 }

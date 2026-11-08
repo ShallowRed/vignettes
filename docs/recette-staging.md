@@ -14,13 +14,9 @@ Là où le kit s'ouvre, le menu du compte contient aussi l'entrée « Thème d'i
 
 ## Accès
 
-La page s'ouvre avec un compte **owner** (connexion Google ou GitHub habituelle).
-Le serveur pose alors un laissez-passer signé (cookie `recette_pass`, 12 heures,
-signé avec `NUXT_SESSION_PASSWORD`). Ce laissez-passer permet ensuite, depuis le
-même navigateur, d'ouvrir l'application en tant que n'importe quel persona et de
-revenir à son compte par le bouton « Revenir à mon compte », sans repasser par OAuth.
+La page s'ouvre avec un compte **owner** (connexion Google ou GitHub habituelle). Le serveur pose alors un laissez-passer scellé (cookie `recette_pass`, 12 heures, scellé avec `NUXT_SESSION_PASSWORD`). Ce laissez-passer permet ensuite, depuis le même navigateur, d'ouvrir l'application en tant que n'importe quel persona et de revenir à son compte par le bouton « Revenir à mon compte », sans repasser par OAuth.
 
-Un script qui fait la recette dans un navigateur, celui d'un agent par exemple, ouvre le kit avec un jeton d'accès d'un compte owner, de portée « Lecture et écriture » : il envoie `POST /auth/recette` avec l'en-tête `Authorization: Bearer <jeton>` et le corps `as=<persona>&redirect=<chemin>`, et le navigateur reçoit la session du persona. Sur l'instance de référence, ce jeton est rangé dans Infisical, à la racine de l'environnement `staging`, sous `RECETTE_TOKEN`, et `mise run recette:session -- <persona>` écrit la session du persona dans un état de stockage de Playwright.
+Un script qui fait la recette dans un navigateur, celui d'un agent par exemple, ouvre le kit avec un jeton d'accès d'un compte owner, de portée « Lecture et écriture » : il envoie `POST /auth/recette` avec l'en-tête `Authorization: Bearer <jeton>` et le corps `as=<persona>&redirect=<chemin>`, et le navigateur reçoit la session du persona. Le jeton ouvre les personas dont le rôle est inférieur à owner ; `as=me` et le persona `owner` répondent 403, car la révocation d'un jeton laisse courir la session qu'il a ouverte. Sur l'instance de référence, ce jeton est rangé dans Infisical, à la racine de l'environnement `staging`, sous `RECETTE_TOKEN`, et `mise run recette:session -- <persona>` écrit la session du persona dans un état de stockage de Playwright.
 
 ## Jeu de données
 

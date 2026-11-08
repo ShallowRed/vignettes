@@ -10,7 +10,7 @@ import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpe
 stubH3Globals()
 setupServerDb()
 vi.stubGlobal('getRequestURL', (e: any) => new URL(`http://${e.headers?.host ?? 'app.example'}${e.path ?? '/'}`))
-vi.stubGlobal('useRuntimeConfig', () => ({ public: {}, session: { seal: { ttl: 2 * 60 * 60 * 1000 } } }))
+vi.stubGlobal('useRuntimeConfig', () => ({ public: {}, session: { maxAge: 8 * 60 * 60, seal: { ttl: 2 * 60 * 60 * 1000 } } }))
 process.env.NUXT_SESSION_PASSWORD = 'origins-routing-password-with-32-chars'
 
 beforeAll(() => {
@@ -126,6 +126,22 @@ describe('a deck page of the studio', () => {
     const event = asUser(2, 'ana', { context: {}, method: 'GET', path: '/slides/secret', headers: { ...STUDIO, ...CLICK } })
     await origins(event)
     expect(event.redirectedTo).toBe('http://decks.example/slides/secret')
+  })
+
+  it('gives a pass that ends with the session', async () => {
+    const sessionCreatedAt = Date.now() - 8 * 60 * 60 * 1000 + 10 * 1000
+    const click = asUser(2, 'ana', { context: {}, method: 'GET', path: '/slides/secret', headers: { ...STUDIO, ...CLICK }, sessionCreatedAt })
+    await origins(click)
+    const redeem = anon({ headers: DECKS, query: Object.fromEntries(new URL(click.redirectedTo).searchParams) })
+    await deckPass(redeem)
+    await expect(viewPassIdentity(anon({ cookies: redeem.setCookies }), 'secret')).resolves.toMatchObject({ login: 'ana' })
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.now() + 11 * 1000 })
+    try {
+      await expect(viewPassIdentity(anon({ cookies: redeem.setCookies }), 'secret')).resolves.toBeNull()
+    }
+    finally {
+      vi.useRealTimers()
+    }
   })
 })
 

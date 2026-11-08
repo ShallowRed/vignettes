@@ -1,8 +1,8 @@
 import type { AppSession, Role, TokenScope } from '#shared/access'
-import type { H3Event, SessionConfig } from 'h3'
+import type { H3Event } from 'h3'
 import { resolveRole } from '#shared/access'
 import { unsealSession } from 'h3'
-import { serverConfig } from './config'
+import { serverConfig, sessionSettings } from './config'
 import { requestSide } from './deck-origin'
 import { viewPassIdentity } from './deck-pass'
 import { authenticatePersonalToken, personalTokenActor } from './personal-token'
@@ -69,14 +69,9 @@ async function resolveActor(user: SessionUser | undefined): Promise<Actor | null
   return { id: user.id, login: user.login, role: account.role }
 }
 
-/** The name of the session cookie. */
-function sessionCookieName(event: H3Event): string {
-  return (useRuntimeConfig(event).session as Partial<SessionConfig> | undefined)?.name || 'nuxt-session'
-}
-
 /** The actor of a request read from its session cookie, which it clears when the session is stale or ended. */
 async function readActor(event: H3Event): Promise<Actor> {
-  if (!getCookie(event, sessionCookieName(event)))
+  if (!getCookie(event, sessionSettings().name))
     return ANONYMOUS
   const session = await getUserSession(event).catch(() => null) as SessionData | null
   const actor = await resolveActor(session?.user)
@@ -145,14 +140,27 @@ interface LoginUser {
 }
 
 /**
- * Opens the session of a login. `replaceUserSession` starts a new session, whose
- * id and lifetime begin now, and the session carries the current version of the
- * account.
+ * Opens the session of a login, which carries the current version of the
+ * account. `replaceUserSession` replaces the data of the session; h3 keeps the
+ * id and the `createdAt` of a session the request already carries.
  */
 export async function openUserSession(event: H3Event, user: LoginUser): Promise<void> {
   const sessionVersion = (await useUserStore().getAccount(user.id))?.sessionVersion ?? 0
   await replaceUserSession(event, { user: { ...user, sessionVersion }, activeAt: Date.now() })
   delete event.context?.actor
+}
+
+/**
+ * When the session of this request ends whatever its use, in milliseconds:
+ * `maxAge` after the `createdAt` that h3 seals with the session and from which
+ * it expires it. `null` for a request without a session cookie.
+ */
+export async function sessionEndsAt(event: H3Event): Promise<number | null> {
+  const { name, password, maxAge, seal } = sessionSettings()
+  if (!maxAge || !password || !getCookie(event, name))
+    return null
+  const { createdAt } = await getSession(event, { name, password, maxAge, seal })
+  return createdAt ? createdAt + maxAge * 1000 : null
 }
 
 /** The actor's `Role` for an H3 request; `anonymous` when no session. */
@@ -189,18 +197,15 @@ interface RequestWithCookies {
  * `getActor` for a request that carries no H3Event, which is every WebSocket
  * upgrade: unseal the nuxt-auth-utils session cookie directly, with the same
  * lifetimes. A stale or ended session is anonymous; the next HTTP request
- * clears it. The password falls back to the env var because runtimeConfig only
- * merges it at the first `getUserSession` call.
+ * clears it.
  */
 export async function getActorFromRequest(request: RequestWithCookies): Promise<Actor> {
-  const config = useRuntimeConfig().session as Partial<SessionConfig> | undefined
-  const name = config?.name || 'nuxt-session'
-  const password = config?.password || serverConfig().sessionPassword
+  const { name, password, maxAge, seal } = sessionSettings()
   const sealed = readCookie(request.headers.get('cookie'), name)
   if (!sealed || !password)
     return { role: 'anonymous' }
 
-  const session = await unsealSession(undefined as never, { password, maxAge: config?.maxAge, seal: config?.seal }, sealed)
+  const session = await unsealSession(undefined as never, { password, maxAge, seal }, sealed)
     .catch(() => null)
   return await resolveActor((session?.data as SessionData | undefined)?.user) ?? ANONYMOUS
 }
