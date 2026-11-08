@@ -2,6 +2,9 @@ import type { Slide } from '@vignettes/core/deck'
 import type { DeckMessages } from '@vignettes/core/render'
 import type { ComputedRef, InjectionKey } from 'vue'
 
+// Lets a component of a slide tell Reveal that it added or moved fragments, provided by `RevealPresentation`.
+export const REVEAL_SYNC: InjectionKey<() => void> = Symbol('revealSync')
+
 // The deck's frontmatter `storybook` root, read by the components that embed a story.
 export const STORYBOOK_BASE: InjectionKey<ComputedRef<string | undefined>>
   = Symbol('storybookBase')

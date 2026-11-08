@@ -21,11 +21,13 @@ interface Props {
   span?: string
   /**
    * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @symbol pictogram
    * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
    */
   picto?: string
   /**
    * Remix icon, `ri:server-line`, lighter than a pictogram.
+   * @symbol icon
    * @fr Icône Remix, `ri:server-line`, plus légère qu'un pictogramme.
    */
   icon?: string

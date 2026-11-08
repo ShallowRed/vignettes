@@ -2,6 +2,7 @@
 import type { MermaidConfig } from 'mermaid'
 import { inject, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { useDeckMessages } from '../../composables/useDeckMessages.ts'
+import { REVEAL_SYNC } from '../../config/injection-keys.ts'
 import { sharedFitScale } from '../../utils/diagram-fit.ts'
 
 const props = defineProps<{
@@ -24,7 +25,7 @@ defineSlots<{
 
 const messages = useDeckMessages()
 
-const revealSync = inject<(() => void) | undefined>('revealSync', undefined)
+const revealSync = inject(REVEAL_SYNC, undefined)
 
 // Flowchart node ids look like `flowchart-A-12`, edge paths like `L_A_B_0`; node ids
 // in the source must stay free of `-` and `_` for the edge match.

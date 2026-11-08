@@ -28,6 +28,7 @@ describe('component reference', () => {
     expect(() => readComponent(component('import type { Props } from \'./props\'\ndefineProps<Props>()'))).toThrow()
     expect(() => readComponent(component('interface Base { a?: string }\ninterface Props extends Base { b?: string }\ndefineProps<Props>()'))).toThrow(/declare defineProps/)
     expect(() => readComponent(component('defineProps({ a: String })'))).toThrow(/declare defineProps/)
+    expect(() => readComponent(component('defineProps<{\n/** A. @symbol picto @fr B */\na?: string }>()'))).toThrow(/@symbol takes/)
   })
 
   it('asks for a JSDoc comment on each prop and slot', () => {

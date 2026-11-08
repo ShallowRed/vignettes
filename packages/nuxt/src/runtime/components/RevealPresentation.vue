@@ -7,7 +7,7 @@ import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useReveal } from '../composables/useReveal.ts'
 import { useTheme } from '../composables/useTheme.ts'
-import { DECK_MESSAGES_KEY } from '../config/injection-keys.ts'
+import { DECK_MESSAGES_KEY, REVEAL_SYNC } from '../config/injection-keys.ts'
 import DeckControls from './DeckControls.vue'
 import 'reveal.js/dist/reveal.css'
 import '../assets/code-theme.css'
@@ -160,8 +160,7 @@ async function exportPptxFile() {
 const { initialize, destroy, getInstance, sync, slide, getIndices } = useReveal(revealContainer, effectiveConfig, messages.value)
 
 // Let MDC components trigger a Reveal sync after dynamic content changes.
-provide('revealSync', sync)
-provide('revealInstance', getInstance)
+provide(REVEAL_SYNC, sync)
 
 // The integrated editor drives the preview to the slide under the cursor.
 defineExpose({ slide, getIndices, getInstance, sync })

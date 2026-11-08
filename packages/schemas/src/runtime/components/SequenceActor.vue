@@ -17,11 +17,13 @@ interface Props {
   title?: string
   /**
    * Remix icon, `ri:user-line`, lighter than a pictogram.
+   * @symbol icon
    * @fr Icône Remix, `ri:user-line`, plus légère qu'un pictogramme.
    */
   icon?: string
   /**
    * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @symbol pictogram
    * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
    */
   picto?: string

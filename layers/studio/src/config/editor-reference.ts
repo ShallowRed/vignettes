@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
-import type { ComponentExample, DeckComponent, DeckComponentGroup, LocalizedText } from '@vignettes/core/deck'
+import type { ComponentExample, DeckComponent, DeckComponentGroup, LocalizedText, SymbolKind } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage } from '@vignettes/core/deck'
 import { CODE_THEMES } from '@vignettes/core/render'
@@ -191,6 +191,7 @@ export interface ComponentAttributeEntry {
   values?: readonly string[]
   boolean?: boolean
   default?: string
+  symbol?: SymbolKind
   description: string
 }
 

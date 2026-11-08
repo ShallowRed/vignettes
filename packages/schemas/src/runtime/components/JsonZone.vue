@@ -17,11 +17,13 @@ interface Props {
   spot?: string
   /**
    * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @symbol pictogram
    * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
    */
   picto?: string
   /**
    * Remix icon (`ri:shield-check-line`), sharper than a pictogram at the xs and sm sizes.
+   * @symbol icon
    * @fr Icône Remix (`ri:shield-check-line`), plus nette qu'un pictogramme aux tailles xs et sm.
    */
   icon?: string

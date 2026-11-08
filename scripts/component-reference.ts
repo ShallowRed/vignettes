@@ -7,16 +7,17 @@
  * content from the `defineProps`, `withDefaults` and `defineSlots` of its Vue
  * file and their JSDoc. It writes the attributes as data too, in the
  * `component-attributes.ts` of the package, which the editor reads with the
- * French description that a prop's JSDoc gives after `@fr`.
+ * French description that a prop's JSDoc gives after `@fr` and the kind of
+ * symbol it names after `@symbol`.
  * `test/unit/component-reference.test.ts` fails when a README or a data file
  * drifts from its components.
  */
-import type { ComponentAttribute, DeckComponent } from '@vignettes/core/deck'
+import type { ComponentAttribute, DeckComponent, SymbolKind } from '@vignettes/core/deck'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { BUILT_IN_COMPONENTS, exampleSource } from '@vignettes/core/deck'
+import { BUILT_IN_COMPONENTS, exampleSource, SYMBOL_KINDS } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { compileScript, parse } from 'vue/compiler-sfc'
@@ -36,6 +37,8 @@ interface Entry {
   description: string
   /** The description after `@fr` in the JSDoc. */
   fr?: string
+  /** What the value of a prop names, after `@symbol` in the JSDoc. */
+  symbol?: SymbolKind
 }
 
 interface ComponentApi {
@@ -57,15 +60,20 @@ function walk(node: unknown, visit: (node: Node) => void): void {
   }
 }
 
-function jsdoc(node: Node): { description: string, fr?: string } {
+const SYMBOL_TAG = /\s*@symbol\s+(\S+)/
+
+function jsdoc(node: Node): { description: string, fr?: string, symbol?: SymbolKind } {
   const comment = node.leadingComments?.findLast(c => c.type === 'CommentBlock' && c.value.startsWith('*'))
-  const [description, fr] = (comment?.value ?? '')
+  const text = (comment?.value ?? '')
     .split('\n')
     .map(line => line.replace(/^\s*\*+\s?/, '').trim())
     .filter(Boolean)
     .join(' ')
-    .split(/\s*@fr\s+/)
-  return { description: description ?? '', fr }
+  const symbol = SYMBOL_TAG.exec(text)?.[1] as SymbolKind | undefined
+  if (symbol && !SYMBOL_KINDS.includes(symbol))
+    throw new Error(`@symbol takes ${SYMBOL_KINDS.join(' or ')}, not ${symbol}: ${text}`)
+  const [description, fr] = text.replace(SYMBOL_TAG, '').split(/\s*@fr\s+/)
+  return { description: description ?? '', fr, ...(symbol ? { symbol } : {}) }
 }
 
 function callee(node: Node, name: string): boolean {
@@ -173,6 +181,7 @@ export function componentAttribute(prop: ComponentApi['props'][number], file: st
     ...(prop.type !== 'boolean' && members.includes('boolean') ? { acceptsTrue: true } : {}),
     ...(prop.optional ? {} : { required: true }),
     ...(fallback === undefined ? {} : { default: fallback }),
+    ...(prop.symbol ? { symbol: prop.symbol } : {}),
     description: { fr: prop.fr, en: prop.description },
   }
 }
@@ -191,6 +200,8 @@ function attributeSource(attribute: ComponentAttribute): string {
     fields.push('required: true')
   if (attribute.default !== undefined)
     fields.push(`default: ${quoted(attribute.default)}`)
+  if (attribute.symbol)
+    fields.push(`symbol: ${quoted(attribute.symbol)}`)
   fields.push(`description: { fr: ${quoted(attribute.description.fr!)}, en: ${quoted(attribute.description.en!)} }`)
   return `    { ${fields.join(', ')} },`
 }

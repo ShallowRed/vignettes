@@ -6,6 +6,7 @@ import { computed } from 'vue'
 interface Props {
   /**
    * Iconify name of the icon, `ri:home-line`; the Remix class `ri-home-line` works too.
+   * @symbol icon
    * @fr Nom Iconify de l'icône, `ri:home-line` ; la classe Remix `ri-home-line` fonctionne aussi.
    */
   name: string

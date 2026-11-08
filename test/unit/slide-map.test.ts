@@ -1,6 +1,7 @@
 import type { PresentationData } from '../../packages/nuxt/src/runtime/types/presentation.ts'
 import { componentMentions, registerDeckComponents, resetDeckComponents, slideRanges } from '@vignettes/core/deck'
-import { afterEach, describe, expect, it } from 'vitest'
+import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 import { fragmentAtLine, slideAtLine, slidePlace, unknownDeckComponents } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
 
@@ -97,6 +98,8 @@ describe('slidePlace', () => {
 })
 
 describe('fragmentAtLine', () => {
+  beforeEach(() => registerDeckComponents(SCHEMA_COMPONENTS))
+
   const deck = [
     '---', // 1
     'parser: separator', // 2
@@ -132,6 +135,18 @@ describe('fragmentAtLine', () => {
     '::', // 32
     '', // 33
     'after', // 34
+    '---', // 35
+    ':::Sequence', // 36
+    '::Actor{id="a"}', // 37
+    '::', // 38
+    '::Message{from="a" to="a"}', // 39
+    '::', // 40
+    '::State{step="2" label="S"}', // 41
+    '::', // 42
+    '::Remark{step="1" over="a"}', // 43
+    'note', // 44
+    '::', // 45
+    ':::', // 46
   ].join('\n')
   const ranges = slideRanges(deck, 'separator')
   const at = (line: number) => fragmentAtLine(deck, ranges, line)
@@ -156,6 +171,13 @@ describe('fragmentAtLine', () => {
     expect(at(22)).toBe(1)
     expect(at(24)).toBe(0)
     expect(at(26)).toBe(1)
+  })
+
+  it('counts the rows of a sequence, its participants left out', () => {
+    expect(at(37)).toBe(-1)
+    expect(at(39)).toBe(0)
+    expect(at(41)).toBe(2)
+    expect(at(44)).toBe(1)
   })
 
   it('counts each item of a fragments block and stops at its close', () => {

@@ -1,0 +1,8 @@
+title: Aperçu d'une séquence à l'étape du curseur
+decks:
+  - slug: recette-sequence
+    file: test/recette/decks/recette-sequence.md
+checks:
+  - account: owner
+    page: /edit/recette-sequence
+    expect: Avec le bouton « Afficher les éléments un par un » de l'aperçu activé, le curseur sur la ligne du message « Réponse » affiche les messages « Demande » et « Réponse », sans la remarque.

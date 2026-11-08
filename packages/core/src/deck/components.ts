@@ -143,6 +143,8 @@ export interface ComponentAttribute {
   required?: boolean
   /** The value its absence gives. */
   default?: string
+  /** What its value names, which an editor completes and lists in its panel of symbols. */
+  symbol?: SymbolKind
   description: LocalizedText
 }
 
@@ -176,6 +178,13 @@ export interface DeckComponent {
   attributes?: readonly ComponentAttribute[]
   /** The component it is written in: an editor offers it inside that one, in place of the others, and nowhere else. */
   parent?: string
+  /**
+   * How it counts in the Reveal fragments of its `parent`, which an editor reads
+   * to open the preview at the step under the cursor. `step` is a fragment of its
+   * own, in writing order or at its `step`; `link` appears with the later of the
+   * two children its `from` and `to` name.
+   */
+  fragment?: 'step' | 'link'
   /** How `:layout` shows it when it is written alone in a slide body (see `bodyMediaLayout`). */
   layout?: BodyMediaLayoutSpec
 }
@@ -377,18 +386,8 @@ export function fullSlideComponentNames(): string[] {
 }
 
 /** What an attribute value names: a Remix icon (`ri:home-line`) or a pictogram under `/pictograms` (`digital/coding`). */
-export type SymbolKind = 'icon' | 'pictogram'
-
-/**
- * The kind of symbol an attribute of a component names: `icon` takes a Remix
- * icon and `picto` a pictogram on every component, `name` a Remix icon on
- * `IconInline`. The component goes by its declared name.
- */
-export function symbolAttribute(component: string, attribute: string): SymbolKind | undefined {
-  if (attribute === 'icon' || (component === 'IconInline' && attribute === 'name'))
-    return 'icon'
-  return attribute === 'picto' ? 'pictogram' : undefined
-}
+export const SYMBOL_KINDS = ['icon', 'pictogram'] as const
+export type SymbolKind = typeof SYMBOL_KINDS[number]
 
 /**
  * Normalise an icon name to the Iconify form (`ri:home-line`). Accepts the Remix

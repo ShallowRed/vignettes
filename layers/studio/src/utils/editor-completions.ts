@@ -5,7 +5,7 @@ import type { SymbolKind } from '@vignettes/core/deck'
 import type { ComponentAttributeEntry, FrontmatterKey, ReferenceEntry, Translate } from '../config/editor-reference'
 import { autocompletion, CompletionContext, completionStatus, snippet, snippetCompletion, startCompletion } from '@codemirror/autocomplete'
 import { Decoration, keymap, ViewPlugin, WidgetType } from '@codemirror/view'
-import { attributedDirective, blocksAround, codeLines, componentKey, symbolAttribute } from '@vignettes/core/deck'
+import { attributedDirective, blocksAround, codeLines, componentKey } from '@vignettes/core/deck'
 import { annotationEntries, childEntries, componentAttributeEntries, componentEntries } from '../config/editor-reference'
 import { emptyValueKey, frontmatterGuide, inFrontmatter as inFrontmatterLine } from './editor-frontmatter'
 import { directiveAt } from './editor-properties'
@@ -148,7 +148,7 @@ export function bodySource(options: CompletionOptions, t: Translate) {
       const values = attribute?.values ?? (attribute?.boolean && name.startsWith(':') ? ['true', 'false'] : undefined)
       if (attribute && values)
         return { from: context.pos - typed.length, options: valueCompletions(values, attribute.default, quote ? '' : '"', t) }
-      const symbol = attribute && symbolAttribute(attributedDirective(tag)!.name, attribute.name)
+      const symbol = attribute?.symbol
       return symbol ? symbolCompletions(context.state, symbol, context.pos - typed.length, typed, quote ? '' : '"', { t, browse: browseSymbols }) : null
     }
 
@@ -167,7 +167,7 @@ export function bodySource(options: CompletionOptions, t: Translate) {
         from: context.pos - attributeWord.length,
         options: attributes
           .filter(attribute => !written.has(componentKey(attribute.name)))
-          .map((attribute, index) => ({ ...attributeCompletion(attribute, attributeWord.startsWith(':'), Boolean(symbolAttribute(directive.name, attribute.name)), docs, t), boost: -index })),
+          .map((attribute, index) => ({ ...attributeCompletion(attribute, attributeWord.startsWith(':'), Boolean(attribute.symbol), docs, t), boost: -index })),
         validFor: /^:?[\w-]*$/,
       }
     }
@@ -182,7 +182,7 @@ export function bodySource(options: CompletionOptions, t: Translate) {
         const values = attribute?.values ?? (attribute?.boolean ? ['true', 'false'] : undefined)
         if (attribute && values)
           return { from: context.pos - yamlValue[2]!.length, options: valueCompletions(values, attribute.default, '', t), validFor: /^\S*$/ }
-        const symbol = attribute && symbolAttribute(attributedDirective(yamlTag)!.name, attribute.name)
+        const symbol = attribute?.symbol
         return symbol ? symbolCompletions(context.state, symbol, context.pos - yamlValue[2]!.length, yamlValue[2]!, '', { t, browse: browseSymbols }) : null
       }
       const yamlKey = /^\s*([\w-]*)$/.exec(before)

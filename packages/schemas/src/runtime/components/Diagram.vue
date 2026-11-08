@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DiagramEdgeRegistration, DiagramNodeRegistration, DiagramSide } from '../injection-keys.ts'
+import { REVEAL_SYNC } from '@vignettes/nuxt/injection-keys'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { rankedLayout } from '../diagram-layout.ts'
 import { DIAGRAM } from '../injection-keys.ts'
@@ -105,7 +106,7 @@ const root = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLElement | null>(null)
 const svg = ref<SVGSVGElement | null>(null)
 const svgLabels = ref<SVGSVGElement | null>(null)
-const revealSync = inject<(() => void) | undefined>('revealSync', undefined)
+const revealSync = inject(REVEAL_SYNC, undefined)
 
 const nodes: DiagramNodeRegistration[] = []
 const edges: DiagramEdgeRegistration[] = []

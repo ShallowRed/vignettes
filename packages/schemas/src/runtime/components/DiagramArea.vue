@@ -24,11 +24,13 @@ interface Props {
   title?: string
   /**
    * Pictogram, as its path under `/pictograms` without the extension: `digital/coding`.
+   * @symbol pictogram
    * @fr Pictogramme, par son chemin sous `/pictograms` sans l'extension : `digital/coding`.
    */
   picto?: string
   /**
    * Remix icon (`ri:server-line`), lighter than a pictogram on a dense diagram.
+   * @symbol icon
    * @fr Icône Remix (`ri:server-line`), plus légère qu'un pictogramme dans un diagramme chargé.
    */
   icon?: string

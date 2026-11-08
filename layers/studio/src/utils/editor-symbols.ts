@@ -5,7 +5,7 @@ import type { Translate } from '../config/editor-reference'
 import type { ComponentAtCursor } from './editor-properties'
 import { insertCompletionText, pickedCompletion } from '@codemirror/autocomplete'
 import { addCollection, buildIcon, loadIcon } from '@iconify/vue'
-import { attributedDirective, attributeNamed, normalizeIconName, splitFrontmatter, symbolAttribute, valueMentions } from '@vignettes/core/deck'
+import { attributedDirective, attributeNamed, normalizeIconName, splitFrontmatter, valueMentions } from '@vignettes/core/deck'
 import { getDefaultTheme, themeLineage } from '@vignettes/core/theme'
 import { SYMBOL_WORDS } from '../config/symbol-words'
 import { attributeChange, componentAt } from './editor-properties'
@@ -132,7 +132,7 @@ export function symbolsInDeck(text: string): Record<SymbolKind, string[]> {
   for (const { tag, name, value } of valueMentions(text)) {
     const directive = attributedDirective(tag)
     const attribute = directive && attributeNamed(directive, name)
-    const kind = attribute && symbolAttribute(directive.name, attribute.name)
+    const kind = attribute?.symbol
     if (kind === 'pictogram')
       found.pictogram.add(value)
     else if (kind === 'icon' && /^ri[:-]./.test(value))
@@ -151,7 +151,7 @@ export interface SymbolPlacement {
 
 export function symbolPlacement(state: EditorState, kind: SymbolKind): SymbolPlacement | undefined {
   const component = componentAt(state)
-  const attribute = component?.directive.attributes?.find(entry => symbolAttribute(component.directive.name, entry.name) === kind)
+  const attribute = component?.directive.attributes?.find(entry => entry.symbol === kind)
   return component && attribute
     ? { component, attribute, written: component.written.some(entry => entry.attribute === attribute) }
     : undefined

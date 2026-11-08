@@ -16,7 +16,7 @@ export const BUILT_IN_ATTRIBUTES: Readonly<Record<string, readonly ComponentAttr
     { name: 'collapse', boolean: true, default: 'false', description: { fr: 'Avec un effet qui montre un élément à son étape, les éléments encore cachés ne prennent pas de place : la diapositive se recompose à chaque étape, et l\'élément apparaît en fondu.', en: 'With an effect that shows an item at its step, the items still hidden take no space: the slide lays out its content again at each step, and an item appears with a fade.' } },
   ],
   IconInline: [
-    { name: 'name', required: true, description: { fr: 'Nom Iconify de l\'icône, `ri:home-line` ; la classe Remix `ri-home-line` fonctionne aussi.', en: 'Iconify name of the icon, `ri:home-line`; the Remix class `ri-home-line` works too.' } },
+    { name: 'name', required: true, symbol: 'icon', description: { fr: 'Nom Iconify de l\'icône, `ri:home-line` ; la classe Remix `ri-home-line` fonctionne aussi.', en: 'Iconify name of the icon, `ri:home-line`; the Remix class `ri-home-line` works too.' } },
     { name: 'size', default: '1.2em', description: { fr: 'Taille CSS de l\'icône.', en: 'CSS size of the icon.' } },
   ],
   Columns: [

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject, onMounted, ref } from 'vue'
+import { REVEAL_SYNC } from '../../config/injection-keys.ts'
 import { fragmentEffects } from '../../utils/fragment-effects.ts'
 
 // Turns each direct child (each item of a direct list) into a Reveal fragment,
@@ -34,7 +35,7 @@ defineSlots<{
 }>()
 
 const root = ref<HTMLElement | null>(null)
-const revealSync = inject<(() => void) | undefined>('revealSync', undefined)
+const revealSync = inject(REVEAL_SYNC, undefined)
 
 onMounted(() => {
   if (!root.value)

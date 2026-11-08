@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SequenceRegistry } from '../injection-keys.ts'
+import { REVEAL_SYNC } from '@vignettes/nuxt/injection-keys'
 import { computed, inject, nextTick, onMounted, provide, reactive, ref } from 'vue'
 import { SEQUENCE } from '../injection-keys.ts'
 import { actorColumn, entrySteps } from '../sequence-grid.ts'
@@ -44,7 +45,7 @@ defineSlots<{
 }>()
 
 const root = ref<HTMLElement | null>(null)
-const revealSync = inject<(() => void) | undefined>('revealSync', undefined)
+const revealSync = inject(REVEAL_SYNC, undefined)
 
 const actors = reactive<string[]>([])
 const rowCount = ref(0)
