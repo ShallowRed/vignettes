@@ -1,7 +1,10 @@
 import type { BodyMediaLayoutSpec, ComponentAttribute } from './components.ts'
+import type { OpenBlock } from './scan.ts'
+import type { TextChange } from './text-edits.ts'
 import { z } from 'zod'
 import { attributeSource } from './attributes.ts'
-import { componentKey, deckComponents } from './components.ts'
+import { componentKey, deckComponentNamed, deckComponents } from './components.ts'
+import { ATX_RE, BLOCK_CLOSE_RE, blockAttributes, COMPONENT_LINE_RE, MARKDOWN_IMAGE_LINE_RE, proseLines, walk } from './scan.ts'
 
 /**
  * The settings of `:layout`, as data: the attributes an author writes, the
@@ -478,4 +481,175 @@ export function bodyMediaLayout(media: { component: string, attributes: Readonly
   if (spec?.type && !next.type && typeof next.src === 'string' && inferMediaType(next.src) !== spec.type)
     next.type = spec.type
   return next
+}
+
+/** An attribute written in a `:layout` annotation: its value, `true` when written alone, and its place in the line. */
+export interface LayoutAnnotationAttribute {
+  name: string
+  value: string | true
+  /** 0-based column, and length of the attribute's text. */
+  column: number
+  length: number
+}
+
+/** A `:layout{…}` annotation written in the source. */
+export interface LayoutAnnotation {
+  /** 1-based line in the whole document. */
+  line: number
+  /** 0-based column of `:layout`, and length of the annotation's text. */
+  column: number
+  length: number
+  attributes: LayoutAnnotationAttribute[]
+}
+
+const LAYOUT_ANNOTATION_RE = /:layout\{([^{}]*)\}/g
+
+/** The `:layout` annotations of a deck, outside the frontmatter, fenced code and inline code. */
+export function layoutAnnotations(raw: string): LayoutAnnotation[] {
+  const annotations: LayoutAnnotation[] = []
+  for (const { line, prose } of proseLines(raw)) {
+    for (const block of prose.matchAll(LAYOUT_ANNOTATION_RE)) {
+      const attributes = [...blockAttributes(block[1]!, block.index + ':layout{'.length)]
+        .map(({ value, ...attribute }) => ({ ...attribute, value: value ?? true as const }))
+      annotations.push({ line, column: block.index, length: block[0].length, attributes })
+    }
+  }
+  return annotations
+}
+
+/** The attributes of an annotation, by name, as `readLayout` reads them. */
+export function layoutAnnotationValues(annotation: LayoutAnnotation): Record<string, string | true> {
+  return Object.fromEntries(annotation.attributes.map(attribute => [attribute.name, attribute.value]))
+}
+
+/**
+ * The change that writes `source` in place of an annotation of `raw`. An empty
+ * `source` removes the annotation, and the annotation alone on its line goes
+ * with its line and the blank line after it.
+ */
+export function layoutAnnotationChange(raw: string, annotation: LayoutAnnotation, source: string): TextChange {
+  const lines = raw.split('\n')
+  const lineFrom = lines.slice(0, annotation.line - 1).reduce((offset, line) => offset + line.length + 1, 0)
+  const text = lines[annotation.line - 1]!
+  const from = lineFrom + annotation.column
+  const to = from + annotation.length
+  if (source || text.trim() !== raw.slice(from, to))
+    return { from, to, insert: source }
+  const next = lines[annotation.line]
+  const end = lineFrom + text.length + (next !== undefined && !next.trim() ? next.length + 1 : 0)
+  return { from: lineFrom, to: Math.min(end + 1, raw.length), insert: '' }
+}
+
+/** An attribute of a `:layout` annotation that `readLayout` leaves out, placed in the source; `legacyMentions` places the attributes it translates. */
+export interface LayoutMention {
+  kind: Exclude<LayoutIssueKind, 'legacy'>
+  attribute: string
+  /** 1-based line, 0-based column and length of the marked text: the attribute, or the annotation when it names no attribute. */
+  line: number
+  column: number
+  length: number
+}
+
+/** The issues `readLayout` finds in each `:layout` annotation of a deck, placed on their attribute. */
+export function layoutMentions(raw: string): LayoutMention[] {
+  return layoutAnnotations(raw).flatMap((annotation) => {
+    const { issues } = readLayout(layoutAnnotationValues(annotation))
+    return issues.flatMap(({ kind, attribute }) => kind === 'legacy' ? [] : [{ kind, attribute }]).map((issue) => {
+      const written = annotation.attributes.find(attribute => attribute.name === issue.attribute)
+      return {
+        ...issue,
+        line: annotation.line,
+        column: written?.column ?? annotation.column,
+        length: written?.length ?? annotation.length,
+      }
+    })
+  })
+}
+
+/** A media written alone on a top-level line of a slide body, or as a block of its own. */
+export interface BodyMedia {
+  /** The component that draws it, by its declared name; `image` for a markdown image. */
+  component: string
+  /** Its attributes as written; a markdown image gives `src` and `alt`. */
+  attributes: Record<string, string | true>
+  /** 1-based first and last lines in the slide text, the closing line of a block included. */
+  from: number
+  to: number
+  /**
+   * `:layout` can show it as its component does: it is the only media of the
+   * slide, it holds no content, label or title, and `:layout` takes each of
+   * its attributes.
+   */
+  movable: boolean
+}
+
+const MEDIA_GROUPS = new Set(['media', 'storybook'])
+
+/**
+ * A media as the walk finds it: how `:layout` shows it, whether its block holds
+ * content, whether it carries a label or a title.
+ */
+type FoundMedia = Omit<BodyMedia, 'movable'> & { spec?: BodyMediaLayoutSpec, content: boolean, captioned: boolean }
+
+/** The attributes of a `{…}` block, by name; an attribute written alone is `true`. */
+function writtenAttributes(content = ''): Record<string, string | true> {
+  return Object.fromEntries([...blockAttributes(content, 0)].map(attribute => [attribute.name, attribute.value ?? true]))
+}
+
+/** Whether the line at `index` stands apart: after a blank line, a heading or the end of a block, and before a blank line. */
+function isApart(lines: readonly string[], index: number): boolean {
+  const previous = lines[index - 1]
+  const next = lines[index + 1]
+  const before = previous === undefined || !previous.trim() || ATX_RE.test(previous) || BLOCK_CLOSE_RE.test(previous)
+  return before && (next === undefined || !next.trim())
+}
+
+/** The media of a slide body, from the text of one slide as `splitSlides` gives it. */
+export function bodyMedia(text: string): BodyMedia[] {
+  const lines = text.split('\n')
+  const found: FoundMedia[] = []
+  let block: { media: FoundMedia, open: OpenBlock } | undefined
+  // `walk` yields one array of open blocks, which it changes: its length before the line is kept.
+  let openBefore = 0
+  for (const { index, text: line, code, open } of walk(lines, 0)) {
+    const before = openBefore
+    openBefore = open.length
+    if (block) {
+      if (!open.includes(block.open)) {
+        found.push({ ...block.media, to: index + 1 })
+        block = undefined
+      }
+      else if (line.trim() && open.length === 1) {
+        block.media.content = true
+      }
+      continue
+    }
+    // A media of the body starts its line; an image or an inline component also
+    // stands apart from the text around it, or it belongs to a paragraph.
+    if (code || before || !/^\S/.test(line))
+      continue
+    const apart = isApart(lines, index)
+    const image = apart && MARKDOWN_IMAGE_LINE_RE.exec(line)
+    if (image) {
+      found.push({ component: 'image', attributes: { src: image[2]!, alt: image[1]!, ...writtenAttributes(image[4]) }, from: index + 1, to: index + 1, spec: MARKDOWN_IMAGE_LAYOUT, content: false, captioned: Boolean(image[3]?.trim()) })
+      continue
+    }
+    const written = COMPONENT_LINE_RE.exec(line)
+    const component = written && deckComponentNamed(written[2]!)
+    if (!written || !component || !MEDIA_GROUPS.has(component.group ?? '') || (written[1]!.length === 1 && !apart))
+      continue
+    const media: FoundMedia = { component: component.name, attributes: writtenAttributes(written[4]), from: index + 1, to: index + 1, spec: component.layout, content: false, captioned: Boolean(written[3]) }
+    if (written[1]!.length > 1 && open.length === 1)
+      block = { media, open: open[0]! }
+    else
+      found.push(media)
+  }
+  if (block)
+    found.push({ ...block.media, to: lines.length })
+  return found.map(({ spec, content, captioned, ...media }) => {
+    const names = spec?.attributes
+    const taken = Boolean(names) && Object.keys(media.attributes).every(name => name in names!)
+    const movable = found.length === 1 && !content && !captioned && taken && !readLayout({ media: 'right', ...bodyMediaLayout(media) }).issues.length
+    return { ...media, movable }
+  })
 }

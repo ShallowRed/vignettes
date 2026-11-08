@@ -1,7 +1,10 @@
+import type { LayoutMention } from './layout.ts'
 import type { LegacyMention } from './legacy-forms.ts'
-import type { AttributeMention, ComponentAttributeIssue, LayoutMention, MalformedAttributes, OpenBlock } from './split.ts'
+import type { AttributeMention, ComponentAttributeIssue, MalformedAttributes } from './mentions.ts'
+import type { OpenBlock } from './scan.ts'
+import { layoutMentions } from './layout.ts'
 import { legacyMentions } from './legacy-forms.ts'
-import { attributeMentions, componentAttributeIssues, layoutMentions, malformedAttributeMentions, unclosedBlocks } from './split.ts'
+import { attributeMentions, componentAttributeIssues, malformedAttributeMentions, unclosedBlocks } from './mentions.ts'
 
 /**
  * An error breaks or drops content, a warning changes what the author probably

@@ -1,8 +1,8 @@
 import type { LocalizedText } from './components.ts'
-import type { TextChange } from './split.ts'
+import type { TextChange } from './text-edits.ts'
 import { frontmatterLineCount } from './frontmatter.ts'
-import { layoutSource, readLayout } from './layout.ts'
-import { layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, lineStarts } from './split.ts'
+import { layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, layoutSource, readLayout } from './layout.ts'
+import { lineStarts } from './text-edits.ts'
 
 /**
  * The forms of the earlier format that a deck may still hold and that a

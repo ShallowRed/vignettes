@@ -1,7 +1,9 @@
 import type { ParserId } from './parser.ts'
-import type { SlideTitle, TextChange } from './split.ts'
+import type { SlideTitle } from './split.ts'
+import type { TextChange } from './text-edits.ts'
 import type { TextRefusal } from './typed-text.ts'
-import { applyTextChanges, contentRange, lineStarts, slideTitle, splitSlides } from './split.ts'
+import { slideTitle, splitSlides } from './split.ts'
+import { applyTextChanges, contentRange, lineStarts } from './text-edits.ts'
 import { typedTextChange } from './typed-text.ts'
 
 /**

@@ -1,6 +1,8 @@
 import type { ParserId } from './parser.ts'
-import type { TextChange } from './split.ts'
-import { containerPrefix, escapeBlockStart, escapeHeadingClose, opensBlock, splitSlides, unclosedBlocks } from './split.ts'
+import type { TextChange } from './text-edits.ts'
+import { unclosedBlocks } from './mentions.ts'
+import { splitSlides } from './split.ts'
+import { containerPrefix, escapeBlockStart, escapeHeadingClose, opensBlock } from './text-edits.ts'
 
 /**
  * A text typed outside the source, on a slide of the preview or in the
