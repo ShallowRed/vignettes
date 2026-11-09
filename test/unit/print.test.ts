@@ -3,9 +3,9 @@ import {
   buildPrintPdfUrl,
   buildPrintView,
   createPrintRenderer,
-  DEFAULT_PRINT_HEIGHT,
-  DEFAULT_PRINT_WIDTH,
   DEFAULT_REVEAL_CONFIG,
+  DEFAULT_SLIDE_HEIGHT,
+  DEFAULT_SLIDE_WIDTH,
   PRINT_PDF_QUERY,
 } from '@vignettes/core/render'
 import { describe, expect, it } from 'vitest'
@@ -42,8 +42,8 @@ describe('buildPrintView', () => {
     expect(view.reveal.progress).toBe(false)
     expect(view.reveal.showNotes).toBe(false)
     // Pins a uniform page size + one page per slide so PDF pages are even.
-    expect(view.reveal.width).toBe(DEFAULT_PRINT_WIDTH)
-    expect(view.reveal.height).toBe(DEFAULT_PRINT_HEIGHT)
+    expect(view.reveal.width).toBe(DEFAULT_SLIDE_WIDTH)
+    expect(view.reveal.height).toBe(DEFAULT_SLIDE_HEIGHT)
     expect(view.reveal.pdfMaxPagesPerSlide).toBe(1)
     expect(view.reveal.preloadIframes).toBe(false)
     // Untouched defaults still flow through the shared merge.

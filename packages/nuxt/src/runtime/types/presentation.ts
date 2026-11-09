@@ -1,4 +1,4 @@
-import type { RevealConfig, Slide, ThemeBackgrounds } from '@vignettes/core/deck'
+import type { ParserId, RevealConfig, Slide, ThemeBackgrounds } from '@vignettes/core/deck'
 import type { PublicationStatus } from '@vignettes/core/status'
 
 export type { PublicationStatus, RevealConfig, Slide, ThemeBackgrounds }
@@ -11,7 +11,7 @@ export interface PresentationMeta {
   // Published Storybook root (no trailing `iframe.html`); resolves `:layout{story=…}` iframes.
   storybook?: string
   // 'separator' (the default) splits by --- / ----; 'heading' splits by H1/H2/H3.
-  parser?: 'heading' | 'separator'
+  parser?: ParserId
 }
 
 export interface PresentationMetadata extends PresentationMeta {

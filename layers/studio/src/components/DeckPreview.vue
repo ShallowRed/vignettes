@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DeckPreview } from '#shared/presentations'
 import { previewTokens } from '#shared/presentations'
+import { DEFAULT_SLIDE_WIDTH } from '@vignettes/core/render'
 import { getThemeTokens } from '@vignettes/core/theme'
 
 // A deck's title slide drawn in HTML and CSS: its background, its pretitle,
@@ -27,7 +28,7 @@ const style = computed(() => ({
 }))
 
 // The bloc marque keeps its size on the slide: it takes the scale of the card to
-// the slide width of the theme, Reveal's 960 pixels by default. The preview
+// the slide width of the theme, else to the default slide width. The preview
 // stylesheet of a theme that draws it styles it, as the theme does on the slides.
 const frame = ref<HTMLElement | null>(null)
 const width = ref(0)
@@ -39,7 +40,7 @@ onMounted(() => {
 })
 onUnmounted(() => observer?.disconnect())
 const brandZoom = computed(() => {
-  const slideWidth = Number(getThemeTokens(props.preview?.theme)?.reveal?.width) || 960
+  const slideWidth = Number(getThemeTokens(props.preview?.theme)?.reveal?.width) || DEFAULT_SLIDE_WIDTH
   return width.value / slideWidth
 })
 

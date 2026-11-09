@@ -1,5 +1,5 @@
-import type { ParserId } from './parser.ts'
 import type { ScannedLine } from './scan.ts'
+import type { ParserId } from './schema.ts'
 import { ANNOTATION_TAGS, componentKey, NOTES_COMPONENT } from './components.ts'
 import { frontmatterLineCount } from './frontmatter.ts'
 import { ATX_RE, COMPONENT_LINE_RE, MARKDOWN_IMAGE_LINE_RE, OTHER_BLOCK_RE, scan } from './scan.ts'

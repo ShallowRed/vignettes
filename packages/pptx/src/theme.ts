@@ -1,8 +1,8 @@
 import type { SlideRole } from './blocks.ts'
 import type { PptxFont } from './font.ts'
 import type { Box } from './layout.ts'
-import { DEFAULT_PRINT_HEIGHT, DEFAULT_PRINT_WIDTH, mergeRevealConfig } from '@vignettes/core/render'
-import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
+import { DEFAULT_SLIDE_HEIGHT, DEFAULT_SLIDE_WIDTH, mergeRevealConfig } from '@vignettes/core/render'
+import { deckThemeName, getThemeTokens } from '@vignettes/core/theme'
 import { fontFormat } from './font.ts'
 
 /** The look of the slides of one role. Colors are six hexadecimal digits, without `#`. */
@@ -116,14 +116,13 @@ function fixedMaster(meta: Readonly<Record<string, unknown>>): PptxMaster {
   const width = positive(reveal.width)
   const height = positive(reveal.height)
   const sized = width !== undefined && height !== undefined
-  const W = sized ? width : DEFAULT_PRINT_WIDTH
-  const H = sized ? height : DEFAULT_PRINT_HEIGHT
-  const theme = typeof meta.theme === 'string' && meta.theme ? meta.theme : getDefaultTheme()
+  const W = sized ? width : DEFAULT_SLIDE_WIDTH
+  const H = sized ? height : DEFAULT_SLIDE_HEIGHT
   return {
     width: W,
     height: H,
     padding: { x: Math.round(W * 0.06), y: Math.round(H * 0.05) },
-    font: fontName(getThemeTokens(theme)?.preview?.fontFamily) ?? FALLBACK_FONT,
+    font: fontName(getThemeTokens(deckThemeName(meta))?.preview?.fontFamily) ?? FALLBACK_FONT,
     mono: 'Courier New',
     title: '111111',
     text: '1A1A1A',

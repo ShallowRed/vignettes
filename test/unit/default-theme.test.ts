@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
-import { getDefaultTheme, setDefaultTheme, setThemeRegistry } from '@vignettes/core/theme'
+import { deckThemeName, getDefaultTheme, setDefaultTheme, setThemeRegistry, themedReveal } from '@vignettes/core/theme'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { defaultMetadata } from '../../packages/nuxt/src/runtime/config/presentation.ts'
 
@@ -33,6 +33,43 @@ describe('the fallback theme', () => {
     expect(defaultMetadata().theme).toBe('minimal')
     setDefaultTheme('brand')
     expect(defaultMetadata().theme).toBe('brand')
+  })
+})
+
+describe('deckThemeName', () => {
+  afterEach(() => setDefaultTheme(null))
+
+  it('keeps the name the frontmatter writes', () => {
+    expect(deckThemeName({ theme: 'brand' })).toBe('brand')
+  })
+
+  it.each([[undefined], [null], [''], [42]])('takes the fallback theme for %s', (theme) => {
+    setDefaultTheme('brand')
+    expect(deckThemeName({ theme })).toBe('brand')
+  })
+})
+
+describe('themedReveal', () => {
+  const tokens = { wide: { name: 'wide', reveal: { width: 1280, height: 720 } } }
+
+  afterEach(() => {
+    setThemeRegistry(null)
+    setDefaultTheme(null)
+  })
+
+  it('lays the options of the deck over those of its theme', () => {
+    setThemeRegistry({ tokens })
+    expect(themedReveal({ theme: 'wide', reveal: { height: 800, margin: 0.2 } })).toEqual({ width: 1280, height: 800, margin: 0.2 })
+  })
+
+  it('reads the fallback theme of a deck that declares none', () => {
+    setThemeRegistry({ tokens })
+    setDefaultTheme('wide')
+    expect(themedReveal({})).toEqual({ width: 1280, height: 720 })
+  })
+
+  it('leaves out the options the schema does not name', () => {
+    expect(themedReveal({ theme: 'absent', reveal: { width: 1200, dependencies: [{ src: 'data:text/javascript,alert(1)' }] } })).toEqual({ width: 1200 })
   })
 })
 

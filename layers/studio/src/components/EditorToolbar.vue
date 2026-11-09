@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { CommandPaletteGroup, CommandPaletteItem, DropdownMenuItem } from '@nuxt/ui'
+import type { ParserId } from '@vignettes/core/deck'
 import type { SketchShape } from '../config/editor-reference'
 import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
 import { inLanguage } from '@vignettes/core/deck'
@@ -16,7 +17,7 @@ const props = defineProps<{
   view?: EditorView
   disabled?: boolean
   /** How the deck splits its slides, which the slide templates follow. */
-  parser?: 'heading' | 'separator'
+  parser?: ParserId
   /** The help panel is open. */
   helpOpen?: boolean
   /** The deck draws the icons and the pictograms: the bar shows a button that opens their panel. */

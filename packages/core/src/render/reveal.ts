@@ -5,6 +5,10 @@ import { isUploadedFile } from '../deck/urls.ts'
 // Shared render helpers for the live composable and the frozen bundle: Reveal
 // defaults, the iframe sandbox policy, and asset-URL rebasing.
 
+/** The size of a slide whose deck and theme set none, in reveal.js logical units. */
+export const DEFAULT_SLIDE_WIDTH = 960
+export const DEFAULT_SLIDE_HEIGHT = 700
+
 // Per-deck `reveal:` frontmatter merges over these via mergeRevealConfig.
 export const DEFAULT_REVEAL_CONFIG: RevealConfig = {
   hash: true,

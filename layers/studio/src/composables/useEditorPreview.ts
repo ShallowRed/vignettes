@@ -8,8 +8,9 @@ import type { LineProblem } from '../utils/editor-problems'
 import type { useDocsAddress } from './useDocsAddress'
 import { completionStatus } from '@codemirror/autocomplete'
 import { EditorView } from '@codemirror/view'
-import { checkDeck, componentMentions, deckRevealOptions, parserIdFor, slideRanges, splitFrontmatter, valueMentions } from '@vignettes/core/deck'
-import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
+import { checkDeck, componentMentions, parserIdFor, slideRanges, splitFrontmatter, valueMentions } from '@vignettes/core/deck'
+import { DEFAULT_SLIDE_HEIGHT, DEFAULT_SLIDE_WIDTH } from '@vignettes/core/render'
+import { themedReveal } from '@vignettes/core/theme'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { fragmentAtLine, slideAtLine, unknownDeckComponents } from '@vignettes/nuxt/slide-map'
 import { listedFrontmatterProblems } from '../utils/editor-frontmatter'
@@ -204,14 +205,10 @@ export function useEditorPreview(options: EditorPreviewOptions) {
   // The slide proportions, so the preview frame matches the deck. Before the first
   // parse, the server render included, they come from the loaded text: its theme's
   // Reveal settings, then its own `reveal:`.
-  const loadedReveal = computed(() => {
-    const meta = splitFrontmatter(options.loadedText).data
-    const theme = typeof meta.theme === 'string' ? meta.theme : getDefaultTheme()
-    return { ...getThemeTokens(theme)?.reveal, ...deckRevealOptions(meta.reveal) }
-  })
+  const loadedReveal = computed(() => themedReveal(splitFrontmatter(options.loadedText).data))
   const previewRatio = computed(() => {
     const reveal = (preview.value?.metadata?.reveal ?? loadedReveal.value) as { width?: number, height?: number }
-    return (reveal.width ?? 960) / (reveal.height ?? 700)
+    return (reveal.width ?? DEFAULT_SLIDE_WIDTH) / (reveal.height ?? DEFAULT_SLIDE_HEIGHT)
   })
 
   // ── Reparse ────────────────────────────────────────────────────────────────

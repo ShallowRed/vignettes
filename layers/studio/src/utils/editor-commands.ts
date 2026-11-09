@@ -1,5 +1,6 @@
 import type { EditorState, Text, TransactionSpec } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
+import type { ParserId } from '@vignettes/core/deck'
 import { snippet } from '@codemirror/autocomplete'
 import { blockEndAround } from '@vignettes/core/deck'
 
@@ -118,7 +119,7 @@ function slideInsertPos(state: EditorState): number {
  * heading opens the slide and the leading `---` would add an empty one; split
  * by `---`, a content slide takes `###`, since a short `##` slide is a section.
  */
-export function slideTemplateFor(template: string, parser: 'heading' | 'separator', section = false): string {
+export function slideTemplateFor(template: string, parser: ParserId, section = false): string {
   if (parser === 'heading')
     return template.replace(/^---\n\n(?=#)/, '')
   return section ? template : template.replace(/^---\n\n## /, '---\n\n### ')

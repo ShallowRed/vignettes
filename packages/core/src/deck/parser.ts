@@ -1,17 +1,15 @@
 import type { Slide } from './model.ts'
-import type { DeckMeta } from './schema.ts'
-
-/**
- * Framework-agnostic parser contract. Implementations (heading, separator) depend
- * on the MDC runtime and live in `src/utils/slide-ast.ts`.
- */
-export type ParserId = 'heading' | 'separator'
+import type { DeckMeta, ParserId } from './schema.ts'
 
 export interface ParseOptions {
   /** Write on each element of a slide the range of its source (`SOURCE_ATTRIBUTE` of `@vignettes/core/render`), for the editor's preview. */
   sourcePositions?: boolean
 }
 
+/**
+ * Framework-agnostic parser contract. Implementations (heading, separator) depend
+ * on the MDC runtime and are in `packages/nuxt/src/runtime/utils/slide-ast.ts`.
+ */
 export interface DeckParser {
   /** Matches the deck's `syntax.split`. */
   readonly id: ParserId

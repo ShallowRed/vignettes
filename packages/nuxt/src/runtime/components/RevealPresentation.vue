@@ -3,7 +3,7 @@ import type { RevealApi } from 'reveal.js'
 import type { PresentationData, RevealConfig } from '../types/presentation.ts'
 import { useRequestURL } from '#imports'
 import { buildPrintPdfUrl, buildPrintView, codeThemeStyle, deckMessages, inSpeakerViewFrame, mergeRevealConfig, PRINT_PDF_QUERY } from '@vignettes/core/render'
-import { getDefaultTheme, getThemeTokens } from '@vignettes/core/theme'
+import { deckThemeName, getThemeTokens } from '@vignettes/core/theme'
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useReveal } from '../composables/useReveal.ts'
 import { useTheme } from '../composables/useTheme.ts'
@@ -47,7 +47,7 @@ const emit = defineEmits<{
   ready: [reveal: RevealApi]
 }>()
 
-const themeName = computed(() => props.theme || getDefaultTheme())
+const themeName = computed(() => deckThemeName(props))
 
 const revealContainer = ref<HTMLElement | null>(null)
 

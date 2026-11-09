@@ -11,7 +11,7 @@ Validated against `DeckMetaSchema` of `@vignettes/core/deck`. An unknown key is 
 - `title`
 - `lang`
 - `theme`
-- `syntax`, holding `split` (`heading`, `separator`)
+- `syntax`, holding `split` (`separator`, `heading`)
 - `storybook`
 - `backgrounds`, holding `h1`, `h2`, `h3`, `default`
 - `brand`

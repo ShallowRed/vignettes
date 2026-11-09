@@ -7,8 +7,8 @@ import { getThemeTokens } from '../theme/tokens.ts'
 export interface SlideBrand {
   lines: string[]
   operator?: { src: string, alt: string }
-  slides: 'cover' | 'all'
-  onDark: 'white' | 'color'
+  slides: NonNullable<DeckBrand['slides']>
+  onDark: NonNullable<DeckBrand['onDark']>
 }
 
 const DEFAULT_LINES = ['République', 'française']

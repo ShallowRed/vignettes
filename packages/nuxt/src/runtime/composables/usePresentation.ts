@@ -2,8 +2,8 @@ import type { ParseOptions } from '@vignettes/core/deck'
 import type { PresentationData } from '../types/presentation.ts'
 import { useAsyncData, useRequestFetch } from '#imports'
 import { parseMarkdown } from '@nuxtjs/mdc/runtime'
-import { deckRevealOptions, frontmatterSource, parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
-import { getThemeTokens } from '@vignettes/core/theme'
+import { frontmatterSource, parserIdFor, splitFrontmatter } from '@vignettes/core/deck'
+import { themedReveal } from '@vignettes/core/theme'
 import { defaultMetadata } from '../config/presentation.ts'
 import { PARSERS } from '../utils/slide-ast.ts'
 
@@ -24,9 +24,7 @@ export async function buildPresentationData(
     ...defaultMetadata(),
     ...(ast.data || {}),
   }
-  const themeReveal = getThemeTokens(metadata.theme)?.reveal
-  if (themeReveal || metadata.reveal)
-    metadata.reveal = { ...themeReveal, ...deckRevealOptions(metadata.reveal) }
+  metadata.reveal = themedReveal(metadata)
   // The deck's `syntax.split` selects heading vs separator via the shared port.
   const parser = PARSERS[parserIdFor(metadata)]
   // `?? []` keeps `slides` an array even if a parser degrades, so downstream

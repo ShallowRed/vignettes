@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 import { readTitleSlide, titleSlidePreview } from '#shared/presentations'
 import { splitFrontmatter } from '@vignettes/core/deck'
-import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
+import { deckThemeName, resolveThemeName } from '@vignettes/core/theme'
 import { publishedSource } from './sources'
 
 /**
@@ -14,7 +14,7 @@ export async function withPreviewImage(event: H3Event, page: string, deck: { slu
   if (!raw)
     return page
   const { data } = splitFrontmatter(raw)
-  const theme = resolveThemeName(typeof data.theme === 'string' ? data.theme : getDefaultTheme())
+  const theme = resolveThemeName(deckThemeName(data))
   const { background: _, ...preview } = titleSlidePreview(readTitleSlide(raw), theme)
   const title = preview.title ?? (typeof data.title === 'string' ? data.title : deck.slug)
   const url = getOgImageUrl(event, deck.alias ? `/p/${deck.alias}` : `/slides/${deck.slug}`, { component: 'Deck', props: { ...preview, title } })

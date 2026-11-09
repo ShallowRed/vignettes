@@ -55,11 +55,16 @@ export const ThemeBackgroundsSchema = z
   })
   .catchall(z.unknown())
 
+/** The two ways of cutting a deck into slides, the default one first. */
+export const ParserIdSchema = z.enum(['separator', 'heading'])
+
+export type ParserId = z.infer<typeof ParserIdSchema>
+
 /** How the deck's text is read, nested under `syntax:`. */
 export const SyntaxConfigSchema = z
   .object({
     /** The lines that open a slide: `---` and `----` (`separator`), or the headings (`heading`). */
-    split: z.enum(['heading', 'separator']).optional(),
+    split: ParserIdSchema.optional(),
   })
   .catchall(z.unknown())
 
@@ -119,7 +124,7 @@ export const DeckMetaSchema = z
     /** @deprecated legacy alias of `status`. */
     access: z.string().optional(),
     /** @deprecated legacy alias of `syntax.split`. */
-    parser: z.enum(['heading', 'separator']).optional(),
+    parser: ParserIdSchema.optional(),
     accessPassword: z.string().optional(),
   })
   .catchall(z.unknown())

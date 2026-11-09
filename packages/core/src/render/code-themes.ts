@@ -29,7 +29,7 @@ export interface CodeTheme {
   punctuation?: string
   /** Weight of the keys (400, 600, 700). */
   keyWeight?: number | string
-  /** Minimal font size of the code, in pixels of the slide (Reveal lays slides out at 960 × 700). */
+  /** Minimal font size of the code, in pixels of the slide. */
   size?: number | string
   /** Opacity of the lines outside the current zone of a JsonTour. */
   dim?: number | string

@@ -1,8 +1,8 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
 import type { ComponentExample, DeckComponent, DeckComponentGroup, LocalizedText, SymbolKind } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage } from '@vignettes/core/deck'
-import { CODE_THEMES } from '@vignettes/core/render'
+import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, DeckBrandSchema, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage, ParserIdSchema } from '@vignettes/core/deck'
+import { CODE_THEMES, DEFAULT_SLIDE_HEIGHT, DEFAULT_SLIDE_WIDTH } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
 /**
@@ -97,8 +97,8 @@ const BOOLEAN = ['true', 'false'] as const
 
 /** Reveal.js options a deck commonly sets, nested under `reveal:`. */
 const REVEAL_KEYS: readonly FrontmatterKey[] = [
-  { key: 'width', descriptionKey: 'reference.frontmatter.reveal.width', default: '960', snippet: 'width: 1280' },
-  { key: 'height', descriptionKey: 'reference.frontmatter.reveal.height', default: '700', snippet: 'height: 720' },
+  { key: 'width', descriptionKey: 'reference.frontmatter.reveal.width', default: String(DEFAULT_SLIDE_WIDTH), snippet: 'width: 1280' },
+  { key: 'height', descriptionKey: 'reference.frontmatter.reveal.height', default: String(DEFAULT_SLIDE_HEIGHT), snippet: 'height: 720' },
   { key: 'margin', descriptionKey: 'reference.frontmatter.reveal.margin', default: '0.1', snippet: 'margin: ${0.04}' },
   { key: 'slideNumber', descriptionKey: 'reference.frontmatter.reveal.slideNumber', values: ['"c/t"', '"h.v"', '"c"', 'true', 'false'], default: '"c/t"', snippet: 'slideNumber: ${false}' },
   { key: 'transition', descriptionKey: 'reference.frontmatter.reveal.transition', values: ['slide', 'fade', 'none', 'convex', 'concave', 'zoom'], default: 'slide', snippet: 'transition: ${fade}' },
@@ -127,13 +127,13 @@ const BRAND_KEYS: readonly FrontmatterKey[] = [
   { key: 'ministry', descriptionKey: 'reference.frontmatter.brand.ministry', snippet: 'ministry: [${Ministère}, ${de l\'Intérieur}]' },
   { key: 'operator', descriptionKey: 'reference.frontmatter.brand.operator', snippet: 'operator: ${/images/operateur.svg}' },
   { key: 'operatorAlt', descriptionKey: 'reference.frontmatter.brand.operatorAlt', snippet: { fr: 'operatorAlt: ${Nom de l\'opérateur}', en: 'operatorAlt: ${Operator name}' } },
-  { key: 'slides', descriptionKey: 'reference.frontmatter.brand.slides', values: ['cover', 'all'], default: 'cover', snippet: 'slides: ${all}' },
-  { key: 'onDark', descriptionKey: 'reference.frontmatter.brand.onDark', values: ['white', 'color'], default: 'white', snippet: 'onDark: ${color}' },
+  { key: 'slides', descriptionKey: 'reference.frontmatter.brand.slides', values: DeckBrandSchema.shape.slides.unwrap().options, default: 'cover', snippet: 'slides: ${all}' },
+  { key: 'onDark', descriptionKey: 'reference.frontmatter.brand.onDark', values: DeckBrandSchema.shape.onDark.unwrap().options, default: 'white', snippet: 'onDark: ${color}' },
 ]
 
 /** How the text is read, nested under `syntax:`. */
 const SYNTAX_KEYS: readonly FrontmatterKey[] = [
-  { key: 'split', descriptionKey: 'reference.frontmatter.syntax.split', values: ['separator', 'heading'], default: 'separator', snippet: 'split: ${heading}' },
+  { key: 'split', descriptionKey: 'reference.frontmatter.syntax.split', values: ParserIdSchema.options, default: 'separator', snippet: 'split: ${heading}' },
 ]
 
 /** Code theme properties, nested under `code:`; a name alone also works (`code: sombre`). */

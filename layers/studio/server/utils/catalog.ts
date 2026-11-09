@@ -7,7 +7,7 @@ import { canList, canShare, isPrivileged, mayEdit } from '#shared/access'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { readTitleSlide, titleSlidePreview, UNGROUPED_PROJECT } from '#shared/presentations'
 import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
-import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
+import { deckThemeName, resolveThemeName } from '@vignettes/core/theme'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
 import { useStores } from './db'
@@ -139,7 +139,6 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
   const grants = actor.id ? await useGrants().listForUser(actor.id) : new Map()
   // Resolving a deck's theme and background needs the tenant themes registered.
   await loadTenantThemes()
-  const fallbackTheme = getDefaultTheme()
 
   const privileged = isPrivileged(actor.role)
   const decks = await useDeckMeta().listManaged()
@@ -165,7 +164,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
     .map(deck => ({
       slug: deck.slug,
       title: deck.title,
-      theme: deck.theme || fallbackTheme,
+      theme: deckThemeName(deck),
       status: deck.status,
       filename: `${deck.slug}.md`,
       project: deck.project,
@@ -176,7 +175,7 @@ export async function listVisiblePresentations(event: H3Event): Promise<Presenta
       variantLabel: deck.variantLabel,
       supersededBy: deck.supersededBy,
       ...deckDates(stats.get(deck.slug), changed.has(deck.slug), unpublishedDrafts.get(deck.slug)),
-      ...deckPreview(stats.get(deck.slug), deck.theme || fallbackTheme),
+      ...deckPreview(stats.get(deck.slug), deckThemeName(deck)),
       ...(canEdit(deck) ? { canEdit: true } : {}),
       ...(changed.has(deck.slug) ? { unpublishedChanges: true } : {}),
       ...(mayShare(deck.slug) ? { canShare: true, hasPassword: Boolean(deck.accessPasswordHash) } : {}),

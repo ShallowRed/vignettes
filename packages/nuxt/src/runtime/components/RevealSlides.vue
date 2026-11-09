@@ -2,7 +2,7 @@
 import type { PresentationData, Slide } from '../types/presentation.ts'
 import { buildComponentMap } from '@vignettes/core/deck'
 import { behindMedia, deckBrand, showsBrand } from '@vignettes/core/render'
-import { getDefaultTheme } from '@vignettes/core/theme'
+import { deckThemeName } from '@vignettes/core/theme'
 import { computed, provide, resolveComponent } from 'vue'
 import { useSlideErrorBoundary } from '../composables/useSlideErrorBoundary.ts'
 import { useSlideIds } from '../composables/useSlideIds.ts'
@@ -26,7 +26,7 @@ const keys = computed(() => slideKeys(props.presentationData?.slides ?? []))
 
 const brand = computed(() => {
   const metadata = props.presentationData?.metadata ?? {}
-  return deckBrand({ ...metadata, theme: metadata.theme || getDefaultTheme() })
+  return deckBrand({ ...metadata, theme: deckThemeName(metadata) })
 })
 function branded(index: number, vIndex = 0): boolean {
   return showsBrand(brand.value, props.presentationData?.slides ?? [], index, vIndex)
@@ -54,7 +54,7 @@ function backgroundAttrs(slide: Pick<Slide, 'headingLevel' | 'section' | 'backgr
   return {
     'data-background-image': resolveSlideBackground(
       slide,
-      props.presentationData.metadata.theme || getDefaultTheme(),
+      deckThemeName(props.presentationData.metadata),
       props.presentationData.metadata.backgrounds,
     ),
     ...(behind ? { 'data-background-size': behind.fit, 'data-background-position': behind.position } : {}),

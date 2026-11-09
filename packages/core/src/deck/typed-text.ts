@@ -1,4 +1,4 @@
-import type { ParserId } from './parser.ts'
+import type { ParserId } from './schema.ts'
 import type { TextChange } from './text-edits.ts'
 import { unclosedBlocks } from './mentions.ts'
 import { splitSlides } from './split.ts'

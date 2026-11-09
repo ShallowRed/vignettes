@@ -6,7 +6,7 @@ import type { ComponentAtCursor } from './editor-properties'
 import { insertCompletionText, pickedCompletion } from '@codemirror/autocomplete'
 import { addCollection, buildIcon, loadIcon } from '@iconify/vue'
 import { attributedDirective, attributeNamed, normalizeIconName, splitFrontmatter, valueMentions } from '@vignettes/core/deck'
-import { getDefaultTheme, themeLineage } from '@vignettes/core/theme'
+import { deckThemeName, themeLineage } from '@vignettes/core/theme'
 import { SYMBOL_WORDS } from '../config/symbol-words'
 import { attributeChange, componentAt } from './editor-properties'
 
@@ -77,8 +77,7 @@ export function loadIconDrawings(): Promise<void> {
 
 /** The theme a deck declares builds on `dsfr`; a deck without `theme` takes the instance's fallback. */
 export function offersSymbols(text: string): boolean {
-  const theme = splitFrontmatter(text).data.theme
-  return themeLineage(typeof theme === 'string' ? theme : getDefaultTheme()).includes(SYMBOL_THEME)
+  return themeLineage(deckThemeName(splitFrontmatter(text).data)).includes(SYMBOL_THEME)
 }
 
 /** The value a deck writes for a symbol: `ri:home-line`, `digital/coding`. */

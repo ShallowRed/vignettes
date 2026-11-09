@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ParserId } from '@vignettes/core/deck'
 import { useCompletionKeys } from '../composables/useCompletionKeys'
 import { useDocsAddress } from '../composables/useDocsAddress'
 import {
@@ -15,7 +16,7 @@ import {
  * click. Same dataset as the autocompletion and the toolbar menu.
  */
 const props = withDefaults(defineProps<{
-  parser?: 'heading' | 'separator'
+  parser?: ParserId
   /** The shared draft saves itself, so the save shortcut does nothing. */
   autosave?: boolean
 }>(), {

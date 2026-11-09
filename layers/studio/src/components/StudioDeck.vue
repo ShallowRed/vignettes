@@ -5,7 +5,7 @@ import type { RevealApi } from 'reveal.js'
 import { loginHref } from '#shared/access'
 import { deckPath, parsedTitleSlide, titleSlidePreview } from '#shared/presentations'
 import { inSpeakerViewFrame } from '@vignettes/core/render'
-import { getDefaultTheme, resolveThemeName } from '@vignettes/core/theme'
+import { deckThemeName, resolveThemeName } from '@vignettes/core/theme'
 
 // A deck as the studio shows it: the Reveal presentation with the other
 // variants of its family the visitor may open, the commands of whoever may edit
@@ -33,7 +33,7 @@ useHead({ title: () => props.presentationData.metadata.title || props.slug })
 const { metadata, slides } = props.presentationData
 // The PowerPoint export, on trial: the presentation offers its command when it receives the deck.
 const pptxExport = useTrial('pptx-export')
-const { background: _, ...titleSlide } = titleSlidePreview(parsedTitleSlide(slides, metadata.backgrounds), resolveThemeName(metadata.theme || getDefaultTheme()))
+const { background: _, ...titleSlide } = titleSlidePreview(parsedTitleSlide(slides, metadata.backgrounds), resolveThemeName(deckThemeName(metadata)))
 const deckTitle = metadata.title || titleSlide.title || props.slug
 useSeoMeta({ ogTitle: deckTitle, description: titleSlide.subtitle, ogDescription: titleSlide.subtitle })
 defineOgImage('Deck', { ...titleSlide, title: titleSlide.title ?? deckTitle })

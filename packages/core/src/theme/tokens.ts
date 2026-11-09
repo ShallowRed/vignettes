@@ -1,4 +1,5 @@
 import type { DeckBrand, RevealConfig, ThemeBackgrounds } from '../deck/schema.ts'
+import { deckRevealOptions } from '../deck/schema.ts'
 import { THEME_ALIASES as BUILT_IN_ALIASES, THEME_TOKENS as BUILT_IN_TOKENS } from './tokens.generated.ts'
 
 // The data side of a theme (backgrounds, Reveal dimensions, language, parser),
@@ -118,4 +119,14 @@ export function setDefaultTheme(name: string | null | undefined): string {
 
 export function getDefaultTheme(): string {
   return defaultTheme
+}
+
+/** The theme a deck is drawn with: the name its frontmatter writes, else the fallback theme. */
+export function deckThemeName(meta: { theme?: unknown }): string {
+  return typeof meta.theme === 'string' && meta.theme ? meta.theme : getDefaultTheme()
+}
+
+/** The Reveal options of a deck: those of its theme, then those of its frontmatter. */
+export function themedReveal(meta: { theme?: unknown, reveal?: unknown }): RevealConfig {
+  return { ...getThemeTokens(deckThemeName(meta))?.reveal, ...deckRevealOptions(meta.reveal) }
 }

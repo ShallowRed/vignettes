@@ -1,6 +1,6 @@
 import type { DeckModel } from '../deck/model.ts'
 import type { RevealConfig } from '../deck/schema.ts'
-import { mergeRevealConfig } from './reveal.ts'
+import { DEFAULT_SLIDE_HEIGHT, DEFAULT_SLIDE_WIDTH, mergeRevealConfig } from './reveal.ts'
 
 /**
  * Print writer: what a caller needs to render a deck through reveal.js's own
@@ -22,15 +22,6 @@ export interface DeckRenderer<T = unknown> {
 
 /** Reveal.js print-pdf query flag — the native entry into its print stylesheet. */
 export const PRINT_PDF_QUERY = 'print-pdf'
-
-/**
- * Default printed page size (reveal.js logical units). Reveal paginates print
- * output against the slide `width`/`height`; without explicit dimensions it sizes
- * each page to its slide's natural content height, producing wildly uneven pages.
- * Pinning a size gives uniform, predictable pages (4:3, reveal's own default).
- */
-export const DEFAULT_PRINT_WIDTH = 960
-export const DEFAULT_PRINT_HEIGHT = 700
 
 export interface PrintOptions {
   /**
@@ -81,9 +72,11 @@ export function buildPrintView(model: DeckModel, options: PrintOptions): PrintVi
     controls: false,
     progress: false,
     showNotes: options.showNotes ?? false,
-    // Pin a page size so pages are uniform (keep the deck's own if it set one).
-    width: deckReveal?.width ?? DEFAULT_PRINT_WIDTH,
-    height: deckReveal?.height ?? DEFAULT_PRINT_HEIGHT,
+    // Reveal paginates print output against the slide size: without one, each
+    // page takes the natural height of its slide. A pinned size gives uniform
+    // pages (the deck's own size if it set one).
+    width: deckReveal?.width ?? DEFAULT_SLIDE_WIDTH,
+    height: deckReveal?.height ?? DEFAULT_SLIDE_HEIGHT,
     // Default to one page per slide so a tall slide doesn't spill into a giant
     // multi-screen page; callers can override via `maxPagesPerSlide`.
     pdfMaxPagesPerSlide: options.maxPagesPerSlide ?? 1,
