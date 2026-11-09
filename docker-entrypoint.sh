@@ -5,6 +5,9 @@
 # client-id/client-secret (le « secret zéro ») est fourni au conteneur.
 set -e
 
+# Whatever the mode, the command starts without the identity that reads the secrets.
+set -- env -u INFISICAL_TOKEN -u INFISICAL_CLIENT_ID -u INFISICAL_CLIENT_SECRET "$@"
+
 # Bypass explicite (debug / tests) : on lance l'app avec l'environnement courant.
 if [ "${INFISICAL_DISABLE:-0}" = "1" ] || [ -z "${INFISICAL_CLIENT_ID:-}" ]; then
   echo "[entrypoint] Infisical désactivé — démarrage direct (env courant)."
@@ -32,6 +35,9 @@ until INFISICAL_TOKEN="$(infisical login --method=universal-auth \
   echo "[entrypoint] Infisical injoignable, nouvelle tentative ($i)…" >&2
   sleep 2
 done
+# Any process of the same user can read the environment `infisical run` starts
+# with: only the token stays in it.
+unset INFISICAL_CLIENT_ID INFISICAL_CLIENT_SECRET
 export INFISICAL_TOKEN
 
 echo "[entrypoint] Injection des secrets (${INFISICAL_ENV}) + démarrage de l'app."

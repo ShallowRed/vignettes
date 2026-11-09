@@ -24,7 +24,7 @@ describe('the security headers plugin', () => {
   it('sets HSTS on a request the proxy received over https only', () => {
     const secure = request({ 'x-forwarded-proto': 'https' })
     hooks.request!(secure)
-    expect(getResponseHeader(secure, 'strict-transport-security')).toBe('max-age=31536000')
+    expect(getResponseHeader(secure, 'strict-transport-security')).toBe('max-age=63072000; includeSubDomains')
     const plain = request()
     hooks.request!(plain)
     expect(getResponseHeader(plain, 'strict-transport-security')).toBeUndefined()

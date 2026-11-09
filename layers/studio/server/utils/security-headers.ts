@@ -27,8 +27,8 @@ export const SECURITY_HEADERS = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), display-capture=()',
 }
 
-/** One year, the value the HSTS preload list asks for. */
-export const STRICT_TRANSPORT_SECURITY = 'max-age=31536000'
+/** Two years, for the host and its subdomains: each of them must answer over https. */
+export const STRICT_TRANSPORT_SECURITY = 'max-age=63072000; includeSubDomains'
 
 /**
  * Reveal's speaker view writes its page, and its one inline script, into a
