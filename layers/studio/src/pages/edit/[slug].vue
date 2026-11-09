@@ -25,7 +25,6 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery, useQueryCache } from '@pinia/colada'
-import { slideRanges } from '@vignettes/core/deck'
 import { SLIDE_RENDER_FAILURES } from '@vignettes/nuxt/injection-keys'
 import Codemirror from 'vue-codemirror6'
 import { deckApi } from '../../api'
@@ -38,6 +37,7 @@ import { useEditorImageUpload } from '../../composables/useEditorImageUpload'
 import { useEditorPreview } from '../../composables/useEditorPreview'
 import { LAYOUT_PROBE, useLayoutProbe } from '../../composables/useLayoutProbe'
 import { usePreviewSource } from '../../composables/usePreviewSource'
+import { useSlideTarget } from '../../composables/useSlideTarget'
 import { useSnapshotCapture } from '../../composables/useSnapshotCapture'
 import { presentationsQuery, projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
@@ -257,25 +257,13 @@ const layoutProbeInstance = useTemplateRef<LayoutProbeInstance>('layoutProbeInst
 const layoutProbe = useLayoutProbe({ preview, instance: layoutProbeInstance })
 provide(LAYOUT_PROBE, layoutProbe)
 
-// `?slide=h/v`: the deck page's edit command opens the editor on the slide it
-// showed. The caret goes to the slide's first line once the text is loaded.
-const slideTarget = typeof route.query.slide === 'string' ? route.query.slide.split('/').map(Number) : []
-let slideTargetPending = slideTarget.length > 0 && slideTarget.every(Number.isInteger)
-watch([raw, editorView], async ([text, view]) => {
-  if (!slideTargetPending || !view || !text)
-    return
-  await nextTick()
-  const ranges = slideRanges(text, parserId.value)
-  const [h, v = 0] = slideTarget
-  const index = ranges.findIndex(range => range.h === h && range.v === v)
-  if (index === -1 || view.state.doc.lines < ranges[index]!.startLine)
-    return
-  slideTargetPending = false
-  const line = view.state.doc.line(ranges[index]!.startLine)
-  view.dispatch({ selection: { anchor: line.from }, effects: EditorView.scrollIntoView(line.from, { y: 'start', yMargin: 48 }) })
-  view.focus()
-  toast.add({ title: t('editor.page.openedOnSlide', { slide: index + 1, total: ranges.length }), icon: 'i-lucide-pencil' })
-}, { immediate: true })
+useSlideTarget({
+  target: route.query.slide,
+  view: editorView,
+  ready: editorReady,
+  parser: parserId,
+  opened: (slide, total) => toast.add({ title: t('editor.page.openedOnSlide', { slide, total }), icon: 'i-lucide-pencil' }),
+})
 
 function toggleFollow() {
   followCursor.value = !followCursor.value
