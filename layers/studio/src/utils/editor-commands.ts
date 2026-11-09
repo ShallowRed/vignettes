@@ -84,7 +84,7 @@ export function insertSnippet(view: EditorView, template: string): void {
  * between the `---` fences would corrupt the deck. Returns `pos` unchanged when
  * it already sits past the frontmatter (or when there is none).
  */
-export function safeInsertPos(doc: Text, pos: number): number {
+function safeInsertPos(doc: Text, pos: number): number {
   if (doc.line(1).text.trim() !== '---')
     return pos
   for (let i = 2; i <= doc.lines; i++) {

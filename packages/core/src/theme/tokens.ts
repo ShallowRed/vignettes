@@ -77,10 +77,6 @@ export function setThemeRegistry(extra: Partial<ThemeRegistry> | null | undefine
   return current
 }
 
-export function getThemeRegistry(): ThemeRegistry {
-  return current
-}
-
 /** Canonical theme names; aliases are accepted on input and resolved with {@link resolveThemeName}. */
 export function knownThemes(): string[] {
   return Object.keys(current.tokens)

@@ -52,7 +52,7 @@ function passLifetimeMs(): number {
   return ttl
 }
 
-export function viewPassCookieName(): string {
+function viewPassCookieName(): string {
   // `__Host-` keeps the cookie to the host that set it, over https.
   return `${serverConfig().secureCookies ? '__Host-' : ''}view_pass`
 }

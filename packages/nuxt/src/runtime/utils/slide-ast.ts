@@ -43,7 +43,7 @@ function parseDeckMarkdown(md: string, keepPosition = false): Promise<MDCParserR
   })
 }
 
-export function getHeadingLevel(children: any[]): string | undefined {
+function getHeadingLevel(children: any[]): string | undefined {
   if (!children || children.length === 0)
     return undefined
   const firstHeading = children.find((node: any) =>
@@ -132,7 +132,7 @@ function filterAnnotationNodes(children: any[]): any[] {
  * :subtitle, :layout, :quicklink. A FULL_SLIDE_COMPONENT on a slide without a
  * media keeps all children in `body` with no header/body split.
  */
-export function createSlide(children: any[], headingLevel?: string): Slide {
+function createSlide(children: any[], headingLevel?: string): Slide {
   const backgroundImage = extractBackgroundOverride(children)
   const withoutBackground = filterBackgroundNodes(children)
   const layoutAttributes = extractLayoutAttributes(withoutBackground)
@@ -298,7 +298,7 @@ export const headingParser: DeckParser = {
   },
 }
 
-export const separatorParser: DeckParser = {
+const separatorParser: DeckParser = {
   id: 'separator',
   parse(raw: string, _meta?: unknown, options?: ParseOptions): Promise<Slide[]> {
     return Promise.all(groupByPosition(splitSlides(raw, 'separator')).map(group => separatorSlide(group, options)))

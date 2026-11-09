@@ -64,7 +64,7 @@ function blockAt(blocks: SlideBlock[], line: number): SlideBlock | undefined {
   return found
 }
 
-export function slideBlockAt(state: EditorState, line: number): SlideBlock | undefined {
+function slideBlockAt(state: EditorState, line: number): SlideBlock | undefined {
   return blockAt(state.field(structureField).blocks, line)
 }
 

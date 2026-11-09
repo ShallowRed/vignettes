@@ -25,7 +25,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
 import { useQuery, useQueryCache } from '@pinia/colada'
-import { parserIdFor, slideRanges, splitFrontmatter } from '@vignettes/core/deck'
+import { slideRanges } from '@vignettes/core/deck'
 import { SLIDE_RENDER_FAILURES } from '@vignettes/nuxt/injection-keys'
 import Codemirror from 'vue-codemirror6'
 import { deckApi } from '../../api'
@@ -265,7 +265,7 @@ watch([raw, editorView], async ([text, view]) => {
   if (!slideTargetPending || !view || !text)
     return
   await nextTick()
-  const ranges = slideRanges(text, parserIdFor(splitFrontmatter(text).data))
+  const ranges = slideRanges(text, parserId.value)
   const [h, v = 0] = slideTarget
   const index = ranges.findIndex(range => range.h === h && range.v === v)
   if (index === -1 || view.state.doc.lines < ranges[index]!.startLine)

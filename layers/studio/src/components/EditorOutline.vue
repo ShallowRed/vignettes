@@ -34,7 +34,9 @@ interface Row extends OutlineSlide {
   stack: boolean
 }
 
-const outline = computed(() => deckOutline(text.value, parserIdFor(splitFrontmatter(text.value).data)))
+// The rows and their edits cut the deck with the parser of the current text.
+const parser = computed(() => parserIdFor(splitFrontmatter(text.value).data))
+const outline = computed(() => deckOutline(text.value, parser.value))
 const stackCount = computed(() => new Set(outline.value.map(slide => slide.h)).size)
 const rows = computed<Row[]>(() => outline.value.map((slide, index) => ({
   ...slide,
@@ -54,7 +56,7 @@ function send(build: (doc: string, parser: ParserId) => OutlineEdit | undefined)
   if (!view || !props.writable)
     return false
   const doc = view.state.doc.toString()
-  const edit = build(doc, parserIdFor(splitFrontmatter(doc).data))
+  const edit = build(doc, parser.value)
   if (!edit) {
     toast.add({ title: t('editor.outline.refused'), icon: 'i-lucide-triangle-alert', color: 'warning' })
     return false
@@ -136,7 +138,7 @@ function commitRename(refocus: boolean) {
   if (!view || !props.writable || current.value === current.shown)
     return
   const doc = view.state.doc.toString()
-  const change = renameChange(doc, parserIdFor(splitFrontmatter(doc).data), current.h, current.v, current.written, current.value)
+  const change = renameChange(doc, parser.value, current.h, current.v, current.written, current.value)
   if (typeof change === 'object')
     props.history.write(view, outlineTransaction({ changes: [change] }))
   else if (change)

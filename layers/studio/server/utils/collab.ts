@@ -34,7 +34,7 @@ export interface CollabContext {
   snapshot?: boolean
 }
 
-export function isPinnedTo(context: CollabContext | undefined, documentName: string): boolean {
+function isPinnedTo(context: CollabContext | undefined, documentName: string): boolean {
   if (context?.deck === documentName)
     return true
   console.warn(`[collab] refused "${documentName}" on a socket pinned to "${context?.deck}"`)
