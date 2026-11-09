@@ -31,6 +31,8 @@ export interface ServerConfig {
   /** The build of a frozen bundle, which serves one deck. */
   bundle: BundleConfig
   origins: Origins
+  /** The origins of the telemetry services this instance sends to. */
+  telemetryOrigins: string[]
 }
 
 /**
@@ -61,6 +63,19 @@ export function readOrigins(env: Record<string, string | undefined>, bundle: Pic
   return { studio: originOf(env.NUXT_STUDIO_URL), decks: originOf(env.NUXT_PUBLIC_DECKS_URL) }
 }
 
+/**
+ * The origins of Umami and of the error tracker, from their address and their
+ * DSN. A value that is no https address is left out: an error in a telemetry
+ * value never stops the server.
+ */
+export function readTelemetryOrigins(env: Record<string, string | undefined>): string[] {
+  const origins = [env.NUXT_PUBLIC_UMAMI_HOST, env.NUXT_PUBLIC_ERROR_TRACKING_DSN].flatMap((value) => {
+    const origin = originOf(value)
+    return origin?.startsWith('https://') ? [origin] : []
+  })
+  return [...new Set(origins)]
+}
+
 export function serverConfig(): ServerConfig {
   const env = process.env
   const bundle = readBundleConfig(env)
@@ -77,6 +92,7 @@ export function serverConfig(): ServerConfig {
     trustedProxyHops: /^\d+$/.test(env.NUXT_TRUSTED_PROXY_HOPS ?? '') ? Number(env.NUXT_TRUSTED_PROXY_HOPS) : 0,
     bundle,
     origins: readOrigins(env, bundle),
+    telemetryOrigins: readTelemetryOrigins(env),
   }
 }
 

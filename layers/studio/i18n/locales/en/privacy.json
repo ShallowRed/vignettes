@@ -1,0 +1,23 @@
+{
+  "privacy": {
+    "title": "Privacy",
+    "nothingMeasured": "This instance does not measure its traffic and sends its errors to no service.",
+    "audience": {
+      "title": "Audience measurement",
+      "collected": "This instance counts its page views with Umami, hosted by its operator. For each page view, Umami records the address of the page, the origin of the site the visitor comes from, the browser, the system, the language, the country and the screen size.",
+      "pages": "For a page of the studio, the recorded address replaces the name of the presentation with a generic term. For a public presentation, it is its address and its title. Private presentations and those protected by a password are not counted.",
+      "limits": "This measurement sets no cookie, serves only to know the traffic of the instance and follows no one from one site to another.",
+      "retention": "The data is kept for {n} month at most. | The data is kept for {n} months at most."
+    },
+    "errors": {
+      "title": "Error tracking",
+      "collected": "When a page or the server meets an error, a technical report goes to GlitchTip, hosted by the operator of the instance. It holds the message of the error, the address of the page without its parameters, the truncated IP address of the visitor, the browser and the system. It holds no account, no cookie and no content sent to the server. The message of an error may quote an extract of a presentation.",
+      "retention": "Reports are kept for {n} day. | Reports are kept for {n} days."
+    },
+    "cookies": {
+      "title": "Cookies",
+      "list": "This instance sets the cookies it needs to work: the session of the signed-in account, the language of the interface, the display preferences, the page to reopen after signing in and the access to a protected presentation."
+    },
+    "contact": "For any question about your data, write to {contact}."
+  }
+}

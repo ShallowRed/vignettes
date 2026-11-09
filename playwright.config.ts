@@ -40,7 +40,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testIgnore: 'origins.e2e.ts' },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testIgnore: ['origins.e2e.ts', 'telemetry.e2e.ts'] },
   ],
   webServer: [
     server(port, database),
@@ -49,6 +49,12 @@ export default defineConfig({
       NUXT_PUBLIC_DECKS_URL: `http://decks.localhost:${originsPort}`,
       // The features on trial open on this server, as on staging.
       NUXT_RECETTE_ENABLED: '1',
+      // Hosts that `telemetry.e2e.ts` intercepts.
+      NUXT_PUBLIC_UMAMI_HOST: 'https://stats.test',
+      NUXT_PUBLIC_UMAMI_STUDIO_WEBSITE_ID: 'studio-website',
+      NUXT_PUBLIC_UMAMI_DECKS_WEBSITE_ID: 'decks-website',
+      NUXT_PUBLIC_UMAMI_RETENTION_MONTHS: '25',
+      NUXT_PUBLIC_ERROR_TRACKING_DSN: 'https://key@errors.test/1',
     }),
   ],
 })

@@ -126,6 +126,7 @@ const SIDES: Record<string, RouteSide> = {
   'POST /__nuxt_island/**': 'studio',
   'GET /': 'studio',
   'GET /edit/[slug]': 'studio',
+  'GET /confidentialite': 'studio',
   'GET /login': 'studio',
   'GET /p/[alias]': 'deck',
   'GET /projects/[slug]': 'studio',

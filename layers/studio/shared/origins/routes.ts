@@ -48,7 +48,8 @@ const RULES: RouteRule[] = [
   { pattern: /^\/__nuxt_error$/, side: 'both', methods: READ },
 ]
 
-function pathnameOf(path: string): string {
+/** A path or an address without its query and its fragment. */
+export function pathnameOf(path: string): string {
   return path.split(/[?#]/, 1)[0] ?? ''
 }
 

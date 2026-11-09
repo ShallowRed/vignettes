@@ -58,8 +58,10 @@ const LOCAL = LOCAL_HTTP_HOSTS.map(host => `http://${host}:*`).join(' ')
  * which `#shared/access` does as its module loads, before any plugin could set
  * `jitless`: hence `'unsafe-eval'`. Without it, zod catches the refused probe
  * and parses without its compiled path, and every page reports a violation.
+ * A page reaches its own origin and the telemetry services of the instance,
+ * which it calls by `fetch` and whose scripts it never loads.
  */
-export function pagePolicy(nonce: string): string {
+export function pagePolicy(nonce: string, telemetryOrigins: string[]): string {
   return [
     'default-src \'self\'',
     `script-src 'self' 'nonce-${nonce}' ${Object.values(SPEAKER_VIEW_SCRIPT_HASHES).map(hash => `'${hash}'`).join(' ')} 'unsafe-eval'`,
@@ -68,7 +70,7 @@ export function pagePolicy(nonce: string): string {
     'font-src \'self\' data:',
     `media-src 'self' blob: https: ${LOCAL}`,
     `frame-src 'self' https: ${LOCAL}`,
-    'connect-src \'self\'',
+    ['connect-src', '\'self\'', ...telemetryOrigins].join(' '),
     'worker-src \'self\' blob:',
     ...BASE_DIRECTIVES,
   ].join('; ')

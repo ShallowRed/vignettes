@@ -173,6 +173,13 @@ const devRoles = computed(() => [
           variant="ghost"
           size="sm"
         />
+        <UButton
+          to="/confidentialite"
+          :label="t('common.header.privacy')"
+          color="neutral"
+          variant="link"
+          size="xs"
+        />
       </div>
     </UCard>
   </div>

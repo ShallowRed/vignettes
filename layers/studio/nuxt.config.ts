@@ -1,10 +1,11 @@
 import { fileURLToPath } from 'node:url'
+import { readBundleConfig } from '@vignettes/freeze/bundle'
 import { themePackageVersions } from '@vignettes/nuxt/build/theme-build'
 import { SECURITY_HEADERS } from './server/utils/security-headers'
 import { UI_FONT_FAMILIES } from './src/utils/ui-themes'
 
 /** One file per area of the interface, the same list for every locale. */
-const MESSAGE_FILES = ['common', 'catalog', 'deck', 'editor', 'reference', 'admin', 'account', 'auth', 'recette']
+const MESSAGE_FILES = ['common', 'catalog', 'deck', 'editor', 'reference', 'admin', 'account', 'auth', 'recette', 'privacy']
 const messageFiles = (locale: string) => MESSAGE_FILES.map(area => `${locale}/${area}.json`)
 
 /**
@@ -28,7 +29,17 @@ export default defineNuxtConfig({
       if (!nuxt.options._prepare)
         nuxt.options.runtimeConfig.themePackages = themePackageVersions(nuxt.options.rootDir)
     },
+    // A frozen bundle has no server and runs no script.
+    ...(readBundleConfig().enabled ? [] : ['@sentry/nuxt/module']),
   ],
+  // The errors alone, without the upload of the source maps. The built server
+  // reads its Sentry configuration only through this import: the container
+  // starts it without `--import`.
+  sentry: {
+    autoInjectServerSentry: 'top-level-import',
+    sourceMapsUploadOptions: { enabled: false },
+    telemetry: false,
+  },
   srcDir: 'src/',
   fonts: {
     families: UI_FONT_FAMILIES,
@@ -65,6 +76,26 @@ export default defineNuxtConfig({
       // The origin of the deck pages, apart from the studio, which the link to
       // a deck names; `NUXT_PUBLIC_DECKS_URL` sets it (see `serverConfig().origins`).
       decksUrl: '',
+      // The Umami service of the instance and its two websites, off while empty;
+      // `NUXT_PUBLIC_UMAMI_HOST` and `NUXT_PUBLIC_UMAMI_*_WEBSITE_ID` set them.
+      // `NUXT_PUBLIC_UMAMI_RETENTION_MONTHS` is the period the privacy page states.
+      umami: {
+        host: '',
+        studioWebsiteId: '',
+        decksWebsiteId: '',
+        retentionMonths: '',
+      },
+      // The error tracker of the instance, off while empty;
+      // `NUXT_PUBLIC_ERROR_TRACKING_DSN` and `NUXT_PUBLIC_ERROR_TRACKING_ENVIRONMENT` set them.
+      // `NUXT_PUBLIC_ERROR_TRACKING_RETENTION_DAYS` is the period the privacy page states.
+      errorTracking: {
+        dsn: '',
+        environment: '',
+        retentionDays: '',
+      },
+      // The address the privacy page gives for questions, hidden while empty;
+      // `NUXT_PUBLIC_PRIVACY_CONTACT` sets it.
+      privacyContact: '',
     },
   },
   css: [fileURLToPath(new URL('./src/assets/css/tailwind.css', import.meta.url))],

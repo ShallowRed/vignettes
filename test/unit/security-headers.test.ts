@@ -9,6 +9,7 @@ vi.stubGlobal('getRequestProtocol', getRequestProtocol)
 vi.stubGlobal('setResponseHeader', setResponseHeader)
 
 const { default: securityHeaders } = await import('../../layers/studio/server/plugins/security-headers')
+const { readTelemetryOrigins } = await import('../../layers/studio/server/utils/config')
 
 type Hook = (...args: any[]) => void
 const hooks: Record<string, Hook> = {}
@@ -19,6 +20,30 @@ function request(headers: Record<string, string> = {}) {
   const res = { setHeader: (name: string, value: unknown) => (headersSent[name.toLowerCase()] = value), getHeader: (name: string) => headersSent[name.toLowerCase()] }
   return createEvent({ method: 'GET', url: '/', headers } as any, res as any)
 }
+
+describe('readTelemetryOrigins', () => {
+  it('reads the origin of an address and of a DSN', () => {
+    expect(readTelemetryOrigins({
+      NUXT_PUBLIC_UMAMI_HOST: 'https://stats.example.org/',
+      NUXT_PUBLIC_ERROR_TRACKING_DSN: 'https://key@errors.example.org/1',
+    })).toEqual(['https://stats.example.org', 'https://errors.example.org'])
+  })
+
+  it('names a service once', () => {
+    expect(readTelemetryOrigins({
+      NUXT_PUBLIC_UMAMI_HOST: 'https://telemetry.example.org',
+      NUXT_PUBLIC_ERROR_TRACKING_DSN: 'https://key@telemetry.example.org/1',
+    })).toEqual(['https://telemetry.example.org'])
+  })
+
+  it.each(['', '   ', 'foo:bar', 'http://stats.example.org', 'not an address'])('leaves out %j', (value) => {
+    expect(readTelemetryOrigins({ NUXT_PUBLIC_UMAMI_HOST: value })).toEqual([])
+  })
+
+  it('reads nothing without a variable', () => {
+    expect(readTelemetryOrigins({})).toEqual([])
+  })
+})
 
 describe('the security headers plugin', () => {
   it('sets HSTS on a request the proxy received over https only', () => {
@@ -57,6 +82,28 @@ describe('the security headers plugin', () => {
     const response = { headers: { 'content-type': 'text/html', 'x-powered-by': 'Nuxt' } }
     hooks['render:response']!(response)
     expect(response.headers).toEqual({ 'content-type': 'text/html' })
+  })
+
+  it('keeps connect-src on the origin of the page without a telemetry service', () => {
+    vi.stubEnv('NUXT_PUBLIC_UMAMI_HOST', undefined)
+    vi.stubEnv('NUXT_PUBLIC_ERROR_TRACKING_DSN', undefined)
+    const event = request()
+    hooks['render:html']!({ head: [], body: [], bodyAppend: [] }, { event })
+    vi.unstubAllEnvs()
+    const policy = getResponseHeader(event, 'content-security-policy') as string
+    expect(policy).toContain('connect-src \'self\';')
+  })
+
+  it('adds the telemetry services to connect-src, and to no other directive', () => {
+    vi.stubEnv('NUXT_PUBLIC_UMAMI_HOST', 'https://stats.example.org')
+    vi.stubEnv('NUXT_PUBLIC_ERROR_TRACKING_DSN', 'https://key@errors.example.org/1')
+    const event = request()
+    hooks['render:html']!({ head: [], body: [], bodyAppend: [] }, { event })
+    vi.unstubAllEnvs()
+    const policy = getResponseHeader(event, 'content-security-policy') as string
+    expect(policy).toContain('connect-src \'self\' https://stats.example.org https://errors.example.org;')
+    expect(policy.match(/stats\.example\.org/g)).toHaveLength(1)
+    expect(policy.match(/errors\.example\.org/g)).toHaveLength(1)
   })
 
   it('lets the inline script of the installed reveal.js speaker view run, in each deck language', async () => {

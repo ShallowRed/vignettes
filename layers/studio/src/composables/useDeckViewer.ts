@@ -1,6 +1,6 @@
 import type { DeckViewer } from '#shared/presentations'
 
-const NO_VIEWER: DeckViewer = { canEdit: false, signedIn: false, variants: [] }
+const NO_VIEWER: DeckViewer = { canEdit: false, signedIn: false, variants: [], publicDeck: false }
 
 /**
  * What the deck page and the editor offer the visitor beside the deck

@@ -13,9 +13,16 @@ const DATABASE_DRIVER = {
   message: 'The adapters (server/db/sqlite/, server/db/postgres/) read and write the tables: add a method to a port of server/db/ports.ts, reached through useStores() or, in a script, openDatabaseFile().',
 }
 
+const ERROR_TRACKING_SDK = {
+  group: ['@sentry/*'],
+  message: 'The error tracking SDK is read in layers/studio/sentry.client.config.ts and layers/studio/sentry.server.config.ts: an error reaches it through Vue or Nitro.',
+}
+const SDK_HOME = ['layers/studio/sentry.*.config.ts']
+
 const DOMAIN_IO = [
   MDC_READER,
   DATABASE_DRIVER,
+  ERROR_TRACKING_SDK,
   { group: ['h3'], message: 'shared/ is the framework-free domain: move request handling to server/utils/.' },
   { group: ['@aws-sdk/*'], message: 'shared/ has no I/O: place the S3 access in server/utils/.' },
   { group: ['node:*'], message: 'shared/ runs on the client and the server: take the value as an argument from an entry point.' },
@@ -103,18 +110,23 @@ export default antfu({
   files: ['**/*.{js,ts,vue}'],
   ignores: [...MDC_HOME, ...DRIVER_HOME],
   rules: {
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, ERROR_TRACKING_SDK] }],
+  },
+}, {
+  files: SDK_HOME,
+  rules: {
     'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER] }],
   },
 }, {
   files: DRIVER_HOME,
   rules: {
-    'no-restricted-imports': ['error', { patterns: [MDC_READER] }],
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, ERROR_TRACKING_SDK] }],
   },
 }, {
   files: MDC_HOME,
   ignores: DRIVER_TESTS,
   rules: {
-    'no-restricted-imports': ['error', { patterns: [DATABASE_DRIVER] }],
+    'no-restricted-imports': ['error', { patterns: [DATABASE_DRIVER, ERROR_TRACKING_SDK] }],
   },
 }, {
   files: ['layers/studio/server/**'],

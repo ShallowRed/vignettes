@@ -91,6 +91,8 @@ export interface DeckViewer {
   /** Whether the visitor reads the deck with an account: on the deck origin, the one of its view pass. */
   signedIn: boolean
   variants: DeckVariant[]
+  /** Whether anyone may read the published deck, which its page views depend on. */
+  publicDeck: boolean
   published?: boolean
   unpublishedChanges?: boolean
   project?: string | null

@@ -26,6 +26,11 @@ export default defineNuxtConfig({
       // The menu of the interface themes on trial, opened in the build made
       // from staging by `NUXT_PUBLIC_UI_TRIALS`.
       uiTrials: false,
+      // The Umami service of the site, off while empty: `checks.yml` sets it on a build from `main`.
+      umami: {
+        host: '',
+        websiteId: '',
+      },
     },
   },
 

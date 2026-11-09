@@ -104,6 +104,9 @@ Production runs SSR via the Nitro `node_server` preset (see Deployment). Every p
 - Reveal.js is imported client-side only.
 - Bundle mode (`BUNDLE_ONLY_SLUG`) prerenders one deck and its API JSON into a self-contained, JS-free static bundle (`noScripts`, inlined CSS); a Nitro plugin turns the page into a standalone Reveal document.
 
+### Telemetry
+An instance sends its page views to Umami and its errors to GlitchTip when its variables name them ([README](../README.md)). `layers/studio/src/utils/page-view.ts` writes each page view and posts it to the sending API of Umami, and `PAGE_VIEW_PAGES` classifies every page: a page of the studio sends its route template, and `StudioDeck` sends the path and the title of a public deck. `layers/studio/sentry.client.config.ts` and `layers/studio/sentry.server.config.ts` are the two readers of the SDK, and each event goes through `scrubErrorEvent` of `layers/studio/shared/error-tracking.ts`. The `connect-src` of a page holds the origins of these services (`telemetryOrigins` of `serverConfig()`), and its `script-src` does not. A frozen bundle sends nothing.
+
 ### Deck origin
 An instance may serve its deck pages from an origin of their own, on another registrable domain than the studio (`NUXT_PUBLIC_DECKS_URL`, with `NUXT_STUDIO_URL`), so that a script of a deck never runs with a session of the studio. The browser never sends the session cookie of the studio to that origin, and a page of another domain cannot set a cookie the studio reads. One server answers both hosts:
 - `routeSide` of `#shared/origins` sorts each route: a deck page (`/slides/`, `/p/`, `/unlock/`, `/frozen/`), a route both origins answer (the deck reads, the two unlock routes, the files and the module routes a deck page loads), or a route of the studio. `test/unit/origins.test.ts` lists every route Nitro serves and fails on a new one until it is sorted.

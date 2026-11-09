@@ -121,7 +121,7 @@ describe('the variants the viewer route offers', () => {
     await patch('talk-secret', { family: 'Conf', variantLabel: 'Interne' })
 
     const seen = await viewer(anon({ params: { slug: 'talk' } }))
-    expect(seen).toEqual({ canEdit: false, signedIn: false, variants: [{ slug: 'talk', alias: null, title: 'Talk', variantLabel: 'FR' }, { slug: 'talk-en', alias: null, title: 'Talk EN', variantLabel: 'EN' }] })
+    expect(seen).toEqual({ canEdit: false, signedIn: false, publicDeck: true, variants: [{ slug: 'talk', alias: null, title: 'Talk', variantLabel: 'FR' }, { slug: 'talk-en', alias: null, title: 'Talk EN', variantLabel: 'EN' }] })
 
     await usePermissionStore().set('talk-secret', 10, 'viewer', 'boss')
     const granted = await viewer(asUser(10, 'vi', { params: { slug: 'talk' } }))
@@ -147,7 +147,7 @@ describe('the variants the viewer route offers', () => {
   it('offers nothing on a trashed or frozen deck', async () => {
     await patch('talk', { family: 'Conf', variantLabel: 'FR' })
     await useDeckMeta().softDelete('talk')
-    await expect(viewer(owner({ params: { slug: 'talk' } }))).resolves.toEqual({ canEdit: false, signedIn: true, variants: [] })
+    await expect(viewer(owner({ params: { slug: 'talk' } }))).resolves.toEqual({ canEdit: false, signedIn: true, publicDeck: false, variants: [] })
     await useDeckMeta().restore('talk')
     await patch('talk', { lifecycle: 'frozen' })
     await expect(viewer(owner({ params: { slug: 'talk' } }))).resolves.toMatchObject({ canEdit: false })

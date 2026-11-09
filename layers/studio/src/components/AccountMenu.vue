@@ -9,7 +9,7 @@ import { uiThemeMenuItems } from '../utils/ui-themes'
 
 // The occasional destinations and the preferences of the reader: the links of
 // the instance, the language, the color mode, the interface theme on trial,
-// then the account pages. One menu
+// the privacy page, then the account pages. One menu
 // holds them, opened by the account once signed in and by a menu button for a
 // visitor, who signs in beside it.
 const { loggedIn, role, user, privileged, owner } = useAppSession()
@@ -66,6 +66,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
     : []),
   ...(linkItems.value.length ? [linkItems.value] : []),
   preferences.value,
+  [{ label: t('common.header.privacy'), icon: 'i-lucide-shield-check', to: '/confidentialite' }],
   ...(loggedIn.value
     ? [
         [

@@ -33,6 +33,8 @@ test('the sign-in command of a deck opens the login page of the studio', async (
 test('a link of the studio to a deck page leaves for the deck origin', async ({ page }) => {
   await page.goto(`${STUDIO}/login`)
   await expect(page.locator('.tailwind-app')).toBeVisible()
+  // The server renders the page before the application mounts on it.
+  await page.waitForFunction(() => '__vue_app__' in document.querySelector('#__nuxt')!)
   // No page of the studio links to a deck for a visitor without a session: the
   // test pushes the route through the router of the page.
   await page.evaluate((path) => {

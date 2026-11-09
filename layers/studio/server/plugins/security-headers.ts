@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import { serverConfig } from '../utils/config'
 import { pagePolicy, STRICT_TRANSPORT_SECURITY } from '../utils/security-headers'
 
 const SCRIPT_TAG = /<script\b/g
@@ -24,7 +25,7 @@ export default defineNitroPlugin((nitroApp) => {
     const nonce = randomBytes(16).toString('base64')
     html.head = html.head.map(chunk => chunk.replace(SCRIPT_TAG, `<script nonce="${nonce}"`))
     html.bodyAppend = html.bodyAppend.map(chunk => chunk.replace(SCRIPT_TAG, `<script nonce="${nonce}"`))
-    setResponseHeader(event, 'Content-Security-Policy', pagePolicy(nonce))
+    setResponseHeader(event, 'Content-Security-Policy', pagePolicy(nonce, serverConfig().telemetryOrigins))
   })
 
   nitroApp.hooks.hook('render:response', (response) => {

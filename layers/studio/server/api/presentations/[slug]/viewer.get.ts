@@ -31,14 +31,16 @@ export default defineEventHandler(async (event): Promise<DeckViewer> => {
   const variants = meta?.family ? await familyVariants(event, slug) : []
   const actor = await getDeckActor(event, slug)
   const signedIn = Boolean(actor.id)
+  const publicDeck = Boolean(meta?.managed && meta.published && meta.status === 'public')
   if (!meta || !await canActorEditDeck(actor, slug))
-    return { canEdit: false as const, signedIn, variants }
+    return { canEdit: false as const, signedIn, variants, publicDeck }
 
   const versionId = meta.published ? await useDbContent().publishedVersion(slug) : null
   return {
     canEdit: true as const,
     signedIn,
     variants,
+    publicDeck,
     published: Boolean(meta.published),
     unpublishedChanges: versionId !== null && (await unpublishedChanges(new Map([[slug, versionId]]))).has(slug),
     project: meta.project ?? null,

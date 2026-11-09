@@ -57,6 +57,10 @@ Then set the other variables in the Environment tab of the dashboard, or with `s
 - `NUXT_PUBLIC_FEEDBACK_URL`: the « Envoyer un retour » link, for example the address of a Tchap room.
 - `NUXT_PUBLIC_INSTANCE_NAME`: the name of the instance, after « Vignettes » in the header of the home page, in the page titles and in the link previews.
 - `NUXT_PUBLIC_UI_THEME`: the interface theme of the instance, `vignettes` (default), `dsfr` or `lasuite`.
+- `NUXT_PUBLIC_UMAMI_HOST`, `NUXT_PUBLIC_UMAMI_STUDIO_WEBSITE_ID`, `NUXT_PUBLIC_UMAMI_DECKS_WEBSITE_ID`: the Umami service of the instance. Set them to count page views.
+- `NUXT_PUBLIC_ERROR_TRACKING_DSN`, `NUXT_PUBLIC_ERROR_TRACKING_ENVIRONMENT`: the DSN of the GlitchTip project of the instance and the name of its environment. Set the DSN to report errors.
+- `NUXT_PUBLIC_PRIVACY_CONTACT`: the address the privacy page gives for questions about personal data, for an instance that sets one of the variables above.
+- `NUXT_PUBLIC_UMAMI_RETENTION_MONTHS`, `NUXT_PUBLIC_ERROR_TRACKING_RETENTION_DAYS`: the periods the privacy page states for page views, in months, and for error reports, in days. Set the periods the services of the instance apply.
 - `NUXT_PUBLIC_DECKS_URL`, `NUXT_STUDIO_URL`: the addresses of the deck pages and of the studio, for an instance that serves its decks from an origin of their own (see « Deck origin » in `docs/architecture.md`). The deck address is on another registrable domain than the studio, and both are domains of the app ([custom domains](https://doc.scalingo.com/platform/app/domain)). Leave the canonical domain of the app unset: Scalingo would redirect the deck address to it. The studio redirects any other address, such as `<app>.osc-fr1.scalingo.io`, to `NUXT_STUDIO_URL`.
 - `NUXT_PUBLIC_WELCOME`: the sentence under the title of the home page for a visitor without an account, what the instance publishes and for whom.
 

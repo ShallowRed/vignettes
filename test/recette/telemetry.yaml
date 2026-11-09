@@ -1,0 +1,5 @@
+title: Mesure d'audience et suivi des erreurs
+checks:
+  - account: viewer
+    page: /confidentialite
+    expect: Le texte de la page Confidentialité se lit confortablement, et sa colonne te convient à côté des autres pages du studio.

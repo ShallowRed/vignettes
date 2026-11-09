@@ -1,0 +1,23 @@
+{
+  "privacy": {
+    "title": "Confidentialité",
+    "nothingMeasured": "Cette instance ne mesure pas sa fréquentation et n'envoie ses erreurs à aucun service.",
+    "audience": {
+      "title": "Mesure d'audience",
+      "collected": "Cette instance compte ses pages vues avec Umami, hébergé par son exploitant. Pour chaque page vue, Umami enregistre l'adresse de la page, l'origine du site d'où vient le visiteur, le navigateur, le système, la langue, le pays et la taille de l'écran.",
+      "pages": "Pour une page du studio, l'adresse enregistrée remplace le nom de la présentation par un terme générique. Pour une présentation publique, ce sont son adresse et son titre. Les présentations privées ou protégées par un mot de passe ne sont pas comptées.",
+      "limits": "Cette mesure ne dépose aucun cookie, sert seulement à connaître la fréquentation de l'instance et ne suit personne d'un site à l'autre.",
+      "retention": "Les données sont conservées {n} mois au plus."
+    },
+    "errors": {
+      "title": "Suivi des erreurs",
+      "collected": "Quand une page ou le serveur rencontre une erreur, un rapport technique part vers GlitchTip, hébergé par l'exploitant de l'instance. Il contient le message de l'erreur, l'adresse de la page sans ses paramètres, l'adresse IP tronquée du visiteur, le navigateur et le système. Il ne contient ni compte, ni cookie, ni contenu envoyé au serveur. Le message d'une erreur peut citer un extrait de présentation.",
+      "retention": "Les rapports sont conservés {n} jour. | Les rapports sont conservés {n} jours."
+    },
+    "cookies": {
+      "title": "Cookies",
+      "list": "Cette instance dépose les cookies nécessaires à son fonctionnement : la session de connexion, la langue de l'interface, les préférences d'affichage, la page à rouvrir après la connexion et l'accès à une présentation protégée."
+    },
+    "contact": "Pour toute question sur vos données, écrivez à {contact}."
+  }
+}

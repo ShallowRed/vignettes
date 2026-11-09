@@ -25,6 +25,8 @@ on:
       - 'examples/**'
       - docs/theme-system.md
       - 'public/pictograms/**'
+      - layers/studio/src/utils/page-view.ts
+      - layers/studio/shared/origins/routes.ts
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
   workflow_dispatch:

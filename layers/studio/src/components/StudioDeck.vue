@@ -6,6 +6,7 @@ import { loginHref } from '#shared/access'
 import { deckPath, parsedTitleSlide, titleSlidePreview } from '#shared/presentations'
 import { inSpeakerViewFrame } from '@vignettes/core/render'
 import { deckThemeName, resolveThemeName } from '@vignettes/core/theme'
+import { deckViewCounts, trackDeckView } from '../utils/page-view'
 
 // A deck as the studio shows it: the Reveal presentation with the other
 // variants of its family the visitor may open, the commands of whoever may edit
@@ -39,6 +40,19 @@ useSeoMeta({ ogTitle: deckTitle, description: titleSlide.subtitle, ogDescription
 defineOgImage('Deck', { ...titleSlide, title: titleSlide.title ?? deckTitle })
 
 const { data: viewer } = useDeckViewer(props.slug)
+
+// A navigation in the page reaches this component before the viewer route answers.
+const { umami } = useRuntimeConfig().public
+onMounted(() => {
+  let counted = false
+  watch(() => viewer.value.publicDeck, (publicDeck) => {
+    if (counted || !deckViewCounts({ publicDeck, draft: Boolean(props.draft), speakerViewFrame, search: location.search }))
+      return
+    counted = true
+    trackDeckView(umami, deckTitle ?? '')
+  }, { immediate: true })
+})
+
 // The family shows only when there is somewhere else to go.
 const variants = computed(() => (viewer.value.variants?.length ?? 0) > 1 ? viewer.value.variants! : [])
 const variantHref = (variant: DeckVariant) => `${deckPath({ slug: variant.slug, alias: variant.alias ?? undefined })}${props.draft ? '?draft' : ''}`

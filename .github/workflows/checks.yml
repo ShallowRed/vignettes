@@ -61,7 +61,7 @@ jobs:
             if printf '%s\n' "$files" | grep -vE '^(site/|docs/|[^/]+\.md$)' | grep -q . || printf '%s\n' "$files" | grep -qx docs/theme-system.md; then
               code=true
             fi
-            if printf '%s\n' "$files" | grep -qE '^(site/|packages/|themes/|examples/|public/pictograms/|docs/theme-system\.md$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$)'; then
+            if printf '%s\n' "$files" | grep -qE '^(site/|packages/|themes/|examples/|public/pictograms/|layers/studio/src/utils/page-view\.ts$|layers/studio/shared/origins/routes\.ts$|docs/theme-system\.md$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$)'; then
               site=true
             fi
           fi
@@ -98,6 +98,8 @@ jobs:
         env:
           NUXT_SITE_URL: ${{ github.ref == 'refs/heads/staging' && vars.DOCS_STAGING_SITE_URL || github.ref != 'refs/heads/staging' && (vars.DOCS_SITE_URL || (github.event_name == 'pull_request' && 'https://docs.example.com' || '')) || '' }}
           NUXT_PUBLIC_UI_TRIALS: ${{ github.ref == 'refs/heads/staging' }}
+          NUXT_PUBLIC_UMAMI_HOST: ${{ github.ref == 'refs/heads/main' && vars.UMAMI_HOST || '' }}
+          NUXT_PUBLIC_UMAMI_WEBSITE_ID: ${{ github.ref == 'refs/heads/main' && vars.UMAMI_DOCS_WEBSITE_ID || '' }}
           NODE_OPTIONS: --max-old-space-size=4096
           NUXT_TELEMETRY_DISABLED: 1
         run: pnpm --filter vignettes-site generate
