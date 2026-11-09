@@ -1,7 +1,5 @@
 {
   "name": "minimal",
-  "lang": "fr",
-  "parser": "separator",
   "code": "clair",
   "reveal": { "slideNumber": true },
   "preview": {

@@ -47,8 +47,6 @@ export interface ThemeTokens {
   brand?: DeckBrand
   preview?: ThemePreview
   reveal?: RevealConfig
-  lang?: string
-  parser?: 'heading' | 'separator'
   pptx?: ThemePptx
 }
 

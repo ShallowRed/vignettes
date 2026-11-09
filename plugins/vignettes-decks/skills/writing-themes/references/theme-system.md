@@ -17,8 +17,6 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
   "name": "brand",
   "extends": "dsfr",
   "aliases": [],
-  "lang": "fr",
-  "parser": "separator",
   "reveal": { "slideNumber": true, "width": 1200, "height": 800 },
   "backgrounds": {
     "h1": "assets/slide-contrast.png",
@@ -31,7 +29,7 @@ A theme is a directory with a `theme.json` manifest, an SCSS entry and an option
 - `name` equals the directory name. A deck names the theme with it in `theme:`, and the stylesheet is `/themes/<name>.css`.
 - `extends` names the theme this one builds on; the build checks it. The editor completes the icons and the pictograms in the decks of a theme that builds on `dsfr`, directly or through another theme.
 - `aliases` lists other frontmatter names that resolve to this theme. A tenant uses it to point a name already present in its decks to its brand. The build reports an alias that shadows another theme's name.
-- `lang`, `parser` and `reveal` are the deck defaults the theme carries: the language for orthotypography, the slide parser and the Reveal config.
+- `reveal` holds the Reveal options of the theme's decks, which the `reveal:` of a deck overrides.
 - `backgrounds` gives the background image of the title slide (`h1`), the sections (`h2`), the content slides (`h3`) and the others (`default`), as a path relative to the theme directory or an absolute URL.
 - `brand` gives the bloc marque of the French state that the theme's decks show in the header of their slides: `ministry`, the lines of the official title (`République française` by default), `operator`, the operator's logo as a path relative to the theme directory or an absolute URL, `operatorAlt`, the operator's name, `slides`, `cover` for the title slide (the default) or `all`, and `onDark`, its version on a dark background, `white` (the default) or `color` for the colors on a white plate. A deck's frontmatter `brand` overrides these keys one by one, and `brand: false` removes it. A theme built on `@vignettes/theme-dsfr` draws it; the bloc marque is reserved for the services of the state.
 - `entry` is the SCSS entry, `<name>.scss` by default.

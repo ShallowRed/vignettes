@@ -30,8 +30,6 @@ export interface ThemeManifest {
   extends?: string
   /** Other names that resolve to this theme, e.g. a name already used in a tenant's decks. */
   aliases?: string[]
-  lang?: string
-  parser?: 'heading' | 'separator'
   reveal?: Record<string, unknown>
   /** Code theme of the deck blocks by default: a name of `CODE_THEMES`, or its properties. */
   code?: unknown
@@ -116,14 +114,10 @@ export function themeAssetUrl(name: string, path: string): string {
 
 /** The runtime tokens a manifest declares, the paths of the backgrounds and of the font turned into public URLs. */
 export function manifestTokens(manifest: ThemeManifest): ThemeTokens {
-  const { name, lang, parser, reveal, backgrounds, brand, preview, code, pptx } = manifest
+  const { name, reveal, backgrounds, brand, preview, code, pptx } = manifest
   const tokens: ThemeTokens = { name }
   if (manifest.extends)
     tokens.extends = manifest.extends
-  if (lang)
-    tokens.lang = lang
-  if (parser)
-    tokens.parser = parser
   if (code)
     tokens.code = code
   if (backgrounds) {

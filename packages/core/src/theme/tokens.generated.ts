@@ -5,8 +5,6 @@ import type { ThemeTokens } from './tokens.ts'
 export const THEME_TOKENS: Record<string, ThemeTokens> = {
   "dsfr": {
     "name": "dsfr",
-    "lang": "fr",
-    "parser": "separator",
     "code": "nuit",
     "reveal": {
       "slideNumber": true,
@@ -23,8 +21,6 @@ export const THEME_TOKENS: Record<string, ThemeTokens> = {
   },
   "minimal": {
     "name": "minimal",
-    "lang": "fr",
-    "parser": "separator",
     "code": "clair",
     "reveal": {
       "slideNumber": true

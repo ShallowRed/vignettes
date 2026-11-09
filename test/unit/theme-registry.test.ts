@@ -67,7 +67,7 @@ describe('manifest discovery', () => {
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'themes-'))
     process.env.NUXT_CONTENT_DIR = join(root, 'content')
-    manifest(join(root, 'themes/base'), { name: 'base', lang: 'fr', reveal: { width: 1200 } })
+    manifest(join(root, 'themes/base'), { name: 'base', reveal: { width: 1200 } })
     manifest(join(root, 'content/themes/brand'), { name: 'brand', extends: 'base', aliases: ['base'], backgrounds: { h1: 'assets/h1.png', h2: '/shared/h2.png' }, brand: { ministry: ['Ministère', 'des Armées'], operator: 'assets/operateur.svg' } })
   })
 
