@@ -1,4 +1,4 @@
-import type { Connection, Document } from '@hocuspocus/server'
+import type { Connection, Document, onStoreDocumentPayload } from '@hocuspocus/server'
 import type { DraftStore } from '@vignettes/core/deck'
 import type { DraftFollow } from './content-push'
 import { CLOSE_REASONS, REFUSAL_REASONS } from '#shared/collab/close-reasons'
@@ -199,6 +199,41 @@ async function storedDraftText(slug: string): Promise<string | null> {
   return stored ? yDocUpdateToMarkdown(stored) : null
 }
 
+/** The time a room whose store failed waits before its next store. */
+export const STORE_RETRY_MS = 30_000
+
+// The rooms whose last store failed, with the payload of that store and the
+// timer of the next one. Hocuspocus keeps such a room in memory and stores it
+// again on the next edit only: once its last editor has left, these timers and
+// `storePendingRooms` store it.
+const failedStores = new Map<string, { payload: onStoreDocumentPayload, timer: ReturnType<typeof setTimeout> }>()
+
+function scheduleStore(payload: onStoreDocumentPayload): void {
+  cancelStore(payload.documentName)
+  const timer = setTimeout(() => void storeFailedRoom(payload.documentName), STORE_RETRY_MS)
+  timer.unref?.()
+  failedStores.set(payload.documentName, { payload, timer })
+}
+
+function cancelStore(name: string): void {
+  clearTimeout(failedStores.get(name)?.timer)
+  failedStores.delete(name)
+}
+
+/** Stores again a room whose last store failed, through the store of Hocuspocus, which unloads the room once stored. */
+async function storeFailedRoom(name: string): Promise<void> {
+  const failed = failedStores.get(name)
+  const server = instance
+  if (!failed || server?.documents.get(name) !== failed.payload.document) {
+    cancelStore(name)
+    return
+  }
+  // The entry stays until `onStoreDocument` reads it, to report a series of failures once.
+  clearTimeout(failed.timer)
+  const { document } = failed.payload
+  await server.storeDocumentHooks(document, { ...failed.payload, clientsCount: document.getConnectionsCount() }, true)
+}
+
 /** The draft text: the live room when one is open (the store lags by the debounce), else the stored draft. */
 export async function currentDraftText(slug: string): Promise<string | null> {
   const live = useCollabServer().documents.get(slug)
@@ -276,7 +311,10 @@ export function useCollabServer(): Hocuspocus {
       }
     },
 
-    async onStoreDocument({ documentName, document, clientsCount, lastContext }) {
+    async onStoreDocument(payload) {
+      const { documentName, document, clientsCount, lastContext } = payload
+      const retried = failedStores.has(documentName)
+      cancelStore(documentName)
       if (!isDeckSlug(documentName) || document.getText(DECK_TEXT_FIELD).length > MAX_DECK_LENGTH)
         return
       const update = Y.encodeStateAsUpdate(document)
@@ -289,8 +327,12 @@ export function useCollabServer(): Hocuspocus {
         await useDraftStore().save(documentName, update)
       }
       catch (error) {
-        if (!(error instanceof DraftLineageError))
+        if (!(error instanceof DraftLineageError)) {
+          scheduleStore(payload)
+          if (!retried)
+            useNitroApp().captureError(error as Error, { tags: ['collab'] })
           throw error
+        }
         // Hocuspocus 4.4 tries no second store, and unloads the room when its
         // last client leaves: the text of the room goes to the history, and its
         // editors reload the stored draft.
@@ -304,21 +346,26 @@ export function useCollabServer(): Hocuspocus {
       // The last editor leaving closes the editing session: keep its final state.
       await recordDraftSnapshot(documentName, document.getText(DECK_TEXT_FIELD).toString(), { force: clientsCount === 0 })
     },
+
+    async afterUnloadDocument({ documentName }) {
+      cancelStore(documentName)
+    },
   })
   return instance
 }
 
 /**
  * Stores now the rooms whose save waits for the Hocuspocus debounce, as its
- * `flushPendingStores` does, and resolves once they are stored. The server
- * calls it when it stops, before it closes the database: the sockets that
- * close with the server would store these rooms into a closed database.
+ * `flushPendingStores` does, and those whose last store failed, and resolves
+ * once they are stored. The server calls it when it stops, before it closes the
+ * database: the sockets that close with the server would store these rooms into
+ * a closed database.
  */
 export async function storePendingRooms(): Promise<void> {
   const server = instance
   if (!server)
     return
-  await Promise.all([...server.documents.keys()].map(name => server.debouncer.executeNow(`onStoreDocument-${name}`)))
+  await Promise.all([...server.documents.keys()].map(name => failedStores.has(name) ? storeFailedRoom(name) : server.debouncer.executeNow(`onStoreDocument-${name}`)))
 }
 
 /**

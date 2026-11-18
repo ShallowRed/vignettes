@@ -2,10 +2,11 @@ import { IncomingMessage, MessageType, OutgoingMessage } from '@hocuspocus/serve
 import { MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import { describe, expect, it, vi } from 'vitest'
 import * as Y from 'yjs'
-import { hasRoom, MAX_DRAFT_BYTES, storePendingRooms, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
+import { hasRoom, MAX_DRAFT_BYTES, STORE_RETRY_MS, storePendingRooms, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
+import { useStores } from '../../layers/studio/server/utils/db'
 import { useContentArchive, useDbContent, useDeckMeta } from '../../layers/studio/server/utils/sources'
 import { yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
-import { setupServerDb, stubH3Globals } from './helpers/server-db'
+import { captureError, setupServerDb, stubH3Globals } from './helpers/server-db'
 
 // Drive the Hocuspocus hooks the way the server does, with the payload shapes
 // of the installed version. The store hook once refused every save because it
@@ -148,6 +149,61 @@ describe('collab document hooks', () => {
     const stored = await useDraftStore().load('room')
     expect(stored && yDocUpdateToMarkdown(stored)).toBe('# edited\n# room')
     await connection.disconnect()
+  })
+})
+
+describe('a room whose store fails after its last editor leaves', () => {
+  async function failedRoom(slug: string, failures = 1) {
+    await useDbContent().writer.save({ slug, raw: '# room', actor: 'ed' })
+    const connection = await server().openDirectConnection(slug, { deck: slug })
+    await connection.transact(document => document.getText('codemirror').insert(0, '# edited\n'))
+    captureError.mockClear()
+    const update = vi.spyOn(useStores().drafts, 'update')
+    for (let i = 0; i < failures; i++)
+      update.mockRejectedValueOnce(new Error('disk full'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    // The last tab closes, and its store runs once the debounce ends.
+    await connection.disconnect({ unloadImmediately: false })
+    await server().debouncer.executeNow(`onStoreDocument-${slug}`)
+    expect(server().documents.has(slug)).toBe(true)
+    expect(yDocUpdateToMarkdown((await useDraftStore().load(slug))!)).toBe('# room')
+  }
+
+  it('reports the error, and stores the room at the next try', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      await failedRoom('retried')
+      expect(captureError).toHaveBeenCalledWith(expect.objectContaining({ message: 'disk full' }), { tags: ['collab'] })
+      await vi.advanceTimersByTimeAsync(STORE_RETRY_MS)
+      await vi.waitFor(async () => expect(yDocUpdateToMarkdown((await useDraftStore().load('retried'))!)).toBe('# edited\n# room'))
+      await vi.waitFor(() => expect(server().documents.has('retried')).toBe(false))
+    }
+    finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps the room in memory while its stores fail, and reports the first failure only', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      await failedRoom('failing', 2)
+      await vi.advanceTimersByTimeAsync(STORE_RETRY_MS)
+      expect(server().documents.has('failing')).toBe(true)
+      expect(yDocUpdateToMarkdown((await useDraftStore().load('failing'))!)).toBe('# room')
+      expect(captureError).toHaveBeenCalledTimes(1)
+      await vi.advanceTimersByTimeAsync(STORE_RETRY_MS)
+      await vi.waitFor(async () => expect(yDocUpdateToMarkdown((await useDraftStore().load('failing'))!)).toBe('# edited\n# room'))
+      await vi.waitFor(() => expect(server().documents.has('failing')).toBe(false))
+    }
+    finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stores the room when the server stops', async () => {
+    await failedRoom('stopped')
+    await storePendingRooms()
+    expect(yDocUpdateToMarkdown((await useDraftStore().load('stopped'))!)).toBe('# edited\n# room')
   })
 })
 

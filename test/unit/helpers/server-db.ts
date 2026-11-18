@@ -66,6 +66,9 @@ async function serverAssetDir(base: string): Promise<string> {
   return studioConfig.nitro?.serverAssets?.find(asset => `assets:${asset.baseName}` === base)?.dir ?? ''
 }
 
+/** The `captureError` of the stubbed `useNitroApp`, which reports an error to the error tracking. */
+export const captureError = vi.fn()
+
 /**
  * The guards and handlers read identity, cookies, query, params and body through
  * h3/Nitro auto-imports. These stubs read them from the event object a test
@@ -77,6 +80,7 @@ export function stubH3Globals() {
   vi.stubGlobal('defineEventHandler', (handler: any) => handler)
   vi.stubGlobal('defineWebSocketHandler', (handler: any) => handler)
   vi.stubGlobal('createError', (e: any) => Object.assign(new Error(e.statusMessage), e))
+  vi.stubGlobal('useNitroApp', () => ({ captureError }))
   // As h3 does, reading the session of a request without a session cookie
   // creates one and sets its cookie.
   vi.stubGlobal('getUserSession', async (e: any) => {
