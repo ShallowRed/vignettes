@@ -236,9 +236,11 @@ const restorable = computed(() => {
   return to.value !== null && to.value !== props.draft
 })
 
+const { track } = useStudioEvent()
 const { mutateAsync: restore, isLoading: restoring } = useMutation({
   mutation: (ref: HistoryRef) => historyApi.restore($fetch, props.slug, ref),
-  onSuccess(result) {
+  onSuccess(result, ref) {
+    track('version-restored', { kind: ref.kind })
     toast.add({
       title: t('deck.history.restored'),
       icon: 'i-lucide-check',
@@ -252,7 +254,7 @@ const { mutateAsync: restore, isLoading: restoring } = useMutation({
   },
 })
 
-const { capture, capturing } = useSnapshotCapture(props.slug, () => {
+const { capture, capturing } = useSnapshotCapture(props.slug, 'history', () => {
   naming.value = false
 })
 </script>

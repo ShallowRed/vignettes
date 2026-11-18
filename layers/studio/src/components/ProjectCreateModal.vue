@@ -27,6 +27,7 @@ onReset(fillSlug)
 
 const slugValid = computed(() => state.slug === '' || isDeckSlug(state.slug))
 
+const { track } = useStudioEvent()
 const { mutate: runCreate, isLoading: pending } = useMutation({
   mutation: () => projectApi.create($fetch, {
     title: state.title.trim(),
@@ -35,6 +36,7 @@ const { mutate: runCreate, isLoading: pending } = useMutation({
     ...(state.slug ? { slug: state.slug } : {}),
   }),
   async onSuccess(project) {
+    track('project-created', {})
     // Refetch the folders query so the new folder is present before we navigate.
     await invalidateAll()
     open.value = false

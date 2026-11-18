@@ -4,8 +4,10 @@ import type { CommandPaletteGroup, CommandPaletteItem, DropdownMenuItem } from '
 import type { ParserId } from '@vignettes/core/deck'
 import type { SketchShape } from '../config/editor-reference'
 import { IMAGE_MIME_TYPES } from '#shared/storage/media-s3'
+import { componentEventName } from '#shared/telemetry/events'
 import { inLanguage } from '@vignettes/core/deck'
 import { useDocsAddress } from '../composables/useDocsAddress'
+import { useStudioEvent } from '../composables/useStudioEvent'
 import { DOCS_SECTIONS, groupedEntries, SLIDE_TEMPLATES } from '../config/editor-reference'
 import { insertImage, insertLink, insertSlideBreak, insertSlideTemplate, insertSnippet, setHeading, slideTemplateFor, toggleLinePrefix, wrapSelection } from '../utils/editor-commands'
 import { btnHover, menuWidth } from '../utils/toolbar-buttons'
@@ -51,6 +53,7 @@ function keepEditorFocus(event: Event) {
 }
 
 const { t, locale } = useI18n()
+const { track } = useStudioEvent()
 
 const imageInput = useTemplateRef<HTMLInputElement>('imageInput')
 
@@ -79,13 +82,19 @@ function writeFromPopover(menu: keyof typeof open, action: (view: EditorView) =>
 // A slide: empty, or from a template that fits the parser of the deck, each
 // drawn as a sketch.
 const slideChoices = computed<{ key: string, label: string, description?: string, sketch: readonly SketchShape[], action: (view: EditorView) => void }[]>(() => [
-  { key: 'empty', label: t('editor.toolbar.emptySlide'), sketch: [], action: insertSlideBreak },
+  { key: 'empty', label: t('editor.toolbar.emptySlide'), sketch: [], action: (view: EditorView) => {
+    insertSlideBreak(view)
+    track('editor-inserted', { kind: 'slide', template: 'empty', via: 'toolbar' })
+  } },
   ...SLIDE_TEMPLATES.map(entry => ({
     key: entry.labelKey,
     label: t(entry.labelKey),
     description: t(entry.descriptionKey),
     sketch: entry.sketch,
-    action: (view: EditorView) => insertSlideTemplate(view, slideTemplateFor(inLanguage(entry.snippet, locale.value), props.parser ?? 'separator', entry.section)),
+    action: (view: EditorView) => {
+      insertSlideTemplate(view, slideTemplateFor(inLanguage(entry.snippet, locale.value), props.parser ?? 'separator', entry.section))
+      track('editor-inserted', { kind: 'slide', template: entry.key, via: 'toolbar' })
+    },
   })),
 ])
 
@@ -105,7 +114,10 @@ const insertGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => {
         description: entry.description,
         suffix: entry.syntax,
         icon: entry.icon,
-        onSelect: () => writeFromPopover('insert', view => insertSnippet(view, entry.snippet)),
+        onSelect: () => writeFromPopover('insert', (view) => {
+          insertSnippet(view, entry.snippet)
+          track('editor-inserted', { kind: 'component', name: componentEventName(entry.name), via: 'toolbar' })
+        }),
       })),
     })),
     ...(docs ? [{ id: 'docs', ignoreFilter: true, items: [{ label: t('editor.toolbar.componentsDocs'), icon: 'i-lucide-book-open', to: docs, target: '_blank' }] }] : []),
@@ -132,7 +144,10 @@ const groups = computed<{ tooltip: string, kbds?: string[], icon: string, action
   ],
   [
     { tooltip: t('editor.toolbar.link'), icon: 'i-lucide-link', action: view => insertLink(view, t('editor.placeholders.text')) },
-    { tooltip: t('editor.toolbar.image'), icon: 'i-lucide-image', action: view => insertImage(view, t('editor.placeholders.imageDescription')) },
+    { tooltip: t('editor.toolbar.image'), icon: 'i-lucide-image', action: (view) => {
+      insertImage(view, t('editor.placeholders.imageDescription'))
+      track('editor-inserted', { kind: 'image', source: 'placeholder', via: 'toolbar' })
+    } },
   ],
 ])
 </script>

@@ -23,7 +23,7 @@ const props = withDefaults(defineProps<{
   parser: 'separator',
 })
 
-const emit = defineEmits<{ insert: [snippet: string] }>()
+const emit = defineEmits<{ insert: [snippet: string, name: string] }>()
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -155,7 +155,7 @@ const shortcuts = computed(() => EDITOR_SHORTCUTS.map(entry => ({
                     variant="ghost"
                     size="xs"
                     :aria-label="t('reference.help.insert', { name: entry.label })"
-                    @click="emit('insert', entry.snippet)"
+                    @click="emit('insert', entry.snippet, entry.name)"
                   />
                 </UTooltip>
               </li>

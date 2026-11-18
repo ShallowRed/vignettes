@@ -1,23 +1,27 @@
 {
   "privacy": {
     "title": "Confidentialité",
-    "nothingMeasured": "Cette instance ne mesure pas sa fréquentation et n'envoie ses erreurs à aucun service.",
+    "nothingMeasured": "Ce service ne mesure pas sa fréquentation et n'envoie ses erreurs à aucun outil externe.",
     "audience": {
       "title": "Mesure d'audience",
-      "collected": "Cette instance compte ses pages vues avec Umami, hébergé par son exploitant. Pour chaque page vue, Umami enregistre l'adresse de la page, l'origine du site d'où vient le visiteur, le navigateur, le système, la langue, le pays et la taille de l'écran.",
-      "pages": "Pour une page du studio, l'adresse enregistrée remplace le nom de la présentation par un terme générique. Pour une présentation publique, ce sont son adresse et son titre. Les présentations privées ou protégées par un mot de passe ne sont pas comptées.",
-      "limits": "Cette mesure ne dépose aucun cookie, sert seulement à connaître la fréquentation de l'instance et ne suit personne d'un site à l'autre.",
-      "retention": "Les données sont conservées {n} mois au plus."
+      "purpose": "Nous mesurons la fréquentation du service et l'usage de ses fonctionnalités avec Umami, un outil libre hébergé par l'exploitant du service, afin de l'améliorer. Aucune donnée n'est transmise à un tiers.",
+      "collected": "Umami enregistre les pages consultées et certaines actions, comme la création, la publication ou l'export d'une présentation. Il enregistre aussi le site d'où vous venez, votre navigateur, votre système, votre langue, votre pays et la taille de votre écran.",
+      "anonymous": "Ces statistiques sont anonymes : elles ne contiennent ni votre compte, ni le nom ou le contenu de vos présentations. Pour une présentation publique, Umami enregistre aussi son adresse et son titre.",
+      "limits": "Umami ne dépose aucun cookie et ne vous suit pas d'un site à l'autre.",
+      "retention": "Ces données sont conservées {n} mois."
     },
     "errors": {
       "title": "Suivi des erreurs",
-      "collected": "Quand une page ou le serveur rencontre une erreur, un rapport technique part vers GlitchTip, hébergé par l'exploitant de l'instance. Il contient le message de l'erreur, l'adresse de la page sans ses paramètres, l'adresse IP tronquée du visiteur, le navigateur et le système. Il ne contient ni compte, ni cookie, ni contenu envoyé au serveur. Le message d'une erreur peut citer un extrait de présentation.",
-      "retention": "Les rapports sont conservés {n} jour. | Les rapports sont conservés {n} jours."
+      "collected": "Quand une erreur se produit, un rapport technique est envoyé à GlitchTip, un outil libre hébergé par l'exploitant du service, pour que nous puissions la corriger. Le rapport contient le message d'erreur, l'adresse de la page, votre adresse IP tronquée, votre navigateur et votre système. Il ne contient ni votre compte ni vos cookies, mais un message d'erreur peut citer un extrait de présentation.",
+      "retention": "Ces rapports sont conservés {n} jour. | Ces rapports sont conservés {n} jours."
     },
     "cookies": {
       "title": "Cookies",
-      "list": "Cette instance dépose les cookies nécessaires à son fonctionnement : la session de connexion, la langue de l'interface, les préférences d'affichage, la page à rouvrir après la connexion et l'accès à une présentation protégée."
+      "list": "Ce service dépose uniquement les cookies nécessaires à son fonctionnement : votre session de connexion, la langue de l'interface, vos préférences d'affichage, la page à rouvrir après la connexion et l'accès aux présentations protégées par un mot de passe."
     },
-    "contact": "Pour toute question sur vos données, écrivez à {contact}."
+    "rights": {
+      "title": "Vos droits",
+      "contact": "Pour toute question sur vos données ou pour exercer vos droits, écrivez à {contact}."
+    }
   }
 }

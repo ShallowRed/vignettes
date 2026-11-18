@@ -28,16 +28,23 @@ const side = computed(() => placement.value === 'right' || placement.value === '
 const size = computed(() => layoutSize(layoutPlacement(attributes.value), attributes.value.size as MediaSize | undefined) ?? '')
 
 // Another author may have changed the line since the panel read it: each choice
-// starts from the text as it is.
-function write(next: (attributes: Record<string, unknown>) => Record<string, unknown>) {
+// starts from the text as it is. It returns whether the change reached the text.
+function write(next: (attributes: Record<string, unknown>) => Record<string, unknown>): boolean {
   const view = props.view
   if (!view || view.state.readOnly)
-    return
+    return false
   const at = slideLayoutAt(view.state)
   if (at.outside)
-    return
+    return false
   view.dispatch(slideLayoutChange(view.state, next(at.attributes)))
   refresh()
+  return true
+}
+
+const { track } = useStudioEvent()
+function choosePlacement(at: MediaPlacement | 'none') {
+  if (write(fresh => layoutForPlacement(fresh, at)))
+    track('layout-applied', { via: 'placement' })
 }
 
 /** Sets an attribute; the value its absence gives, or none, removes it. */
@@ -146,8 +153,10 @@ function applyProposal() {
   if (!view || chosen?.kind !== 'size')
     return
   const candidate = layoutCandidates(view.state).find(found => found.size === chosen.size)
-  if (candidate)
+  if (candidate) {
     view.dispatch(candidate.change)
+    track('layout-applied', { via: 'proposal' })
+  }
   refresh()
 }
 
@@ -248,7 +257,7 @@ const fields = computed(() => placement.value === 'none'
               color="neutral"
               variant="outline"
               :label="t('editor.convert')"
-              @click="write(fresh => fresh)"
+              @click="() => { write(fresh => fresh) }"
             />
           </PanelNotice>
 
@@ -287,7 +296,7 @@ const fields = computed(() => placement.value === 'none'
                 class="flex-col gap-1"
                 :class="placement === at ? 'text-highlighted' : btnHover"
                 :aria-pressed="placement === at"
-                @click="write(fresh => layoutForPlacement(fresh, at))"
+                @click="choosePlacement(at)"
               >
                 <SlideSketch
                   :shapes="placementSketch(at, share)"

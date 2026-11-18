@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PresentationListItem } from '#shared/presentations'
 import type { Project } from '#shared/projects'
+import type { EditorPanel } from '#shared/telemetry/events'
 /**
  * Integrated Markdown editor.
  *
@@ -16,11 +17,13 @@ import type { Project } from '#shared/projects'
  */
 import type { Extension } from '@codemirror/state'
 import type { SymbolKind } from '@vignettes/core/deck'
+import type { Ref } from 'vue'
 import type { PreviewInstance } from '../../composables/useEditorPreview'
 import type { LayoutProbeInstance } from '../../composables/useLayoutProbe'
 import type { Translate } from '../../config/editor-reference'
 import type { Severity } from '../../utils/editor-problems'
 import { loginHref } from '#shared/access'
+import { componentEventName } from '#shared/telemetry/events'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, highlightActiveLine, keymap } from '@codemirror/view'
@@ -39,6 +42,7 @@ import { LAYOUT_PROBE, useLayoutProbe } from '../../composables/useLayoutProbe'
 import { usePreviewSource } from '../../composables/usePreviewSource'
 import { useSlideTarget } from '../../composables/useSlideTarget'
 import { useSnapshotCapture } from '../../composables/useSnapshotCapture'
+import { useStudioEvent } from '../../composables/useStudioEvent'
 import { presentationsQuery, projectsQuery } from '../../queries'
 import { CODE_LANGUAGES } from '../../utils/editor-code-languages'
 import { insertSnippet, wrapSelection } from '../../utils/editor-commands'
@@ -126,7 +130,7 @@ const { dirty, unpublished, neverPublished, publicationHint, saveState, publishS
 
 // ⌘S captures a snapshot of the shared draft. Until the connection is up, the
 // server may hold an older text than the editor, so nothing is captured.
-const { capture: sendSnapshot } = useSnapshotCapture(slug)
+const { capture: sendSnapshot } = useSnapshotCapture(slug, 'shortcut')
 function captureSnapshot() {
   if (collabStatus.value !== 'connected') {
     toast.add({ title: t('editor.collab.offline'), description: t('deck.history.snapshotOffline'), icon: 'i-lucide-cloud-off', color: 'error' })
@@ -316,7 +320,7 @@ const { imageUploadHandlers, uploadImages } = useEditorImageUpload(editorWritabl
 
 function uploadChosenImages(files: File[]) {
   if (editorView.value && editorWritable.value)
-    uploadImages(editorView.value, files)
+    uploadImages(editorView.value, files, 'toolbar')
 }
 
 // Project slugs feed the frontmatter completion. Shares the catalog's `projects`
@@ -420,6 +424,7 @@ async function notifyPublished() {
 
 // ── Side panels ─────────────────────────────────────────────────────────────
 
+const { track } = useStudioEvent()
 const helpOpen = ref(false)
 const historyOpen = ref(false)
 
@@ -442,9 +447,11 @@ watch(helpOpen, (opened) => {
 })
 
 // The help stays open beside the text, for the next insertion.
-function insertFromHelp(snippet: string) {
-  if (editorView.value)
-    insertSnippet(editorView.value, snippet)
+function insertFromHelp(snippet: string, name: string) {
+  if (!editorView.value)
+    return
+  insertSnippet(editorView.value, snippet)
+  track('editor-inserted', { kind: 'component', name: componentEventName(name), via: 'help' })
 }
 
 // ── Metadata panel (shared with the catalog) ────────────────────────────────
@@ -452,6 +459,15 @@ function insertFromHelp(snippet: string) {
 const metaOpen = ref(false)
 const metaItem = ref<PresentationListItem | null>(null)
 const metaFocus = ref<'sharing' | undefined>()
+
+// A panel counts when it opens; the outline open from the preference of the browser does not.
+const PANELS: Record<EditorPanel, Ref<boolean>> = { help: helpOpen, symbols: symbolsOpen, history: historyOpen, outline: outlineOpen, meta: metaOpen }
+for (const [panel, opened] of Object.entries(PANELS) as [EditorPanel, Ref<boolean>][]) {
+  watch(opened, (open, wasOpen) => {
+    if (open && !wasOpen)
+      track('panel-opened', { panel })
+  })
+}
 
 // The catalog entry of the deck, with its alias and its accesses, read through
 // the cache the catalog pages and the settings drawer share.

@@ -40,12 +40,12 @@ describe('componentEntries', () => {
 
   it('offers a component the application registers, with its texts in the interface language', () => {
     registerDeckComponents([{ name: 'Cover', example: { content: [{ fr: '${Titre}', en: '${Title}' }] }, description: { fr: 'Couverture', en: 'Cover' } }])
-    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Cover', icon: 'i-lucide-shapes', snippet: '::Cover\n${Title}\n::' })
+    expect(componentEntries('en').at(-1)).toEqual({ name: 'Cover', syntax: '::Cover', label: 'Cover', description: 'Cover', icon: 'i-lucide-shapes', snippet: '::Cover\n${Title}\n::' })
   })
 
   it('falls back to French for a language a component lacks', () => {
     registerDeckComponents([{ name: 'Cover', example: { content: [{ fr: '${Titre}' }] }, description: { fr: 'Couverture' } }])
-    expect(componentEntries('en').at(-1)).toEqual({ syntax: '::Cover', label: 'Cover', description: 'Couverture', icon: 'i-lucide-shapes', snippet: '::Cover\n${Titre}\n::' })
+    expect(componentEntries('en').at(-1)).toEqual({ name: 'Cover', syntax: '::Cover', label: 'Cover', description: 'Couverture', icon: 'i-lucide-shapes', snippet: '::Cover\n${Titre}\n::' })
   })
 })
 

@@ -124,11 +124,13 @@ function close() {
 
 const project = computed(() => state.project !== NONE ? { project: state.project } : {})
 
+const { track } = useStudioEvent()
 const { mutate: runCreate, isLoading: pending } = useMutation({
   mutation: () => deckApi.create($fetch, fromFile.value
     ? { slug: state.slug, raw: fileRaw.value, ...(fileTitleMissing.value ? { title: title.value } : {}), ...project.value }
     : { slug: state.slug, title: title.value, template: state.start, ...project.value, ...(state.theme ? { theme: state.theme } : {}) }),
   async onSuccess() {
+    track('deck-created', { source: fromFile.value ? 'file' : 'template' })
     open.value = false
     toast.add({ title: t('catalog.deckCreate.created'), description: title.value, icon: 'i-lucide-file-plus-2', color: 'success' })
     await invalidatePresentations()

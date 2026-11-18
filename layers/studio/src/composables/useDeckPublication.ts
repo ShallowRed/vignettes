@@ -31,6 +31,7 @@ export function useDeckPublication(options: DeckPublicationOptions) {
   const { slug, raw, collab, docSynced } = options
   const { t, locale } = useI18n()
   const toast = useToast()
+  const { track } = useStudioEvent()
 
   const lastSaved = ref('')
   // Solo concurrency token: the draft stamp we loaded, echoed on save so the
@@ -142,6 +143,7 @@ export function useDeckPublication(options: DeckPublicationOptions) {
       if (!collab.value)
         await writeDraft()
       await deckApi.publish($fetch, slug)
+      track('deck-published', {})
       publishedRaw.value = raw.value
       publishedAt.value = Date.now()
       publishState.value = 'idle'

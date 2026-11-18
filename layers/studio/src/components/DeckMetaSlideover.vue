@@ -142,18 +142,25 @@ function close() {
   open.value = false
 }
 
+const { track } = useStudioEvent()
 const { mutate: save, isLoading: saving } = useMutation({
-  mutation: () => deckApi.updateMeta($fetch, props.item.slug, {
-    status: state.status,
-    unlisted: state.unlisted,
-    project: state.project === NONE ? null : state.project,
-    alias: aliasOf(state.alias) || null,
-    family: state.family.trim() || null,
-    variantLabel: state.variantLabel.trim() || null,
-    supersededBy: state.supersededBy === NONE ? null : state.supersededBy,
-    ...(passwordReady.value ? { accessPassword: state.password.trim() } : {}),
-  }),
-  async onSuccess() {
+  // Compare with the status the item had when the save starts.
+  mutation: () => {
+    const changedStatus = state.status !== props.item.status ? state.status : null
+    return deckApi.updateMeta($fetch, props.item.slug, {
+      status: state.status,
+      unlisted: state.unlisted,
+      project: state.project === NONE ? null : state.project,
+      alias: aliasOf(state.alias) || null,
+      family: state.family.trim() || null,
+      variantLabel: state.variantLabel.trim() || null,
+      supersededBy: state.supersededBy === NONE ? null : state.supersededBy,
+      ...(passwordReady.value ? { accessPassword: state.password.trim() } : {}),
+    }).then(() => changedStatus)
+  },
+  async onSuccess(changedStatus) {
+    if (changedStatus)
+      track('deck-status-changed', { status: changedStatus })
     toast.add({ title: t('deck.meta.saved'), icon: 'i-lucide-check', color: 'success' })
     await invalidatePresentations()
     open.value = false

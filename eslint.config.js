@@ -19,10 +19,18 @@ const ERROR_TRACKING_SDK = {
 }
 const SDK_HOME = ['layers/studio/sentry.*.config.ts']
 
+const UMAMI_SENDER = {
+  group: ['**/page-view', '**/page-view.ts'],
+  importNames: ['sendToUmami'],
+  message: 'Send an event to Umami through track() of layers/studio/src/composables/useStudioEvent.ts, declared in layers/studio/shared/telemetry/events.ts.',
+}
+const UMAMI_SENDER_HOME = ['layers/studio/src/composables/useStudioEvent.ts', 'site/app/plugins/page-views.client.ts']
+
 const DOMAIN_IO = [
   MDC_READER,
   DATABASE_DRIVER,
   ERROR_TRACKING_SDK,
+  UMAMI_SENDER,
   { group: ['h3'], message: 'shared/ is the framework-free domain: move request handling to server/utils/.' },
   { group: ['@aws-sdk/*'], message: 'shared/ has no I/O: place the S3 access in server/utils/.' },
   { group: ['node:*'], message: 'shared/ runs on the client and the server: take the value as an argument from an entry point.' },
@@ -110,23 +118,23 @@ export default antfu({
   files: ['**/*.{js,ts,vue}'],
   ignores: [...MDC_HOME, ...DRIVER_HOME],
   rules: {
-    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, ERROR_TRACKING_SDK] }],
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, ERROR_TRACKING_SDK, UMAMI_SENDER] }],
   },
 }, {
   files: SDK_HOME,
   rules: {
-    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER] }],
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, UMAMI_SENDER] }],
   },
 }, {
   files: DRIVER_HOME,
   rules: {
-    'no-restricted-imports': ['error', { patterns: [MDC_READER, ERROR_TRACKING_SDK] }],
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, ERROR_TRACKING_SDK, UMAMI_SENDER] }],
   },
 }, {
   files: MDC_HOME,
   ignores: DRIVER_TESTS,
   rules: {
-    'no-restricted-imports': ['error', { patterns: [DATABASE_DRIVER, ERROR_TRACKING_SDK] }],
+    'no-restricted-imports': ['error', { patterns: [DATABASE_DRIVER, ERROR_TRACKING_SDK, UMAMI_SENDER] }],
   },
 }, {
   files: ['layers/studio/server/**'],
@@ -152,7 +160,7 @@ export default antfu({
       patterns: [{
         regex: '^(?!(zod|js-yaml|slugify)$|\\.{1,2}/)',
         message: '@vignettes/core is framework-free: it imports zod, js-yaml, slugify and its own files.',
-      }],
+      }, UMAMI_SENDER],
     }],
     'no-restricted-properties': ['error', PROCESS_ENV],
   },
@@ -163,7 +171,7 @@ export default antfu({
       patterns: [{
         regex: '^(?!(@vignettes/core(/.*)?|pptxgenjs|jszip|pptx-embed-fonts)$|\\.{1,2}/)',
         message: PPTX_WRITER_MESSAGE,
-      }],
+      }, UMAMI_SENDER],
     }],
     'no-restricted-globals': ['error', ...PPTX_BROWSER_GLOBALS.map(name => ({ name, message: PPTX_WRITER_MESSAGE }))],
     'no-restricted-properties': ['error', PROCESS_ENV, ...PPTX_BROWSER_GLOBALS.map(property => ({ object: 'globalThis', property, message: PPTX_WRITER_MESSAGE }))],
@@ -180,5 +188,10 @@ export default antfu({
   rules: {
     'no-restricted-imports': ['error', { patterns: DOMAIN_IO }],
     'no-restricted-properties': ['error', PROCESS_ENV],
+  },
+}, {
+  files: UMAMI_SENDER_HOME,
+  rules: {
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, ERROR_TRACKING_SDK] }],
   },
 })

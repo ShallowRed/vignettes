@@ -6,6 +6,7 @@ import { loginHref } from '#shared/access'
 import { deckPath, parsedTitleSlide, titleSlidePreview } from '#shared/presentations'
 import { inSpeakerViewFrame } from '@vignettes/core/render'
 import { deckThemeName, resolveThemeName } from '@vignettes/core/theme'
+import { useStudioEvent } from '../composables/useStudioEvent'
 import { deckViewCounts, trackDeckView } from '../utils/page-view'
 
 // A deck as the studio shows it: the Reveal presentation with the other
@@ -43,6 +44,7 @@ const { data: viewer } = useDeckViewer(props.slug)
 
 // A navigation in the page reaches this component before the viewer route answers.
 const { umami } = useRuntimeConfig().public
+const { track } = useStudioEvent()
 onMounted(() => {
   let counted = false
   watch(() => viewer.value.publicDeck, (publicDeck) => {
@@ -110,6 +112,7 @@ watch([reveal, () => viewer.value.canEdit], ([instance, canEdit]) => {
     :code="presentationData.metadata.code"
     :deck="pptxExport ? presentationData : undefined"
     @ready="onReady"
+    @exported="format => track('deck-exported', { format })"
   >
     <RevealSlides :presentation-data="presentationData" />
     <template

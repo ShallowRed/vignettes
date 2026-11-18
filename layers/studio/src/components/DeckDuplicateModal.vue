@@ -63,6 +63,7 @@ function close() {
   open.value = false
 }
 
+const { track } = useStudioEvent()
 const { mutate: runCopy, isLoading: pending } = useMutation({
   mutation: () => deckApi.duplicate($fetch, props.item.slug, {
     slug: state.slug,
@@ -72,6 +73,7 @@ const { mutate: runCopy, isLoading: pending } = useMutation({
     ...(askSourceLabel.value && state.sourceVariantLabel.trim() ? { sourceVariantLabel: state.sourceVariantLabel.trim() } : {}),
   }),
   async onSuccess() {
+    track('deck-created', { source: 'duplicate', mode: props.mode })
     open.value = false
     toast.add({
       title: isVariant.value ? t('deck.duplicate.variantCreated') : t('deck.duplicate.editionCreated'),

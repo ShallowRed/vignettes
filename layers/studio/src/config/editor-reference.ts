@@ -1,4 +1,5 @@
 /* eslint-disable no-template-curly-in-string -- `${…}` is the CodeMirror snippet placeholder syntax, not an unbuilt template literal */
+import type { SlideTemplateKey } from '#shared/telemetry/events'
 import type { ComponentExample, DeckComponent, DeckComponentGroup, LocalizedText, SymbolKind } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, DeckBrandSchema, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage, ParserIdSchema } from '@vignettes/core/deck'
@@ -24,6 +25,8 @@ export interface Translate {
 
 /** A component or an annotation, with its texts in the interface language. */
 export interface DirectiveEntry {
+  /** The name of the component or the tag of the annotation: `Quote`, `pretitle`. */
+  name: string
   /** The deck syntax that opens it: `::Quote`, `:::Columns`, `:pretitle`. */
   syntax: string
   /** Its name in the interface. */
@@ -67,6 +70,8 @@ export interface SketchShape {
 }
 
 export interface SlideTemplate {
+  /** Its name in the events of the studio. */
+  key: SlideTemplateKey
   labelKey: string
   descriptionKey: string
   /** The shapes of its sketch in the slide menu. */
@@ -175,6 +180,7 @@ export const FRONTMATTER_KEYS: readonly FrontmatterKey[] = [
 /** A component with its texts in the interface language, written with `syntax`; its name stands for a missing label. */
 function componentEntry(component: DeckComponent, syntax: string, lang: string): DirectiveEntry {
   return {
+    name: component.name,
     syntax,
     label: inLanguage(component.label, lang) || component.name,
     description: inLanguage(component.description, lang),
@@ -227,6 +233,7 @@ function insertable(components: readonly DeckComponent[], lang: string): Referen
 /** The `:tag{…}` annotations the parser lifts out of the slide body. */
 export function annotationEntries(lang: string): ReferenceEntry[] {
   return DECK_ANNOTATIONS.map(annotation => ({
+    name: annotation.tag,
     syntax: `:${annotation.tag}`,
     label: inLanguage(annotation.label, lang),
     description: inLanguage(annotation.description, lang),
@@ -295,6 +302,7 @@ const column = (x: number, width: number, y = 20): SketchShape[] => [text(x, y, 
  */
 export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
   {
+    key: 'twoColumns',
     labelKey: 'reference.templates.twoColumns.label',
     descriptionKey: 'reference.templates.twoColumns.description',
     sketch: [title(10, 8, 40), ...column(10, 32), ...column(54, 32)],
@@ -304,6 +312,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'threeColumns',
     labelKey: 'reference.templates.threeColumns.label',
     descriptionKey: 'reference.templates.threeColumns.description',
     sketch: [title(10, 8, 40), ...column(10, 22), ...column(37, 22), ...column(64, 22)],
@@ -313,6 +322,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'cover',
     labelKey: 'reference.templates.cover.label',
     descriptionKey: 'reference.templates.cover.description',
     sketch: [title(18, 20, 60, 7), text(30, 32, 36)],
@@ -322,6 +332,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'section',
     labelKey: 'reference.templates.section.label',
     section: true,
     descriptionKey: 'reference.templates.section.description',
@@ -332,6 +343,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'keyPoints',
     labelKey: 'reference.templates.keyPoints.label',
     descriptionKey: 'reference.templates.keyPoints.description',
     sketch: [title(10, 8, 40), text(12, 20, 50), text(12, 26, 44), text(12, 32, 48)],
@@ -341,6 +353,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'comparison',
     labelKey: 'reference.templates.comparison.label',
     descriptionKey: 'reference.templates.comparison.description',
     sketch: [title(10, 8, 44), title(10, 19, 16, 3), ...column(10, 32, 26), title(54, 19, 16, 3), ...column(54, 32, 26)],
@@ -350,6 +363,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'mediaText',
     labelKey: 'reference.templates.mediaText.label',
     descriptionKey: 'reference.templates.mediaText.description',
     sketch: [title(8, 10, 34), text(8, 22, 34), text(8, 28, 28), media(48, 1, 47, 52)],
@@ -359,6 +373,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'quote',
     labelKey: 'reference.templates.quote.label',
     descriptionKey: 'reference.templates.quote.description',
     sketch: [title(14, 18, 2.5, 12), text(20, 19, 56), text(20, 25, 50), text(20, 34, 20)],
@@ -368,6 +383,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'fullScreenImage',
     labelKey: 'reference.templates.fullScreenImage.label',
     descriptionKey: 'reference.templates.fullScreenImage.description',
     sketch: [media(1, 1, 94, 52), title(10, 38, 44)],
@@ -377,6 +393,7 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     },
   },
   {
+    key: 'storybookGallery',
     labelKey: 'reference.templates.storybookGallery.label',
     descriptionKey: 'reference.templates.storybookGallery.description',
     sketch: [title(10, 8, 40), media(10, 19, 36, 26), media(50, 19, 36, 26)],

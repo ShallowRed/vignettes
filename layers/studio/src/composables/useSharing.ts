@@ -43,6 +43,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
   const requestFetch = useRequestFetch()
   const queryCache = useQueryCache()
   const toast = useToast()
+  const { track } = useStudioEvent()
   const { t, locale } = useI18n()
 
   const grantRoleItems = computed<GrantRoleItem[]>(() => [
@@ -116,6 +117,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
   const { mutate: submitGrant, isLoading: adding } = useMutation({
     mutation: () => permissionsApi.set(requestFetch, scope(), grantUserId.value!, grantRole.value, grantExpiry()),
     onSuccess() {
+      track('access-granted', { scope: scope().kind, role: grantRole.value, via: 'account' })
       grantUserId.value = undefined
       grantDays.value = defaultDays()
     },
@@ -185,6 +187,7 @@ export function useSharing(scope: () => PermissionScope, enabled: () => boolean,
       )
     },
     onSuccess() {
+      track('access-granted', { scope: 'deck', role: grantRole.value, via: 'handle' })
       inviteHandle.value = ''
       grantDays.value = defaultDays()
     },

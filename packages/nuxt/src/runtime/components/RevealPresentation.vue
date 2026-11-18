@@ -45,6 +45,8 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   /** Reveal is initialized; the host can bind keys or listen to slide changes. */
   ready: [reveal: RevealApi]
+  /** The reader opened the print view, or the PowerPoint file was written. */
+  exported: [format: 'pdf' | 'pptx']
 }>()
 
 const themeName = computed(() => deckThemeName(props))
@@ -89,6 +91,7 @@ const printSupported = import.meta.client && isPrintMode && /Chrome\//.test(navi
 const preparingPrint = ref(printSupported)
 
 function openPrintView() {
+  emit('exported', 'pdf')
   window.location.href = buildPrintPdfUrl(window.location.href)
 }
 
@@ -147,6 +150,7 @@ async function exportPptxFile() {
       frenchTypography: frenchTypography.value,
       font: getThemeTokens(themeName.value)?.pptx?.font,
     })
+    emit('exported', 'pptx')
   }
   catch (error) {
     console.error('[pptx] export failed', error)

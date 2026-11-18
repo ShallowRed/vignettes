@@ -85,22 +85,45 @@ export function startsPageView(path: string): boolean {
 
 let referrerSent = false
 
-/** The visit of the current document: its referrer goes with its first page view. */
-export function currentVisit(website: string): PageViewVisit {
-  const referrer = referrerSent ? '' : document.referrer
-  referrerSent = true
+/** The visit of the current document, without its referrer. */
+function documentVisit(website: string): PageViewVisit {
   return {
     website,
     hostname: location.hostname,
     language: navigator.language,
     screen: `${screen.width}x${screen.height}`,
     origin: location.origin,
-    referrer,
+    referrer: '',
   }
 }
 
+/** The visit of the current document: its referrer goes with its first page view. */
+export function currentVisit(website: string): PageViewVisit {
+  const referrer = referrerSent ? '' : document.referrer
+  referrerSent = true
+  return { ...documentVisit(website), referrer }
+}
+
+/** The body of an event of the studio, whose data its catalog has accepted. */
+export interface NamedEvent {
+  type: 'event'
+  payload: PageViewEvent['payload'] & {
+    name: string
+    data: Readonly<Record<string, string | boolean>>
+  }
+}
+
+/**
+ * An event of the studio, sent from a page under its route template, with no
+ * referrer: the referrer of the visit stays for its first page view.
+ */
+export function studioEventPayload(name: string, data: NamedEvent['payload']['data'], template: string, website: string): NamedEvent {
+  const { origin: _, ...sent } = documentVisit(website)
+  return { type: 'event', payload: { ...sent, url: template, title: template, name, data } }
+}
+
 /** A failed request raises no error. */
-export function sendPageView(host: string, event: PageViewEvent): void {
+export function sendToUmami(host: string, event: PageViewEvent | NamedEvent): void {
   fetch(`${host.replace(/\/$/, '')}/api/send`, {
     method: 'POST',
     keepalive: true,
@@ -115,14 +138,26 @@ export interface UmamiConfig {
   decksWebsiteId: string
 }
 
+/** The template of a route path: Nuxt writes `/edit/:slug()`. */
+export function routeTemplate(routePath: string): string {
+  return routePath.replace(/\(\)/g, '')
+}
+
+/** The Umami website of a page of the studio, by its template: none for a page that sends nothing. */
+export function pageSite(config: UmamiConfig, template: string): string | undefined {
+  const kind = PAGE_VIEW_PAGES[template]
+  const website = kind === 'count' ? config.studioWebsiteId : kind === 'deck' ? config.decksWebsiteId : ''
+  return config.host && website ? website : undefined
+}
+
 /** Sends the view of a studio page, under its template, when the page counts. */
 export function trackStudioPage(config: UmamiConfig, routePath: string | undefined): void {
-  if (!config.host || !config.studioWebsiteId || !routePath)
+  if (!routePath)
     return
-  // Nuxt writes the path of a route with parentheses: `/edit/:slug()`.
-  const template = routePath.replace(/\(\)/g, '')
-  if (PAGE_VIEW_PAGES[template] === 'count')
-    sendPageView(config.host, pageViewEvent({ url: template, title: template }, currentVisit(config.studioWebsiteId)))
+  const template = routeTemplate(routePath)
+  const website = PAGE_VIEW_PAGES[template] === 'count' ? pageSite(config, template) : undefined
+  if (website)
+    sendToUmami(config.host, pageViewEvent({ url: template, title: template }, currentVisit(website)))
 }
 
 export interface DeckView {
@@ -141,5 +176,5 @@ export function deckViewCounts({ publicDeck, draft, speakerViewFrame, search }: 
 /** Sends the view of a deck, with its path and its title. */
 export function trackDeckView(config: UmamiConfig, title: string): void {
   if (config.host && config.decksWebsiteId)
-    sendPageView(config.host, pageViewEvent({ url: location.pathname, title }, currentVisit(config.decksWebsiteId)))
+    sendToUmami(config.host, pageViewEvent({ url: location.pathname, title }, currentVisit(config.decksWebsiteId)))
 }

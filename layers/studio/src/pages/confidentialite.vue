@@ -33,8 +33,9 @@ useHead({ title: () => t('privacy.title') })
         <h2 class="font-semibold text-highlighted">
           {{ t('privacy.audience.title') }}
         </h2>
+        <p>{{ t('privacy.audience.purpose') }}</p>
         <p>{{ t('privacy.audience.collected') }}</p>
-        <p>{{ t('privacy.audience.pages') }}</p>
+        <p>{{ t('privacy.audience.anonymous') }}</p>
         <p>{{ t('privacy.audience.limits') }}</p>
         <p v-if="umami.retentionMonths">
           {{ t('privacy.audience.retention', Number(umami.retentionMonths)) }}
@@ -58,9 +59,15 @@ useHead({ title: () => t('privacy.title') })
         </h2>
         <p>{{ t('privacy.cookies.list') }}</p>
       </section>
-      <p v-if="privacyContact">
-        {{ t('privacy.contact', { contact: privacyContact }) }}
-      </p>
+      <section
+        v-if="privacyContact"
+        class="flex flex-col gap-2"
+      >
+        <h2 class="font-semibold text-highlighted">
+          {{ t('privacy.rights.title') }}
+        </h2>
+        <p>{{ t('privacy.rights.contact', { contact: privacyContact }) }}</p>
+      </section>
     </div>
   </NuxtLayout>
 </template>

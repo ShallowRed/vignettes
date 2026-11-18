@@ -1,3 +1,4 @@
+import type { StudioEventData } from '#shared/telemetry/events'
 import type { Extension } from '@codemirror/state'
 import type { Ref } from 'vue'
 import { EditorView } from '@codemirror/view'
@@ -13,6 +14,7 @@ import { imageUploadFailure } from '../utils/image-upload-failure'
  */
 export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
   const toast = useToast()
+  const { track } = useStudioEvent()
   const { t, locale } = useI18n()
 
   async function uploadImage(file: File): Promise<string> {
@@ -27,7 +29,9 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
     return [...(list ?? [])].filter(f => f.type.startsWith('image/'))
   }
 
-  async function uploadImages(view: EditorView, files: File[]): Promise<void> {
+  /** `via` names the gesture that brings the files. */
+  async function uploadImages(view: EditorView, files: File[], via: Extract<StudioEventData<'editor-inserted'>, { kind: 'image' }>['via']): Promise<void> {
+    let inserted = false
     for (const file of files) {
       try {
         const src = await uploadImage(file)
@@ -37,11 +41,14 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
         }
         view.dispatch(imageDirectiveInsertion(view.state, view.state.selection.main.head, src))
         view.focus()
+        inserted = true
       }
       catch (error) {
         toast.add({ ...imageUploadFailure(error, file, t, locale.value), icon: 'i-lucide-triangle-alert', color: 'error' })
       }
     }
+    if (inserted)
+      track('editor-inserted', { kind: 'image', source: 'file', via })
   }
 
   const imageUploadHandlers: Extension = EditorView.domEventHandlers({
@@ -52,7 +59,7 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
       if (!files.length)
         return false
       event.preventDefault()
-      uploadImages(view, files)
+      uploadImages(view, files, 'paste')
       return true
     },
     drop(event, view) {
@@ -65,7 +72,7 @@ export function useEditorImageUpload(writable: Ref<boolean>, slug: string) {
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
       if (pos != null)
         view.dispatch({ selection: { anchor: pos } })
-      uploadImages(view, files)
+      uploadImages(view, files, 'drop')
       return true
     },
   })

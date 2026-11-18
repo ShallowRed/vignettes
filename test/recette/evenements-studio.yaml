@@ -1,0 +1,5 @@
+title: Événements du studio
+checks:
+  - account: viewer
+    page: /confidentialite
+    expect: Le paragraphe « Le studio compte aussi des actions » se lit sans peine et décrit la mesure comme tu veux la présenter aux personnes qui utilisent le studio.
