@@ -1,0 +1,5 @@
+title: Page d'une adresse inconnue
+checks:
+  - account: anonymous
+    page: /slides/codimd/adresse-inconnue
+    expect: "La page « Cette page n'existe pas » montre le logo à gauche de l'en-tête, et son survol ouvre l'infobulle « Retour à l'accueil ». L'onglet s'intitule « Cette page n'existe pas · Vignettes »."

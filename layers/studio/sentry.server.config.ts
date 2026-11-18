@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nuxt'
-import { ERROR_TRACKING_DEFAULTS, scrubErrorEvent } from './shared/error-tracking'
+import { ERROR_TRACKING_DEFAULTS, isRequestRefusal, scrubErrorEvent } from './shared/error-tracking'
 
 const { dsn, environment } = useRuntimeConfig().public.errorTracking
 
@@ -8,6 +8,6 @@ if (dsn) {
     ...ERROR_TRACKING_DEFAULTS,
     dsn,
     environment: environment || undefined,
-    beforeSend: event => scrubErrorEvent(event),
+    beforeSend: (event, hint) => isRequestRefusal(hint.originalException) ? null : scrubErrorEvent(event),
   })
 }

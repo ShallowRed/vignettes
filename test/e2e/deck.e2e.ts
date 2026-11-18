@@ -228,6 +228,11 @@ test('a click activates a frame, and a click beside it gives the keyboard back t
 
 test('Tab enters a frame and activates it', async ({ page }) => {
   await openFocusingFrame(page)
+  // The deck takes back the focus that the frame takes on load. Firefox then
+  // starts the keyboard navigation after the frame and does not wrap around
+  // the page, so Tab starts from the title of the slide.
+  await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).not.toBe('IFRAME')
+  await page.locator('section#page-qui-prend-le-focus h2').click()
   // A frame of another origin takes the focus a moment after Tab.
   for (let presses = 0; presses < 20; presses++) {
     await page.keyboard.press('Tab')

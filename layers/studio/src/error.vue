@@ -15,20 +15,23 @@ const route = useRoute()
 const known = computed(() => [401, 403, 404].includes(props.error.statusCode) ? String(props.error.statusCode) : 'other')
 const title = computed(() => t(`common.error.${known.value}.title`))
 const description = computed(() => t(`common.error.${known.value}.description`))
+useHead({ title })
 </script>
 
 <template>
-  <NuxtLayout name="default">
-    <ErrorState
-      :icon="error.statusCode === 404 ? 'i-lucide-file-question' : 'i-lucide-triangle-alert'"
-      :title="title"
-      :description="description"
-      :actions="error.statusCode === 401 ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: loginHref(route.fullPath) }] : []"
-      :back="{ onClick: () => clearError({ redirect: '/' }) }"
-    >
-      <p class="text-xs text-dimmed">
-        {{ error.statusCode }}
-      </p>
-    </ErrorState>
-  </NuxtLayout>
+  <AppShell>
+    <NuxtLayout name="default">
+      <ErrorState
+        :icon="error.statusCode === 404 ? 'i-lucide-file-question' : 'i-lucide-triangle-alert'"
+        :title="title"
+        :description="description"
+        :actions="error.statusCode === 401 ? [{ label: t('common.actions.signIn'), icon: 'i-lucide-log-in', to: loginHref(route.fullPath) }] : []"
+        :back="{ onClick: () => clearError({ redirect: '/' }) }"
+      >
+        <p class="text-xs text-dimmed">
+          {{ error.statusCode }}
+        </p>
+      </ErrorState>
+    </NuxtLayout>
+  </AppShell>
 </template>

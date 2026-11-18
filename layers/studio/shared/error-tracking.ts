@@ -39,6 +39,15 @@ function scrubText(text: string): string {
   return text.split('\nparams:', 1)[0]!.replace(ADDRESS_PARAMETER, '')
 }
 
+/**
+ * The SDK reports every error a server middleware throws, refusals included:
+ * a 4xx answers a request the instance declines on purpose, often from a robot.
+ */
+export function isRequestRefusal(error: unknown): boolean {
+  const statusCode = (error as { statusCode?: unknown } | null)?.statusCode
+  return typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500
+}
+
 export function scrubErrorEvent<T extends ErrorTrackingEvent>(event: T): T {
   delete event.user
   delete event.breadcrumbs

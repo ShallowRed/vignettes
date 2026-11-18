@@ -1,5 +1,6 @@
+import { createError } from 'h3'
 import { describe, expect, it } from 'vitest'
-import { ERROR_TRACKING_DEFAULTS, scrubErrorEvent } from '../../layers/studio/shared/error-tracking'
+import { ERROR_TRACKING_DEFAULTS, isRequestRefusal, scrubErrorEvent } from '../../layers/studio/shared/error-tracking'
 import { ADAPTERS, NOW, useAdapter } from './helpers/adapters'
 
 describe('scrubErrorEvent', () => {
@@ -59,6 +60,14 @@ describe('scrubErrorEvent', () => {
 
   it('accepts an event without any of these fields', () => {
     expect(scrubErrorEvent({})).toEqual({})
+  })
+})
+
+describe('isRequestRefusal', () => {
+  it('names the 4xx errors a route throws, and leaves the server errors', () => {
+    expect(isRequestRefusal(createError({ statusCode: 404, statusMessage: 'Not found' }))).toBe(true)
+    expect(isRequestRefusal(createError({ statusCode: 500 }))).toBe(false)
+    expect(isRequestRefusal(new Error('Cannot remove headers after they are sent to the client'))).toBe(false)
   })
 })
 
