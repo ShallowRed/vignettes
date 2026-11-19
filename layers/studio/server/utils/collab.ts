@@ -2,7 +2,7 @@ import type { Connection, Document, onStoreDocumentPayload } from '@hocuspocus/s
 import type { DraftStore } from '@vignettes/core/deck'
 import type { DraftFollow } from './content-push'
 import { CLOSE_REASONS, REFUSAL_REASONS } from '#shared/collab/close-reasons'
-import { DECK_TEXT_FIELD, DraftLineageError, followOutcome, followText, includesState, isDeckTextUpdate, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '#shared/collab/ydoc'
+import { DECK_TEXT_FIELD, DraftLineageError, dropPending, followOutcome, followText, includesState, isDeckTextUpdate, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { Hocuspocus } from '@hocuspocus/server'
 import { isDeckSlug, MAX_DECK_LENGTH } from '@vignettes/core/deck'
 import * as Y from 'yjs'
@@ -97,10 +97,12 @@ function refusal(reason: typeof REFUSAL_REASONS[keyof typeof REFUSAL_REASONS]): 
 // The y-protocols type of a sync step 1 message (`messageYjsSyncStep1`).
 const SYNC_STEP_1 = 0
 
-// The connections whose sync step 1 shares the lineage of the room, and those
-// refused: Hocuspocus goes on handling the messages queued after a refusal.
+// The connections whose sync step 1 shares the lineage of the room, those
+// refused for another lineage, and those refused for an update the room does
+// not take: Hocuspocus goes on handling the messages queued after a refusal.
 const validated = new WeakSet<object>()
 const refused = new WeakSet<object>()
+const unsupported = new WeakSet<object>()
 
 type CloseReason = typeof CLOSE_REASONS[keyof typeof CLOSE_REASONS]
 
@@ -118,6 +120,19 @@ function closeConnection(connection: Connection, reason: CloseReason): void {
 function closeRoom(document: Document, reason: CloseReason): void {
   for (const connection of document.getConnections())
     closeConnection(connection, reason)
+}
+
+/**
+ * Ends a connection that sent an update the room does not take, on which the
+ * client goes offline and syncs again, and refuses its next messages.
+ */
+function unsupportedRefusal(connection: Connection, cause: string): Error {
+  if (!unsupported.has(connection)) {
+    unsupported.add(connection)
+    console.warn(`[collab] refused ${cause} on "${connection.document.name}"`)
+    connection.webSocket.close(1008, 'Unsupported content')
+  }
+  return new Error(cause)
 }
 
 function lineageRefusal(connection: Connection): Error {
@@ -269,6 +284,8 @@ export function useCollabServer(): Hocuspocus {
         throw refusal(REFUSAL_REASONS.notFound)
       const stored = await useDraftStore().load(documentName) ?? await firstDraft(documentName)
       Y.applyUpdate(document, stored)
+      // A draft stored before `mergeDraftUpdate` dropped the pending parts may hold some.
+      dropPending(document)
       return document
     },
 
@@ -289,16 +306,23 @@ export function useCollabServer(): Hocuspocus {
       if (!validated.has(connection))
         throw lineageRefusal(connection)
       // The other sync messages carry an update, which the editor fills with deck text only.
-      if (!isDeckTextUpdate(payload)) {
-        console.warn(`[collab] refused an update with content other than deck text on "${document.name}"`)
-        connection.webSocket.close(1008, 'Unsupported content')
-        throw new Error('an update with content other than deck text')
-      }
+      if (!isDeckTextUpdate(payload))
+        throw unsupportedRefusal(connection, 'an update with content other than deck text')
     },
 
     async beforeHandleMessage({ connection }) {
       if (refused.has(connection))
         throw lineageRefusal(connection)
+      if (unsupported.has(connection))
+        throw unsupportedRefusal(connection, 'a message after an update the room does not take')
+    },
+
+    // Yjs holds as pending, in memory and out of the text, the part of an
+    // update whose items or deletions depend on items the room lacks: the hook
+    // drops that part and ends the connection that sent it.
+    async afterHandleMessage({ document, connection }) {
+      if (dropPending(document))
+        unsupportedRefusal(connection, 'an update with pending parts')
     },
 
     // A document past the limit closes its connections unstored: the editor

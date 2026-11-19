@@ -7,14 +7,27 @@ import { serverConfig } from './config'
 // The one reader of the host a request reaches: the `Host` header, which the
 // proxy passes as the browser wrote it. `X-Forwarded-Host` is never read.
 
-/** The origin the browser called, `Host` with the protocol of the request. */
+/**
+ * The origin the browser called, `Host` with the protocol of the request. A
+ * `Host` that is not a valid host, as one with a space, is the client's error.
+ */
 export function requestOrigin(event: H3Event): string {
-  return getRequestURL(event).origin
+  try {
+    return getRequestURL(event).origin
+  }
+  catch {
+    throw createError({ statusCode: 400, statusMessage: 'Bad Request: the Host header is not a valid host' })
+  }
 }
 
-/** The origin a WebSocket upgrade reaches, which crossws builds from `Host`. */
+/** The origin a WebSocket upgrade reaches, which crossws builds from `Host`; a 400 for a `Host` that is not a valid host. */
 export function upgradeOrigin(request: Request): string {
-  return new URL(request.url).origin
+  try {
+    return new URL(request.url).origin
+  }
+  catch {
+    throw new Response('Bad Request: the Host header is not a valid host', { status: 400 })
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
-import { DraftLineageError, editDraftUpdate, followDraftUpdate, includesState, isDeckTextUpdate, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
+import { DraftLineageError, dropPending, editDraftUpdate, followDraftUpdate, includesState, isDeckTextUpdate, markdownToYDocUpdate, mergeDraftUpdate, replaceText, sharesLineage, yDocUpdateToMarkdown } from '../../layers/studio/shared/collab/ydoc'
 
 describe('deck ydoc helpers', () => {
   it('round-trips markdown through a Y.Doc update', () => {
@@ -134,6 +134,42 @@ describe('editDraftUpdate', () => {
     expect(yDocUpdateToMarkdown(edited)).toBe('theme: kit')
     expect(sharesLineage(Y.encodeStateVectorFromUpdate(edited), Y.encodeStateVector(draft))).toBe(true)
     expect(editDraftUpdate(Y.encodeStateAsUpdate(draft), () => false)).toBeNull()
+  })
+})
+
+describe('dropPending', () => {
+  /** A stored draft that holds pending parts: text written after an item it lacks. */
+  function pollutedDraft() {
+    const draft = docWith('# v1')
+    const tab = new Y.Doc()
+    Y.applyUpdate(tab, Y.encodeStateAsUpdate(draft))
+    tab.getText('codemirror').insert(0, 'a')
+    const withheld = Y.encodeStateVector(tab)
+    tab.getText('codemirror').insert(1, 'x'.repeat(10_000))
+    Y.applyUpdate(draft, Y.encodeStateAsUpdate(tab, withheld))
+    return { draft, update: Y.encodeStateAsUpdate(draft) }
+  }
+
+  it('drops the pending parts of a document', () => {
+    const { draft } = pollutedDraft()
+    expect(dropPending(draft)).toBe(true)
+    expect(draft.store.pendingStructs).toBeNull()
+    expect(dropPending(draft)).toBe(false)
+  })
+
+  it('leaves the pending parts of a stored draft out of a merge and of an edit', () => {
+    const { draft, update } = pollutedDraft()
+    expect(update.byteLength).toBeGreaterThan(10_000)
+    const room = new Y.Doc()
+    Y.applyUpdate(room, update)
+    dropPending(room)
+    room.getText('codemirror').insert(0, 'b')
+    expect(mergeDraftUpdate(update, Y.encodeStateAsUpdate(room)).byteLength).toBeLessThan(200)
+    expect(editDraftUpdate(update, (text) => {
+      text.insert(0, 'c')
+      return true
+    })!.byteLength).toBeLessThan(200)
+    expect(yDocUpdateToMarkdown(Y.encodeStateAsUpdate(draft))).toBe('# v1')
   })
 })
 

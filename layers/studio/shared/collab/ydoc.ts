@@ -58,6 +58,20 @@ export function replaceText(ytext: Y.Text, next: string): void {
     ytext.insert(start, inserted)
 }
 
+/**
+ * Drops the pending structs and delete set of `doc`: the parts of updates that
+ * Yjs holds, out of the text, until the items they depend on arrive. A draft
+ * encoded with them would carry them along. Returns whether it held any.
+ */
+export function dropPending(doc: Y.Doc): boolean {
+  const { store } = doc
+  if (!store.pendingStructs && !store.pendingDs)
+    return false
+  store.pendingStructs = null
+  store.pendingDs = null
+  return true
+}
+
 /** A refused draft write: no stored draft, an empty update over a stored draft, or an update of another lineage. */
 export class DraftLineageError extends Error {}
 
@@ -79,6 +93,7 @@ export function mergeDraftUpdate(stored: Uint8Array | null, update: Uint8Array):
   const doc = new Y.Doc()
   Y.applyUpdate(doc, stored)
   Y.applyUpdate(doc, update)
+  dropPending(doc)
   const merged = Y.encodeStateAsUpdate(doc)
   doc.destroy()
   return merged
@@ -111,6 +126,7 @@ export function followText(ytext: Y.Text, previous: string | null, next: string)
 export function editDraftUpdate(update: Uint8Array, edit: (text: Y.Text) => boolean): Uint8Array | null {
   const doc = new Y.Doc()
   Y.applyUpdate(doc, update)
+  dropPending(doc)
   let changed = false
   doc.transact(() => {
     changed = edit(doc.getText(DECK_TEXT_FIELD))
