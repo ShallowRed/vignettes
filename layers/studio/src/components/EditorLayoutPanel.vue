@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import type { EditorState, TransactionSpec } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import type { MediaPlacement, MediaSize } from '@vignettes/core/deck'
+import type { MediaPlacement, MediaSize, TextStep } from '@vignettes/core/deck'
 import type { LayoutProposal, LayoutReading } from '../utils/editor-layout'
 import type { Choice, ChoiceNote } from './ChoiceRow.vue'
-import { DEFAULT_SIDE_MEDIA_SIZE, HEADING_MODES, layoutDefault, layoutForPlacement, layoutPlacement, layoutSize, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, VERTICAL_ALIGNS } from '@vignettes/core/deck'
+import { DEFAULT_SIDE_MEDIA_SIZE, DEFAULT_TEXT_STEP, HEADING_MODES, layoutDefault, layoutPlacement, layoutSize, MEDIA_FITS, MEDIA_PLACEMENTS, MEDIA_POSITIONS, MEDIA_SIZES, TEXT_STEPS, VERTICAL_ALIGNS } from '@vignettes/core/deck'
 import { useCursorReading } from '../composables/useCursorReading'
 import { LAYOUT_PROBE } from '../composables/useLayoutProbe'
-import { layoutCandidates, placementSketch, proposeLayout, slideLayoutAt, slideLayoutChange, slideMediaAt } from '../utils/editor-layout'
+import { blockedPlacements, heldByFloor, layoutCandidates, placementSketch, slideLayoutAt, slideLayoutChange, slideLayoutProposal, slidePlacementChange } from '../utils/editor-layout'
 import { OVERFLOW_THRESHOLD } from '../utils/preview-overflow'
 import { btnHover, menuWidth } from '../utils/toolbar-buttons'
 
@@ -17,7 +18,7 @@ const props = defineProps<{
   disabled?: boolean
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const { open, current, refresh } = useCursorReading(() => props.view, slideLayoutAt)
 
@@ -29,27 +30,38 @@ const size = computed(() => layoutSize(layoutPlacement(attributes.value), attrib
 
 // Another author may have changed the line since the panel read it: each choice
 // starts from the text as it is. It returns whether the change reached the text.
-function write(next: (attributes: Record<string, unknown>) => Record<string, unknown>): boolean {
+function write(change: (state: EditorState) => TransactionSpec): boolean {
   const view = props.view
-  if (!view || view.state.readOnly)
+  if (!view || view.state.readOnly || slideLayoutAt(view.state).outside)
     return false
-  const at = slideLayoutAt(view.state)
-  if (at.outside)
+  const spec = change(view.state)
+  if (!spec.changes)
     return false
-  view.dispatch(slideLayoutChange(view.state, next(at.attributes)))
+  view.dispatch(spec)
   refresh()
   return true
 }
 
+/** Writes the attributes of the slide's `:layout` that `next` gives from the written ones. */
+function writeAttributes(next: (attributes: Record<string, unknown>) => Record<string, unknown>) {
+  write(state => slideLayoutChange(state, next(slideLayoutAt(state).attributes)))
+}
+
 const { track } = useStudioEvent()
-function choosePlacement(at: MediaPlacement | 'none') {
-  if (write(fresh => layoutForPlacement(fresh, at)))
+
+// The placements the media of the body cannot take, read with the slide. Their
+// buttons stay focusable, so that their tooltip says why on hover and on focus.
+const blocked = computed(() => current.value && props.view ? blockedPlacements(props.view.state) : {})
+
+/** Places the media of the slide: a media of the body moves into `:layout`, a slide without one takes the placeholder image. */
+function place(at: MediaPlacement | 'none') {
+  if (write(state => slidePlacementChange(state, at)))
     track('layout-applied', { via: 'placement' })
 }
 
 /** Sets an attribute; the value its absence gives, or none, removes it. */
 function set(name: string, chosen: unknown) {
-  write((fresh) => {
+  writeAttributes((fresh) => {
     const absent = name === 'size' ? layoutSize(layoutPlacement(fresh), undefined) : layoutDefault(name, fresh)
     const next = { ...fresh }
     if (chosen === undefined || chosen === '' || chosen === false || chosen === absent)
@@ -60,19 +72,20 @@ function set(name: string, chosen: unknown) {
   })
 }
 
-// Each size of the media, measured in a hidden render once the panel opens and
-// again after a change of the text of the slide, as the preview waits for the
-// typing to pause. The panel keeps the place of what it measures from the
-// opening on, so that the result moves nothing.
+// Each size of the media and each step of the text, measured in a hidden render
+// once the panel opens and again after a change of the text of the slide, as
+// the preview waits for the typing to pause; then the path of the proposal.
+// The panel keeps the place of what it measures from the opening on, so that
+// the result moves nothing.
 const probe = inject(LAYOUT_PROBE, undefined)
-const readings = shallowRef<Partial<Record<MediaSize, LayoutReading>>>({})
+const readings = shallowRef<Record<string, LayoutReading>>({})
+// The keys of the readings of the sizes and the steps the panel marks.
+const sizeKeys = shallowRef<Partial<Record<MediaSize, string>>>({})
+const stepKeys = shallowRef<Partial<Record<TextStep, string>>>({})
 const proposal = shallowRef<LayoutProposal>()
 const measured = ref(false)
-// The slide has sizes of its media to measure.
+// The slide has settings to measure, and a proposal to show.
 const measurable = ref(false)
-// Its media sits beside the text, where the panel proposes a size.
-const proposing = ref(false)
-const fromBody = ref(false)
 let measureTimer: ReturnType<typeof setTimeout> | undefined
 let measuredText: string | undefined
 let pendingText: string | undefined
@@ -100,16 +113,16 @@ watch([open, current], ([opened]) => {
     return
   clearTimeout(measureTimer)
   // A measure of another text says nothing of this one.
-  const media = slideMediaAt(view.state)
+  const { sizes, steps } = layoutCandidates(view.state)
   readings.value = {}
+  sizeKeys.value = Object.fromEntries(Object.entries(sizes).map(([choice, found]) => [choice, found.key]))
+  stepKeys.value = Object.fromEntries(Object.entries(steps).map(([choice, found]) => [choice, found.key]))
   proposal.value = undefined
   measured.value = false
-  measurable.value = layoutCandidates(view.state).length > 0
-  proposing.value = measurable.value && Boolean(media?.proposable)
-  fromBody.value = media?.source === 'body'
+  measurable.value = Object.keys(steps).length > 0 || Object.keys(sizes).length > 0
   pendingText = text
   measureTimer = setTimeout(async () => {
-    const result = media && probe ? await probe.measure(view.state) : {}
+    const result = probe && measurable.value ? await probe.measure(view.state) : { readings: {} }
     // A later measure is under way.
     if (result === undefined || pendingText !== text)
       return
@@ -118,19 +131,41 @@ watch([open, current], ([opened]) => {
     if (result === null)
       return
     measuredText = text
-    readings.value = result
+    readings.value = result.readings
+    proposal.value = result.proposal
     measured.value = true
-    proposal.value = media && Object.keys(result).length ? proposeLayout(media, attributes.value.size as MediaSize | undefined, result) : undefined
   }, 300)
 })
+
+/** The changes a proposal makes to the written settings, in words. */
+function proposedChanges(proposed: Record<string, unknown>): string {
+  const written = attributes.value
+  const changes: string[] = []
+  if (!layoutPlacement(written) && layoutPlacement(proposed))
+    changes.push(t('editor.layout.changes.media', { size: proposed.size }))
+  else if (proposed.size !== written.size)
+    changes.push(t('editor.layout.changes.size', { size: proposed.size }))
+  if (proposed.heading !== written.heading)
+    changes.push(t('editor.layout.changes.heading'))
+  const step = (attributes: Record<string, unknown>) => attributes.text ?? DEFAULT_TEXT_STEP
+  if (step(proposed) !== step(written))
+    changes.push(t('editor.layout.changes.text', { step: step(proposed) }))
+  if (proposed.inset !== written.inset)
+    changes.push(t('editor.layout.changes.inset'))
+  return new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(changes)
+}
 
 const proposalText = computed(() => {
   const chosen = proposal.value
   if (!measured.value)
     return t('editor.layout.measuring')
-  if (chosen?.kind === 'size')
-    return t(fromBody.value ? 'editor.layout.proposeBody' : 'editor.layout.proposeSize', { size: chosen.size })
-  return chosen?.kind === 'too-long' ? t('editor.layout.tooLong') : t('editor.layout.sizeFits', { size: size.value })
+  if (chosen?.kind === 'too-long')
+    return t('editor.layout.tooLong')
+  if (chosen?.grow)
+    return t('editor.layout.proposeGrow', { step: chosen.attributes.text })
+  if (chosen)
+    return t('editor.layout.propose', { changes: proposedChanges(chosen.attributes) })
+  return side.value ? t('editor.layout.sizeFits', { size: size.value }) : t('editor.layout.textFits')
 })
 
 // The panel notes a size that brings the body text below this share of its size.
@@ -138,7 +173,8 @@ const SHRUNK_TEXT = 0.99
 
 /** What the panel says of a size it measured: the text overflows, or its body text shrinks. */
 function sizeNote(choice: string): ChoiceNote | undefined {
-  const reading = readings.value[choice as MediaSize]
+  const key = sizeKeys.value[choice as MediaSize]
+  const reading = key ? readings.value[key] : undefined
   if (!reading)
     return undefined
   if (reading.overflow > OVERFLOW_THRESHOLD)
@@ -146,18 +182,26 @@ function sizeNote(choice: string): ChoiceNote | undefined {
   return reading.textScale < SHRUNK_TEXT ? { text: t('editor.layout.sizeShrinks', { percent: Math.round(reading.textScale * 100) }), severity: 'info' } : undefined
 }
 
-// The size is taken from the text as it is when the author applies it.
+/** What the panel says of a step it measured: the text overflows, or the floor of the theme holds it at the size of the step above. */
+function stepNote(choice: string): ChoiceNote | undefined {
+  const step = TEXT_STEPS.indexOf(choice as TextStep)
+  const reading = readings.value[stepKeys.value[choice as TextStep] ?? '']
+  // A slide without a body, as a title alone, has no text the step sizes.
+  if (!reading?.bodySize)
+    return undefined
+  if (reading.overflow > OVERFLOW_THRESHOLD)
+    return { text: t('editor.layout.sizeOverflows'), severity: 'warning' }
+  // Below the step of the theme, the floor may hold a step at the size of the one above it.
+  const below = step < TEXT_STEPS.indexOf(DEFAULT_TEXT_STEP)
+  const above = below ? readings.value[stepKeys.value[TEXT_STEPS[step + 1]!] ?? ''] : undefined
+  return above && heldByFloor(reading, above) ? { text: t('editor.layout.stepHeld'), severity: 'info' } : undefined
+}
+
+// The proposal is written on the text as it is when the author applies it.
 function applyProposal() {
-  const view = props.view
   const chosen = proposal.value
-  if (!view || chosen?.kind !== 'size')
-    return
-  const candidate = layoutCandidates(view.state).find(found => found.size === chosen.size)
-  if (candidate) {
-    view.dispatch(candidate.change)
+  if (chosen?.kind === 'layout' && write(state => slideLayoutProposal(state, chosen.attributes)))
     track('layout-applied', { via: 'proposal' })
-  }
-  refresh()
 }
 
 const PLACEMENTS: (MediaPlacement | 'none')[] = ['none', ...MEDIA_PLACEMENTS]
@@ -205,6 +249,7 @@ const shownRows = computed(() => {
     ...(behind ? [{ title: t('editor.layout.veil'), icon: 'i-lucide-blend', row: row('veil', veils.value, choice => choice || t('editor.layout.veilNone'), (attributes.value.veil as string | undefined) ?? '') }] : []),
     ...(media ? [{ title: t('editor.layout.fit'), icon: 'i-lucide-crop', row: row('fit', MEDIA_FITS, choice => t(`editor.layout.fits.${choice}`), value('fit'), FIT_ICONS) }] : []),
     ...(media && value('fit') === 'cover' ? [{ title: t('editor.layout.position'), icon: 'i-lucide-scan-eye', iconOnly: true, row: row('position', MEDIA_POSITIONS, choice => t(`editor.layout.positions.${choice}`), value('position'), POSITION_ICONS) }] : []),
+    ...(current.value?.screen ? [] : [{ title: t('editor.layout.text'), icon: 'i-lucide-a-large-small', row: row('text', TEXT_STEPS, choice => choice, value('text'), {}, stepNote) }]),
     { title: t('editor.layout.align'), icon: 'i-lucide-move-vertical', row: row('align', ['', ...VERTICAL_ALIGNS], choice => t(`editor.layout.aligns.${choice || 'auto'}`), value('align'), ALIGN_ICONS) },
     { title: t('editor.layout.heading'), icon: 'i-lucide-heading', iconOnly: true, row: row('heading', ['', ...HEADING_MODES], choice => t(`editor.layout.headings.${choice || 'normal'}`), value('heading'), HEADING_ICONS) },
   ]
@@ -257,19 +302,19 @@ const fields = computed(() => placement.value === 'none'
               color="neutral"
               variant="outline"
               :label="t('editor.convert')"
-              @click="() => { write(fresh => fresh) }"
+              @click="writeAttributes(fresh => fresh)"
             />
           </PanelNotice>
 
           <!-- Two lines from the opening on, the height of every result. -->
           <PanelNotice
-            v-if="proposing"
+            v-if="measurable"
             class="min-h-12"
             :text="proposalText"
-            :muted="proposal?.kind !== 'size'"
+            :muted="proposal?.kind !== 'layout'"
           >
             <UButton
-              v-if="proposal?.kind === 'size'"
+              v-if="proposal?.kind === 'layout'"
               size="xs"
               color="neutral"
               variant="outline"
@@ -287,23 +332,29 @@ const fields = computed(() => placement.value === 'none'
               {{ t('editor.layout.placement') }}
             </h3>
             <div class="grid grid-cols-3 gap-1">
-              <UButton
+              <UTooltip
                 v-for="at in PLACEMENTS"
                 :key="at"
-                color="neutral"
-                :variant="placement === at ? 'soft' : 'ghost'"
-                size="xs"
-                class="flex-col gap-1"
-                :class="placement === at ? 'text-highlighted' : btnHover"
-                :aria-pressed="placement === at"
-                @click="choosePlacement(at)"
+                :text="blocked[at as MediaPlacement] && t(`editor.layout.blocked.${blocked[at as MediaPlacement]}`)"
+                :disabled="!blocked[at as MediaPlacement]"
               >
-                <SlideSketch
-                  :shapes="placementSketch(at, share)"
-                  class="w-16 aspect-video"
-                />
-                <span>{{ t(`editor.layout.placements.${at}`) }}</span>
-              </UButton>
+                <UButton
+                  color="neutral"
+                  :variant="placement === at ? 'soft' : 'ghost'"
+                  size="xs"
+                  class="flex-col gap-1"
+                  :class="placement === at ? 'text-highlighted' : !blocked[at as MediaPlacement] && btnHover"
+                  :aria-pressed="placement === at"
+                  :aria-disabled="Boolean(blocked[at as MediaPlacement])"
+                  @click="place(at)"
+                >
+                  <SlideSketch
+                    :shapes="placementSketch(at, share)"
+                    class="w-16 aspect-video"
+                  />
+                  <span>{{ t(`editor.layout.placements.${at}`) }}</span>
+                </UButton>
+              </UTooltip>
             </div>
           </section>
 
@@ -343,10 +394,18 @@ const fields = computed(() => placement.value === 'none'
             <ChoiceRow
               :choices="shown.row.choices"
               :icon-only="shown.iconOnly"
-              :marks="shown.row.name === 'size' && measurable"
+              :marks="(shown.row.name === 'size' || shown.row.name === 'text') && measurable"
               @choose="set(shown.row.name, $event)"
             />
           </section>
+
+          <USwitch
+            v-if="!current.screen"
+            :model-value="attributes.inset === 'tight'"
+            :label="t('editor.layout.inset')"
+            size="sm"
+            @update:model-value="set('inset', $event ? 'tight' : undefined)"
+          />
 
           <USwitch
             v-if="placement !== 'none' && placement !== 'behind'"

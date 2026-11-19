@@ -93,19 +93,19 @@
     order: 2;
   }
 
-  // Media bleed: the slide keeps its text inset (`--slide-padding-x`), but the
+  // Media bleed: the slide keeps its text inset (`--slide-inset-x`), but the
   // media pane pulls back out to the slide edge so wide screens stay wide.
   section.layout-media-right > .slide-media-pane {
-    margin-right: calc(-1 * var(--slide-padding-x, 4rem));
+    margin-right: calc(-1 * var(--slide-inset-x, 4rem));
   }
 
   section.layout-media-left > .slide-media-pane {
-    margin-left: calc(-1 * var(--slide-padding-x, 4rem));
+    margin-left: calc(-1 * var(--slide-inset-x, 4rem));
   }
 
   section:is(.layout-media-top, .layout-media-bottom) > .slide-media-pane {
-    margin-left: calc(-1 * var(--slide-padding-x, 4rem));
-    margin-right: calc(-1 * var(--slide-padding-x, 4rem));
+    margin-left: calc(-1 * var(--slide-inset-x, 4rem));
+    margin-right: calc(-1 * var(--slide-inset-x, 4rem));
   }
 
   // Content pane: a column aligned vertically by `--slide-align`

@@ -65,6 +65,9 @@ export interface DeckAnnotation {
 
 const TEXT_ATTRIBUTE = (fr: string, en: string): ComponentAttribute => ({ name: 'text', description: { fr, en } })
 
+/** The image the examples and the editor put where an image is to come, which the author then replaces. */
+export const PLACEHOLDER_IMAGE = '/images/placeholder.svg'
+
 export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
   {
     tag: 'slide-background',
@@ -72,7 +75,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     label: { fr: 'Image de fond', en: 'Background image' },
     images: ['image'],
     attributes: [{ name: 'image', description: { fr: 'Adresse de l\'image de fond.', en: 'Address of the background image.' } }],
-    example: { attributes: { image: '${/images/placeholder.svg}' } },
+    example: { attributes: { image: `\${${PLACEHOLDER_IMAGE}}` } },
     description: { fr: 'Image en fond de cette diapositive', en: 'Background image of this slide' },
     docs: '/ecrire/syntaxe#les-annotations',
   },
@@ -98,7 +101,7 @@ export const DECK_ANNOTATIONS: readonly DeckAnnotation[] = [
     tag: 'layout',
     icon: 'i-lucide-layout-panel-left',
     label: { fr: 'Mise en page', en: 'Layout' },
-    example: { attributes: { media: '${right}', src: '${/images/placeholder.svg}', alt: '${Description}' } },
+    example: { attributes: { media: '${right}', src: `\${${PLACEHOLDER_IMAGE}}`, alt: '${Description}' } },
     description: { fr: 'Image, page ou story à côté, au-dessus, au-dessous ou derrière le texte', en: 'Image, page or story beside, above, below or behind the text' },
     docs: '/ecrire/syntaxe#les-mises-en-page',
   },
@@ -236,7 +239,7 @@ export const BUILT_IN_COMPONENTS: readonly DeckComponent[] = withAttributes([
     group: 'media',
     aliases: ['deck-image'],
     images: ['src'],
-    example: { attributes: { src: '${/images/placeholder.svg}', alt: '${Description}' } },
+    example: { attributes: { src: `\${${PLACEHOLDER_IMAGE}}`, alt: '${Description}' } },
     description: { fr: 'Image avec sa légende', en: 'Image with its caption' },
     docs: '/reference/nuxt#image',
     layout: { attributes: { src: 'src', alt: 'alt', fit: 'fit', position: 'position' }, type: 'image' },

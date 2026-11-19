@@ -1,10 +1,7 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { OVERFLOW_THRESHOLD, sectionOverflow } from '../../layers/studio/src/utils/preview-overflow'
-
-// One deck per theme of the repository, with the same slides: the measure reads
-// the geometry each theme's stylesheet gives.
-const DECKS = ['/slides/mise-en-page', '/slides/mise-en-page-minimal']
+import { LAYOUT_DECKS } from './fixtures/layout-decks'
 
 /** The overflow of the slide at `h`, measured in the page by the editor's own function. */
 async function overflowAt(page: Page, deck: string, h: number): Promise<number> {
@@ -18,7 +15,7 @@ async function overflowAt(page: Page, deck: string, h: number): Promise<number> 
   )`)
 }
 
-for (const deck of DECKS) {
+for (const deck of LAYOUT_DECKS) {
   test(`the overflow counts the text past the slide and the text that reaches a media below it, in ${deck}`, async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'The measure reads the geometry of the theme stylesheet; Chromium is enough to keep its rule.')
     const fits = (overflow: number) => overflow <= OVERFLOW_THRESHOLD

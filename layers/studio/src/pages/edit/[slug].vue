@@ -255,8 +255,8 @@ const { onPreviewClick, onPreviewDoubleClick, sourceTracking } = usePreviewSourc
   history: editorHistory,
 })
 
-// The layout panel measures each size of a media in a hidden render, drawn with
-// the metadata of the preview.
+// The layout panel measures each setting of a slide in a hidden render, drawn
+// with the metadata of the preview.
 const layoutProbeInstance = useTemplateRef<LayoutProbeInstance>('layoutProbeInstance')
 const layoutProbe = useLayoutProbe({ preview, instance: layoutProbeInstance })
 provide(LAYOUT_PROBE, layoutProbe)

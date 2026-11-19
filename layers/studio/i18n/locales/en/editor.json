@@ -264,12 +264,28 @@
       "legacy": ":layout format to convert into attributes.",
       "missingSource": "Enter the address of an image or a page, or the id of a story.",
       "outside": "Place the cursor in a slide to set its layout.",
-      "measuring": "Measuring the media sizes…",
-      "proposeSize": "The text fits with a media on {size} of the width.",
-      "proposeBody": "Place the media to the right of the text, on {size} of the width.",
+      "measuring": "Measuring the layout…",
       "sizeFits": "The text fits with the media on {size} of the width.",
       "tooLong": "The text overflows at every size: shorten it or split the slide.",
-      "apply": "Apply"
+      "apply": "Apply",
+      "text": "Text size",
+      "inset": "Tight margins",
+      "stepHeld": "At this step, the text stays at the smallest size of the theme.",
+      "textFits": "The text fits in the slide.",
+      "propose": "The text fits with {changes}.",
+      "proposeGrow": "The text also fits at {step}, one step larger.",
+      "changes": {
+        "media": "the media to the right of the text, on {size} of the width",
+        "size": "the media on {size} of the width",
+        "heading": "the compact heading",
+        "text": "the size {step}",
+        "inset": "tight margins"
+      },
+      "blocked": {
+        "several": "This slide has several media in its body: they stay there.",
+        "kept": "This media has a caption or a setting the layout does not take: it stays in the body of the slide.",
+        "not-behind": "A page or a story does not go behind the text."
+      }
     },
     "convert": "Convert",
     "docsLink": "Documentation",

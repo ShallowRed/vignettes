@@ -2,7 +2,7 @@
 import type { SlideTemplateKey } from '#shared/telemetry/events'
 import type { ComponentExample, DeckComponent, DeckComponentGroup, LocalizedText, SymbolKind } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
-import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, DeckBrandSchema, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage, ParserIdSchema } from '@vignettes/core/deck'
+import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, DeckBrandSchema, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage, ParserIdSchema, PLACEHOLDER_IMAGE } from '@vignettes/core/deck'
 import { CODE_THEMES, DEFAULT_SLIDE_HEIGHT, DEFAULT_SLIDE_WIDTH } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
@@ -368,8 +368,8 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     descriptionKey: 'reference.templates.mediaText.description',
     sketch: [title(8, 10, 34), text(8, 22, 34), text(8, 28, 28), media(48, 1, 47, 52)],
     snippet: {
-      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="${right}" size="${1/2}" src="${/images/placeholder.svg}" alt="${Description de l\'image}"}\n\n${Le parcours d\'inscription passe de six à trois écrans.}',
-      en: '---\n\n## ${Slide title}\n\n:layout{media="${right}" size="${1/2}" src="${/images/placeholder.svg}" alt="${Image description}"}\n\n${The sign-up journey goes from six screens to three.}',
+      fr: `---\n\n## \${Titre de la diapo}\n\n:layout{media="\${right}" size="\${1/2}" src="\${${PLACEHOLDER_IMAGE}}" alt="\${Description de l'image}"}\n\n\${Le parcours d'inscription passe de six à trois écrans.}`,
+      en: `---\n\n## \${Slide title}\n\n:layout{media="\${right}" size="\${1/2}" src="\${${PLACEHOLDER_IMAGE}}" alt="\${Image description}"}\n\n\${The sign-up journey goes from six screens to three.}`,
     },
   },
   {
@@ -388,8 +388,8 @@ export const SLIDE_TEMPLATES: readonly SlideTemplate[] = [
     descriptionKey: 'reference.templates.fullScreenImage.description',
     sketch: [media(1, 1, 94, 52), title(10, 38, 44)],
     snippet: {
-      fr: '---\n\n## ${Titre de la diapo}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${50%}"}',
-      en: '---\n\n## ${Slide title}\n\n:layout{media="behind" src="${/images/placeholder.svg}" alt="${Description}" veil="${50%}"}',
+      fr: `---\n\n## \${Titre de la diapo}\n\n:layout{media="behind" src="\${${PLACEHOLDER_IMAGE}}" alt="\${Description}" veil="\${50%}"}`,
+      en: `---\n\n## \${Slide title}\n\n:layout{media="behind" src="\${${PLACEHOLDER_IMAGE}}" alt="\${Description}" veil="\${50%}"}`,
     },
   },
   {

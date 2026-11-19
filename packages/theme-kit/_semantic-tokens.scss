@@ -30,6 +30,10 @@
  *       component (card, quote, frame, code block).
  *   --code-min-size
  *       the smallest size of a code block, in slide units; `0px` by default.
+ *   --text-size-ratio / --text-min-size
+ *       the ratio between two steps of the body text of a slide
+ *       (`:layout{text=…}`), and the size the body never goes below, in slide
+ *       pixels, which scale with the slide.
  *   --code-surface / --code-surface-dark
  *       the backgrounds of the light code theme `clair` and of the dark code
  *       theme `nuit`, by default the backgrounds of GitHub's light and dark code.
@@ -74,6 +78,10 @@
   --border: #e0e0e0;
   --radius: 6px;
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  // Body text of a slide
+  --text-size-ratio: 1.125;
+  --text-min-size: 16px;
 
   // Code
   --code-min-size: 0px;

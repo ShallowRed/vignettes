@@ -1,7 +1,7 @@
 import type { RevealConfig } from '@vignettes/core/deck'
 
 /**
- * The Reveal settings of the hidden render that measures the sizes of a media:
+ * The Reveal settings of the hidden render that measures each setting of a slide:
  * no keys, address, messages or pointer, and no transition, so that it leaves
  * the preview alone and shows each slide at once.
  */

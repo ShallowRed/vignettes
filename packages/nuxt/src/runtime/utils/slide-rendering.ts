@@ -183,6 +183,10 @@ export function getSlideClasses(slide: Pick<Slide, 'headingLevel' | 'section' | 
     classes.push(`heading-${slide.layout.heading}`)
   if (slide.layout?.align)
     classes.push(`align-${slide.layout.align}`)
+  if (slide.layout?.text)
+    classes.push(`text-size-${slide.layout.text}`)
+  if (slide.layout?.inset)
+    classes.push(`inset-${slide.layout.inset}`)
   return classes
 }
 

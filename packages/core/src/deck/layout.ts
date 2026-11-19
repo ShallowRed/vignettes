@@ -33,6 +33,17 @@ export type MediaType = typeof MEDIA_TYPES[number]
 export const HEADING_MODES = ['compact', 'hidden', 'print'] as const
 export type HeadingMode = typeof HEADING_MODES[number]
 
+/** The sizes of the body text of a slide, around the theme's own `md` (see `text` in `LAYOUT_ATTRIBUTES`). */
+export const TEXT_STEPS = ['xs', 'sm', 'md', 'lg', 'xl'] as const
+export type TextStep = typeof TEXT_STEPS[number]
+
+/** The step of a slide that writes no `text`: the size of the theme's body. */
+export const DEFAULT_TEXT_STEP: TextStep = 'md'
+
+/** The margins of a slide that `inset` sets (see `LAYOUT_ATTRIBUTES`). */
+export const INSET_VALUES = ['tight'] as const
+export type Inset = typeof INSET_VALUES[number]
+
 /** The vertical alignment of the content of a slide (see `align` in `LAYOUT_ATTRIBUTES`). */
 export const VERTICAL_ALIGNS = ['top', 'center', 'bottom'] as const
 export type VerticalAlign = typeof VERTICAL_ALIGNS[number]
@@ -79,6 +90,10 @@ export interface SlideLayout {
   align?: VerticalAlign
   /** The body is a screen or a gallery of screens, at the largest size the slide leaves them. */
   screen?: true
+  /** The size of the body text, when it is not the theme's `md`. */
+  text?: TextStep
+  /** The margins of the slide, halved by `tight`. */
+  inset?: Inset
 }
 
 export const LAYOUT_ATTRIBUTES: readonly ComponentAttribute[] = [
@@ -149,6 +164,20 @@ export const LAYOUT_ATTRIBUTES: readonly ComponentAttribute[] = [
     },
   },
   {
+    name: 'text',
+    values: TEXT_STEPS,
+    default: DEFAULT_TEXT_STEP,
+    description: {
+      fr: 'Taille du corps de la diapositive (texte, listes, citations et leurs espacements), de xs à xl autour de la taille du thème ; les titres gardent leur taille, et le texte ne descend pas sous la taille minimale du thème',
+      en: 'Size of the body of the slide (text, lists, quotes and their spacing), from xs to xl around the size of the theme; the headings keep their size, and the text stays above the smallest size of the theme',
+    },
+  },
+  {
+    name: 'inset',
+    values: INSET_VALUES,
+    description: { fr: 'Marges de la diapositive réduites de moitié, et lignes du texte sans largeur maximale (tight)', en: 'Margins of the slide halved, and lines of text without a maximum width (tight)' },
+  },
+  {
     name: 'screen',
     boolean: true,
     description: {
@@ -199,6 +228,8 @@ const LayoutAttributesSchema = z.strictObject({
   heading: z.enum(HEADING_MODES).optional(),
   align: z.enum(VERTICAL_ALIGNS).optional(),
   screen: z.union([z.boolean(), z.enum(['true', 'false', ''])]).optional(),
+  text: z.enum(TEXT_STEPS).optional(),
+  inset: z.enum(INSET_VALUES).optional(),
 })
 
 type LayoutAttributes = z.infer<typeof LayoutAttributesSchema>
@@ -341,6 +372,10 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
     layout.heading = attrs.heading
   if (attrs.align)
     layout.align = attrs.align
+  if (attrs.text && attrs.text !== DEFAULT_TEXT_STEP)
+    layout.text = attrs.text
+  if (attrs.inset)
+    layout.inset = attrs.inset
 
   const source = attrs.story || attrs.src
   const placement = layoutPlacement(attrs)
@@ -356,6 +391,10 @@ export function readLayout(attributes: Attributes): { layout: SlideLayout, issue
     if (isSet(attrs.screen)) {
       layout.screen = true
       layout.heading ??= layoutDefault('heading', attrs) as HeadingMode
+      // The screens take the room of the body, which has no text to size.
+      unused(['text', 'inset'])
+      delete layout.text
+      delete layout.inset
     }
     return { layout, issues }
   }

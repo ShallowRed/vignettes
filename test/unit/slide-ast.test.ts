@@ -66,6 +66,13 @@ describe('slide layouts', () => {
     expect(getSlideClasses(veil!)).toEqual(['slide-h3', 'layout-media', 'layout-media-behind', 'media-veil'])
   })
 
+  it('names the text step and the tight inset in the classes, and no class for md', async () => {
+    const [small] = await headingParser.parse('### Title\n\n:layout{text="sm" inset="tight"}\n\nText')
+    expect(getSlideClasses(small!)).toEqual(['slide-h3', 'text-size-sm', 'inset-tight'])
+    const [normal] = await headingParser.parse('### Title\n\n:layout{text="md"}\n\nText')
+    expect(getSlideClasses(normal!)).toEqual(['slide-h3'])
+  })
+
   it('names the heading mode in the classes', async () => {
     const [slide] = await headingParser.parse('### Title\n\n:layout{heading="compact"}\n\nText')
     expect(getSlideClasses(slide!)).toEqual(['slide-h3', 'heading-compact'])

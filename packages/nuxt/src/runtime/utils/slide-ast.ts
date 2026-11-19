@@ -148,7 +148,7 @@ function createSlide(children: any[], headingLevel?: string): Slide {
   const cleaned = filterAnnotationNodes(filtered)
   const shared = {
     headingLevel: level,
-    ...(layout?.media || layout?.heading || layout?.align || layout?.screen ? { layout } : {}),
+    ...(layout && Object.keys(layout).length ? { layout } : {}),
     backgroundImage,
     quicklink,
   }

@@ -264,12 +264,28 @@
       "legacy": "Format de :layout à convertir en attributs.",
       "missingSource": "Indiquez l'adresse d'une image ou d'une page, ou l'identifiant d'une story.",
       "outside": "Placez le curseur dans une diapositive pour régler sa mise en page.",
-      "measuring": "Mesure des tailles du média…",
-      "proposeSize": "Le texte tient avec un média sur {size} de la largeur.",
-      "proposeBody": "Placer le média à droite du texte, sur {size} de la largeur.",
+      "measuring": "Mesure de la mise en page…",
       "sizeFits": "Le texte tient avec le média sur {size} de la largeur.",
       "tooLong": "Le texte dépasse à chaque taille : raccourcissez-le ou coupez la diapositive.",
-      "apply": "Appliquer"
+      "apply": "Appliquer",
+      "text": "Taille du texte",
+      "inset": "Marges réduites",
+      "stepHeld": "À ce cran, le texte reste à la taille minimale du thème.",
+      "textFits": "Le texte tient dans la diapositive.",
+      "propose": "Le texte tient avec {changes}.",
+      "proposeGrow": "Le texte tient aussi en {step}, un cran plus grand.",
+      "changes": {
+        "media": "le média à droite du texte, sur {size} de la largeur",
+        "size": "le média sur {size} de la largeur",
+        "heading": "le titre compact",
+        "text": "la taille {step}",
+        "inset": "les marges réduites"
+      },
+      "blocked": {
+        "several": "Cette diapositive a plusieurs médias dans son corps : ils y restent.",
+        "kept": "Ce média a une légende ou un réglage que la mise en page ne reprend pas : il reste dans le corps de la diapositive.",
+        "not-behind": "Une page ou une story ne se place pas derrière le texte."
+      }
     },
     "convert": "Convertir",
     "docsLink": "Documentation",

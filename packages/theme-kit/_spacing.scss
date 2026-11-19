@@ -7,23 +7,38 @@
  * allowed to bleed back out to the slide edge (see `_media-layouts.scss`).
  *
  * Tunable per deck by overriding `--slide-padding-x` / `--slide-padding-y`
- * on `.reveal`.
+ * on `.reveal`. `--slide-inset-scale` multiplies them on a slide, and the
+ * padding of its body: `:layout{inset="tight"}` halves them, and lets the lines
+ * of the text take the whole width. `--slide-inset-x` and `--slide-inset-y`
+ * are the insets of a slide once multiplied: its padding, its media bleed and
+ * its bloc marque read them.
  */
 
 .reveal {
   --slide-padding-x: 4rem;
   --slide-padding-y: 1.75rem;
+  --slide-inset-scale: 1;
+}
+
+.reveal .slides section {
+  --slide-inset-x: calc(var(--slide-padding-x) * var(--slide-inset-scale));
+  --slide-inset-y: calc(var(--slide-padding-y) * var(--slide-inset-scale));
+}
+
+.reveal .slides section.inset-tight {
+  --slide-inset-scale: 0.5;
+  --measure: none;
 }
 
 /* Leaf slides only: the `.stack` wrapper of a vertical group is not a slide. */
 .reveal .slides > section:not(.stack),
 .reveal .slides > section.stack > section {
   box-sizing: border-box;
-  padding: var(--slide-padding-y) var(--slide-padding-x);
+  padding: var(--slide-inset-y) var(--slide-inset-x);
 }
 
 /* Reveal's print view moves each slide into a `.pdf-page` and sets its padding
    to 0 with `!important`: the printed slide keeps the same inset. */
 html.reveal-print .reveal .slides .pdf-page > section {
-  padding: var(--slide-padding-y) var(--slide-padding-x) !important;
+  padding: var(--slide-inset-y) var(--slide-inset-x) !important;
 }

@@ -216,3 +216,28 @@ describe('bodyMediaLayout', () => {
     expect(bodyMediaLayout({ component: 'Iframe', attributes: { src: '/cartes/plan.svg' } })).toEqual({ src: '/cartes/plan.svg', type: 'iframe' })
   })
 })
+
+describe('the text step and the inset of :layout', () => {
+  it('reads them on a slide with a media, without one, without a source and with a page behind the text', () => {
+    expect(readLayout({ text: 'sm', inset: 'tight' })).toEqual({ layout: { text: 'sm', inset: 'tight' }, issues: [] })
+    expect(readLayout({ media: 'right', src: '/a.png', text: 'lg' }).layout).toMatchObject({ text: 'lg', media: { placement: 'right' } })
+    expect(readLayout({ media: 'right', text: 'xs' })).toMatchObject({ layout: { text: 'xs' }, issues: [{ kind: 'missing-source' }] })
+    expect(readLayout({ media: 'behind', story: 'a--b', inset: 'tight' })).toMatchObject({ layout: { inset: 'tight' }, issues: [{ kind: 'behind-needs-image' }] })
+  })
+
+  it('reads md as the size of the theme, and leaves it written', () => {
+    expect(readLayout({ text: 'md' })).toEqual({ layout: {}, issues: [] })
+    expect(layoutSource({ text: 'md' })).toBe(':layout{text="md"}')
+    expect(layoutDefault('text')).toBe('md')
+  })
+
+  it('refuses a step it does not know, and leaves the text of the screens unused', () => {
+    expect(readLayout({ text: 'xxl' })).toMatchObject({ layout: {}, issues: [{ kind: 'invalid-value', attribute: 'text' }] })
+    expect(readLayout({ inset: 'wide' })).toMatchObject({ layout: {}, issues: [{ kind: 'invalid-value', attribute: 'inset' }] })
+    expect(readLayout({ screen: true, text: 'sm', inset: 'tight' })).toMatchObject({
+      layout: { screen: true },
+      issues: [{ kind: 'unused', attribute: 'text' }, { kind: 'unused', attribute: 'inset' }],
+    })
+    expect(readLayout({ screen: true, text: 'sm' }).layout.text).toBeUndefined()
+  })
+})

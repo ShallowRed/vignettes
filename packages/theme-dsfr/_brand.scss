@@ -90,8 +90,8 @@ $brand-space-below: 1.5rem;
   @include mark;
 
   position: absolute;
-  top: var(--slide-padding-y);
-  left: var(--slide-padding-x);
+  top: var(--slide-inset-y);
+  left: var(--slide-inset-x);
   z-index: 1;
 }
 

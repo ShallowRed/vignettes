@@ -86,7 +86,7 @@
     display: flex;
     flex-direction: column;
     justify-content: var(--slide-align);
-    padding-block: var(--slide-body-padding-y, 0);
+    padding-block: calc(var(--slide-body-padding-y, 0px) * var(--slide-inset-scale, 1));
   }
 }
 
@@ -163,7 +163,7 @@
  */
 .reveal section.heading-compact {
   --slide-heading-min-height: 0;
-  --slide-body-padding-y: 0;
+  --slide-body-padding-y: 0px;
 
   justify-content: start;
 
@@ -189,7 +189,7 @@
 // `:layout{screen}`: the body hands the height the heading leaves to its
 // screens, which `@vignettes/storybook` lays out in it.
 .reveal .slides section.layout-screen {
-  --slide-body-padding-y: 0;
+  --slide-body-padding-y: 0px;
 }
 
 .reveal .slides section.layout-screen article {

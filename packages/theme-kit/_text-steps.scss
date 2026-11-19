@@ -1,0 +1,39 @@
+/**
+ * Text steps: the size of the body of a slide, `:layout{text=…}`
+ * (see `TEXT_STEPS` in `@vignettes/core/deck`).
+ *
+ * The body is the `article` of the content pane. It takes the factor of its
+ * step in `em` of the pane, so that a media beside it, which shrinks the pane
+ * by `--media-text-scale`, and the step multiply. It never goes below
+ * `--text-min-size`. The headings, the pretitle and the subtitle stand outside
+ * the article and keep their size.
+ *
+ * `--text-size-factor` is registered as a number: the computed style of the
+ * section gives its value, which the measure of the studio reads.
+ */
+
+@property --text-size-factor {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+.reveal .slides section.text-size-xs {
+  --text-size-factor: calc(1 / (var(--text-size-ratio) * var(--text-size-ratio)));
+}
+
+.reveal .slides section.text-size-sm {
+  --text-size-factor: calc(1 / var(--text-size-ratio));
+}
+
+.reveal .slides section.text-size-lg {
+  --text-size-factor: var(--text-size-ratio);
+}
+
+.reveal .slides section.text-size-xl {
+  --text-size-factor: calc(var(--text-size-ratio) * var(--text-size-ratio));
+}
+
+.reveal .slides section > .slide-content-pane > article {
+  font-size: max(var(--text-min-size), calc(var(--text-size-factor) * 1em));
+}

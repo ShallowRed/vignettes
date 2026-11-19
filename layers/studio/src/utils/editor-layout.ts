@@ -1,8 +1,8 @@
 import type { EditorState, TransactionSpec } from '@codemirror/state'
-import type { BodyMedia, LayoutAnnotation, MediaPlacement, MediaSize, MediaType } from '@vignettes/core/deck'
+import type { BodyMedia, LayoutAnnotation, MediaPlacement, MediaSize, MediaType, TextStep } from '@vignettes/core/deck'
 import type { InjectionKey, Ref } from 'vue'
 import type { SketchShape } from '../config/editor-reference'
-import { bodyMedia, bodyMediaLayout, DEFAULT_SIDE_MEDIA_SIZE, inferMediaType, layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, layoutPlacement, layoutSource, MEDIA_SIZES, modernLayoutAttributes, readLayout } from '@vignettes/core/deck'
+import { bodyMedia, bodyMediaLayout, DEFAULT_SIDE_MEDIA_SIZE, DEFAULT_TEXT_STEP, inferMediaType, layoutAnnotationChange, layoutAnnotations, layoutAnnotationValues, layoutForPlacement, layoutPlacement, layoutSource, MEDIA_PLACEMENTS, MEDIA_SIZES, modernLayoutAttributes, PLACEHOLDER_IMAGE, readLayout, TEXT_STEPS } from '@vignettes/core/deck'
 import { SKETCH_FRAME, text as sketchText, title } from '../config/editor-reference'
 import { frontmatterEnd } from './editor-frontmatter'
 import { HEADING_RE, slideContentAt } from './editor-slides'
@@ -29,6 +29,8 @@ export interface SlideLayoutAtCursor {
   endLine: number
   /** The cursor sits in the frontmatter, out of any slide. */
   outside: boolean
+  /** The body is a screen or a gallery of screens, as the parser reads `:layout`: the text has no step and no inset there. */
+  screen: boolean
 }
 
 /** Reads the slide under the cursor; the state carries `deckStructure` of `editor-slides`. */
@@ -39,10 +41,12 @@ export function slideLayoutAt(state: EditorState): SlideLayoutAtCursor {
   const endLine = block?.to ?? state.doc.lines
   const annotation = layoutAnnotations(state.doc.toString()).find(found => found.line >= startLine && found.line <= endLine)
   const written = annotation ? layoutAnnotationValues(annotation) : {}
+  const read = readLayout(written)
   return {
     annotation,
     attributes: modernLayoutAttributes(written),
-    legacy: readLayout(written).issues.some(issue => issue.kind === 'legacy'),
+    legacy: read.issues.some(issue => issue.kind === 'legacy'),
+    screen: Boolean(read.layout.screen),
     startLine,
     endLine,
     outside: line <= frontmatterEnd(state),
@@ -83,6 +87,8 @@ export interface SlideMediaAtCursor {
   kind: MediaType
   /** The media of the body, its lines in the whole document. */
   body?: BodyMedia
+  /** The number of media written in the body of the slide. */
+  bodyCount: number
   /** The panel may propose a size beside the text. */
   proposable: boolean
 }
@@ -97,48 +103,110 @@ export function slideMediaAt(state: EditorState): SlideMediaAtCursor | undefined
   const placement = layoutPlacement(at.attributes)
   if (placement) {
     const { src, story, type } = at.attributes as { src?: string, story?: string, type?: string }
-    return { source: 'layout', placement, kind: inferMediaType(src ?? '', type, Boolean(story)), proposable: (placement === 'right' || placement === 'left') && !found.length }
+    return { source: 'layout', placement, kind: inferMediaType(src ?? '', type, Boolean(story)), bodyCount: found.length, proposable: (placement === 'right' || placement === 'left') && !found.length }
   }
   const [body] = found
   if (!body)
     return undefined
   const { src = '', story, type } = bodyMediaLayout(body) as { src?: string, story?: string, type?: string }
-  return { source: 'body', placement: 'right', kind: inferMediaType(src, type, Boolean(story)), body, proposable: body.movable }
+  return { source: 'body', placement: 'right', kind: inferMediaType(src, type, Boolean(story)), body, bodyCount: found.length, proposable: body.movable }
 }
 
-/** A size of the media the panel measures: the attributes the slide takes with it, and the change that writes them. */
+/**
+ * Why the media of a slide cannot take a placement: the slide has several media
+ * in its body, its media has a caption or a setting `:layout` does not take, or
+ * it is a page or a story, which an image behind the text cannot show.
+ */
+export type BlockedPlacement = 'several' | 'kept' | 'not-behind'
+
+/**
+ * The placements a media written in the body of the slide under the cursor
+ * cannot take: none when `:layout` cannot show it as its component does, and
+ * behind the text for a page or a story.
+ */
+export function blockedPlacements(state: EditorState): Partial<Record<MediaPlacement, BlockedPlacement>> {
+  if (layoutPlacement(slideLayoutAt(state).attributes))
+    return {}
+  const media = slideMediaAt(state)
+  if (!media?.body)
+    return {}
+  if (!media.body.movable)
+    return Object.fromEntries(MEDIA_PLACEMENTS.map(placement => [placement, media.bodyCount > 1 ? 'several' : 'kept']))
+  return media.kind === 'image' ? {} : { behind: 'not-behind' }
+}
+
+/**
+ * The change that places the media of the slide under the cursor: a media
+ * written alone in the body moves into `:layout` at this placement, and a
+ * placement without a source takes the placeholder image, which the author then
+ * replaces. No change for a placement the media cannot take.
+ */
+export function slidePlacementChange(state: EditorState, placement: MediaPlacement | 'none'): TransactionSpec {
+  const written = slideLayoutAt(state).attributes
+  if (placement === 'none')
+    return slideLayoutChange(state, layoutForPlacement(written, placement))
+  if (!layoutPlacement(written)) {
+    if (blockedPlacements(state)[placement])
+      return {}
+    const media = slideMediaAt(state)
+    if (media?.body)
+      return slideLayoutProposal(state, layoutForPlacement({ ...written, ...bodyMediaLayout(media.body) }, placement))
+  }
+  const next = layoutForPlacement(written, placement)
+  if (!next.src && !next.story)
+    next.src = PLACEHOLDER_IMAGE
+  return slideLayoutChange(state, next)
+}
+
+/** A setting of the slide the panel measures: its attributes, the change that writes them, and the text of the annotation, which names it. */
 export interface LayoutCandidate {
-  size: MediaSize
+  key: string
   attributes: Record<string, unknown>
   change: TransactionSpec
 }
 
+/** The candidate that gives the slide under the cursor these attributes; a `text` at the theme's step is left out. */
+function candidate(state: EditorState, attributes: Record<string, unknown>): LayoutCandidate {
+  const next = { ...attributes }
+  if (next.text === DEFAULT_TEXT_STEP)
+    delete next.text
+  return { key: layoutSource(next), attributes: next, change: slideLayoutProposal(state, next) }
+}
+
+/** The attributes that move a media of the body to the right of the text, as its component draws it. */
+function movedMedia(written: Record<string, unknown>, media: SlideMediaAtCursor): Record<string, unknown> {
+  return media.body ? { ...written, ...bodyMediaLayout(media.body), media: 'right' } : written
+}
+
 /**
- * The sizes of the media of the slide under the cursor, in its placement: each
- * one with the change the panel makes when the author takes it. A media of the
- * body goes to the right of the text. None behind the text, or for a media of
- * the body that `:layout` cannot take.
+ * The settings the panel marks, measured together: each size of the media in
+ * its placement, a media of the body moved to the right of the text, and each
+ * step of the text with the other settings as written. No size behind the
+ * text or for a media of the body that `:layout` cannot take, and no step on
+ * a slide of screens.
  */
-export function layoutCandidates(state: EditorState): LayoutCandidate[] {
+export function layoutCandidates(state: EditorState): { sizes: Partial<Record<MediaSize, LayoutCandidate>>, steps: Partial<Record<TextStep, LayoutCandidate>> } {
+  const at = slideLayoutAt(state)
+  if (at.outside)
+    return { sizes: {}, steps: {} }
+  const written = at.attributes
   const media = slideMediaAt(state)
-  if (!media || media.placement === 'behind' || (media.body && !media.proposable))
-    return []
-  const written = slideLayoutAt(state).attributes
-  const base = media.body ? { ...written, ...bodyMediaLayout(media.body), media: 'right' } : written
-  return MEDIA_SIZES.map((size) => {
-    const attributes = { ...base, size }
-    return { size, attributes, change: slideLayoutProposal(state, attributes) }
-  })
+  const sized = media && media.placement !== 'behind' && !(media.body && !media.proposable)
+  const sizes = sized ? Object.fromEntries(MEDIA_SIZES.map(size => [size, candidate(state, { ...movedMedia(written, media), size })])) : {}
+  const steps = at.screen ? {} : Object.fromEntries(TEXT_STEPS.map(step => [step, candidate(state, { ...written, text: step })]))
+  return { sizes, steps }
 }
 
 /**
  * The change that gives the slide under the cursor these attributes, and takes
- * out of its body the media they show, with a blank line beside it.
+ * out of its body the media they move into `:layout`, with a blank line beside it.
  */
 export function slideLayoutProposal(state: EditorState, attributes: Record<string, unknown>): TransactionSpec {
   const layout = slideLayoutChange(state, attributes).changes
   const body = slideMediaAt(state)?.body
-  if (!body || !layout)
+  // The change takes the media out of the body when the attributes give the slide a media it had not.
+  const moving = body && layoutPlacement(attributes) && !layoutPlacement(slideLayoutAt(state).attributes)
+  if (!moving || !layout)
     return { changes: layout }
   const doc = state.doc
   const blank = (n: number) => n >= 1 && n <= doc.lines && !doc.line(n).text.trim()
@@ -155,30 +223,125 @@ export function slideLayoutProposal(state: EditorState, attributes: Record<strin
   return { changes: [layout, removed].flat() }
 }
 
-/** What the panel measures of a size of the media: the overflow of the text, in slide pixels, and the share its body text keeps. */
+/**
+ * What the panel measures of a setting: the overflow of the text, in slide
+ * pixels; the size of the body, in slide pixels; the share of it a media beside
+ * the text keeps, at the same step; the height the body fills; and the ratio
+ * between two steps of the theme.
+ */
 export interface LayoutReading {
   overflow: number
+  bodySize: number
   textScale: number
+  fill: number
+  ratio: number
 }
 
-/** The size the panel proposes, or that the text overflows the slide at every size beside it. */
-export type LayoutProposal = { kind: 'size', size: MediaSize } | { kind: 'too-long' }
+/** The setting the panel proposes, and whether it makes a short text larger; or that the text overflows at every setting. */
+export type LayoutProposal = { kind: 'layout', attributes: Record<string, unknown>, grow?: true } | { kind: 'too-long' }
+
+/** Below this share of the room of the body, a text that fits may take the step above. */
+const ROOMY_FILL = 0.5
+
+const fits = (reading: LayoutReading) => reading.overflow <= OVERFLOW_THRESHOLD
+
+/** Whether the floor of the theme holds `step` at the size of `from`: it stays within a third of a step of it. */
+export function heldByFloor(step: LayoutReading, from: LayoutReading): boolean {
+  return step.bodySize > from.bodySize * (1 - (1 - 1 / from.ratio) / 3)
+}
 
 /**
- * The size the panel proposes for a media beside the text, from what it
- * measured: for an image, the half of the slide, else its third; for a page
- * or a story, which shrinks a wide screen, two thirds, else the half. None
- * when the written size fits.
+ * The path of the proposal, from the least visible change to the most: the
+ * size of a media beside the text, for an image the half of the slide then
+ * its third, for a page or a story two thirds then the half; a heading on one
+ * line; a step of the text below; the tight inset; a second step below. Each
+ * change keeps the ones before it, a step that the floor holds is passed, and
+ * the path stops at the first setting that fits. A text that fits as written,
+ * at the size of the theme and in less than half its room, takes the step
+ * above when it fits too. The generator gives each setting to measure and
+ * receives its reading; it returns the proposal, or none when the text fits
+ * as written.
  */
-export function proposeLayout(media: SlideMediaAtCursor, writtenSize: MediaSize | undefined, readings: Partial<Record<MediaSize, LayoutReading>>): LayoutProposal | undefined {
-  if (!media.proposable)
+export function* proposalSteps(state: EditorState): Generator<LayoutCandidate, LayoutProposal | undefined, LayoutReading> {
+  const at = slideLayoutAt(state)
+  if (at.outside)
     return undefined
-  const fits = (size: MediaSize) => (readings[size]?.overflow ?? Number.POSITIVE_INFINITY) <= OVERFLOW_THRESHOLD
-  if (media.source === 'layout' && fits(writtenSize ?? DEFAULT_SIDE_MEDIA_SIZE))
+  const written = at.attributes
+  const screen = at.screen
+  const media = slideMediaAt(state)
+  const current = yield candidate(state, written)
+  const proposal = (attributes: Record<string, unknown>) => ({ kind: 'layout' as const, attributes: candidate(state, attributes).attributes })
+
+  if (fits(current)) {
+    // A slide without a body, a title alone, has no text to make larger.
+    if (screen || (written.text && written.text !== DEFAULT_TEXT_STEP) || !current.bodySize || current.fill >= ROOMY_FILL)
+      return undefined
+    const larger = { ...written, text: TEXT_STEPS[TEXT_STEPS.indexOf(DEFAULT_TEXT_STEP) + 1] }
+    return fits(yield candidate(state, larger)) ? { ...proposal(larger), grow: true } : undefined
+  }
+
+  let attributes = written
+  let previous = current
+  const sided = media?.proposable && (media.placement === 'right' || media.placement === 'left')
+  if (sided) {
+    const moved = movedMedia(written, media)
+    const order: MediaSize[] = media.kind === 'image' ? ['1/2', '1/3'] : ['2/3', '1/2']
+    // A media of `:layout` only gives room to the text by a smaller size than its own.
+    const own = (written.size as MediaSize | undefined) ?? DEFAULT_SIDE_MEDIA_SIZE
+    const sizes = media.source === 'layout' ? order.filter(size => MEDIA_SIZES.indexOf(size) < MEDIA_SIZES.indexOf(own)) : order
+    for (const size of sizes) {
+      previous = yield candidate(state, { ...moved, size })
+      if (fits(previous))
+        return proposal({ ...moved, size })
+    }
+    attributes = sizes.length ? { ...moved, size: sizes.at(-1) } : moved
+  }
+
+  if (!written.heading && !screen) {
+    attributes = { ...attributes, heading: 'compact' }
+    previous = yield candidate(state, attributes)
+    if (fits(previous))
+      return proposal(attributes)
+  }
+
+  let step = TEXT_STEPS.indexOf((written.text as TextStep | undefined) ?? DEFAULT_TEXT_STEP)
+  // A step that the floor holds leaves the steps below it at the floor too: the
+  // path passes them all and goes on to the tight inset.
+  function* smaller(): Generator<LayoutCandidate, LayoutProposal | undefined, LayoutReading> {
+    if (step > 0) {
+      step--
+      const next = { ...attributes, text: TEXT_STEPS[step] }
+      const reading = yield candidate(state, next)
+      if (heldByFloor(reading, previous)) {
+        step = 0
+        return undefined
+      }
+      attributes = next
+      previous = reading
+      return fits(reading) ? proposal(attributes) : undefined
+    }
     return undefined
-  const order: MediaSize[] = media.kind === 'image' ? ['1/2', '1/3'] : ['2/3', '1/2']
-  const size = order.find(fits)
-  return size ? { kind: 'size', size } : { kind: 'too-long' }
+  }
+
+  // The steps size the body: a slide without one has none to try.
+  const sizable = !screen && current.bodySize > 0
+  if (sizable) {
+    const once = yield* smaller()
+    if (once)
+      return once
+  }
+  if (!written.inset && !screen) {
+    attributes = { ...attributes, inset: 'tight' }
+    previous = yield candidate(state, attributes)
+    if (fits(previous))
+      return proposal(attributes)
+  }
+  if (sizable) {
+    const twice = yield* smaller()
+    if (twice)
+      return twice
+  }
+  return { kind: 'too-long' }
 }
 
 /**

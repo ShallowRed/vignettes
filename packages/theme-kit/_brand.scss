@@ -13,9 +13,9 @@
 // `_spacing.scss` sizes its box: the slide keeps its height there too.
 .reveal .slides section.has-brand {
   box-sizing: border-box;
-  padding-top: calc(var(--slide-padding-y) + var(--slide-brand-height, 0px));
+  padding-top: calc(var(--slide-inset-y) + var(--slide-brand-height, 0px));
 }
 
 html.reveal-print .reveal .slides .pdf-page > section.has-brand {
-  padding-top: calc(var(--slide-padding-y) + var(--slide-brand-height, 0px)) !important;
+  padding-top: calc(var(--slide-inset-y) + var(--slide-brand-height, 0px)) !important;
 }

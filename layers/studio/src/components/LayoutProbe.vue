@@ -3,10 +3,10 @@ import type { PresentationData } from '@vignettes/nuxt/types'
 import type { RevealApi } from 'reveal.js'
 import type { LayoutReading } from '../utils/editor-layout'
 import { probeRevealConfig } from '../utils/layout-probe'
-import { bodyTextScale, presentSection, sectionOverflow, transitionsEnded } from '../utils/preview-overflow'
+import { bodyReading, presentSection, sectionOverflow, transitionsEnded } from '../utils/preview-overflow'
 
-// The hidden render the layout panel measures: one slide per size of a media,
-// drawn as the preview draws it, transparent and out of the page flow.
+// The hidden render the layout panel measures: one slide per setting it
+// measures, drawn as the preview draws it, transparent and out of the page flow.
 const props = defineProps<{ data: PresentationData }>()
 
 let started: (reveal: RevealApi) => void
@@ -16,9 +16,8 @@ const ready = new Promise<RevealApi>((resolve) => {
 const presentation = useTemplateRef<{ sync: () => void }>('presentation')
 
 /**
- * Shows each slide in turn and reads its overflow and the share of its body
- * text. A measure that a later one replaced stops at its next wait, before it
- * moves the slides again.
+ * Shows each slide in turn and reads its overflow and its body. A measure that
+ * a later one replaced stops at its next wait, before it moves the slides again.
  */
 async function measure(current: () => boolean): Promise<LayoutReading[] | undefined> {
   const reveal = await ready
@@ -38,8 +37,8 @@ async function measure(current: () => boolean): Promise<LayoutReading[] | undefi
       return undefined
     const section = presentSection(reveal)
     readings.push(section
-      ? { overflow: sectionOverflow(slides, section, reveal.getComputedSlideSize().height), textScale: bodyTextScale(section) }
-      : { overflow: 0, textScale: 1 })
+      ? { overflow: sectionOverflow(slides, section, reveal.getComputedSlideSize().height), ...bodyReading(section) }
+      : { overflow: 0, bodySize: 0, textScale: 1, fill: 0, ratio: 1 })
   }
   return readings
 }
