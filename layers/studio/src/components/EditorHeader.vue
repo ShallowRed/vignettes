@@ -46,6 +46,7 @@ const HEADER_BUTTON_UI = { base: 'max-sm:px-1.5', label: HEADER_LABEL }
 <template>
   <header
     class="flex items-center gap-2 sm:gap-3 px-3 h-14 shrink-0 border-b border-default bg-default"
+    :data-collab-status="collab ? collabStatus : undefined"
   >
     <AppTitle :items="breadcrumb" />
 

@@ -11,8 +11,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { PARSERS } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
 
 const ROOT = join(import.meta.dirname, '../..')
-const RECETTE = 'test/recette/decks/recette-export-powerpoint.md'
-const DECKS = [...readdirSync(join(ROOT, 'examples')).filter(name => name.endsWith('.md')).map(name => `examples/${name}`), RECETTE]
+const EXPORT_DECK = 'test/unit/fixtures/export-powerpoint.md'
+const DECKS = [...readdirSync(join(ROOT, 'examples')).filter(name => name.endsWith('.md')).map(name => `examples/${name}`), EXPORT_DECK]
 
 // A one pixel PNG, given for every image except the addresses the loader refuses.
 const PIXEL_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
@@ -149,7 +149,7 @@ describe('writePptx', () => {
   })
 
   it('puts in the file the bytes the host gives for each image', async () => {
-    const { zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     const media = Object.keys(zip.files).filter(path => path.startsWith('ppt/media/') && !zip.files[path]!.dir)
     expect(media.length).toBeGreaterThan(0)
     for (const path of media)
@@ -157,7 +157,7 @@ describe('writePptx', () => {
   })
 
   it('writes one set of properties per paragraph, before its runs, and the notes masters before the slides', async () => {
-    const { zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     const parts = Object.keys(zip.files).filter(path => /^ppt\/(?:slides|slideLayouts|slideMasters|notesSlides)\/[^/]+\.xml$/.test(path))
     for (const path of parts) {
       for (const [, inner] of (await zip.file(path)!.async('string')).matchAll(/<a:p>([\s\S]*?)<\/a:p>/g)) {
@@ -191,7 +191,7 @@ describe('writePptx', () => {
   })
 
   it('writes a title in the title placeholder, and none for a hidden heading', async () => {
-    const { slides, zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { slides, zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     const paths = slidePaths(zip, 'slides', 'slide')
     const first = await zip.file(paths[0]!)!.async('string')
     expect(first).toMatch(/<p:ph[^>]*type="title"[^>]*\/>[\s\S]*?<a:t>Export PowerPoint<\/a:t>/)
@@ -200,7 +200,7 @@ describe('writePptx', () => {
   })
 
   it('writes the notes in the speaker notes, and on no slide', async () => {
-    const { zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     const slides = await Promise.all(slidePaths(zip, 'slides', 'slide').map(path => zip.file(path)!.async('string')))
     const notes = await Promise.all(slidePaths(zip, 'notesSlides', 'notesSlide').map(path => zip.file(path)!.async('string')))
     expect(notes.map(xmlText).join(' ')).toContain('Ce que l\'orateur dit sur les paragraphes.')
@@ -209,7 +209,7 @@ describe('writePptx', () => {
   })
 
   it('writes a frame with its label and link for a component, a story and a refused image', async () => {
-    const { zip, loaded } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { zip, loaded } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     const all = (await Promise.all(Object.keys(zip.files).filter(path => /^ppt\/slides\/(?:_rels\/)?slide\d+\.xml(?:\.rels)?$/.test(path)).map(path => zip.file(path)!.async('string')))).join('\n')
     expect(xmlText(all)).toContain('Schéma de cartes')
     expect(all).toContain('https://storybook.example.org/iframe.html?id=compositions-job-board--in-progress')
@@ -219,7 +219,7 @@ describe('writePptx', () => {
   })
 
   it('writes the value of a binding to any key of the frontmatter', async () => {
-    const { zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     const texts = await Promise.all(slidePaths(zip, 'slides', 'slide').map(path => zip.file(path)!.async('string')))
     expect(normalize(texts.map(xmlText).join(' '))).toContain('préparé pour Direction de l\'essai')
   })
@@ -231,7 +231,7 @@ describe('writePptx', () => {
   })
 
   it('takes the font of the theme, and white text over a veil, drawn when its image is absent', async () => {
-    const { slides, zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { slides, zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     expect(await zip.file('ppt/theme/theme1.xml')!.async('string')).toContain('<a:latin typeface="Marianne"')
     const paths = slidePaths(zip, 'slides', 'slide')
     const absent = shown(slides).findIndex(slide => slide.layout?.media?.src?.includes(REFUSED))
@@ -242,7 +242,7 @@ describe('writePptx', () => {
   })
 
   it('opens a section at each section slide, after one that gathers the slides before it', async () => {
-    const { zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'))
+    const { zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'))
     const presentation = await zip.file('ppt/presentation.xml')!.async('string')
     const sections = [...presentation.matchAll(/<p14:section name="([^"]*)"/g)].map(match => unescape(match[1]!))
     expect(sections).toEqual(['Recette · Export PowerPoint', 'Le texte', 'Les images', 'Les cadres'])
@@ -256,7 +256,7 @@ describe('writePptx', () => {
   })
 
   it('takes the look the host measured: the surface and the title of each role, the head of a table, the accent of a link', async () => {
-    const { zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'), STYLE)
+    const { zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'), STYLE)
     const layouts = await Promise.all(Object.keys(zip.files).filter(path => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(path)).map(path => zip.file(path)!.async('string')))
     const section = layouts.find(xml => xml.includes('name="Section"'))!
     expect(section).toMatch(/<p:bg>[\s\S]*?<a:srgbClr val="000091"/)
@@ -269,7 +269,7 @@ describe('writePptx', () => {
   })
 
   it('takes from the fixed master the values the host could not read', async () => {
-    const { zip } = await write(readFileSync(join(ROOT, RECETTE), 'utf8'), { roles: { section: { background: '000091' } } })
+    const { zip } = await write(readFileSync(join(ROOT, EXPORT_DECK), 'utf8'), { roles: { section: { background: '000091' } } })
     const presentation = await zip.file('ppt/presentation.xml')!.async('string')
     expect(presentation).toMatch(/<p:sldSz cx="12191695" cy="88897\d\d"/)
     const slides = await Promise.all(slidePaths(zip, 'slides', 'slide').map(path => zip.file(path)!.async('string')))

@@ -18,6 +18,7 @@ export const PAGE_VIEW_PAGES: Record<string, PageViewKind> = {
   '/p/:alias': 'deck',
   '/projects/:slug': 'count',
   '/recette': 'skip',
+  '/recette/branche': 'skip',
   '/slides/:slug': 'deck',
   '/tokens': 'count',
   '/trash': 'count',

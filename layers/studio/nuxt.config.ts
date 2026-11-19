@@ -1,7 +1,9 @@
+import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readBundleConfig } from '@vignettes/freeze/bundle'
 import { themePackageVersions } from '@vignettes/nuxt/build/theme-build'
 import { SECURITY_HEADERS } from './server/utils/security-headers'
+import { RECETTE_CAPTURE_DIR } from './shared/recette/captures'
 import { UI_FONT_FAMILIES } from './src/utils/ui-themes'
 
 /** One file per area of the interface, the same list for every locale. */
@@ -112,5 +114,9 @@ export default defineNuxtConfig({
   nitro: {
     // The starting points of a new deck, read by `server/utils/templates.ts`.
     serverAssets: [{ baseName: 'templates', dir: fileURLToPath(new URL('./templates', import.meta.url)) }],
+    // The captures of the branch recette, mounted in development only
+    // (https://nitro.build/guide/storage, devStorage), from
+    // the root of the repository where the dev server starts.
+    devStorage: { 'recette-captures': { driver: 'fs', base: resolve(RECETTE_CAPTURE_DIR) } },
   },
 })

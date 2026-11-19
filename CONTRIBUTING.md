@@ -15,24 +15,34 @@ The end-to-end suite needs its browsers once: `pnpm exec playwright install chro
 
 ## Local acceptance
 
-The author of a branch writes the checks to make on the local studio in a recette file, `test/recette/<subject>.yaml`:
+The author of a branch checks every behaviour the branch changes: unit tests, end-to-end tests, the in-app browser. What no measure settles, such as the rendering of a theme, the balance of a layout or the legibility of a slide, goes to Lucas as questions, in a recette file `test/recette/<subject>.yaml` whose subject is written in lowercase letters, digits and hyphens:
 
 ```yaml
-title: Kit de recette de branche
+title: Contraste des sections du thème DSFR
 decks:
-  - slug: recette-branche
-    file: test/recette/decks/recette-branche.md
-checks:
-  - account: editor
-    page: /edit/recette-branche
-    expect: L'éditeur ouvre la présentation d'essai « Recette · Branche ».
+  - slug: recette-sections-dsfr
+    file: test/recette/decks/recette-sections-dsfr.md
+questions:
+  - id: section-bleue
+    account: anonymous
+    page: /slides/recette-sections-dsfr#/section-bleue
+    question: Le titre blanc de la section bleue se lit-il bien à distance ?
+  - id: panneau-mise-en-page
+    account: editor
+    page: /edit/recette-sections-dsfr
+    question: Le panneau de mise en page se lit-il bien à côté de la diapositive ?
+    steps:
+      - click: {text: '## Section bleue'}
+      - click: {role: button, name: Mise en page}
 ```
 
-`decks` lists the trial decks to create, each with a slug that starts with `recette-` and a `.md` deck file of the repository, whose frontmatter gives the status, the theme and the folder. `checks` lists the checks, each with the account that opens the page (`owner`, `editor`, `viewer` or `anonymous`), the page of the studio and the expected result in one sentence. The page is any path of the studio, with its query and its fragment: `/edit/<slug>`, `/slides/<slug>` for the published version, `/slides/<slug>?draft` for the working draft. `#/<slide-id>` opens a slide by its id, and `#/1` opens the second slide by its index from zero. On an instance that serves its decks from their own origin, the studio redirects a deck page there and keeps the account of the check. `layers/studio/shared/recette/branch.ts` holds the schema, and `test/unit/recette-branch.test.ts` validates every recette file of the repository.
+`decks` lists the trial decks to create, each with a slug that starts with `recette-` and a `.md` deck file of the repository, whose frontmatter gives the status, the theme and the folder. Each question has an `id`, unique in its file, the account that opens the page (`owner`, `editor`, `viewer` or `anonymous`), the page of the studio and the question, in 200 characters at most. The page is any path of the studio, with its query and its fragment: `/edit/<slug>`, `/slides/<slug>` for the published version, `/slides/<slug>?draft` for the working draft. `#/<slide-id>` opens a slide by its id, and `#/1` opens the second slide by its index from zero. On an instance that serves its decks from their own origin, the studio redirects a deck page there and keeps the account of the question.
 
-`mise run dev` creates the trial decks missing from the database of the worktree, and prints the address that signs in as owner and opens the recette page once the studio answers: `https://<host>/auth/dev-login?role=owner&redirect=/recette`, plus the Tailscale address under `PORTLESS_TAILSCALE=1`. The page lists the recette files the branch adds or changes since `origin/main`, committed or not: for a stack, those of every branch of the stack. Each check opens its page in a new tab with its account, and the button « Recréer les présentations d'essai » replaces the trial decks with their file, after an edit during the recette or a change of the file.
+`steps` lists the gestures the capture plays before its picture: `click` an element by its role and accessible name, or by its exact text; `press` a key, by its Playwright name, with `repeat` from 1 to 20; `type` a text. A gesture whose target matches no element or several fails the capture. `full: true` captures the whole page beyond the window. `layers/studio/shared/recette/branch.ts` holds the schema, and `test/unit/recette-branch.test.ts` validates every recette file of the repository.
 
-The recette files stay in the repository after the merge, as the record of what was checked.
+`mise run dev` creates the trial decks missing from the database of the worktree, opens the catalog signed in as owner once the studio answers, and prints the address of the recette of the branch: `https://<host>/auth/dev-login?role=owner&redirect=/recette/branche`, plus the Tailscale address under `PORTLESS_TAILSCALE=1`. `mise run recette:capture` then republishes the trial decks from their file and captures each question as its account, at the width of a computer and of a phone, in `.data/recette/captures/` of the worktree. The page `/recette/branche` lists the recette files the branch adds or changes since `origin/main`, committed or not, for a stack those of every branch of the stack, and shows each question with its two captures, its gestures and a button that opens its page in a new tab with its account. A capture taken before the last change of the worktree is marked « Capture périmée ». The button « Recréer les présentations d'essai » replaces the trial decks with their file.
+
+Once Lucas approves the recette, the author removes the recette file and its trial decks in a last commit, which the top branch of a stack carries, and the pull request says what Lucas approved. A branch without a visual judgment has no recette file: the author tells Lucas what was checked and how.
 
 ## Conventions
 

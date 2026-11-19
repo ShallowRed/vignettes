@@ -1,12 +1,13 @@
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import process from 'node:process'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { allRecetteFiles, branchRecetteFiles, readRecetteFiles, seedBranchDecks } from '../../layers/studio/server/utils/recette-branch'
+import { allRecetteFiles, branchRecetteCaptures, branchRecetteFiles, readCapture, readRecetteFiles, seedBranchDecks, worktreeState } from '../../layers/studio/server/utils/recette-branch'
 import { useDbContent, useDeckMeta } from '../../layers/studio/server/utils/sources'
 import { RECETTE_ACCOUNTS, RecetteFileSchema } from '../../layers/studio/shared/recette/branch'
+import { recetteSubject } from '../../layers/studio/shared/recette/captures'
 import { RECETTE_PERSONAS } from '../../layers/studio/shared/recette/personas'
 import { asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
 
@@ -22,6 +23,8 @@ process.env.NUXT_SESSION_PASSWORD = 'recette-test-password-with-32-chars'
 
 const { default: status } = await import('../../layers/studio/server/api/recette/status.get')
 const { default: recreate } = await import('../../layers/studio/server/api/recette/branch.post')
+const { default: branchRecette } = await import('../../layers/studio/server/api/recette/branch.get')
+const { default: capture } = await import('../../layers/studio/server/api/recette/captures/[...key].get')
 
 const deck = (title: string) => `---\ntitle: ${title}\nstatus: private\ntheme: minimal\n---\n\n# ${title}\n`
 
@@ -29,10 +32,11 @@ function recette(decks: Array<{ slug: string, file: string }> = []) {
   return [
     'title: Essai',
     ...(decks.length ? ['decks:', ...decks.flatMap(d => [`  - slug: ${d.slug}`, `    file: ${d.file}`])] : []),
-    'checks:',
-    '  - account: editor',
+    'questions:',
+    '  - id: ouverture',
+    '    account: editor',
     '    page: /edit/recette-essai',
-    '    expect: L\'éditeur s\'ouvre.',
+    '    question: L\'éditeur se lit-il bien ?',
   ].join('\n')
 }
 
@@ -92,7 +96,9 @@ describe('recette files of a branch', () => {
 })
 
 describe('recette file schema', () => {
-  const check = (account: string, page = '/edit/recette-essai') => RecetteFileSchema.safeParse({ title: 'Essai', checks: [{ account, page, expect: 'Elle s\'ouvre.' }] })
+  const question = (fields: Record<string, unknown> = {}) => ({ id: 'ouverture', account: 'owner', page: '/edit/recette-essai', question: 'Se lit-elle bien ?', ...fields })
+  const parse = (questions: unknown[], extra: Record<string, unknown> = {}) => RecetteFileSchema.safeParse({ title: 'Essai', questions, ...extra })
+  const check = (account: string, page = '/edit/recette-essai') => parse([question({ account, page })])
 
   it('accepts every account of the kit, each a persona or the visitor', () => {
     for (const account of RECETTE_ACCOUNTS) {
@@ -115,7 +121,7 @@ describe('recette file schema', () => {
   })
 
   it('refuses a trial deck without the recette- prefix or with an invalid slug', () => {
-    const withDeck = (slug: string) => RecetteFileSchema.safeParse({ title: 'Essai', decks: [{ slug, file: 'a.md' }], checks: [{ account: 'owner', page: '/', expect: 'Ok.' }] })
+    const withDeck = (slug: string) => parse([question()], { decks: [{ slug, file: 'a.md' }] })
     expect(withDeck('recette-essai').success).toBe(true)
     expect(withDeck('essai').success).toBe(false)
     expect(withDeck('recette-Essai !').success).toBe(false)
@@ -123,7 +129,42 @@ describe('recette file schema', () => {
 
   it('refuses a trial deck named twice', () => {
     const decks = [{ slug: 'recette-essai', file: 'a.md' }, { slug: 'recette-essai', file: 'b.md' }]
-    expect(RecetteFileSchema.safeParse({ title: 'Essai', decks, checks: [{ account: 'owner', page: '/', expect: 'Ok.' }] }).success).toBe(false)
+    expect(parse([question()], { decks }).success).toBe(false)
+  })
+
+  it('names the questions format for a file written with checks', () => {
+    const earlier = parse([question()], { checks: [{ account: 'owner', page: '/', expect: 'Ok.' }] })
+    expect(earlier.error?.issues.map(issue => issue.message)).toEqual([expect.stringContaining('write its checks as questions')])
+    expect(RecetteFileSchema.safeParse({ title: 'Essai', checks: [{ account: 'owner', page: '/', expect: 'Ok.' }] }).success).toBe(false)
+  })
+
+  it('refuses a file without questions', () => {
+    expect(parse([]).success).toBe(false)
+    expect(RecetteFileSchema.safeParse({ title: 'Essai' }).success).toBe(false)
+  })
+
+  it('refuses a question without a valid id, an id given twice, and an empty or too long question', () => {
+    expect(parse([question({ id: undefined })]).success).toBe(false)
+    expect(parse([question({ id: 'Section bleue' })]).success).toBe(false)
+    expect(parse([question(), question()]).success).toBe(false)
+    expect(parse([question({ question: ' ' })]).success).toBe(false)
+    expect(parse([question({ question: 'x'.repeat(201) })]).success).toBe(false)
+    expect(parse([question({ question: 'x'.repeat(200) }), question({ id: 'autre' })]).success).toBe(true)
+  })
+
+  it('accepts the simple gestures and refuses any other form', () => {
+    const steps = (list: unknown[]) => parse([question({ steps: list })]).success
+    expect(steps([{ click: { role: 'button', name: 'Page' } }, { click: { text: '- one' } }, { press: 'Slash', repeat: 2 }, { press: 'Enter' }, { type: 'Titre' }])).toBe(true)
+    for (const step of [
+      { click: { role: 'button', name: 'Page', text: 'Page' } },
+      { click: { role: 'button' } },
+      { click: {} },
+      { press: 'Enter', type: 'x' },
+      { press: 'Enter', repeat: 0 },
+      { press: 'Enter', repeat: 21 },
+      { scroll: 3 },
+    ])
+      expect(steps([step]), JSON.stringify(step)).toBe(false)
   })
 })
 
@@ -136,7 +177,7 @@ describe('reading recette files', () => {
     expect(await read('test/recette/a.yaml')).toMatchObject({
       title: 'Essai',
       decks: [{ slug: 'recette-essai', exists: false }],
-      checks: [{ account: 'editor', page: '/edit/recette-essai' }],
+      questions: [{ id: 'ouverture', account: 'editor', page: '/edit/recette-essai' }],
     })
   })
 
@@ -222,11 +263,13 @@ describe('trial decks', () => {
 describe('outside development', () => {
   // vitest runs without `import.meta.dev`: the kit opens, as on staging, and
   // the owner session passes `assertRecette`, so only the dev check answers.
-  it('reads no recette file and publishes no trial deck, even for an owner of an enabled kit', async () => {
+  it('reads no recette file, serves no capture and publishes no trial deck, even for an owner of an enabled kit', async () => {
     process.env.NUXT_RECETTE_ENABLED = '1'
     try {
       await seedAccount(1, 'boss', 'owner')
-      await expect(status(asUser(1, 'boss'))).resolves.toMatchObject({ branch: null })
+      await expect(status(asUser(1, 'boss'))).resolves.not.toHaveProperty('branch')
+      await expect(branchRecette(asUser(1, 'boss'))).rejects.toMatchObject({ statusCode: 404 })
+      await expect(capture(asUser(1, 'boss'))).rejects.toMatchObject({ statusCode: 404 })
       await expect(recreate(asUser(1, 'boss', { method: 'POST' }))).rejects.toMatchObject({ statusCode: 404 })
     }
     finally {
@@ -235,10 +278,81 @@ describe('outside development', () => {
   })
 })
 
+describe('captures', () => {
+  function memoryStorage(items: Record<string, unknown> = {}) {
+    const calls: string[] = []
+    const read = (kind: string, answer: (key: string) => unknown) => async (key: string) => {
+      calls.push(`${kind} ${key}`)
+      return answer(key)
+    }
+    const storage = {
+      hasItem: read('has', key => key in items) as (key: string) => Promise<boolean>,
+      getItem: read('get', key => items[key] ?? null),
+      getItemRaw: read('raw', key => items[key] ?? null),
+    }
+    return { storage, calls }
+  }
+
+  it('reads a capture only for a key of the captures, and gives its bytes', async () => {
+    const png = new Uint8Array([137, 80, 78, 71])
+    const { storage, calls } = memoryStorage({ 'essai/ouverture-desktop.png': png })
+    for (const key of ['../essai/ouverture-desktop.png', 'essai/ouverture-tablet.png', 'essai/state.json'])
+      expect(await readCapture(storage, key)).toBeNull()
+    expect(calls).toEqual([])
+    expect(await readCapture(storage, 'essai/ouverture-phone.png')).toBeNull()
+    expect(await readCapture(storage, 'essai/ouverture-desktop.png')).toEqual(png)
+  })
+
+  it('changes the state of the worktree with the content of a tracked or untracked file, and keeps it for a commit or an ignored file', async () => {
+    write('.gitignore', 'ignored.txt\n')
+    write('image.bin', '\u0000one')
+    git('add', '.')
+    git('commit', '-q', '-m', 'base')
+    const base = await worktreeState(root)
+    expect(base).toMatch(/^[0-9a-f]{40}$/)
+
+    write('ignored.txt', 'ignored')
+    expect(await worktreeState(root)).toBe(base)
+    write('image.bin', '\u0000two')
+    const tracked = await worktreeState(root)
+    expect(tracked).not.toBe(base)
+    git('commit', '-q', '-am', 'image')
+    expect(await worktreeState(root)).toBe(tracked)
+    write('notes.md', 'one')
+    const untracked = await worktreeState(root)
+    expect(untracked).not.toBe(tracked)
+    write('notes.md', 'two')
+    expect(await worktreeState(root)).not.toBe(untracked)
+    expect(git('status', '--porcelain')).toContain('?? notes.md')
+  })
+
+  it('gives each question its captures, stale once the worktree changed, without the state of the capture, or when the last run did not take it', async () => {
+    write('test/recette/essai.yaml', recette())
+    const [file] = await readRecetteFiles(root, ['test/recette/essai.yaml'])
+    const captures = async (items: Record<string, unknown>, state: string | null) => {
+      const [captured] = await branchRecetteCaptures(memoryStorage(items).storage, [file!], state)
+      return 'questions' in captured! ? captured.questions[0]!.captures : captured
+    }
+    const desktop = { 'essai/ouverture-desktop.png': new Uint8Array([1]) }
+
+    expect(await captures({}, 'abc')).toEqual({ desktop: null, phone: null })
+    const taken = { state: 'abc', keys: ['essai/ouverture-desktop.png'] }
+    expect(await captures({ ...desktop, 'essai/state.json': taken }, 'abc')).toEqual({ desktop: { key: 'essai/ouverture-desktop.png', stale: false }, phone: null })
+    expect(await captures({ ...desktop, 'essai/state.json': taken }, 'def')).toMatchObject({ desktop: { stale: true } })
+    expect(await captures({ ...desktop, 'essai/state.json': { state: 'abc', keys: [] } }, 'abc')).toMatchObject({ desktop: { stale: true } })
+    expect(await captures(desktop, 'abc')).toMatchObject({ desktop: { stale: true } })
+  })
+})
+
 describe('recette files of the repository', () => {
   it('are all valid, with unique slugs and existing deck files', async () => {
     const files = await readRecetteFiles(process.cwd(), await allRecetteFiles(process.cwd()))
-    expect(files.length).toBeGreaterThan(0)
     expect(files.filter(file => 'error' in file)).toEqual([])
+  })
+
+  it('each have a subject the captures can name', () => {
+    const dir = join(process.cwd(), 'test/recette')
+    const names = (existsSync(dir) ? readdirSync(dir, { withFileTypes: true }) : []).filter(entry => entry.isFile() && entry.name.endsWith('.yaml'))
+    expect(names.filter(entry => recetteSubject(`test/recette/${entry.name}`) === undefined).map(entry => entry.name)).toEqual([])
   })
 })

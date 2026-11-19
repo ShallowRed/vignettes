@@ -109,7 +109,9 @@ A session ends eight hours after the login, or after two hours without a `GET` r
 | `GET /api/recette/status` | owner, or a persona holding the pass | State of the `recette-*` data set |
 | `POST /api/recette/seed` | owner | Reset the data set |
 | `POST /auth/recette`, body `as=<persona>` | pass | Open the app as a persona |
+| `GET /api/recette/branch` | owner, or a persona holding the pass | The branch, its recette with the captures of its questions and the state of the worktree, in development only |
 | `POST /api/recette/branch` | owner, or a persona holding the pass | Replace the trial decks of the branch recette with their file, in development only |
+| `GET /api/recette/captures/<subject>/<id>-<width>.png` | owner, or a persona holding the pass | A capture of a question of the branch recette, in development only |
 
 The kit answers 404 unless `NUXT_RECETTE_ENABLED=1` or the app runs in development. See [recette-staging.md](recette-staging.md).
 

@@ -27,15 +27,26 @@
       "resetFailed": "La réinitialisation a échoué"
     },
     "branch": {
+      "pageTitle": "Recette de la branche",
       "title": "Recette de la branche",
-      "empty": "Cette branche n'a pas de fichier de recette. On en ajoute un dans {path}.",
+      "branch": "Branche {branch}",
+      "empty": "Cette branche n'a pas de recette.",
       "invalid": "Ce fichier de recette ne peut pas être lu.",
       "missing": "Présentations d'essai absentes : {slugs}.",
       "recreate": "Recréer les présentations d'essai",
       "recreateDone": "Présentations d'essai recréées",
       "recreateSummary": "{decks} présentations publiées",
       "recreateFailed": "La création des présentations d'essai a échoué",
-      "subject": "sujet"
+      "open": "Ouvrir la page",
+      "desktop": "Ordinateur",
+      "phone": "Téléphone",
+      "captureMissing": "Capture absente",
+      "captureStale": "Capture périmée",
+      "steps": "Gestes avant la capture",
+      "clickStep": "Clic sur « {target} »",
+      "pressStep": "Touche {key}",
+      "pressRepeatStep": "Touche {key}, {count} fois",
+      "typeStep": "Saisie de « {text} »"
     },
     "personas": {
       "anonymous": {

@@ -20,3 +20,8 @@ export function postForm(action: string, fields: Record<string, string> = {}, ta
   form.submit()
   form.remove()
 }
+
+/** Opens the app as a persona of the recette kit, then `redirect`, in this tab or in `target`. */
+export function openAs(persona: string, redirect = '/', target?: string): void {
+  postForm('/auth/recette', { as: persona, redirect }, target)
+}

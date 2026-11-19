@@ -46,7 +46,7 @@ echo "Se connecter sans OAuth : http://localhost:3000/auth/dev-login?role=owner"
 """
 
 [tasks.dev]
-description = "Nuxt behind portless; the browser opens the recette page, signed in as owner, once the app answers, and its address is printed. Host: vignettes-studio.localhost, or <branch>.vignettes-studio.localhost in a worktree"
+description = "Nuxt behind portless; the browser opens the catalog, signed in as owner, once the app answers, and the address of the branch recette is printed. Host: vignettes-studio.localhost, or <branch>.vignettes-studio.localhost in a worktree"
 depends = [ "install" ]
 run = "portless run mise run dev:serve"
 
@@ -54,9 +54,9 @@ run = "portless run mise run dev:serve"
 hide = true
 run = """
 url="${PORTLESS_URL:-http://localhost:${PORT:-3000}}"
-recette="/auth/dev-login?role=owner&redirect=/recette"
+recette="/auth/dev-login?role=owner&redirect=/recette/branche"
 {
-  mise run open "$url$recette" || exit
+  mise run open "$url/auth/dev-login?role=owner&redirect=/" || exit
   echo "Recette : $url$recette"
   [ -z "$PORTLESS_TAILSCALE_URL" ] || echo "Recette sur le tailnet : $PORTLESS_TAILSCALE_URL$recette"
 } &
@@ -282,6 +282,11 @@ run = "pnpm test"
 description = "End-to-end tests on the production build, in Chromium and Firefox (first run: pnpm exec playwright install chromium firefox)"
 depends = [ "install" ]
 run = "pnpm build:server && pnpm test:e2e"
+
+[tasks."recette:capture"]
+description = "Capture each question of the branch recette at the width of a computer and of a phone, on the studio that mise run dev serves (first run: pnpm exec playwright install chromium). --list and the VS Code extension skip the global setup, so they read an earlier list of questions"
+depends = [ "install" ]
+run = "RECETTE_URL=\"$(portless get vignettes-studio)\" pnpm exec playwright test --config playwright.recette.config.ts"
 
 [tasks."test:watch"]
 description = "Tests in watch mode"

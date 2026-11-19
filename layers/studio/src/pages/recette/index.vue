@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { BranchRecetteFile, RecetteCheck } from '#shared/recette/branch'
 import type { RecettePersona } from '#shared/recette/personas'
 import { loginHref } from '#shared/access'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PREFIX } from '#shared/recette/personas'
-import { postForm } from '../utils/post-form'
-import { requestErrorMessage } from '../utils/request-error'
+import { openAs } from '../../utils/post-form'
+import { requestErrorMessage } from '../../utils/request-error'
 
 definePageMeta({ layout: false })
 
@@ -12,6 +11,7 @@ definePageMeta({ layout: false })
  * Staging acceptance kit (owner only, staging and dev): one block per account,
  * each with the pages to open as that account and what they must show. The
  * server refuses everything outside staging/dev, so this page then reads 404.
+ * The recette of a branch, in development, is on `/recette/branche`.
  */
 interface Status {
   owner: string
@@ -21,8 +21,6 @@ interface Status {
   personas: RecettePersona[]
   /** Address of the image seeded into a deck, by deck slug. */
   images: Record<string, string>
-  /** The recette files of the branch, in development; null elsewhere. */
-  branch: BranchRecetteFile[] | null
 }
 
 const { t } = useI18n()
@@ -45,7 +43,7 @@ async function seed() {
   try {
     const summary = await $fetch<Status['counts']>('/api/recette/seed', { method: 'POST' })
     toast.add({ title: t('recette.dataset.resetDone'), description: t('recette.dataset.resetSummary', summary), icon: 'i-lucide-check', color: 'success' })
-    checked.value = Object.fromEntries(Object.entries(checked.value).filter(([key]) => key.startsWith('branch.')))
+    checked.value = {}
     await refresh()
   }
   catch (e: any) {
@@ -55,30 +53,6 @@ async function seed() {
     seeding.value = false
   }
 }
-
-const recreating = ref(false)
-async function recreateBranchDecks() {
-  recreating.value = true
-  try {
-    const summary = await $fetch<{ decks: number }>('/api/recette/branch', { method: 'POST' })
-    toast.add({ title: t('recette.branch.recreateDone'), description: t('recette.branch.recreateSummary', summary), icon: 'i-lucide-check', color: 'success' })
-    await refresh()
-  }
-  catch (e: any) {
-    toast.add({ title: requestErrorMessage(e, t('recette.branch.recreateFailed')), icon: 'i-lucide-triangle-alert', color: 'error' })
-  }
-  finally {
-    recreating.value = false
-  }
-}
-
-const branchFiles = computed(() => data.value?.branch ?? [])
-const hasTrialDecks = computed(() => branchFiles.value.some(file => 'decks' in file && file.decks.length > 0))
-/** Keyed by content, so a check keeps its mark when the file inserts or reorders checks. */
-const branchCheckKey = (path: string, check: RecetteCheck) => `branch.${path}.${check.account} ${check.page} ${check.expect}`
-
-/** Opens the app as a persona, then `redirect`, in this tab or in `target`. */
-const openAs = (key: string, redirect = '/', target?: string) => postForm('/auth/recette', { as: key, redirect }, target)
 
 interface Step {
   id: string
@@ -201,90 +175,6 @@ useHead({ title: () => t('recette.page.pageTitle') })
       />
 
       <template v-else-if="data">
-        <section
-          v-if="data.branch"
-          class="flex flex-col gap-3"
-        >
-          <div class="flex items-center gap-4">
-            <h2 class="flex-1 font-medium text-highlighted">
-              {{ t('recette.branch.title') }}
-            </h2>
-            <UButton
-              v-if="hasTrialDecks"
-              :label="t('recette.branch.recreate')"
-              icon="i-lucide-refresh-cw"
-              color="neutral"
-              variant="subtle"
-              size="sm"
-              :loading="recreating"
-              @click="recreateBranchDecks"
-            />
-          </div>
-
-          <i18n-t
-            v-if="branchFiles.length === 0"
-            keypath="recette.branch.empty"
-            tag="p"
-            class="text-sm text-muted"
-            scope="global"
-          >
-            <template #path>
-              <code>test/recette/&lt;{{ t('recette.branch.subject') }}&gt;.yaml</code>
-            </template>
-          </i18n-t>
-
-          <UCard
-            v-for="file in branchFiles"
-            :key="file.path"
-            :ui="{ body: 'p-0 sm:p-0' }"
-          >
-            <template #header>
-              <div class="flex flex-col gap-0.5">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-highlighted">{{ 'title' in file ? file.title : file.path }}</span>
-                  <span
-                    v-if="'checks' in file"
-                    class="text-xs text-muted tabular-nums"
-                  >{{ progressOf(file.checks.map(check => branchCheckKey(file.path, check))) }}</span>
-                </div>
-                <code class="text-xs text-muted">{{ file.path }}</code>
-              </div>
-            </template>
-
-            <UAlert
-              v-if="'error' in file"
-              icon="i-lucide-triangle-alert"
-              color="error"
-              variant="subtle"
-              :title="t('recette.branch.invalid')"
-              :description="file.error"
-              class="rounded-none"
-            />
-
-            <template v-else>
-              <UAlert
-                v-if="file.decks.some(deck => !deck.exists)"
-                icon="i-lucide-file-question"
-                color="warning"
-                variant="subtle"
-                :title="t('recette.branch.missing', { slugs: file.decks.filter(deck => !deck.exists).map(deck => deck.slug).join(', ') })"
-                class="rounded-none"
-              />
-              <ul class="divide-y divide-default text-sm">
-                <RecetteCheckRow
-                  v-for="check in file.checks"
-                  :key="branchCheckKey(file.path, check)"
-                  v-model="checked[branchCheckKey(file.path, check)]"
-                  :target="check.page"
-                  :account="t(`recette.personas.${check.account}.label`)"
-                  :expect="check.expect"
-                  @open="openAs(check.account, check.page, '_blank')"
-                />
-              </ul>
-            </template>
-          </UCard>
-        </section>
-
         <UCard :ui="{ body: 'grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-default' }">
           <div class="flex flex-col items-start gap-1">
             <span class="text-xs text-muted">{{ t('recette.page.session') }}</span>

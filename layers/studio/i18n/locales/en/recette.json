@@ -27,15 +27,26 @@
       "resetFailed": "The reset failed"
     },
     "branch": {
+      "pageTitle": "Branch acceptance",
       "title": "Branch acceptance",
-      "empty": "This branch has no acceptance file. Add one in {path}.",
+      "branch": "Branch {branch}",
+      "empty": "This branch has no acceptance questions.",
       "invalid": "This acceptance file cannot be read.",
       "missing": "Missing trial presentations: {slugs}.",
       "recreate": "Recreate the trial presentations",
       "recreateDone": "Trial presentations recreated",
       "recreateSummary": "{decks} presentations published",
       "recreateFailed": "The trial presentations could not be created",
-      "subject": "subject"
+      "open": "Open the page",
+      "desktop": "Computer",
+      "phone": "Phone",
+      "captureMissing": "No capture",
+      "captureStale": "Outdated capture",
+      "steps": "Gestures before the capture",
+      "clickStep": "Click “{target}”",
+      "pressStep": "Key {key}",
+      "pressRepeatStep": "Key {key}, {count} times",
+      "typeStep": "Type “{text}”"
     },
     "personas": {
       "anonymous": {
