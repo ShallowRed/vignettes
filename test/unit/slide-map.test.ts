@@ -1,9 +1,9 @@
 import type { PresentationData } from '../../packages/nuxt/src/runtime/types/presentation.ts'
-import { componentMentions, registerDeckComponents, resetDeckComponents, slideRanges } from '@vignettes/core/deck'
+import { componentMentions, fragmentAtLine, registerDeckComponents, resetDeckComponents, slideRanges } from '@vignettes/core/deck'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { headingParser } from '../../packages/nuxt/src/runtime/utils/slide-ast.ts'
-import { fragmentAtLine, slideAtLine, slidePlace, unknownDeckComponents } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
+import { slideAtLine, slidePlace, unknownDeckComponents } from '../../packages/nuxt/src/runtime/utils/slide-map.ts'
 
 // Maps a 1-based line to reveal indices for a given deck source.
 function at(raw: string, parser: 'heading' | 'separator', line: number) {
@@ -184,6 +184,50 @@ describe('fragmentAtLine', () => {
     expect(at(30)).toBe(0)
     expect(at(31)).toBe(1)
     expect(at(34)).toBe(1)
+  })
+
+  const withCode = [
+    '::Fragments', // 1
+    '- one', // 2
+    '```md', // 3
+    '- a', // 4
+    '- b', // 5
+    '```', // 6
+    '- two', // 7
+    'follows the list', // 8
+    '::', // 9
+    '---', // 10
+    ':::Scheme', // 11
+    '::Step{title="Syntax"}', // 12
+    '```md', // 13
+    '::Step{title="Example"}', // 14
+    '::', // 15
+    '```', // 16
+    '::', // 17
+    '::Step{title="Next"}', // 18
+    '::', // 19
+    ':::', // 20
+  ].join('\n')
+  const inCode = (line: number) => fragmentAtLine(withCode, slideRanges(withCode, 'separator'), line)
+
+  it('counts a fenced code block of a fragments block as one step, its lines left out', () => {
+    expect(inCode(3)).toBe(1)
+    expect(inCode(5)).toBe(1)
+    expect(inCode(7)).toBe(2)
+    expect(inCode(8)).toBe(2)
+  })
+
+  it('counts two fenced code blocks of a fragments block written one after the other as two steps', () => {
+    const raw = ['::Fragments', '```js', 'a', '```', '```js', 'b', '```', 'after', '::'].join('\n')
+    const atRaw = (line: number) => fragmentAtLine(raw, slideRanges(raw, 'separator'), line)
+    expect(atRaw(3)).toBe(0)
+    expect(atRaw(5)).toBe(1)
+    expect(atRaw(8)).toBe(2)
+  })
+
+  it('leaves out a component written in fenced code', () => {
+    expect(inCode(14)).toBe(0)
+    expect(inCode(18)).toBe(1)
   })
 })
 

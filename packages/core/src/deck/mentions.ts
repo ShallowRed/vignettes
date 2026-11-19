@@ -1,15 +1,16 @@
 import type { ComponentAttribute } from './components.ts'
 import type { OpenBlock, WrittenAttribute } from './scan.ts'
+import type { SlideRange } from './split.ts'
 import { isRefusedEmbed, isValueless, readAttribute } from './attributes.ts'
-import { ANNOTATION_TAGS, attributeNamed, componentKey, DECK_ANNOTATIONS, deckComponentNamed } from './components.ts'
+import { ANNOTATION_TAGS, attributeNamed, componentKey, DECK_ANNOTATIONS, deckComponentNamed, deckComponents } from './components.ts'
 import { frontmatterLineCount } from './frontmatter.ts'
 import { LAYOUT_ATTRIBUTES } from './layout.ts'
-import { blockAttributes, proseLines, walk } from './scan.ts'
+import { blockAttributes, LIST_MARKER, proseLines, walk } from './scan.ts'
 
 /**
  * The places where a deck writes its blocks, directives, attributes and values,
  * read from its markdown text for the editor and the deck check, the blocks
- * around a line, and the declaration of a directive.
+ * around a line and the fragment under it, and the declaration of a directive.
  */
 
 /** A component name as written in the source: `::Name`, `:::Name`, `:name{…}`. */
@@ -74,11 +75,102 @@ export function blocksAround(raw: string, line: number): OpenBlock[] {
   return around
 }
 
+/** The component whose items and blocks are fragments. */
+const FRAGMENTS_BLOCK = 'Fragments'
+const LIST_ITEM_RE = new RegExp(`^\\s*${LIST_MARKER}[ \\t]`)
+
+interface FragmentCounter {
+  /** The name the contract gives the component, or the written name of an unregistered one. */
+  name: string
+  fragments: boolean
+  /** Fragments counted so far, the writing-order index of the next one. */
+  count: number
+  /** Diagram node ids to their fragment index, for the edges. */
+  nodes: Map<string, number>
+}
+
+/**
+ * The Reveal fragment index under the 1-based `line`, -1 before the first
+ * fragment of its slide, so an editor can open the preview at that step.
+ * Counted in writing order, or by their `step`: the children the contract
+ * declares as fragments of their parent (`DeckComponent.fragment`), and each
+ * item or block of a `::Fragments` block, a fenced code block counting as one.
+ * A container with `:fragments="false"` counts nothing.
+ */
+export function fragmentAtLine(raw: string, ranges: SlideRange[], line: number): number {
+  let start = ranges[0]?.startLine ?? 1
+  for (const range of ranges) {
+    if (range.startLine > line)
+      break
+    start = range.startLine
+  }
+  const containers = new Set([FRAGMENTS_BLOCK, ...deckComponents().filter(component => component.fragment).map(component => component.parent)])
+  const counters = new Map<OpenBlock, FragmentCounter>()
+  let index = -1
+  // The line above ends a block: a blank line, a line that opens a block or a closing fence.
+  let afterBreak = true
+  for (const { index: at, text, code, fence, open } of walk(raw.split('\n'), start - 1)) {
+    if (at + 1 > line)
+      break
+    const block = open.at(-1)
+    const opens = block?.line === at + 1
+    if (block && opens) {
+      const component = deckComponentNamed(block.name)
+      const name = component?.name ?? block.name
+      const attributes = new Map(attributeBlockAt(text, block.column + block.length).written.map(({ name, value }) => [name, value]))
+      const outer = open.at(-2)
+      const parent = outer && counters.get(outer)
+      if (parent?.fragments && component?.fragment && component.parent === parent.name) {
+        if (component.fragment === 'link') {
+          const ends = [attributes.get('from'), attributes.get('to')]
+            .map(id => (id === undefined ? undefined : parent.nodes.get(id)))
+            .filter((value): value is number => value !== undefined)
+          index = ends.length ? Math.max(...ends) : Math.max(parent.count - 1, 0)
+        }
+        else {
+          const written = attributes.get('step') ?? attributes.get(':step')
+          const own = written !== undefined && !Number.isNaN(Number(written)) ? Number(written) : parent.count
+          parent.count++
+          const id = attributes.get('id')
+          if (id)
+            parent.nodes.set(id, own)
+          index = own
+        }
+      }
+      counters.set(block, { name, fragments: containers.has(name) && attributes.get(':fragments') !== 'false', count: 0, nodes: new Map() })
+    }
+    else {
+      const top = block && counters.get(block)
+      // The lines of fenced code belong to the block that its opening fence starts.
+      if (top?.name === FRAGMENTS_BLOCK && top.fragments && text.trim() && (!code || fence === 'open')) {
+        // A fence at the first column starts a block, after a paragraph or a list too.
+        if (LIST_ITEM_RE.test(text) || afterBreak || (fence === 'open' && !/^\s/.test(text)))
+          index = top.count++
+      }
+    }
+    afterBreak = !text.trim() || opens || fence === 'close'
+  }
+  return index
+}
+
 /** A directive as written in the source, with its colons: `::Quote`, `:::Columns`, `:pretitle`. */
 export interface DirectiveMention extends ComponentMention {
   colons: string
   /** 0-based columns of its `{…}` block when it has one, the closing brace included; to the end of the line when the block stays open. */
   attributes?: { from: number, to: number }
+}
+
+/**
+ * The `{…}` block written at the 0-based column `from` of a line, when one opens there: its columns,
+ * the closing brace included, or to the end of the line when the block stays open; its attributes;
+ * and whether a closing brace or quote is missing.
+ */
+function attributeBlockAt(text: string, from: number): { attributes?: { from: number, to: number }, written: WrittenAttribute[], malformed: boolean } {
+  if (text[from] !== '{')
+    return { written: [], malformed: false }
+  const close = attributesEnd(text, from + 1)
+  const end = typeof close === 'number' ? close : text.length
+  return { attributes: { from, to: typeof close === 'number' ? close + 1 : text.length }, written: [...blockAttributes(text.slice(from + 1, end), from + 1)], malformed: typeof close === 'string' }
 }
 
 /** The directives written in a deck with the attributes of their `{…}` block, outside the frontmatter, fenced code and inline code. */
@@ -88,10 +180,8 @@ function* writtenDirectives(raw: string): Generator<{ mention: DirectiveMention,
       const [, before, colons, name] = match
       const column = match.index + before!.length
       const length = colons!.length + name!.length
-      const close = prose[column + length] === '{' ? attributesEnd(prose, column + length + 1) : undefined
-      const attributes = close === undefined ? undefined : { from: column + length, to: typeof close === 'number' ? close + 1 : prose.length }
-      const written = attributes ? [...blockAttributes(prose.slice(attributes.from + 1, typeof close === 'number' ? close : prose.length), attributes.from + 1)] : []
-      yield { mention: { name: name!, colons: colons!, line, column, length, ...(attributes && { attributes }) }, written, malformed: typeof close === 'string' }
+      const { attributes, written, malformed } = attributeBlockAt(prose, column + length)
+      yield { mention: { name: name!, colons: colons!, line, column, length, ...(attributes && { attributes }) }, written, malformed }
     }
   }
 }

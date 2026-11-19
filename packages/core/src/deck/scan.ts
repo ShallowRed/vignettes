@@ -63,6 +63,8 @@ interface WalkedLine {
   text: string
   /** The line belongs to fenced code, its fences included. */
   code: boolean
+  /** The line is the fence that opens fenced code, or the one that closes it. */
+  fence?: 'open' | 'close'
   /** The line belongs to fenced code or to an MDC block, its opening and closing lines included. */
   nested: boolean
   /** The blocks still open once the line is read, until the walk reads the next line. */
@@ -80,11 +82,14 @@ export function* walk(lines: string[], from: number): Generator<WalkedLine> {
     const name = fence || fenceOpen || close ? undefined : BLOCK_OPEN_RE.exec(text)
     const code = Boolean(fence || fenceOpen)
     const nested = code || Boolean(name) || open.length > 0
+    let edge: WalkedLine['fence']
     if (fence && isFenceClose(text, fence)) {
       fence = undefined
+      edge = 'close'
     }
     else if (fenceOpen) {
       fence = fenceOpen[1]
+      edge = 'open'
     }
     else if (close && open.length) {
       const at = open.map(block => block.colons.length).lastIndexOf(close[1]!.length)
@@ -94,7 +99,7 @@ export function* walk(lines: string[], from: number): Generator<WalkedLine> {
     else if (name) {
       open.push({ name: name[3]!, colons: name[2]!, line: index + 1, column: name[1]!.length, length: name[2]!.length + name[3]!.length })
     }
-    yield { index, text, code, nested, open }
+    yield { index, text, code, ...(edge && { fence: edge }), nested, open }
   }
 }
 
