@@ -239,3 +239,16 @@ html.reveal-print .reveal .slides {
     display: flex !important;
   }
 }
+
+// Reveal's scroll view, under 435 pixels wide, also sets every slide to
+// `display: block !important`: the skeleton and a slide whose media is behind
+// its text keep their flex column there. `_media-layouts.scss` stacks the panes
+// of the other media slides.
+.reveal.reveal-scroll .scroll-page {
+  section.slide-h1,
+  section.slide-h2,
+  section.slide-h3:not(.layout-media),
+  section.slide-h3.layout-media-behind {
+    display: flex !important;
+  }
+}

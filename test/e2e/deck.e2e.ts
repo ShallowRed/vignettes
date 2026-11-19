@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
 const DECK = '/slides/composants'
+const SCREENS_DECK = '/slides/ecrans'
 
 test('the server-rendered page links the Reveal styles and the theme', async ({ request, browserName }) => {
   test.skip(browserName !== 'chromium', 'The response does not depend on the browser.')
@@ -267,6 +268,21 @@ test.describe('below 435px, where Reveal lays the deck out as a scrolling page',
     await expect(slide).toHaveClass(/\bpresent\b/)
     await expect(slide).toBeInViewport({ ratio: 0.9 })
     await expect(page).toHaveURL(/#\/fond$/)
+  })
+
+  test('a slide keeps its layout: a centered title, and frames as high as the heading of a screen slide leaves', async ({ page }) => {
+    await page.goto(SCREENS_DECK)
+    await expect(page.locator('.reveal.reveal-scroll.ready')).toHaveCount(1)
+
+    const slide = (await page.locator('section#ecrans').boundingBox())!
+    const title = (await page.locator('section#ecrans h1').boundingBox())!
+    expect((title.y + title.height / 2 - slide.y) / slide.height).toBeGreaterThan(0.3)
+
+    const frame = (await page.locator('section#ecran-a-sa-proportion .story-frame__media').boundingBox())!
+    expect(frame.width).toBeGreaterThan(300)
+    expect(frame.width / frame.height).toBeCloseTo(1000 / 520, 1)
+    for (const media of await page.locator('section#galerie-sur-un-ecran .story-frame__media').all())
+      expect((await media.boundingBox())!.height).toBeGreaterThan(100)
   })
 
   for (const [opening, width] of [['at 390px', 390], ['at 1280px, then narrowed to 390px', 1280]] as const) {
