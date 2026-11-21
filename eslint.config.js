@@ -40,6 +40,13 @@ const DOMAIN_IO = [
 const YJS = { group: ['yjs', 'yjs/*'], message: 'In shared/, yjs belongs to shared/collab/.' }
 
 const MDC_HOME = ['packages/nuxt/**', 'nuxt.config.ts', 'layers/studio/src/mdc.config.ts', 'test/**']
+
+const EXTENSION_PACKAGE_HOME = ['packages/schemas/src/**', 'packages/storybook/src/**']
+const EXTENSION_PACKAGE = {
+  regex: '^@vignettes/(?!(core|nuxt)(/|$))',
+  message: 'An extension package (@vignettes/schemas, @vignettes/storybook) imports @vignettes/core and @vignettes/nuxt, and no other package of the repository: a component two extensions share belongs to @vignettes/nuxt or @vignettes/core.',
+}
+
 const DRIVER_HOME = ['layers/studio/server/db/sqlite/**', 'layers/studio/server/db/postgres/**']
 // The test helpers open each adapter; migrations.test.ts applies the SQLite migrations by hand.
 const DRIVER_TESTS = ['test/unit/helpers/**', 'test/unit/migrations.test.ts']
@@ -119,6 +126,11 @@ export default antfu({
   ignores: [...MDC_HOME, ...DRIVER_HOME],
   rules: {
     'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, ERROR_TRACKING_SDK, UMAMI_SENDER] }],
+  },
+}, {
+  files: EXTENSION_PACKAGE_HOME,
+  rules: {
+    'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, ERROR_TRACKING_SDK, UMAMI_SENDER, EXTENSION_PACKAGE] }],
   },
 }, {
   files: SDK_HOME,
