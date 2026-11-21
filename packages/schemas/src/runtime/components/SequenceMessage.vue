@@ -101,7 +101,7 @@ const named = computed(() => [props.from, ...ids(props.via), props.to])
 .sequence-message__line {
   position: absolute;
   top: var(--line-y);
-  border-top: 2px solid var(--accent);
+  border-top: var(--schema-stroke) solid var(--accent);
 }
 
 .sequence-message--dashed .sequence-message__line {

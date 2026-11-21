@@ -4,6 +4,8 @@
  * in writing order.
  */
 
+import { pairs } from './pairs.ts'
+
 const FIRST_ACTOR_COLUMN = 2
 
 /** The ids of a comma-separated attribute, `a, b` → `['a', 'b']`. */
@@ -107,18 +109,14 @@ export interface StateCell {
  */
 export function stateCells(actors: readonly string[], values: string | undefined, options: { colored: boolean, mark?: string }): StateCell[] {
   const marked = ids(options.mark)
-  return (values ?? '').split('|').flatMap((entry) => {
-    const separator = entry.indexOf('=')
-    if (separator < 0)
-      return []
-    const id = entry.slice(0, separator).trim()
+  return pairs(values).flatMap(({ key: id, value }) => {
     const column = actorColumn(actors, id)
     if (column === undefined)
       return []
     return [{
       id,
       column,
-      value: entry.slice(separator + 1).trim(),
+      value,
       marked: options.colored && (!marked.length || marked.includes(id)),
     }]
   })

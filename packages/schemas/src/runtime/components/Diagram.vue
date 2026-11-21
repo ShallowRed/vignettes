@@ -56,8 +56,8 @@ interface Props {
    */
   nodeWidth?: string | number
   /**
-   * Height budget in px for the automatic layout; a taller graph is scaled down.
-   * @fr Hauteur disponible en px pour la disposition automatique ; un graphe plus haut est réduit.
+   * Height budget in px for the automatic layout; a taller graph is scaled down. The legend adds its own height below this budget.
+   * @fr Hauteur disponible en px pour la disposition automatique ; un graphe plus haut est réduit. La légende s'ajoute sous le diagramme, en plus de cette hauteur.
    */
   height?: string | number
   /**
@@ -80,6 +80,11 @@ interface Props {
    * @fr Forme des cartes de chaque `::Node` : pictogramme au-dessus du texte, ou à côté.
    */
   tiles?: 'column' | 'row'
+  /**
+   * Key of the codes the diagram uses, `code=meaning` separated by `|`: `dashed` for a dashed arrow, `solid` for a plain one, `planned` for a dashed card, `emphasis` for the accent card, `flow` for a data pill, or a color as `color` takes it: `dashed=Asynchronous message|planned=Target state`. Shown under the diagram with the slide.
+   * @fr Légende des codes qu'emploie le diagramme, `code=sens` séparés par `|` : `dashed` pour une flèche en pointillés, `solid` pour une flèche pleine, `planned` pour une carte en pointillés, `emphasis` pour la carte d'accent, `flow` pour une pastille de données, ou une couleur comme la prend `color` : `dashed=Message asynchrone|planned=État visé`. Affichée sous le diagramme, avec la diapositive.
+   */
+  legend?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -103,6 +108,7 @@ defineSlots<{
 }>()
 
 const root = ref<HTMLElement | null>(null)
+const frame = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLElement | null>(null)
 const svg = ref<SVGSVGElement | null>(null)
 const svgLabels = ref<SVGSVGElement | null>(null)
@@ -160,7 +166,7 @@ function layoutAuto() {
   scale.value = Math.min(1, available / width, budget / height)
   const offset = Math.max(0, (available - width * scale.value) / 2)
   canvasStyle.value = { width: `${width}px`, height: `${height}px`, transform: `scale(${scale.value})`, marginLeft: `${offset}px` }
-  root.value!.style.height = `${height * scale.value}px`
+  frame.value!.style.height = `${height * scale.value}px`
 }
 
 type Point = [number, number]
@@ -353,87 +359,97 @@ onBeforeUnmount(() => observer?.disconnect())
     :style="{ '--diagram-node-width': `${nodeWidth}px`, '--diagram-gap': gap }"
   >
     <div
-      ref="canvas"
-      class="diagram__canvas"
-      :style="layout === 'grid'
-        ? { gridTemplateColumns: props.columns ?? `repeat(${columns}, minmax(0, 1fr))`, gridTemplateRows: rowCount ? `repeat(${rowCount}, auto)` : undefined }
-        : canvasStyle"
+      ref="frame"
+      class="diagram__frame"
     >
-      <svg
-        ref="svg"
-        class="diagram__edges"
-        aria-hidden="true"
+      <div
+        ref="canvas"
+        class="diagram__canvas"
+        :style="layout === 'grid'
+          ? { gridTemplateColumns: props.columns ?? `repeat(${columns}, minmax(0, 1fr))`, gridTemplateRows: rowCount ? `repeat(${rowCount}, auto)` : undefined }
+          : canvasStyle"
       >
-        <defs>
-          <marker
-            id="diagram-arrow"
-            viewBox="0 0 10 10"
-            refX="9"
-            refY="5"
-            markerWidth="5"
-            markerHeight="5"
-            orient="auto-start-reverse"
+        <svg
+          ref="svg"
+          class="diagram__edges"
+          aria-hidden="true"
+        >
+          <defs>
+            <marker
+              id="diagram-arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="5"
+              markerHeight="5"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M 0 0 L 10 5 L 0 10 z"
+                fill="currentColor"
+              />
+            </marker>
+          </defs>
+          <g
+            v-for="(p, i) in paths"
+            :key="i"
+            class="diagram__edge"
+            :class="{ 'fragment': fragments, 'diagram__edge--dashed': p.dashed }"
+            :data-fragment-index="fragments ? p.index : undefined"
           >
             <path
-              d="M 0 0 L 10 5 L 0 10 z"
-              fill="currentColor"
+              :d="p.d"
+              :marker-end="p.arrow ? 'url(#diagram-arrow)' : undefined"
             />
-          </marker>
-        </defs>
-        <g
-          v-for="(p, i) in paths"
-          :key="i"
-          class="diagram__edge"
-          :class="{ 'fragment': fragments, 'diagram__edge--dashed': p.dashed }"
-          :data-fragment-index="fragments ? p.index : undefined"
+          </g>
+        </svg>
+        <slot />
+        <!-- Cards carry a Reveal fragment, whose opacity puts them in the same
+             paint layer as the arrows and above them in document order. The
+             labels ride in a second layer after the cards so they stay legible
+             when a gap is narrower than the words. -->
+        <svg
+          ref="svgLabels"
+          class="diagram__edges diagram__edges--labels"
+          aria-hidden="true"
         >
-          <path
-            :d="p.d"
-            :marker-end="p.arrow ? 'url(#diagram-arrow)' : undefined"
-          />
-        </g>
-      </svg>
-      <slot />
-      <!-- Cards carry a Reveal fragment, whose opacity puts them in the same
-           paint layer as the arrows and above them in document order. The
-           labels ride in a second layer after the cards so they stay legible
-           when a gap is narrower than the words. -->
-      <svg
-        ref="svgLabels"
-        class="diagram__edges diagram__edges--labels"
-        aria-hidden="true"
-      >
-        <g
-          v-for="(p, i) in paths"
-          :key="i"
-          class="diagram__edge"
-          :class="{ fragment: fragments }"
-          :data-fragment-index="fragments ? p.index : undefined"
-        >
-          <rect
-            v-if="plates[i]"
-            class="diagram__label-plate"
-            :x="plates[i]!.left"
-            :y="plates[i]!.top"
-            :width="plates[i]!.width"
-            :height="plates[i]!.height"
-            rx="3"
-          />
-          <text
-            v-if="p.label"
-            :x="p.lx"
-            :y="p.ly"
-            :text-anchor="p.labelAnchor"
-            dominant-baseline="middle"
-          >{{ p.label }}</text>
-        </g>
-      </svg>
+          <g
+            v-for="(p, i) in paths"
+            :key="i"
+            class="diagram__edge"
+            :class="{ fragment: fragments }"
+            :data-fragment-index="fragments ? p.index : undefined"
+          >
+            <rect
+              v-if="plates[i]"
+              class="diagram__label-plate"
+              :x="plates[i]!.left"
+              :y="plates[i]!.top"
+              :width="plates[i]!.width"
+              :height="plates[i]!.height"
+              rx="3"
+            />
+            <text
+              v-if="p.label"
+              :x="p.lx"
+              :y="p.ly"
+              :text-anchor="p.labelAnchor"
+              dominant-baseline="middle"
+            >{{ p.label }}</text>
+          </g>
+        </svg>
+      </div>
     </div>
+    <SchemaLegend :entries="legend" />
   </div>
 </template>
 
 <style scoped>
 .diagram {
+  /* The lines and the planned card, which the legend draws too. */
+  --schema-stroke: 1.5px;
+  --schema-dash: 5 5;
+  --schema-planned: 2px dashed var(--accent);
   position: relative;
   width: 100%;
   margin: 0.5em 0;
@@ -481,11 +497,11 @@ onBeforeUnmount(() => observer?.disconnect())
 .diagram__edge path {
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: var(--schema-stroke);
 }
 
 .diagram__edge--dashed path {
-  stroke-dasharray: 5 5;
+  stroke-dasharray: var(--schema-dash);
 }
 
 /* Labels keep their own scale: the size classes shrink the cards, and a label
@@ -534,7 +550,7 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .diagram--cards-outlined :deep(.picto-card--planned) {
-  border: 2px dashed var(--accent);
+  border: var(--schema-planned);
 }
 
 .diagram--dim:has(.current-fragment) :deep(.fragment.visible:not(.current-fragment)) {

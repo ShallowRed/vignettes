@@ -12,7 +12,7 @@ interface Props {
   icon?: string
   title?: string
   n?: string | number
-  /** Target state (dashed frame), as opposed to what runs today. */
+  /** Target state (dashed card), as opposed to what runs today. */
   planned?: boolean
   /** `row` sets the pictogram beside the text instead of above it. */
   orientation?: 'column' | 'row'

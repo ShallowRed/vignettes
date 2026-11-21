@@ -99,11 +99,12 @@ Attributes:
 - `fragments` (`boolean`, default `true`): Shows the nodes and the edges one at a time, in writing order; each edge appears with the later of its nodes.
 - `dim` (`boolean`, default `true`): Dims the nodes already shown once a later one is current.
 - `nodeWidth` (`string | number`, default `200`): Card width in px for the automatic layout (grid cells size their own).
-- `height` (`string | number`, default `460`): Height budget in px for the automatic layout; a taller graph is scaled down.
+- `height` (`string | number`, default `460`): Height budget in px for the automatic layout; a taller graph is scaled down. The legend adds its own height below this budget.
 - `gap` (`string`, default `'1.2em 3em'`): Grid gaps as `row column` CSS lengths.
 - `route` (`'curve' | 'orthogonal'`, default `'curve'`): Default edge route: curved, or orthogonal elbows.
 - `cards` (`'outlined' | 'plain'`, default `'outlined'`): Card surface: `outlined`, a white card with a border, or `plain`.
 - `tiles` (`'column' | 'row'`, default `'column'`): Card shape for every `::Node`: pictogram above the text, or beside it.
+- `legend` (`string`): Key of the codes the diagram uses, `code=meaning` separated by `|`: `dashed` for a dashed arrow, `solid` for a plain one, `planned` for a dashed card, `emphasis` for the accent card, `flow` for a data pill, or a color as `color` takes it: `dashed=Asynchronous message|planned=Target state`. Shown under the diagram with the slide.
 
 Content: The `::Node`, `::Edge` and `::Area` blocks.
 
@@ -130,7 +131,7 @@ Attributes:
 - `color` (`string`): Color of the icon and the title: a palette name of the theme, such as `green`, or a hexadecimal color or a color function, such as `#2a7f62`.
 - `title` (`string`): Title of the card.
 - `n` (`string | number`): Number in a badge.
-- `planned` (`boolean`): Draws a dashed frame, for a target state.
+- `planned` (`boolean`): Draws a dashed card, for a target state.
 - `step` (`string | number`): Fragment step; defaults to the writing order.
 - `variant` (`'card' | 'entity' | 'flow' | 'plain'`): `entity`: left-aligned box whose caption lists attributes, one per list item. `flow`: a pill for the data that travels between two machines. `plain`: title and caption without a card, for a row or column heading.
 - `emphasis` (`boolean`): Fills the card with the accent, for the node the slide is about.
@@ -156,7 +157,7 @@ Attributes:
 - `from` (`string`, required): `id` of the node the arrow leaves.
 - `to` (`string`, required): `id` of the node the arrow reaches.
 - `label` (`string`): Text on the arrow.
-- `dashed` (`boolean`): Draws a dashed arrow.
+- `dashed` (`boolean`): Draws a dashed arrow, for an asynchronous message: the sender goes on without waiting for an answer.
 - `arrow` (`boolean`): `false` leaves the arrowhead off, for the leg that reaches a flow box.
 - `step` (`string | number`): Fragment step; defaults to the later of the two nodes.
 - `anchors` (`string`): Sides to leave and enter by, `from,to` (`top` | `right` | `bottom` | `left`); without it, the sides follow the position of the cards.
@@ -217,6 +218,7 @@ Attributes:
 - `dim` (`boolean`, default `true`): Dims the rows already shown once a later one is current.
 - `size` (`'sm' | 'md'`, default `'md'`): Scale of the cards and the text; `sm` fits about ten rows on a slide.
 - `enter` (`'start' | 'first-row'`, default `'start'`): When the participants appear: `start`, all of them with the slide; `first-row`, those of the first row and those no row names with the slide, each other one with the first row that names it, in a column kept for it from the start.
+- `legend` (`string`): Key of the codes the sequence uses, `code=meaning` separated by `|`: `dashed` for a dashed arrow, `solid` for a plain one, or a color as `color` takes it: `dashed=Answer`. Shown under the sequence with the slide.
 
 Content: The `::Actor` blocks, then the `::Message`, `::State` and `::Remark` rows in reading order.
 

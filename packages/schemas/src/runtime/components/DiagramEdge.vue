@@ -21,8 +21,8 @@ interface Props {
    */
   label?: string
   /**
-   * Draws a dashed arrow.
-   * @fr Dessine une flèche en pointillés.
+   * Draws a dashed arrow, for an asynchronous message: the sender goes on without waiting for an answer.
+   * @fr Dessine une flèche en pointillés, pour un message asynchrone : l'émetteur continue sans attendre de réponse.
    */
   dashed?: boolean
   /**

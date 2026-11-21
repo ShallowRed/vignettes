@@ -30,6 +30,11 @@ interface Props {
    * @fr Moment où les participants apparaissent : `start`, tous avec la diapositive ; `first-row`, ceux de la première rangée et ceux qu'aucune rangée ne nomme avec la diapositive, chacun des autres avec la première rangée qui le nomme, dans une colonne qui lui est gardée dès le départ.
    */
   enter?: 'start' | 'first-row'
+  /**
+   * Key of the codes the sequence uses, `code=meaning` separated by `|`: `dashed` for a dashed arrow, `solid` for a plain one, or a color as `color` takes it: `dashed=Answer`. Shown under the sequence with the slide.
+   * @fr Légende des codes qu'emploie la séquence, `code=sens` séparés par `|` : `dashed` pour une flèche en pointillés, `solid` pour une flèche pleine, ou une couleur comme la prend `color` : `dashed=Réponse`. Affichée sous la séquence, avec la diapositive.
+   */
+  legend?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -116,11 +121,25 @@ onMounted(async () => {
       aria-hidden="true"
     />
     <slot />
+    <SchemaLegend
+      class="sequence__legend"
+      :entries="legend"
+      :marks="['solid', 'dashed']"
+    />
   </div>
 </template>
 
 <style scoped>
+/* After the explicit rows, out of the lifelines' span. */
+.sequence__legend {
+  grid-column: 1 / -1;
+}
+
 .sequence {
+  /* The line of a message, which the legend draws too: a dashed border of
+     2px draws dashes of about 6px. */
+  --schema-stroke: 2px;
+  --schema-dash: 6 6;
   position: relative;
   display: grid;
   width: 100%;

@@ -47,8 +47,8 @@ interface Props {
    */
   n?: string | number
   /**
-   * Draws a dashed frame, for a target state.
-   * @fr Dessine un cadre en pointillés, pour un état visé.
+   * Draws a dashed card, for a target state.
+   * @fr Dessine une carte en pointillés, pour un état visé.
    */
   planned?: boolean
   /**
