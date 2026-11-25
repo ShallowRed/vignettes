@@ -14,6 +14,9 @@ export default defineConfig({
     environment: 'node',
     include: ['test/**/*.{test,spec}.ts'],
     globalSetup: ['test/unit/helpers/pglite-template.ts'],
+    // nuxt-auth-utils imports `#imports`: inlined, it goes through Vite, where a
+    // test can mock `#imports`.
+    server: { deps: { inline: ['nuxt-auth-utils'] } },
     // A contract suite opens a PGlite instance, close to 1 GB per worker: the
     // workers take half the memory at most.
     maxWorkers: Math.max(1, Math.min(availableParallelism(), Math.floor(totalmem() / 2 / 2 ** 30))),
