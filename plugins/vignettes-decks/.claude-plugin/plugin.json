@@ -1,6 +1,6 @@
 {
   "name": "vignettes-decks",
-  "description": "Write a Vignettes deck: outline and slide text for its purpose, format, components, layouts and live Storybook embeds; write a Vignettes theme",
+  "description": "Write a Vignettes deck: outline and slide text for its purpose, format, components, layouts and live Storybook embeds",
   "author": {
     "name": "Lucas Poulain"
   }

@@ -9,6 +9,11 @@
       "name": "vignettes-decks",
       "source": "./plugins/vignettes-decks",
       "description": "Write a Vignettes deck: outline and slide text for its purpose, format, components, layouts and live Storybook embeds"
+    },
+    {
+      "name": "vignettes-themes",
+      "source": "./plugins/vignettes-themes",
+      "description": "Write a Vignettes theme: manifest, SCSS on the theme kit, semantic tokens, section surfaces, local check and publication"
     }
   ]
 }

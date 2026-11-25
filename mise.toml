@@ -304,7 +304,7 @@ depends = [ "install" ]
 run = "node scripts/component-reference.ts"
 
 [tasks."deck:plugin"]
-description = "Regenerate the references of the deck authoring plugin (plugins/vignettes-decks) from the deck core and the package READMEs"
+description = "Regenerate the references of the authoring plugins of plugins/ (vignettes-decks, vignettes-themes) from the deck core and the package READMEs"
 depends = [ "install" ]
 run = "node scripts/deck-plugin.ts"
 

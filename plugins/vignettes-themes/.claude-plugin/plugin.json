@@ -1,0 +1,7 @@
+{
+  "name": "vignettes-themes",
+  "description": "Write a Vignettes theme: manifest, SCSS on the theme kit, semantic tokens, section surfaces, local check and publication",
+  "author": {
+    "name": "Lucas Poulain"
+  }
+}
