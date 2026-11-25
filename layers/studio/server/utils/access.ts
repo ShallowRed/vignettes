@@ -96,6 +96,11 @@ export async function unlockDeck(event: H3Event, gate: GateOptions): Promise<{ u
   return { unlocked: true }
 }
 
+/** Whether a freeze is generating its bundle and reads the deck it freezes: no visitor makes that request. */
+export function isFreezeRead(prerendering: boolean | undefined, bundle: { onlySlug?: string }, slug: string): boolean {
+  return prerendering === true && bundle.onlySlug === slug
+}
+
 /** Throws `createError` on deny/needs-password; returns normally on allow. */
 export async function gateDeckAccess(event: H3Event, opts: GateOptions): Promise<void> {
   const decision = await decideDeckAccess(event, opts)

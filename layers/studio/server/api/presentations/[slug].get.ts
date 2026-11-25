@@ -1,7 +1,7 @@
 import type { DeckDraftSource } from '#shared/presentations'
 import { yDocUpdateToMarkdown } from '#shared/collab/ydoc'
 import { resolveDeck, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
-import { assertCanReadDraft, gateDeckAccess, gateOptionsOf } from '../../utils/access'
+import { assertCanReadDraft, gateDeckAccess, gateOptionsOf, isFreezeRead } from '../../utils/access'
 import { useDraftStore } from '../../utils/collab'
 import { serverConfig } from '../../utils/config'
 import { useDbContent, useDeckMeta } from '../../utils/sources'
@@ -54,10 +54,12 @@ export default defineEventHandler(async (event) => {
   if (!gate)
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
 
-  await gateDeckAccess(event, gate)
+  const bundle = serverConfig().bundle
+  // /frozen/** gates the bundle on its deck when it serves it.
+  if (!isFreezeRead(import.meta.prerender, bundle, slug))
+    await gateDeckAccess(event, gate)
 
   // A frozen bundle carries its own Storybook copy: point the deck's embeds at it.
-  const bundle = serverConfig().bundle
   const content = resolveDeck({ stub, storybookBase: bundle.enabled ? bundle.storybookUrl : undefined }).content
   return { content, status: gate.status, writable: useDraftStore().isWritable() }
 })
