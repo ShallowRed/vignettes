@@ -16,7 +16,7 @@ How does a deck written in an earlier form keep rendering after we rename or ret
 
 ## Decision
 
-When we rename or retire a form, the core keeps reading it. `LEGACY_FORMS` of `packages/core/src/deck/legacy-forms.ts` lists it with its conversion into the current form, and the editor marks it and offers the conversion. The syntax has no version. We track the two retired components that `legacyComponentLayout` reads without an entry in `LEGACY_FORMS`, `FullScreenImage` and `SplitSlide`, in [issue 236](https://github.com/ShallowRed/vignettes/issues/236).
+When we rename or retire a form, the core keeps reading it. `LEGACY_FORMS` of `packages/core/src/deck/legacy-forms.ts` lists it with its conversion into the current form, and the editor marks it and offers the conversion. The syntax has no version. We track the two retired components that `legacyComponentLayout` reads without an entry in `LEGACY_FORMS`, `FullScreenImage` and `SplitSlide`, in [issue 11](https://github.com/ShallowRed/vignettes/issues/11).
 
 ## Consequences
 
