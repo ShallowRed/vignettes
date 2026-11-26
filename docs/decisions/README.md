@@ -1,6 +1,6 @@
 # Decisions
 
-The decisions that shape the code of Vignettes, one per file. [0000](0000-recording-decisions.md) says what goes in a decision and how we write it.
+The decisions that shape the code of Vignettes, one per file. [0000](0000-recording-decisions.md) says what goes in a decision and how we write it, and [docs/design](../design/README.md) holds the decisions of interface design.
 
 - [0000](0000-recording-decisions.md) Recording a decision.
 - [0001](0001-deck-format-in-the-core.md) We define the deck format once, in the core.

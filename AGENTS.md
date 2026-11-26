@@ -1,6 +1,6 @@
 # Vignettes
 
-Instructions for coding agents working in this repository. [CONTRIBUTING.md](CONTRIBUTING.md) holds the checks and the conventions, [docs/architecture.md](docs/architecture.md) the layout and the data flow. [docs/decisions](docs/decisions/README.md) records the decisions that shape the code, each with its reasons and its check: read the ones a change touches; [0000](docs/decisions/0000-recording-decisions.md) says how we propose one. To write a deck, use the `vignettes-decks` plugin published from `plugins/vignettes-decks`; to write a theme, the `vignettes-themes` plugin of `plugins/vignettes-themes`.
+Instructions for coding agents working in this repository. [CONTRIBUTING.md](CONTRIBUTING.md) holds the checks and the conventions, [docs/architecture.md](docs/architecture.md) the layout and the data flow. [docs/decisions](docs/decisions/README.md) records the decisions that shape the code, and [docs/design](docs/design/README.md) those of the interface, each with its reasons and its check: read the ones a change touches; [0000](docs/decisions/0000-recording-decisions.md) says how we propose one. To write a deck, use the `vignettes-decks` plugin published from `plugins/vignettes-decks`; to write a theme, the `vignettes-themes` plugin of `plugins/vignettes-themes`.
 
 ## Toolchain
 

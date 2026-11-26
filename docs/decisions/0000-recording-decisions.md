@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-11-26
 decision-makers: Lucas Poulain
 ---
@@ -16,11 +16,13 @@ Where does a coding agent, or a person who joins the project, find a decision th
 - The architecture contracts of `ai-harness/memoire/vignettes/`, which the `contract` skill writes. Set aside because a contract holds the decision together with the plan of a set of commits and the history of its versions, and it is outside the repository.
 - The private notes of `docs/private/`. Set aside because git ignores that folder: the notes have no history and are absent from the worktrees where agents work.
 - Writing the decisions in French, as Lucas states them. Set aside because `docs/`, `AGENTS.md` and the code are in English.
+- The decisions of interface design in this folder, beside those of the code. Set aside so that the folder of a decision tells its nature.
+- The decisions of interface design kept in the memory of the agents and in the pull requests. Set aside because an agent in a worktree does not see that memory, and a decision nobody finds gets discussed again.
 - Keeping the full text of a superseded decision, as [Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions) and [Martin Fowler](https://martinfowler.com/bliki/ArchitectureDecisionRecord.html) advise. Set aside because an agent that reads the folder then loads a text that the code does not apply.
 
 ## Decision
 
-We record each decision that shapes the code in one file of `docs/decisions/`, named `NNNN-subject.md` and written in English. For the choice of a tool, we write the use we expect of it, whether we hold the choice as firm or on trial, and what would make us revise it.
+We record each decision that shapes the code in one file of `docs/decisions/`, named `NNNN-subject.md` and written in English. We record each decision of interface design, a rule shared by several screens, the composition of a screen or the meaning of a visual element, in one file of `docs/design/`, with the same format and a numbering of its own. These two folders form the registry. For the choice of a tool, we write the use we expect of it, whether we hold the choice as firm or on trial, and what would make us revise it.
 
 ### Header
 
@@ -52,23 +54,20 @@ The header is a YAML block with the keys of the [MADR 4.0 template](https://gith
 - `AGENTS.md` links to a decision without stating its rule again. `docs/architecture.md` and the guide of each tool describe how a part works, and link to the decision it applies.
 - When Lucas sets the framing of the project with the `contract` skill, the framing gives the characteristics the code keeps and their priorities, and links to the decision of each pattern it applies.
 - The documents of the domain that we use when writing the code, such as `docs/access-matrix.md` and `docs/presentation-format.md`, stay in `docs/`.
-- A contract of the `contract` skill plans a set of commits; the pull request that applies it adds the decisions the contract fixes to this folder.
-- A private note of `docs/private/` holds a study, and we write the decision it leads to in this folder.
-- When we move a decision into this folder from a contract, a private note or the memory of the agents, we replace its statement there with one sentence that links to its number, and keep the study or the history.
+- A contract of the `contract` skill plans a set of commits; the pull request that applies it adds the decisions the contract fixes to the registry.
+- A private note of `docs/private/` holds a study, and we write the decision it leads to in the registry.
+- When we move a decision into the registry from a contract, a private note or the memory of the agents, we replace its statement there with one sentence that links to its number, and keep the study or the history.
 - We write a rule of the product, such as a label or the behaviour of a page, in the pull request or the issue that sets it.
 
 ## Consequences
 
-- An agent finds the decisions from `AGENTS.md`, reads the index of `docs/decisions/README.md`, and opens the decisions that a change touches.
+- An agent finds the decisions from `AGENTS.md`, reads the index of `docs/decisions/README.md` and of `docs/design/README.md`, and opens the decisions that a change touches.
+- The folder of a decision tells its nature; in return we keep two indexes and two numberings, and a number names a decision only with its folder.
 - The text of each decision stays short, and an agent reads one header for a superseded decision.
-- We write in this folder, one by one, the decisions that contracts, private notes and the memory of the agents hold, as [issue 235](https://github.com/ShallowRed/vignettes/issues/235) lists them; each of these places stays the source of a decision until we move it.
+- We write in the registry, one by one, the decisions that contracts, private notes and the memory of the agents hold, as [issue 235](https://github.com/ShallowRed/vignettes/issues/235) lists them; each of these places stays the source of a decision until we move it.
 - Whoever writes a decision writes its header, keeps the index in step, and changes the decision it replaces or amends.
 
 ## Confirmation
 
-- `test/unit/decisions.test.ts` checks, in error in the CI, that each decision has a header with a known status, a date and its decision-makers, that a `superseded by` status names an existing decision, and that the index lists every decision.
+- `test/unit/decisions.test.ts` checks, in error in the CI, that each decision has a header with a known status, a date and its decision-makers, that a `superseded by` status names an existing decision of the same series, and that the index of each series, `docs/decisions/README.md` and `docs/design/README.md`, lists every decision.
 - The reviewer of a pull request checks by hand that a file records one decision and that its sections follow this decision.
-
-## Open questions
-
-- Do the decisions of interface design, the composition of a screen or the meaning of a visual element, go in this folder, or in a place where they can be seen with the interface?

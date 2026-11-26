@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-11-26
 decision-makers: Lucas Poulain
 ---
@@ -12,11 +12,11 @@ How many processes serve one instance? The collaborative rooms of Hocuspocus kee
 
 ## Considered options
 
-- Several replicas behind the router, with these four pieces of state moved to a shared store, such as the Redis extension of Hocuspocus. Set aside in July 2026, when we designed the collaborative editing, as outside its goals, without a written reason.
+- Several replicas behind the router, with these four pieces of state moved to a shared store, such as the Redis extension of Hocuspocus. Set aside because an instance serves a small team, and a shared store adds one more service to host and pay for on every platform, without a measured need. One process also keeps the deployment, the recovery and the debugging simple, and spares us keeping the replicas of a collaborative room consistent.
 
 ## Decision
 
-An instance runs as one process, one web container on Scalingo (`sc scale web:1`). Before we run several replicas, we write a new decision that moves the four pieces of state to a shared store.
+An instance runs as one process, one web container on Scalingo (`sc scale web:1`). We revise this decision when the load of an instance exceeds what one container serves. Before we run several replicas, we write a new decision that moves the four pieces of state to a shared store.
 
 ## Consequences
 
@@ -27,7 +27,3 @@ An instance runs as one process, one web container on Scalingo (`sc scale web:1`
 ## Confirmation
 
 - No automatic check counts the processes of an instance. The guide of each platform gives the command that sets one ([deploy-scalingo.md](../deploy-scalingo.md)), and [architecture.md](../architecture.md) lists the state kept in memory, which the reviewer checks when a change adds to it.
-
-## Open questions
-
-- Why do we set aside several replicas with a shared store: the traffic of an instance, the cost of one more service per platform, or the simplicity of running one process?
