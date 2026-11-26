@@ -1,6 +1,6 @@
 # Vignettes
 
-Instructions for coding agents working in this repository. [CONTRIBUTING.md](CONTRIBUTING.md) holds the checks and the conventions, [docs/architecture.md](docs/architecture.md) the layout and the data flow. To write a deck, use the `vignettes-decks` plugin published from `plugins/vignettes-decks`; to write a theme, the `vignettes-themes` plugin of `plugins/vignettes-themes`.
+Instructions for coding agents working in this repository. [CONTRIBUTING.md](CONTRIBUTING.md) holds the checks and the conventions, [docs/architecture.md](docs/architecture.md) the layout and the data flow. [docs/decisions](docs/decisions/README.md) records the decisions that shape the code, each with its reasons and its check: read the ones a change touches; [0000](docs/decisions/0000-recording-decisions.md) says how we propose one. To write a deck, use the `vignettes-decks` plugin published from `plugins/vignettes-decks`; to write a theme, the `vignettes-themes` plugin of `plugins/vignettes-themes`.
 
 ## Toolchain
 
@@ -24,20 +24,18 @@ The code keeps these boundaries, and `eslint.config.js` checks them with message
 - `packages/pptx` writes a deck as a PowerPoint file: it imports `@vignettes/core`, pptxgenjs, jszip and pptx-embed-fonts, and reaches no resource itself (no `fetch`, no DOM). The browser side of the export, images, font and download, is in `packages/nuxt/src/runtime/utils/pptx-export.ts`.
 - `layers/studio/shared` is the studio's domain, run on the client and the server: no framework, no I/O, no `process.env`, no render module. `yjs` stays in `shared/collab`.
 - `@nuxtjs/mdc` is read by the render module (`packages/nuxt`), the configuration files and the tests.
-- drizzle-orm and the database drivers (better-sqlite3, pg, PGlite) are read by the adapters (`layers/studio/server/db/sqlite`, `layers/studio/server/db/postgres`), the test helpers and `test/unit/migrations.test.ts`. Code elsewhere reaches the rows through a port of `server/db/ports.ts`.
+- [0002](docs/decisions/0002-storage-behind-ports.md) sets which modules import drizzle-orm and the database drivers.
 
 Four more rules hold the entry points:
 
 - `layers/studio/server` reads its configuration through `serverConfig()` of `server/utils/config.ts`, the one server module that reads `process.env`.
 - `layers/studio/server` writes a draft through `useDraftStore()` and `writeDraftText()` of `server/utils/collab.ts`, the one server module that reads `useStores().drafts`: each write keeps the Yjs lineage of the stored draft. `ContentRewrites` of `server/db/ports.ts` rewrites a stored draft in its lineage too, for the theme rename, the data migrations and the content scripts.
-- `layers/studio/server` reads the host a request reaches through `requestOrigin()` and `requestSide()` of `server/utils/deck-origin.ts`, the one server module that calls `getRequestURL` or `getRequestHost` or reads the `Host` header.
+- [0003](docs/decisions/0003-separate-deck-origin.md) sets which module reads the host a request reaches.
 - `@vignettes/nuxt` exposes the entry points its `package.json` lists under `exports`; an import of anything else fails the type check. Its slide helpers stay out of the auto-imports.
 
 ## The deck format
 
-The format is defined once, in `packages/core/src/deck`: `scan.ts` reads the lines, following fenced code and the MDC blocks, `split.ts` cuts the slides and gives their source lines, `components.ts` lists the annotations, layouts and components, `schema.ts` validates the frontmatter, `legacy-forms.ts` lists the forms of the earlier format that a conversion rewrites into the current format. The parsers, the editor and the catalog read these; add a rule there, never in one of its readers. A change that renames or retires a form keeps reading it and adds its conversion to `legacy-forms.ts`.
-
-An extension package declares its components as data (`packages/schemas/src/components.ts`, `packages/storybook/src/components.ts`) and registers them in its Nuxt plugin.
+The decisions on the format are [0001](docs/decisions/0001-deck-format-in-the-core.md), [0005](docs/decisions/0005-earlier-forms-stay-readable.md) and [0006](docs/decisions/0006-adapter-keys-under-their-adapter.md). In `packages/core/src/deck`, `scan.ts` reads the lines, following fenced code and the MDC blocks, `split.ts` cuts the slides and gives their source lines, `components.ts` lists the annotations, layouts and components, `schema.ts` validates the frontmatter, and `legacy-forms.ts` lists the forms of the earlier format with their conversion.
 
 The README of `packages/nuxt`, `packages/schemas` and `packages/storybook` holds the reference of each component between `<!-- component: Name -->` and `<!-- /component -->`. After a change to the props or the slots of a component, or to its entry in the contract, run `node scripts/component-reference.ts`: it writes these blocks from the `defineProps`, `withDefaults` and `defineSlots` of the Vue file and their JSDoc, and the `component-attributes.ts` of the package that the editor reads for its completion, its tooltips and its checks. `test/unit/component-reference.test.ts` fails while a README or a `component-attributes.ts` differs from its components. Write a JSDoc comment on each prop and slot, end the comment of a prop with its French description after `@fr`, and add `@symbol icon` or `@symbol pictogram` before it on a prop whose value names one.
 

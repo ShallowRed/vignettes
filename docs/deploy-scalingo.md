@@ -61,7 +61,7 @@ Then set the other variables in the Environment tab of the dashboard, or with `s
 - `NUXT_PUBLIC_ERROR_TRACKING_DSN`, `NUXT_PUBLIC_ERROR_TRACKING_ENVIRONMENT`: the DSN of the GlitchTip project of the instance and the name of its environment. Set the DSN to report errors.
 - `NUXT_PUBLIC_PRIVACY_CONTACT`: the address the privacy page gives for questions about personal data, for an instance that sets one of the variables above.
 - `NUXT_PUBLIC_UMAMI_RETENTION_MONTHS`, `NUXT_PUBLIC_ERROR_TRACKING_RETENTION_DAYS`: the periods the privacy page states for page views and events, in months, and for error reports, in days. Set the periods the services of the instance apply.
-- `NUXT_PUBLIC_DECKS_URL`, `NUXT_STUDIO_URL`: the addresses of the deck pages and of the studio, for an instance that serves its decks from an origin of their own (see « Deck origin » in `docs/architecture.md`). The deck address is on another registrable domain than the studio, and both are domains of the app ([custom domains](https://doc.scalingo.com/platform/app/domain)). Leave the canonical domain of the app unset: Scalingo would redirect the deck address to it. The studio redirects any other address, such as `<app>.osc-fr1.scalingo.io`, to `NUXT_STUDIO_URL`.
+- `NUXT_PUBLIC_DECKS_URL`, `NUXT_STUDIO_URL`: the addresses of the deck pages and of the studio, which an instance that serves decks to other people sets ([0003](decisions/0003-separate-deck-origin.md), and « Deck origin » in `docs/architecture.md`). The deck address is on another registrable domain than the studio, and both are domains of the app ([custom domains](https://doc.scalingo.com/platform/app/domain)). Leave the canonical domain of the app unset: Scalingo would redirect the deck address to it. The studio redirects any other address, such as `<app>.osc-fr1.scalingo.io`, to `NUXT_STUDIO_URL`.
 - `NUXT_PUBLIC_WELCOME`: the sentence under the title of the home page for a visitor without an account, what the instance publishes and for whom.
 
 Scalingo gives a container the variables of the app when it starts it ([environment](https://doc.scalingo.com/platform/app/environment)), and a running container keeps the values it started with. After changing a variable on a running app, restart it so that new containers read the values:
@@ -93,7 +93,7 @@ scalingo integrations-add github
 sc integration-link-create --branch main --auto-deploy https://github.com/ShallowRed/vignettes
 ```
 
-Then keep one `web` container: the server process keeps the collaboration sessions in its memory.
+Then keep one `web` container: the server process keeps the collaboration sessions in its memory ([0004](decisions/0004-one-process-per-instance.md)).
 
 ```sh
 sc scale web:1
