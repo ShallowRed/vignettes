@@ -18,6 +18,7 @@ function server(port: number, database: string, env: Record<string, string> = {}
       'node .output/server/index.mjs',
     ].join(' && '),
     url: `http://127.0.0.1:${port}/slides/composants`,
+    stdout: 'pipe' as const,
     reuseExistingServer: !process.env.CI,
     env: {
       PORT: String(port),
