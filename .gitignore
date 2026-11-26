@@ -23,6 +23,9 @@ logs
 .env.*
 !.env.example
 
+# Infisical project of each maintainer (`infisical init`)
+.infisical.json
+
 # Exports (may contain sensitive content)
 export/*
 !export/.gitkeep
