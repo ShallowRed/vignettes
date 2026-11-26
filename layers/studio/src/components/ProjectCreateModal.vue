@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import type { Project, ProjectIcon } from '#shared/projects'
-import { PROJECT_ICONS, slugifyProject } from '#shared/projects'
+import { slugifyProject } from '#shared/projects'
 import { useMutation } from '@pinia/colada'
 import { isDeckSlug } from '@vignettes/core/deck'
 import { projectApi } from '../api'
 import { useCatalogCache } from '../composables/useCatalog'
 import { useDerivedSlug } from '../composables/useDerivedSlug'
 import { useFormModal } from '../composables/useFormModal'
-import { PROJECT_COLORS, projectSwatchStyle } from '../utils/project-colors'
 import { requestErrorMessage } from '../utils/request-error'
 
 const emit = defineEmits<{ created: [Project] }>()
@@ -75,85 +74,18 @@ function submit() {
         class="flex flex-col gap-4"
         @submit.prevent="submit"
       >
-        <UFormField
-          :label="t('common.fields.name')"
-          required
-        >
-          <UInput
-            v-model="state.title"
-            :placeholder="t('catalog.projectCreate.namePlaceholder')"
-            autofocus
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
-          :label="t('common.fields.address')"
-          :error="slugValid ? undefined : t('catalog.form.slugInvalid')"
-          :help="t('catalog.projectCreate.addressHelp', { slug: state.slug || '…' })"
-        >
-          <div class="flex items-center gap-2">
-            <UInput
-              v-model="slug"
-              :placeholder="t('common.fields.folderSlugPlaceholder')"
-              class="flex-1 font-mono"
-            />
-            <UButton
-              icon="i-lucide-wand-sparkles"
-              color="neutral"
-              variant="subtle"
-              :aria-label="t('catalog.projectCreate.fillFromName')"
-              :disabled="!state.title.trim()"
-              @click="fillSlug"
-            />
-          </div>
-        </UFormField>
-
-        <UFormField
-          :label="t('common.fields.icon')"
-        >
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              v-for="i in PROJECT_ICONS"
-              :key="i"
-              type="button"
-              class="grid place-items-center size-8 rounded-lg ring-2 transition bg-elevated"
-              :class="(state.icon ?? 'folder') === i ? 'ring-primary' : 'ring-transparent'"
-              :aria-label="i"
-              @click="state.icon = i === 'folder' ? null : i"
-            >
-              <UIcon
-                :name="`i-lucide-${i}`"
-                class="size-4"
-              />
-            </button>
-          </div>
-        </UFormField>
-
-        <UFormField
-          :label="t('common.fields.color')"
-          :help="t('catalog.projectCreate.colorHelp')"
-        >
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="size-7 rounded-full ring-2 ring-offset-2 ring-offset-default transition bg-muted"
-              :class="[state.color === null ? 'ring-primary' : 'ring-transparent']"
-              :aria-label="t('common.fields.noColor')"
-              @click="state.color = null"
-            />
-            <button
-              v-for="c in PROJECT_COLORS"
-              :key="c"
-              type="button"
-              class="size-7 rounded-full ring-2 ring-offset-2 ring-offset-default transition"
-              :class="state.color === c ? 'ring-primary' : 'ring-transparent'"
-              :style="projectSwatchStyle(c)"
-              :aria-label="c"
-              @click="state.color = c"
-            />
-          </div>
-        </UFormField>
+        <ProjectFormFields
+          v-model:title="state.title"
+          v-model:slug="slug"
+          v-model:icon="state.icon"
+          v-model:color="state.color"
+          :address-help="t('catalog.projectCreate.addressHelp', { slug: state.slug || '…' })"
+          :regenerate-label="t('catalog.projectCreate.fillFromName')"
+          :slug-valid="slugValid"
+          :name-placeholder="t('catalog.projectCreate.namePlaceholder')"
+          :color-help="t('catalog.projectCreate.colorHelp')"
+          @regenerate="fillSlug"
+        />
 
         <UAlert
           v-if="errorMessage"
