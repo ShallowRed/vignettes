@@ -8,10 +8,12 @@ name: Documentation site
 # the package READMEs; this workflow sends that output. The upload goes over
 # SSH with a dedicated key, which the VPS accepts for one command only, the
 # `vignettes/docs-deploy.sh` script of the vps-infra repository: the key can
-# replace the site, never redeploy the application. The job reads that key, VPS_DOCS_SSH_KEY, from the `/docs` path of
-# Infisical over OIDC, with the repository variables INFISICAL_* and VPS_*, as
-# `docker-publish.yml` does: on `staging`, the identity and the project of
-# staging, whose key the VPS accepts for the staging site only.
+# replace the site, never redeploy the application. The job reads that key,
+# VPS_DOCS_SSH_KEY, from the `/docs` path of Infisical over OIDC, with the
+# identities and projects of the repository variables and the secrets
+# INFISICAL_API_URL, VPS_HOST and VPS_USER, as `docker-publish.yml` does: on
+# `staging`, the identity and the project of staging, whose key the VPS accepts
+# for the staging site only.
 
 on:
   push:
@@ -66,7 +68,7 @@ jobs:
         with:
           method: oidc
           identity-id: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_MACHINE_IDENTITY_ID || vars.INFISICAL_STAGING_IDENTITY_ID }}
-          domain: ${{ vars.INFISICAL_API_URL }}
+          domain: ${{ secrets.INFISICAL_API_URL }}
           oidc-audience: infisical-vignettes
           project-slug: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_PROJECT_SLUG || vars.INFISICAL_STAGING_PROJECT_SLUG }}
           env-slug: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
@@ -74,8 +76,8 @@ jobs:
 
       - name: Send the site to the VPS over SSH
         env:
-          VPS_HOST: ${{ vars.VPS_HOST }}
-          VPS_USER: ${{ vars.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
           TARGET: ${{ github.ref == 'refs/heads/main' && 'docs' || 'docs-staging' }}
           # The Infisical step above puts VPS_DOCS_SSH_KEY in the job environment.
         run: |

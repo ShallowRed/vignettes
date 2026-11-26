@@ -99,7 +99,7 @@ jobs:
         with:
           method: oidc
           identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
-          domain: ${{ vars.INFISICAL_API_URL }}
+          domain: ${{ secrets.INFISICAL_API_URL }}
           oidc-audience: infisical-vignettes
           project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
           env-slug: prod

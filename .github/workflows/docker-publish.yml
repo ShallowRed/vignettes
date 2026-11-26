@@ -18,12 +18,13 @@ name: Build and publish Docker image
 # pushed on `staging` that edits this workflow therefore cannot deploy
 # production.
 #
-# Requirements (Settings > Secrets and variables > Actions > Variables):
-#   INFISICAL_API_URL             : address of the Infisical instance (not versioned here)
+# Requirements (Settings > Secrets and variables > Actions). Variables:
 #   INFISICAL_MACHINE_IDENTITY_ID : UUID of the OIDC machine identity of `main`
 #   INFISICAL_STAGING_IDENTITY_ID : UUID of the OIDC machine identity of `staging`
 #   INFISICAL_PROJECT_SLUG        : slug of the Infisical project of `main`
 #   INFISICAL_STAGING_PROJECT_SLUG: slug of the Infisical project of `staging`
+# Secrets, which GitHub masks in the public logs of the runs:
+#   INFISICAL_API_URL             : address of the Infisical instance
 #   VPS_HOST, VPS_USER            : SSH host and user of the VPS (for the deploy job)
 #   VPS_SSH_KNOWN_HOSTS           : the host keys of the VPS, as `ssh-keyscan` prints them
 
@@ -132,7 +133,7 @@ jobs:
         with:
           method: oidc
           identity-id: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_MACHINE_IDENTITY_ID || vars.INFISICAL_STAGING_IDENTITY_ID }}
-          domain: ${{ vars.INFISICAL_API_URL }}
+          domain: ${{ secrets.INFISICAL_API_URL }}
           oidc-audience: infisical-vignettes
           project-slug: ${{ github.ref == 'refs/heads/main' && vars.INFISICAL_PROJECT_SLUG || vars.INFISICAL_STAGING_PROJECT_SLUG }}
           env-slug: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
@@ -140,9 +141,9 @@ jobs:
 
       - name: Deploy to VPS over SSH
         env:
-          VPS_HOST: ${{ vars.VPS_HOST }}
-          VPS_USER: ${{ vars.VPS_USER }}
-          VPS_SSH_KNOWN_HOSTS: ${{ vars.VPS_SSH_KNOWN_HOSTS }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
           # The Infisical step above puts VPS_SSH_KEY in the environment of the job.
         run: |
           set -euo pipefail
