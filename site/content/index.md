@@ -294,7 +294,7 @@ Installer la skill
 #default
 
 ```text
-/plugin marketplace add ShallowRed/vignettes-plugins
+/plugin marketplace add ShallowRed/vignettes
 /plugin install vignettes-decks@vignettes
 
 Écris une présentation Vignettes de six diapositives
