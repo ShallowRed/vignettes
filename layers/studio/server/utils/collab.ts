@@ -19,6 +19,16 @@ export const MAX_MESSAGE_BYTES = 4 * MAX_DECK_LENGTH
 export const MAX_DRAFT_BYTES = 2 * MAX_MESSAGE_BYTES
 
 /**
+ * The messages one socket may send in `PEER_WINDOW_MS`, and their bytes. A key
+ * held down repeats about 33 times a second, and each repeat sends two messages,
+ * the edit and the cursor: 660 messages in 10 seconds, three times under the
+ * bound. The bytes hold two messages of the largest size.
+ */
+export const PEER_WINDOW_MS = 10_000
+export const MAX_PEER_MESSAGES = 2000
+export const MAX_PEER_BYTES = 2 * MAX_MESSAGE_BYTES
+
+/**
  * The socket is authorized for ONE deck at upgrade time (`/collab?deck=<slug>`);
  * the route hands that deck, and the login editing, to Hocuspocus as the
  * connection context. Hocuspocus lets a client name any document afterwards:

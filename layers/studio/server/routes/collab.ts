@@ -1,7 +1,7 @@
 import { isDeckSlug } from '@vignettes/core/deck'
 import { canActorEditDeck } from '../utils/access'
 import { getActorFromRequest } from '../utils/actor'
-import { MAX_MESSAGE_BYTES, useCollabServer, useDraftStore } from '../utils/collab'
+import { MAX_MESSAGE_BYTES, MAX_PEER_BYTES, MAX_PEER_MESSAGES, PEER_WINDOW_MS, useCollabServer, useDraftStore } from '../utils/collab'
 import { databaseReady } from '../utils/db'
 import { sideOfOrigin, upgradeOrigin } from '../utils/deck-origin'
 import { crossOriginRefusal } from '../utils/same-origin'
@@ -14,13 +14,15 @@ type CollabConnection = ReturnType<ReturnType<typeof useCollabServer>['handleCon
  * the socket to Hocuspocus, and the first messages of the client arrive
  * meanwhile: the messages, then the close, run one after the other on `queue`.
  * A message after `AUTHORIZATION_TTL_MS` reads the edit right again, so a
- * sign-out or a removed grant closes the socket.
+ * sign-out or a removed grant closes the socket. `window` counts the messages
+ * of the current `PEER_WINDOW_MS` and their bytes.
  */
 interface PeerState {
   deck: string
   connection: Promise<CollabConnection | null>
   queue: Promise<void>
   authorizedAt: number
+  window: { start: number, messages: number, bytes: number }
 }
 
 const peers = new Map<string, PeerState>()
@@ -104,7 +106,7 @@ export default defineWebSocketHandler({
       peer.close(1011, 'Unavailable')
       return null
     })
-    peers.set(peer.id, { deck, connection, queue: Promise.resolve(), authorizedAt: Date.now() })
+    peers.set(peer.id, { deck, connection, queue: Promise.resolve(), authorizedAt: Date.now(), window: { start: Date.now(), messages: 0, bytes: 0 } })
   },
 
   message(peer, message) {
@@ -114,6 +116,15 @@ export default defineWebSocketHandler({
     const data = message.uint8Array()
     if (data.byteLength > MAX_MESSAGE_BYTES) {
       peer.close(1009, 'Message too big')
+      return
+    }
+    const now = Date.now()
+    if (now - state.window.start >= PEER_WINDOW_MS)
+      state.window = { start: now, messages: 0, bytes: 0 }
+    state.window.messages++
+    state.window.bytes += data.byteLength
+    if (state.window.messages > MAX_PEER_MESSAGES || state.window.bytes > MAX_PEER_BYTES) {
+      peer.close(1008, 'Too many messages')
       return
     }
     state.queue = state.queue.then(async () => {

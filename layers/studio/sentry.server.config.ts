@@ -8,6 +8,7 @@ if (dsn) {
     ...ERROR_TRACKING_DEFAULTS,
     dsn,
     environment: environment || undefined,
+    includeServerName: false,
     beforeSend: (event, hint) => isRequestRefusal(hint.originalException) ? null : scrubErrorEvent(event),
   })
 }

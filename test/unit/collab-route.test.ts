@@ -20,6 +20,9 @@ vi.mock('../../layers/studio/server/utils/access', () => ({
 }))
 vi.mock('../../layers/studio/server/utils/collab', () => ({
   MAX_MESSAGE_BYTES: 1024,
+  MAX_PEER_MESSAGES: 3,
+  MAX_PEER_BYTES: 2048,
+  PEER_WINDOW_MS: 10_000,
   useCollabServer: () => ({
     handleConnection: (_socket: unknown, _request: unknown, context: { user: string }) => ({
       handleMessage: (data: Uint8Array) => handled.push(`${context.user}:${new TextDecoder().decode(data)}`),
@@ -58,6 +61,35 @@ describe('the collab socket', () => {
     collab.message!(peer as any, message('after') as any)
     await vi.waitFor(() => expect(closed).toEqual([4403]))
     expect(handled).toEqual(['ana:before'])
+    now.mockRestore()
+  })
+
+  it('closes a socket that sends more messages or bytes than a window allows, and counts again in the next window', async () => {
+    handled.length = 0
+    mayEdit = true
+    nextActor = async () => ({ login: 'ana' })
+    const closed: number[] = []
+    const now = vi.spyOn(Date, 'now')
+    now.mockReturnValue(100_000)
+    const peer = { id: 'p3', request: { url: 'https://x/collab?deck=deck' }, send: () => {}, close: (code: number) => closed.push(code) }
+    collab.open!(peer as any)
+    for (const text of ['a', 'b', 'c'])
+      collab.message!(peer as any, message(text) as any)
+    now.mockReturnValue(110_000)
+    collab.message!(peer as any, message('next window') as any)
+    await vi.waitFor(() => expect(handled).toEqual(['ana:a', 'ana:b', 'ana:c', 'ana:next window']))
+    expect(closed).toEqual([])
+    for (const text of ['d', 'e', 'f'])
+      collab.message!(peer as any, message(text) as any)
+    expect(closed).toEqual([1008])
+    await vi.waitFor(() => expect(handled).toEqual(['ana:a', 'ana:b', 'ana:c', 'ana:next window', 'ana:d', 'ana:e']))
+
+    const heavy = { ...peer, id: 'p4', close: (code: number) => closed.push(code) }
+    collab.open!(heavy as any)
+    collab.message!(heavy as any, message('x'.repeat(1000)) as any)
+    collab.message!(heavy as any, message('x'.repeat(1000)) as any)
+    collab.message!(heavy as any, message('x'.repeat(1000)) as any)
+    expect(closed).toEqual([1008, 1008])
     now.mockRestore()
   })
 })
