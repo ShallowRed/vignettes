@@ -53,6 +53,15 @@ const LAYOUT_MESSAGES: Record<LayoutMention['kind'], string> = {
 
 const SEVERITY_RANK: Record<Severity, number> = { error: 0, warning: 1, info: 2 }
 
+/** The problems of `checkDeck` that the frontmatter guide and the preview find themselves. */
+const EDITOR_CHECKS = ['frontmatter', 'unknown-component', 'unknown-theme'] as const
+
+type ListedDeckProblem = Exclude<DeckProblem, { check: typeof EDITOR_CHECKS[number] }>
+
+function isListed(problem: DeckProblem): problem is ListedDeckProblem {
+  return !(EDITOR_CHECKS as readonly string[]).includes(problem.check)
+}
+
 /** The conversion of the legacy form written on the line of `from`, read from the text as it stands. */
 function legacyFix(mention: LegacyMention, t: Translate): ProblemFix | undefined {
   if (!mention.changes.length)
@@ -68,7 +77,7 @@ function legacyFix(mention: LegacyMention, t: Translate): ProblemFix | undefined
 }
 
 /** The place, the texts and the conversion of a problem that `checkDeck` finds. */
-function deckIssue(problem: DeckProblem, t: Translate, lang: string, docsUrl: (docs?: string) => string | undefined): Omit<EditorIssue, 'severity' | 'marked'> {
+function deckIssue(problem: ListedDeckProblem, t: Translate, lang: string, docsUrl: (docs?: string) => string | undefined): Omit<EditorIssue, 'severity' | 'marked'> {
   const place = { line: problem.line, column: problem.column, length: problem.length }
   switch (problem.check) {
     case 'malformed':
@@ -148,7 +157,7 @@ export function editorIssues(raw: string, findings: PreviewFindings, t: Translat
       severity: 'error' as const,
       marked: false,
     })),
-    ...findings.deck.map(problem => ({ ...deckIssue(problem, t, lang, docsUrl), severity: problem.severity, marked: false })),
+    ...findings.deck.filter(isListed).map(problem => ({ ...deckIssue(problem, t, lang, docsUrl), severity: problem.severity, marked: false })),
     ...findings.rendering.map(failure => ({
       line: failure.line,
       column: failure.column,

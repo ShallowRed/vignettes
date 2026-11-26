@@ -2,6 +2,7 @@ import type { PreviewFindings } from '../../layers/studio/src/utils/editor-issue
 import { EditorState } from '@codemirror/state'
 import { checkDeck } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
+import { listedFrontmatterProblems } from '../../layers/studio/src/utils/editor-frontmatter'
 import { editorIssues } from '../../layers/studio/src/utils/editor-issues'
 
 const t = ((key: string) => key) as Parameters<typeof editorIssues>[2]
@@ -45,5 +46,19 @@ describe('editorIssues', () => {
     expect(issue!.message).toContain('`align` attribute of `:layout`')
     const state = EditorState.create({ doc: raw })
     expect(state.update(issue!.fix!.change(state, state.doc.line(3).from)!).state.doc.toString()).toBe('---\ntitle: A\n---\n')
+  })
+
+  it('leaves to its own checks the frontmatter, the theme and the unknown components that checkDeck finds', () => {
+    const raw = '---\ntheme: maison\nreveal:\n  width: large\n---\n\n## Un\n\n::Callout\nTexte\n::\n\n::Quote{author="X}\n::\n'
+    const deck = checkDeck(raw)
+    expect(deck.map(problem => problem.check)).toEqual(expect.arrayContaining(['frontmatter', 'unknown-theme', 'unknown-component', 'malformed']))
+    const findings = {
+      ...none,
+      frontmatter: listedFrontmatterProblems(raw, t),
+      unknown: [{ name: 'Callout', line: 9, column: 0, length: 9 }],
+    }
+    const ownChecks = new Set(['frontmatter', 'unknown-theme', 'unknown-component'])
+    expect(editorIssues(raw, { ...findings, deck }, t, 'fr', () => undefined))
+      .toEqual(editorIssues(raw, { ...findings, deck: deck.filter(problem => !ownChecks.has(problem.check)) }, t, 'fr', () => undefined))
   })
 })

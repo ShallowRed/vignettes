@@ -6,7 +6,7 @@ import type { LineProblem, Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { Decoration, hoverTooltip, ViewPlugin } from '@codemirror/view'
-import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, frontmatterLineCount, inLanguage, isFrontmatterUnclosed, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, unclosedFrontmatterLine } from '@vignettes/core/deck'
+import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, frontmatterKeyLines, frontmatterLineCount, inLanguage, isFrontmatterUnclosed, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, unclosedFrontmatterLine } from '@vignettes/core/deck'
 import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
 import { DOCS_SECTIONS, FRONTMATTER_KEYS } from '../config/editor-reference'
@@ -204,14 +204,13 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
   const parsed = DeckMetaSchema.safeParse(data ?? {})
   const schemaIssues = new Map(parsed.success ? [] : parsed.error.issues.map(issue => [issue.path.join('.'), issue]))
 
-  for (let n = 2; n < end; n++) {
+  for (const key of frontmatterKeyLines(state.doc.toString())) {
+    const n = key.line
     const line = state.doc.line(n)
-    const match = KEY_LINE_RE.exec(line.text)
-    if (!match)
-      continue
-    const indent = match[1]!.length
+    const match = KEY_LINE_RE.exec(line.text)!
+    const indent = key.column
     const keyFrom = line.from + indent
-    const keyTo = keyFrom + match[2]!.length
+    const keyTo = keyFrom + key.length
     const scope = fieldsAt(state, n, indent)
     const field = scope?.fields.find(f => f.key === match[2])
     const path = indent === 0 ? match[2]! : `${scope?.parent?.key ?? ''}.${match[2]}`
