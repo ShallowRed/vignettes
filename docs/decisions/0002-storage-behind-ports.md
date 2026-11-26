@@ -16,7 +16,7 @@ How does an instance store its rows so that it runs on a platform that starts th
 
 ## Decision
 
-The studio reaches its rows through the ports of `layers/studio/server/db/ports.ts`: one interface per store, and an operation that must be atomic is one method, which the adapter runs in one transaction. Two adapters implement them: `server/db/postgres/`, which node-postgres runs against a PostgreSQL server and PGlite runs locally and in the tests, and `server/db/sqlite/`. An instance that deploys with two containers running together, as on Scalingo, runs on PostgreSQL. A light instance on one machine, without a database server, can run on the SQLite adapter, which we keep for it. We track the move of the production instance to PostgreSQL in [issue 234](https://github.com/ShallowRed/vignettes/issues/234).
+The studio reaches its rows through the ports of `layers/studio/server/db/ports.ts`: one interface per store, and an operation that must be atomic is one method, which the adapter runs in one transaction. Two adapters implement them: `server/db/postgres/`, which node-postgres runs against a PostgreSQL server and PGlite runs locally and in the tests, and `server/db/sqlite/`. An instance that deploys with two containers running together, as on Scalingo, runs on PostgreSQL. A light instance on one machine, without a database server, can run on the SQLite adapter, which we keep for it. We track the move of the production instance to PostgreSQL in [issue 9](https://github.com/ShallowRed/vignettes/issues/9).
 
 The adapters, the test helpers and `test/unit/migrations.test.ts` import drizzle-orm and the database drivers; any other code reaches the rows through a port.
 

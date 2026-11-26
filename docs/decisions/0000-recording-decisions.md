@@ -13,9 +13,9 @@ Where does a coding agent, or a person who joins the project, find a decision th
 ## Considered options
 
 - A section of `AGENTS.md`, one sentence per decision. Set aside because one sentence has no room for the options set aside and the consequences, and every session loads the whole file.
-- The architecture contracts of `ai-harness/memoire/vignettes/`, which the `contract` skill writes. Set aside because a contract holds the decision together with the plan of a set of commits and the history of its versions, and it is outside the repository.
-- The private notes of `docs/private/`. Set aside because git ignores that folder: the notes have no history and are absent from the worktrees where agents work.
-- Writing the decisions in French, as Lucas states them. Set aside because `docs/`, `AGENTS.md` and the code are in English.
+- Architecture contracts kept outside the repository. Set aside because a contract holds the decision together with the plan of a set of commits and the history of its versions, and an agent in a worktree does not see it.
+- Notes in a folder that git ignores. Set aside because the notes have no history and are absent from the worktrees where agents work.
+- Writing the decisions in French, the language in which we discuss them. Set aside because `docs/`, `AGENTS.md` and the code are in English.
 - The decisions of interface design in this folder, beside those of the code. Set aside so that the folder of a decision tells its nature.
 - The decisions of interface design kept in the memory of the agents and in the pull requests. Set aside because an agent in a worktree does not see that memory, and a decision nobody finds gets discussed again.
 - Keeping the full text of a superseded decision, as [Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions) and [Martin Fowler](https://martinfowler.com/bliki/ArchitectureDecisionRecord.html) advise. Set aside because an agent that reads the folder then loads a text that the code does not apply.
@@ -30,7 +30,7 @@ The header is a YAML block with the keys of the [MADR 4.0 template](https://gith
 
 - `status`: proposed, accepted, rejected, deprecated, or `superseded by NNNN`;
 - `date`: the date of the last change of the decision, as YYYY-MM-DD;
-- `decision-makers`: the people who decide, Lucas Poulain for this repository;
+- `decision-makers`: the people who decide;
 - `consulted` and `informed`, when there are any.
 
 ### Sections
@@ -45,18 +45,16 @@ The header is a YAML block with the keys of the [MADR 4.0 template](https://gith
 ### Lifecycle
 
 - We propose a decision in a pull request, alone or with the code that applies it, with the status proposed.
-- Lucas accepts a decision in the pull request he merges: he sets the status to accepted, or asks for it. A decision stays proposed while a question remains open. Lucas can accept a decision before the pull requests that apply it; we then track them in an issue, which the decision cites.
+- A maintainer accepts a decision in the pull request they merge: they set the status to accepted, or ask for it. A decision stays proposed while a question remains open. A maintainer can accept a decision before the pull requests that apply it; we then track them in an issue, which the decision cites.
 - A decision that replaces or amends another names it in the first sentence of its Decision section. The pull request that accepts it sets the status of the replaced decision to `superseded by NNNN`, or adds to the amended decision one sentence that links to the amendment.
 - We keep the file and the number of a superseded decision. In the pull request that sets its status, we reduce the file to its header and one sentence that links to the new decision; git keeps the earlier text.
 
 ### Other places
 
 - `AGENTS.md` links to a decision without stating its rule again. `docs/architecture.md` and the guide of each tool describe how a part works, and link to the decision it applies.
-- When Lucas sets the framing of the project with the `contract` skill, the framing gives the characteristics the code keeps and their priorities, and links to the decision of each pattern it applies.
+- The framing of the project gives the characteristics the code keeps and their priorities, and links to the decision of each pattern it applies.
 - The documents of the domain that we use when writing the code, such as `docs/access-matrix.md` and `docs/presentation-format.md`, stay in `docs/`.
-- A contract of the `contract` skill plans a set of commits; the pull request that applies it adds the decisions the contract fixes to the registry.
-- A private note of `docs/private/` holds a study, and we write the decision it leads to in the registry.
-- When we move a decision into the registry from a contract, a private note or the memory of the agents, we replace its statement there with one sentence that links to its number, and keep the study or the history.
+- When a contract that plans a set of commits, or a study, leads to a decision, we write the decision in the registry, and the contract or the study states it in one sentence that links to its number.
 - We write a rule of the product, such as a label or the behaviour of a page, in the pull request or the issue that sets it.
 
 ## Consequences
@@ -64,7 +62,7 @@ The header is a YAML block with the keys of the [MADR 4.0 template](https://gith
 - An agent finds the decisions from `AGENTS.md`, reads the index of `docs/decisions/README.md` and of `docs/design/README.md`, and opens the decisions that a change touches.
 - The folder of a decision tells its nature; in return we keep two indexes and two numberings, and a number names a decision only with its folder.
 - The text of each decision stays short, and an agent reads one header for a superseded decision.
-- We write in the registry, one by one, the decisions that contracts, private notes and the memory of the agents hold, as [issue 235](https://github.com/ShallowRed/vignettes/issues/235) lists them; each of these places stays the source of a decision until we move it.
+- We write in the registry, one by one, the decisions already taken that it lacks, as [issue 10](https://github.com/ShallowRed/vignettes/issues/10) lists them; each stays in the place that holds it until we write it here.
 - Whoever writes a decision writes its header, keeps the index in step, and changes the decision it replaces or amends.
 
 ## Confirmation

@@ -7,8 +7,8 @@ import { RECETTE_PREFIX } from './personas'
 
 /**
  * The recette file of a branch, `test/recette/<subject>.yaml`: the trial decks
- * to create in the local database and the questions Lucas answers from their
- * captures, the visual judgments no measure settles. The kit reads it in
+ * to create in the local database and the questions the author answers from
+ * their captures, the visual judgments no measure settles. The kit reads it in
  * development only.
  */
 
