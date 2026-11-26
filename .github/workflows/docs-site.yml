@@ -10,10 +10,11 @@ name: Documentation site
 # `vignettes/docs-deploy.sh` script of the vps-infra repository: the key can
 # replace the site, never redeploy the application. The job reads that key,
 # VPS_DOCS_SSH_KEY, from the `/docs` path of Infisical over OIDC, with the
-# identities and projects of the repository variables and the secrets
-# INFISICAL_API_URL, VPS_HOST and VPS_USER, as `docker-publish.yml` does: on
-# `staging`, the identity and the project of staging, whose key the VPS accepts
-# for the staging site only.
+# identities and projects of the repository variables and the secret
+# INFISICAL_API_URL, and connects with the secrets VPS_HOST, VPS_USER and
+# VPS_SSH_KNOWN_HOSTS, as `docker-publish.yml` does: on `staging`, the identity
+# and the project of staging, whose key the VPS accepts for the staging site
+# only.
 
 on:
   push:
@@ -78,15 +79,14 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
           TARGET: ${{ github.ref == 'refs/heads/main' && 'docs' || 'docs-staging' }}
           # The Infisical step above puts VPS_DOCS_SSH_KEY in the job environment.
         run: |
           set -euo pipefail
           umask 077
           printf '%s\n' "${VPS_DOCS_SSH_KEY}" > deploy_key
-          # Trusts the host key the VPS presents now, as the deploy job of
-          # docker-publish.yml does.
-          ssh-keyscan -H "${VPS_HOST}" > known_hosts 2>/dev/null
+          printf '%s\n' "${VPS_SSH_KNOWN_HOSTS}" > known_hosts
           # The script on the VPS reads `docs <sha>` or `docs-staging <sha>` as the
           # command and the archive on its standard input.
           ssh -i deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=known_hosts \
