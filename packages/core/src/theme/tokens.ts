@@ -2,7 +2,7 @@ import type { DeckBrand, RevealConfig, ThemeBackgrounds } from '../deck/schema.t
 import { deckRevealOptions } from '../deck/schema.ts'
 import { THEME_ALIASES as BUILT_IN_ALIASES, THEME_TOKENS as BUILT_IN_TOKENS } from './tokens.generated.ts'
 
-// The data side of a theme (backgrounds, Reveal dimensions, language, parser),
+// The data side of a theme (backgrounds, Reveal dimensions),
 // declared by each theme's `theme.json`. Colors stay authored in SCSS.
 /**
  * What a catalog card needs to draw a deck's title slide without the theme's

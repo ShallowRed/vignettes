@@ -13,6 +13,12 @@ export interface SlideBrand {
 
 const DEFAULT_LINES = ['République', 'française']
 
+/** The slides that show the bloc marque when neither the deck nor its theme names them. */
+export const DEFAULT_BRAND_SLIDES: SlideBrand['slides'] = 'cover'
+
+/** The version of the bloc marque on a dark background when neither the deck nor its theme names it. */
+export const DEFAULT_BRAND_ON_DARK: SlideBrand['onDark'] = 'white'
+
 function brandFields(value: unknown): DeckBrand | undefined {
   return value && typeof value === 'object' ? value as DeckBrand : undefined
 }
@@ -41,8 +47,8 @@ export function deckBrand(meta: { theme?: string, brand?: unknown }): SlideBrand
   return {
     lines: titleLines(fields.ministry),
     ...(src ? { operator: { src, alt: typeof fields.operatorAlt === 'string' ? fields.operatorAlt : '' } } : {}),
-    slides: fields.slides === 'all' ? 'all' : 'cover',
-    onDark: fields.onDark === 'color' ? 'color' : 'white',
+    slides: fields.slides === 'all' ? 'all' : DEFAULT_BRAND_SLIDES,
+    onDark: fields.onDark === 'color' ? 'color' : DEFAULT_BRAND_ON_DARK,
   }
 }
 

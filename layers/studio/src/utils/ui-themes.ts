@@ -25,7 +25,7 @@ export const UI_THEME_FONTS: Record<UiTheme, string> = {
   lasuite: 'Marianne',
 }
 
-export const UI_THEME_NAMES: Record<UiTheme, string> = {
+const UI_THEME_NAMES: Record<UiTheme, string> = {
   vignettes: 'Vignettes',
   dsfr: 'DSFR',
   lasuite: 'La Suite numérique',

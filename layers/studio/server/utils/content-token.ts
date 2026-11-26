@@ -12,7 +12,7 @@ import { serverConfig } from './config'
  * ignores it. It carries the editor role, never owner: users and grants stay
  * out of reach.
  */
-export const CONTENT_TOKEN_LOGIN = 'content-token'
+const CONTENT_TOKEN_LOGIN = 'content-token'
 
 function sameSecret(provided: string, expected: string): boolean {
   const a = Buffer.from(provided)

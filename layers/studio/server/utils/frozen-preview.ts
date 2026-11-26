@@ -22,7 +22,7 @@ export async function withPreviewImage(event: H3Event, page: string, deck: { slu
 }
 
 /** The tags nuxt-og-image writes for an image of 1200 by 600 pixels. */
-export function previewImageTags(url: string): string {
+function previewImageTags(url: string): string {
   const content = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
   return [
     ['name', 'twitter:card', 'summary_large_image'],

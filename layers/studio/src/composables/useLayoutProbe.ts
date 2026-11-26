@@ -1,8 +1,9 @@
 import type { EditorState } from '@codemirror/state'
+import type { ParserId } from '@vignettes/core/deck'
 import type { PresentationData } from '@vignettes/nuxt/types'
 import type { InjectionKey, Ref, ShallowRef } from 'vue'
 import type { LayoutCandidate, LayoutProposal, LayoutReading } from '../utils/editor-layout'
-import { parserIdFor, slideRanges } from '@vignettes/core/deck'
+import { slideRanges } from '@vignettes/core/deck'
 import { buildPresentationData } from '@vignettes/nuxt/presentation-data'
 import { slideAtLine } from '@vignettes/nuxt/slide-map'
 import { layoutCandidates, proposalSteps } from '../utils/editor-layout'
@@ -38,6 +39,7 @@ export const LAYOUT_PROBE: InjectionKey<LayoutProbe> = Symbol('layoutProbe')
  */
 export function useLayoutProbe(options: {
   preview: Readonly<Ref<PresentationData | null>>
+  parserId: Readonly<Ref<ParserId>>
   instance: Readonly<ShallowRef<LayoutProbeInstance | null>>
 }): LayoutProbe {
   const data = shallowRef<PresentationData | null>(null)
@@ -48,8 +50,7 @@ export function useLayoutProbe(options: {
     const metadata = options.preview.value?.metadata
     if (!metadata)
       return null
-    const parser = parserIdFor({ parser: metadata.parser, syntax: metadata.syntax })
-    const { h, v } = slideAtLine(slideRanges(state.doc.toString(), parser), state.doc.lineAt(state.selection.main.head).number)
+    const { h, v } = slideAtLine(slideRanges(state.doc.toString(), options.parserId.value), state.doc.lineAt(state.selection.main.head).number)
     const read = previewSourceReader()
     const readings: Record<string, LayoutReading> = {}
 

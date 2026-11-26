@@ -3,7 +3,7 @@ import type { SlideTemplateKey } from '#shared/telemetry/events'
 import type { ComponentExample, DeckComponent, DeckComponentGroup, LocalizedText, SymbolKind } from '@vignettes/core/deck'
 import { PUBLICATION_STATUSES } from '#shared/access'
 import { annotationSource, attributedDirective, DECK_ANNOTATIONS, DECK_COMPONENT_GROUPS, DeckBrandSchema, deckComponentNamed, deckComponents, exampleOpening, exampleSource, inLanguage, ParserIdSchema, PLACEHOLDER_IMAGE } from '@vignettes/core/deck'
-import { CODE_THEMES, DEFAULT_SLIDE_HEIGHT, DEFAULT_SLIDE_WIDTH } from '@vignettes/core/render'
+import { CODE_THEMES, DEFAULT_BRAND_ON_DARK, DEFAULT_BRAND_SLIDES, DEFAULT_SLIDE_HEIGHT, DEFAULT_SLIDE_WIDTH } from '@vignettes/core/render'
 import { knownThemes } from '@vignettes/core/theme'
 
 /**
@@ -132,8 +132,8 @@ const BRAND_KEYS: readonly FrontmatterKey[] = [
   { key: 'ministry', descriptionKey: 'reference.frontmatter.brand.ministry', snippet: 'ministry: [${Ministère}, ${de l\'Intérieur}]' },
   { key: 'operator', descriptionKey: 'reference.frontmatter.brand.operator', snippet: 'operator: ${/images/operateur.svg}' },
   { key: 'operatorAlt', descriptionKey: 'reference.frontmatter.brand.operatorAlt', snippet: { fr: 'operatorAlt: ${Nom de l\'opérateur}', en: 'operatorAlt: ${Operator name}' } },
-  { key: 'slides', descriptionKey: 'reference.frontmatter.brand.slides', values: DeckBrandSchema.shape.slides.unwrap().options, default: 'cover', snippet: 'slides: ${all}' },
-  { key: 'onDark', descriptionKey: 'reference.frontmatter.brand.onDark', values: DeckBrandSchema.shape.onDark.unwrap().options, default: 'white', snippet: 'onDark: ${color}' },
+  { key: 'slides', descriptionKey: 'reference.frontmatter.brand.slides', values: DeckBrandSchema.shape.slides.unwrap().options, default: DEFAULT_BRAND_SLIDES, snippet: 'slides: ${all}' },
+  { key: 'onDark', descriptionKey: 'reference.frontmatter.brand.onDark', values: DeckBrandSchema.shape.onDark.unwrap().options, default: DEFAULT_BRAND_ON_DARK, snippet: 'onDark: ${color}' },
 ]
 
 /** How the text is read, nested under `syntax:`. */

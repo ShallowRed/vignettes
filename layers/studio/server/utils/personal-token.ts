@@ -96,7 +96,7 @@ function matchesPath(pattern: string, path: string): boolean {
  * the route Nitro matched must be that entry's; the path alone decides before
  * the router runs.
  */
-export function tokenRouteOf(event: H3Event): TokenRoute | undefined {
+function tokenRouteOf(event: H3Event): TokenRoute | undefined {
   const path = event.path.split('?')[0]!
   const matched = (event.context?.matchedRoute as { path?: string } | undefined)?.path
   return TOKEN_ROUTES.find(route => route.method === event.method

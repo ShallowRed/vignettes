@@ -85,9 +85,3 @@ export class DomTextTransformer {
     }
   }
 }
-
-export function createDomTextTransformer(
-  options: DomTextTransformerOptions,
-): DomTextTransformer {
-  return new DomTextTransformer(options)
-}

@@ -86,7 +86,7 @@ export function symbolValue(kind: SymbolKind, name: string): string {
 }
 
 /** The translation key of a category, its words joined by hyphens: `editor.symbols.categories.user-faces`. */
-export function categoryKey(kind: SymbolKind, category: string): string {
+function categoryKey(kind: SymbolKind, category: string): string {
   return `editor.symbols.${kind === 'icon' ? 'categories' : 'folders'}.${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
 }
 
