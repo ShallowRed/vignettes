@@ -25,6 +25,7 @@ describe('readTelemetryOrigins', () => {
   it('reads the origin of an address and of a DSN', () => {
     expect(readTelemetryOrigins({
       NUXT_PUBLIC_UMAMI_HOST: 'https://stats.example.org/',
+      NUXT_PUBLIC_UMAMI_STUDIO_WEBSITE_ID: 'studio',
       NUXT_PUBLIC_ERROR_TRACKING_DSN: 'https://key@errors.example.org/1',
     })).toEqual(['https://stats.example.org', 'https://errors.example.org'])
   })
@@ -32,12 +33,17 @@ describe('readTelemetryOrigins', () => {
   it('names a service once', () => {
     expect(readTelemetryOrigins({
       NUXT_PUBLIC_UMAMI_HOST: 'https://telemetry.example.org',
+      NUXT_PUBLIC_UMAMI_DECKS_WEBSITE_ID: 'decks',
       NUXT_PUBLIC_ERROR_TRACKING_DSN: 'https://key@telemetry.example.org/1',
     })).toEqual(['https://telemetry.example.org'])
   })
 
   it.each(['', '   ', 'foo:bar', 'http://stats.example.org', 'not an address'])('leaves out %j', (value) => {
-    expect(readTelemetryOrigins({ NUXT_PUBLIC_UMAMI_HOST: value })).toEqual([])
+    expect(readTelemetryOrigins({ NUXT_PUBLIC_UMAMI_HOST: value, NUXT_PUBLIC_UMAMI_STUDIO_WEBSITE_ID: 'studio' })).toEqual([])
+  })
+
+  it('leaves out an Umami address without a website, which measures nothing', () => {
+    expect(readTelemetryOrigins({ NUXT_PUBLIC_UMAMI_HOST: 'https://stats.example.org' })).toEqual([])
   })
 
   it('reads nothing without a variable', () => {
@@ -96,6 +102,7 @@ describe('the security headers plugin', () => {
 
   it('adds the telemetry services to connect-src, and to no other directive', () => {
     vi.stubEnv('NUXT_PUBLIC_UMAMI_HOST', 'https://stats.example.org')
+    vi.stubEnv('NUXT_PUBLIC_UMAMI_STUDIO_WEBSITE_ID', 'studio')
     vi.stubEnv('NUXT_PUBLIC_ERROR_TRACKING_DSN', 'https://key@errors.example.org/1')
     const event = request()
     hooks['render:html']!({ head: [], body: [], bodyAppend: [] }, { event })

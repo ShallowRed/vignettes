@@ -2,6 +2,7 @@ import type { PageViewVisit } from '../../layers/studio/src/utils/page-view'
 import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { measuresAudience } from '../../layers/studio/shared/telemetry/umami'
 import { deckViewCounts, PAGE_VIEW_PAGES, pageViewEvent, startsPageView, trackStudioPage } from '../../layers/studio/src/utils/page-view'
 
 const PAGES_DIR = fileURLToPath(new URL('../../layers/studio/src/pages', import.meta.url))
@@ -110,5 +111,13 @@ describe('deckViewCounts', () => {
     expect(deckViewCounts({ ...read, publicDeck: true, draft: true })).toBe(false)
     expect(deckViewCounts({ ...read, publicDeck: true, speakerViewFrame: true })).toBe(false)
     expect(deckViewCounts({ ...read, publicDeck: true, search: '?print-pdf' })).toBe(false)
+  })
+})
+
+describe('measuresAudience', () => {
+  it('measures with an address and at least one website', () => {
+    expect(measuresAudience({ host: 'https://stats.example.org', studioWebsiteId: '', decksWebsiteId: 'decks' })).toBe(true)
+    expect(measuresAudience({ host: 'https://stats.example.org', studioWebsiteId: '', decksWebsiteId: '' })).toBe(false)
+    expect(measuresAudience({ host: '', studioWebsiteId: 'studio', decksWebsiteId: 'decks' })).toBe(false)
   })
 })

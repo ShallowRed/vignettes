@@ -4,6 +4,7 @@
  * this file by its path, so it uses no alias and no framework import.
  */
 
+import type { UmamiConfig } from '../../shared/telemetry/umami'
 import { pathnameOf } from '../../shared/origins/routes'
 
 /** `count` sends the route template, `deck` leaves the page to `StudioDeck`, `skip` sends nothing. */
@@ -131,12 +132,6 @@ export function sendToUmami(host: string, event: PageViewEvent | NamedEvent): vo
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(event),
   }).catch(() => {})
-}
-
-export interface UmamiConfig {
-  host: string
-  studioWebsiteId: string
-  decksWebsiteId: string
 }
 
 /** The template of a route path: Nuxt writes `/edit/:slug()`. */

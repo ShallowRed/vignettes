@@ -6,6 +6,7 @@ import type { DatabaseConfig } from '../db/config'
 import process from 'node:process'
 import { readRoleMap } from '#shared/access'
 import { frozenS3ConfigFromEnv, isFrozenS3Configured } from '#shared/storage/frozen-s3'
+import { measuresAudience } from '#shared/telemetry/umami'
 import { readBundleConfig } from '@vignettes/freeze/bundle'
 import { readDatabaseConfig } from '../db/config'
 
@@ -64,12 +65,13 @@ export function readOrigins(env: Record<string, string | undefined>, bundle: Pic
 }
 
 /**
- * The origins of Umami and of the error tracker, from their address and their
- * DSN. A value that is no https address is left out: an error in a telemetry
- * value never stops the server.
+ * The origins of Umami, when the instance measures its audience, and of the
+ * error tracker, from their address and their DSN. A value that is no https
+ * address is left out: an error in a telemetry value never stops the server.
  */
 export function readTelemetryOrigins(env: Record<string, string | undefined>): string[] {
-  const origins = [env.NUXT_PUBLIC_UMAMI_HOST, env.NUXT_PUBLIC_ERROR_TRACKING_DSN].flatMap((value) => {
+  const umami = { host: env.NUXT_PUBLIC_UMAMI_HOST ?? '', studioWebsiteId: env.NUXT_PUBLIC_UMAMI_STUDIO_WEBSITE_ID ?? '', decksWebsiteId: env.NUXT_PUBLIC_UMAMI_DECKS_WEBSITE_ID ?? '' }
+  const origins = [measuresAudience(umami) ? umami.host : undefined, env.NUXT_PUBLIC_ERROR_TRACKING_DSN].flatMap((value) => {
     const origin = originOf(value)
     return origin?.startsWith('https://') ? [origin] : []
   })

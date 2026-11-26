@@ -1,9 +1,7 @@
 import type { z } from 'zod'
-import type { HistoryEntry } from '../../layers/studio/shared/presentations'
-import type { HISTORY_ENTRY_KINDS } from '../../layers/studio/shared/telemetry/events'
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { componentEventName, SLIDE_TEMPLATE_KEYS, STUDIO_EVENTS, studioEventData } from '../../layers/studio/shared/telemetry/events'
 import { SLIDE_TEMPLATES } from '../../layers/studio/src/config/editor-reference'
 import { currentVisit, pageSite, studioEventPayload } from '../../layers/studio/src/utils/page-view'
@@ -48,9 +46,8 @@ describe('the catalog of the studio events', () => {
     expect(Object.keys(STUDIO_EVENTS).filter(name => !sources.includes(`track('${name}'`))).toEqual([])
   })
 
-  it('lists the templates of a slide and the kinds of a history entry', () => {
+  it('lists the templates of a slide', () => {
     expect(SLIDE_TEMPLATES.map(template => template.key).sort()).toEqual([...SLIDE_TEMPLATE_KEYS].sort())
-    expectTypeOf<typeof HISTORY_ENTRY_KINDS[number]>().toEqualTypeOf<HistoryEntry['kind']>()
   })
 })
 

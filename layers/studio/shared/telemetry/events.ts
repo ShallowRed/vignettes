@@ -12,6 +12,7 @@ import { BUILT_IN_COMPONENTS, DECK_ANNOTATIONS } from '@vignettes/core/deck'
 import { PublicationStatusSchema } from '@vignettes/core/status'
 import { z } from 'zod'
 import { DeckGrantSchema } from '../access/roles'
+import { HISTORY_ENTRY_KINDS } from '../presentations/history'
 
 /** The keys of `SLIDE_TEMPLATES`; a test compares them. */
 export const SLIDE_TEMPLATE_KEYS = ['twoColumns', 'threeColumns', 'cover', 'section', 'keyPoints', 'comparison', 'mediaText', 'quote', 'fullScreenImage', 'storybookGallery'] as const
@@ -20,9 +21,6 @@ export type SlideTemplateKey = typeof SLIDE_TEMPLATE_KEYS[number]
 /** The side panels of the editor. */
 export const EDITOR_PANELS = ['help', 'symbols', 'history', 'outline', 'meta'] as const
 export type EditorPanel = typeof EDITOR_PANELS[number]
-
-/** The kinds of `HistoryEntry`; a type test compares them. */
-export const HISTORY_ENTRY_KINDS = ['version', 'snapshot'] as const
 
 /** A component registered at runtime, by an extension package or a tenant, is sent under this name. */
 export const EXTENSION_COMPONENT = 'extension'

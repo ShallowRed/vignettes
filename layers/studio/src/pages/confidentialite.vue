@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { measuresAudience } from '#shared/telemetry/umami'
+
 definePageMeta({ layout: false })
 
 const { t } = useI18n()
 const { umami, errorTracking, privacyContact } = useRuntimeConfig().public
 
-const measures = Boolean(umami.host)
+const measures = measuresAudience(umami)
 const reportsErrors = Boolean(errorTracking.dsn)
 
 const breadcrumb = computed(() => [

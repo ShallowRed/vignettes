@@ -37,6 +37,9 @@ export interface PublishedEntryDetail extends PublishedEntry {
 /** One moment of the history, as `GET /api/presentations/:slug/history` lists them. */
 export type HistoryEntry = PublishedEntry | DraftSnapshotEntry
 
+/** The kinds of `HistoryEntry`, which the events of the studio name. */
+export const HISTORY_ENTRY_KINDS = ['version', 'snapshot'] as const satisfies readonly HistoryEntry['kind'][]
+
 /**
  * Newest first. Times are kept to the second: at the same second a snapshot
  * comes before a version, since the draft moves after a publish, and two
