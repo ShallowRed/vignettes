@@ -30,6 +30,16 @@ export function frontmatterLineCount(markdown: string): number {
   return block.endsWith('\n') ? lines - 1 : lines
 }
 
+/**
+ * Whether the text opens a frontmatter block that no line closes yet, as while
+ * it is typed: a first line `---` and no later line that starts with `---`,
+ * which `FRONTMATTER_RE` would read as a closing line.
+ */
+export function isFrontmatterUnclosed(markdown: string): boolean {
+  const lines = markdown.split(/\r?\n/)
+  return lines[0] === '---' && !lines.slice(1).some(line => line.startsWith('---'))
+}
+
 const KEY_LINE_RE = /^\s*[\w.-]+\s*:/
 const HEADING_RE = /^#{1,6}\s/
 

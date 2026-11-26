@@ -4,7 +4,7 @@ import type { Translate } from '../config/editor-reference'
 import { codeFolding, foldEffect, foldGutter, foldKeymap, foldService, unfoldAll } from '@codemirror/language'
 import { Prec, RangeSet, StateField } from '@codemirror/state'
 import { Decoration, EditorView, gutterLineClass, GutterMarker, keymap, lineNumbers, MatchDecorator, ViewPlugin } from '@codemirror/view'
-import { parserIdFor, slideRanges, slideTitle, splitFrontmatter } from '@vignettes/core/deck'
+import { frontmatterLineCount, parserIdFor, slideRanges, slideTitle, splitFrontmatter } from '@vignettes/core/deck'
 
 /**
  * The deck structure in the markdown pane: line numbers, the lines of the slide
@@ -31,15 +31,7 @@ function readStructure(state: EditorState): DeckStructure {
   const text = state.doc.toString()
   const ranges = slideRanges(text, parserIdFor(splitFrontmatter(text).data))
   const doc = state.doc
-  let frontmatterEnd = 0
-  if (doc.lines > 1 && doc.line(1).text.trim() === '---') {
-    for (let n = 2; n <= doc.lines; n++) {
-      if (doc.line(n).text.trim() === '---') {
-        frontmatterEnd = n
-        break
-      }
-    }
-  }
+  const frontmatterEnd = frontmatterLineCount(text)
   // A slide opened by a separator shows it as its first line.
   const starts = ranges.map(({ startLine }) =>
     startLine - 1 > frontmatterEnd && startLine - 1 >= 1 && SEPARATOR_RE.test(doc.line(startLine - 1).text) ? startLine - 1 : startLine)

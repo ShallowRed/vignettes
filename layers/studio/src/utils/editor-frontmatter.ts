@@ -6,7 +6,7 @@ import type { LineProblem, Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { Decoration, hoverTooltip, ViewPlugin } from '@codemirror/view'
-import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, inLanguage, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, unclosedFrontmatterLine } from '@vignettes/core/deck'
+import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, frontmatterLineCount, inLanguage, isFrontmatterUnclosed, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, unclosedFrontmatterLine } from '@vignettes/core/deck'
 import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
 import { DOCS_SECTIONS, FRONTMATTER_KEYS } from '../config/editor-reference'
@@ -34,22 +34,13 @@ export interface FrontmatterOptions {
 
 /** Last line of the frontmatter block (1-based), or 0 without a closed block. */
 export function frontmatterEnd(state: EditorState): number {
-  const doc = state.doc
-  if (doc.lines < 2 || doc.line(1).text.trim() !== '---')
-    return 0
-  for (let n = 2; n <= doc.lines; n++) {
-    if (doc.line(n).text.trim() === '---')
-      return n
-  }
-  return 0
+  return frontmatterLineCount(state.doc.toString())
 }
 
 /** A block still being typed, with no closing fence yet, counts until the end. */
 export function inFrontmatter(state: EditorState, line: number): boolean {
-  if (state.doc.line(1).text.trim() !== '---')
-    return false
   const end = frontmatterEnd(state)
-  return line > 1 && (end === 0 || line < end)
+  return line > 1 && (end ? line < end : isFrontmatterUnclosed(state.doc.toString()))
 }
 
 const KEY_LINE_RE = /^(\s*)([\w.-]+)\s*:(.*)$/

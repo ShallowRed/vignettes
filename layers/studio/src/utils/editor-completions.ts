@@ -106,19 +106,6 @@ function propsBlockKeys(state: EditorState, line: number): Set<string> {
   return keys
 }
 
-/** The position sits inside the leading frontmatter block. */
-function inFrontmatter(context: CompletionContext): boolean {
-  const doc = context.state.doc
-  if (doc.lines < 2 || doc.line(1).text.trim() !== '---')
-    return false
-  const here = doc.lineAt(context.pos).number
-  for (let n = 2; n <= doc.lines; n++) {
-    if (doc.line(n).text.trim() === '---')
-      return here > 1 && here < n
-  }
-  return here > 1
-}
-
 // Completions are built on each query so they follow a locale change and the
 // components registered since the editor opened.
 export function bodySource(options: CompletionOptions, t: Translate) {
@@ -133,7 +120,7 @@ export function bodySource(options: CompletionOptions, t: Translate) {
 
   return (context: CompletionContext): CompletionResult | Promise<CompletionResult> | null => {
     // A read-only editor offers no choice: choosing one writes into the text.
-    if (context.state.readOnly || inFrontmatter(context))
+    if (context.state.readOnly || inFrontmatterLine(context.state, context.state.doc.lineAt(context.pos).number))
       return null
 
     const line = context.state.doc.lineAt(context.pos)

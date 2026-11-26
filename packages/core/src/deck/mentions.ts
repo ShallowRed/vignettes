@@ -77,7 +77,7 @@ export function blocksAround(raw: string, line: number): OpenBlock[] {
 
 /** The component whose items and blocks are fragments. */
 const FRAGMENTS_BLOCK = 'Fragments'
-const LIST_ITEM_RE = new RegExp(`^\\s*${LIST_MARKER}[ \\t]`)
+const LIST_ITEM_RE = new RegExp(`^\\s*${LIST_MARKER}[ \\t]+`)
 
 interface FragmentCounter {
   /** The name the contract gives the component, or the written name of an unregistered one. */
@@ -87,6 +87,8 @@ interface FragmentCounter {
   count: number
   /** Diagram node ids to their fragment index, for the edges. */
   nodes: Map<string, number>
+  /** The column where the text of the last list item starts, while a line indented to it continues that item. */
+  itemContent?: number
 }
 
 /**
@@ -143,9 +145,16 @@ export function fragmentAtLine(raw: string, ranges: SlideRange[], line: number):
       const top = block && counters.get(block)
       // The lines of fenced code belong to the block that its opening fence starts.
       if (top?.name === FRAGMENTS_BLOCK && top.fragments && text.trim() && (!code || fence === 'open')) {
+        const item = LIST_ITEM_RE.exec(text)
+        // After a blank line, a line indented to the text of the list item above continues that item.
+        const continues = !item && top.itemContent !== undefined && text.length - text.trimStart().length >= top.itemContent
         // A fence at the first column starts a block, after a paragraph or a list too.
-        if (LIST_ITEM_RE.test(text) || afterBreak || (fence === 'open' && !/^\s/.test(text)))
+        if (item || (afterBreak && !continues) || (fence === 'open' && !/^\s/.test(text)))
           index = top.count++
+        if (item)
+          top.itemContent = item[0].length
+        else if (afterBreak && !continues)
+          top.itemContent = undefined
       }
     }
     afterBreak = !text.trim() || opens || fence === 'close'
@@ -211,14 +220,41 @@ function isLiftedAnnotation(mention: DirectiveMention, text: string | undefined)
  */
 export function componentMentions(raw: string, names: Iterable<string>): ComponentMention[] {
   const wanted = new Set([...names].map(componentKey))
+  const topLevel = topLevelLines(raw)
+  return directiveMentions(raw)
+    .filter(mention => wanted.has(componentKey(mention.name)) && !isLiftedAnnotation(mention, topLevel.get(mention.line)))
+    .map(({ name, line, column, length }) => ({ name, line, column, length }))
+}
+
+/** The lines of a deck outside the frontmatter, fenced code and MDC blocks, by their 1-based number. */
+function topLevelLines(raw: string): Map<number, string> {
   const topLevel = new Map<number, string>()
   for (const { index, text, nested } of walk(raw.split('\n'), frontmatterLineCount(raw))) {
     if (!nested)
       topLevel.set(index + 1, text)
   }
-  return directiveMentions(raw)
-    .filter(mention => wanted.has(componentKey(mention.name)) && !isLiftedAnnotation(mention, topLevel.get(mention.line)))
-    .map(({ name, line, column, length }) => ({ name, line, column, length }))
+  return topLevel
+}
+
+/** An annotation that the parser takes out of the slide body, with the attributes of its `{…}` block. */
+export interface LiftedAnnotation {
+  name: string
+  /** 1-based line in the whole document. */
+  line: number
+  /** The written attributes, `true` for one written alone. */
+  attributes: Record<string, string | true>
+}
+
+/** The annotations that the parser takes out of the slide body, in writing order (see `isLiftedAnnotation`). */
+export function liftedAnnotations(raw: string): LiftedAnnotation[] {
+  const topLevel = topLevelLines(raw)
+  return [...writtenDirectives(raw)]
+    .filter(({ mention }) => isLiftedAnnotation(mention, topLevel.get(mention.line)))
+    .map(({ mention, written }) => ({
+      name: mention.name,
+      line: mention.line,
+      attributes: Object.fromEntries(written.map(({ name, value }) => [name, value ?? true])),
+    }))
 }
 
 /**

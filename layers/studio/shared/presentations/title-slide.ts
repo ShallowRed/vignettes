@@ -1,7 +1,7 @@
 import type { Slide, ThemeBackgrounds } from '@vignettes/core/deck'
 import type { ThemePreview } from '@vignettes/core/theme'
 import type { DeckPreview } from './list-item'
-import { codeLines, isSectionSlide, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel, titleSlideIndex } from '@vignettes/core/deck'
+import { codeLines, isSectionSlide, liftedAnnotations, parserIdFor, slideRanges, splitFrontmatter, surfaceLevel, titleSlideIndex } from '@vignettes/core/deck'
 import { deckBrand, resolveSlideBackground } from '@vignettes/core/render'
 import { getThemeTokens } from '@vignettes/core/theme'
 
@@ -28,13 +28,8 @@ const NOT_PARAGRAPH_RE = /^(?:[:#>|<]|[-*+] |\d+\. |!\[|```|~~~|-{3}|\*{3}|_{3})
 const LEAD_MAX_LENGTH = 160
 
 function annotation(lines: string[], tag: string, attribute: string): string | undefined {
-  const pattern = new RegExp(`^:${tag}\\{[^}]*\\b${attribute}=(["'])(.*?)\\1`)
-  for (const line of lines) {
-    const match = pattern.exec(line.trim())
-    if (match)
-      return match[2]
-  }
-  return undefined
+  const value = liftedAnnotations(lines.join('\n')).find(annotation => annotation.name === tag)?.attributes[attribute]
+  return typeof value === 'string' ? value : undefined
 }
 
 /** Markdown inline syntax reduced to the text a reader sees. */

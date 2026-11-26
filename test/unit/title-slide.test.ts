@@ -62,6 +62,11 @@ describe('readTitleSlide', () => {
     const raw = '```md\n# Not a title\n```\n\n# Real title'
     expect(readTitleSlide(raw).title).toBe('Real title')
   })
+
+  it('reads the annotations that the slide takes out of its body, and those only', () => {
+    const raw = '# Real title\n\n```md\n:subtitle{text="Not a subtitle"}\n```\n\n- An item with :subtitle{text="inline"} in it\n\n:pretitle{text="Kept \\"as written\\""}'
+    expect(readTitleSlide(raw)).toMatchObject({ subtitle: undefined, pretitle: 'Kept "as written"' })
+  })
 })
 
 describe('parsedTitleSlide', () => {

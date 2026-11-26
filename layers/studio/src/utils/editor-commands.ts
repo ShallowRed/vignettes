@@ -2,7 +2,7 @@ import type { EditorState, Text, TransactionSpec } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { ParserId } from '@vignettes/core/deck'
 import { snippet } from '@codemirror/autocomplete'
-import { blockEndAround } from '@vignettes/core/deck'
+import { blockEndAround, frontmatterLineCount } from '@vignettes/core/deck'
 
 /**
  * Markdown insertion helpers for the writer toolbar. Each command edits the
@@ -86,13 +86,8 @@ export function insertSnippet(view: EditorView, template: string): void {
  * it already sits past the frontmatter (or when there is none).
  */
 function safeInsertPos(doc: Text, pos: number): number {
-  if (doc.line(1).text.trim() !== '---')
-    return pos
-  for (let i = 2; i <= doc.lines; i++) {
-    if (doc.line(i).text.trim() === '---')
-      return Math.max(pos, doc.line(i).to)
-  }
-  return pos
+  const end = frontmatterLineCount(doc.toString())
+  return end ? Math.max(pos, doc.line(end).to) : pos
 }
 
 /** An `::Image` directive for an uploaded image at `at`, on its own paragraph, the caret after it. */

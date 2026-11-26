@@ -225,6 +225,15 @@ describe('fragmentAtLine', () => {
     expect(atRaw(8)).toBe(2)
   })
 
+  it('counts the lines indented under a list item after a blank line in that item', () => {
+    const raw = ['::Fragments', '- one', '', '  ```js', '  a', '  ```', '', '  more of one', '- two', '', 'after the list', '::'].join('\n')
+    const atRaw = (line: number) => fragmentAtLine(raw, slideRanges(raw, 'separator'), line)
+    expect(atRaw(4)).toBe(0)
+    expect(atRaw(8)).toBe(0)
+    expect(atRaw(9)).toBe(1)
+    expect(atRaw(11)).toBe(2)
+  })
+
   it('leaves out a component written in fenced code', () => {
     expect(inCode(14)).toBe(0)
     expect(inCode(18)).toBe(1)

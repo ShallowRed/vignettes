@@ -144,6 +144,13 @@ describe('completion hint', () => {
     expect(hint('# Slide\n\n|')).toEqual({ kind: 'insert' })
   })
 
+  it('reads the frontmatter as the deck parser reads it, and a block still typed until its end', () => {
+    expect(hint('---\ntitle: Deck\n|')).toEqual({ kind: 'settings' })
+    expect(hint('---\n---\n\n|')).toEqual({ kind: 'insert' })
+    expect(hint('---\n----\n\n|')).toEqual({ kind: 'insert' })
+    expect(hint('--- \ntitle: Deck\n|\n---\n')).toEqual({ kind: 'insert' })
+  })
+
   it('describes a free value of the frontmatter', () => {
     expect(hint('---\nstorybook: |\n---\n')).toMatchObject({ kind: 'free', key: { key: 'storybook' } })
     expect(hint('---\nreveal:|\n---\n')).toBeNull()
