@@ -38,7 +38,7 @@ describe('the host of a request', () => {
     expect(() => requestOrigin(request({ host: 'app example' }))).toThrow(expect.objectContaining({ statusCode: 400 }))
     let refusal: unknown
     try {
-      upgradeOrigin({ url: 'http://app example/collab?deck=talk' } as Request)
+      upgradeOrigin({ url: 'http://app example/collab?deck=talk' })
     }
     catch (error) {
       refusal = error

@@ -21,7 +21,7 @@ export function requestOrigin(event: H3Event): string {
 }
 
 /** The origin a WebSocket upgrade reaches, which crossws builds from `Host`; a 400 for a `Host` that is not a valid host. */
-export function upgradeOrigin(request: Request): string {
+export function upgradeOrigin(request: Pick<Request, 'url'>): string {
   try {
     return new URL(request.url).origin
   }

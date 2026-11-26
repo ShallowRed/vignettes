@@ -28,7 +28,14 @@ packages:
 # critical advisories of the production dependencies, in the major version
 # their dependents accept.
 overrides:
+  # One release of @iconify/utils for every dependent: the Vite server build of
+  # Nuxt imports the copy that @nuxt/icon resolves by its path, and Nitro turns
+  # that path back into the package name only when the root copy is the same.
+  '@iconify/utils@3': ^3.1.4
   '@nuxt/devtools': ^3.4.4
+  # The schema of the installed nuxt for every module: @nuxt/ui, @nuxt/fonts and
+  # @nuxt/icon would otherwise keep 4.6.2, which GHSA-mjrq-cffv-q4qc affects.
+  '@nuxt/schema@4': 'catalog:'
   # The two unhead overrides resolve one release of unhead 3 for every
   # dependent, so that the built server contains `unhead/legacy` and starts.
   '@unhead/vue@3': ^3.4.3
@@ -90,10 +97,10 @@ catalog:
   '@lezer/highlight': ^1.2.3
   '@nuxt/fonts': ^0.14.0
   '@nuxt/icon': ^2.1.0
-  # The schema of the installed nuxt, which the site declares: the modules Docus
-  # brings accept any Nuxt 4 and would otherwise install @nuxt/schema 4.6, which
-  # the hoisting places at the root, where the studio reads the types of Nitro.
-  '@nuxt/schema': 4.5.2
+  # The schema of the installed nuxt, which the site declares and the overrides
+  # give to every module: the hoisting places it at the root, where the studio
+  # reads the types of Nitro.
+  '@nuxt/schema': 4.6.4
   '@nuxt/ui': ^4.9.0
   '@nuxtjs/i18n': ^10.6.0
   '@nuxtjs/mdc': ^0.23.2
@@ -119,7 +126,7 @@ catalog:
   js-yaml: ^5.4.3
   jszip: ^3.10.1
   mermaid: ^11.17.2
-  nuxt: ^4.5.2
+  nuxt: ~4.6.4
   nuxt-auth-utils: ^0.5.34
   nuxt-og-image: ~6.9.1
   pg: ^8.23.1
@@ -133,7 +140,9 @@ catalog:
   typescript: ^5.9.3
   unist-util-visit: ^5.0.0
   vitest: ^4.1.9
-  vue: ^3.5.43
+  # The release nuxt requires: with an older one here, the built server holds a
+  # second Vue, which pinia, reka-ui and vueuse load.
+  vue: ^3.5.46
   vue-codemirror6: ^1.5.2
   vue-router: ^4.6.3
   vue-tsc: ^3.3.11
