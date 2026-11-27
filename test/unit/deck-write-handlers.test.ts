@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { MAX_DECK_LENGTH } from '@vignettes/core/deck'
+import { textDigest } from '@vignettes/core/digest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as Y from 'yjs'
 import { hasRoom, useCollabServer, useDraftStore, useSnapshotStore } from '../../layers/studio/server/utils/collab'
@@ -30,6 +31,10 @@ function save(raw: string, stamp?: number | null, publishedVersion?: number | nu
   const body = { raw, ...(stamp === undefined ? {} : { stamp }), ...(publishedVersion === undefined ? {} : { publishedVersion }) }
   return saveDraft(editor({ params: { slug: 'deck' }, body }))
 }
+function saveWithDigest(raw: string, stamp: number | null, draftDigest: unknown, publishedVersion?: number | null) {
+  const body = { raw, stamp, draftDigest, ...(publishedVersion === undefined ? {} : { publishedVersion }) }
+  return saveDraft(editor({ params: { slug: 'deck' }, body }))
+}
 const storedText = async () => yDocUpdateToMarkdown((await useDraftStore().load('deck'))!)
 
 beforeEach(async () => {
@@ -56,6 +61,41 @@ describe('saving a draft solo (PUT /api/presentations/:slug)', () => {
   it('answers a save without a draft digest with its key, its size and its stamp', async () => {
     const answer = await save('# v1', null)
     expect(answer).toEqual({ ok: true, key: 'draft:deck', bytes: 4, stamp: await useDraftStore().stamp('deck') })
+  })
+
+  it('writes a save whose draft digest is the stored draft, and answers that digest', async () => {
+    await expect(saveWithDigest('# v1', null, null)).resolves.toMatchObject({ ok: true, draftDigest: null })
+    const loaded = await textDigest('# v1')
+    const stamp = await useDraftStore().stamp('deck')
+    await expect(saveWithDigest('# v2', stamp, loaded)).resolves.toMatchObject({ ok: true, draftDigest: loaded })
+    expect(await storedText()).toBe('# v2')
+  })
+
+  it('refuses a save whose draft changed within the second of its stamp (409)', async () => {
+    const first = await save('# v1', null)
+    await save('# theirs', first.stamp)
+    // SQLite keeps the stamp to the second: the second write may leave the same one.
+    vi.spyOn(useStores().drafts, 'stamp').mockResolvedValueOnce(first.stamp)
+    await expect(saveWithDigest('# mine', first.stamp, await textDigest('# v1'))).rejects.toMatchObject({ statusCode: 409, data: { conflict: true } })
+    expect(await storedText()).toBe('# theirs')
+  })
+
+  it('passes a save with a null draft digest while the stored draft is the published version it loaded', async () => {
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    const loaded = await useDbContent().publishedVersion('deck')
+    await (await useCollabServer().openDirectConnection('deck', { deck: 'deck' })).disconnect()
+    await expect(saveWithDigest('# solo', null, null)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(saveWithDigest('# solo', null, null, loaded)).resolves.toMatchObject({ ok: true, draftDigest: null })
+    expect(await storedText()).toBe('# solo')
+  })
+
+  it('refuses a draft digest of another form (400) without writing', async () => {
+    await save('# v1', null)
+    const stamp = await useDraftStore().stamp('deck')
+    const digest = await textDigest('# v1')
+    for (const draftDigest of [42, digest.slice(1), digest.toUpperCase()])
+      await expect(saveWithDigest('# v2', stamp, draftDigest)).rejects.toMatchObject({ statusCode: 400, statusMessage: 'draftDigest must be null or the SHA-256 of the draft, in lowercase hexadecimal' })
+    expect(await storedText()).toBe('# v1')
   })
 
   it('writes in the lineage of the stored draft: a tab that holds it merges one copy', async () => {

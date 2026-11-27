@@ -11,3 +11,8 @@ export async function sha256Hex(bytes: Uint8Array): Promise<string> {
 export function textDigest(text: string): Promise<string> {
   return sha256Hex(new TextEncoder().encode(text))
 }
+
+/** Whether a value has the form of a digest: 64 lowercase hexadecimal digits. */
+export function isDigest(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{64}$/.test(value)
+}
