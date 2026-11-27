@@ -59,10 +59,10 @@ const SERVER_ENV = {
 
 const REQUEST_HOST_MESSAGE = 'The host a request reaches is read in server/utils/deck-origin.ts: use requestOrigin() or requestSide().'
 const HOST_HEADER = '/^(?:host|x-forwarded-host)$/i'
+// The selectors of @antfu/eslint-config, which a block that sets the rule replaces.
+const ANTFU_RESTRICTED_SYNTAX = ['TSEnumDeclaration[const=true]', 'TSExportAssignment']
 const REQUEST_HOST = [
-  // The selectors of @antfu/eslint-config, which a block that sets the rule replaces.
-  'TSEnumDeclaration[const=true]',
-  'TSExportAssignment',
+  ...ANTFU_RESTRICTED_SYNTAX,
   { selector: 'CallExpression[callee.name=/^getRequest(?:URL|Host)$/]', message: REQUEST_HOST_MESSAGE },
   { selector: `CallExpression[callee.name='getRequestHeader'][arguments.1.value=${HOST_HEADER}]`, message: REQUEST_HOST_MESSAGE },
   { selector: `MemberExpression[object.callee.name='getRequestHeaders'][property.name=${HOST_HEADER}]`, message: REQUEST_HOST_MESSAGE },
@@ -86,6 +86,51 @@ const PROCESS_ENV = {
 // The PowerPoint writer runs in the browser and in Node, and reaches no resource itself.
 const PPTX_BROWSER_GLOBALS = ['fetch', 'XMLHttpRequest', 'document', 'window', 'Image', 'navigator']
 const PPTX_WRITER_MESSAGE = '@vignettes/pptx writes a PPTX from a deck model: it imports @vignettes/core, pptxgenjs, jszip and pptx-embed-fonts. Image and font loading, the DOM and the download belong to packages/nuxt/src/runtime/utils/pptx-export.ts.'
+
+// The command line: each resource has one module of packages/cli/src, and a
+// block per module lifts the rule of its own resource.
+const CLI_HOMES = {
+  env: 'packages/cli/src/cli.ts',
+  output: 'packages/cli/src/output.ts',
+  prompt: 'packages/cli/src/prompt.ts',
+  storage: 'packages/cli/src/storage.ts',
+  remote: 'packages/cli/src/remote.ts',
+}
+const CLI_ENV_MESSAGE = 'packages/cli/src/cli.ts reads the environment and passes the values as arguments.'
+const CLI_OUTPUT_MESSAGE = 'packages/cli/src/output.ts writes the standard output and sets the exit code.'
+const CLI_KEYRING_MESSAGE = 'packages/cli/src/storage.ts loads @napi-rs/keyring, with import() when a command needs a secret, so that check runs without it.'
+const CLI_FETCH_MESSAGE = 'packages/cli/src/remote.ts calls the instances.'
+
+function cliBoundaries(home) {
+  return {
+    'no-restricted-imports': ['error', {
+      paths: [
+        ...(home === 'env' ? [] : [{ name: 'node:process', importNames: ['env'], message: CLI_ENV_MESSAGE }]),
+        ...(home === 'output' ? [] : [{ name: 'node:process', importNames: ['stdout', 'exit', 'exitCode'], message: CLI_OUTPUT_MESSAGE }]),
+      ],
+      patterns: [
+        { group: ['**/layers/**'], message: 'The CLI declares the answers it reads in packages/cli/src/api.ts.' },
+        ...(home === 'prompt' ? [] : [{ group: ['@clack/prompts'], message: 'packages/cli/src/prompt.ts asks the questions, on the standard error.' }]),
+        { group: ['@napi-rs/keyring'], message: CLI_KEYRING_MESSAGE },
+        {
+          regex: '^(?!(@vignettes/core/.+|@vignettes/schemas/components|@vignettes/storybook/components|zod|node:.+|@clack/prompts|@napi-rs/keyring)$|\\.{1,2}/)',
+          message: '@vignettes/cli imports @vignettes/core, @vignettes/schemas/components, @vignettes/storybook/components, zod, the node: modules and its own files.',
+        },
+      ],
+    }],
+    'no-restricted-properties': ['error', ...[
+      ...(home === 'env' ? [] : [{ object: 'process', property: 'env', message: CLI_ENV_MESSAGE }]),
+      ...(home === 'output' ? [] : ['stdout', 'exit', 'exitCode'].map(property => ({ object: 'process', property, message: CLI_OUTPUT_MESSAGE }))),
+      ...(home === 'remote' ? [] : [{ object: 'globalThis', property: 'fetch', message: CLI_FETCH_MESSAGE }]),
+    ]],
+    'no-restricted-globals': ['error', ...[
+      ...(home === 'output' ? [] : [{ name: 'console', message: CLI_OUTPUT_MESSAGE }]),
+      ...(home === 'remote' ? [] : [{ name: 'fetch', message: CLI_FETCH_MESSAGE }]),
+    ]],
+    // no-restricted-imports reads the static imports only.
+    'no-restricted-syntax': ['error', ...ANTFU_RESTRICTED_SYNTAX, ...(home === 'storage' ? [] : [{ selector: 'ImportExpression[source.value=\'@napi-rs/keyring\']', message: CLI_KEYRING_MESSAGE }])],
+  }
+}
 
 export default antfu({
   vue: true,
@@ -206,4 +251,10 @@ export default antfu({
   rules: {
     'no-restricted-imports': ['error', { patterns: [MDC_READER, DATABASE_DRIVER, ERROR_TRACKING_SDK] }],
   },
-})
+}, {
+  files: ['packages/cli/src/**'],
+  rules: cliBoundaries(),
+}, ...Object.entries(CLI_HOMES).map(([home, file]) => ({
+  files: [file],
+  rules: cliBoundaries(home),
+})))

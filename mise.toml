@@ -309,9 +309,12 @@ depends = [ "install" ]
 run = "node scripts/deck-plugin.ts"
 
 [tasks.typecheck]
-description = "vue-tsc on the whole repo"
+description = "vue-tsc on the application and the packages it reads, tsc on packages/cli"
 depends = [ "install" ]
-run = "pnpm exec nuxi typecheck"
+run = [
+  "pnpm exec nuxi typecheck",
+  "pnpm exec tsc --noEmit -p packages/cli"
+]
 
 [tasks."lint:fix"]
 description = "ESLint with autofix"

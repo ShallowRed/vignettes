@@ -1,0 +1,38 @@
+{
+  "name": "@vignettes/cli",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Command line of Vignettes: checks a deck, and signs in to a studio instance with a personal token.",
+  "license": "MIT",
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "bin": {
+    "vignettes": "./dist/cli.mjs"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "js-yaml": "catalog:",
+    "slugify": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vignettes/core": "workspace:*",
+    "@vignettes/schemas": "workspace:*",
+    "@vignettes/storybook": "workspace:*",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}

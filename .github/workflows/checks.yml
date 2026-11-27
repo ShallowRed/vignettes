@@ -27,8 +27,11 @@ jobs:
   # What to run: on a pull request, the test job when the change touches more
   # than the documentation (the site, `docs/` and the Markdown files at the
   # root; `docs/theme-system.md` counts as code, since the deck plugin test
-  # reads it), and the site job when it touches what the site reads, the paths
-  # of `docs-site.yml`. A call runs what its scope names. GitHub applies the
+  # reads it), the site job when it touches what the site reads, the paths of
+  # `docs-site.yml` without `packages/cli/`, and the command line step of the
+  # test job when it touches `packages/cli/`, a package the built file holds or
+  # the dependencies.
+  # A call runs what its scope names. GitHub applies the
   # `paths` filter to a whole workflow, not to one of its jobs
   # (https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore),
   # so this job compares the files itself.
@@ -40,6 +43,7 @@ jobs:
     outputs:
       code: ${{ steps.diff.outputs.code }}
       site: ${{ steps.diff.outputs.site }}
+      cli: ${{ steps.diff.outputs.cli }}
     steps:
       - name: Checkout
         if: github.event_name == 'pull_request'
@@ -54,19 +58,23 @@ jobs:
           RANGE: ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
         run: |
           if [ "$GITHUB_EVENT_NAME" != pull_request ]; then
-            if [ "$SCOPE" = site ]; then code=false site=true; else code=true site=false; fi
+            if [ "$SCOPE" = site ]; then code=false site=true cli=false; else code=true site=false cli=true; fi
           else
             files=$(git diff --name-only --no-renames "$RANGE")
-            code=false site=false
+            code=false site=false cli=false
             if printf '%s\n' "$files" | grep -vE '^(site/|docs/|[^/]+\.md$)' | grep -q . || printf '%s\n' "$files" | grep -qx docs/theme-system.md; then
               code=true
             fi
-            if printf '%s\n' "$files" | grep -qE '^(site/|packages/|themes/|examples/|public/pictograms/|layers/studio/src/utils/page-view\.ts$|layers/studio/shared/origins/routes\.ts$|docs/theme-system\.md$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$)'; then
+            if printf '%s\n' "$files" | grep -v '^packages/cli/' | grep -qE '^(site/|packages/|themes/|examples/|public/pictograms/|layers/studio/src/utils/page-view\.ts$|layers/studio/shared/origins/routes\.ts$|docs/theme-system\.md$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$)'; then
               site=true
+            fi
+            if printf '%s\n' "$files" | grep -qE '^(packages/(cli|core|schemas|storybook)/|pnpm-lock\.yaml$|pnpm-workspace\.yaml$)'; then
+              cli=true
             fi
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "site=$site" >> "$GITHUB_OUTPUT"
+          echo "cli=$cli" >> "$GITHUB_OUTPUT"
 
   # The documentation site installs the render module and publishes the package
   # READMEs: generating it checks both. Same command as `mise run site:generate`.
@@ -153,9 +161,27 @@ jobs:
         if: inputs.scope != 'build'
         run: pnpm exec nuxi typecheck
 
+      - name: Types of the command line
+        if: inputs.scope != 'build'
+        run: pnpm exec tsc --noEmit -p packages/cli
+
       - name: Unit tests
         if: inputs.scope != 'build'
         run: pnpm test
+
+      # The packed command line runs outside the workspace, without its optional
+      # dependencies, and its built file loads @napi-rs/keyring by import() alone.
+      - name: Command line package
+        if: inputs.scope != 'build' && needs.changes.outputs.cli == 'true'
+        run: |
+          pnpm --filter @vignettes/cli build
+          if grep -qE "(from|import) ['\"]@napi-rs/keyring['\"]" packages/cli/dist/cli.mjs; then
+            echo "packages/cli/dist/cli.mjs imports @napi-rs/keyring statically" >&2
+            exit 1
+          fi
+          pnpm --filter @vignettes/cli pack --pack-destination "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP"
+          npm_config_omit=optional npx --yes ./vignettes-cli-*.tgz --version
 
       - name: Build
         env:
