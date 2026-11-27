@@ -126,6 +126,11 @@ describe('attributeMentions', () => {
     const raw = '---\nstorybook: javascript:x\n---\n\n```md\n::Iframe{src="javascript:x"}\n```\n'
     expect(attributeMentions(raw)).toEqual([])
   })
+  it('reads a destination between angle brackets to its closing bracket, spaces included', () => {
+    const raw = '[x](<javascript:a b>) ![y](</images/a b.png>)'
+    const found = attributeMentions(raw).map(({ column, length, reason }) => [raw.slice(column, column + length), reason])
+    expect(found).toEqual([['javascript:a b', 'url']])
+  })
 })
 
 describe('componentAttributeIssues', () => {

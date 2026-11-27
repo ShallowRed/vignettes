@@ -303,8 +303,9 @@ export interface AttributeMention {
 }
 
 const BLOCK_TAG_RE = /:+([a-z][\w-]*)(?:\[[^\]]*\])?$/i
-// The destination of a markdown link keeps one level of balanced parentheses.
-const MARKDOWN_LINK_RE = /(!?)\[[^\]]*\]\(\s*<?((?:[^\s()<>]|\([^\s()]*\))+)/g
+// The destination of a markdown link: between angle brackets, spaces included,
+// or up to its first space, with one level of balanced parentheses.
+const MARKDOWN_LINK_RE = /(!?)\[[^\]]*\]\(\s*(?:<([^<>\n]+)>|<?((?:[^\s()<>]|\([^\s()]*\))+))/g
 
 /** A value written in the source: an attribute's, or the address of a markdown link or image. */
 export interface ValueMention {
@@ -317,6 +318,8 @@ export interface ValueMention {
   /** 0-based column of the attribute or the address, and length of its text. */
   column: number
   length: number
+  /** The rank of its `{…}` block in the deck, the same for the values of one block; undefined for the address of a link. */
+  block?: number
 }
 
 /**
@@ -326,19 +329,23 @@ export interface ValueMention {
  */
 export function valueMentions(raw: string): ValueMention[] {
   const mentions: ValueMention[] = []
+  let rank = 0
   for (const { line, prose } of proseLines(raw)) {
     for (const block of prose.matchAll(ATTRIBUTE_BLOCK_RE)) {
       const before = prose.slice(0, block.index)
       const tag = BLOCK_TAG_RE.exec(before)?.[1] ?? (before.endsWith(')') ? 'a' : 'span')
       for (const { name, value, column, length } of blockAttributes(block[1]!, block.index + 1)) {
         if (value !== undefined)
-          mentions.push({ tag, name, value, line, column, length })
+          mentions.push({ tag, name, value, line, column, length, block: rank })
       }
+      rank++
     }
     for (const link of prose.matchAll(MARKDOWN_LINK_RE)) {
-      const [text, bang, url] = link
+      const [text, bang, bracketed, bare] = link
+      const url = bracketed ?? bare!
       const image = bang === '!'
-      mentions.push({ tag: image ? 'img' : 'a', name: image ? 'src' : 'href', value: url!, line, column: link.index + text.length - url!.length, length: url!.length })
+      const end = link.index + text.length - (bracketed === undefined ? 0 : 1)
+      mentions.push({ tag: image ? 'img' : 'a', name: image ? 'src' : 'href', value: url, line, column: end - url.length, length: url.length })
     }
   }
   return mentions
