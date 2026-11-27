@@ -40,6 +40,7 @@ const { default: loadDeck } = await import('../../layers/studio/server/api/prese
 const { default: saveDraft } = await import('../../layers/studio/server/api/presentations/[slug].put')
 const { default: publishDeck } = await import('../../layers/studio/server/api/presentations/[slug]/publish.post')
 const { default: uploadMedia } = await import('../../layers/studio/server/api/media.post')
+const { default: deckMarkdown } = await import('../../layers/studio/server/api/presentations/[slug]/markdown.get')
 
 const ORIGIN = 'https://studio.example.test'
 const HANDLERS: Record<string, (event: unknown) => Promise<unknown>> = {
@@ -119,6 +120,9 @@ describe('the routes of the command line (packages/cli/src/api.ts)', () => {
     expect(read(await saveDraft(as({ params: { slug: 'talk' }, body: { raw, stamp: (draft as { stamp: number }).stamp, draftDigest: loaded } })), SAVE_DRAFT)).toMatchObject({ draftDigest: loaded })
     const digest = await textDigest(raw)
     expect(read(await publishDeck(as({ params: { slug: 'talk' }, body: { digest } })), PUBLISH_DECK)).toMatchObject({ ok: true, digest })
+    const markdown = as({ params: { slug: 'talk' } })
+    expect(await deckMarkdown(markdown)).toBe(raw)
+    expect(markdown.responseHeaders['content-type']).toMatch(/^text\/markdown\s*;/)
     await useProjectStore().create({ title: 'Command line', slug: 'cli' })
     expect(read(await listProjects(as({})), PROJECTS)).toEqual([{ slug: 'cli' }])
   })
@@ -280,5 +284,23 @@ describe('the answers of an instance (packages/cli/src/remote.ts)', () => {
     expect(failed).toMatchObject({ code: EXIT_CODES.instance, stderr: expect.stringContaining('The token stays on this machine: run vignettes logout again, or vignettes logout --instance https://studio.example.test --local') })
     expectNoSecret(failed, secret)
     expect(keyring.passwords.get(`vignettes/${ORIGIN}`)).toBe(secret)
+  })
+})
+
+describe('the texts pull reads (packages/cli/src/commands/pull.ts)', () => {
+  const account = { login: 'ann', role: 'editor', name: 'CLI', prefix: 'vgt_witness-', scope: 'read', expiresAt: '2027-01-01T00:00:00.000Z' }
+  const markdown = (text: string, type = 'text/markdown; charset=utf-8'): typeof fetch => async (input, init) => {
+    const { url } = record(input, init)
+    return url.pathname === '/api/tokens/current' ? Response.json(account) : new Response(text, { headers: { 'content-type': type } })
+  }
+
+  it('writes nothing of a text that holds the secret, or of an answer that is not markdown', async () => {
+    for (const fetch of [markdown(`# ${WITNESS}`), markdown('# Talk', 'text/html')]) {
+      const run = await runCommand('pull', { operands: ['talk'], fetch, options: { instance: ORIGIN, out: home, json: true }, environment: environment({ token: WITNESS }) })
+      expect(run.code).toBe(EXIT_CODES.instance)
+      expect(JSON.parse(run.stdout).results[0]).toMatchObject({ action: 'stopped', error: { code: 'instance-answer' } })
+      expectNoSecret(run, WITNESS)
+    }
+    expect(readdirSync(home)).toEqual([])
   })
 })

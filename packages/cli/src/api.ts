@@ -67,6 +67,9 @@ export const PUBLISH_DECK: Route<{ ok: boolean, bytes: number, digest?: string }
 /** An uploaded image, from `api/media.post.ts`. */
 export const UPLOAD_MEDIA: Route<{ src: string }> = { method: 'POST', path: '/api/media', answer: z.object({ src: z.string() }) }
 
+/** The stored text of a deck, its published version or with `?draft` its draft, from `api/presentations/[slug]/markdown.get.ts`: a `text/markdown` answer, which `callMarkdown` reads. */
+export const DECK_MARKDOWN = { method: 'GET', path: '/api/presentations/:slug/markdown' } as const satisfies Omit<Route<unknown>, 'answer'>
+
 /** The JSON error of a route, as Nitro writes it. */
 export const ErrorBodySchema = z.object({
   statusCode: z.number().optional(),
@@ -75,4 +78,4 @@ export const ErrorBodySchema = z.object({
 })
 
 /** Every route the command line calls. */
-export const ROUTES: Route<unknown>[] = [CURRENT_TOKEN, REVOKE_TOKEN, PROJECTS, DECK_DRAFT, CREATE_DECK, SAVE_DRAFT, PUBLISH_DECK, UPLOAD_MEDIA]
+export const ROUTES: Omit<Route<unknown>, 'answer'>[] = [CURRENT_TOKEN, REVOKE_TOKEN, PROJECTS, DECK_DRAFT, DECK_MARKDOWN, CREATE_DECK, SAVE_DRAFT, PUBLISH_DECK, UPLOAD_MEDIA]

@@ -1,5 +1,5 @@
 import type { DeckOutcome, DeckRoute, FailedAnswer, RemoteDraft } from '../../packages/cli/src/push-plan.ts'
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { creationDraft } from '@vignettes/core/deck'
@@ -10,7 +10,7 @@ import { EXIT_CODES } from '../../packages/cli/src/output.ts'
 import { ACTION_EXIT_CODES, deckOutcome, digestOutcome, outcomeExit, TOO_MANY_INVALID_TOKENS, TOO_MANY_TOKEN_REQUESTS } from '../../packages/cli/src/push-plan.ts'
 import { runCommand } from './helpers/cli-run'
 
-const ROUTES: DeckRoute[] = ['read', 'projects', 'create', 'reread', 'image', 'save', 'publish']
+const ROUTES: DeckRoute[] = ['read', 'projects', 'create', 'reread', 'image', 'save', 'publish', 'markdown']
 
 const status = (code: number, over: Partial<Extract<FailedAnswer, { kind: 'status' }>> = {}): FailedAnswer => ({ kind: 'status', status: code, statusMessage: 'Refused', ...over })
 
@@ -232,8 +232,8 @@ const sentOf = async (name: string) => (await readLocalDeck(join(folder, name)))
 
 describe('the answers of an instance to push (packages/cli/src/commands/push.ts)', () => {
   const failing = ANSWERS.filter(([name]) => name !== 'a body outside its schema' && name !== 'a network error')
-  // The decks of these tests have no folder: test 'keeps the results of the decks before a list of the folders that fails' reads the route of the folders.
-  it.each(ROUTES.filter(route => route !== 'projects').flatMap(route => failing.map(([name, answer]) => [route, name, answer] as const)))('gives the %s route of the first deck its action and its code for %s, then sends or skips the second deck', async (route, name, answer) => {
+  // The decks of these tests have no folder: test 'keeps the results of the decks before a list of the folders that fails' reads the route of the folders. The markdown route is that of pull, tested below.
+  it.each(ROUTES.filter(route => route !== 'projects' && route !== 'markdown').flatMap(route => failing.map(([name, answer]) => [route, name, answer] as const)))('gives the %s route of the first deck its action and its code for %s, then sends or skips the second deck', async (route, name, answer) => {
     const status = answer.kind === 'status' ? answer : undefined
     const respond = () => Response.json({ statusCode: status!.status, statusMessage: status!.statusMessage, data: status!.data }, { status: status!.status, headers: status!.status < 400 ? { location: `/login?token=${SECRET}` } : {} })
     const run = await pushBoth(call => call.route === route && call.slug === 'first' ? respond() : undefined)
@@ -362,5 +362,88 @@ describe('the answers of an instance to push (packages/cli/src/commands/push.ts)
     const run = await pushFiles(['first.md', 'third.md'], call => call.route === 'projects' ? Response.json({ statusCode: 429, statusMessage: TOO_MANY_TOKEN_REQUESTS }, { status: 429 }) : undefined, { decks: { first: { content: published, from: 'published', stamp: null, publishedRaw: published, publishedVersion: 1 } } })
     expect(run.document.results).toMatchObject([{ action: 'published' }, { action: 'stopped', error: { code: 'too-many-token-requests' } }])
     expect(run.code).toBe(EXIT_CODES.instance)
+  })
+})
+
+// An instance in memory that answers `GET /api/presentations/:slug/markdown`
+// with the text of each deck, as the studio does, but for the answer a test
+// replaces.
+function markdownInstance(replace: (slug: string) => Response | undefined) {
+  const calls: string[] = []
+  const fetch: typeof globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input))
+    calls.push(`${init.method ?? 'GET'} ${url.pathname}${url.search}`)
+    if (url.pathname === '/api/tokens/current')
+      return Response.json({ login: 'ann', role: 'editor', name: 'CLI', prefix: 'vgt_witness-', scope: 'write', expiresAt: '2027-01-01T00:00:00.000Z' })
+    const slug = url.pathname.split('/')[3]!
+    return replace(slug) ?? new Response(`# ${slug}\n`, { headers: { 'content-type': 'text/markdown; charset=utf-8' } })
+  }
+  return { fetch, calls }
+}
+
+async function pullBoth(replace: (slug: string) => Response | undefined, options: Record<string, unknown> = {}) {
+  const { fetch, calls } = markdownInstance(replace)
+  mkdirSync(join(folder, 'pulled'), { recursive: true })
+  const run = await runCommand('pull', { operands: ['first', 'second'], fetch, options: { instance: ORIGIN, json: true, out: join(folder, 'pulled'), ...options }, environment: { token: SECRET, configHome: folder } })
+  return { ...run, calls, document: JSON.parse(run.stdout) }
+}
+
+describe('the answers of an instance to pull (packages/cli/src/commands/pull.ts)', () => {
+  it.each(ANSWERS)('gives the read of the first deck its action and its code for %s, then reads or skips the second deck', async (name, answer) => {
+    const respond = (): Response => {
+      if (answer.kind === 'unreachable')
+        throw new TypeError('fetch failed', { cause: { code: 'ECONNRESET' } })
+      if (answer.kind === 'unreadable')
+        return Response.json({ content: '# first' })
+      return Response.json({ statusCode: answer.status, statusMessage: answer.statusMessage, data: answer.data }, { status: answer.status, headers: answer.status < 400 ? { location: `/login?token=${SECRET}` } : {} })
+    }
+    const run = await pullBoth(slug => slug === 'first' ? respond() : undefined)
+    const [first, second] = run.document.results
+    const outcome = deckOutcome('markdown', answer)
+    if (outcome.action === 'forbidden') {
+      expect(first.action).toBe('forbidden')
+      expect(run.code).toBe(EXIT_CODES.permission)
+      expect(second.action).toBe('written')
+      if (outcome.reason === 'password')
+        expect(first.message).toBe('first asks for its password, which a token does not carry; open it in the studio.')
+    }
+    else {
+      const code = outcome.action === 'stopped' ? outcome.code : 'instance-error'
+      expect(first).toMatchObject({ action: 'stopped', error: { code } })
+      expect(run.code).toBe(outcome.action === 'stopped' ? outcomeExit(outcome).exit : EXIT_CODES.instance)
+      expect(second.action).toBe('skipped')
+    }
+    expect(run.stdout + run.stderr).not.toContain(SECRET)
+    expect(run.calls.filter(call => call.includes('/second/'))).toEqual(second.action === 'skipped' ? [] : ['GET /api/presentations/second/markdown'])
+  })
+
+  it('names a draft this account may not edit on a 403 of --draft, and refuses a text that holds the token or is not markdown', async () => {
+    const frozen = await pullBoth(slug => slug === 'first' ? Response.json({ statusCode: 403, statusMessage: 'Forbidden' }, { status: 403 }) : undefined, { draft: true })
+    expect(frozen.document.results[0]).toMatchObject({ action: 'forbidden', message: 'This account may not edit first: the deck is frozen or archived, or shared with this account for reading alone.' })
+    expect(frozen.calls).toContain('GET /api/presentations/first/markdown?draft')
+    for (const response of [new Response(`# ${SECRET}\n`, { headers: { 'content-type': 'text/markdown' } }), new Response('# first\n', { headers: { 'content-type': 'text/plain' } })]) {
+      const refused = await pullBoth(slug => slug === 'first' ? response : undefined)
+      expect(refused.document.results[0]).toMatchObject({ action: 'stopped', error: { code: 'instance-answer' } })
+      expect(refused.code).toBe(EXIT_CODES.instance)
+      expect(existsSync(join(folder, 'pulled', 'first.md'))).toBe(false)
+      expect(refused.stdout).not.toContain(SECRET)
+    }
+  })
+
+  it('stops on a body cut before its end, and keeps the results of the decks before it', async () => {
+    const cut = () => new Response(new ReadableStream({ start: controller => controller.error(new TypeError('terminated', { cause: { code: 'ECONNRESET' } })) }), { headers: { 'content-type': 'text/markdown' } })
+    const run = await pullBoth(slug => slug === 'second' ? cut() : undefined)
+    const [first, second] = run.document.results
+    expect(first.action).toBe('written')
+    expect(second).toMatchObject({ action: 'stopped', error: { code: 'instance-unreachable' } })
+    expect(run.code).toBe(EXIT_CODES.instance)
+  })
+
+  it('writes the bytes the instance sends, its byte order mark, its CRLF and its control characters kept', async () => {
+    const RAW = Uint8Array.from([0xEF, 0xBB, 0xBF, 0x23, 0x20, 0x41, 0x0D, 0x0A, 0x1B, 0x62, 0xC2, 0x85, 0x0A])
+    const run = await pullBoth(slug => slug === 'first' ? new Response(RAW, { headers: { 'content-type': 'text/markdown; charset=utf-8' } }) : undefined)
+    expect(run.document.results[0].action).toBe('written')
+    expect(new Uint8Array(readFileSync(join(folder, 'pulled', 'first.md')))).toEqual(RAW)
+    expect((await pullBoth(() => undefined)).document.results.map((result: { action: string }) => result.action)).toEqual(['local-differs', 'identical'])
   })
 })

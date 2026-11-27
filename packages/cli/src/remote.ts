@@ -1,4 +1,4 @@
-import type { Route } from './api.ts'
+import type { DECK_MARKDOWN, Route } from './api.ts'
 import type { FailedAnswer } from './push-plan.ts'
 import manifest from '../package.json' with { type: 'json' }
 import { ErrorBodySchema } from './api.ts'
@@ -42,7 +42,7 @@ function repeats(value: unknown, token: string): boolean {
 }
 
 /** The address of a route at the origin of the instance, and nowhere else. */
-function routeUrl(route: Route<unknown>, call: RemoteCall, request: RouteRequest): URL {
+function routeUrl(route: Omit<Route<unknown>, 'answer'>, call: RemoteCall, request: RouteRequest): URL {
   const path = route.path.replace(':slug', encodeURIComponent(request.slug ?? ''))
   const url = new URL(`${path}${request.query ? `?${request.query}` : ''}`, call.origin)
   if (url.origin !== call.origin)
@@ -51,7 +51,7 @@ function routeUrl(route: Route<unknown>, call: RemoteCall, request: RouteRequest
 }
 
 /** Sends a request with the token; a network error, a closed connection or a timeout throws `instance-unreachable`. */
-async function send(route: Route<unknown>, call: RemoteCall, request: RouteRequest, accept = 'application/json'): Promise<{ url: URL, response: Response }> {
+async function send(route: Omit<Route<unknown>, 'answer'>, call: RemoteCall, request: RouteRequest, accept = 'application/json'): Promise<{ url: URL, response: Response }> {
   const url = routeUrl(route, call, request)
   const headers: Record<string, string> = { 'authorization': `Bearer ${call.token}`, 'accept': accept, 'user-agent': `vignettes-cli/${manifest.version}` }
   if (request.json !== undefined)
@@ -106,6 +106,15 @@ export type DeckAnswer<Answer>
   = | { ok: true, answer: Answer }
     | { ok: false, failure: FailedAnswer, detail: string }
 
+/** An answer that is not a success: its status, the message of the server without the token, and its `data`; a redirection names its address. */
+async function failedAnswer(response: Response, url: URL, call: RemoteCall): Promise<{ ok: false, failure: FailedAnswer, detail: string }> {
+  if (response.status >= 300 && response.status < 400)
+    return { ok: false, failure: { kind: 'status', status: response.status }, detail: redirection(response, url, call.token) }
+  const error = ErrorBodySchema.safeParse(await response.json().catch(() => undefined))
+  const statusMessage = error.success ? error.data.statusMessage?.replaceAll(call.token, '<token>') : undefined
+  return { ok: false, failure: { kind: 'status', status: response.status, statusMessage, data: error.success ? error.data.data : undefined }, detail: statusMessage ?? String(response.status) }
+}
+
 /**
  * Calls a route of a deck as `callInstance` does, and gives each answer that
  * is not a success to the caller, which classes it by `deckOutcome`: the
@@ -120,16 +129,40 @@ export async function callDeckRoute<Answer>(route: Route<Answer>, call: RemoteCa
     return { ok: false, failure: { kind: 'unreachable' }, detail: error instanceof CliError ? error.message : String(error) }
   }
   const { url, response } = sent
-  if (response.status >= 300 && response.status < 400)
-    return { ok: false, failure: { kind: 'status', status: response.status }, detail: redirection(response, url, call.token) }
-  const body = await response.json().catch(() => undefined)
-  if (!response.ok) {
-    const error = ErrorBodySchema.safeParse(body)
-    const statusMessage = error.success ? error.data.statusMessage?.replaceAll(call.token, '<token>') : undefined
-    return { ok: false, failure: { kind: 'status', status: response.status, statusMessage, data: error.success ? error.data.data : undefined }, detail: statusMessage ?? String(response.status) }
-  }
-  const answer = route.answer.safeParse(body)
+  if (!response.ok)
+    return failedAnswer(response, url, call)
+  const answer = route.answer.safeParse(await response.json().catch(() => undefined))
   if (!answer.success || repeats(answer.data, call.token))
     return { ok: false, failure: { kind: 'unreadable' }, detail: route.path }
   return { ok: true, answer: answer.data }
+}
+
+/**
+ * Reads the stored text of a deck as `callDeckRoute` reads a route, and gives
+ * the bytes of the body as they came: an answer that is not `text/markdown`, or
+ * whose text holds the token, is an answer the command line does not read, and
+ * a body cut before its end is no answer.
+ */
+export async function callMarkdown(route: typeof DECK_MARKDOWN, call: RemoteCall, request: RouteRequest): Promise<DeckAnswer<Uint8Array>> {
+  let sent
+  try {
+    sent = await send(route, call, request, 'text/markdown')
+  }
+  catch (error) {
+    return { ok: false, failure: { kind: 'unreachable' }, detail: error instanceof CliError ? error.message : String(error) }
+  }
+  const { url, response } = sent
+  if (!response.ok)
+    return failedAnswer(response, url, call)
+  let bytes
+  try {
+    bytes = new Uint8Array(await response.arrayBuffer())
+  }
+  catch (error) {
+    return { ok: false, failure: { kind: 'unreachable' }, detail: new CliError('instance-unreachable', call.origin, networkCode(error)).message }
+  }
+  const markdown = /^text\/markdown\s*(?:;|$)/i.test(response.headers.get('content-type') ?? '')
+  if (!markdown || new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes).includes(call.token))
+    return { ok: false, failure: { kind: 'unreadable' }, detail: route.path }
+  return { ok: true, answer: bytes }
 }

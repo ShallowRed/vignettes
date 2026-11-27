@@ -30,6 +30,7 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'unreadable-file': EXIT_CODES.usage,
   'not-utf8': EXIT_CODES.usage,
   'unwritable-file': EXIT_CODES.usage,
+  'pulled-link': EXIT_CODES.usage,
   'missing-instance': EXIT_CODES.usage,
   'unknown-instance': EXIT_CODES.usage,
   'invalid-instance': EXIT_CODES.usage,

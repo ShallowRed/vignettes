@@ -4,7 +4,7 @@ import type { Relay } from './fixtures/cli-relay.ts'
 import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -79,11 +79,18 @@ async function setup(server: Server, name: CliCase) {
     budget += relay.requests.length - before
     return run
   }
+  const pull = async (args: string[]) => {
+    const before = relay.requests.length
+    const run = await vignettes(['pull', ...args], { cwd: folder, origin: relay.origin, token: secret })
+    budget += relay.requests.length - before
+    return run
+  }
   return {
     relay,
     folder,
     secret,
     push,
+    pull,
     write: (file: string, text: string | Uint8Array) => writeFileSync(join(folder, file), text),
     /** A request of the owner straight to the server, as someone else in the studio. */
     owner: (method: string, path: string, body?: unknown) => fetch(`http://127.0.0.1:${SERVERS[server].port}${path}`, {
@@ -345,6 +352,49 @@ test.describe('vignettes push', () => {
       await applyRemoteRepublish(deps, items)
       expect(c.relay.requests.slice(from).map(request => `${request.method} ${request.path}`)).toEqual([`GET /api/presentations/cli-identical-${RUN}?draft`, `PUT /api/presentations/cli-identical-${RUN}`, `POST /api/presentations/cli-identical-${RUN}/publish`])
       expect(await textOf(c, `cli-identical-${RUN}`)).toBe(deck('Identical', 'Republished.'))
+    }
+    finally {
+      await c.close()
+    }
+  })
+})
+
+test.describe('vignettes pull', () => {
+  test('writes the published version or the draft of a deck, and names a deck it cannot read', async () => {
+    const c = await setup('first', 'pull')
+    try {
+      const slug = `cli-pull-${RUN}`
+      c.write(`${slug}.md`, deck('Pulled', 'Published.'))
+      expect((await c.push([`${slug}.md`])).document.results[0]!.action).toBe('created')
+      const read = await (await c.owner('GET', `/api/presentations/${slug}?draft`)).json()
+      const draft = deck('Pulled', 'Draft.').replaceAll('\n', '\r\n')
+      expect((await c.owner('PUT', `/api/presentations/${slug}`, { raw: draft, stamp: read.stamp })).status).toBe(200)
+
+      // The file pushed is the published version.
+      expect((await c.pull([slug])).document.results[0]!.action).toBe('identical')
+      c.write(`${slug}.md`, deck('Pulled', 'Changed here.'))
+      const differs = await c.pull([slug])
+      expect(differs.status).toBe(5)
+      expect(differs.document.results[0]!.action).toBe('local-differs')
+      const forced = await c.pull([slug, '--force'])
+      expect(forced.document.results[0]).toMatchObject({ action: 'written', file: join(realpathSync(c.folder), `${slug}.md`), replaced: expect.stringContaining('.md.replaced-local-') })
+      expect(readFileSync(join(c.folder, `${slug}.md`), 'utf8')).toBe(await textOf(c, slug))
+      expect(readFileSync(forced.document.results[0]!.replaced, 'utf8')).toBe(deck('Pulled', 'Changed here.'))
+
+      mkdirSync(join(c.folder, 'drafts'))
+      const fromDraft = await c.pull([slug, '--draft', '--out', 'drafts'])
+      expect(fromDraft.status).toBe(0)
+      expect(readFileSync(join(c.folder, 'drafts', `${slug}.md`), 'utf8')).toBe(draft)
+
+      const absent = await c.pull([`cli-absent-${RUN}`])
+      expect(absent.status).toBe(4)
+      expect(absent.document.results[0]).toMatchObject({ action: 'forbidden', message: `No published version of cli-absent-${RUN} that this account may read: the deck does not exist, has no published version, is in the trash, or is not shared with this account.` })
+
+      const unpublished = `cli-unpublished-${RUN}`
+      expect((await c.owner('POST', '/api/presentations', { slug: unpublished, raw: deck('Unpublished', 'Draft.'), project: 'cli' })).status).toBe(201)
+      expect((await c.pull([unpublished])).document.results[0]).toMatchObject({ action: 'forbidden', message: expect.stringContaining('has no published version') })
+      expect((await c.pull([unpublished, '--draft'])).document.results[0]!.action).toBe('written')
+      expect((await c.pull([`cli-absent-${RUN}`, '--draft'])).document.results[0]).toMatchObject({ action: 'forbidden', message: expect.stringContaining('is not shared with this account as an editor') })
     }
     finally {
       await c.close()

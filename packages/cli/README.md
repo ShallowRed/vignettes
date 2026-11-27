@@ -1,6 +1,6 @@
 # @vignettes/cli
 
-The command line of Vignettes. `vignettes check` reads deck files and reports the problems the studio reports in its editor, without network and without writing a file. `vignettes login`, `whoami` and `logout` sign in to an instance with a personal token, show the account of the token and revoke it. `vignettes push` sends decks with their local images to an instance and publishes them.
+The command line of Vignettes. `vignettes check` reads deck files and reports the problems the studio reports in its editor, without network and without writing a file. `vignettes login`, `whoami` and `logout` sign in to an instance with a personal token, show the account of the token and revoke it. `vignettes push` sends decks with their local images to an instance and publishes them, and `vignettes pull` writes the text of decks from an instance.
 
 ```bash
 npm install --global @vignettes/cli
@@ -115,14 +115,25 @@ The decks go one after the other. A refusal of a deck, codes 1, 4 and 5, lets th
 
 A rule of the command line can refuse a deck that a newer version accepts: update the command line before you report a refusal in an issue of https://github.com/ShallowRed/vignettes/issues. During a deployment that runs two containers, the instance sees the editor sessions of one container: a deck open in the editor on the other one is published with the text sent, and the session then saves its own text as the draft.
 
+## Reading a deck from an instance
+
+```bash
+vignettes pull talk
+vignettes pull talk --draft --out decks
+```
+
+`pull` writes the published version of each deck to `<slug>.md`, in the folder `--out` names or in the current one; `--draft` reads the draft, the text of an editor session open in the studio included, else the published version. The file holds the bytes the instance sends. The command writes through a temporary file, `.<slug>.md.<random>.tmp`, then a rename: a command stopped between the two leaves that file, which the next command ignores and which you can remove. It stops on a symbolic link at `<slug>.md`. A local file that holds the same text stays as it is (`identical`); a local file with another text stays too, with the code 5 (`local-differs`), unless `--force`, which first copies it to `<slug>.md.replaced-local-<time>`.
+
+The command writes the text alone: the file cites the images uploaded to the instance by `/media/<name>`, which stay on the instance ([issue 21](https://github.com/ShallowRed/vignettes/issues/21)). A `push` of that file to the same instance sends the same text without an upload; to another instance, the images are missing, and `push` gives `uploaded-image-unknown`.
+
 ## Exit codes
 
 - 0: success; for `check`, no file has an error.
 - 1: a file has an error; for `push`, the instance also refused a deck or an image.
-- 2: a usage error, such as an unknown option or command, a missing file, a file that cannot be read or is not UTF-8, a slug that `push` refuses, a folder that differs from the front matter, a deck to create without a folder for an account without a global role, a copy of a replaced draft that holds other bytes, more than 300 requests, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
+- 2: a usage error, such as an unknown option or command, a missing file, a file that cannot be read or is not UTF-8, a slug that `push` or `pull` refuses, a symbolic link where `pull` writes, a folder that differs from the front matter, a deck to create without a folder for an account without a global role, a copy of a replaced draft that holds other bytes, more than 300 requests, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
 - 3: the instance refuses the token, which is unknown, revoked or expired, or refuses every token of this address for 10 minutes after 20 refused ones.
 - 4: the instance refuses the request: the account or the scope of the token lacks the right, the deck is in the trash, or it asks for its password; for `push`, a token of the scope read, or a folder where the account may not create a deck.
-- 5: for `push`, a draft on the instance that the command did not send, a deck open in the editor, a draft changed since the command read it or since it created the deck, a slug taken on the instance, or a creation that stopped before its access was set.
+- 5: for `pull`, a local file that holds another text; for `push`, a draft on the instance that the command did not send, a deck open in the editor, a draft changed since the command read it or since it created the deck, a slug taken on the instance, or a creation that stopped before its access was set.
 - 6: the instance cannot be reached, redirects, does not know the route, answers with an error, gives an answer the command line does not read, refuses a token over 300 requests in 5 minutes, or does not repeat the digest of the text `push` sent.
 - 70: an internal error of the command line.
 - 130: stopped by Ctrl+C.

@@ -48,6 +48,7 @@ describe('the options of the command line (packages/cli/src/usage.ts)', () => {
       logout: ['instance', 'local'],
       whoami: ['instance'],
       push: ['slug', 'folder', 'dry-run', 'force', 'instance'],
+      pull: ['draft', 'out', 'force', 'instance'],
     })
   })
 
@@ -55,7 +56,7 @@ describe('the options of the command line (packages/cli/src/usage.ts)', () => {
     const options = Object.values(COMMANDS).flatMap(command => Object.entries(command.options) as [string, OptionUsage][])
     expect(options.filter(([name]) => /token|secret|password|key/i.test(name))).toEqual([['token-stdin', expect.objectContaining({ type: 'boolean' })]])
     for (const [name, option] of options)
-      expect(option.type === 'boolean' || ['instance', 'name', 'slug', 'folder'].includes(name), name).toBe(true)
+      expect(option.type === 'boolean' || ['instance', 'name', 'slug', 'folder', 'out'].includes(name), name).toBe(true)
   })
 })
 
@@ -257,6 +258,16 @@ describe('the push command before its first request (packages/cli/src/commands/p
     finally {
       rmSync(folder, { recursive: true })
     }
+  })
+})
+
+describe('the pull command before its first request (packages/cli/src/commands/pull.ts)', () => {
+  it.each([
+    [['atelier.fr'], '“atelier.fr” cannot be the slug'],
+    [['talk', 'Talk'], 'Two files have the slug “Talk”'],
+  ])('stops %j with code 2 before any request', (slugs, named) => {
+    const run = vignettes(['pull', ...slugs, '--instance', 'https://studio.example.test'], { VIGNETTES_TOKEN: 'vgt_made-up-secret-of-the-pull-tests' })
+    expect(run).toMatchObject({ status: EXIT_CODES.usage, stderr: expect.stringContaining(named) })
   })
 })
 

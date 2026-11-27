@@ -135,6 +135,36 @@ export function passwordMessage(deck: DeckContext): string {
   return `${deck.slug} asks for its password, which a token does not carry; open it in the studio.`
 }
 
+/** What `pull` does with a deck. */
+export type PullAction = 'written' | 'identical' | 'local-differs' | 'forbidden' | 'refused' | 'stopped' | 'skipped'
+
+/** The refusal 403 of the draft of a deck: frozen, archived, or shared for reading alone. */
+export function readOnlyDraftMessage(deck: DeckContext): string {
+  return `This account may not edit ${deck.slug}: the deck is frozen or archived, or shared with this account for reading alone.`
+}
+
+/** One sentence per action of the results of `pull`; `draft` names a read of the draft. */
+export function pullActionMessage(action: PullAction, deck: DeckContext & { file: string, draft: boolean }): string {
+  switch (action) {
+    case 'written':
+      return `Wrote ${deck.file} from the ${deck.draft ? 'draft' : 'published version'} of ${deck.slug}.`
+    case 'identical':
+      return `${deck.file} holds the ${deck.draft ? 'draft' : 'published version'} of ${deck.slug} already.`
+    case 'local-differs':
+      return `${deck.file} holds another text than the ${deck.draft ? 'draft' : 'published version'} of ${deck.slug}: commit or copy it, then run the command again with --force, which first copies it beside itself.`
+    case 'forbidden':
+      return deck.draft
+        ? `No draft of ${deck.slug} that this account may edit: the deck does not exist, is in the trash, or is not shared with this account as an editor.`
+        : `No published version of ${deck.slug} that this account may read: the deck does not exist, has no published version, is in the trash, or is not shared with this account.`
+    case 'refused':
+      return `${deck.file} was not written.`
+    case 'stopped':
+      return `The command stopped at ${deck.slug}.`
+    case 'skipped':
+      return `${deck.slug} was not read: the command stopped at an earlier deck.`
+  }
+}
+
 /** One sentence per action of the results of `push`. */
 export function pushActionMessage(action: PushAction, deck: DeckContext): string {
   switch (action) {
@@ -183,6 +213,7 @@ export type CliErrorCode
     | 'unreadable-file'
     | 'not-utf8'
     | 'unwritable-file'
+    | 'pulled-link'
     | 'missing-instance'
     | 'unknown-instance'
     | 'invalid-instance'
@@ -235,6 +266,7 @@ const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'unreadable-file': file => `The file “${file}” cannot be read.`,
   'not-utf8': file => `The file “${file}” is not written in UTF-8: save it in UTF-8, the encoding the studio reads.`,
   'unwritable-file': file => `The command line cannot write the file “${file}”.`,
+  'pulled-link': file => `“${file}” is a symbolic link: the command line writes a pulled deck to a file of the folder alone. Remove the link, or give another folder with --out.`,
   'missing-instance': () => 'Name the instance with --instance <origin or name> or VIGNETTES_INSTANCE, or sign in with vignettes login --instance <origin>.',
   'unknown-instance': name => `No registered instance is named “${name}”: give its origin, such as https://app.vignettes.io, or sign in to it with vignettes login.`,
   'invalid-instance': address => `“${address}” is not an address: write the origin of the instance, such as https://app.vignettes.io.`,

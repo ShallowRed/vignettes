@@ -7,13 +7,14 @@ import manifest from '../package.json' with { type: 'json' }
 import { check } from './commands/check.ts'
 import { login } from './commands/login.ts'
 import { logout } from './commands/logout.ts'
+import { pull } from './commands/pull.ts'
 import { push } from './commands/push.ts'
 import { whoami } from './commands/whoami.ts'
 import { CliError } from './messages.ts'
 import { createOutput, isInteractive, printText } from './output.ts'
 import { commandHelp, COMMANDS, COMMON_OPTIONS, isCommandName, mainHelp } from './usage.ts'
 
-const RUNS: Record<CommandName, CommandRun> = { check, login, logout, whoami, push }
+const RUNS: Record<CommandName, CommandRun> = { check, login, logout, whoami, push, pull }
 
 function parseConfig(options: Record<string, OptionUsage>): ParseArgsOptionsConfig {
   return Object.fromEntries(Object.entries(options).map(([name, { type }]) => [name, { type }]))

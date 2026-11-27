@@ -64,6 +64,16 @@ export const COMMANDS = {
       'instance': INSTANCE_OPTION,
     },
   },
+  pull: {
+    summary: 'Write the published version of decks, or their draft, to <slug>.md files, without their images.',
+    operands: { name: 'slug', required: 1, multiple: true },
+    options: {
+      draft: { type: 'boolean', description: 'Read the draft, the text of an open editor session included; the published version by default.' },
+      out: { type: 'string', value: 'folder', description: 'The folder of the files; the current folder by default.' },
+      force: { type: 'boolean', description: 'Replace a local file that holds another text, after a copy of it beside itself.' },
+      instance: INSTANCE_OPTION,
+    },
+  },
 } as const satisfies Record<string, CommandUsage>
 
 export type CommandName = keyof typeof COMMANDS

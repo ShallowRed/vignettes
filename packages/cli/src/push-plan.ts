@@ -202,11 +202,11 @@ export const ACTION_EXIT_CODES: Record<PushAction, ExitCode> = {
 }
 
 /**
- * The routes of a deck, by their step: the read, the list of the folders for a
- * deck to create, the creation, the second read after it, an upload, the save
- * and the publication.
+ * The routes of a deck, by their step: for `push`, the read, the list of the
+ * folders for a deck to create, the creation, the second read after it, an
+ * upload, the save and the publication; for `pull`, the read of the stored text.
  */
-export type DeckRoute = 'read' | 'projects' | 'create' | 'reread' | 'image' | 'save' | 'publish'
+export type DeckRoute = 'read' | 'projects' | 'create' | 'reread' | 'image' | 'save' | 'publish' | 'markdown'
 
 /** An answer of a route of a deck that is not a success. */
 export type FailedAnswer
