@@ -29,6 +29,7 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'missing-file': EXIT_CODES.usage,
   'unreadable-file': EXIT_CODES.usage,
   'not-utf8': EXIT_CODES.usage,
+  'unwritable-file': EXIT_CODES.usage,
   'missing-instance': EXIT_CODES.usage,
   'unknown-instance': EXIT_CODES.usage,
   'invalid-instance': EXIT_CODES.usage,
@@ -53,6 +54,19 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'instance-unreachable': EXIT_CODES.instance,
   'instance-error': EXIT_CODES.instance,
   'instance-answer': EXIT_CODES.instance,
+  'invalid-slug': EXIT_CODES.usage,
+  'duplicate-slug': EXIT_CODES.usage,
+  'slug-with-files': EXIT_CODES.usage,
+  'folder-differs': EXIT_CODES.usage,
+  'too-many-requests-planned': EXIT_CODES.usage,
+  'read-scope': EXIT_CODES.permission,
+  'folder-required': EXIT_CODES.usage,
+  'folder-refused': EXIT_CODES.permission,
+  'replaced-copy-differs': EXIT_CODES.usage,
+  'too-many-token-requests': EXIT_CODES.instance,
+  'too-many-invalid-tokens': EXIT_CODES.authentication,
+  'digest-unchecked': EXIT_CODES.instance,
+  'media-name-differs': EXIT_CODES.instance,
   'internal': EXIT_CODES.internal,
   'interrupted': EXIT_CODES.interrupted,
 }
@@ -113,7 +127,8 @@ export interface Output {
 export function createOutput(options: { cli: string, json: boolean, command: CommandName | null }): Output {
   const { cli, json, command } = options
   let instance: string | null = null
-  const writeDocument = (document: ResultDocument | ErrorDocument) => process.stdout.write(`${JSON.stringify(document)}\n`)
+  // JSON.stringify escapes the C0 characters alone: the document escapes DEL and the C1 ones too.
+  const writeDocument = (document: ResultDocument | ErrorDocument) => process.stdout.write(`${JSON.stringify(document).replace(/[\u007F-\u009F]/g, character => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`)}\n`)
   const fail = (error: unknown) => {
     const { code, message } = asCliError(error)
     if (json)

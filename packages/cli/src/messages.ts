@@ -1,4 +1,5 @@
 import type { ComponentAttributeIssue, DeckFileIssueReason, DeckProblem, FrontmatterProblem, LayoutMention } from '@vignettes/core/deck'
+import type { PushAction, PushProblemCode } from './push-plan.ts'
 import { inLanguage, LEGACY_FORMS, MAX_DECK_LENGTH, MAX_JSON_BODY_BYTES } from '@vignettes/core/deck'
 import { IMAGE_FORMAT_NAMES, MAX_MEDIA_MEGABYTES } from '@vignettes/core/media'
 
@@ -98,6 +99,78 @@ export function problemMessage(problem: DeckProblem): string {
   }
 }
 
+/** What the messages of `push` and `pull` name: the deck, its address in the studio, the instance and the version of the command line. */
+export interface DeckContext {
+  slug: string
+  url: string
+  origin: string
+  cli: string
+}
+
+/** One sentence per code of `PUSH_PROBLEM_CODES`; `value` is the path, the message of the instance or the version the problem names. */
+export function pushProblemMessage(code: PushProblemCode, value: string, deck: DeckContext): string {
+  switch (code) {
+    case 'image-refused':
+      return `The instance refused the image ${value}. Command line ${deck.cli}.`
+    case 'instance-refused':
+      return `The instance refused ${deck.slug}: ${value}. Command line ${deck.cli}: update it before you report this refusal in an issue of https://github.com/ShallowRed/vignettes/issues.`
+    case 'uploaded-image-unknown':
+      return `${value} is an image uploaded to an instance, and no text of ${deck.slug} on ${deck.origin} cites it: it may come from another instance, which this one does not serve.`
+    case 'folder-ignored':
+      return `--folder leaves the folder of ${deck.slug} as it is, since the deck exists: move it in the studio.`
+    case 'draft-online':
+      return `The draft of ${deck.slug} on the instance differs from its published version, which is this text: open ${deck.url} to publish or discard it.`
+    case 'published-replaced':
+      return `The publication replaces the version ${value} of ${deck.slug}, which held another text; the history of the studio keeps it.`
+  }
+}
+
+/** The refusal 413 of the request of a deck, with the message of the instance. */
+export function bodyTooLargeMessage(deck: DeckContext, detail: string): string {
+  return `The request that sends ${deck.slug} weighs more than the instance reads: ${detail}.`
+}
+
+/** The refusal of a deck that asks for its password. */
+export function passwordMessage(deck: DeckContext): string {
+  return `${deck.slug} asks for its password, which a token does not carry; open it in the studio.`
+}
+
+/** One sentence per action of the results of `push`. */
+export function pushActionMessage(action: PushAction, deck: DeckContext): string {
+  switch (action) {
+    case 'create':
+      return `${deck.slug} would be created, then published.`
+    case 'publish':
+      return `${deck.slug} would be published.`
+    case 'created':
+      return `Created and published ${deck.slug}: ${deck.url}`
+    case 'published':
+      return `Published ${deck.slug}: ${deck.url}`
+    case 'identical':
+      return `The published version of ${deck.slug} is this text already: ${deck.url}`
+    case 'unpublished-draft':
+      return `The draft of ${deck.slug} on the instance holds changes this command did not send: open ${deck.url} in the studio, or run the command again with --force, which first writes a copy of that draft beside the file.`
+    case 'creation-unfinished':
+      return `The creation of ${deck.slug} stopped on the instance before its access was set; open ${deck.url} in the studio and set its access there, or remove the access keys from the file and run the command again.`
+    case 'live-session':
+      return `${deck.slug} is open in the editor of the studio, where the changes go through the session: wait until its editors leave it, then run the command again.`
+    case 'conflict':
+      return `Someone changed the draft of ${deck.slug} since this command read it: run the command again.`
+    case 'exists':
+      return `The slug ${deck.slug} is taken on the instance: the deck is in the trash, is not shared with this account, or has an empty draft. Open ${deck.url} in the studio, or ask an owner.`
+    case 'digest-unchecked':
+      return new CliError('digest-unchecked', deck.origin, deck.slug).message
+    case 'forbidden':
+      return `This account may not edit ${deck.slug} on the instance, or the deck is in the trash.`
+    case 'refused':
+      return `${deck.slug} was not sent: fix its errors, then run the command again. Command line ${deck.cli}.`
+    case 'stopped':
+      return `The command stopped at ${deck.slug}.`
+    case 'skipped':
+      return `${deck.slug} was not sent: the command stopped at an earlier deck.`
+  }
+}
+
 export type CliErrorCode
   = | 'missing-command'
     | 'unknown-command'
@@ -109,6 +182,7 @@ export type CliErrorCode
     | 'missing-file'
     | 'unreadable-file'
     | 'not-utf8'
+    | 'unwritable-file'
     | 'missing-instance'
     | 'unknown-instance'
     | 'invalid-instance'
@@ -133,6 +207,19 @@ export type CliErrorCode
     | 'instance-unreachable'
     | 'instance-error'
     | 'instance-answer'
+    | 'invalid-slug'
+    | 'duplicate-slug'
+    | 'slug-with-files'
+    | 'folder-differs'
+    | 'too-many-requests-planned'
+    | 'read-scope'
+    | 'folder-required'
+    | 'folder-refused'
+    | 'replaced-copy-differs'
+    | 'too-many-token-requests'
+    | 'too-many-invalid-tokens'
+    | 'digest-unchecked'
+    | 'media-name-differs'
     | 'internal'
     | 'interrupted'
 
@@ -147,6 +234,7 @@ const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'missing-file': file => `The file “${file}” does not exist.`,
   'unreadable-file': file => `The file “${file}” cannot be read.`,
   'not-utf8': file => `The file “${file}” is not written in UTF-8: save it in UTF-8, the encoding the studio reads.`,
+  'unwritable-file': file => `The command line cannot write the file “${file}”.`,
   'missing-instance': () => 'Name the instance with --instance <origin or name> or VIGNETTES_INSTANCE, or sign in with vignettes login --instance <origin>.',
   'unknown-instance': name => `No registered instance is named “${name}”: give its origin, such as https://app.vignettes.io, or sign in to it with vignettes login.`,
   'invalid-instance': address => `“${address}” is not an address: write the origin of the instance, such as https://app.vignettes.io.`,
@@ -171,6 +259,19 @@ const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'instance-unreachable': (origin, code) => `The instance “${origin}” cannot be reached (${code}).`,
   'instance-error': (origin, status) => `The instance “${origin}” answered with the status ${status}.`,
   'instance-answer': (origin, path) => `The answer of “${origin}” to ${path} has a form the command line does not read: the instance may run another version of Vignettes.`,
+  'invalid-slug': (file, slug) => `“${slug}” cannot be the slug of ${file}: a slug holds letters, digits, dashes and underscores, and starts with a letter or a digit. Rename the file, or give --slug <slug> for a single file.`,
+  'duplicate-slug': slug => `Two files have the slug “${slug}”, letter case aside: push them under different names.`,
+  'slug-with-files': () => '--slug names the deck of a single file: give one file with it.',
+  'folder-differs': (file, folder, project) => `--folder names “${folder}” and the front matter of ${file} names “${project}”: give one folder.`,
+  'too-many-requests-planned': (count, limit) => `This command would send up to ${count} requests, and an instance accepts ${limit} requests of a token in 5 minutes: push fewer decks at a time.`,
+  'read-scope': origin => `The token sent to “${origin}” has the scope read, which publishes nothing: create a token of the scope write in the studio, or run the command with --dry-run.`,
+  'folder-required': slug => `${slug} does not exist on the instance, and an account without a global role creates a deck in a folder: give --folder <folder>, or the project key of the front matter.`,
+  'folder-refused': (origin, folder) => `The instance “${origin}” has no folder “${folder}” in which this account may create a deck.`,
+  'replaced-copy-differs': file => `${file} exists and holds another text than the draft this command would replace: move it, then run the command again.`,
+  'too-many-token-requests': () => 'This token sent more than 300 requests in 5 minutes: wait 5 minutes, then run the same command again; it resumes where it stopped.',
+  'too-many-invalid-tokens': () => 'This address sent 20 refused tokens in 10 minutes, and the instance refuses every token from it for 10 minutes: check VIGNETTES_TOKEN or run vignettes login, then wait 10 minutes.',
+  'digest-unchecked': (origin, slug) => `The instance ${origin} did not confirm the digest of the text this command sent, so it may run a version without this check: update the instance before pushing. The draft of ${slug} may hold the sent text, and its published version may differ from it; run vignettes pull ${slug} to read the published version, and vignettes pull ${slug} --draft to read the draft.`,
+  'media-name-differs': () => 'The instance names images differently from this version of the command line; update it.',
   'internal': detail => `Internal error of the command line: ${detail}`,
   'interrupted': () => 'Stopped by Ctrl+C.',
 }

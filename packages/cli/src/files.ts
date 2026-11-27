@@ -1,8 +1,9 @@
 import type { ImageType } from '@vignettes/core/media'
+import { Buffer } from 'node:buffer'
 import { constants } from 'node:fs'
-import { open, readFile, realpath, stat } from 'node:fs/promises'
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
-import { acceptedImageType, MAX_MEDIA_BYTES, sniffImageType } from '@vignettes/core/media'
+import { open, readFile, realpath, stat, writeFile } from 'node:fs/promises'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { MAX_MEDIA_BYTES, sniffImageType } from '@vignettes/core/media'
 import { CliError } from './messages.ts'
 
 const errorCode = (error: unknown) => (error as { code?: string }).code ?? ''
@@ -80,6 +81,7 @@ export async function readImage(folder: string, path: string): Promise<ReadImage
   catch (error) {
     return errorCode(error) === 'ELOOP' ? { state: 'outside' } : readFailure(error)
   }
+  let data: Uint8Array
   try {
     const opened = await handle.stat()
     const again = await realpath(resolved).catch(() => undefined)
@@ -90,9 +92,7 @@ export async function readImage(folder: string, path: string): Promise<ReadImage
       return { state: 'unreadable' }
     if (opened.size > MAX_MEDIA_BYTES)
       return { state: 'read', bytes: opened.size }
-    const data = new Uint8Array(await handle.readFile())
-    const type = acceptedImageType(sniffImageType(data) ?? '', data)
-    return { state: 'read', bytes: data.length, ...(type && { type }), data }
+    data = new Uint8Array(await handle.readFile())
   }
   catch (error) {
     return readFailure(error)
@@ -100,4 +100,29 @@ export async function readImage(folder: string, path: string): Promise<ReadImage
   finally {
     await handle.close()
   }
+  const type = sniffImageType(data)
+  return { state: 'read', bytes: data.length, ...(type && { type }), data }
+}
+
+/**
+ * Writes the draft that `push --force` replaces beside the deck file, as
+ * `<slug>.md.replaced-<stamp>`, a name a list of `*.md` leaves out, with
+ * `O_EXCL`. A file of that name that holds the same bytes is the copy of an
+ * earlier run under the same stamp; one that holds other bytes stops the deck.
+ */
+export async function writeReplacedCopy(folder: string, slug: string, stamp: number | null, draft: string): Promise<string> {
+  const path = join(folder, `${slug}.md.replaced-${stamp ?? 'none'}`)
+  const bytes = new TextEncoder().encode(draft)
+  try {
+    await writeFile(path, bytes, { flag: 'wx', mode: 0o600 })
+    return path
+  }
+  catch (error) {
+    if (errorCode(error) !== 'EEXIST')
+      throw new CliError('unwritable-file', path)
+  }
+  const kept = await readFile(path).catch(() => undefined)
+  if (!kept || !Buffer.from(kept).equals(Buffer.from(bytes)))
+    throw new CliError('replaced-copy-differs', path)
+  return path
 }

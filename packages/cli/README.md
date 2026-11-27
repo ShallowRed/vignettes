@@ -1,6 +1,6 @@
 # @vignettes/cli
 
-The command line of Vignettes. `vignettes check` reads deck files and reports the problems the studio reports in its editor, without network and without writing a file. `vignettes login`, `whoami` and `logout` sign in to an instance with a personal token, show the account of the token and revoke it.
+The command line of Vignettes. `vignettes check` reads deck files and reports the problems the studio reports in its editor, without network and without writing a file. `vignettes login`, `whoami` and `logout` sign in to an instance with a personal token, show the account of the token and revoke it. `vignettes push` sends decks with their local images to an instance and publishes them.
 
 ```bash
 npm install --global @vignettes/cli
@@ -71,6 +71,15 @@ With `--json`, the standard output holds one JSON document, and the columns coun
 - `deck-empty` and `deck-too-long`, errors: an empty deck, or a deck of more than 1,000,000 characters, which an instance refuses.
 - `deck-body-too-large`, error: a deck whose request to an instance would weigh more than 2 MiB.
 
+`push` gives these codes too, which come from the instance or from its options:
+
+- `image-refused`, error: the instance refused a local image, with its message and its reason.
+- `instance-refused`, error: the instance refused the request of a deck, with its message and the version of the command line.
+- `uploaded-image-unknown`, warning: the file cites an image uploaded to an instance, `/media/<name>`, that no text of the deck on this instance cites: the image may come from another instance.
+- `folder-ignored`, warning: `--folder` on a deck that exists, whose folder the command leaves as it is.
+- `draft-online`, warning: the published version is the text sent, and the draft on the instance differs from it.
+- `published-replaced`, warning: the publication replaces a published version that held another text, which the history of the studio keeps.
+
 ## Signing in to an instance
 
 ```bash
@@ -89,14 +98,32 @@ Each command reads the instance from `--instance`, an origin or the name of a re
 
 With `--json`, with the `CI` variable set or without a terminal on the standard input, the commands ask no question: `login` then reads the token with `--token-stdin` only. The `instance` of the JSON document gives the origin of the instance.
 
+## Publishing a deck
+
+```bash
+vignettes push talk.md --dry-run
+vignettes push talk.md
+```
+
+`push` reads every file with its local images and checks them as `check` does. When a file has an error, it sends nothing and exits with 1. It then checks the token with the instance, reads the deck on the instance, and creates it when it does not exist, uploads each local image, saves the text as the draft and publishes it. The slug of a deck is the name of its file without `.md`, or `--slug` for a single file. A deck that the command creates goes into the folder that `--folder` or the `project` key of the front matter names, and stays private: you set its access in the studio. An account without a global role creates a deck in a folder where it has the editor grant. The text sent is the file where each local image is replaced by the address the instance gives it, `/media/<name>`; the file keeps its paths. `push` uploads each local image at each run, and an instance stores an image once under its name.
+
+The command publishes a deck whose draft on the instance is its text, the draft of its creation or the published version. It stops on a draft that holds changes someone made in the studio, with the code 5: open the deck in the studio, or run the command again with `--force`, which first writes the replaced draft beside the file, as `<slug>.md.replaced-<stamp>`. That copy holds the draft of another person: do not commit it, and add the line `*.md.replaced-*` to the `.gitignore` of the repository of the decks. A deck open in the editor of the studio, or a draft saved by someone else between the read and the save, stops the deck with the code 5, and the command can run again. Each save and each publication carries the digest of the text it read or sends, and the instance refuses it when the draft holds another text. An instance that does not repeat that digest runs a version without the check: the command stops with the code 6, and the message names `vignettes pull` to read what the instance holds. Update the instance before pushing.
+
+The decks go one after the other. A refusal of a deck, codes 1, 4 and 5, lets the next decks go; a refusal of the token or a failure of the instance, codes 3 and 6, stops the command, and the next decks are `skipped`. The command counts the requests it may send before the first one and stops above 300, the requests of a token an instance accepts in 5 minutes. It retries nothing: after a stop, run the same command again, and it resumes where it stopped.
+
+`--dry-run` sends the reads alone. Each result of the JSON document gives `file`, `slug`, `action`, `url`, the address of the deck in the studio, `message`, `problems` and `warnings`, and `files`, the local images the command sent with the name the instance gives them, a line each in the text output. With `--dry-run`, `files` names the images the command would upload, and `writes` the writes it would send. The actions are `created`, `published`, `identical`, `unpublished-draft`, `creation-unfinished`, `live-session`, `conflict`, `exists`, `digest-unchecked`, `forbidden`, `refused`, `stopped` and `skipped`, and `create` and `publish` under `--dry-run`.
+
+A rule of the command line can refuse a deck that a newer version accepts: update the command line before you report a refusal in an issue of https://github.com/ShallowRed/vignettes/issues. During a deployment that runs two containers, the instance sees the editor sessions of one container: a deck open in the editor on the other one is published with the text sent, and the session then saves its own text as the draft.
+
 ## Exit codes
 
 - 0: success; for `check`, no file has an error.
-- 1: a file has an error.
-- 2: a usage error, such as an unknown option or command, a missing file, a file that cannot be read or is not UTF-8, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
-- 3: the instance refuses the token, which is unknown, revoked or expired.
-- 4: the instance refuses the request: the account or the scope of the token lacks the right.
-- 6: the instance cannot be reached, redirects, does not know the route, answers with an error, or gives an answer the command line does not read.
+- 1: a file has an error; for `push`, the instance also refused a deck or an image.
+- 2: a usage error, such as an unknown option or command, a missing file, a file that cannot be read or is not UTF-8, a slug that `push` refuses, a folder that differs from the front matter, a deck to create without a folder for an account without a global role, a copy of a replaced draft that holds other bytes, more than 300 requests, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
+- 3: the instance refuses the token, which is unknown, revoked or expired, or refuses every token of this address for 10 minutes after 20 refused ones.
+- 4: the instance refuses the request: the account or the scope of the token lacks the right, the deck is in the trash, or it asks for its password; for `push`, a token of the scope read, or a folder where the account may not create a deck.
+- 5: for `push`, a draft on the instance that the command did not send, a deck open in the editor, a draft changed since the command read it or since it created the deck, a slug taken on the instance, or a creation that stopped before its access was set.
+- 6: the instance cannot be reached, redirects, does not know the route, answers with an error, gives an answer the command line does not read, refuses a token over 300 requests in 5 minutes, or does not repeat the digest of the text `push` sent.
 - 70: an internal error of the command line.
 - 130: stopped by Ctrl+C.
 

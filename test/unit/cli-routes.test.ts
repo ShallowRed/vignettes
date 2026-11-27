@@ -4,12 +4,15 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { Readable } from 'node:stream'
+import { textDigest } from '@vignettes/core/digest'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TOKEN_ROUTES } from '../../layers/studio/server/utils/personal-token'
+import { TOO_MANY_INVALID_TOKENS as SERVER_INVALID_TOKENS, TOO_MANY_TOKEN_REQUESTS as SERVER_TOKEN_REQUESTS, TOKEN_ROUTES } from '../../layers/studio/server/utils/personal-token'
 import { resetRateLimits } from '../../layers/studio/server/utils/rate-limit'
+import { useProjectStore } from '../../layers/studio/server/utils/sources'
 import manifest from '../../packages/cli/package.json' with { type: 'json' }
-import { CURRENT_TOKEN, REVOKE_TOKEN, ROUTES } from '../../packages/cli/src/api.ts'
+import { CREATE_DECK, CURRENT_TOKEN, DECK_DRAFT, PROJECTS, PUBLISH_DECK, REVOKE_TOKEN, ROUTES, SAVE_DRAFT, UPLOAD_MEDIA } from '../../packages/cli/src/api.ts'
 import { EXIT_CODES } from '../../packages/cli/src/output.ts'
+import { TOO_MANY_INVALID_TOKENS, TOO_MANY_TOKEN_REQUESTS } from '../../packages/cli/src/push-plan.ts'
 import { runCommand } from './helpers/cli-run'
 import { fakeKeyring } from './helpers/keyring'
 import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpers/server-db'
@@ -20,12 +23,23 @@ import { anon, asUser, seedAccount, setupServerDb, stubH3Globals } from './helpe
 stubH3Globals()
 setupServerDb()
 
+vi.mock('../../layers/studio/server/utils/media-store', async importOriginal => ({
+  ...await importOriginal<typeof import('../../layers/studio/server/utils/media-store')>(),
+  storeMedia: vi.fn(),
+}))
+
 const prompts = vi.hoisted(() => ({ cancel: Symbol('cancel'), password: vi.fn() }))
 vi.mock('@clack/prompts', () => ({ password: prompts.password, isCancel: (value: unknown) => value === prompts.cancel }))
 
 const { default: currentToken } = await import('../../layers/studio/server/api/tokens/current.get')
 const { default: revokeToken } = await import('../../layers/studio/server/api/tokens/current.delete')
 const { default: createToken } = await import('../../layers/studio/server/api/tokens/index.post')
+const { default: listProjects } = await import('../../layers/studio/server/api/projects.get')
+const { default: createDeck } = await import('../../layers/studio/server/api/presentations.post')
+const { default: loadDeck } = await import('../../layers/studio/server/api/presentations/[slug].get')
+const { default: saveDraft } = await import('../../layers/studio/server/api/presentations/[slug].put')
+const { default: publishDeck } = await import('../../layers/studio/server/api/presentations/[slug]/publish.post')
+const { default: uploadMedia } = await import('../../layers/studio/server/api/media.post')
 
 const ORIGIN = 'https://studio.example.test'
 const HANDLERS: Record<string, (event: unknown) => Promise<unknown>> = {
@@ -86,6 +100,32 @@ describe('the routes of the command line (packages/cli/src/api.ts)', () => {
   it('calls the routes of TOKEN_ROUTES only', () => {
     for (const route of ROUTES)
       expect(TOKEN_ROUTES).toContainEqual(expect.objectContaining({ method: route.method, path: route.path }))
+  })
+
+  it('reads the answers of the handlers of the routes of push', async () => {
+    const as = (over: Record<string, unknown>) => asUser(1, 'ann', over)
+    const raw = '---\ntitle: Talk\n---\n\n# One\n'
+    const read = (answer: unknown, route: typeof ROUTES[number]) => {
+      const more = Array.isArray(answer) ? answer.map(item => ({ ...item, more: 1 })) : { ...(answer as object), more: 1 }
+      expect(route.answer.parse(answer)).toEqual(route.answer.parse(more))
+      return route.answer.parse(answer)
+    }
+    expect(read(await createDeck(as({ method: 'POST', body: { slug: 'talk', raw } })), CREATE_DECK)).toEqual({ slug: 'talk' })
+    const draft = read(await loadDeck(as({ params: { slug: 'talk' }, query: { draft: '' } })), DECK_DRAFT)
+    expect(draft).toMatchObject({ from: 'draft', publishedRaw: null, publishedVersion: null })
+    const png = Uint8Array.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0])
+    expect(read(await uploadMedia(as({ method: 'POST', query: { deck: 'talk' }, parts: [{ name: 'file', filename: 'a.png', type: 'image/png', data: png }] })), UPLOAD_MEDIA).src).toMatch(/^\/media\/[0-9a-f]{32}\.png$/)
+    const loaded = await textDigest((draft as { content: string }).content)
+    expect(read(await saveDraft(as({ params: { slug: 'talk' }, body: { raw, stamp: (draft as { stamp: number }).stamp, draftDigest: loaded } })), SAVE_DRAFT)).toMatchObject({ draftDigest: loaded })
+    const digest = await textDigest(raw)
+    expect(read(await publishDeck(as({ params: { slug: 'talk' }, body: { digest } })), PUBLISH_DECK)).toMatchObject({ ok: true, digest })
+    await useProjectStore().create({ title: 'Command line', slug: 'cli' })
+    expect(read(await listProjects(as({})), PROJECTS)).toEqual([{ slug: 'cli' }])
+  })
+
+  it('copies the two 429 messages of personal-token.ts', () => {
+    expect(TOO_MANY_TOKEN_REQUESTS).toBe(SERVER_TOKEN_REQUESTS)
+    expect(TOO_MANY_INVALID_TOKENS).toBe(SERVER_INVALID_TOKENS)
   })
 
   it('reads the answers of the two handlers of /api/tokens/current', async () => {

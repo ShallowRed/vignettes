@@ -53,6 +53,17 @@ export const COMMANDS = {
     summary: 'Show the instance, the account and the token the command line uses.',
     options: { instance: INSTANCE_OPTION },
   },
+  push: {
+    summary: 'Check decks, then send them with their local images to an instance and publish them.',
+    operands: { name: 'file', required: 1, multiple: true },
+    options: {
+      'slug': { type: 'string', value: 'slug', description: 'The slug of the deck of a single file; the name of the file without .md by default.' },
+      'folder': { type: 'string', value: 'folder', description: 'The folder of a deck the command creates; the project key of the front matter by default.' },
+      'dry-run': { type: 'boolean', description: 'Read the instance and show what the command would write, without writing.' },
+      'force': { type: 'boolean', description: 'Publish over a draft this command did not send, after a copy of that draft beside the file.' },
+      'instance': INSTANCE_OPTION,
+    },
+  },
 } as const satisfies Record<string, CommandUsage>
 
 export type CommandName = keyof typeof COMMANDS
