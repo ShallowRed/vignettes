@@ -228,8 +228,10 @@ const EDITOR_SENTENCES: [DeckProblem, string, Record<string, string>][] = [
 const STUDIO_HELP_KEYS = ['attributeUnknown', 'layoutUnknownAttribute', 'layoutInvalidValue']
 
 // The editor writes no sentence of its own for these: the earlier forms carry
-// their description in the core, and the editor finds the other two itself.
-const CLI_SENTENCES = ['legacy', 'unknown-component', 'unknown-theme']
+// their description in the core, the editor finds the unknown components and
+// themes itself, and the problems of the files of a deck are found by the
+// command line alone.
+const CLI_SENTENCES = ['deck-body-too-large', 'deck-empty', 'deck-too-long', 'image-missing', 'image-not-replaced', 'image-outside-deck', 'image-source-other', 'image-too-large', 'image-type', 'image-unplaced', 'image-unread', 'image-unreadable', 'legacy', 'unknown-component', 'unknown-theme']
 
 describe('the published package (packages/cli/package.json)', () => {
   it('publishes the built file, the README and the licence, without a dependency on a package of the workspace', () => {

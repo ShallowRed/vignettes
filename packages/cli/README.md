@@ -59,6 +59,17 @@ With `--json`, the standard output holds one JSON document, and the columns coun
 - `legacy`, info: a form of an earlier version of the format, which the studio converts.
 - `unknown-component`, warning: a component absent from the components built into the command line; the studio shows its content without formatting.
 - `unknown-theme`, info: a theme absent from the themes built into the command line, which an instance may publish.
+- `image-missing`, error: no file at the path of a local image, read from the folder of the deck.
+- `image-outside-deck`, error: a local image whose path leads out of the folder of the deck and of its subfolders, symbolic links included; the command line reads none of its bytes.
+- `image-unreadable`, error: a local image that the command line cannot read: a folder or another entry that is not a file, a file you have no right to read, or a path the system refuses.
+- `image-type`, error: a local image whose bytes show none of the formats an instance accepts: PNG, JPG, WEBP, GIF, SVG or AVIF.
+- `image-too-large`, error: a local image of more than 10 MB.
+- `image-unplaced`, error: the path of a local image in the front matter written otherwise than in block style on the line of its key, which the command line cannot replace.
+- `image-source-other`, warning: an image address that is neither a path relative to the deck, nor a path of the site, nor an `http://`, `https://` or `data:image` address.
+- `image-unread`, warning: a relative path of an image written in HTML, in a markdown reference definition, or as the address of a page, which the command line leaves as written ([issue 22](https://github.com/ShallowRed/vignettes/issues/22)).
+- `image-not-replaced`, warning: a relative path of an image that stays in the text sent to an instance, in a form the command line does not read.
+- `deck-empty` and `deck-too-long`, errors: an empty deck, or a deck of more than 1,000,000 characters, which an instance refuses.
+- `deck-body-too-large`, error: a deck whose request to an instance would weigh more than 2 MiB.
 
 ## Signing in to an instance
 
