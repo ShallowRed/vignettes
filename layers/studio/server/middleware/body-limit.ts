@@ -1,10 +1,6 @@
-import { MAX_MEDIA_BYTES } from '#shared/storage/media-s3'
+import { MAX_JSON_BODY_BYTES } from '@vignettes/core/deck'
+import { MAX_MEDIA_BYTES } from '@vignettes/core/media'
 
-/**
- * The largest JSON body a route reads: thirty times a deck of 60 KB, and
- * `content:push` sends the decks it names in one request.
- */
-const MAX_JSON_BYTES = 2 * 1024 * 1024
 /** An image at the upload limit, with the multipart framing around it. */
 const MAX_UPLOAD_BYTES = MAX_MEDIA_BYTES + 1024 * 1024
 
@@ -26,7 +22,7 @@ export default defineEventHandler((event) => {
       throw createError({ statusCode: 411, statusMessage: 'A request body must declare its Content-Length' })
     return
   }
-  const limit = event.path.startsWith('/api/media') ? MAX_UPLOAD_BYTES : MAX_JSON_BYTES
+  const limit = event.path.startsWith('/api/media') ? MAX_UPLOAD_BYTES : MAX_JSON_BODY_BYTES
   if (Number(declared) > limit)
     throw createError({ statusCode: 413, statusMessage: `The request body weighs more than the ${limit / 2 ** 20} MB limit` })
 })

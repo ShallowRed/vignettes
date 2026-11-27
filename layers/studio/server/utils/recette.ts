@@ -1,11 +1,13 @@
+import type { ImageType } from '@vignettes/core/media'
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
 import { RECETTE_INVITED_HANDLE, RECETTE_PASSWORD, RECETTE_PERSONAS, RECETTE_PREFIX } from '#shared/recette/personas'
+import { mediaName } from '@vignettes/core/media'
 import { getActor } from './actor'
 import { useDraftStore } from './collab'
 import { serverConfig } from './config'
-import { mediaNameOf, storeMedia } from './media-store'
+import { storeMedia } from './media-store'
 import { hashAccessPassword } from './password'
 import { opened, sealed } from './seal'
 import { useDbContent, useDeckMeta, useMediaIndex, usePermissionStore, useProjectPermissionStore, useProjectStore } from './sources'
@@ -118,20 +120,21 @@ const SEED_DECKS: SeedDeck[] = [
   { slug: `${RECETTE_PREFIX}corbeille`, title: 'Recette · Corbeille', status: 'private', project: RECETTE_FOLDERS.private, theme: 'minimal', trashed: true, note: 'À la corbeille : 404 partout, restaurable par un rôle privilégié.' },
 ]
 
-const IMAGE_MIME = 'image/svg+xml'
+const IMAGE_MIME: ImageType = 'image/svg+xml'
 
 /** The image seeded into a deck: its title on a colored ground, so each deck has its own file. */
-function imageOf(deck: SeedDeck): { name: string, data: Buffer } {
+async function imageOf(deck: SeedDeck): Promise<{ name: string, data: Buffer }> {
   const data = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240"><rect width="640" height="240" fill="${deck.status === 'public' ? '#18753c' : '#000091'}"/><text x="320" y="130" text-anchor="middle" font-family="sans-serif" font-size="32" fill="#fff">${deck.title}</text></svg>`)
-  return { name: mediaNameOf(data, IMAGE_MIME)!, data }
+  return { name: await mediaName(data, IMAGE_MIME), data }
 }
 
 /** The `/media/...` address of the image seeded into a deck, by deck slug. */
-export function recetteImages(): Record<string, string> {
-  return Object.fromEntries(SEED_DECKS.filter(deck => deck.image).map(deck => [deck.slug, `/media/${imageOf(deck).name}`]))
+export async function recetteImages(): Promise<Record<string, string>> {
+  const decks = SEED_DECKS.filter(deck => deck.image)
+  return Object.fromEntries(await Promise.all(decks.map(async deck => [deck.slug, `/media/${(await imageOf(deck)).name}`])))
 }
 
-function markdownFor(deck: SeedDeck): string {
+async function markdownFor(deck: SeedDeck): Promise<string> {
   const lines = [
     '---',
     `title: "${deck.title}"`,
@@ -167,7 +170,7 @@ function markdownFor(deck: SeedDeck): string {
     '}',
     '```',
     '',
-    ...(deck.image ? ['## Une image téléversée', '', `![${deck.title}](/media/${imageOf(deck).name})`, ''] : []),
+    ...(deck.image ? ['## Une image téléversée', '', `![${deck.title}](/media/${(await imageOf(deck)).name})`, ''] : []),
   ]
   return lines.join('\n')
 }
@@ -196,8 +199,8 @@ export async function seedRecette(): Promise<SeedSummary> {
 
   const meta = useDeckMeta()
   for (const deck of SEED_DECKS) {
-    const raw = markdownFor(deck)
-    const image = deck.image ? imageOf(deck) : null
+    const raw = await markdownFor(deck)
+    const image = deck.image ? await imageOf(deck) : null
     if (image)
       await storeMedia(image.name, image.data, IMAGE_MIME)
     if (deck.draftOnly) {

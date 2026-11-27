@@ -1,6 +1,6 @@
 /**
  * Save a deck's markdown as its draft.
- * PUT /api/presentations/:slug   body: { raw, stamp?, publishedVersion? }
+ * PUT /api/presentations/:slug   body: { raw, stamp?, publishedVersion?, draftDigest? }
  *
  * Saving and publishing are distinct acts: this writes the text of the draft in
  * its Yjs lineage (`writeDraftText`); `POST /:slug/publish` turns the draft into
@@ -9,11 +9,17 @@
  * refused (409, `data.conflict`), and their draft stays. A save that loaded no
  * draft also carries the `publishedVersion` it loaded: an editor opened
  * meanwhile stores the published text as the draft, which the save may replace
- * while that version is still the one served. Each save also leaves a snapshot
- * in the history.
+ * while that version is still the one served. A save may also carry the
+ * `draftDigest` of the draft it loaded (`textDigest`, null = no draft then),
+ * which catches a write the stamp, kept to the second, misses: it is refused
+ * (409, `data.conflict`) when the stored draft holds another text, except for
+ * a save that loaded no draft facing the published version it loaded, as for
+ * the stamp; the answer repeats the digest it compared. Each save also leaves
+ * a snapshot in the history.
  */
 
 import { DeckWriteError, prepareDeckWrite } from '@vignettes/core/deck'
+import { isDigest, textDigest } from '@vignettes/core/digest'
 import { assertCanEditDeck } from '../../utils/access'
 import { currentDraftText, hasRoom, recordDraftSnapshot, useDraftStore, writeDraftText } from '../../utils/collab'
 import { useDbContent } from '../../utils/sources'
@@ -42,6 +48,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Body must be { raw: string }' })
   }
 
+  const loadedDigest = body.draftDigest
+  if (loadedDigest !== undefined && loadedDigest !== null && !isDigest(loadedDigest)) {
+    throw createError({ statusCode: 400, statusMessage: 'draftDigest must be null or the SHA-256 of the draft, in lowercase hexadecimal' })
+  }
+
   // `stamp` is what the client loaded (null = no draft then). Undefined means a
   // client that does not participate in the check (kept working).
   const base = body?.stamp
@@ -56,6 +67,18 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  if (loadedDigest !== undefined) {
+    const stored = await currentDraftText(slug)
+    const storedDigest = stored === null ? null : await textDigest(stored)
+    if (storedDigest !== loadedDigest && !(loadedDigest === null && await holdsPublishedText(slug, null, body.publishedVersion))) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'This draft was saved by someone else since you opened it',
+        data: { conflict: true },
+      })
+    }
+  }
+
   try {
     const prepared = prepareDeckWrite({ slug, raw })
     await writeDraftText(prepared.slug, prepared.raw, editor.login)
@@ -66,6 +89,7 @@ export default defineEventHandler(async (event) => {
       key: `draft:${prepared.slug}`,
       bytes: new TextEncoder().encode(prepared.raw).length,
       stamp: await drafts.stamp(prepared.slug),
+      ...(loadedDigest === undefined ? {} : { draftDigest: loadedDigest as string | null }),
     }
   }
   catch (error) {

@@ -96,6 +96,12 @@ export interface PreparedDeckWrite {
 /** The longest text of a deck, in UTF-16 code units: twenty decks of 50 KB. */
 export const MAX_DECK_LENGTH = 1_000_000
 
+/**
+ * The largest JSON body a route of the studio reads, in bytes: thirty times a
+ * deck of 60 KB, and `content:push` sends the decks it names in one request.
+ */
+export const MAX_JSON_BODY_BYTES = 2 * 1024 * 1024
+
 /** A write that `prepareDeckWrite` refuses; the message names the reason. */
 export class DeckWriteError extends Error {}
 

@@ -1,4 +1,4 @@
-// Upload names are `<hash>.<ext>` (see `media-s3.ts`).
+// Upload names are `<hash>.<ext>` (see `mediaName` of `@vignettes/core/media`).
 const UPLOAD_REFERENCE = /\/media\/([a-z0-9]+\.[a-z0-9]+)/gi
 // Files of the content space, by their served path. The lookbehind leaves out
 // `https://host/images/x.png`: only a root-relative path is served from here.

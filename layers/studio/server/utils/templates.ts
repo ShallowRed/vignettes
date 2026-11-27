@@ -1,4 +1,5 @@
-import { splitFrontmatter, stringifyDocument } from '@vignettes/core/deck'
+import type { CreationChoices } from '@vignettes/core/deck'
+import { creationDraft } from '@vignettes/core/deck'
 
 /**
  * The starting points of a new deck: the Markdown files of
@@ -29,35 +30,6 @@ export async function loadTemplate(id: string): Promise<string | null> {
     return null
   const text = await useStorage(STORAGE).getItem(`${id}${EXTENSION}`)
   return typeof text === 'string' ? text : null
-}
-
-export interface CreationChoices {
-  title?: string
-  theme?: string
-  project?: string
-}
-
-/** The text with its frontmatter `project` key naming this folder; no folder removes the key. */
-export function inFolder(raw: string, project?: string): string {
-  const { data, body } = splitFrontmatter(raw)
-  const { project: _project, ...kept } = data
-  return stringifyDocument({ ...kept, ...(project ? { project } : {}) }, body.trimStart())
-}
-
-/**
- * The first draft of a new deck, from a template or an imported file: the
- * frontmatter takes the title and the theme given at creation, and the folder
- * chosen at creation (`inFolder`). `status` is removed: the deck's row holds it.
- */
-export function creationDraft(raw: string, choices: CreationChoices): string {
-  const { data, body } = splitFrontmatter(raw)
-  const { status: _status, ...kept } = data
-  const frontmatter = {
-    ...kept,
-    ...(choices.title ? { title: choices.title } : {}),
-    ...(choices.theme ? { theme: choices.theme } : {}),
-  }
-  return inFolder(stringifyDocument(frontmatter, body.trimStart()), choices.project)
 }
 
 /**

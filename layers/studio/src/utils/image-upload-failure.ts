@@ -1,6 +1,6 @@
-import type { MediaRefusal } from '#shared/storage/media-s3'
+import type { MediaRefusal } from '@vignettes/core/media'
 import type { Translate } from '../config/editor-reference'
-import { IMAGE_FORMAT_NAMES, MAX_MEDIA_MEGABYTES } from '#shared/storage/media-s3'
+import { IMAGE_FORMAT_NAMES, MAX_MEDIA_MEGABYTES } from '@vignettes/core/media'
 import { requestErrorMessage } from './request-error'
 
 /**

@@ -1,6 +1,6 @@
 import { EditorState } from '@codemirror/state'
+import { sniffImageType } from '@vignettes/core/media'
 import { describe, expect, it } from 'vitest'
-import { sniffImageType } from '../../layers/studio/shared/storage/media-s3'
 import { imageDirectiveInsertion } from '../../layers/studio/src/utils/editor-commands'
 import { imageUploadFailure } from '../../layers/studio/src/utils/image-upload-failure'
 

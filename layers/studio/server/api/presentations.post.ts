@@ -1,11 +1,11 @@
 import type { z } from 'zod'
 import { markdownToYDocUpdate } from '#shared/collab/ydoc'
 import { CreateDeckSchema } from '#shared/presentations'
-import { isDeckSlug, onlyTitleMissing, readDeckFile } from '@vignettes/core/deck'
+import { creationDraft, isDeckSlug, onlyTitleMissing, readDeckFile } from '@vignettes/core/deck'
 import { assertCanCreateInProject } from '../utils/access'
 import { useDraftStore } from '../utils/collab'
 import { useDeckMeta, useProjectStore } from '../utils/sources'
-import { creationDraft, deckFromTemplate, DEFAULT_TEMPLATE, loadTemplate } from '../utils/templates'
+import { deckFromTemplate, DEFAULT_TEMPLATE, loadTemplate } from '../utils/templates'
 
 type CreateInput = z.infer<typeof CreateDeckSchema>
 

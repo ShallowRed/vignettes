@@ -7,6 +7,8 @@
   "exports": {
     "./deck": "./src/deck/index.ts",
     "./deck-assets": "./src/deck-assets.ts",
+    "./digest": "./src/digest.ts",
+    "./media": "./src/media.ts",
     "./paths": "./src/paths.ts",
     "./render": "./src/render/index.ts",
     "./slugify": "./src/slugify.ts",
