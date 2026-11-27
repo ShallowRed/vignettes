@@ -1,12 +1,12 @@
 import type { FileHandle } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { mediaName } from '@vignettes/core/media'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { readDeck, readImage } from '../../packages/cli/src/files.ts'
+import { readDeck, readImage, writePulled, writeReplacedCopy } from '../../packages/cli/src/files.ts'
 import { readLocalDeck } from '../../packages/cli/src/local-deck.ts'
 
 // The opened files with the inode of their descriptor, and the handles whose
@@ -182,5 +182,48 @@ describe('a deck and its images (readLocalDeck of packages/cli/src/local-deck.ts
     writeFileSync(join(folder, 'talk.md'), '---\ntitle: T\n---\n\n# A\n\n![a](./sub) ![b](./a%00.png)\n')
     const deck = await readLocalDeck(join(folder, 'talk.md'))
     expect(deck.problems.map(problem => problem.check)).toEqual(['image-unreadable', 'image-unreadable'])
+  })
+})
+
+describe('the files that pull writes (writePulled of packages/cli/src/files.ts)', () => {
+  // A text in CRLF with a byte order mark and an ESC, which the file keeps.
+  const RAW = Uint8Array.from([0xEF, 0xBB, 0xBF, 0x23, 0x20, 0x41, 0x0D, 0x0A, 0x1B, 0x62, 0x0A])
+
+  it('writes the bytes received through a temporary file and a rename, then finds them identical', async () => {
+    expect(await writePulled(folder, 'talk', RAW, false)).toEqual({ state: 'written', path: join(folder, 'talk.md') })
+    expect(new Uint8Array(readFileSync(join(folder, 'talk.md')))).toEqual(RAW)
+    expect(readdirSync(folder).filter(file => file.endsWith('.tmp'))).toEqual([])
+    const written = statSync(join(folder, 'talk.md')).mtimeMs
+    expect(await writePulled(folder, 'talk', RAW, false)).toEqual({ state: 'identical', path: join(folder, 'talk.md') })
+    expect(statSync(join(folder, 'talk.md')).mtimeMs).toBe(written)
+  })
+
+  it('keeps a local file with another text, and with force copies it beside itself first', async () => {
+    writeFileSync(join(folder, 'talk.md'), '# Mine\n')
+    expect(await writePulled(folder, 'talk', RAW, false)).toMatchObject({ state: 'local-differs' })
+    expect(readFileSync(join(folder, 'talk.md'), 'utf8')).toBe('# Mine\n')
+    const forced = await writePulled(folder, 'talk', RAW, true)
+    expect(forced).toMatchObject({ state: 'written', replaced: expect.stringMatching(/talk\.md\.replaced-local-\d{4}-/) })
+    expect(readFileSync(forced.replaced!, 'utf8')).toBe('# Mine\n')
+    expect(new Uint8Array(readFileSync(join(folder, 'talk.md')))).toEqual(RAW)
+  })
+
+  it.each([false, true])('refuses a symbolic link at the name of the file, with force %s', async (force) => {
+    writeFileSync(join(root, 'elsewhere.md'), '# Elsewhere\n')
+    symlinkSync(join(root, 'elsewhere.md'), join(folder, 'talk.md'))
+    await expect(writePulled(folder, 'talk', RAW, force)).rejects.toMatchObject({ code: 'pulled-link' })
+    expect(readFileSync(join(root, 'elsewhere.md'), 'utf8')).toBe('# Elsewhere\n')
+  })
+})
+
+describe('the copy of a replaced draft (writeReplacedCopy of packages/cli/src/files.ts)', () => {
+  it('writes the draft under a name a list of *.md leaves out, takes a copy of the same bytes, and refuses one of other bytes', async () => {
+    const path = await writeReplacedCopy(folder, 'talk', 1764245000, '# Theirs\n')
+    expect(path).toBe(join(folder, 'talk.md.replaced-1764245000'))
+    expect(readFileSync(path, 'utf8')).toBe('# Theirs\n')
+    expect(readdirSync(folder).filter(file => file.endsWith('.md'))).toEqual([])
+    expect(await writeReplacedCopy(folder, 'talk', 1764245000, '# Theirs\n')).toBe(path)
+    await expect(writeReplacedCopy(folder, 'talk', 1764245000, '# Other\n')).rejects.toMatchObject({ code: 'replaced-copy-differs' })
+    expect(readFileSync(path, 'utf8')).toBe('# Theirs\n')
   })
 })

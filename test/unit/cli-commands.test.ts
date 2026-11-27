@@ -6,12 +6,13 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { checkDeck, PROBLEM_CODES, problemCode } from '@vignettes/core/deck'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 import catalog from '../../layers/studio/i18n/locales/en/catalog.json' with { type: 'json' }
 import editor from '../../layers/studio/i18n/locales/en/editor.json' with { type: 'json' }
 import manifest from '../../packages/cli/package.json' with { type: 'json' }
 import { CliError, problemMessage } from '../../packages/cli/src/messages.ts'
-import { EXIT_CODES, exitCodeOf, isInteractive } from '../../packages/cli/src/output.ts'
+import { createOutput, EXIT_CODES, exitCodeOf, isInteractive } from '../../packages/cli/src/output.ts'
+import { PUSH_PROBLEM_CODES } from '../../packages/cli/src/push-plan.ts'
 import { COMMANDS, COMMON_OPTIONS } from '../../packages/cli/src/usage.ts'
 
 const CLI = resolve('packages/cli/src/cli.ts')
@@ -46,6 +47,8 @@ describe('the options of the command line (packages/cli/src/usage.ts)', () => {
       login: ['instance', 'name', 'token-stdin'],
       logout: ['instance', 'local'],
       whoami: ['instance'],
+      push: ['slug', 'folder', 'dry-run', 'force', 'instance'],
+      pull: ['draft', 'out', 'force', 'instance'],
     })
   })
 
@@ -53,7 +56,7 @@ describe('the options of the command line (packages/cli/src/usage.ts)', () => {
     const options = Object.values(COMMANDS).flatMap(command => Object.entries(command.options) as [string, OptionUsage][])
     expect(options.filter(([name]) => /token|secret|password|key/i.test(name))).toEqual([['token-stdin', expect.objectContaining({ type: 'boolean' })]])
     for (const [name, option] of options)
-      expect(option.type === 'boolean' || ['instance', 'name'].includes(name), name).toBe(true)
+      expect(option.type === 'boolean' || ['instance', 'name', 'slug', 'folder', 'out'].includes(name), name).toBe(true)
   })
 })
 
@@ -200,6 +203,74 @@ describe('the check command (packages/cli/src/commands/check.ts)', () => {
   })
 })
 
+describe('the push command before its first request (packages/cli/src/commands/push.ts)', () => {
+  const deck = '---\ntitle: A\n---\n\n# B\n'
+  let folder: string
+  const write = (name: string, text = deck) => {
+    writeFileSync(join(folder, name), text)
+    return join(folder, name)
+  }
+  // fetch throws in OFFLINE: a request would stop the command with the code 6.
+  const pushed = (args: string[]) => vignettes(['push', ...args, '--instance', 'https://studio.example.test'], { VIGNETTES_TOKEN: 'vgt_made-up-secret-of-the-push-tests' })
+
+  it.each([
+    ['a slug with a dot, which check accepts', () => [write('atelier.fr.md')], '“atelier.fr” cannot be the slug'],
+    ['a slug that starts with a dash', () => [write('-a.md')], 'cannot be the slug'],
+    ['--slug with two files', () => [write('a.md'), write('b.md'), '--slug', 'c'], '--slug names the deck of a single file'],
+    ['two files of the same slug', () => [write('a.md'), join(folder, 'sub', 'a.md')], 'Two files have the slug “a”'],
+    ['two slugs that differ by case', () => [write('a.md'), join(folder, 'sub', 'A.md')], 'Two files have the slug “A”'],
+    ['a folder that differs from the project key', () => [write('a.md', '---\ntitle: A\nproject: one\n---\n\n# B\n'), '--folder', 'two'], '--folder names “two” and the front matter'],
+  ])('stops %s with code 2 before any request', (_, args, named) => {
+    folder = mkdtempSync(join(tmpdir(), 'vignettes-push-'))
+    try {
+      mkdirSync(join(folder, 'sub'))
+      writeFileSync(join(folder, 'sub', 'a.md'), deck)
+      const run = pushed(args())
+      expect(run.status).toBe(EXIT_CODES.usage)
+      expect(run.stderr).toContain(named)
+      if (args().includes(join(folder, 'atelier.fr.md')))
+        expect(vignettes(['check', join(folder, 'atelier.fr.md')]).status).toBe(EXIT_CODES.success)
+    }
+    finally {
+      rmSync(folder, { recursive: true })
+    }
+  })
+
+  it('stops with code 2 before any request when the decks would need more than 300 requests', () => {
+    folder = mkdtempSync(join(tmpdir(), 'vignettes-push-'))
+    try {
+      const files = Array.from({ length: 60 }, (_, index) => write(`deck-${index}.md`))
+      const run = pushed(files)
+      expect(run).toMatchObject({ status: EXIT_CODES.usage, stderr: expect.stringContaining('up to 302 requests') })
+    }
+    finally {
+      rmSync(folder, { recursive: true })
+    }
+  })
+
+  it('sends no request for a deck with an error, and names its problems', () => {
+    folder = mkdtempSync(join(tmpdir(), 'vignettes-push-'))
+    try {
+      const run = pushed(['--json', write('a.md', '---\ntitle: A\n---\n\n![a](./absent.png)\n'), write('b.md')])
+      expect(run.status).toBe(EXIT_CODES.deckError)
+      expect(JSON.parse(run.stdout).results.map(({ action, problems }: { action: string, problems: { code: string }[] }) => [action, problems.map(problem => problem.code)])).toEqual([['refused', ['image-missing']], ['skipped', []]])
+    }
+    finally {
+      rmSync(folder, { recursive: true })
+    }
+  })
+})
+
+describe('the pull command before its first request (packages/cli/src/commands/pull.ts)', () => {
+  it.each([
+    [['atelier.fr'], '“atelier.fr” cannot be the slug'],
+    [['talk', 'Talk'], 'Two files have the slug “Talk”'],
+  ])('stops %j with code 2 before any request', (slugs, named) => {
+    const run = vignettes(['pull', ...slugs, '--instance', 'https://studio.example.test'], { VIGNETTES_TOKEN: 'vgt_made-up-secret-of-the-pull-tests' })
+    expect(run).toMatchObject({ status: EXIT_CODES.usage, stderr: expect.stringContaining(named) })
+  })
+})
+
 describe('the exit codes (packages/cli/src/output.ts)', () => {
   it('keeps the table of the contract', () => {
     expect(Object.values(EXIT_CODES)).toEqual([0, 1, 2, 3, 4, 5, 6, 70, 130])
@@ -216,6 +287,48 @@ describe('the exit codes (packages/cli/src/output.ts)', () => {
     expect(isInteractive({ json: true, stdinIsTTY: true, ci: false })).toBe(false)
     expect(isInteractive({ json: false, stdinIsTTY: false, ci: false })).toBe(false)
     expect(isInteractive({ json: false, stdinIsTTY: true, ci: true })).toBe(false)
+  })
+})
+
+describe('the outputs of a text from an instance (packages/cli/src/output.ts)', () => {
+  const TEXT = 'a\u001B[2Jb\u0085c\u007Fd\te'
+  const controls = (text: string) => [...text].filter(character => (character < ' ' && character !== '\n' && character !== '\t') || (character >= '\u007F' && character <= '\u009F'))
+  function written(json: boolean, write: (output: ReturnType<typeof createOutput>) => void) {
+    let stdout = ''
+    let stderr = ''
+    const out = vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+      stdout += String(chunk)
+      return true
+    })
+    const err = vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+      stderr += String(chunk)
+      return true
+    })
+    try {
+      write(createOutput({ cli: manifest.version, json, command: 'push' }))
+    }
+    finally {
+      out.mockRestore()
+      err.mockRestore()
+      process.exitCode = undefined
+    }
+    return { stdout, stderr }
+  }
+
+  it('writes a step and an error on the standard error without their control characters', () => {
+    expect(written(false, output => output.progress(TEXT)).stderr).toBe('a[2Jbcd\te\n')
+    const failed = written(false, output => output.fail(new CliError('instance-redirect', 'https://studio.example.test', TEXT))).stderr
+    expect(failed).toContain('a[2Jbcd\te')
+    expect(controls(failed)).toEqual([])
+  })
+
+  it('escapes every control character in the JSON document', () => {
+    const { stdout } = written(true, output => output.finish([{ message: TEXT }]))
+    expect(controls(stdout)).toEqual([])
+    expect(JSON.parse(stdout).results).toEqual([{ message: TEXT }])
+    const failed = written(true, output => output.fail(new CliError('instance-redirect', 'https://studio.example.test', TEXT))).stdout
+    expect(failed).toContain('\\u0085')
+    expect(JSON.parse(failed).error.message).toContain(TEXT)
   })
 })
 
@@ -300,8 +413,8 @@ describe('the sentences of the problems (packages/cli/src/messages.ts)', () => {
     expect(codes.filter(code => !compared.includes(code)).sort()).toEqual(CLI_SENTENCES)
   })
 
-  it('lists every code of PROBLEM_CODES in the README', () => {
-    const codes = Object.values(PROBLEM_CODES).flatMap(code => typeof code === 'string' ? [code] : Object.values(code))
+  it('lists every code of PROBLEM_CODES and of PUSH_PROBLEM_CODES in the README', () => {
+    const codes = [...Object.values(PROBLEM_CODES).flatMap(code => typeof code === 'string' ? [code] : Object.values(code)), ...Object.keys(PUSH_PROBLEM_CODES)]
     const section = readFileSync(resolve('packages/cli/README.md'), 'utf8').split('## Codes of the problems')[1]!.split('\n## ')[0]!
     const listed = section.split('\n').filter(line => line.startsWith('- ')).flatMap(line => [...line.slice(0, line.indexOf(':')).matchAll(/`([^`]+)`/g)].map(match => match[1]))
     expect(listed.sort()).toEqual(codes.sort())

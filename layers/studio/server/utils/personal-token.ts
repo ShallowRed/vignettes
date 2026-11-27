@@ -49,6 +49,12 @@ export const TOKEN_ROUTES: TokenRoute[] = [
   { method: 'POST', path: '/auth/recette', scope: 'write' },
 ]
 
+/** The refusal of a token over its requests in the window; the command line reads this message. */
+export const TOO_MANY_TOKEN_REQUESTS = 'Too many requests with this token, try again later'
+
+/** The refusal of a client over its refused tokens in the window; the command line reads this message. */
+export const TOO_MANY_INVALID_TOKENS = 'Too many invalid tokens, try again later'
+
 const MINUTE = 60_000
 const FAILURES_PER_CLIENT = 20
 const FAILURE_WINDOW_MS = 10 * MINUTE
@@ -159,7 +165,7 @@ async function authenticate(event: H3Event): Promise<Actor | null> {
 
   const failures = `token-failure:${clientAddress(event)}`
   if (rateLimitReached(failures, FAILURES_PER_CLIENT))
-    throw refuse(429, 'Too many invalid tokens, try again later')
+    throw refuse(429, TOO_MANY_INVALID_TOKENS)
 
   const now = new Date()
   const readable = SECRET_PATTERN.test(secret)
@@ -172,7 +178,7 @@ async function authenticate(event: H3Event): Promise<Actor | null> {
   }
 
   if (!hitRateLimit(`token:${token.id}`, REQUESTS_PER_TOKEN, REQUEST_WINDOW_MS))
-    throw refuse(429, 'Too many requests with this token, try again later')
+    throw refuse(429, TOO_MANY_TOKEN_REQUESTS)
 
   if (!token.lastUsedAt || now.getTime() - token.lastUsedAt.getTime() >= MINUTE)
     await useTokenStore().touch(token.id, now)

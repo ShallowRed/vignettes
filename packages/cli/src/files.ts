@@ -1,8 +1,10 @@
 import type { ImageType } from '@vignettes/core/media'
+import { Buffer } from 'node:buffer'
+import { randomBytes } from 'node:crypto'
 import { constants } from 'node:fs'
-import { open, readFile, realpath, stat } from 'node:fs/promises'
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
-import { acceptedImageType, MAX_MEDIA_BYTES, sniffImageType } from '@vignettes/core/media'
+import { lstat, open, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { MAX_MEDIA_BYTES, sniffImageType } from '@vignettes/core/media'
 import { CliError } from './messages.ts'
 
 const errorCode = (error: unknown) => (error as { code?: string }).code ?? ''
@@ -80,6 +82,7 @@ export async function readImage(folder: string, path: string): Promise<ReadImage
   catch (error) {
     return errorCode(error) === 'ELOOP' ? { state: 'outside' } : readFailure(error)
   }
+  let data: Uint8Array
   try {
     const opened = await handle.stat()
     const again = await realpath(resolved).catch(() => undefined)
@@ -90,9 +93,7 @@ export async function readImage(folder: string, path: string): Promise<ReadImage
       return { state: 'unreadable' }
     if (opened.size > MAX_MEDIA_BYTES)
       return { state: 'read', bytes: opened.size }
-    const data = new Uint8Array(await handle.readFile())
-    const type = acceptedImageType(sniffImageType(data) ?? '', data)
-    return { state: 'read', bytes: data.length, ...(type && { type }), data }
+    data = new Uint8Array(await handle.readFile())
   }
   catch (error) {
     return readFailure(error)
@@ -100,4 +101,79 @@ export async function readImage(folder: string, path: string): Promise<ReadImage
   finally {
     await handle.close()
   }
+  const type = sniffImageType(data)
+  return { state: 'read', bytes: data.length, ...(type && { type }), data }
+}
+
+/**
+ * Writes the draft that `push --force` replaces beside the deck file, as
+ * `<slug>.md.replaced-<stamp>`, a name a list of `*.md` leaves out, with
+ * `O_EXCL`. A file of that name that holds the same bytes is the copy of an
+ * earlier run under the same stamp; one that holds other bytes stops the deck.
+ */
+export async function writeReplacedCopy(folder: string, slug: string, stamp: number | null, draft: string): Promise<string> {
+  const path = join(folder, `${slug}.md.replaced-${stamp ?? 'none'}`)
+  const bytes = new TextEncoder().encode(draft)
+  try {
+    await writeFile(path, bytes, { flag: 'wx', mode: 0o600 })
+    return path
+  }
+  catch (error) {
+    if (errorCode(error) !== 'EEXIST')
+      throw new CliError('unwritable-file', path)
+  }
+  const kept = await readFile(path).catch(() => undefined)
+  if (!kept || !Buffer.from(kept).equals(Buffer.from(bytes)))
+    throw new CliError('replaced-copy-differs', path)
+  return path
+}
+
+/** What `pull` did with the file of a deck. */
+export interface PulledFile {
+  state: 'written' | 'identical' | 'local-differs'
+  path: string
+  /** The copy of the local file that `--force` replaced. */
+  replaced?: string
+}
+
+/**
+ * Writes the bytes `pull` received to `<folder>/<slug>.md` as they came, by a
+ * temporary file created with `O_EXCL` in the same folder and a rename. A
+ * symbolic link at that name stops the deck; a file with the same bytes is
+ * left as it is; a file with other bytes is refused, or with `force` copied
+ * first to `<slug>.md.replaced-local-<time>`, with `O_EXCL`.
+ */
+export async function writePulled(folder: string, slug: string, bytes: Uint8Array, force: boolean): Promise<PulledFile> {
+  const path = join(folder, `${slug}.md`)
+  const found = await lstat(path).catch((error) => {
+    if (errorCode(error) === 'ENOENT')
+      return undefined
+    throw new CliError('unwritable-file', path)
+  })
+  if (found?.isSymbolicLink())
+    throw new CliError('pulled-link', path)
+  let replaced: string | undefined
+  if (found) {
+    const local = await readFile(path).catch(() => {
+      throw new CliError('unreadable-file', path)
+    })
+    if (Buffer.from(local).equals(Buffer.from(bytes)))
+      return { state: 'identical', path }
+    if (!force)
+      return { state: 'local-differs', path }
+    replaced = `${path}.replaced-local-${new Date().toISOString().replaceAll(':', '-')}`
+    await writeFile(replaced, local, { flag: 'wx' }).catch(() => {
+      throw new CliError('unwritable-file', replaced!)
+    })
+  }
+  const temporary = join(folder, `.${slug}.md.${randomBytes(6).toString('hex')}.tmp`)
+  try {
+    await writeFile(temporary, bytes, { flag: 'wx' })
+    await rename(temporary, path)
+  }
+  catch {
+    await rm(temporary, { force: true })
+    throw new CliError('unwritable-file', path)
+  }
+  return { state: 'written', path, ...(replaced && { replaced }) }
 }
