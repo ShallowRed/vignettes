@@ -53,6 +53,11 @@ describe('saving a draft solo (PUT /api/presentations/:slug)', () => {
     await expect(save('# legacy')).resolves.toMatchObject({ ok: true })
   })
 
+  it('answers a save without a draft digest with its key, its size and its stamp', async () => {
+    const answer = await save('# v1', null)
+    expect(answer).toEqual({ ok: true, key: 'draft:deck', bytes: 4, stamp: await useDraftStore().stamp('deck') })
+  })
+
   it('writes in the lineage of the stored draft: a tab that holds it merges one copy', async () => {
     await save('# v1', null)
     const tab = new Y.Doc()
@@ -166,6 +171,7 @@ describe('uploading an image (POST /api/media)', () => {
     await expect(upload('image/png', { data: jpeg })).resolves.toMatchObject({ src: expect.stringMatching(/\.jpg$/) })
     expect(storeMedia).toHaveBeenLastCalledWith(expect.stringMatching(/\.jpg$/), jpeg, 'image/jpeg')
     await expect(upload('image/svg+xml')).resolves.toMatchObject({ src: expect.stringMatching(/\.png$/) })
+    await expect(upload('image/svg+xml', { data: Buffer.from('<svg/>') })).resolves.toMatchObject({ src: expect.stringMatching(/\.svg$/) })
   })
 
   it('refuses a file whose content does not match its declared type (415)', async () => {
