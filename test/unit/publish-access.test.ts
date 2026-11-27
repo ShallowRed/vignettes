@@ -49,7 +49,7 @@ async function axes() {
   const [row] = await testRows().select('decks', { slug: 'deck' })
   return { status: row!.status, unlisted: row!.unlisted, accessPasswordHash: row!.accessPasswordHash, project: row!.project, managed: row!.managed }
 }
-const listedTo = async (event: unknown) => (await listVisiblePresentations(event as any)).some(deck => deck.slug === 'deck')
+const listedTo = async (event: Parameters<typeof listVisiblePresentations>[0]) => (await listVisiblePresentations(event)).some(deck => deck.slug === 'deck')
 
 let previous: string | undefined
 beforeAll(() => {
@@ -73,10 +73,10 @@ describe('the first publication of a row that is not managed and has no publishe
     expect(await axes()).toMatchObject({ managed: false, project: null })
   })
 
-  it('by a collaborator with an editor grant on the deck, takes the access axes of the text', async () => {
+  it('by a collaborator with an editor grant on the deck, keeps the deck private and its folder', async () => {
     await usePermissionStore().set('deck', 10, 'editor', 'boss')
     await publishDeck(collab(slug))
-    expect(await axes()).toEqual({ status: 'public', unlisted: false, accessPasswordHash: null, project: 'autre', managed: true })
+    expect(await axes()).toEqual({ status: 'private', unlisted: false, accessPasswordHash: null, project: null, managed: true })
   })
 
   it('by an account with the editor role, takes the access axes of the text', async () => {
@@ -103,13 +103,13 @@ describe('a publication of a row that is not managed and has a published version
     expect(await loadDeck(editor(slug))).toMatchObject({ status: 'public' })
   })
 
-  it('by a collaborator with an editor grant on the folder, takes the access axes of the new text', async () => {
+  it('by a collaborator with an editor grant on the folder, keeps its access, its folder and its unlisted', async () => {
     await publishDeck(collab(slug))
-    expect(await gateOptionsOf('deck')).toMatchObject({ status: 'private', storedHash: undefined })
-    expect(await loadDeck(editor(slug))).toMatchObject({ status: 'private' })
-    expect(await axes()).toEqual({ status: 'private', unlisted: false, accessPasswordHash: null, project: 'autre', managed: true })
-    expect(await useGrants().get('deck', 10)).toBeUndefined()
-    expect(await listedTo(collab())).toBe(false)
+    expect(await gateOptionsOf('deck')).toMatchObject({ status: 'public', storedHash: 'hash-of-the-published-text' })
+    expect(await loadDeck(editor(slug))).toMatchObject({ status: 'public' })
+    expect(await axes()).toEqual({ status: 'public', unlisted: true, accessPasswordHash: 'hash-of-the-published-text', project: 'equipe', managed: true })
+    expect(await useGrants().get('deck', 10)).toBe('editor')
+    expect(await listedTo(collab())).toBe(true)
     expect(await listedTo(editor())).toBe(true)
     expect(await listedTo(anon())).toBe(false)
   })

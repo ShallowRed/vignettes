@@ -70,7 +70,7 @@ describe('unpublished changes', () => {
 
   it('flags, for whoever may edit, a draft that differs from the published text', async () => {
     await seedAccount(3, 'ed', 'editor')
-    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed', accessFromText: true })
     await writeDraftText('live', DECK.replace('# v1', '# v2'))
     const listed = await listVisiblePresentations(asUser(3, 'ed'))
     expect(listed.find(d => d.slug === 'live')?.unpublishedChanges).toBe(true)
@@ -80,7 +80,7 @@ describe('unpublished changes', () => {
 
   it('stays quiet when the draft only repeats the published text', async () => {
     await seedAccount(3, 'ed', 'editor')
-    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed', accessFromText: true })
     await writeDraftText('live', DECK)
     const listed = await listVisiblePresentations(asUser(3, 'ed'))
     expect(listed.find(d => d.slug === 'live')?.unpublishedChanges).toBeUndefined()
@@ -95,7 +95,7 @@ describe('the date and the flag of a published deck', () => {
 
   beforeEach(async () => {
     await seedAccount(3, 'ed', 'editor')
-    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'live', raw: DECK, actor: 'ed', accessFromText: true })
   })
 
   it('keep the date of the version for a draft equal to it, saved later', async () => {

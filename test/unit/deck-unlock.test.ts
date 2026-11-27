@@ -18,7 +18,7 @@ const { default: unlockByAlias } = await import('../../layers/studio/server/api/
 let storedHash: string
 beforeEach(async () => {
   storedHash = await hashAccessPassword('open-sesame')
-  await useDbContent().writer.save({ slug: 'talk', raw: '---\ntitle: Talk\n---\n\n# Talk', actor: 'test' })
+  await useDbContent().writer.save({ slug: 'talk', raw: '---\ntitle: Talk\n---\n\n# Talk', actor: 'test', accessFromText: true })
   await useDeckMeta().update('talk', { title: 'Talk', status: 'semi-private', alias: 'talk-2026', accessPasswordHash: storedHash })
 })
 

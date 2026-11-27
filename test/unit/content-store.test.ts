@@ -21,12 +21,12 @@ describe.each(ADAPTERS)('deck content ($name)', (adapter) => {
   })
 
   it('publishes then serves the exact markdown', async () => {
-    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas', accessFromText: true })
     expect((await content().source.load('my-deck'))?.raw).toBe(DECK)
   })
 
   it('derives the catalog and access axes from the frontmatter', async () => {
-    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas', accessFromText: true })
     const row = await deck('my-deck')
     expect(row.title).toBe('Mon deck')
     expect(row.status).toBe('public')
@@ -37,13 +37,13 @@ describe.each(ADAPTERS)('deck content ($name)', (adapter) => {
   })
 
   it('defaults the status closed when the frontmatter has none', async () => {
-    await content().writer.save({ slug: 'bare', raw: '# Sans frontmatter', actor: 'lucas' })
+    await content().writer.save({ slug: 'bare', raw: '# Sans frontmatter', actor: 'lucas', accessFromText: true })
     expect((await deck('bare')).status).toBe('private')
   })
 
   it('keeps every published version immutable and serves the latest', async () => {
-    await content().writer.save({ slug: 'd', raw: '# v1', actor: 'a' })
-    await content().writer.save({ slug: 'd', raw: '# v2', actor: 'b' })
+    await content().writer.save({ slug: 'd', raw: '# v1', actor: 'a', accessFromText: true })
+    await content().writer.save({ slug: 'd', raw: '# v2', actor: 'b', accessFromText: true })
     expect((await content().source.load('d'))?.raw).toBe('# v2')
     const versions = await db.rows.select('deckVersions', { deckSlug: 'd' })
     expect(versions.map(v => v.raw)).toEqual(['# v1', '# v2'])
@@ -51,7 +51,7 @@ describe.each(ADAPTERS)('deck content ($name)', (adapter) => {
   })
 
   it('does not serve a soft-deleted deck', async () => {
-    await content().writer.save({ slug: 'trashed', raw: '# hidden', actor: 'lucas' })
+    await content().writer.save({ slug: 'trashed', raw: '# hidden', actor: 'lucas', accessFromText: true })
     await db.rows.update('decks', { deletedAt: new Date() }, { slug: 'trashed' })
     expect(await content().source.load('trashed')).toBeNull()
   })
@@ -60,16 +60,16 @@ describe.each(ADAPTERS)('deck content ($name)', (adapter) => {
     // The incident shape: published public, admin flips to private in the DB
     // (managed row = access truth), then a republish carries a stale
     // `status: public` frontmatter. The DB status must survive.
-    await content().writer.save({ slug: 'client', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'client', raw: DECK, actor: 'lucas', accessFromText: true })
     await db.rows.update('decks', { status: 'private', managed: true }, { slug: 'client' })
-    await content().writer.save({ slug: 'client', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'client', raw: DECK, actor: 'lucas', accessFromText: true })
     expect((await deck('client')).status).toBe('private')
   })
 
   it('the first publish still derives access axes from the frontmatter', async () => {
     // An unmanaged anchor row (draft-only deck) has no admin intent to protect.
     await db.rows.insert('decks', { slug: 'fresh', title: 'fresh', createdAt: new Date(), updatedAt: new Date() })
-    await content().writer.save({ slug: 'fresh', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'fresh', raw: DECK, actor: 'lucas', accessFromText: true })
     expect((await deck('fresh')).status).toBe('public')
   })
 
@@ -100,33 +100,63 @@ project: autre
     }
     // A published row that predates the `managed` flag, as the migration 0002 of SQLite leaves it.
     const publishedUnmanaged = async (slug: string, raw: string) => {
-      await content().writer.save({ slug, raw, actor: 'lucas' })
-      await db.rows.update('decks', { managed: false, status: 'private', accessPasswordHash: null, project: 'equipe', unlisted: true }, { slug })
+      await content().writer.save({ slug, raw, actor: 'lucas', accessFromText: true })
+      await db.rows.update('decks', { managed: false, status: 'private', accessPasswordHash: null, project: 'equipe', unlisted: false }, { slug })
     }
 
-    it('takes the access axes of the text it publishes when it has no published version', async () => {
-      await db.rows.insert('decks', { slug: 'fresh', title: 'fresh', project: 'equipe', createdAt: new Date(), updatedAt: new Date() })
-      await content().writer.save({ slug: 'fresh', raw: ACCESS_TEXT, actor: 'collab' })
-      expect(await axes('fresh')).toEqual({ status: 'public', unlisted: true, accessPasswordHash: 'hash-of-the-text', project: 'autre', managed: true })
+    describe('published by an account that may set its access from the text', () => {
+      it('takes the access axes of the text it publishes when it has no published version', async () => {
+        await db.rows.insert('decks', { slug: 'fresh', title: 'fresh', project: 'equipe', createdAt: new Date(), updatedAt: new Date() })
+        await content().writer.save({ slug: 'fresh', raw: ACCESS_TEXT, actor: 'collab', accessFromText: true })
+        expect(await axes('fresh')).toEqual({ status: 'public', unlisted: true, accessPasswordHash: 'hash-of-the-text', project: 'autre', managed: true })
+      })
+
+      it('takes the access axes of the new text when it has a published version', async () => {
+        await publishedUnmanaged('old', ACCESS_TEXT)
+        await content().writer.save({ slug: 'old', raw: CLOSED_TEXT, actor: 'collab', accessFromText: true })
+        expect(await axes('old')).toEqual({ status: 'private', unlisted: false, accessPasswordHash: null, project: 'autre', managed: true })
+      })
+
+      it('reads the earlier key access of the new text', async () => {
+        await publishedUnmanaged('old', CLOSED_TEXT)
+        await content().writer.save({ slug: 'old', raw: LEGACY_TEXT, actor: 'collab', accessFromText: true })
+        expect(await axes('old')).toEqual({ status: 'semi-private', unlisted: true, accessPasswordHash: 'hash-of-the-text', project: 'autre', managed: true })
+      })
     })
 
-    it('takes the access axes of the new text when it has a published version', async () => {
-      await publishedUnmanaged('old', ACCESS_TEXT)
-      await content().writer.save({ slug: 'old', raw: CLOSED_TEXT, actor: 'collab' })
-      expect(await axes('old')).toEqual({ status: 'private', unlisted: false, accessPasswordHash: null, project: 'autre', managed: true })
-    })
+    describe('published by an account without a global role', () => {
+      it('turns private in its own folder when it has no published version, whatever the text says', async () => {
+        const texts = { fresh: ACCESS_TEXT, legacy: LEGACY_TEXT.replace('access: semi-private', 'access: public') }
+        for (const [slug, raw] of Object.entries(texts)) {
+          await db.rows.insert('decks', { slug, title: slug, project: 'equipe', createdAt: new Date(), updatedAt: new Date() })
+          await content().writer.save({ slug, raw, actor: 'collab', accessFromText: false })
+          expect(await axes(slug)).toEqual({ status: 'private', unlisted: false, accessPasswordHash: null, project: 'equipe', managed: true })
+        }
+      })
 
-    it('reads the earlier key access of the new text', async () => {
-      await publishedUnmanaged('old', CLOSED_TEXT)
-      await content().writer.save({ slug: 'old', raw: LEGACY_TEXT, actor: 'collab' })
-      expect(await axes('old')).toEqual({ status: 'semi-private', unlisted: true, accessPasswordHash: 'hash-of-the-text', project: 'autre', managed: true })
+      it('keeps the status and the password of its published text, and its folder and unlisted, when it has a published version', async () => {
+        await publishedUnmanaged('old', ACCESS_TEXT)
+        await content().writer.save({ slug: 'old', raw: CLOSED_TEXT, actor: 'collab', accessFromText: false })
+        expect(await axes('old')).toEqual({ status: 'public', unlisted: false, accessPasswordHash: 'hash-of-the-text', project: 'equipe', managed: true })
+      })
+
+      it('reads the earlier key access of its published text', async () => {
+        await publishedUnmanaged('old', LEGACY_TEXT)
+        await content().writer.save({ slug: 'old', raw: ACCESS_TEXT, actor: 'collab', accessFromText: false })
+        expect(await axes('old')).toEqual({ status: 'semi-private', unlisted: false, accessPasswordHash: 'hash-of-the-text', project: 'equipe', managed: true })
+      })
+
+      it('turns private without a folder when it has no row', async () => {
+        await content().writer.save({ slug: 'new', raw: ACCESS_TEXT, actor: 'collab', accessFromText: false })
+        expect(await axes('new')).toEqual({ status: 'private', unlisted: false, accessPasswordHash: null, project: null, managed: true })
+      })
     })
   })
 
   it('content axes keep following the frontmatter on republish', async () => {
-    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas', accessFromText: true })
     const renamed = DECK.replace('title: Mon deck', 'title: Renommé').replace('theme: minimal', 'theme: dsfr')
-    await content().writer.save({ slug: 'my-deck', raw: renamed, actor: 'lucas' })
+    await content().writer.save({ slug: 'my-deck', raw: renamed, actor: 'lucas', accessFromText: true })
     const row = await deck('my-deck')
     expect(row.title).toBe('Renommé')
     expect(row.theme).toBe('dsfr')
@@ -136,9 +166,9 @@ project: autre
     // The project decides which master keys apply: once managed, the DB value
     // wins over the source's stale `project:` (a folder rename cascades in DB
     // only — every deck's frontmatter would otherwise undo it at republish).
-    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas', accessFromText: true })
     await db.rows.update('decks', { project: 'renomme' }, { slug: 'my-deck' })
-    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas' })
+    await content().writer.save({ slug: 'my-deck', raw: DECK, actor: 'lucas', accessFromText: true })
     expect((await deck('my-deck')).project).toBe('renomme')
   })
 })

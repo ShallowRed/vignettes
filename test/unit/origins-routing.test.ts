@@ -28,7 +28,7 @@ const CLICK = { 'sec-fetch-mode': 'navigate', 'sec-fetch-dest': 'document', 'sec
 
 beforeEach(async () => {
   await seedAccount(2, 'ana', 'viewer')
-  await useDbContent().writer.save({ slug: 'secret', raw: '---\ntitle: Secret\n---\n\n# Secret', actor: 'test' })
+  await useDbContent().writer.save({ slug: 'secret', raw: '---\ntitle: Secret\n---\n\n# Secret', actor: 'test', accessFromText: true })
   await useDeckMeta().update('secret', { title: 'Secret', status: 'private', published: true })
   await usePermissionStore().set('secret', 2, 'viewer', 'boss')
 })

@@ -24,7 +24,7 @@ describe('the read of a deck by its freeze', () => {
   })
 
   it('keeps a running server gated, even with the bundle variable set', async () => {
-    await useDbContent().writer.save({ slug: 'secret', raw: '---\ntitle: Secret\n---\n\n# Secret', actor: 'test' })
+    await useDbContent().writer.save({ slug: 'secret', raw: '---\ntitle: Secret\n---\n\n# Secret', actor: 'test', accessFromText: true })
     await useDeckMeta().update('secret', { status: 'private', published: true })
 
     await expect(getDeck(anon({ params: { slug: 'secret' } }))).rejects.toMatchObject({ statusCode: 401 })

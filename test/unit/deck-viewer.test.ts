@@ -12,7 +12,7 @@ const { default: duplicate } = await import('../../layers/studio/server/api/pres
 const { default: viewer } = await import('../../layers/studio/server/api/presentations/[slug]/viewer.get')
 
 const owner = (over: Record<string, unknown>) => asUser(1, 'boss', over)
-const save = (slug: string, status: string) => useDbContent().writer.save({ slug, raw: `---\ntitle: ${slug}\nstatus: ${status}\n---\n\n# ${slug}\n`, actor: 'boss' })
+const save = (slug: string, status: string) => useDbContent().writer.save({ slug, raw: `---\ntitle: ${slug}\nstatus: ${status}\n---\n\n# ${slug}\n`, actor: 'boss', accessFromText: true })
 const read = (slug: string) => viewer(anon({ params: { slug } }))
 
 beforeEach(() => seedAccount(1, 'boss', 'owner'))

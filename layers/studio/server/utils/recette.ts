@@ -209,7 +209,7 @@ export async function seedRecette(): Promise<SeedSummary> {
       await meta.update(deck.slug, { title: deck.title, status: deck.status, project: deck.project ?? null, theme: deck.theme })
       continue
     }
-    await useDbContent().writer.save({ slug: deck.slug, raw, actor: 'recette' })
+    await useDbContent().writer.save({ slug: deck.slug, raw, actor: 'recette', accessFromText: true })
     // After the deck row exists: the index points at it by foreign key, and the
     // upload is what ties the image to this deck's access rules.
     if (image)

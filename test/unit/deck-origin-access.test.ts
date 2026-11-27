@@ -38,7 +38,7 @@ async function withPass(id: number, login: string, slug: string, over: Record<st
 beforeEach(async () => {
   await seedAccount(2, 'ana', 'viewer')
   for (const slug of ['secret', 'other']) {
-    await useDbContent().writer.save({ slug, raw: `---\ntitle: ${slug}\n---\n\n# ${slug}`, actor: 'test' })
+    await useDbContent().writer.save({ slug, raw: `---\ntitle: ${slug}\n---\n\n# ${slug}`, actor: 'test', accessFromText: true })
     await useDeckMeta().update(slug, { title: slug, status: 'private', published: true })
   }
   await usePermissionStore().set('secret', 2, 'viewer', 'boss')

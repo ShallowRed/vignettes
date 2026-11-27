@@ -24,7 +24,7 @@ beforeEach(async () => {
 
 describe('the snapshot routes', () => {
   it('lists snapshots and versions together, newest first', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed', accessFromText: true })
     await writeDraftText('deck', '# draft')
     await keepSnapshot(editor({ params: { slug: 'deck' }, body: { label: 'Relu' } }))
     const { entries } = await listHistory(editor(params()))
@@ -51,7 +51,7 @@ describe('the snapshot routes', () => {
   })
 
   it('keeps the replaced draft when a version is restored too', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed', accessFromText: true })
     await writeDraftText('deck', '# unpublished work')
     const { entries } = await listHistory(editor(params()))
     await restoreVersion(editor(params(entries[0]!.id)))

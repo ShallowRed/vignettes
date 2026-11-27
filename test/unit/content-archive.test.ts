@@ -10,7 +10,7 @@ describe.each(ADAPTERS)('content archive ($name)', (adapter) => {
   it('reads every deck by slug, trashed ones included, with its served markdown', async () => {
     await seedDeck(db.rows, 'zeta', { managed: true, unlisted: true, deletedAt: NOW })
     await seedDeck(db.rows, 'alpha', { alias: 'a', family: 'f' })
-    await db.stores.content.writer.save({ slug: 'alpha', raw: '# alpha', actor: 'ana' })
+    await db.stores.content.writer.save({ slug: 'alpha', raw: '# alpha', actor: 'ana', accessFromText: true })
     expect(await archive().decks()).toMatchObject([
       { slug: 'alpha', alias: 'a', family: 'f', managed: true, trashed: false, raw: '# alpha' },
       { slug: 'zeta', unlisted: true, managed: true, trashed: true, raw: null },

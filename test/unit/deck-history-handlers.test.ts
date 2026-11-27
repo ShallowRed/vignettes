@@ -15,7 +15,7 @@ const viewer = (over: Record<string, unknown>) => asUser(10, 'vi', over)
 const params = (id?: number) => ({ params: { slug: 'deck', ...(id === undefined ? {} : { id: String(id) }) } })
 
 async function publish(raw: string) {
-  await useDbContent().writer.save({ slug: 'deck', raw, actor: 'ed' })
+  await useDbContent().writer.save({ slug: 'deck', raw, actor: 'ed', accessFromText: true })
   const { entries } = await listHistory(editor(params()))
   return entries.find(e => e.kind === 'version')!.id
 }
@@ -38,7 +38,7 @@ describe('reading the history (GET /api/presentations/:slug/history)', () => {
 
   it('answers 404 for a version of another deck and 400 for a malformed id', async () => {
     const id = await publish('# v1')
-    await useDbContent().writer.save({ slug: 'other', raw: '# other', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'other', raw: '# other', actor: 'ed', accessFromText: true })
     await expect(loadVersion(editor({ params: { slug: 'other', id: String(id) } }))).rejects.toMatchObject({ statusCode: 404 })
     await expect(loadVersion(editor({ params: { slug: 'deck', id: 'abc' } }))).rejects.toMatchObject({ statusCode: 400 })
     // The panel matches a loaded entry to the selection by kind and id.

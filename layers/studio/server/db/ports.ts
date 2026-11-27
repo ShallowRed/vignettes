@@ -1,7 +1,7 @@
 import type { DeckGrant, Lifecycle, PublicationStatus, Role, TokenScope, UserStore } from '#shared/access'
 import type { PublishedEntry, PublishedEntryDetail } from '#shared/presentations'
 import type { Project, ProjectDirectory } from '#shared/projects'
-import type { ContentSource, ContentWriter, DeckDirectory, DraftStore } from '@vignettes/core/deck'
+import type { ContentSource, ContentWriter, DeckDirectory, DeckWriteInput, DeckWriteResult, DraftStore } from '@vignettes/core/deck'
 
 /**
  * The storage ports: one interface per store, and `Stores`, the set an adapter
@@ -10,11 +10,20 @@ import type { ContentSource, ContentWriter, DeckDirectory, DraftStore } from '@v
  * `server/db/<driver>/`, and `server/db/open.ts` opens it.
  */
 
+/**
+ * The writer of the published versions. Its caller says whether the publisher
+ * may set the access of a row that is not managed from the text it publishes
+ * (`publicationAccess` of `#shared/presentations`).
+ */
+export type DeckContentWriter = Omit<ContentWriter, 'save'> & {
+  save: (input: DeckWriteInput & { accessFromText: boolean }) => Promise<DeckWriteResult>
+}
+
 /** The published versions of the decks: the content ports, plus the date of the served version. */
 export interface DeckContent {
   source: ContentSource
-  /** `save` publishes: one new version, and the deck row derived from its frontmatter. */
-  writer: ContentWriter
+  /** `save` publishes: one new version, and the deck row with the title and the theme of its frontmatter. */
+  writer: DeckContentWriter
   /** When the served version was published; null when the deck has none. */
   publishedAt: (slug: string) => Promise<Date | null>
   /** The id of the served version; null when the deck has none. */

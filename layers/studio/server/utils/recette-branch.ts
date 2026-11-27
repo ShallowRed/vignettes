@@ -151,7 +151,7 @@ export async function seedBranchDecks(root: string, { replace }: { replace: bool
       continue
     if (deck.exists)
       await meta.purge(deck.slug)
-    await useDbContent().writer.save({ slug: deck.slug, raw: await readFile(join(root, deck.file), 'utf8'), actor: 'recette' })
+    await useDbContent().writer.save({ slug: deck.slug, raw: await readFile(join(root, deck.file), 'utf8'), actor: 'recette', accessFromText: true })
     published++
   }
   return published

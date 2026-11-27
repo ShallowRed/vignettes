@@ -7,9 +7,9 @@ describe.each(ADAPTERS)('version history ($name)', (adapter) => {
 
   beforeEach(async () => {
     const { writer } = db.stores.content
-    await writer.save({ slug: 'deck', raw: '# one', actor: 'ana' })
-    await writer.save({ slug: 'deck', raw: '# two, longer', actor: 'bob' })
-    await writer.save({ slug: 'other', raw: '# elsewhere', actor: 'ana' })
+    await writer.save({ slug: 'deck', raw: '# one', actor: 'ana', accessFromText: true })
+    await writer.save({ slug: 'deck', raw: '# two, longer', actor: 'bob', accessFromText: true })
+    await writer.save({ slug: 'other', raw: '# elsewhere', actor: 'ana', accessFromText: true })
   })
 
   it('lists the versions of one deck, newest first, and marks the served one', async () => {

@@ -22,8 +22,8 @@ beforeEach(async () => {
   await seedAccount(10, 'vi', 'viewer')
   await useProjectStore().create({ title: 'Client' })
   await useProjectStore().create({ title: 'Autre' })
-  await useDbContent().writer.save({ slug: 'talk', raw: '---\ntitle: Talk\nstatus: public\nproject: client\n---\n\n# Talk\n', actor: 'boss' })
-  await useDbContent().writer.save({ slug: 'other', raw: '---\ntitle: Other\nproject: autre\n---\n\n# Other\n', actor: 'boss' })
+  await useDbContent().writer.save({ slug: 'talk', raw: '---\ntitle: Talk\nstatus: public\nproject: client\n---\n\n# Talk\n', actor: 'boss', accessFromText: true })
+  await useDbContent().writer.save({ slug: 'other', raw: '---\ntitle: Other\nproject: autre\n---\n\n# Other\n', actor: 'boss', accessFromText: true })
 })
 
 describe('the family fields of PATCH /api/admin/decks/:slug', () => {
@@ -59,7 +59,7 @@ describe('the folder of PATCH /api/admin/decks/:slug', () => {
   })
 
   it('saves a deck published under a folder that was never created', async () => {
-    await useDbContent().writer.save({ slug: 'orphan', raw: '---\ntitle: Orphan\nproject: nowhere\n---\n\n# Orphan\n', actor: 'boss' })
+    await useDbContent().writer.save({ slug: 'orphan', raw: '---\ntitle: Orphan\nproject: nowhere\n---\n\n# Orphan\n', actor: 'boss', accessFromText: true })
     await expect(patch('orphan', { project: 'nowhere', status: 'private' })).resolves.toMatchObject({ project: 'nowhere', status: 'private' })
   })
 })
@@ -115,9 +115,9 @@ describe('copying a deck (POST /api/presentations/:slug/duplicate)', () => {
 describe('the variants the viewer route offers', () => {
   it('lists the family members the visitor may open, and nothing else to a visitor', async () => {
     await patch('talk', { family: 'Conf', variantLabel: 'FR' })
-    await useDbContent().writer.save({ slug: 'talk-en', raw: '---\ntitle: Talk EN\nstatus: public\nproject: client\n---\n\n# EN\n', actor: 'boss' })
+    await useDbContent().writer.save({ slug: 'talk-en', raw: '---\ntitle: Talk EN\nstatus: public\nproject: client\n---\n\n# EN\n', actor: 'boss', accessFromText: true })
     await patch('talk-en', { family: 'Conf', variantLabel: 'EN' })
-    await useDbContent().writer.save({ slug: 'talk-secret', raw: '---\ntitle: Secret\nproject: client\n---\n\n# S\n', actor: 'boss' })
+    await useDbContent().writer.save({ slug: 'talk-secret', raw: '---\ntitle: Secret\nproject: client\n---\n\n# S\n', actor: 'boss', accessFromText: true })
     await patch('talk-secret', { family: 'Conf', variantLabel: 'Interne' })
 
     const seen = await viewer(anon({ params: { slug: 'talk' } }))

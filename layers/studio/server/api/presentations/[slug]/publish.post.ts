@@ -1,3 +1,4 @@
+import { isPrivileged } from '#shared/access'
 import { DeckWriteError } from '@vignettes/core/deck'
 import { isDigest, textDigest } from '@vignettes/core/digest'
 import { assertCanEditDeck } from '../../../utils/access'
@@ -45,7 +46,8 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const result = await useDbContent().writer.save({ slug, raw: draft, actor: editor.login ?? 'unknown' })
+    // An account without a global role sets no access axis from the text it publishes.
+    const result = await useDbContent().writer.save({ slug, raw: draft, actor: editor.login ?? 'unknown', accessFromText: isPrivileged(editor.role) })
     announcePublication(slug)
     return { ok: true, ...result, ...(digest === undefined ? {} : { digest }) }
   }
