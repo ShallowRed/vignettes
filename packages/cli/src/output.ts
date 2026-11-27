@@ -43,6 +43,7 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'name-taken': EXIT_CODES.usage,
   'already-signed-in': EXIT_CODES.usage,
   'not-signed-in': EXIT_CODES.usage,
+  'not-registered': EXIT_CODES.usage,
   'token-in-environment': EXIT_CODES.usage,
   'token-refused': EXIT_CODES.authentication,
   'token-forbidden': EXIT_CODES.permission,

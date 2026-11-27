@@ -98,6 +98,7 @@ export type CliErrorCode
     | 'name-taken'
     | 'already-signed-in'
     | 'not-signed-in'
+    | 'not-registered'
     | 'token-in-environment'
     | 'token-refused'
     | 'token-forbidden'
@@ -134,6 +135,7 @@ const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'name-taken': (name, origin) => `The name “${name}” stands for “${origin}” already: choose another one with --name.`,
   'already-signed-in': origin => `The instance “${origin}” is registered on this machine already: run vignettes logout --instance ${origin} first.`,
   'not-signed-in': origin => `No token of “${origin}” is kept on this machine: run vignettes login --instance ${origin}, or set VIGNETTES_TOKEN.`,
+  'not-registered': origin => `No instance “${origin}” is registered on this machine.`,
   'token-in-environment': () => 'VIGNETTES_TOKEN is set: unset it before vignettes logout, which revokes the token kept on this machine.',
   'token-refused': origin => `The instance “${origin}” refuses the token: the token is unknown, revoked or expired.`,
   'token-forbidden': origin => `The instance “${origin}” refuses this request to the token: its account or its scope lacks the right.`,

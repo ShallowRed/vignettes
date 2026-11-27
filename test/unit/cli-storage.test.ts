@@ -203,7 +203,7 @@ describe('login, whoami and logout on the kept secrets (packages/cli/src/command
     expect(removed).toMatchObject({ code: EXIT_CODES.success, stdout: 'Removed https://studio.example.test from this machine, without contacting the instance.\n' })
     expect(removed.stderr).not.toContain('cannot erase')
     expect(readdirSync(join(home, 'vignettes'))).toEqual(['config.json'])
-    await expect(runCommand('logout', { keyring: keyring.load, options: { local: true }, environment: { configHome: home } })).resolves.toMatchObject({ code: EXIT_CODES.usage })
+    await expect(runCommand('logout', { keyring: keyring.load, options: { local: true, instance: ORIGIN }, environment: { configHome: home } })).resolves.toMatchObject({ code: EXIT_CODES.usage, stderr: expect.stringContaining('No instance “https://studio.example.test” is registered on this machine.') })
   })
 
   it('stops login with code 2 and erases the secret when another command drops the registration', async () => {

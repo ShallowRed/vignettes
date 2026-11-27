@@ -35,7 +35,7 @@ export const logout: CommandRun = async ({ options, environment, output, keyring
   output.setInstance(origin)
   const instance = await storage.instanceAt(origin)
   if (!instance)
-    throw new CliError('not-signed-in', origin)
+    throw new CliError('not-registered', origin)
   const result = { instance: origin, revoked: false, token: { prefix: instance.prefix } }
   const revokeIfValid = `If the token ${instance.prefix} is still valid, revoke it on the Access tokens page of the studio.`
   if (local) {
