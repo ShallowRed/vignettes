@@ -83,10 +83,34 @@ export type CliErrorCode
     | 'missing-operand'
     | 'missing-file'
     | 'unreadable-file'
+    | 'missing-instance'
+    | 'unknown-instance'
+    | 'invalid-instance'
+    | 'insecure-instance'
+    | 'unreadable-config'
+    | 'keyring-unreadable'
+    | 'secret-not-erased'
+    | 'secret-missing'
+    | 'registration-lost'
+    | 'missing-token'
+    | 'empty-token'
+    | 'invalid-name'
+    | 'name-taken'
+    | 'already-signed-in'
+    | 'not-signed-in'
+    | 'not-registered'
+    | 'token-in-environment'
+    | 'token-refused'
+    | 'token-forbidden'
+    | 'route-unknown'
+    | 'instance-redirect'
+    | 'instance-unreachable'
+    | 'instance-error'
+    | 'instance-answer'
     | 'internal'
     | 'interrupted'
 
-const CLI_ERRORS: Record<CliErrorCode, (detail: string) => string> = {
+const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'missing-command': () => 'Name a command: run vignettes --help for the list.',
   'unknown-command': name => `Unknown command “${name}”: run vignettes --help for the list.`,
   'unknown-option': name => `Unknown option “${name}”: run the command with --help for its options.`,
@@ -96,16 +120,40 @@ const CLI_ERRORS: Record<CliErrorCode, (detail: string) => string> = {
   'missing-operand': operand => `Give at least one <${operand}> after the command.`,
   'missing-file': file => `The file “${file}” does not exist.`,
   'unreadable-file': file => `The file “${file}” cannot be read.`,
+  'missing-instance': () => 'Name the instance with --instance <origin or name> or VIGNETTES_INSTANCE, or sign in with vignettes login --instance <origin>.',
+  'unknown-instance': name => `No registered instance is named “${name}”: give its origin, such as https://app.vignettes.io, or sign in to it with vignettes login.`,
+  'invalid-instance': address => `“${address}” is not an address: write the origin of the instance, such as https://app.vignettes.io.`,
+  'insecure-instance': address => `The address “${address}” does not start with https://: the command line sends a token over https only, or over http to localhost, 127.0.0.1 and [::1].`,
+  'unreadable-config': file => `The file “${file}” cannot be read: fix or remove it.`,
+  'keyring-unreadable': (origin, prefix) => `The keyring of the system holds the token ${prefix} of “${origin}” and cannot be read: unlock it, then run the command again. If it stays unreadable, revoke the token on the Access tokens page of the studio, then run vignettes logout --instance ${origin} --local.`,
+  'secret-not-erased': origin => `The keyring of the system cannot erase the token of “${origin}”, which stays on this machine: unlock the keyring, then run vignettes logout again, or vignettes logout --instance ${origin} --local if it stays unreadable.`,
+  'secret-missing': (origin, prefix) => `The instance “${origin}” is registered on this machine and its token ${prefix} is missing: run vignettes logout --instance ${origin}, then vignettes login --instance ${origin}.`,
+  'registration-lost': (file, name, prefix) => `Another command rewrote ${file} at the same time, so “${name}” is not registered: revoke the token ${prefix} on the Access tokens page of the studio, then run vignettes login again.`,
+  'missing-token': () => 'Give the token on the standard input with --token-stdin: the command asks no question with --json, with CI set or without a terminal.',
+  'empty-token': () => 'The token is empty: paste the token the studio showed when you created it.',
+  'invalid-name': name => `“${name}” cannot name an instance: write a name without “://” after --name.`,
+  'name-taken': (name, origin) => `The name “${name}” stands for “${origin}” already: choose another one with --name.`,
+  'already-signed-in': origin => `The instance “${origin}” is registered on this machine already: run vignettes logout --instance ${origin} first.`,
+  'not-signed-in': origin => `No token of “${origin}” is kept on this machine: run vignettes login --instance ${origin}, or set VIGNETTES_TOKEN.`,
+  'not-registered': origin => `No instance “${origin}” is registered on this machine.`,
+  'token-in-environment': () => 'VIGNETTES_TOKEN is set: unset it before vignettes logout, which revokes the token kept on this machine.',
+  'token-refused': origin => `The instance “${origin}” refuses the token: the token is unknown, revoked or expired.`,
+  'token-forbidden': origin => `The instance “${origin}” refuses this request to the token: its account or its scope lacks the right.`,
+  'route-unknown': (origin, path) => `The instance “${origin}” does not know the route ${path}: check that the address is the origin of the instance.`,
+  'instance-redirect': (origin, location) => `The instance “${origin}” redirects to “${location}”: the command line sends the token to the origin it was given only, so give the origin of the instance itself.`,
+  'instance-unreachable': (origin, code) => `The instance “${origin}” cannot be reached (${code}).`,
+  'instance-error': (origin, status) => `The instance “${origin}” answered with the status ${status}.`,
+  'instance-answer': (origin, path) => `The answer of “${origin}” to ${path} has a form the command line does not read: the instance may run another version of Vignettes.`,
   'internal': detail => `Internal error of the command line: ${detail}`,
   'interrupted': () => 'Stopped by Ctrl+C.',
 }
 
-/** An issue of a command, by its code; `detail` names what the message is about. */
+/** An issue of a command, by its code; `details` name what the message is about. */
 export class CliError extends Error {
   readonly code: CliErrorCode
 
-  constructor(code: CliErrorCode, detail = '') {
-    super(CLI_ERRORS[code](detail))
+  constructor(code: CliErrorCode, ...details: string[]) {
+    super(CLI_ERRORS[code](...details))
     this.code = code
   }
 }

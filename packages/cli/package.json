@@ -23,9 +23,13 @@
     "build": "tsdown"
   },
   "dependencies": {
+    "@clack/prompts": "catalog:",
     "js-yaml": "catalog:",
     "slugify": "catalog:",
     "zod": "catalog:"
+  },
+  "optionalDependencies": {
+    "@napi-rs/keyring": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

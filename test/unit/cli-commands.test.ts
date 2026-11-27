@@ -1,11 +1,12 @@
 import type { DeckProblem } from '@vignettes/core/deck'
+import type { OptionUsage } from '../../packages/cli/src/usage.ts'
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { checkDeck, PROBLEM_CODES, problemCode } from '@vignettes/core/deck'
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import catalog from '../../layers/studio/i18n/locales/en/catalog.json' with { type: 'json' }
 import editor from '../../layers/studio/i18n/locales/en/editor.json' with { type: 'json' }
 import manifest from '../../packages/cli/package.json' with { type: 'json' }
@@ -14,76 +15,6 @@ import { EXIT_CODES, exitCodeOf, isInteractive } from '../../packages/cli/src/ou
 import { COMMANDS, COMMON_OPTIONS } from '../../packages/cli/src/usage.ts'
 
 const CLI = resolve('packages/cli/src/cli.ts')
-
-function vignettes(...args: string[]) {
-  const { status, stdout, stderr } = spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8' })
-  return { status, stdout, stderr }
-}
-
-describe('the options of the command line (packages/cli/src/usage.ts)', () => {
-  it('gives each command the exact list of its options, the common ones apart', () => {
-    expect(Object.keys(COMMON_OPTIONS)).toEqual(['json', 'help', 'version'])
-    expect(Object.fromEntries(Object.entries(COMMANDS).map(([name, command]) => [name, Object.keys(command.options)]))).toEqual({
-      check: [],
-    })
-  })
-
-  it('gives no option a token: login reads it from a masked question or from the standard input', () => {
-    for (const command of Object.values(COMMANDS)) {
-      for (const [name, option] of Object.entries(command.options)) {
-        if (/token|secret|password/i.test(name))
-          expect(option.type, name).toBe('boolean')
-      }
-    }
-  })
-})
-
-describe('the entry point (packages/cli/src/cli.ts)', () => {
-  it('reads the command at the first argument that is not an option', () => {
-    expect(JSON.parse(vignettes('--json', 'check', 'a.md').stdout)).toMatchObject({ command: 'check', error: { code: 'missing-file' } })
-  })
-
-  it('answers --version and --help with code 0', () => {
-    expect(vignettes('--version')).toMatchObject({ status: 0, stdout: `${manifest.version}\n` })
-    const help = vignettes('--help')
-    expect(help.status).toBe(0)
-    for (const name of Object.keys(COMMANDS))
-      expect(help.stdout).toContain(`  ${name} `)
-    expect(vignettes('check', '--help').stdout).toMatch(/^Usage: vignettes check <file…> \[options\]/)
-  })
-
-  it.each([
-    [['--bogus'], '“--bogus”'],
-    [['check', '--token', 'abc'], '“--token”'],
-    [['login'], '“login”'],
-    [['--json=yes'], '“--json”'],
-    [['check'], '<file>'],
-    [[], 'Name a command'],
-    [['--', 'check'], 'Name a command'],
-  ])('stops %j with code 2 and a message that names %s', (args, named) => {
-    const { status, stdout, stderr } = vignettes(...args)
-    expect(status).toBe(EXIT_CODES.usage)
-    expect(stdout).toBe('')
-    expect(stderr).toContain(named)
-  })
-
-  it('writes one JSON document on the standard output with --json, an error included', () => {
-    const unknown = vignettes('--json', '--bogus')
-    expect(unknown.status).toBe(EXIT_CODES.usage)
-    expect(unknown.stderr).toBe('')
-    expect(JSON.parse(unknown.stdout)).toEqual({
-      ok: false,
-      cli: manifest.version,
-      command: null,
-      instance: null,
-      error: { code: 'unknown-option', message: expect.stringContaining('“--bogus”') },
-    })
-    expect(JSON.parse(vignettes('check', 'deck.md', '--json').stdout)).toMatchObject({ ok: false, command: 'check', error: { code: 'missing-file' } })
-  })
-})
-
-const VALID = 'test/e2e/fixtures/decks/composants.md'
-const WITH_ERRORS = 'test/unit/fixtures/composants-inconnus.md'
 
 // Before the command line: fetch and the sockets throw, and @napi-rs/keyring
 // cannot be resolved.
@@ -95,20 +26,127 @@ globalThis.fetch = () => { throw new Error('fetch called') }
 net.Socket.prototype.connect = () => { throw new Error('socket opened') }
 `)}`
 
+// An empty configuration folder, and none of the variables of the machine
+// that name an instance or carry a token.
+const CONFIG_HOME = mkdtempSync(join(tmpdir(), 'vignettes-commands-'))
+afterAll(() => rmSync(CONFIG_HOME, { recursive: true }))
+const ENVIRONMENT = Object.fromEntries(Object.entries(process.env).filter(([name]) => !['VIGNETTES_INSTANCE', 'VIGNETTES_TOKEN', 'CI'].includes(name)))
+
+function vignettes(args: string[], variables: Record<string, string> = {}) {
+  const env = { ...ENVIRONMENT, XDG_CONFIG_HOME: CONFIG_HOME, ...variables }
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['--import', OFFLINE, CLI, ...args], { encoding: 'utf8', env })
+  return { status, stdout, stderr }
+}
+
+describe('the options of the command line (packages/cli/src/usage.ts)', () => {
+  it('gives each command the exact list of its options, the common ones apart', () => {
+    expect(Object.keys(COMMON_OPTIONS)).toEqual(['json', 'help', 'version'])
+    expect(Object.fromEntries(Object.entries(COMMANDS).map(([name, command]) => [name, Object.keys(command.options)]))).toEqual({
+      check: [],
+      login: ['instance', 'name', 'token-stdin'],
+      logout: ['instance', 'local'],
+      whoami: ['instance'],
+    })
+  })
+
+  it('gives no option a token: login reads it from a masked question or from the standard input', () => {
+    const options = Object.values(COMMANDS).flatMap(command => Object.entries(command.options) as [string, OptionUsage][])
+    expect(options.filter(([name]) => /token|secret|password|key/i.test(name))).toEqual([['token-stdin', expect.objectContaining({ type: 'boolean' })]])
+    for (const [name, option] of options)
+      expect(option.type === 'boolean' || ['instance', 'name'].includes(name), name).toBe(true)
+  })
+})
+
+describe('the entry point (packages/cli/src/cli.ts)', () => {
+  it('reads the command at the first argument that is not an option', () => {
+    expect(JSON.parse(vignettes(['--json', 'check', 'a.md']).stdout)).toMatchObject({ command: 'check', error: { code: 'missing-file' } })
+  })
+
+  it('answers --version and --help with code 0', () => {
+    expect(vignettes(['--version'])).toMatchObject({ status: 0, stdout: `${manifest.version}\n` })
+    const help = vignettes(['--help'])
+    expect(help.status).toBe(0)
+    for (const name of Object.keys(COMMANDS))
+      expect(help.stdout).toContain(`  ${name} `)
+    expect(vignettes(['check', '--help']).stdout).toMatch(/^Usage: vignettes check <file…> \[options\]/)
+    expect(vignettes(['login', '--help']).stdout).toMatch(/^Usage: vignettes login \[options\][\s\S]*--instance <origin or name>[\s\S]*--token-stdin /)
+  })
+
+  it.each([
+    [['login', '--instance', 'https://studio.example.test'], {}],
+    [['login', '--instance', 'https://studio.example.test'], { CI: '1' }],
+    [['login', '--instance', 'https://studio.example.test', '--json'], {}],
+  ])('asks no question for %j with %j and no terminal, and names --token-stdin', (args, variables) => {
+    const { status, stdout, stderr } = vignettes(args, variables)
+    expect(status).toBe(EXIT_CODES.usage)
+    if (args.includes('--json'))
+      expect(JSON.parse(stdout)).toMatchObject({ instance: null, error: { code: 'missing-token', message: expect.stringContaining('--token-stdin') } })
+    else
+      expect(stderr).toContain('--token-stdin')
+  })
+
+  it('refuses logout while VIGNETTES_TOKEN is set, and does not write the token', () => {
+    const token = 'vgt_made-up-secret-of-the-variable'
+    const { status, stdout, stderr } = vignettes(['logout', '--instance', 'https://studio.example.test'], { VIGNETTES_TOKEN: token })
+    expect(status).toBe(EXIT_CODES.usage)
+    expect(stderr).toContain('VIGNETTES_TOKEN is set')
+    expect(stdout + stderr).not.toContain(token)
+  })
+
+  it.each([
+    [['--bogus'], '“--bogus”'],
+    [['check', '--token', 'abc'], '“--token”'],
+    [['login', '--token', 'abc'], '“--token”'],
+    [['whoami', '--token=abc'], '“--token”'],
+    [['logout', '--name', 'studio'], '“--name”'],
+    [['bogus'], '“bogus”'],
+    [['--instance', 'staging', 'whoami'], 'No registered instance is named “staging”'],
+    [['whoami', '--instance'], '“--instance”'],
+    [['whoami'], '--instance'],
+    [['login', '--token-stdin', '--instance', 'http://studio.example.test'], 'https://'],
+    [['--json=yes'], '“--json”'],
+    [['check'], '<file>'],
+    [[], 'Name a command'],
+    [['--', 'check'], 'Name a command'],
+  ])('stops %j with code 2 and a message that names %s', (args, named) => {
+    const { status, stdout, stderr } = vignettes(args)
+    expect(status).toBe(EXIT_CODES.usage)
+    expect(stdout).toBe('')
+    expect(stderr).toContain(named)
+  })
+
+  it('writes one JSON document on the standard output with --json, an error included', () => {
+    const unknown = vignettes(['--json', '--bogus'])
+    expect(unknown.status).toBe(EXIT_CODES.usage)
+    expect(unknown.stderr).toBe('')
+    expect(JSON.parse(unknown.stdout)).toEqual({
+      ok: false,
+      cli: manifest.version,
+      command: null,
+      instance: null,
+      error: { code: 'unknown-option', message: expect.stringContaining('“--bogus”') },
+    })
+    expect(JSON.parse(vignettes(['check', 'deck.md', '--json']).stdout)).toMatchObject({ ok: false, command: 'check', error: { code: 'missing-file' } })
+  })
+})
+
+const VALID = 'test/e2e/fixtures/decks/composants.md'
+const WITH_ERRORS = 'test/unit/fixtures/composants-inconnus.md'
+
 describe('the check command (packages/cli/src/commands/check.ts)', () => {
   it('exits with 0 without an error, 1 with an error in a deck, 2 for a missing file', () => {
-    const valid = vignettes('check', VALID)
+    const valid = vignettes(['check', VALID])
     expect(valid).toEqual({ status: EXIT_CODES.success, stdout: '1 file checked: 0 errors, 0 warnings, 0 info.\n', stderr: '' })
-    const failed = vignettes('check', VALID, WITH_ERRORS)
+    const failed = vignettes(['check', VALID, WITH_ERRORS])
     expect(failed.status).toBe(EXIT_CODES.deckError)
     expect(failed.stdout).toContain(`${WITH_ERRORS}:7:3  error  frontmatter  Value refused: this key takes a number, such as 1280.\n`)
     expect(failed.stdout).toMatch(/^2 files checked: 2 errors, 3 warnings, 0 info\.$/m)
-    expect(vignettes('check', VALID, 'absent.md')).toEqual({ status: EXIT_CODES.usage, stdout: '', stderr: 'vignettes: The file “absent.md” does not exist.\n' })
-    expect(vignettes('check', 'test/unit/fixtures').stderr).toContain('cannot be read')
+    expect(vignettes(['check', VALID, 'absent.md'])).toEqual({ status: EXIT_CODES.usage, stdout: '', stderr: 'vignettes: The file “absent.md” does not exist.\n' })
+    expect(vignettes(['check', 'test/unit/fixtures']).stderr).toContain('cannot be read')
   })
 
   it('writes the problems of each file in one JSON document, the column from 0', () => {
-    const { status, stdout, stderr } = vignettes('check', '--json', VALID, WITH_ERRORS)
+    const { status, stdout, stderr } = vignettes(['check', '--json', VALID, WITH_ERRORS])
     expect(status).toBe(EXIT_CODES.deckError)
     expect(stderr).toBe('')
     const document = JSON.parse(stdout)
@@ -192,6 +230,15 @@ const STUDIO_HELP_KEYS = ['attributeUnknown', 'layoutUnknownAttribute', 'layoutI
 // The editor writes no sentence of its own for these: the earlier forms carry
 // their description in the core, and the editor finds the other two itself.
 const CLI_SENTENCES = ['legacy', 'unknown-component', 'unknown-theme']
+
+describe('the published package (packages/cli/package.json)', () => {
+  it('publishes the built file, the README and the licence, without a dependency on a package of the workspace', () => {
+    expect(manifest.files).toEqual(['LICENSE', 'README.md', 'dist'])
+    const { dependencies = {}, optionalDependencies = {}, peerDependencies = {} } = manifest as Record<string, Record<string, string> | undefined>
+    const published = Object.entries({ ...dependencies, ...optionalDependencies, ...peerDependencies })
+    expect(published.filter(([name, version]) => name.startsWith('@vignettes/') || version.startsWith('workspace:'))).toEqual([])
+  })
+})
 
 describe('the sentences of the problems (packages/cli/src/messages.ts)', () => {
   it.each(EDITOR_SENTENCES.map(([problem, key, params]) => [problemCode(problem), problem, key, params] as const))('copies the sentence of the editor for %s', (_, problem, key, params) => {

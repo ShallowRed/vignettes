@@ -28,6 +28,30 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'missing-operand': EXIT_CODES.usage,
   'missing-file': EXIT_CODES.usage,
   'unreadable-file': EXIT_CODES.usage,
+  'missing-instance': EXIT_CODES.usage,
+  'unknown-instance': EXIT_CODES.usage,
+  'invalid-instance': EXIT_CODES.usage,
+  'insecure-instance': EXIT_CODES.usage,
+  'unreadable-config': EXIT_CODES.usage,
+  'keyring-unreadable': EXIT_CODES.usage,
+  'secret-not-erased': EXIT_CODES.usage,
+  'secret-missing': EXIT_CODES.usage,
+  'registration-lost': EXIT_CODES.usage,
+  'missing-token': EXIT_CODES.usage,
+  'empty-token': EXIT_CODES.usage,
+  'invalid-name': EXIT_CODES.usage,
+  'name-taken': EXIT_CODES.usage,
+  'already-signed-in': EXIT_CODES.usage,
+  'not-signed-in': EXIT_CODES.usage,
+  'not-registered': EXIT_CODES.usage,
+  'token-in-environment': EXIT_CODES.usage,
+  'token-refused': EXIT_CODES.authentication,
+  'token-forbidden': EXIT_CODES.permission,
+  'route-unknown': EXIT_CODES.instance,
+  'instance-redirect': EXIT_CODES.instance,
+  'instance-unreachable': EXIT_CODES.instance,
+  'instance-error': EXIT_CODES.instance,
+  'instance-answer': EXIT_CODES.instance,
   'internal': EXIT_CODES.internal,
   'interrupted': EXIT_CODES.interrupted,
 }
@@ -73,11 +97,13 @@ export interface Output {
   fail: (error: unknown) => void
   /** Ends the process at once after Ctrl+C. */
   interrupt: () => never
+  /** Names the instance the command contacts, in the JSON document. */
+  setInstance: (origin: string) => void
 }
 
 export function createOutput(options: { cli: string, json: boolean, command: CommandName | null }): Output {
   const { cli, json, command } = options
-  const instance = null
+  let instance: string | null = null
   const writeDocument = (document: ResultDocument | ErrorDocument) => process.stdout.write(`${JSON.stringify(document)}\n`)
   const fail = (error: unknown) => {
     const { code, message } = asCliError(error)
@@ -102,6 +128,9 @@ export function createOutput(options: { cli: string, json: boolean, command: Com
     interrupt: () => {
       fail(new CliError('interrupted'))
       process.exit(EXIT_CODES.interrupted)
+    },
+    setInstance: (origin) => {
+      instance = origin
     },
   }
 }

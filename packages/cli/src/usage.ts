@@ -1,4 +1,5 @@
 import type { Output } from './output.ts'
+import type { KeyringLoader } from './storage.ts'
 
 export interface OptionUsage {
   type: 'boolean' | 'string'
@@ -21,11 +22,36 @@ export const COMMON_OPTIONS = {
   version: { type: 'boolean', description: 'Show the version of the command line.' },
 } as const satisfies Record<string, OptionUsage>
 
+const INSTANCE_OPTION = {
+  type: 'string',
+  value: 'origin or name',
+  description: 'The origin of the instance, or the name login registered it under; without it, VIGNETTES_INSTANCE, then the default instance.',
+} as const satisfies OptionUsage
+
 export const COMMANDS = {
   check: {
     summary: 'Check decks for the problems the studio reports, without network and without writing a file.',
     operands: { name: 'file', required: 1, multiple: true },
     options: {},
+  },
+  login: {
+    summary: 'Sign in to an instance with a personal token: check the token, keep it on this machine and register the instance.',
+    options: {
+      'instance': INSTANCE_OPTION,
+      'name': { type: 'string', value: 'name', description: 'The name to register the instance under, for --instance and VIGNETTES_INSTANCE; its host by default.' },
+      'token-stdin': { type: 'boolean', description: 'Read the token from the standard input, without a question.' },
+    },
+  },
+  logout: {
+    summary: 'Revoke the token kept for an instance, then erase it from this machine.',
+    options: {
+      instance: INSTANCE_OPTION,
+      local: { type: 'boolean', description: 'Remove the instance and its token from this machine without contacting the instance: the token stays valid until you revoke it in the studio.' },
+    },
+  },
+  whoami: {
+    summary: 'Show the instance, the account and the token the command line uses.',
+    options: { instance: INSTANCE_OPTION },
   },
 } as const satisfies Record<string, CommandUsage>
 
@@ -50,6 +76,10 @@ export interface CommandInput {
   /** False with `--json`, without a terminal on the standard input, or with `CI` set: the command asks no question. */
   interactive: boolean
   output: Output
+  /** The `fetch` of Node, the keyring and the standard input, replaced by the tests. */
+  fetch?: typeof fetch
+  keyring?: KeyringLoader
+  stdin?: NodeJS.ReadableStream
 }
 
 export type CommandRun = (input: CommandInput) => Promise<void>
