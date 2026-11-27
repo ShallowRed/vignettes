@@ -4,7 +4,8 @@ import type { SlideRange } from './split.ts'
 import { isRefusedEmbed, isValueless, readAttribute } from './attributes.ts'
 import { ANNOTATION_TAGS, attributeNamed, componentKey, DECK_ANNOTATIONS, deckComponentNamed, deckComponents } from './components.ts'
 import { frontmatterLineCount } from './frontmatter.ts'
-import { LAYOUT_ATTRIBUTES } from './layout.ts'
+import { HTML_TAGS } from './html-tags.ts'
+import { LAYOUT_ATTRIBUTES, legacyComponentLayout } from './layout.ts'
 import { blockAttributes, LIST_MARKER, proseLines, walk } from './scan.ts'
 
 /**
@@ -25,6 +26,7 @@ export interface ComponentMention {
 }
 
 const DIRECTIVE_RE = /(^|[\s([])(:+)([a-z][\w-]*)/gi
+const ATTRIBUTE_BLOCK_RE = /\{([^{}]*)\}/g
 
 /**
  * The blocks that no closing line ends before the end of the text, which MDC
@@ -226,6 +228,34 @@ export function componentMentions(raw: string, names: Iterable<string>): Compone
     .map(({ name, line, column, length }) => ({ name, line, column, length }))
 }
 
+// MDC names an element by the kebab case of the written name: `Strong` and `STRONG` give `strong`, `TBody` gives `t-body`.
+const ONE_WORD_RE = /^(?:[a-z][a-z\d]*|[A-Z][a-z\d]*|[A-Z][A-Z\d]*)$/
+
+/**
+ * The names of the components a deck writes, once each, as `componentMentions`
+ * places them: a directive written in a `{…}` block is an attribute or a value,
+ * a directive named after an HTML element renders as that element, and the
+ * parser lays its slide out with a component of the earlier format that
+ * `legacyComponentLayout` reads.
+ */
+export function writtenComponentNames(raw: string): string[] {
+  const blocks = new Map<number, Array<{ from: number, to: number }>>()
+  for (const { line, prose } of proseLines(raw))
+    blocks.set(line, [...prose.matchAll(ATTRIBUTE_BLOCK_RE)].map(block => ({ from: block.index, to: block.index + block[0].length })))
+  const mentions = directiveMentions(raw)
+  for (const { line, attributes } of mentions) {
+    if (attributes)
+      blocks.get(line)?.push(attributes)
+  }
+  const topLevel = topLevelLines(raw)
+  const names = mentions
+    .filter(mention => !blocks.get(mention.line)?.some(({ from, to }) => from < mention.column && mention.column < to))
+    .filter(({ name }) => !(ONE_WORD_RE.test(name) && HTML_TAGS.has(name.toLowerCase())) && !legacyComponentLayout(name, {}))
+    .filter(mention => !isLiftedAnnotation(mention, topLevel.get(mention.line)))
+    .map(({ name }) => name)
+  return [...new Set(names)]
+}
+
 /** The lines of a deck outside the frontmatter, fenced code and MDC blocks, by their 1-based number. */
 function topLevelLines(raw: string): Map<number, string> {
   const topLevel = new Map<number, string>()
@@ -271,8 +301,6 @@ export interface AttributeMention {
   column: number
   length: number
 }
-
-const ATTRIBUTE_BLOCK_RE = /\{([^{}]*)\}/g
 
 const BLOCK_TAG_RE = /:+([a-z][\w-]*)(?:\[[^\]]*\])?$/i
 // The destination of a markdown link keeps one level of balanced parentheses.

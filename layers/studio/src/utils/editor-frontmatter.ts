@@ -6,7 +6,7 @@ import type { LineProblem, Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { Decoration, hoverTooltip, ViewPlugin } from '@codemirror/view'
-import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, frontmatterLineCount, inLanguage, isFrontmatterUnclosed, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, unclosedFrontmatterLine } from '@vignettes/core/deck'
+import { DECK_FILE_EXPECTED_TYPES, DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, frontmatterKeyLines, frontmatterLineCount, inLanguage, isFrontmatterUnclosed, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, splitFrontmatter, unclosedFrontmatterLine } from '@vignettes/core/deck'
 import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
 import { DOCS_SECTIONS, FRONTMATTER_KEYS } from '../config/editor-reference'
@@ -152,9 +152,6 @@ function completionSource(options: FrontmatterOptions) {
 /** Values checked against their set; the others take free text. */
 const OPEN_VALUES = new Set(['theme', 'lang', 'slideNumber', 'project'])
 
-/** The types a schema issue may expect, each with its message. */
-const EXPECTED_TYPES = new Set(['number', 'boolean', 'string'])
-
 const unquote = (value: string) => value.replace(/^(["'])(.*)\1$/, '$2')
 
 /**
@@ -174,7 +171,7 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
   }
   catch (error) {
     if (error instanceof YAMLException) {
-      const line = state.doc.line(Math.min(end - 1, Math.max(2, (error.mark?.line ?? 0) + 2)))
+      const line = state.doc.line(splitFrontmatter(state.doc.toString()).yamlErrorLine ?? 2)
       // A value with a colon in it, such as a title, is the most frequent case.
       const colon = /^(\s*[\w-]+):\s+([^"'\s].*:\s.*)$/.exec(line.text)
       problems.push({
@@ -204,18 +201,18 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
   const parsed = DeckMetaSchema.safeParse(data ?? {})
   const schemaIssues = new Map(parsed.success ? [] : parsed.error.issues.map(issue => [issue.path.join('.'), issue]))
 
-  for (let n = 2; n < end; n++) {
+  for (const key of frontmatterKeyLines(state.doc.toString())) {
+    const n = key.line
     const line = state.doc.line(n)
-    const match = KEY_LINE_RE.exec(line.text)
-    if (!match)
-      continue
-    const indent = match[1]!.length
+    const name = key.path.at(-1) ?? ''
+    const indent = key.column
     const keyFrom = line.from + indent
-    const keyTo = keyFrom + match[2]!.length
+    const keyTo = keyFrom + key.length
+    const afterKey = line.text.slice(indent + key.length)
     const scope = fieldsAt(state, n, indent)
-    const field = scope?.fields.find(f => f.key === match[2])
-    const path = indent === 0 ? match[2]! : `${scope?.parent?.key ?? ''}.${match[2]}`
-    const value = match[3]!.replace(/\s#.*$/, '').trim()
+    const field = scope?.fields.find(f => f.key === name)
+    const path = key.path.join('.')
+    const value = afterKey.slice(afterKey.indexOf(':') + 1).replace(/\s#.*$/, '').trim()
     const valueFrom = line.from + line.text.indexOf(value, keyTo - line.from + 1)
     const onValue = (severity: Problem['severity'], message: string, short: string) =>
       problems.push({ from: valueFrom, to: valueFrom + value.length, severity, message, short })
@@ -226,7 +223,7 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
         onValue('error', t('editor.diagnostics.refusedUrl'), t('editor.diagnostics.refusedUrlShort', { line: n }))
       }
       else {
-        const expected = 'expected' in issue && EXPECTED_TYPES.has(String(issue.expected)) ? String(issue.expected) : null
+        const expected = 'expected' in issue && DECK_FILE_EXPECTED_TYPES.includes(String(issue.expected)) ? String(issue.expected) : null
         onValue('error', expected ? t(`editor.frontmatter.expected.${expected}`) : t('editor.frontmatter.invalidValue'), t('editor.frontmatter.invalidValueShort', { line: n, key: path }))
       }
       continue
@@ -239,10 +236,10 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
       // Under `reveal`, the deck passes the options `RevealConfigSchema` names,
       // more than the guide lists.
       const known = indent === 0
-        ? LEGACY_FRONTMATTER_KEYS.includes(match[2]!)
-        : scope?.parent?.key === 'reveal' && Object.hasOwn(RevealConfigSchema.shape, match[2]!)
+        ? LEGACY_FRONTMATTER_KEYS.includes(name)
+        : scope?.parent?.key === 'reveal' && Object.hasOwn(RevealConfigSchema.shape, name)
       if (!known && scope)
-        problems.push({ from: keyFrom, to: keyTo, severity: 'info', message: t('editor.frontmatter.unknownKey', { key: match[2] }) })
+        problems.push({ from: keyFrom, to: keyTo, severity: 'info', message: t('editor.frontmatter.unknownKey', { key: name }) })
       continue
     }
     if (indent === 0 && field.key === 'theme' && value && !isKnownTheme(unquote(value))) {

@@ -43,16 +43,31 @@ describe('readDeckFile', () => {
     expect(readDeckFile('---\ntitle: Bilan\ntheme: dsfr\n---\n\n# Bilan\n')).toMatchObject({ valid: true, meta: { title: 'Bilan', theme: 'dsfr' } })
   })
 
-  it('names the key of each refused value, the title included', () => {
-    expect(readDeckFile('---\nparser: titres\n---\n')).toMatchObject({ valid: false, issues: [{ key: 'title' }, { key: 'parser' }] })
+  it('names the key and the nature of each refused value, the title included', () => {
+    expect(readDeckFile('---\nparser: titres\n---\n')).toMatchObject({ valid: false, issues: [{ key: 'title', reason: 'no-title' }, { key: 'parser', reason: 'value', values: ['separator', 'heading'] }] })
+    expect(readDeckFile('---\ntitle: " "\n---\n')).toMatchObject({ valid: false, issues: [{ key: 'title', reason: 'no-title' }] })
+    expect(readDeckFile('---\ntitle: 42\n---\n')).toMatchObject({ valid: false, issues: [{ key: 'title', reason: 'value', expected: 'string' }] })
+  })
+
+  it('gives the type or the values a refused value takes, when the schema gives them', () => {
+    const raw = '---\ntitle: A\nstorybook: "javascript:x"\nreveal:\n  width: large\nbrand:\n  slides: some\ncode: [1]\n---\n'
+    expect(readDeckFile(raw)).toEqual({
+      valid: false,
+      issues: [
+        { key: 'storybook', reason: 'address', message: expect.any(String) },
+        { key: 'brand.slides', reason: 'value', message: expect.any(String), values: ['cover', 'all'] },
+        { key: 'reveal.width', reason: 'value', message: expect.any(String), expected: 'number' },
+        { key: 'code', reason: 'value', message: expect.any(String) },
+      ],
+    })
   })
 
   it('reports a block that is not YAML without a key', () => {
-    expect(readDeckFile('---\ntitle: [Bilan\n---\n')).toMatchObject({ valid: false, issues: [{ key: '' }] })
+    expect(readDeckFile('---\ntitle: [Bilan\n---\n')).toMatchObject({ valid: false, issues: [{ key: '', reason: 'unreadable' }] })
   })
 
   it('reports a front matter whose closing line is missing, by the heading it takes in', () => {
-    expect(readDeckFile('---\ntitle: Bilan\n\n# Bilan\n\n---\n## Suite\n')).toMatchObject({ valid: false, issues: [{ key: '', message: expect.stringMatching(/^Line 4:/) }] })
+    expect(readDeckFile('---\ntitle: Bilan\n\n# Bilan\n\n---\n## Suite\n')).toMatchObject({ valid: false, issues: [{ key: '', reason: 'unclosed', message: expect.stringMatching(/^Line 4:/) }] })
   })
 })
 
