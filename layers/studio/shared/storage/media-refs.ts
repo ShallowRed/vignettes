@@ -2,7 +2,8 @@
 const UPLOAD_REFERENCE = /\/media\/([a-z0-9]+\.[a-z0-9]+)/gi
 // Files of the content space, by their served path. The lookbehind leaves out
 // `https://host/images/x.png`: only a root-relative path is served from here.
-const ASSET_REFERENCE = /(?<![\w/])\/(images)\/([^\s"')\]]+)/gi
+// The angle brackets close a markdown destination written between them.
+const ASSET_REFERENCE = /(?<![\w/])\/(images)\/([^\s"')\]<>]+)/gi
 
 /** The key `/<prefix>/<path>` is indexed and gated under. */
 export function assetKey(prefix: string, path: string): string {

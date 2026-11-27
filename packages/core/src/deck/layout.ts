@@ -315,7 +315,11 @@ function percentOf(overlay: unknown): string | undefined {
   return value > 0 ? `${Math.round(Math.min(value, 1) * 100)}%` : undefined
 }
 
-const LEGACY_COMPONENTS: Readonly<Record<string, (props: Attributes) => Attributes>> = {
+/**
+ * The components of the earlier format that drew a media beside or behind the
+ * text, by `componentKey`, with the `:layout` attributes each one gives.
+ */
+export const LEGACY_COMPONENTS: Readonly<Record<string, (props: Attributes) => Attributes>> = {
   fullscreenimage: ({ src, alt, overlay, heading }) => ({ media: 'behind', src, type: 'image', alt, veil: percentOf(overlay), heading }),
   splitslide: ({ src, type, fit, alt, title, lightbox, ratio, reverse }) => ({
     media: isSet(reverse) ? 'left' : 'right',

@@ -1,5 +1,6 @@
 import type { ComponentAttributeIssue, DeckFileIssueReason, DeckProblem, FrontmatterProblem, LayoutMention } from '@vignettes/core/deck'
-import { inLanguage, LEGACY_FORMS } from '@vignettes/core/deck'
+import { inLanguage, LEGACY_FORMS, MAX_DECK_LENGTH, MAX_JSON_BODY_BYTES } from '@vignettes/core/deck'
+import { IMAGE_FORMAT_NAMES, MAX_MEDIA_MEGABYTES } from '@vignettes/core/media'
 
 type Problem<Check extends DeckProblem['check']> = Extract<DeckProblem, { check: Check }>
 
@@ -70,6 +71,30 @@ export function problemMessage(problem: DeckProblem): string {
       return `Unknown component “${problem.name}”: the studio shows its content without formatting.`
     case 'unknown-theme':
       return `The theme “${problem.theme}” is not among the themes built into the command line: an instance may publish it.`
+    case 'image-missing':
+      return `No image file at “${problem.value}”, read from the folder of the deck.`
+    case 'image-outside-deck':
+      return `“${problem.value}” leads out of the folder of the deck, symbolic links included: the command line reads the images of the folder of the deck and of its subfolders only. Move the image into it.`
+    case 'image-unreadable':
+      return `The command line cannot read “${problem.value}”: give the path of a file you have the right to read.`
+    case 'image-type':
+      return `The bytes of “${problem.value}” show none of the accepted formats: ${IMAGE_FORMAT_NAMES.join(', ')}.`
+    case 'image-too-large':
+      return `“${problem.value}” weighs more than ${MAX_MEDIA_MEGABYTES} MB, the largest image an instance accepts.`
+    case 'image-source-other':
+      return `“${problem.value}” is not an image address the command line reads: write a path relative to the deck, a path of the site such as /images/…, or an http://, https:// or data:image address.`
+    case 'image-unread':
+      return `${problem.value} stays as written in the text sent to the instance, which will not serve it: the command line uploads the images that a markdown image or an image attribute cites (https://github.com/ShallowRed/vignettes/issues/22).`
+    case 'image-not-replaced':
+      return `${problem.value} stays as written in the text sent to the instance, which will not serve it. If the slide shows it as an image, report the form of this line in an issue of https://github.com/ShallowRed/vignettes/issues; if it is a link to a file, publish the file elsewhere and link to its address.`
+    case 'image-unplaced':
+      return `The command line cannot replace “${problem.value}” in the text: write the value in block style, on the line of its key, without quotes or between plain quotes.`
+    case 'deck-empty':
+      return 'The file is empty: an instance refuses an empty deck.'
+    case 'deck-too-long':
+      return `The deck holds more than ${MAX_DECK_LENGTH} characters, the longest deck an instance accepts.`
+    case 'deck-body-too-large':
+      return `The request that sends this deck weighs ${problem.bytes} bytes, more than the ${MAX_JSON_BODY_BYTES} bytes an instance reads.`
   }
 }
 
@@ -83,6 +108,7 @@ export type CliErrorCode
     | 'missing-operand'
     | 'missing-file'
     | 'unreadable-file'
+    | 'not-utf8'
     | 'missing-instance'
     | 'unknown-instance'
     | 'invalid-instance'
@@ -120,6 +146,7 @@ const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'missing-operand': operand => `Give at least one <${operand}> after the command.`,
   'missing-file': file => `The file “${file}” does not exist.`,
   'unreadable-file': file => `The file “${file}” cannot be read.`,
+  'not-utf8': file => `The file “${file}” is not written in UTF-8: save it in UTF-8, the encoding the studio reads.`,
   'missing-instance': () => 'Name the instance with --instance <origin or name> or VIGNETTES_INSTANCE, or sign in with vignettes login --instance <origin>.',
   'unknown-instance': name => `No registered instance is named “${name}”: give its origin, such as https://app.vignettes.io, or sign in to it with vignettes login.`,
   'invalid-instance': address => `“${address}” is not an address: write the origin of the instance, such as https://app.vignettes.io.`,

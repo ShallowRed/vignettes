@@ -102,8 +102,18 @@ export const MAX_DECK_LENGTH = 1_000_000
  */
 export const MAX_JSON_BODY_BYTES = 2 * 1024 * 1024
 
+/** Why `prepareDeckWrite` refuses a write: a slug outside `isDeckSlug`, an empty text, or a text longer than `MAX_DECK_LENGTH`. */
+export type DeckWriteRefusal = 'slug' | 'empty' | 'too-long'
+
 /** A write that `prepareDeckWrite` refuses; the message names the reason. */
-export class DeckWriteError extends Error {}
+export class DeckWriteError extends Error {
+  readonly reason: DeckWriteRefusal
+
+  constructor(reason: DeckWriteRefusal, message: string) {
+    super(message)
+    this.reason = reason
+  }
+}
 
 /**
  * Validate a write request and derive its storage key. Throws a
@@ -114,13 +124,13 @@ export function prepareDeckWrite(input: DeckWriteInput): PreparedDeckWrite {
   const { slug, raw } = input
 
   if (!isDeckSlug(slug))
-    throw new DeckWriteError(`Invalid slug "${slug}" — must match ${SLUG_RE} (single path segment, no slashes)`)
+    throw new DeckWriteError('slug', `Invalid slug "${slug}" — must match ${SLUG_RE} (single path segment, no slashes)`)
 
   if (typeof raw !== 'string' || raw.length === 0)
-    throw new DeckWriteError('Refusing to write empty markdown (a blank save would wipe the deck)')
+    throw new DeckWriteError('empty', 'Refusing to write empty markdown (a blank save would wipe the deck)')
 
   if (raw.length > MAX_DECK_LENGTH)
-    throw new DeckWriteError(`The deck holds more than ${MAX_DECK_LENGTH} characters`)
+    throw new DeckWriteError('too-long', `The deck holds more than ${MAX_DECK_LENGTH} characters`)
 
   return { slug, key: `${slug}.md`, raw }
 }

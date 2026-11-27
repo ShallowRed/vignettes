@@ -28,6 +28,7 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'missing-operand': EXIT_CODES.usage,
   'missing-file': EXIT_CODES.usage,
   'unreadable-file': EXIT_CODES.usage,
+  'not-utf8': EXIT_CODES.usage,
   'missing-instance': EXIT_CODES.usage,
   'unknown-instance': EXIT_CODES.usage,
   'invalid-instance': EXIT_CODES.usage,
@@ -64,6 +65,14 @@ export function asCliError(error: unknown): CliError {
 export function exitCodeOf(error: unknown): ExitCode {
   return ERROR_EXIT_CODES[asCliError(error).code]
 }
+
+// The C0 and C1 control characters but the tab and the line feed: ESC opens
+// an escape sequence of the terminal, and a deck or an instance may write one.
+// eslint-disable-next-line no-control-regex
+const CONTROL_RE = /[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g
+
+/** A text without its control characters, as the command line writes it on the terminal. */
+const withoutControls = (text: string) => text.replace(CONTROL_RE, '')
 
 /** A command asks a question only in a terminal, outside the CI and without `--json`. */
 export function isInteractive(mode: { json: boolean, stdinIsTTY: boolean, ci: boolean }): boolean {
@@ -110,14 +119,14 @@ export function createOutput(options: { cli: string, json: boolean, command: Com
     if (json)
       writeDocument({ ok: false, cli, command, instance, error: { code, message } })
     else
-      process.stderr.write(`vignettes: ${message}\n`)
+      process.stderr.write(`vignettes: ${withoutControls(message)}\n`)
     process.exitCode = exitCodeOf(error)
   }
   return {
-    progress: text => process.stderr.write(`${text}\n`),
+    progress: text => process.stderr.write(`${withoutControls(text)}\n`),
     print: (text) => {
       if (!json)
-        process.stdout.write(text.endsWith('\n') ? text : `${text}\n`)
+        process.stdout.write(withoutControls(text.endsWith('\n') ? text : `${text}\n`))
     },
     finish: (results, exitCode = EXIT_CODES.success) => {
       if (json)

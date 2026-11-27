@@ -2,7 +2,7 @@ import type { AttributeMention, ComponentAttributeIssue, ComponentMention, DeckP
 import type { Translate } from '../config/editor-reference'
 import type { LineProblem, ProblemFix, Severity } from './editor-problems'
 import type { RenderFailureMention } from './render-failures'
-import { deckComponentNamed, inLanguage, LEGACY_FORMS, legacyMentions } from '@vignettes/core/deck'
+import { DECK_FILE_CHECKS, deckComponentNamed, inLanguage, LEGACY_FORMS, legacyMentions } from '@vignettes/core/deck'
 import { DOCS_SECTIONS } from '../config/editor-reference'
 
 /**
@@ -53,8 +53,11 @@ const LAYOUT_MESSAGES: Record<LayoutMention['kind'], string> = {
 
 const SEVERITY_RANK: Record<Severity, number> = { error: 0, warning: 1, info: 2 }
 
-/** The problems of `checkDeck` that the frontmatter guide and the preview find themselves. */
-const EDITOR_CHECKS = ['frontmatter', 'unknown-component', 'unknown-theme'] as const
+/**
+ * The problems of `checkDeck` that the frontmatter guide and the preview find
+ * themselves, and those of the files of a deck, which the command line finds.
+ */
+const EDITOR_CHECKS = ['frontmatter', 'unknown-component', 'unknown-theme', ...DECK_FILE_CHECKS] as const
 
 type ListedDeckProblem = Exclude<DeckProblem, { check: typeof EDITOR_CHECKS[number] }>
 

@@ -1,6 +1,7 @@
 import type { DeckProblem } from '@vignettes/core/deck'
 import { readdirSync, readFileSync } from 'node:fs'
-import { checkDeck, componentMentions, parserIdFor, PROBLEM_CODES, problemCode, registerDeckComponents, resetDeckComponents, splitFrontmatter, writtenComponentNames } from '@vignettes/core/deck'
+import { checkDeck, checkDeckFiles, checkDeckWrite, componentMentions, DeckWriteError, MAX_DECK_LENGTH, MAX_JSON_BODY_BYTES, parserIdFor, prepareDeckWrite, PROBLEM_CODES, problemCode, registerDeckComponents, resetDeckComponents, splitFrontmatter, writtenComponentNames } from '@vignettes/core/deck'
+import { MAX_MEDIA_BYTES } from '@vignettes/core/media'
 import { SCHEMA_COMPONENTS } from '@vignettes/schemas/components'
 import { STORYBOOK_COMPONENTS } from '@vignettes/storybook/components'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -104,8 +105,100 @@ describe('checkDeck', () => {
       'frontmatter',
       'unknown-component',
       'unknown-theme',
+      'image-missing',
+      'image-outside-deck',
+      'image-unreadable',
+      'image-type',
+      'image-too-large',
+      'image-source-other',
+      'image-unread',
+      'image-not-replaced',
+      'image-unplaced',
+      'deck-empty',
+      'deck-too-long',
+      'deck-body-too-large',
     ])
     expect(checkDeck('---\ntitle: A\n---\n\n:layout{media="right"}\n').map(problemCode)).toEqual(['layout-missing-source'])
+  })
+})
+
+const coded = (problem: DeckProblem) => [problemCode(problem), problem.severity, problem.line]
+
+describe('checkDeckFiles', () => {
+  const raw = [
+    '---',
+    'title: A',
+    'brand: { operator: ./flow.svg }',
+    '---',
+    '',
+    '![a](./missing.png) ![b](../outside.png) ![c](./text.png)',
+    '![d](./large.png) ![e](./fine.png) ![f](//host/x.png) ![g](/images/g.png) ![h](./locked.png)',
+    '<img src="./html.png">',
+    '',
+  ].join('\n')
+  const facts = new Map([
+    ['./flow.svg', { state: 'read', bytes: 10, type: 'image/svg+xml' }],
+    ['./missing.png', { state: 'missing' }],
+    ['../outside.png', { state: 'outside' }],
+    ['./text.png', { state: 'read', bytes: 10 }],
+    ['./large.png', { state: 'read', bytes: MAX_MEDIA_BYTES + 1, type: 'image/png' }],
+    ['./fine.png', { state: 'read', bytes: MAX_MEDIA_BYTES, type: 'image/png' }],
+    ['./locked.png', { state: 'unreadable' }],
+  ] as const)
+
+  it('finds a problem for each local image the command line read, and for each source it does not read', () => {
+    expect(checkDeckFiles(raw, new Map(facts)).map(problem => [...coded(problem), problem.check.startsWith('image') && 'value' in problem && problem.value])).toEqual([
+      ['image-unplaced', 'error', 3, './flow.svg'],
+      ['image-missing', 'error', 6, './missing.png'],
+      ['image-outside-deck', 'error', 6, '../outside.png'],
+      ['image-type', 'error', 6, './text.png'],
+      ['image-too-large', 'error', 7, './large.png'],
+      ['image-source-other', 'warning', 7, '//host/x.png'],
+      ['image-unreadable', 'error', 7, './locked.png'],
+      ['image-unread', 'warning', 8, './html.png'],
+    ])
+  })
+
+  it('finds nothing in a deck without an image source', () => {
+    expect(checkDeckFiles('---\ntitle: A\n---\n\n# B\n', new Map())).toEqual([])
+  })
+})
+
+describe('checkDeckWrite', () => {
+  it('reports a relative path of an image left in the text sent as a warning, apart from those image-unread reports', () => {
+    const sent = '---\ntitle: A\n---\n\n[télécharger](./a.pdf) [![x](./b.png)](https://e.org)\n<img src="./c.png">\n'
+    expect(checkDeckWrite(sent, { slug: 'deck' }).map(problem => [...coded(problem), 'value' in problem && problem.value])).toEqual([
+      ['image-not-replaced', 'warning', 5, './b.png'],
+    ])
+  })
+
+  it('reports no path inside the place of a local source left in the text, which checkDeckFiles reports', () => {
+    const sent = '# A\n\n![a](</media/0.png>) ![b](<./a b.png>)\n'
+    expect(checkDeckWrite(sent, { slug: 'deck' }).map(problem => 'value' in problem && problem.value)).toEqual(['b.png'])
+    expect(checkDeckWrite(sent, { slug: 'deck', left: [{ line: 3, column: 27, length: 9 }] })).toEqual([])
+  })
+
+  it('refuses an empty text and a text longer than MAX_DECK_LENGTH, with the reason of prepareDeckWrite', () => {
+    expect(checkDeckWrite('', { slug: 'deck' }).map(coded)).toEqual([['deck-empty', 'error', 1]])
+    expect(checkDeckWrite('x'.repeat(MAX_DECK_LENGTH), { slug: 'deck' })).toEqual([])
+    expect(checkDeckWrite('x'.repeat(MAX_DECK_LENGTH + 1), { slug: 'deck' }).map(coded)).toEqual([['deck-too-long', 'error', 1]])
+    expect(() => prepareDeckWrite({ slug: 'deck', raw: '' })).toThrow(expect.objectContaining({ reason: 'empty' }))
+    expect(() => prepareDeckWrite({ slug: 'a.b', raw: 'x' })).toThrow(DeckWriteError)
+  })
+
+  it('checks no slug: atelier.fr is the name of a file that check reads', () => {
+    expect(checkDeckWrite('# A\n', { slug: 'atelier.fr' })).toEqual([])
+    expect(checkDeckWrite('', { slug: 'atelier.fr' }).map(coded)).toEqual([['deck-empty', 'error', 1]])
+  })
+
+  it('refuses a text whose request would weigh more than MAX_JSON_BODY_BYTES', () => {
+    // Each € weighs three bytes in UTF-8 for one character; the body of a save adds its stamp, its version and its digest.
+    const free = MAX_JSON_BODY_BYTES - JSON.stringify({ raw: '', stamp: Number.MAX_SAFE_INTEGER, publishedVersion: Number.MAX_SAFE_INTEGER, draftDigest: '0'.repeat(64) }).length
+    const largest = '€'.repeat(Math.floor(free / 3)) + 'e'.repeat(free % 3)
+    expect(checkDeckWrite(largest, { slug: 'deck' })).toEqual([])
+    const problems = checkDeckWrite(`${largest}e`, { slug: 'deck' })
+    expect(problems.map(coded)).toEqual([['deck-body-too-large', 'error', 1]])
+    expect(problems[0]).toMatchObject({ bytes: MAX_JSON_BODY_BYTES + 1 })
   })
 })
 

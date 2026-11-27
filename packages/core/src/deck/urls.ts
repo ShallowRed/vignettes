@@ -1,3 +1,5 @@
+import { DECK_ASSET_PREFIXES } from '../deck-assets.ts'
+
 /**
  * The addresses a deck may give, for a link, a frame, an image or its Storybook.
  * The schema, the parsers, the renderer and the editor apply this one rule. A
@@ -16,7 +18,7 @@ const SCHEME_RE = /^([a-z][a-z\d+.-]*):/i
 const DATA_IMAGE_RE = /^data:image\/(?:avif|gif|jpeg|png|svg\+xml|webp)[;,]/i
 
 /** The address as the URL parser of a browser reads it: tabs and newlines dropped, control characters and spaces trimmed. */
-function parsedForm(value: string): string {
+export function parsedForm(value: string): string {
   const url = value.replace(/[\t\n\r]/g, '')
   let start = 0
   let end = url.length
@@ -72,6 +74,13 @@ export function isRefusedEmbedUrl(value: unknown): boolean {
  * space and its frozen bundles, which the operator publishes.
  */
 export const UPLOADED_FILE_PATHS: readonly string[] = ['/media/']
+
+/**
+ * The first segments of the paths the studio serves as files of the site,
+ * besides the files at the root of `public/` (`/favicon.svg`): the deck assets
+ * of the content space, the themes and the frozen bundles.
+ */
+export const SITE_PATH_PREFIXES: readonly string[] = [...DECK_ASSET_PREFIXES, 'themes', 'frozen']
 
 /**
  * Whether `src`, read from a page of `origin`, is a file an account uploaded on

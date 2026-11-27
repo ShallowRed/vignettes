@@ -15,7 +15,7 @@ vignettes check talk.md
 vignettes check talk.md appendix.md
 ```
 
-The command reads every file first, then checks each one with `checkDeck` of `@vignettes/core`, which knows the components built into the command line, those of `@vignettes/schemas` and `@vignettes/storybook` included. It writes a line per problem, then a count:
+The command reads every file first, with the local images it cites, then checks each one with `checkDeck` of `@vignettes/core`, which knows the components built into the command line, those of `@vignettes/schemas` and `@vignettes/storybook` included. It also checks each image a deck cites by a path relative to its file: the image is read from the folder of the deck or one of its subfolders, symbolic links resolved, and an instance accepts its format and its weight. A file is read as UTF-8. It writes a line per problem, then a count:
 
 ```
 talk.md:7:3  error  frontmatter  Value refused: this key takes a number, such as 1280.
@@ -59,6 +59,17 @@ With `--json`, the standard output holds one JSON document, and the columns coun
 - `legacy`, info: a form of an earlier version of the format, which the studio converts.
 - `unknown-component`, warning: a component absent from the components built into the command line; the studio shows its content without formatting.
 - `unknown-theme`, info: a theme absent from the themes built into the command line, which an instance may publish.
+- `image-missing`, error: no file at the path of a local image, read from the folder of the deck.
+- `image-outside-deck`, error: a local image whose path leads out of the folder of the deck and of its subfolders, symbolic links included; the command line reads none of its bytes.
+- `image-unreadable`, error: a local image that the command line cannot read: a folder or another entry that is not a file, a file you have no right to read, or a path the system refuses.
+- `image-type`, error: a local image whose bytes show none of the formats an instance accepts: PNG, JPG, WEBP, GIF, SVG or AVIF.
+- `image-too-large`, error: a local image of more than 10 MB.
+- `image-unplaced`, error: the path of a local image in the front matter written otherwise than in block style on the line of its key, which the command line cannot replace.
+- `image-source-other`, warning: an image address that is neither a path relative to the deck, nor a path of the site, nor an `http://`, `https://` or `data:image` address.
+- `image-unread`, warning: a relative path of an image written in HTML, in a markdown reference definition, or as the address of a page, which the command line leaves as written ([issue 22](https://github.com/ShallowRed/vignettes/issues/22)).
+- `image-not-replaced`, warning: a relative path of an image that stays in the text sent to an instance, in a form the command line does not read.
+- `deck-empty` and `deck-too-long`, errors: an empty deck, or a deck of more than 1,000,000 characters, which an instance refuses.
+- `deck-body-too-large`, error: a deck whose request to an instance would weigh more than 2 MiB.
 
 ## Signing in to an instance
 
@@ -82,7 +93,7 @@ With `--json`, with the `CI` variable set or without a terminal on the standard 
 
 - 0: success; for `check`, no file has an error.
 - 1: a file has an error.
-- 2: a usage error, such as an unknown option or command, a missing file or a file that cannot be read, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
+- 2: a usage error, such as an unknown option or command, a missing file, a file that cannot be read or is not UTF-8, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
 - 3: the instance refuses the token, which is unknown, revoked or expired.
 - 4: the instance refuses the request: the account or the scope of the token lacks the right.
 - 6: the instance cannot be reached, redirects, does not know the route, answers with an error, or gives an answer the command line does not read.
