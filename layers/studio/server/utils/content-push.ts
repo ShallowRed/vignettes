@@ -1,7 +1,6 @@
 import type { ArchivedDeckAxes, ArchiveWrite, ContentArchive } from '../db/ports'
 import { isAccessPasswordHash } from '#shared/access/password-shape'
-import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
-import { inFolder } from './templates'
+import { inFolder, prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
 
 /** A stub of the content space, sent by `content:push`. */
 export interface PushedStub {

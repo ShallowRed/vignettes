@@ -1,5 +1,5 @@
+import { creationDraft, inFolder } from '@vignettes/core/deck'
 import { describe, expect, it } from 'vitest'
-import { creationDraft, inFolder } from '../../layers/studio/server/utils/templates'
 
 const IMPORTED = [
   '---',
