@@ -1,11 +1,11 @@
-## Contexte
+## Context
 
-<!-- Le défaut, au passé : ce que faisait le produit, et dans quel cas. -->
+<!-- The defect, in the past tense: what the product did, and in which case. -->
 
 ## Description
 
-<!-- Une phrase : « Corrige », puis le comportement rétabli. -->
+<!-- One sentence: "Fixes", then the behaviour the pull request restores. -->
 
-## Vérification
+## Testing
 
-<!-- La commande ou le geste qui montrait le défaut, puis le résultat à obtenir. -->
+<!-- The command or the gesture that showed the defect, then the result to get. -->

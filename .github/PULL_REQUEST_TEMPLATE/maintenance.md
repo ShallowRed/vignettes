@@ -1,7 +1,7 @@
 ## Description
 
-<!-- Une phrase : un verbe d'action, puis ce que la pull request change. -->
+<!-- One sentence: a verb of action, then what the pull request changes. -->
 
-## Vérification
+## Testing
 
-<!-- La commande à lancer, puis le résultat à obtenir. -->
+<!-- The command to run, then the result to get. -->

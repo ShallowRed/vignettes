@@ -1,11 +1,11 @@
 ## Description
 
-<!-- Une phrase : un verbe d'action, puis le comportement livré. -->
+<!-- One sentence: a verb of action, then the behaviour the pull request delivers. -->
 
-## Modifications
+## Changes
 
-<!-- Une liste. Chaque élément est une phrase complète, avec son sujet et son verbe, sur une chose modifiée. -->
+<!-- A list. Each element is a full sentence, with its subject and its verb, about one changed element. -->
 
-## Vérification
+## Testing
 
-<!-- La commande à lancer ou le geste à faire, puis le résultat à obtenir. -->
+<!-- The command to run or the gesture to make, then the result to get. -->

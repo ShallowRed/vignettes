@@ -1,7 +1,7 @@
 name: Pull request description
 
-# The description of a pull request follows the model that the type of its
-# title names (CONTRIBUTING.md, section "Pull requests"). The run starts again when the
+# The description of a pull request follows the template for the type of its
+# title (CONTRIBUTING.md, section "Pull requests"). The run starts again when the
 # title or the description changes, and on each push, so that the last commit
 # of the pull request holds the result.
 on:
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      - name: Check the description against its model
+      - name: Check the description against its template
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
