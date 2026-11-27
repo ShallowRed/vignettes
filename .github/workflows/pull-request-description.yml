@@ -1,0 +1,32 @@
+name: Pull request description
+
+# The description of a pull request follows the template for the type of its
+# title (CONTRIBUTING.md, section "Pull requests"). The run starts again when the
+# title or the description changes, and on each push, so that the last commit
+# of the pull request holds the result.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pull-request-description-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  description:
+    # A bot such as Dependabot writes its own description.
+    if: github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Check the description against its template
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/pull-request-description.ts
