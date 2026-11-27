@@ -12,9 +12,11 @@ const originsPort = 3211
 function server(port: number, database: string, env: Record<string, string> = {}) {
   return {
     command: [
-      `rm -rf ${database} ${database}.lock`,
+      `rm -rf ${database} ${database}.lock ${database}.cli-tokens.json`,
       'node scripts/db-migrate.ts',
       'node scripts/content-import.ts --content=test/e2e/fixtures/decks --apply',
+      // The accounts and the tokens of `cli.e2e.ts`, drawn at random at each run.
+      'node test/e2e/fixtures/cli-seed.ts',
       'node .output/server/index.mjs',
     ].join(' && '),
     url: `http://127.0.0.1:${port}/slides/composants`,
@@ -41,10 +43,13 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testIgnore: ['origins.e2e.ts', 'telemetry.e2e.ts'] },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testIgnore: ['origins.e2e.ts', 'telemetry.e2e.ts', 'cli.e2e.ts'] },
   ],
   webServer: [
-    server(port, database),
+    server(port, database, {
+      // The content token of `cli.e2e.ts`, which the server reads at its start.
+      NUXT_CONTENT_TOKEN: 'e2e-content-token-not-a-secret-0000',
+    }),
     server(originsPort, '.data/e2e-origins-pglite', {
       NUXT_STUDIO_URL: `http://app.localhost:${originsPort}`,
       NUXT_PUBLIC_DECKS_URL: `http://decks.localhost:${originsPort}`,
