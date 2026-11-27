@@ -49,3 +49,21 @@ Once the author approves the recette, they remove the recette file and its trial
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org): `type(scope): subject`, lowercase after the colon, imperative present, in English.
 
 Code, code comments and commit messages are written in English. The texts of the interface are in `layers/studio/i18n/locales/`, in French and English with the same keys.
+
+## Pull requests
+
+The title of a pull request follows the convention of the commit messages: a squash merge makes it the subject of the commit in `main`. Its description is in French, in titled sections, and starts from one of the three models of `.github/PULL_REQUEST_TEMPLATE/`. The type of the title names the model, and the model names the sections the description requires:
+
+- `feature.md` for `feat`, `refactor` and `perf`: `Description`, `Modifications`, `Vérification`;
+- `fix.md` for `fix`: `Contexte`, `Description`, `Vérification`;
+- `maintenance.md` for `build`, `chore`, `ci`, `docs`, `revert`, `style` and `test`: `Description`, `Vérification`.
+
+Each model accepts the sections it does not require. The sections follow the order `Contexte`, `Description`, `Modifications`, `Vérification`, `Suites`.
+
+- `Contexte`: the defect or the earlier state of the product, in the past tense.
+- `Description`: one sentence, which starts with the action of the pull request on the product (Ajoute, Corrige, Remplace, Retire) and names the behaviour it delivers.
+- `Modifications`: a list, one full sentence per changed element, with its subject and its verb.
+- `Vérification`: the command to run or the gesture to make, then the result to get.
+- `Suites`: what remains to do, with the issue that tracks it when there is one.
+
+`gh pr create --template feature.md` starts a description from a model, and so does `?template=feature.md` at the end of the address of a new pull request on GitHub ([query parameters of a pull request](https://docs.github.com/en/pull-requests/reference/using-query-parameters-to-create-a-pull-request)). The workflow `pull-request-description.yml` runs `scripts/pull-request-description.ts` on each pull request, and fails while the description differs from its model; `test/unit/pull-request-description.test.ts` lists the cases it refuses and compares the list of the models above to the script. The Revert button of GitHub writes a title `Revert "…"`: rename it `revert: …`.
