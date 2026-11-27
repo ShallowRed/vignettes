@@ -108,6 +108,7 @@ export type CliErrorCode
     | 'missing-operand'
     | 'missing-file'
     | 'unreadable-file'
+    | 'not-utf8'
     | 'missing-instance'
     | 'unknown-instance'
     | 'invalid-instance'
@@ -145,6 +146,7 @@ const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'missing-operand': operand => `Give at least one <${operand}> after the command.`,
   'missing-file': file => `The file “${file}” does not exist.`,
   'unreadable-file': file => `The file “${file}” cannot be read.`,
+  'not-utf8': file => `The file “${file}” is not written in UTF-8: save it in UTF-8, the encoding the studio reads.`,
   'missing-instance': () => 'Name the instance with --instance <origin or name> or VIGNETTES_INSTANCE, or sign in with vignettes login --instance <origin>.',
   'unknown-instance': name => `No registered instance is named “${name}”: give its origin, such as https://app.vignettes.io, or sign in to it with vignettes login.`,
   'invalid-instance': address => `“${address}” is not an address: write the origin of the instance, such as https://app.vignettes.io.`,

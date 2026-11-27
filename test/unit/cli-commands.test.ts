@@ -1,7 +1,7 @@
 import type { DeckProblem } from '@vignettes/core/deck'
 import type { OptionUsage } from '../../packages/cli/src/usage.ts'
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -145,6 +145,29 @@ describe('the check command (packages/cli/src/commands/check.ts)', () => {
     expect(vignettes(['check', 'test/unit/fixtures']).stderr).toContain('cannot be read')
   })
 
+  it('reports the local images of a deck, without a control character on the terminal, and stops with 2 on a file that is not UTF-8', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'vignettes-images-'))
+    try {
+      mkdirSync(join(folder, 'decks'))
+      writeFileSync(join(folder, 'decks', 'deck.md'), '---\ntitle: A\n---\n\n# B\n\n![a](./absent.png) ![b](../outside.png)\n')
+      writeFileSync(join(folder, 'outside.png'), Uint8Array.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))
+      writeFileSync(join(folder, 'latin.md'), Uint8Array.from([0x23, 0x20, 0xE9]))
+      const run = vignettes(['check', join(folder, 'decks', 'deck.md')])
+      expect(run.status).toBe(EXIT_CODES.deckError)
+      expect(run.stdout).toContain('7:6  error  image-missing  No image file at “./absent.png”, read from the folder of the deck.\n')
+      expect(run.stdout).toContain('7:25  error  image-outside-deck  ')
+      writeFileSync(join(folder, 'decks', 'escape.md'), '---\ntitle: A\n---\n\n# B\n\n![a](./\u001B[2J.png) ![b](./a%00.png)\n')
+      const escaped = vignettes(['check', join(folder, 'decks', 'escape.md')])
+      expect(escaped.stdout).toContain('7:6  error  image-missing  No image file at “./[2J.png”, read from the folder of the deck.\n')
+      expect(escaped.stdout).toContain('7:23  error  image-unreadable  ')
+      expect([...escaped.stdout + escaped.stderr].filter(character => character < ' ' && character !== '\n')).toEqual([])
+      expect(vignettes(['check', join(folder, 'latin.md')])).toMatchObject({ status: EXIT_CODES.usage, stderr: `vignettes: The file “${join(folder, 'latin.md')}” is not written in UTF-8: save it in UTF-8, the encoding the studio reads.\n` })
+    }
+    finally {
+      rmSync(folder, { recursive: true })
+    }
+  })
+
   it('writes the problems of each file in one JSON document, the column from 0', () => {
     const { status, stdout, stderr } = vignettes(['check', '--json', VALID, WITH_ERRORS])
     expect(status).toBe(EXIT_CODES.deckError)
@@ -160,12 +183,16 @@ describe('the check command (packages/cli/src/commands/check.ts)', () => {
     const folder = mkdtempSync(join(tmpdir(), 'vignettes-check-'))
     try {
       copyFileSync(WITH_ERRORS, join(folder, 'deck.md'))
+      writeFileSync(join(folder, 'image.md'), '---\ntitle: A\n---\n\n# B\n\n![a](./a.png)\n')
+      writeFileSync(join(folder, 'a.png'), Uint8Array.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))
       const environment = { ...process.env, HOME: folder, XDG_CONFIG_HOME: join(folder, 'config') }
-      const run = spawnSync(process.execPath, ['--import', OFFLINE, CLI, 'check', '--json', 'deck.md'], { cwd: folder, env: environment, encoding: 'utf8' })
+      const run = spawnSync(process.execPath, ['--import', OFFLINE, CLI, 'check', '--json', 'deck.md', 'image.md'], { cwd: folder, env: environment, encoding: 'utf8' })
       expect(run.stderr).toBe('')
       expect(run.status).toBe(EXIT_CODES.deckError)
-      expect(JSON.parse(run.stdout).results[0].problems.length).toBeGreaterThan(0)
-      expect(readdirSync(folder, { recursive: true })).toEqual(['deck.md'])
+      const [deck, image] = JSON.parse(run.stdout).results
+      expect(deck.problems.length).toBeGreaterThan(0)
+      expect(image).toEqual({ file: 'image.md', problems: [] })
+      expect(readdirSync(folder, { recursive: true }).sort()).toEqual(['a.png', 'deck.md', 'image.md'])
     }
     finally {
       rmSync(folder, { recursive: true })

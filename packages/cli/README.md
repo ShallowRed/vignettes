@@ -15,7 +15,7 @@ vignettes check talk.md
 vignettes check talk.md appendix.md
 ```
 
-The command reads every file first, then checks each one with `checkDeck` of `@vignettes/core`, which knows the components built into the command line, those of `@vignettes/schemas` and `@vignettes/storybook` included. It writes a line per problem, then a count:
+The command reads every file first, with the local images it cites, then checks each one with `checkDeck` of `@vignettes/core`, which knows the components built into the command line, those of `@vignettes/schemas` and `@vignettes/storybook` included. It also checks each image a deck cites by a path relative to its file: the image is read from the folder of the deck or one of its subfolders, symbolic links resolved, and an instance accepts its format and its weight. A file is read as UTF-8. It writes a line per problem, then a count:
 
 ```
 talk.md:7:3  error  frontmatter  Value refused: this key takes a number, such as 1280.
@@ -93,7 +93,7 @@ With `--json`, with the `CI` variable set or without a terminal on the standard 
 
 - 0: success; for `check`, no file has an error.
 - 1: a file has an error.
-- 2: a usage error, such as an unknown option or command, a missing file or a file that cannot be read, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
+- 2: a usage error, such as an unknown option or command, a missing file, a file that cannot be read or is not UTF-8, a missing instance or token, a registered instance at `login`, a registered instance whose token is missing, a registration that another command dropped during `login`, or a keyring that cannot be read or cannot erase the token.
 - 3: the instance refuses the token, which is unknown, revoked or expired.
 - 4: the instance refuses the request: the account or the scope of the token lacks the right.
 - 6: the instance cannot be reached, redirects, does not know the route, answers with an error, or gives an answer the command line does not read.
