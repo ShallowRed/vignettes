@@ -62,16 +62,24 @@ export async function resolveInstance(input: TargetInput, storage: Storage): Pro
 export async function keptSecret(storage: Storage, instance: StoredInstance): Promise<string | undefined> {
   const reading = await storage.readSecret(instance)
   if (reading.state === 'unreadable')
-    throw new CliError('keyring-unreadable', instance.origin)
+    throw new CliError('keyring-unreadable', instance.origin, instance.prefix)
   return reading.state === 'found' ? reading.secret : undefined
 }
 
-/** The instance a command contacts and the secret it sends there. */
+/**
+ * The instance a command contacts and the secret it sends there; a registered
+ * instance whose secret is missing from its place stops the command.
+ */
 export async function resolveTarget(input: TargetInput): Promise<Target> {
   const storage = await openStorage(input)
   const origin = await resolveInstance(input, storage)
   if (input.environment.token)
     return { origin, token: input.environment.token, storage }
   const instance = await storage.instanceAt(origin)
-  return { origin, token: instance && await keptSecret(storage, instance), storage }
+  if (!instance)
+    return { origin, token: undefined, storage }
+  const token = await keptSecret(storage, instance)
+  if (!token)
+    throw new CliError('secret-missing', origin, instance.prefix)
+  return { origin, token, storage }
 }

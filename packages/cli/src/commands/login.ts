@@ -10,7 +10,8 @@ import { tokenReport, tokenResult } from './whoami.ts'
  * Reads a secret, checks it on the instance, keeps it and registers the
  * instance with the place of its secret. A registered instance is refused
  * without a read of the keyring, so that no token stays valid without its
- * secret on the machine.
+ * secret on the machine. A registration another command dropped stops the
+ * command, which erases the secret it kept.
  */
 export const login: CommandRun = async ({ options, environment, interactive, output, keyring, fetch, stdin }) => {
   const fromStandardInput = Boolean(options['token-stdin'])
@@ -37,8 +38,12 @@ export const login: CommandRun = async ({ options, environment, interactive, out
   const place = await storage.saveSecret(origin, secret)
   if (place === 'file')
     output.progress(`The keyring of the system cannot keep the token: it is in ${storage.credentialsFile}, which your account alone can read.`)
-  if (!await storage.register({ name, origin, login: answer.login, prefix: answer.prefix, store: place }))
-    output.progress(`Another command rewrote ${storage.configFile} at the same time, so “${name}” is not registered: revoke the token ${answer.prefix} on the Access tokens page of the studio, then run vignettes login again.`)
+  const instance = { name, origin, login: answer.login, prefix: answer.prefix, store: place }
+  if (!await storage.register(instance)) {
+    // The lost registration is the error to report, whatever the erasure of the secret gives.
+    await storage.deleteSecret(instance).catch(() => {})
+    throw new CliError('registration-lost', storage.configFile, name, answer.prefix)
+  }
   const result = { ...tokenResult(origin, answer), name, storage: place }
   output.print(`Signed in to ${origin} as “${name}”.\n${tokenReport(result)}`)
   output.finish([result])

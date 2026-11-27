@@ -90,6 +90,8 @@ export type CliErrorCode
     | 'unreadable-config'
     | 'keyring-unreadable'
     | 'secret-not-erased'
+    | 'secret-missing'
+    | 'registration-lost'
     | 'missing-token'
     | 'empty-token'
     | 'invalid-name'
@@ -122,13 +124,15 @@ const CLI_ERRORS: Record<CliErrorCode, (...details: string[]) => string> = {
   'invalid-instance': address => `“${address}” is not an address: write the origin of the instance, such as https://app.vignettes.io.`,
   'insecure-instance': address => `The address “${address}” does not start with https://: the command line sends a token over https only, or over http to localhost, 127.0.0.1 and [::1].`,
   'unreadable-config': file => `The file “${file}” cannot be read: fix or remove it.`,
-  'keyring-unreadable': origin => `The keyring of the system holds the token of “${origin}” and cannot be read: unlock it, then run the command again.`,
-  'secret-not-erased': origin => `The keyring of the system cannot erase the token of “${origin}”, which stays on this machine: unlock the keyring, then run vignettes logout again.`,
+  'keyring-unreadable': (origin, prefix) => `The keyring of the system holds the token ${prefix} of “${origin}” and cannot be read: unlock it, then run the command again. If it stays unreadable, revoke the token on the Access tokens page of the studio, then run vignettes logout --instance ${origin} --local.`,
+  'secret-not-erased': origin => `The keyring of the system cannot erase the token of “${origin}”, which stays on this machine: unlock the keyring, then run vignettes logout again, or vignettes logout --instance ${origin} --local if it stays unreadable.`,
+  'secret-missing': (origin, prefix) => `The instance “${origin}” is registered on this machine and its token ${prefix} is missing: run vignettes logout --instance ${origin}, then vignettes login --instance ${origin}.`,
+  'registration-lost': (file, name, prefix) => `Another command rewrote ${file} at the same time, so “${name}” is not registered: revoke the token ${prefix} on the Access tokens page of the studio, then run vignettes login again.`,
   'missing-token': () => 'Give the token on the standard input with --token-stdin: the command asks no question with --json, with CI set or without a terminal.',
   'empty-token': () => 'The token is empty: paste the token the studio showed when you created it.',
   'invalid-name': name => `“${name}” cannot name an instance: write a name without “://” after --name.`,
   'name-taken': (name, origin) => `The name “${name}” stands for “${origin}” already: choose another one with --name.`,
-  'already-signed-in': origin => `A token of “${origin}” is kept on this machine already: run vignettes logout --instance ${origin} first.`,
+  'already-signed-in': origin => `The instance “${origin}” is registered on this machine already: run vignettes logout --instance ${origin} first.`,
   'not-signed-in': origin => `No token of “${origin}” is kept on this machine: run vignettes login --instance ${origin}, or set VIGNETTES_TOKEN.`,
   'token-in-environment': () => 'VIGNETTES_TOKEN is set: unset it before vignettes logout, which revokes the token kept on this machine.',
   'token-refused': origin => `The instance “${origin}” refuses the token: the token is unknown, revoked or expired.`,

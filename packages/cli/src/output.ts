@@ -35,6 +35,8 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'unreadable-config': EXIT_CODES.usage,
   'keyring-unreadable': EXIT_CODES.usage,
   'secret-not-erased': EXIT_CODES.usage,
+  'secret-missing': EXIT_CODES.usage,
+  'registration-lost': EXIT_CODES.usage,
   'missing-token': EXIT_CODES.usage,
   'empty-token': EXIT_CODES.usage,
   'invalid-name': EXIT_CODES.usage,

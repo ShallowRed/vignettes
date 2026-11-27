@@ -236,7 +236,7 @@ describe('the answers of an instance (packages/cli/src/remote.ts)', () => {
     const secret = 'vgt_made-up-secret-kept-after-a-failure'
     await runCommand('login', { fetch: answering(() => Response.json({ login: 'ann', role: 'editor', name: 'CLI', prefix: secret.slice(0, 12), scope: 'read', expiresAt: '2027-01-01T00:00:00.000Z' })), keyring: keyring.load, options: { 'instance': ORIGIN, 'token-stdin': true }, stdin: Readable.from([secret]), environment: environment() })
     const failed = await runCommand('logout', { fetch: answering(() => new Response(secret, { status: 503 })), keyring: keyring.load, environment: environment() })
-    expect(failed).toMatchObject({ code: EXIT_CODES.instance, stderr: expect.stringContaining('The token stays on this machine: run vignettes logout again.') })
+    expect(failed).toMatchObject({ code: EXIT_CODES.instance, stderr: expect.stringContaining('The token stays on this machine: run vignettes logout again, or vignettes logout --instance https://studio.example.test --local') })
     expectNoSecret(failed, secret)
     expect(keyring.passwords.get(`vignettes/${ORIGIN}`)).toBe(secret)
   })

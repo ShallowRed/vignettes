@@ -61,7 +61,10 @@ export interface Storage {
   forget: (origin: string) => Promise<void>
   /** The secret of an instance, read at the place it registers alone. */
   readSecret: (instance: StoredInstance) => Promise<SecretReading>
-  /** Writes to the keyring, or to `credentials.json` when the keyring fails, whatever the error. */
+  /**
+   * Writes to the keyring, or to `credentials.json` when the keyring fails,
+   * whatever the error, after removing an earlier secret of the origin from the file.
+   */
   saveSecret: (origin: string, secret: string) => Promise<SecretPlace>
   /** Erases the secret of an instance at its registered place; a keyring that fails stops the command. */
   deleteSecret: (instance: StoredInstance) => Promise<void>
@@ -174,6 +177,7 @@ export function createStorage(options: { configHome?: string, loadKeyring?: Keyr
       return secret ? { state: 'found', secret } : { state: 'absent' }
     },
     async saveSecret(origin, secret) {
+      await dropFileSecret(origin)
       try {
         ;(await entry(origin)).setPassword(secret)
         return 'keyring'

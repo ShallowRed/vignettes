@@ -44,7 +44,10 @@ export const COMMANDS = {
   },
   logout: {
     summary: 'Revoke the token kept for an instance, then erase it from this machine.',
-    options: { instance: INSTANCE_OPTION },
+    options: {
+      instance: INSTANCE_OPTION,
+      local: { type: 'boolean', description: 'Remove the instance and its token from this machine without contacting the instance: the token stays valid until you revoke it in the studio.' },
+    },
   },
   whoami: {
     summary: 'Show the instance, the account and the token the command line uses.',

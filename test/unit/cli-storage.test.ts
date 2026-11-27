@@ -80,6 +80,15 @@ describe('the secrets (packages/cli/src/storage.ts)', () => {
     await expect(storage.readSecret(registration('keyring'))).resolves.toEqual({ state: 'found', secret: SECRET })
   })
 
+  it('removes an earlier secret of the origin from credentials.json when the keyring keeps the new one', async () => {
+    await createStorage({ configHome: home, loadKeyring: fakeKeyring('locked').load }).saveSecret(ORIGIN, 'vgt_an-earlier-made-up-secret')
+    const keyring = fakeKeyring()
+    const storage = createStorage({ configHome: home, loadKeyring: keyring.load })
+    await expect(storage.saveSecret(ORIGIN, SECRET)).resolves.toBe('keyring')
+    expect(keyring.passwords.get(`vignettes/${ORIGIN}`)).toBe(SECRET)
+    expect(readdirSync(storage.folder)).toEqual([])
+  })
+
   it('writes through a temporary file created in mode 0600, then renames it', async () => {
     const storage = createStorage({ configHome: home, loadKeyring: fakeKeyring('locked').load })
     await storage.saveSecret(ORIGIN, SECRET)
@@ -170,6 +179,45 @@ describe('login, whoami and logout on the kept secrets (packages/cli/src/command
     expect(keyring.passwords.size).toBe(0)
   })
 
+  it('removes the instance with logout --local while the keyring stays locked, without calling the instance, then signs in again', async () => {
+    const keyring = fakeKeyring()
+    await signIn(keyring)
+    keyring.lock()
+    const fetch = vi.fn<typeof globalThis.fetch>()
+    const removed = await runCommand('logout', { fetch, keyring: keyring.load, options: { local: true, json: true }, environment: { configHome: home, token: OTHER } })
+    expect(removed.code).toBe(EXIT_CODES.success)
+    expect(JSON.parse(removed.stdout)).toMatchObject({ ok: true, instance: ORIGIN, results: [{ instance: ORIGIN, revoked: false, token: { prefix: 'vgt_test-sec' } }] })
+    expect(removed.stderr).toContain('If the token vgt_test-sec is still valid, revoke it on the Access tokens page of the studio.')
+    expect(removed.stderr).toContain('cannot erase the secret of the token, which stays there')
+    expect(fetch).not.toHaveBeenCalled()
+    await expect(createStorage({ configHome: home }).readConfig()).resolves.toEqual({ instances: [] })
+
+    await signIn(keyring, OTHER)
+    await expect(createStorage({ configHome: home }).instanceAt(ORIGIN)).resolves.toMatchObject({ store: 'file', prefix: 'vgt_another-' })
+  })
+
+  it('erases the secret kept in credentials.json with logout --local', async () => {
+    const keyring = fakeKeyring('locked')
+    await signIn(keyring)
+    const removed = await runCommand('logout', { keyring: keyring.load, options: { local: true }, environment: { configHome: home } })
+    expect(removed).toMatchObject({ code: EXIT_CODES.success, stdout: 'Removed https://studio.example.test from this machine, without contacting the instance.\n' })
+    expect(removed.stderr).not.toContain('cannot erase')
+    expect(readdirSync(join(home, 'vignettes'))).toEqual(['config.json'])
+    await expect(runCommand('logout', { keyring: keyring.load, options: { local: true }, environment: { configHome: home } })).resolves.toMatchObject({ code: EXIT_CODES.usage })
+  })
+
+  it('stops login with code 2 and erases the secret when another command drops the registration', async () => {
+    const keyring = fakeKeyring()
+    vi.mocked(fs.rename).mockImplementationOnce(async (from, to) => {
+      await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises').then(module => module.rename(from, to))
+      writeFileSync(String(to), JSON.stringify({ instances: [] }))
+    })
+    const lost = await runCommand('login', { keyring: keyring.load, fetch: async () => answer(SECRET), stdin: Readable.from([SECRET]), options: { 'instance': ORIGIN, 'token-stdin': true, 'json': true }, environment: { configHome: home } })
+    expect(lost.code).toBe(EXIT_CODES.usage)
+    expect(JSON.parse(lost.stdout)).toMatchObject({ ok: false, error: { code: 'registration-lost', message: expect.stringContaining('revoke the token vgt_test-sec on the Access tokens page') } })
+    expect(keyring.passwords.size).toBe(0)
+  })
+
   it('stops logout when the keyring cannot erase the secret, keeps the instance and announces no erasure', async () => {
     const keyring = fakeKeyring()
     await signIn(keyring)
@@ -195,13 +243,19 @@ describe('login, whoami and logout on the kept secrets (packages/cli/src/command
     expect(readdirSync(storage.folder)).toEqual(['config.json'])
   })
 
-  it('removes the instance whose secret is absent and exits with 0, without calling the instance', async () => {
+  it('sends whoami to logout on an instance whose secret is absent, and logout removes it with code 0, without calling the instance', async () => {
     const keyring = fakeKeyring()
     await signIn(keyring)
     keyring.passwords.clear()
     const fetch = vi.fn<typeof globalThis.fetch>()
+    const shown = await runCommand('whoami', { fetch, keyring: keyring.load, environment: { configHome: home } })
+    expect(shown).toMatchObject({ code: EXIT_CODES.usage, stderr: expect.stringContaining('its token vgt_test-sec is missing: run vignettes logout --instance https://studio.example.test, then vignettes login') })
     const signedOut = await runCommand('logout', { fetch, keyring: keyring.load, environment: { configHome: home } })
-    expect(signedOut).toMatchObject({ code: EXIT_CODES.success, stdout: expect.stringContaining('No token of https://studio.example.test was kept on this machine') })
+    expect(signedOut).toMatchObject({
+      code: EXIT_CODES.success,
+      stdout: expect.stringContaining('The token of https://studio.example.test is missing from this machine'),
+      stderr: expect.stringContaining('If the token vgt_test-sec is still valid, revoke it'),
+    })
     expect(fetch).not.toHaveBeenCalled()
     await expect(createStorage({ configHome: home }).readConfig()).resolves.toEqual({ instances: [] })
   })

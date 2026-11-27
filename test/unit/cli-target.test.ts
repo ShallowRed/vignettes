@@ -85,7 +85,13 @@ describe('the secret a command sends (packages/cli/src/target.ts)', () => {
     const storage = await registered(['studio', 'https://studio.example.test'])
     await storage.saveSecret('https://studio.example.test', STORED)
     keyring.lock()
-    await expect(resolveTarget(input())).rejects.toMatchObject({ code: 'keyring-unreadable', message: expect.stringContaining('unlock it') })
+    await expect(resolveTarget(input())).rejects.toMatchObject({ code: 'keyring-unreadable', message: expect.stringMatching(/token vgt_abcdefgh of .*unlock it.*logout --instance https:\/\/studio\.example\.test --local/) })
+    await expect(resolveTarget(input({}, { token: FROM_ENVIRONMENT }))).resolves.toMatchObject({ token: FROM_ENVIRONMENT })
+  })
+
+  it('stops with code 2 on a registered instance whose secret is missing from its place', async () => {
+    await registered(['studio', 'https://studio.example.test'])
+    await expect(resolveTarget(input())).rejects.toMatchObject({ code: 'secret-missing', message: expect.stringContaining('its token vgt_abcdefgh is missing: run vignettes logout --instance https://studio.example.test') })
     await expect(resolveTarget(input({}, { token: FROM_ENVIRONMENT }))).resolves.toMatchObject({ token: FROM_ENVIRONMENT })
   })
 })

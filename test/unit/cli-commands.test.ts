@@ -44,7 +44,7 @@ describe('the options of the command line (packages/cli/src/usage.ts)', () => {
     expect(Object.fromEntries(Object.entries(COMMANDS).map(([name, command]) => [name, Object.keys(command.options)]))).toEqual({
       check: [],
       login: ['instance', 'name', 'token-stdin'],
-      logout: ['instance'],
+      logout: ['instance', 'local'],
       whoami: ['instance'],
     })
   })
