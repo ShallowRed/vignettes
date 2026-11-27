@@ -52,4 +52,4 @@ registerDeckComponents([
 
 ## Entry points
 
-`./deck`, `./render`, `./theme`, `./status`, `./slugify` and `./deck-assets`.
+`./deck`, `./render`, `./theme`, `./status`, `./slugify`, `./deck-assets`, `./media`, the rules of an uploaded image and its name, and `./digest`, the SHA-256 of a text or of some bytes.

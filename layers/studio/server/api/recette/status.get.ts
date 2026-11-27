@@ -16,6 +16,6 @@ export default defineEventHandler(async (event) => {
     seeded: await isRecetteSeeded(),
     counts: recetteCounts(),
     personas: RECETTE_PERSONAS,
-    images: recetteImages(),
+    images: await recetteImages(),
   }
 })

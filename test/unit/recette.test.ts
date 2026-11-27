@@ -202,8 +202,9 @@ describe('seed', () => {
   it('seeds an image that follows the visibility of its deck', async () => {
     await seedAccount(1, 'boss', 'owner')
     await seed(asUser(1, 'boss'))
-    const images = recetteImages()
+    const images = await recetteImages()
     const nameOf = (slug: string) => images[slug]!.replace('/media/', '')
+    expect(nameOf('recette-public')).toMatch(/^[0-9a-f]{32}\.svg$/)
     expect(await decideMediaAccess(anon(), nameOf('recette-public'))).toMatchObject({ allowed: true })
     expect(await decideMediaAccess(anon(), nameOf('recette-privee'))).toMatchObject({ allowed: false })
     expect(await decideMediaAccess(asUser(1, 'boss'), nameOf('recette-privee'))).toMatchObject({ allowed: true })
@@ -212,7 +213,7 @@ describe('seed', () => {
   it('keeps a private image private when a public deck cites it', async () => {
     await seedAccount(1, 'boss', 'owner')
     await seed(asUser(1, 'boss'))
-    const name = recetteImages()['recette-privee']!.replace('/media/', '')
+    const name = (await recetteImages())['recette-privee']!.replace('/media/', '')
     expect(await decideMediaAccess(anon(), name)).toMatchObject({ allowed: false })
 
     // What an editor of the public deck can do: write the name into its draft.

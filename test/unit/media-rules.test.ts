@@ -1,8 +1,8 @@
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
+import { sha256Hex, textDigest } from '@vignettes/core/digest'
+import { acceptedImageType, IMAGE_EXTENSIONS, IMAGE_FORMAT_NAMES, IMAGE_MIME_TYPES, imageExtFor, MAX_MEDIA_BYTES, MAX_MEDIA_MEGABYTES, mediaName } from '@vignettes/core/media'
 import { describe, expect, it } from 'vitest'
-import { mediaNameOf } from '../../layers/studio/server/utils/media-store'
-import { IMAGE_FORMAT_NAMES, IMAGE_MIME_TYPES, imageExtFor, MAX_MEDIA_BYTES, MAX_MEDIA_MEGABYTES, sniffImageType } from '../../layers/studio/shared/storage/media-s3'
 
 const bytes = (...parts: (string | number[])[]) => Buffer.from(parts.flatMap(part => typeof part === 'string' ? [...Buffer.from(part)] : part))
 
@@ -21,6 +21,13 @@ describe('the rules of an uploaded image', () => {
     expect(IMAGE_MIME_TYPES.map(imageExtFor)).toEqual(['png', 'jpg', 'webp', 'gif', 'svg', 'avif'])
     expect(IMAGE_FORMAT_NAMES).toEqual(['PNG', 'JPG', 'WEBP', 'GIF', 'SVG', 'AVIF'])
     expect(imageExtFor('image/bmp')).toBeUndefined()
+    expect(imageExtFor('toString')).toBeUndefined()
+  })
+
+  it('lists the extension of each accepted type, and jpeg', () => {
+    for (const type of IMAGE_MIME_TYPES)
+      expect(IMAGE_EXTENSIONS).toContain(imageExtFor(type))
+    expect(IMAGE_EXTENSIONS).toContain('jpeg')
   })
 
   it('weighs 10 MiB at most', () => {
@@ -28,17 +35,33 @@ describe('the rules of an uploaded image', () => {
     expect(MAX_MEDIA_BYTES).toBe(10 * 2 ** 20)
   })
 
-  it('reads the type of each accepted format from its bytes', () => {
-    for (const [type, data] of Object.entries(SAMPLES))
-      expect(sniffImageType(data)).toBe(type)
-    expect(sniffImageType(bytes('plain text'))).toBeUndefined()
+  it('stores a raster image under the type of its bytes, whatever its declared type', () => {
+    expect(acceptedImageType('image/png', SAMPLES['image/jpeg']!)).toBe('image/jpeg')
+    expect(acceptedImageType('image/svg+xml', SAMPLES['image/png']!)).toBe('image/png')
+    expect(acceptedImageType('image/png', bytes('plain text'))).toBeUndefined()
   })
 
-  it('names an image by the first 32 hexadecimal digits of the SHA-256 of its bytes and the extension of its type', () => {
+  it('accepts an SVG declared as one, and refuses an SVG declared as another type', () => {
+    expect(acceptedImageType('image/svg+xml', SAMPLES['image/svg+xml']!)).toBe('image/svg+xml')
+    expect(acceptedImageType('image/png', SAMPLES['image/svg+xml']!)).toBeUndefined()
+  })
+
+  it('names an image by the first 32 hexadecimal digits of the SHA-256 of its bytes and the extension of its type', async () => {
     const data = SAMPLES['image/png']!
     const hash = createHash('sha256').update(data).digest('hex').slice(0, 32)
-    expect(mediaNameOf(data, 'image/png')).toBe(`${hash}.png`)
-    expect(mediaNameOf(data, 'image/jpeg')).toBe(`${hash}.jpg`)
-    expect(mediaNameOf(data, 'image/bmp')).toBeUndefined()
+    expect(await mediaName(data, 'image/png')).toBe(`${hash}.png`)
+    expect(await mediaName(data, 'image/jpeg')).toBe(`${hash}.jpg`)
+  })
+})
+
+describe('the digest', () => {
+  it('is the SHA-256 that Node computes, in lowercase hexadecimal', async () => {
+    for (const data of [...Object.values(SAMPLES), Buffer.alloc(0)])
+      expect(await sha256Hex(data)).toBe(createHash('sha256').update(data).digest('hex'))
+  })
+
+  it('hashes the UTF-8 bytes of a text', async () => {
+    const text = '---\ntitle: Déjà\n---\n\n# Été 🌞\r\n'
+    expect(await textDigest(text)).toBe(createHash('sha256').update(text, 'utf8').digest('hex'))
   })
 })

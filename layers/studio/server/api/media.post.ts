@@ -1,13 +1,11 @@
-import type { MediaRefusal } from '#shared/storage/media-s3'
+import type { MediaRefusal } from '@vignettes/core/media'
 import { isPrivileged } from '#shared/access'
-import { IMAGE_FORMAT_NAMES, imageExtFor, MAX_MEDIA_BYTES, MAX_MEDIA_MEGABYTES, sniffImageType } from '#shared/storage/media-s3'
 import { isDeckSlug } from '@vignettes/core/deck'
+import { acceptedImageType, IMAGE_FORMAT_NAMES, imageExtFor, MAX_MEDIA_BYTES, MAX_MEDIA_MEGABYTES, mediaName } from '@vignettes/core/media'
 import { assertCanEditDeck } from '../utils/access'
 import { getActorRole } from '../utils/actor'
-import { mediaNameOf, storeMedia } from '../utils/media-store'
+import { storeMedia } from '../utils/media-store'
 import { useDeckMeta, useMediaIndex } from '../utils/sources'
-
-const SVG = 'image/svg+xml'
 
 /**
  * POST /api/media?deck=<slug> — upload an image. Allowed to privileged roles, and
@@ -56,11 +54,7 @@ export default defineEventHandler(async (event) => {
       data: { reason: 'size' satisfies MediaRefusal },
     })
   }
-  // A browser declares the type of a file from its extension. A raster image
-  // saved under another extension is stored under the type of its bytes; an
-  // SVG has to be declared as one.
-  const sniffed = sniffImageType(file.data)
-  const type = sniffed && (sniffed !== SVG || mime === SVG) ? sniffed : undefined
+  const type = acceptedImageType(mime, file.data)
   if (!type) {
     throw createError({
       statusCode: 415,
@@ -69,7 +63,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const name = mediaNameOf(file.data, type)!
+  const name = await mediaName(file.data, type)
   try {
     await storeMedia(name, file.data, type)
   }
