@@ -24,6 +24,7 @@ on:
     paths:
       - 'site/**'
       - 'packages/**'
+      - '!packages/cli/**'
       - 'themes/**'
       - 'examples/**'
       - docs/theme-system.md
