@@ -36,7 +36,7 @@ afterAll(() => {
 const page = () => serveFrozen(anon({ params: { path: 'talk-2026/' } }))
 
 async function publishedDeck(status: 'public' | 'private') {
-  await useDbContent().writer.save({ slug: 'talk', raw: '---\ntitle: Talk\n---\n\n# Talk', actor: 'test' })
+  await useDbContent().writer.save({ slug: 'talk', raw: '---\ntitle: Talk\n---\n\n# Talk', actor: 'test', accessFromText: true })
   // A frozen deck is reached through `/p/<alias>`, so it always carries one.
   await useDeckMeta().update('talk', { status, lifecycle: 'frozen', alias: 'talk' })
 }
@@ -95,7 +95,7 @@ describe('the frozen bundle route, on a path out of its bundle', () => {
   })
 
   it('gates a name on the deck whose bundle it reads, when it is also the alias of another deck', async () => {
-    await useDbContent().writer.save({ slug: 'notes', raw: '---\ntitle: Notes\n---\n\n# Notes', actor: 'test' })
+    await useDbContent().writer.save({ slug: 'notes', raw: '---\ntitle: Notes\n---\n\n# Notes', actor: 'test', accessFromText: true })
     await useDeckMeta().update('notes', { status: 'private', lifecycle: 'frozen', alias: 'notes', frozenBundle: 'notes-2026' })
     // A public deck whose alias spells the bundle of the private one.
     await publishedDeck('public')

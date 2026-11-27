@@ -18,7 +18,7 @@ const viewer = (over: Record<string, unknown>) => asUser(10, 'vi', over)
 const params = (id?: number) => ({ params: { slug: 'deck', ...(id === undefined ? {} : { id: String(id) }) } })
 
 async function publish(raw: string) {
-  await useDbContent().writer.save({ slug: 'deck', raw, actor: 'ed' })
+  await useDbContent().writer.save({ slug: 'deck', raw, actor: 'ed', accessFromText: true })
   const { entries } = await listHistory(editor(params()))
   return entries.find(e => e.kind === 'version')!.id
 }

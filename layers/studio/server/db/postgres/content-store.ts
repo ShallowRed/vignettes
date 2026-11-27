@@ -1,7 +1,8 @@
 import type { DeckContent } from '../ports.ts'
 import type { PostgresDb } from './index.ts'
-import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
+import { prepareDeckWrite, splitFrontmatter } from '@vignettes/core/deck'
 import { and, eq, isNull } from 'drizzle-orm'
+import { publicationAccess, readsPublishedText } from '../../../shared/presentations/publication-access.ts'
 import { referencedImages } from '../../../shared/storage/media-refs.ts'
 import { recordDeckMedia } from './media-index.ts'
 import { decks, deckVersions } from './schema.ts'
@@ -45,28 +46,18 @@ export function createDbContent(db: PostgresDb): DeckContent {
         const now = new Date()
 
         await db.transaction(async (tx) => {
-          // A managed row keeps its access axes; the frontmatter sets them until the first publish.
           const [current] = await tx.select({
             status: decks.status,
             unlisted: decks.unlisted,
             accessPasswordHash: decks.accessPasswordHash,
             project: decks.project,
             managed: decks.managed,
-          }).from(decks).where(eq(decks.slug, prepared.slug))
-
-          const accessAxes = current?.managed
-            ? {
-                status: current.status,
-                unlisted: current.unlisted,
-                accessPasswordHash: current.accessPasswordHash,
-                project: current.project,
-              }
-            : {
-                status: resolveDeckStatus(prepared.raw),
-                unlisted: Boolean(meta.unlisted),
-                accessPasswordHash: (meta.accessPassword as string) ?? null,
-                project: (meta.project as string) ?? null,
-              }
+            publishedVersionId: decks.publishedVersionId,
+          }).from(decks).where(eq(decks.slug, prepared.slug)).for('update')
+          const [published] = readsPublishedText(current, input)
+            ? await tx.select({ raw: deckVersions.raw }).from(deckVersions).where(eq(deckVersions.id, current.publishedVersionId))
+            : []
+          const accessAxes = publicationAccess(current, prepared.raw, { accessFromText: input.accessFromText, publishedRaw: published?.raw })
 
           const derived = {
             title: (meta.title as string) || prepared.slug,

@@ -21,7 +21,7 @@ describe('downloading the markdown (GET /api/presentations/:slug/markdown)', () 
   const download = (event: any) => downloadMarkdown(Object.assign(event, { params: event.params ?? { slug: 'deck' } }))
 
   beforeEach(async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: published, actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: published, actor: 'ed', accessFromText: true })
   })
 
   it('serves the published version under the reading rules', async () => {

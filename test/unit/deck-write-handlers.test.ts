@@ -81,7 +81,7 @@ describe('saving a draft solo (PUT /api/presentations/:slug)', () => {
   })
 
   it('passes a save with a null draft digest while the stored draft is the published version it loaded', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed', accessFromText: true })
     const loaded = await useDbContent().publishedVersion('deck')
     await (await useCollabServer().openDirectConnection('deck', { deck: 'deck' })).disconnect()
     await expect(saveWithDigest('# solo', null, null)).rejects.toMatchObject({ statusCode: 409 })
@@ -109,7 +109,7 @@ describe('saving a draft solo (PUT /api/presentations/:slug)', () => {
   })
 
   it('passes a save that loaded no draft while the stored draft is the published version it loaded', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed', accessFromText: true })
     const loaded = await useDbContent().publishedVersion('deck')
     // An editor opened in real time stores the published text as the draft.
     await (await useCollabServer().openDirectConnection('deck', { deck: 'deck' })).disconnect()
@@ -119,9 +119,9 @@ describe('saving a draft solo (PUT /api/presentations/:slug)', () => {
   })
 
   it('refuses a save that loaded no draft once another version is published, or once the draft changed', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed', accessFromText: true })
     const loaded = await useDbContent().publishedVersion('deck')
-    await useDbContent().writer.save({ slug: 'deck', raw: '# v2', actor: 'content-push' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v2', actor: 'content-push', accessFromText: true })
     await (await useCollabServer().openDirectConnection('deck', { deck: 'deck' })).disconnect()
     await expect(save('# solo', null, loaded)).rejects.toMatchObject({ statusCode: 409 })
     await expect(save('# typed', null, await useDbContent().publishedVersion('deck'))).resolves.toMatchObject({ ok: true })
@@ -247,7 +247,7 @@ describe('uploading an image (POST /api/media)', () => {
 
 describe('loading a deck for edit (GET /api/presentations/:slug?draft)', () => {
   it('returns the draft with the published text and date alongside', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed', accessFromText: true })
     await save('# draft', null)
     const loaded = await loadDeck(editor({ params: { slug: 'deck' }, query: { draft: '' } }))
     expect(loaded).toMatchObject({ content: '# draft', from: 'draft', publishedRaw: '# published', publishedVersion: await useDbContent().publishedVersion('deck') })

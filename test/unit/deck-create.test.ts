@@ -95,7 +95,7 @@ describe('importing a file at creation (POST /api/presentations)', () => {
   })
 
   it('refuses a slug already taken (409)', async () => {
-    await useDbContent().writer.save({ slug: 'revue', raw: '# Autre', actor: 'boss' })
+    await useDbContent().writer.save({ slug: 'revue', raw: '# Autre', actor: 'boss', accessFromText: true })
     await expect(createDeck(owner({ body: { slug: 'revue', raw: file } }))).rejects.toMatchObject({ statusCode: 409 })
   })
 

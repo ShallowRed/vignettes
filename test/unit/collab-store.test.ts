@@ -38,7 +38,7 @@ describe('collab document hooks', () => {
   })
 
   it('seeds an empty room from the published text and stores it before a client receives it', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed', accessFromText: true })
     const room = new Y.Doc()
     await hooks().onLoadDocument!({ documentName: 'deck', document: room as any, context: { deck: 'deck' } } as any)
     expect(room.getText('codemirror').toString()).toBe('# published')
@@ -64,7 +64,7 @@ describe('collab document hooks', () => {
     await expect(load('long')).rejects.toMatchObject({ reason: 'deck-too-long' })
     expect(await useDraftStore().load('long')).toBeNull()
 
-    await useDbContent().writer.save({ slug: 'trashed', raw: '# trashed', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'trashed', raw: '# trashed', actor: 'ed', accessFromText: true })
     await useDeckMeta().softDelete('trashed')
     await expect(load('trashed')).rejects.toMatchObject({ reason: 'deck-not-found' })
     expect(await useDraftStore().load('trashed')).toBeNull()
@@ -74,7 +74,7 @@ describe('collab document hooks', () => {
   })
 
   it('loads a stored draft without its pending parts', async () => {
-    await useDbContent().writer.save({ slug: 'lineage-7', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'lineage-7', raw: '# v1', actor: 'ed', accessFromText: true })
     const direct = await useCollabServer().openDirectConnection('lineage-7', { deck: 'lineage-7' })
     const draft = new Y.Doc()
     Y.applyUpdate(draft, Y.encodeStateAsUpdate(direct.document!))
@@ -94,7 +94,7 @@ describe('collab document hooks', () => {
   })
 
   it('counts a room that is still loading as open', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed', accessFromText: true })
     const opening = server().openDirectConnection('deck', { deck: 'deck' })
     expect(server().documents.has('deck')).toBe(false)
     expect(hasRoom('deck')).toBe(true)
@@ -103,7 +103,7 @@ describe('collab document hooks', () => {
   })
 
   it('creates the draft once when two loads race, as two containers do, and both rooms hold that one lineage', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# published', actor: 'ed', accessFromText: true })
     const [a, b] = [new Y.Doc(), new Y.Doc()]
     await Promise.all([a, b].map(document => hooks().onLoadDocument!({ documentName: 'deck', document: document as any, context: { deck: 'deck' } } as any)))
     Y.applyUpdate(a, Y.encodeStateAsUpdate(b))
@@ -114,14 +114,14 @@ describe('collab document hooks', () => {
     ['with the same published version', '# v1'],
     ['after a new published version', '# v2'],
   ])('gives a tab kept across an unload one copy of the text, %s', async (_, republished) => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed', accessFromText: true })
     const first = await server().openDirectConnection('deck', { deck: 'deck' })
     const tab = new Y.Doc()
     Y.applyUpdate(tab, Y.encodeStateAsUpdate(first.document!))
     await first.disconnect()
     expect(server().documents.has('deck')).toBe(false)
 
-    await useDbContent().writer.save({ slug: 'deck', raw: republished, actor: 'content-push' })
+    await useDbContent().writer.save({ slug: 'deck', raw: republished, actor: 'content-push', accessFromText: true })
     const second = await server().openDirectConnection('deck', { deck: 'deck' })
     Y.applyUpdate(second.document!, Y.encodeStateAsUpdate(tab, Y.encodeStateVector(second.document!)))
     Y.applyUpdate(tab, Y.encodeStateAsUpdate(second.document!, Y.encodeStateVector(tab)))
@@ -149,7 +149,7 @@ describe('collab document hooks', () => {
   })
 
   it('keeps the text of a room of another lineage in the history, closes it, and leaves the stored draft', async () => {
-    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'deck', raw: '# v1', actor: 'ed', accessFromText: true })
     await (await server().openDirectConnection('deck', { deck: 'deck' })).disconnect()
     const closed: unknown[] = []
     const foreign = Object.assign(doc('# foreign'), { getConnections: () => [connectionLog(closed)] })
@@ -160,7 +160,7 @@ describe('collab document hooks', () => {
   })
 
   it('stores an edited room before its save debounce ends, for a server that stops', async () => {
-    await useDbContent().writer.save({ slug: 'room', raw: '# room', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'room', raw: '# room', actor: 'ed', accessFromText: true })
     const connection = await server().openDirectConnection('room', { deck: 'room' })
     await connection.transact(document => document.getText('codemirror').insert(0, '# edited\n'))
     const seeded = await useDraftStore().load('room')
@@ -174,7 +174,7 @@ describe('collab document hooks', () => {
 
 describe('a room whose store fails after its last editor leaves', () => {
   async function failedRoom(slug: string, failures = 1) {
-    await useDbContent().writer.save({ slug, raw: '# room', actor: 'ed' })
+    await useDbContent().writer.save({ slug, raw: '# room', actor: 'ed', accessFromText: true })
     const connection = await server().openDirectConnection(slug, { deck: slug })
     await connection.transact(document => document.getText('codemirror').insert(0, '# edited\n'))
     captureError.mockClear()
@@ -260,7 +260,7 @@ describe('a tab that holds another lineage of the draft', () => {
   const storedText = async (slug: string) => yDocUpdateToMarkdown((await useDraftStore().load(slug))!)
 
   it('closes it with the lineage reason, and applies none of what it sends', async () => {
-    await useDbContent().writer.save({ slug: 'lineage-1', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'lineage-1', raw: '# v1', actor: 'ed', accessFromText: true })
     const direct = await useCollabServer().openDirectConnection('lineage-1', { deck: 'lineage-1' })
     const foreign = doc('# v1')
     const other = tab('lineage-1')
@@ -274,7 +274,7 @@ describe('a tab that holds another lineage of the draft', () => {
   })
 
   it('closes a tab that sends an update before its sync step 1', async () => {
-    await useDbContent().writer.save({ slug: 'lineage-2', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'lineage-2', raw: '# v1', actor: 'ed', accessFromText: true })
     const direct = await useCollabServer().openDirectConnection('lineage-2', { deck: 'lineage-2' })
     const early = tab('lineage-2')
     early.update(Y.encodeStateAsUpdate(doc('# extra')))
@@ -285,7 +285,7 @@ describe('a tab that holds another lineage of the draft', () => {
   })
 
   it('closes a tab of the stored lineage that writes outside the deck text, and applies none of it', async () => {
-    await useDbContent().writer.save({ slug: 'lineage-4', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'lineage-4', raw: '# v1', actor: 'ed', accessFromText: true })
     const direct = await useCollabServer().openDirectConnection('lineage-4', { deck: 'lineage-4' })
     const kept = new Y.Doc()
     Y.applyUpdate(kept, Y.encodeStateAsUpdate(direct.document!))
@@ -304,7 +304,7 @@ describe('a tab that holds another lineage of the draft', () => {
   })
 
   it('closes a tab of the stored lineage that sends an update with pending parts, keeps none of it, and refuses its next messages', async () => {
-    await useDbContent().writer.save({ slug: 'lineage-5', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'lineage-5', raw: '# v1', actor: 'ed', accessFromText: true })
     const direct = await useCollabServer().openDirectConnection('lineage-5', { deck: 'lineage-5' })
     const kept = new Y.Doc()
     Y.applyUpdate(kept, Y.encodeStateAsUpdate(direct.document!))
@@ -330,7 +330,7 @@ describe('a tab that holds another lineage of the draft', () => {
   })
 
   it('accepts a tab of the stored lineage, and an empty one', async () => {
-    await useDbContent().writer.save({ slug: 'lineage-3', raw: '# v1', actor: 'ed' })
+    await useDbContent().writer.save({ slug: 'lineage-3', raw: '# v1', actor: 'ed', accessFromText: true })
     const direct = await useCollabServer().openDirectConnection('lineage-3', { deck: 'lineage-3' })
     const kept = new Y.Doc()
     Y.applyUpdate(kept, Y.encodeStateAsUpdate(direct.document!))

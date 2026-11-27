@@ -1,7 +1,8 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import type { DeckContent } from '../ports.ts'
-import { prepareDeckWrite, resolveDeckStatus, splitFrontmatter } from '@vignettes/core/deck'
+import { prepareDeckWrite, splitFrontmatter } from '@vignettes/core/deck'
 import { and, eq, isNull } from 'drizzle-orm'
+import { publicationAccess, readsPublishedText } from '../../../shared/presentations/publication-access.ts'
 import { referencedImages } from '../../../shared/storage/media-refs.ts'
 import { recordDeckMedia } from './media-index.ts'
 import { decks, deckVersions } from './schema.ts'
@@ -11,8 +12,8 @@ type Db = BetterSQLite3Database<Record<string, unknown>>
 /**
  * SQLite adapters for the content ports. `source` serves the deck's published
  * version; `writer.save` IS the publish act: one immutable version row, then the
- * deck row repointed and its catalog/access axes re-derived from the frontmatter
- * (single derivation chain — no second truth to drift).
+ * deck row repointed, its title and theme derived from the frontmatter and its
+ * access axes from `publicationAccess`.
  */
 export function createDbContent(db: Db): DeckContent {
   return {
@@ -49,34 +50,18 @@ export function createDbContent(db: Db): DeckContent {
         const meta = splitFrontmatter(prepared.raw).data as Record<string, unknown>
         const now = new Date()
 
-        // A managed row is the access truth (admin edits shadow frontmatter), so
-        // republishing must not re-derive the ACCESS axes: a stale
-        // `status: public` would silently reopen a closed deck (that incident
-        // happened), and a stale `project:` would undo a folder rename or move —
-        // the project decides which master keys apply, so it is an access axis
-        // too. These follow the frontmatter only until the first publish marks
-        // the row managed; title and theme stay content-driven on every publish.
         const current = db.select({
           status: decks.status,
           unlisted: decks.unlisted,
           accessPasswordHash: decks.accessPasswordHash,
           project: decks.project,
           managed: decks.managed,
+          publishedVersionId: decks.publishedVersionId,
         }).from(decks).where(eq(decks.slug, prepared.slug)).get()
-
-        const accessAxes = current?.managed
-          ? {
-              status: current.status,
-              unlisted: current.unlisted,
-              accessPasswordHash: current.accessPasswordHash,
-              project: current.project,
-            }
-          : {
-              status: resolveDeckStatus(prepared.raw),
-              unlisted: Boolean(meta.unlisted),
-              accessPasswordHash: (meta.accessPassword as string) ?? null,
-              project: (meta.project as string) ?? null,
-            }
+        const publishedRaw = readsPublishedText(current, input)
+          ? db.select({ raw: deckVersions.raw }).from(deckVersions).where(eq(deckVersions.id, current.publishedVersionId)).get()?.raw
+          : undefined
+        const accessAxes = publicationAccess(current, prepared.raw, { accessFromText: input.accessFromText, publishedRaw })
 
         const derived = {
           title: (meta.title as string) || prepared.slug,

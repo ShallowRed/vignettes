@@ -5,7 +5,7 @@ Who can open what, and who sees what in the catalog. The pure decision lives in 
 ## Decision tree (one request on a deck)
 
 1. **Deck in the trash?** (`decks.deleted_at`): 404 everywhere, read and write alike (`isTrashed` in the edit guards and the collab upgrade).
-2. **`managed` row?** The database is the truth for the access axes. Otherwise (a deck never published nor edited by an admin), the frontmatter decides.
+2. **`managed` row?** The database is the truth for the access axes. Otherwise (a deck never published nor edited by an admin), the frontmatter decides. A publication makes the row managed, with the axes of [Publishing a deck](#publishing-a-deck).
 3. **`decideAccess(status, role, grant, hasPassword, passwordGranted)`**: allow / deny / needs-password (401 + `data.requiresPassword`). On a read, a refusal answers 401 to an anonymous visitor and 404 to a signed-in account, the answer of a slug that does not exist. On an edit, it answers 403 to whoever can read the deck and 404 otherwise.
 4. **`canList(status, lifecycle, role, grant, unlisted)`**: presence in the catalog. Listing and opening are two distinct axes.
 
@@ -37,9 +37,13 @@ An image of `/media/<hash>.<ext>` is served with the visibility of the decks tha
 - `canShare(role, grant)` in `decide.ts` decides who shares a deck: whoever may edit the deck (global owner or editor, `editor` grant on the deck or its folder). They list, add, change and remove the per-deck grants, up to `editor`, with an expiry or none. The routes check it through `assertCanShareDeck`, which also answers 404 for a slug with no deck, except to the owner. Two rules bound a sharer other than the owner. `mayWriteGrantOf`: they do not write their own grant; removing it stays open to everyone. `sharingLimit` and `mayGrantUntil`: when their own editor grants expire, the latest of them is their limit, and a grant they give or change ends by that limit, or, without raising its role, no later than it already did; a permanent editor grant or a global role sets no limit. Every sharer, the owner included, makes 30 shares at most every 10 minutes through `POST .../permissions`, since each one may create an invited account.
 - The password and the grants are **orthogonal**: the password covers sharing without an account (client demo), the grant covers identified collaboration. A grant holder skips the password.
 
-## Historical pitfall (fixed)
+## Publishing a deck
 
-On publish, `content-store.writer.save` re-derived ALL the axes from the frontmatter, overwriting the admin's choices (`managed`). Since the fix, a `managed` row **keeps** its access axes (`status`, `unlisted`, hash) on republish; only the content axes (title, theme, project) follow the frontmatter. A deck's first publish still derives everything from the frontmatter.
+A publication writes the title and the theme of its frontmatter on the deck row, then makes the row `managed`. `publicationAccess` in `shared/presentations/publication-access.ts` gives the access axes (`status`, `unlisted`, password hash, `project`), and [0023](decisions/0023-publication-by-an-account-without-a-global-role.md) records the rule:
+
+- A `managed` row keeps its axes, so that the status an editor set and a move of its folder hold against the keys of the text.
+- A row that is not `managed`, published by a global editor or owner or by the content token, takes the axes of the text.
+- A row that is not `managed`, published by an account without a global role, takes none from the text. Without a published version, the deck turns private in the folder of its row. With one, it keeps the status and the password of its published text, those visitors already got, and the folder and `unlisted` of its row; the catalog then lists it by `canList`.
 
 ## Decision: the editors of a deck share it
 

@@ -234,7 +234,7 @@ describe('seed', () => {
   it('spares a deck that only shares the prefix, and the kit folder holding it', async () => {
     await seedAccount(1, 'boss', 'owner')
     await seed(asUser(1, 'boss'))
-    await useDbContent().writer.save({ slug: 'recette-de-cuisine', raw: '---\ntitle: Mine\nproject: recette-partage\n---\n\n# Mine', actor: 'boss' })
+    await useDbContent().writer.save({ slug: 'recette-de-cuisine', raw: '---\ntitle: Mine\nproject: recette-partage\n---\n\n# Mine', actor: 'boss', accessFromText: true })
     await useDeckMeta().update('recette-de-cuisine', { title: 'Mine', project: 'recette-partage' })
 
     await resetRecette()

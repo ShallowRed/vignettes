@@ -237,7 +237,7 @@ describe('trial decks', () => {
   it('creates the missing decks and leaves the existing ones, trashed included', async () => {
     write('test/recette/decks/autre.md', deck('Autre'))
     write('test/recette/b.yaml', recette([{ slug: 'recette-autre', file: 'test/recette/decks/autre.md' }]))
-    await useDbContent().writer.save({ slug: 'recette-autre', raw: deck('Modifiée'), actor: 'test' })
+    await useDbContent().writer.save({ slug: 'recette-autre', raw: deck('Modifiée'), actor: 'test', accessFromText: true })
     await useDeckMeta().softDelete('recette-autre')
 
     expect(await seedBranchDecks(root, { replace: false })).toBe(1)
@@ -248,7 +248,7 @@ describe('trial decks', () => {
   })
 
   it('replaces every deck with its file', async () => {
-    await useDbContent().writer.save({ slug: 'recette-essai', raw: deck('Modifiée'), actor: 'test' })
+    await useDbContent().writer.save({ slug: 'recette-essai', raw: deck('Modifiée'), actor: 'test', accessFromText: true })
     expect(await seedBranchDecks(root, { replace: true })).toBe(1)
     expect((await useDbContent().source.load('recette-essai'))?.raw).toContain('# Essai')
   })

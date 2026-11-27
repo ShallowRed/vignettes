@@ -10,3 +10,4 @@ The decisions that shape the code of Vignettes, one per file. [0000](0000-record
 - [0005](0005-earlier-forms-stay-readable.md) Earlier forms of the format stay readable, without a version of the syntax.
 - [0006](0006-adapter-keys-under-their-adapter.md) We write the keys of an adapter under the key of that adapter.
 - [0022](0022-digest-of-a-publication-and-a-save.md) A publication and a save check the digest of the text they expect.
+- [0023](0023-publication-by-an-account-without-a-global-role.md) A publication by an account without a global role sets no access from its text.
