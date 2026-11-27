@@ -83,6 +83,13 @@ export type CliErrorCode
     | 'missing-operand'
     | 'missing-file'
     | 'unreadable-file'
+    | 'missing-instance'
+    | 'unknown-instance'
+    | 'invalid-instance'
+    | 'insecure-instance'
+    | 'unreadable-config'
+    | 'keyring-unreadable'
+    | 'secret-not-erased'
     | 'internal'
     | 'interrupted'
 
@@ -96,6 +103,13 @@ const CLI_ERRORS: Record<CliErrorCode, (detail: string) => string> = {
   'missing-operand': operand => `Give at least one <${operand}> after the command.`,
   'missing-file': file => `The file “${file}” does not exist.`,
   'unreadable-file': file => `The file “${file}” cannot be read.`,
+  'missing-instance': () => 'Name the instance with --instance <origin or name> or VIGNETTES_INSTANCE, or sign in with vignettes login --instance <origin>.',
+  'unknown-instance': name => `No registered instance is named “${name}”: give its origin, such as https://app.vignettes.io, or sign in to it with vignettes login.`,
+  'invalid-instance': address => `“${address}” is not an address: write the origin of the instance, such as https://app.vignettes.io.`,
+  'insecure-instance': address => `The address “${address}” does not start with https://: the command line sends a token over https only, or over http to localhost, 127.0.0.1 and [::1].`,
+  'unreadable-config': file => `The file “${file}” cannot be read: fix or remove it.`,
+  'keyring-unreadable': origin => `The keyring of the system holds the token of “${origin}” and cannot be read: unlock it, then run the command again.`,
+  'secret-not-erased': origin => `The keyring of the system cannot erase the token of “${origin}”, which stays on this machine: unlock the keyring, then run vignettes logout again.`,
   'internal': detail => `Internal error of the command line: ${detail}`,
   'interrupted': () => 'Stopped by Ctrl+C.',
 }

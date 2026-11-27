@@ -28,6 +28,13 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'missing-operand': EXIT_CODES.usage,
   'missing-file': EXIT_CODES.usage,
   'unreadable-file': EXIT_CODES.usage,
+  'missing-instance': EXIT_CODES.usage,
+  'unknown-instance': EXIT_CODES.usage,
+  'invalid-instance': EXIT_CODES.usage,
+  'insecure-instance': EXIT_CODES.usage,
+  'unreadable-config': EXIT_CODES.usage,
+  'keyring-unreadable': EXIT_CODES.usage,
+  'secret-not-erased': EXIT_CODES.usage,
   'internal': EXIT_CODES.internal,
   'interrupted': EXIT_CODES.interrupted,
 }

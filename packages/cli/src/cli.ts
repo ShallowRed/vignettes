@@ -41,10 +41,25 @@ function usageError(error: unknown, args: string[], options: ParseArgsOptionsCon
   return error
 }
 
+/** The options written `--name value`, whose value the search of the command skips. */
+const VALUED_OPTIONS = new Set(Object.values(COMMANDS as Record<string, CommandUsage>).flatMap(({ options }) =>
+  Object.entries(options).filter(([, option]) => option.type === 'string').map(([name]) => `--${name}`)))
+
+/** The index of the first argument that is neither an option nor the value of one, before `--`. */
+function commandIndex(args: string[]): number {
+  let value = false
+  for (const [index, arg] of args.entries()) {
+    if (arg === '--')
+      break
+    if (!value && !arg.startsWith('-'))
+      return index
+    value = !value && VALUED_OPTIONS.has(arg)
+  }
+  return -1
+}
+
 async function main(args: string[], environment: CliEnvironment): Promise<void> {
-  // The options before the command are common ones, which take no value.
-  const end = args.includes('--') ? args.indexOf('--') : args.length
-  const at = args.slice(0, end).findIndex(arg => !arg.startsWith('-'))
+  const at = commandIndex(args)
   const name = at === -1 ? undefined : args[at]
   const command = name && isCommandName(name) ? name : null
   const output = createOutput({ cli: manifest.version, json: args.includes('--json'), command })
