@@ -142,7 +142,7 @@ catalog:
   tsdown: 0.23.7
   typescript: ^5.9.3
   unist-util-visit: ^5.0.0
-  vitest: ^4.1.9
+  vitest: ^4.1.11
   # The release nuxt requires: with an older one here, the built server holds a
   # second Vue, which pinia, reka-ui and vueuse load.
   vue: ^3.5.46
