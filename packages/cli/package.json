@@ -23,6 +23,7 @@
     "build": "tsdown"
   },
   "dependencies": {
+    "@clack/prompts": "catalog:",
     "js-yaml": "catalog:",
     "slugify": "catalog:",
     "zod": "catalog:"

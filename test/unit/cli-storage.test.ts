@@ -2,8 +2,11 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync
 import * as fs from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { Readable } from 'node:stream'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { EXIT_CODES } from '../../packages/cli/src/output.ts'
 import { createStorage } from '../../packages/cli/src/storage.ts'
+import { runCommand } from './helpers/cli-run'
 import { fakeKeyring } from './helpers/keyring'
 
 vi.mock('node:fs/promises', async (actual) => {
@@ -121,5 +124,85 @@ describe('the registered instances (packages/cli/src/storage.ts)', () => {
     expect(createStorage({ configHome: home }).folder).toBe(join(home, 'vignettes'))
     expect(createStorage({ configHome: 'relative' }).folder).toBe(join(homedir(), '.config', 'vignettes'))
     expect(createStorage({}).folder).toBe(join(homedir(), '.config', 'vignettes'))
+  })
+})
+
+describe('login, whoami and logout on the kept secrets (packages/cli/src/commands)', () => {
+  const answer = (secret: string) => Response.json({ login: 'ann', role: 'editor', name: 'CLI', prefix: secret.slice(0, 12), scope: 'read', expiresAt: '2027-01-01T00:00:00.000Z' })
+  const OTHER = 'vgt_another-made-up-secret-of-the-tests'
+
+  async function signIn(keyring: ReturnType<typeof fakeKeyring>, secret = SECRET) {
+    const signedIn = await runCommand('login', { keyring: keyring.load, fetch: async () => answer(secret), stdin: Readable.from([secret]), options: { 'instance': ORIGIN, 'token-stdin': true }, environment: { configHome: home } })
+    expect(signedIn.code).toBe(EXIT_CODES.success)
+  }
+
+  it.each([undefined, 'locked'] as const)('refuses login on an instance whose secret is kept, keyring %s, without reading the keyring or a secret', async (failure) => {
+    const keyring = fakeKeyring()
+    await signIn(keyring)
+    if (failure)
+      keyring.lock()
+    const fetch = vi.fn<typeof globalThis.fetch>()
+    const stdin = Readable.from([OTHER])
+    const refused = await runCommand('login', { fetch, keyring: keyring.load, stdin, options: { 'instance': ORIGIN, 'token-stdin': true }, environment: { configHome: home } })
+    expect(refused).toMatchObject({ code: EXIT_CODES.usage, stderr: expect.stringContaining('run vignettes logout --instance https://studio.example.test first') })
+    expect(fetch).not.toHaveBeenCalled()
+    expect(stdin.readableDidRead).toBe(false)
+    expect(readdirSync(join(home, 'vignettes'))).toEqual(['config.json'])
+    keyring.unlock()
+    expect(keyring.passwords.get(`vignettes/${ORIGIN}`)).toBe(SECRET)
+  })
+
+  it('stops logout and whoami with code 2 while the keyring that holds the secret is locked, without calling the instance', async () => {
+    const keyring = fakeKeyring()
+    await signIn(keyring)
+    keyring.lock()
+    const fetch = vi.fn<typeof globalThis.fetch>()
+    for (const name of ['logout', 'whoami'] as const) {
+      const stopped = await runCommand(name, { fetch, keyring: keyring.load, environment: { configHome: home } })
+      expect(stopped).toMatchObject({ code: EXIT_CODES.usage, stdout: '', stderr: expect.stringContaining('cannot be read: unlock it') })
+    }
+    expect(fetch).not.toHaveBeenCalled()
+
+    keyring.unlock()
+    const revoked = vi.fn(async () => Response.json({ action: 'revoked' }))
+    await expect(runCommand('logout', { fetch: revoked, keyring: keyring.load, environment: { configHome: home } })).resolves.toMatchObject({ code: EXIT_CODES.success })
+    expect(revoked).toHaveBeenCalledOnce()
+    expect(keyring.passwords.size).toBe(0)
+  })
+
+  it('stops logout when the keyring cannot erase the secret, keeps the instance and announces no erasure', async () => {
+    const keyring = fakeKeyring()
+    await signIn(keyring)
+    const lockedDuringTheRequest = async () => {
+      keyring.lock()
+      return Response.json({ action: 'revoked' })
+    }
+    const stopped = await runCommand('logout', { fetch: lockedDuringTheRequest, keyring: keyring.load, environment: { configHome: home } })
+    expect(stopped).toMatchObject({ code: EXIT_CODES.usage, stdout: '', stderr: expect.stringContaining('cannot erase the token of “https://studio.example.test”, which stays on this machine') })
+    await expect(createStorage({ configHome: home }).instanceAt(ORIGIN)).resolves.toMatchObject({ store: 'keyring' })
+    keyring.unlock()
+    expect(keyring.passwords.get(`vignettes/${ORIGIN}`)).toBe(SECRET)
+  })
+
+  it.each([undefined, 'locked'] as const)('erases the secret at its registered place at logout, keyring %s', async (failure) => {
+    const keyring = fakeKeyring(failure)
+    await signIn(keyring)
+    const signedOut = await runCommand('logout', { keyring: keyring.load, fetch: async () => Response.json({ action: 'revoked' }), environment: { configHome: home } })
+    expect(signedOut.code).toBe(EXIT_CODES.success)
+    expect(keyring.passwords.size).toBe(0)
+    const storage = createStorage({ configHome: home, loadKeyring: keyring.load })
+    await expect(storage.readConfig()).resolves.toEqual({ instances: [] })
+    expect(readdirSync(storage.folder)).toEqual(['config.json'])
+  })
+
+  it('removes the instance whose secret is absent and exits with 0, without calling the instance', async () => {
+    const keyring = fakeKeyring()
+    await signIn(keyring)
+    keyring.passwords.clear()
+    const fetch = vi.fn<typeof globalThis.fetch>()
+    const signedOut = await runCommand('logout', { fetch, keyring: keyring.load, environment: { configHome: home } })
+    expect(signedOut).toMatchObject({ code: EXIT_CODES.success, stdout: expect.stringContaining('No token of https://studio.example.test was kept on this machine') })
+    expect(fetch).not.toHaveBeenCalled()
+    await expect(createStorage({ configHome: home }).readConfig()).resolves.toEqual({ instances: [] })
   })
 })

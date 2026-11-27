@@ -5,11 +5,14 @@ import process from 'node:process'
 import { parseArgs } from 'node:util'
 import manifest from '../package.json' with { type: 'json' }
 import { check } from './commands/check.ts'
+import { login } from './commands/login.ts'
+import { logout } from './commands/logout.ts'
+import { whoami } from './commands/whoami.ts'
 import { CliError } from './messages.ts'
 import { createOutput, isInteractive, printText } from './output.ts'
 import { commandHelp, COMMANDS, COMMON_OPTIONS, isCommandName, mainHelp } from './usage.ts'
 
-const RUNS: Record<CommandName, CommandRun> = { check }
+const RUNS: Record<CommandName, CommandRun> = { check, login, logout, whoami }
 
 function parseConfig(options: Record<string, OptionUsage>): ParseArgsOptionsConfig {
   return Object.fromEntries(Object.entries(options).map(([name, { type }]) => [name, { type }]))

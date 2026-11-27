@@ -9,4 +9,7 @@ export default defineConfig({
   deps: {
     alwaysBundle: ['@vignettes/core', '@vignettes/schemas', '@vignettes/storybook'],
   },
+  // One file: src/target.ts loads src/storage.ts by import(), which would
+  // otherwise get a file of its own.
+  outputOptions: { codeSplitting: false },
 })
