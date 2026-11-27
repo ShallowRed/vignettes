@@ -1,9 +1,9 @@
 import type { DeckProblem, DeckProblemSeverity } from '@vignettes/core/deck'
 import type { CommandRun } from '../usage.ts'
-import { readFile } from 'node:fs/promises'
 import { checkDeck, problemCode } from '@vignettes/core/deck'
 import { registerKnownComponents } from '../components.ts'
-import { CliError, problemMessage } from '../messages.ts'
+import { readDeck } from '../files.ts'
+import { problemMessage } from '../messages.ts'
 import { EXIT_CODES } from '../output.ts'
 
 /** A problem of the `--json` document: `line` from 1, `column` from 0, as in the core. */
@@ -18,15 +18,6 @@ export interface CheckedProblem {
 export interface CheckResult {
   file: string
   problems: CheckedProblem[]
-}
-
-async function readDeck(file: string): Promise<string> {
-  try {
-    return await readFile(file, 'utf8')
-  }
-  catch (error) {
-    throw new CliError((error as { code?: string }).code === 'ENOENT' ? 'missing-file' : 'unreadable-file', file)
-  }
 }
 
 function checked(problem: DeckProblem): CheckedProblem {

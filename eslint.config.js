@@ -95,11 +95,13 @@ const CLI_HOMES = {
   prompt: 'packages/cli/src/prompt.ts',
   storage: 'packages/cli/src/storage.ts',
   remote: 'packages/cli/src/remote.ts',
+  files: 'packages/cli/src/files.ts',
 }
 const CLI_ENV_MESSAGE = 'packages/cli/src/cli.ts reads the environment and passes the values as arguments.'
 const CLI_OUTPUT_MESSAGE = 'packages/cli/src/output.ts writes the standard output and sets the exit code.'
 const CLI_KEYRING_MESSAGE = 'packages/cli/src/storage.ts loads @napi-rs/keyring, with import() when a command needs a secret, so that check runs without it.'
 const CLI_FETCH_MESSAGE = 'packages/cli/src/remote.ts calls the instances.'
+const CLI_FILES_MESSAGE = 'packages/cli/src/files.ts reads the deck files and the images and writes the pulled files.'
 
 function cliBoundaries(home) {
   return {
@@ -107,6 +109,8 @@ function cliBoundaries(home) {
       paths: [
         ...(home === 'env' ? [] : [{ name: 'node:process', importNames: ['env'], message: CLI_ENV_MESSAGE }]),
         ...(home === 'output' ? [] : [{ name: 'node:process', importNames: ['stdout', 'exit', 'exitCode'], message: CLI_OUTPUT_MESSAGE }]),
+        // storage.ts keeps config.json and credentials.json.
+        ...(home === 'files' || home === 'storage' ? [] : ['node:fs', 'node:fs/promises'].map(name => ({ name, message: CLI_FILES_MESSAGE }))),
       ],
       patterns: [
         { group: ['**/layers/**'], message: 'The CLI declares the answers it reads in packages/cli/src/api.ts.' },
@@ -128,7 +132,7 @@ function cliBoundaries(home) {
       ...(home === 'remote' ? [] : [{ name: 'fetch', message: CLI_FETCH_MESSAGE }]),
     ]],
     // no-restricted-imports reads the static imports only.
-    'no-restricted-syntax': ['error', ...ANTFU_RESTRICTED_SYNTAX, ...(home === 'storage' ? [] : [{ selector: 'ImportExpression[source.value=\'@napi-rs/keyring\']', message: CLI_KEYRING_MESSAGE }])],
+    'no-restricted-syntax': ['error', ...ANTFU_RESTRICTED_SYNTAX, ...(home === 'storage' ? [] : [{ selector: 'ImportExpression[source.value=\'@napi-rs/keyring\']', message: CLI_KEYRING_MESSAGE }]), ...(home === 'files' || home === 'storage' ? [] : [{ selector: 'ImportExpression[source.value=/^(node:)?fs(\\u002Fpromises)?$/]', message: CLI_FILES_MESSAGE }])],
   }
 }
 
