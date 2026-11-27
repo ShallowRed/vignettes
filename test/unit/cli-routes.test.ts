@@ -196,6 +196,7 @@ const STATUSES: [string, () => Response, number][] = [
   ['404', () => Response.json(echo, { status: 404 }), EXIT_CODES.instance],
   ...[400, 411, 413, 415, 429, 500, 502, 503].map(status => [String(status), () => Response.json(echo, { status }), EXIT_CODES.instance] as [string, () => Response, number]),
   ['an answer outside its schema', () => Response.json({ ...echo, login: 1 }), EXIT_CODES.instance],
+  ['a valid answer that repeats the token', () => Response.json({ login: 'ann', role: 'editor', name: WITNESS, prefix: WITNESS, scope: 'read', expiresAt: '2027-01-01T00:00:00.000Z' }), EXIT_CODES.instance],
   ['an answer that is not JSON', () => new Response(`<html>${WITNESS}</html>`), EXIT_CODES.instance],
 ]
 

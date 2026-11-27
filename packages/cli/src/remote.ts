@@ -24,8 +24,11 @@ export async function callInstance<Answer>(route: Route<Answer>, call: RemoteCal
   const url = new URL(route.path, call.origin)
   if (url.origin !== call.origin)
     throw new CliError('internal', 'a route left the origin of the instance.')
-  // An address or a text of the answer could repeat the token: it never reaches an output.
+  // An address or a field of the answer could repeat the token: it never reaches an output or a file.
   const safe = (text: string) => text.replaceAll(call.token, '<token>')
+  const repeatsToken = (value: unknown): boolean => typeof value === 'string'
+    ? value.includes(call.token)
+    : typeof value === 'object' && value !== null && Object.values(value).some(repeatsToken)
   let response: Response
   try {
     response = await (call.fetch ?? globalThis.fetch)(url, {
@@ -50,7 +53,7 @@ export async function callInstance<Answer>(route: Route<Answer>, call: RemoteCal
   if (!response.ok)
     throw new CliError('instance-error', call.origin, String(response.status))
   const answer = route.answer.safeParse(await response.json().catch(() => undefined))
-  if (!answer.success)
+  if (!answer.success || repeatsToken(answer.data))
     throw new CliError('instance-answer', call.origin, route.path)
   return answer.data
 }
