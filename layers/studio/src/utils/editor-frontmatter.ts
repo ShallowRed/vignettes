@@ -207,14 +207,15 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
   for (const key of frontmatterKeyLines(state.doc.toString())) {
     const n = key.line
     const line = state.doc.line(n)
-    const match = KEY_LINE_RE.exec(line.text)!
+    const name = key.path.at(-1) ?? ''
     const indent = key.column
     const keyFrom = line.from + indent
     const keyTo = keyFrom + key.length
+    const afterKey = line.text.slice(indent + key.length)
     const scope = fieldsAt(state, n, indent)
-    const field = scope?.fields.find(f => f.key === match[2])
-    const path = indent === 0 ? match[2]! : `${scope?.parent?.key ?? ''}.${match[2]}`
-    const value = match[3]!.replace(/\s#.*$/, '').trim()
+    const field = scope?.fields.find(f => f.key === name)
+    const path = indent === 0 ? name : `${scope?.parent?.key ?? ''}.${name}`
+    const value = afterKey.slice(afterKey.indexOf(':') + 1).replace(/\s#.*$/, '').trim()
     const valueFrom = line.from + line.text.indexOf(value, keyTo - line.from + 1)
     const onValue = (severity: Problem['severity'], message: string, short: string) =>
       problems.push({ from: valueFrom, to: valueFrom + value.length, severity, message, short })
@@ -238,10 +239,10 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
       // Under `reveal`, the deck passes the options `RevealConfigSchema` names,
       // more than the guide lists.
       const known = indent === 0
-        ? LEGACY_FRONTMATTER_KEYS.includes(match[2]!)
-        : scope?.parent?.key === 'reveal' && Object.hasOwn(RevealConfigSchema.shape, match[2]!)
+        ? LEGACY_FRONTMATTER_KEYS.includes(name)
+        : scope?.parent?.key === 'reveal' && Object.hasOwn(RevealConfigSchema.shape, name)
       if (!known && scope)
-        problems.push({ from: keyFrom, to: keyTo, severity: 'info', message: t('editor.frontmatter.unknownKey', { key: match[2] }) })
+        problems.push({ from: keyFrom, to: keyTo, severity: 'info', message: t('editor.frontmatter.unknownKey', { key: name }) })
       continue
     }
     if (indent === 0 && field.key === 'theme' && value && !isKnownTheme(unquote(value))) {

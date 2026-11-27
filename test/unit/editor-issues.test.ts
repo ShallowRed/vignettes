@@ -61,4 +61,8 @@ describe('editorIssues', () => {
     expect(editorIssues(raw, { ...findings, deck }, t, 'fr', () => undefined))
       .toEqual(editorIssues(raw, { ...findings, deck: deck.filter(problem => !ownChecks.has(problem.check)) }, t, 'fr', () => undefined))
   })
+
+  it('reads a frontmatter value that holds a line separator U+2028', () => {
+    expect(listedFrontmatterProblems('---\ntitle: a\u2028b\n---\n', key => key)).toEqual([])
+  })
 })
