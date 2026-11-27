@@ -26,7 +26,8 @@ const ERROR_EXIT_CODES: Record<CliErrorCode, ExitCode> = {
   'unexpected-option-value': EXIT_CODES.usage,
   'unexpected-operand': EXIT_CODES.usage,
   'missing-operand': EXIT_CODES.usage,
-  'not-implemented': EXIT_CODES.usage,
+  'missing-file': EXIT_CODES.usage,
+  'unreadable-file': EXIT_CODES.usage,
   'internal': EXIT_CODES.internal,
   'interrupted': EXIT_CODES.interrupted,
 }

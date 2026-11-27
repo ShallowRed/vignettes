@@ -4,11 +4,12 @@ import type { CliEnvironment, CommandInput, CommandName, CommandRun, CommandUsag
 import process from 'node:process'
 import { parseArgs } from 'node:util'
 import manifest from '../package.json' with { type: 'json' }
+import { check } from './commands/check.ts'
 import { CliError } from './messages.ts'
 import { createOutput, isInteractive, printText } from './output.ts'
 import { commandHelp, COMMANDS, COMMON_OPTIONS, isCommandName, mainHelp } from './usage.ts'
 
-const RUNS: Partial<Record<CommandName, CommandRun>> = {}
+const RUNS: Record<CommandName, CommandRun> = { check }
 
 function parseConfig(options: Record<string, OptionUsage>): ParseArgsOptionsConfig {
   return Object.fromEntries(Object.entries(options).map(([name, { type }]) => [name, { type }]))
@@ -72,10 +73,7 @@ async function main(args: string[], environment: CliEnvironment): Promise<void> 
       throw new CliError('missing-command')
     if (usage.operands && positionals.length < usage.operands.required)
       throw new CliError('missing-operand', usage.operands.name)
-    const run = RUNS[command]
-    if (!run)
-      throw new CliError('not-implemented', command)
-    await run({
+    await RUNS[command]({
       operands: positionals,
       // No option takes several values.
       options: values as CommandInput['options'],

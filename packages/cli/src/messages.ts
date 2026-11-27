@@ -1,11 +1,11 @@
-import type { ComponentAttributeIssue, DeckProblem, LayoutMention } from '@vignettes/core/deck'
+import type { ComponentAttributeIssue, DeckFileIssueReason, DeckProblem, FrontmatterProblem, LayoutMention } from '@vignettes/core/deck'
 import { inLanguage, LEGACY_FORMS } from '@vignettes/core/deck'
 
 type Problem<Check extends DeckProblem['check']> = Extract<DeckProblem, { check: Check }>
 
-// A copy of the English sentences of the editor (layers/studio/i18n/locales/en/editor.json),
-// without the help that points at the screen of the studio; test/unit/cli-commands.test.ts
-// compares them.
+// A copy of the English sentences of the studio (layers/studio/i18n/locales/en/editor.json
+// and catalog.json), without the help that points at the screen of the studio;
+// test/unit/cli-commands.test.ts compares them.
 const MALFORMED: Record<Problem<'malformed'>['reason'], (name: string) => string> = {
   brace: name => `Add the } brace that closes the attributes of “${name}”.`,
   quote: name => `Add the " quote that closes a value of “${name}”.`,
@@ -23,6 +23,22 @@ const REFUSED: Record<Problem<'refused'>['reason'], string> = {
   url: 'Address refused: write an address that starts with https://, or a path of this site that starts with /.',
   binding: 'Attribute refused: after “:”, write true, false, a number or a text between quotes, and remove v-bind, v-on, @ and v-model.',
   http: 'http:// address: the browser blocks this frame, image or video in the studio. Write the address with https://, or with http://localhost for a server on your computer.',
+}
+
+const EXPECTED: Record<NonNullable<FrontmatterProblem['expected']>, string> = {
+  number: 'Value refused: this key takes a number, such as 1280.',
+  boolean: 'Value refused: this key takes true or false.',
+  string: 'Value refused: this key takes a text.',
+}
+
+const FRONTMATTER: Record<DeckFileIssueReason, (problem: FrontmatterProblem) => string> = {
+  'unclosed': () => 'Open front matter: add a --- line above this heading to close it.',
+  'unreadable': () => 'Unreadable front matter line: write one key per line, as key: value.',
+  'no-title': () => 'The file\'s front matter gives no title: add the title key.',
+  'address': () => REFUSED.url,
+  'value': ({ key, expected, values }) => expected
+    ? EXPECTED[expected]
+    : values ? `Expected value: ${values.join(', ')}.` : `Value of “${key}” refused.`,
 }
 
 const LAYOUT: Record<LayoutMention['kind'], (attribute: string) => string> = {
@@ -49,7 +65,7 @@ export function problemMessage(problem: DeckProblem): string {
     case 'legacy':
       return `${LEGACY_FORMS[problem.form].written}: ${inLanguage(LEGACY_FORMS[problem.form].description, 'en')}`
     case 'frontmatter':
-      return problem.key ? `Frontmatter, ${problem.key}: ${problem.message}` : `Frontmatter: ${problem.message}`
+      return FRONTMATTER[problem.reason](problem)
     case 'unknown-component':
       return `Unknown component “${problem.name}”: the studio shows its content without formatting.`
     case 'unknown-theme':
@@ -65,7 +81,8 @@ export type CliErrorCode
     | 'unexpected-option-value'
     | 'unexpected-operand'
     | 'missing-operand'
-    | 'not-implemented'
+    | 'missing-file'
+    | 'unreadable-file'
     | 'internal'
     | 'interrupted'
 
@@ -77,7 +94,8 @@ const CLI_ERRORS: Record<CliErrorCode, (detail: string) => string> = {
   'unexpected-option-value': name => `The option “${name}” takes no value.`,
   'unexpected-operand': operand => `Unexpected argument “${operand}”: this command takes no file or name after it.`,
   'missing-operand': operand => `Give at least one <${operand}> after the command.`,
-  'not-implemented': name => `The command “${name}” is not available in this version of the command line.`,
+  'missing-file': file => `The file “${file}” does not exist.`,
+  'unreadable-file': file => `The file “${file}” cannot be read.`,
   'internal': detail => `Internal error of the command line: ${detail}`,
   'interrupted': () => 'Stopped by Ctrl+C.',
 }

@@ -180,8 +180,10 @@ jobs:
             exit 1
           fi
           pnpm --filter @vignettes/cli pack --pack-destination "$RUNNER_TEMP"
+          cp test/e2e/fixtures/decks/composants.md "$RUNNER_TEMP/deck.md"
           cd "$RUNNER_TEMP"
           npm_config_omit=optional npx --yes ./vignettes-cli-*.tgz --version
+          npm_config_omit=optional npx --yes ./vignettes-cli-*.tgz check deck.md
 
       - name: Build
         env:
