@@ -14,6 +14,8 @@ export interface SplitDocument {
   hasFrontmatter: boolean
   /** The YAML parser's message when the block does not parse; `data` is then empty. */
   yamlError?: string
+  /** The 1-based line of the document where the YAML parser stops, inside the block. */
+  yamlErrorLine?: number
 }
 
 /** The leading frontmatter block as written, its `---` lines included; an empty string without one. */
@@ -109,16 +111,18 @@ export function splitFrontmatter(markdown: string): SplitDocument {
 
   const yaml = match[1] ?? ''
   let data: Record<string, unknown> = {}
-  let yamlError: string | undefined
+  const body = markdown.slice(match[0].length)
   try {
     const parsed = load(yaml)
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
       data = parsed as Record<string, unknown>
   }
   catch (error: any) {
-    yamlError = String(error?.message || error)
+    // The block starts on line 2; its last line is the one above the closing `---`.
+    const yamlErrorLine = Math.min(frontmatterLineCount(markdown) - 1, Math.max(2, (error?.mark?.line ?? 0) + 2))
+    return { data, body, hasFrontmatter: true, yamlError: String(error?.message || error), yamlErrorLine }
   }
-  return { data, body: markdown.slice(match[0].length), hasFrontmatter: true, ...(yamlError ? { yamlError } : {}) }
+  return { data, body, hasFrontmatter: true }
 }
 
 /** Return the body with any leading frontmatter block removed. */

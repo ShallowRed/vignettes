@@ -100,7 +100,7 @@ const BrandFieldSchema = z.custom<false | DeckBrand>(() => true).superRefine((va
     return
   const result = DeckBrandSchema.safeParse(value)
   for (const issue of result.error?.issues ?? [])
-    ctx.addIssue({ code: 'custom', message: issue.message, path: issue.path })
+    ctx.addIssue({ ...issue })
 })
 
 export const DeckMetaSchema = z
@@ -189,10 +189,28 @@ export function parseDeckMeta(
 /** What a deck file brought from elsewhere declares: the deck metadata, with a title. */
 const DeckFileSchema = DeckMetaSchema.extend({ title: z.string().trim().min(1) })
 
-/** A refusal of a deck file; `key` is the frontmatter key at fault, empty when the YAML block itself does not parse. */
+/**
+ * The nature of a refusal of a deck file: a block without its closing line, a
+ * YAML block that does not parse, a missing or empty title, an address the
+ * deck refuses, or another value outside its schema.
+ */
+export type DeckFileIssueReason = 'unclosed' | 'unreadable' | 'no-title' | 'address' | 'value'
+
+/** The types a `value` refusal may expect. */
+export type DeckFileExpectedType = 'number' | 'boolean' | 'string'
+
+export const DECK_FILE_EXPECTED_TYPES: readonly string[] = ['number', 'boolean', 'string'] satisfies DeckFileExpectedType[]
+
+/** A refusal of a deck file; `key` is the frontmatter key at fault, empty when the block itself is refused. */
 export interface DeckFileIssue {
   key: string
+  reason: DeckFileIssueReason
+  /** The parser's or the schema's message, in English. */
   message: string
+  /** For a `value` refusal, the type the key takes, when the schema gives it. */
+  expected?: DeckFileExpectedType
+  /** For a `value` refusal, the values the key takes, when the schema gives them. */
+  values?: string[]
 }
 
 export type DeckFileReading
@@ -204,6 +222,21 @@ export function onlyTitleMissing(issues: readonly DeckFileIssue[]): boolean {
   return issues.length === 1 && issues[0]!.key === 'title'
 }
 
+function schemaIssue(issue: z.core.$ZodIssue, data: Record<string, unknown>): DeckFileIssue {
+  const key = issue.path.join('.')
+  const { message } = issue
+  const title = data.title
+  if (key === 'title' && (title == null || (typeof title === 'string' && !title.trim())))
+    return { key, reason: 'no-title', message }
+  if (message === DECK_URL_MESSAGE)
+    return { key, reason: 'address', message }
+  if (issue.code === 'invalid_type' && DECK_FILE_EXPECTED_TYPES.includes(issue.expected))
+    return { key, reason: 'value', message, expected: issue.expected as DeckFileExpectedType }
+  if (issue.code === 'invalid_value')
+    return { key, reason: 'value', message, values: issue.values.map(String) }
+  return { key, reason: 'value', message }
+}
+
 /**
  * Read the frontmatter of a deck file before it becomes a deck: the block must
  * be closed, the YAML must parse, the values must follow `DeckMetaSchema`, and
@@ -212,15 +245,12 @@ export function onlyTitleMissing(issues: readonly DeckFileIssue[]): boolean {
 export function readDeckFile(raw: string): DeckFileReading {
   const unclosed = unclosedFrontmatterLine(raw)
   if (unclosed)
-    return { valid: false, issues: [{ key: '', message: `Line ${unclosed}: a heading inside the front matter, which lacks its closing --- line` }] }
+    return { valid: false, issues: [{ key: '', reason: 'unclosed', message: `Line ${unclosed}: a heading inside the front matter, which lacks its closing --- line` }] }
   const { data, yamlError } = splitFrontmatter(raw)
   if (yamlError)
-    return { valid: false, issues: [{ key: '', message: yamlError }] }
+    return { valid: false, issues: [{ key: '', reason: 'unreadable', message: yamlError }] }
   const result = DeckFileSchema.safeParse(data)
   if (result.success)
     return { valid: true, meta: result.data }
-  return {
-    valid: false,
-    issues: result.error.issues.map(issue => ({ key: issue.path.join('.'), message: issue.message })),
-  }
+  return { valid: false, issues: result.error.issues.map(issue => schemaIssue(issue, data)) }
 }

@@ -24,7 +24,11 @@ interface Place {
   length: number
 }
 
-/** A refusal of `readDeckFile`, placed on the line of its key, else on the heading of a block without its closing line, else on the first line. */
+/**
+ * A refusal of `readDeckFile`, placed on the line of its key, else on the
+ * heading of a block without its closing line, else on the line where the YAML
+ * parser stops, else on the first line.
+ */
 export type FrontmatterProblem = DeckFileIssue & Place
 
 /** A theme that the themes of this repository leave out: an instance may publish it. */
@@ -93,7 +97,7 @@ function frontmatterProblems(raw: string): FrontmatterProblem[] {
   const reading = readDeckFile(raw)
   if (reading.valid)
     return []
-  const line = unclosedFrontmatterLine(raw) ?? 1
+  const line = unclosedFrontmatterLine(raw) ?? splitFrontmatter(raw).yamlErrorLine ?? 1
   const blockPlace = { line, column: 0, length: raw.split(/\r?\n/)[line - 1]!.length }
   return reading.issues.map(issue => ({ ...issue, ...(keyPlace(raw, issue.key) ?? blockPlace) }))
 }

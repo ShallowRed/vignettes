@@ -6,7 +6,7 @@ import type { LineProblem, Problem } from './editor-problems'
 import { snippetCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { Decoration, hoverTooltip, ViewPlugin } from '@codemirror/view'
-import { DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, frontmatterKeyLines, frontmatterLineCount, inLanguage, isFrontmatterUnclosed, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, unclosedFrontmatterLine } from '@vignettes/core/deck'
+import { DECK_FILE_EXPECTED_TYPES, DECK_URL_MESSAGE, DeckMetaSchema, FRONTMATTER_EMBED_KEYS, frontmatterKeyLines, frontmatterLineCount, inLanguage, isFrontmatterUnclosed, isRefusedEmbedUrl, LEGACY_FRONTMATTER_KEYS, RevealConfigSchema, splitFrontmatter, unclosedFrontmatterLine } from '@vignettes/core/deck'
 import { isKnownTheme, knownThemes, resolveThemeName } from '@vignettes/core/theme'
 import { load, YAMLException } from 'js-yaml'
 import { DOCS_SECTIONS, FRONTMATTER_KEYS } from '../config/editor-reference'
@@ -152,9 +152,6 @@ function completionSource(options: FrontmatterOptions) {
 /** Values checked against their set; the others take free text. */
 const OPEN_VALUES = new Set(['theme', 'lang', 'slideNumber', 'project'])
 
-/** The types a schema issue may expect, each with its message. */
-const EXPECTED_TYPES = new Set(['number', 'boolean', 'string'])
-
 const unquote = (value: string) => value.replace(/^(["'])(.*)\1$/, '$2')
 
 /**
@@ -174,7 +171,7 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
   }
   catch (error) {
     if (error instanceof YAMLException) {
-      const line = state.doc.line(Math.min(end - 1, Math.max(2, (error.mark?.line ?? 0) + 2)))
+      const line = state.doc.line(splitFrontmatter(state.doc.toString()).yamlErrorLine ?? 2)
       // A value with a colon in it, such as a title, is the most frequent case.
       const colon = /^(\s*[\w-]+):\s+([^"'\s].*:\s.*)$/.exec(line.text)
       problems.push({
@@ -214,7 +211,7 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
     const afterKey = line.text.slice(indent + key.length)
     const scope = fieldsAt(state, n, indent)
     const field = scope?.fields.find(f => f.key === name)
-    const path = indent === 0 ? name : `${scope?.parent?.key ?? ''}.${name}`
+    const path = key.path.join('.')
     const value = afterKey.slice(afterKey.indexOf(':') + 1).replace(/\s#.*$/, '').trim()
     const valueFrom = line.from + line.text.indexOf(value, keyTo - line.from + 1)
     const onValue = (severity: Problem['severity'], message: string, short: string) =>
@@ -226,7 +223,7 @@ export function frontmatterProblems(state: EditorState, t: Translate, staleTheme
         onValue('error', t('editor.diagnostics.refusedUrl'), t('editor.diagnostics.refusedUrlShort', { line: n }))
       }
       else {
-        const expected = 'expected' in issue && EXPECTED_TYPES.has(String(issue.expected)) ? String(issue.expected) : null
+        const expected = 'expected' in issue && DECK_FILE_EXPECTED_TYPES.includes(String(issue.expected)) ? String(issue.expected) : null
         onValue('error', expected ? t(`editor.frontmatter.expected.${expected}`) : t('editor.frontmatter.invalidValue'), t('editor.frontmatter.invalidValueShort', { line: n, key: path }))
       }
       continue

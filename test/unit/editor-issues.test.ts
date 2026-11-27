@@ -62,6 +62,14 @@ describe('editorIssues', () => {
       .toEqual(editorIssues(raw, { ...findings, deck: deck.filter(problem => !ownChecks.has(problem.check)) }, t, 'fr', () => undefined))
   })
 
+  it('names a refused nested key by its path, and places an unreadable block on the line checkDeck gives', () => {
+    const withParams = ((key: string, params?: Record<string, unknown>) => params ? `${key} ${JSON.stringify(params)}` : key) as Parameters<typeof listedFrontmatterProblems>[1]
+    expect(listedFrontmatterProblems('---\ntitle: A\nreveal:\n  width: large\n---\n', withParams).map(problem => problem.short))
+      .toEqual(['editor.frontmatter.invalidValueShort {"line":4,"key":"reveal.width"}'])
+    const raw = '---\ntitle: A\nlang: fr\n  theme: dsfr\n---\n'
+    expect(listedFrontmatterProblems(raw, t).map(problem => problem.line)).toEqual(checkDeck(raw).map(problem => problem.line))
+  })
+
   it('reads a frontmatter value that holds a line separator U+2028', () => {
     expect(listedFrontmatterProblems('---\ntitle: a\u2028b\n---\n', key => key)).toEqual([])
   })

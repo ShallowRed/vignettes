@@ -55,9 +55,10 @@ describe('checkDeck', () => {
     ])
   })
 
-  it('places a missing title and an unreadable YAML block on the first line, and an unclosed block on its heading', () => {
+  it('places a missing title on the first line, an unreadable YAML block where the parser stops, and an unclosed block on its heading', () => {
     expect(checkDeck('## Sans titre\n').map(placed)).toEqual([['frontmatter', 'error', 1]])
-    expect(checkDeck('---\ntitle: [A\n---\n').map(placed)).toEqual([['frontmatter', 'error', 1]])
+    expect(checkDeck('---\ntitle: A\nlang: fr\n  theme: dsfr\n---\n').map(placed)).toEqual([['frontmatter', 'error', 4]])
+    expect(checkDeck('---\ntitle: [A\n---\n').map(placed)).toEqual([['frontmatter', 'error', 2]])
     expect(checkDeck('---\ntitle: A\n\n# Titre\n\n---\n## Suite\n').map(placed)).toEqual([['frontmatter', 'error', 4]])
   })
 
